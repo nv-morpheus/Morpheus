@@ -1,0 +1,57 @@
+name: "anomaly_detection_fil_model"
+backend: "fil"
+max_batch_size: 100000
+
+input [
+ {
+    name: "input__0"
+    data_type: TYPE_FP64
+    dims: [ 13 ]
+  }
+]
+
+output [
+  {
+    name: "preds"
+    data_type: TYPE_INT8
+    dims: [ -1 ]
+  }
+]
+
+instance_group [
+  { 
+    count: 2 
+    kind: KIND_GPU 
+  }
+]
+
+parameters [    
+  {    
+    key: "algo"    
+    value: { string_value: "ALGO_AUTO" }    
+  },    
+  {    
+    key: "storage_type"    
+    value: { string_value: "AUTO" }    
+  },    
+  {    
+    key: "output_class"    
+    value: { string_value: "true" }    
+  },    
+  {    
+    key: "threshold"    
+    value: { string_value: "0.5" }    
+  },    
+  {    
+    key: "blocks_per_sm"    
+    value: { string_value: "0" }    
+  },    
+  {    
+    key: "predict_proba"    
+    value: { string_value: "false" }    
+  },    
+  {    
+    key: "model_type"    
+    value: { string_value: "xgboost" }    
+  }
+]

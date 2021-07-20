@@ -1,0 +1,32 @@
+{
+  "[python]": {
+    "editor.rulers": [
+      120
+    ],
+    "editor.tabSize": 4
+  },
+  "[rst]": {
+    "editor.rulers": [
+      120
+    ]
+  },
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "python.analysis.extraPaths": [
+    "./examples/anomaly_detection"
+  ],
+  "python.autoComplete.extraPaths": [
+    "./examples/anomaly_detection"
+  ],
+  "python.formatting.provider": "yapf",
+  "python.formatting.yapfArgs": [
+    "--style=${workspaceFolder}/setup.cfg",
+  ],
+  "python.linting.flake8Enabled": true,
+  "python.linting.pylintArgs": [
+    "--rcfile=${workspaceFolder}/.pylintrc"
+  ],
+  "python.linting.pylintEnabled": true,
+  "rewrap.wrappingColumn": 120,
+}

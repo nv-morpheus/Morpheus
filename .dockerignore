@@ -1,0 +1,10 @@
+./.git*
+models
+.vscode
+__pycache__
+.ipynb_checkpoints
+**/*Dockerfile*
+.tmp
+
+# Ignore specific files
+docker/commands.sh

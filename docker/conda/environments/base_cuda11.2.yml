@@ -1,0 +1,17 @@
+name: morpheus_dev
+channels:
+- rapidsai
+- nvidia
+- rapidsai-nightly
+- conda-forge
+dependencies:
+- pip
+- cudatoolkit=11.2
+- cuml=21.06.*
+- cudf_kafka=21.06.*
+- custreamz=21.06.*
+- python=3.8
+- tqdm
+- pip:
+    - nvidia-pyindex
+    - git+https://github.com/mdemoret-nv/streamz.git@async#egg=streamz

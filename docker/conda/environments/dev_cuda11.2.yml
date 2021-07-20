@@ -1,0 +1,28 @@
+name: morpheus
+channels:
+- rapidsai
+- nvidia
+- rapidsai-nightly
+- conda-forge
+dependencies:
+- cudatoolkit=11.2
+- cudf_kafka=21.06.*
+- cuml=21.06.*
+- custreamz=21.06.*
+- dask
+- distributed
+- docker-compose
+- docker-py
+- faker
+- numpydoc
+- pip
+- pydot
+- python-graphviz
+- python=3.8
+- sphinx
+- sphinx_rtd_theme
+- tqdm
+- pip:
+    - nvidia-pyindex
+    - git+https://github.com/mdemoret-nv/streamz.git@async#egg=streamz
+    - docutils

@@ -1,0 +1,5 @@
+Introduction
+===============
+
+ * Goals
+ * Architecture stuff
