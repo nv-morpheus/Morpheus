@@ -1,0 +1,4 @@
+[lfs]
+        url = https://github.com/NVIDIA/Morpheus.git/info/lfs
+[lfs "https://github.com/NVIDIA/Morpheus.git/info/lfs"]
+        access = basic
