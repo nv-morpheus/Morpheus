@@ -1,4 +1,4 @@
 [submodule "models"]
 	path = models
-	url = ./../Morpheus-Models.git
+	url = ./../Morpheus-Models
 	branch = branch-0.1-EA
