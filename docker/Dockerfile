@@ -27,7 +27,7 @@ SHELL ["/bin/bash", "-c"]
 # All code will be under /workspace
 WORKDIR /workspace
 
-RUN /opt/conda/bin/conda install -y -n base -c conda-forge mamba && conda clean -afy
+RUN /opt/conda/bin/conda install -y -n base mamba && conda clean -afy
 
 COPY docker/conda/environments/dev_cuda${CUDA_VER}.yml ./docker/conda/environments/
 
