@@ -26,11 +26,11 @@ gpuci_logger ">>>> END Dockerfile <<<<"
 
 # Get build info ready
 gpuci_logger "Preparing build config..."
-BUILD_TAG="cuda${CUDA_VER}-${LINUX_VER}-py${PYTHON_VER}"
+BUILD_TAG="cuda${CUDA}-${LINUX_VER}-py${PYTHON_VER}"
 
 # Setup initial BUILD_ARGS
 BUILD_ARGS="--no-cache \
-  --build-arg CUDA_VER=${CUDA_VER} \
+  --build-arg CUDA_VER=${CUDA} \
   --build-arg LINUX_VER=${LINUX_VER} \
   --build-arg PYTHON_VER=${PYTHON_VER}"
 
