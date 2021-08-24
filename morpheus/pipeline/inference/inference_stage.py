@@ -197,10 +197,6 @@ class InferenceStage(MultiMessageStage):
 
         return await super()._start()
 
-    async def stop(self):
-        if (self._progress is not None):
-            self._progress.close()
-
     @staticmethod
     def _split_batches(x: MultiInferenceMessage, max_batch_size: int) -> typing.List[MultiInferenceMessage]:
 
@@ -278,7 +274,7 @@ class InferenceStage(MultiMessageStage):
         for inf, res in zip(in_message, out_message):
 
             # Ensure they all share the same meta object. Otherwise this doesnt work
-            assert inf.meta == saved_meta
+            # assert inf.meta is saved_meta
 
             # Make sure we have a continuous list
             assert inf.mess_offset == saved_offset + saved_count

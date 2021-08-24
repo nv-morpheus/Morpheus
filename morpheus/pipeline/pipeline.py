@@ -19,6 +19,7 @@ import inspect
 import logging
 import os
 import queue
+import signal
 import time
 import typing
 from abc import ABC
@@ -447,6 +448,9 @@ class StreamWrapper(ABC, collections.abc.Hashable):
     async def stop(self):
         pass
 
+    async def join(self):
+        pass
+
     def _create_ports(self, input_count: int, output_count: int):
         assert len(self._input_ports) == 0 and len(self._output_ports) == 0, "Can only create ports once!"
 
@@ -581,6 +585,9 @@ class SourceStage(StreamWrapper):
 
     async def stop(self):
         self._source_stream.stop()
+
+    async def join(self):
+        await self._source_stream.join()
 
 
 class SingleOutputSource(SourceStage):
@@ -895,6 +902,10 @@ class Pipeline():
         for s in list(self._sources) + list(self._stages):
             await s.stop()
 
+    async def join(self):
+        for s in list(self._sources):
+            await s.join()
+
     async def build_and_start(self):
 
         if (not self.is_built):
@@ -1064,18 +1075,38 @@ class Pipeline():
 
         loop.set_exception_handler(error_handler)
 
-        try:
-            asyncio.ensure_future(self.build_and_start())
+        exit_count = 0
 
-            loop.run_forever()
+        # Handles Ctrl+C for graceful shutdown
+        def term_signal():
+
+            nonlocal exit_count
+            exit_count = exit_count + 1
+
+            if (exit_count == 1):
+                tqdm.write("Stopping pipeline. Please wait... Press Ctrl+C again to kill.")
+                loop.create_task(self.stop())
+            else:
+                tqdm.write("Killing")
+                exit(1)
+
+        for s in [signal.SIGINT, signal.SIGTERM]:
+            loop.add_signal_handler(s, term_signal)
+
+        try:
+            loop.run_until_complete(self.build_and_start())
+
+            # Wait for completion
+            loop.run_until_complete(self.join())
 
         except KeyboardInterrupt:
-            tqdm.write("Stopping pipeline. Please wait...")
-
             loop.run_until_complete(self.stop())
+            loop.run_until_complete(self.join())
         finally:
+            # Shutdown the async generator sources and exit
+            loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
-            logger.info("Exited")
+            logger.info("====Pipeline Complete====")
 
 
 class LinearPipeline(Pipeline):

@@ -61,7 +61,7 @@ class MessageMeta:
 
 
 @dataclasses.dataclass
-class MultiMessage:
+class MultiMessage(MessageData):
     """
     This class holds data for multiple messages at a time. To avoid copying data for slicing operations, it
     holds a reference to a batched metadata object and stores the offset and count into that batch.

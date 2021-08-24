@@ -48,7 +48,7 @@ setup(
     packages=find_packages(include=["morpheus", "morpheus.*"]),
     include_package_data=True,
     install_requires=[
-        "streamz @ git+https://github.com/mdemoret-nv/streamz.git@async#egg=streamz",
+        "streamz @ git+https://github.com/mdemoret-nv/streamz.git@on_completed#egg=streamz",
         "appdirs",
         "click-completion",
         "click<8",

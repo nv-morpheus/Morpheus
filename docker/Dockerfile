@@ -47,7 +47,7 @@ SHELL ["/opt/conda/bin/conda", "run", "-n", "morpheus", "/bin/bash", "-c"]
 # without all its dependencies
 RUN pip install nvidia-pyindex && \
   pip install nvidia-tensorrt==${TENSORRT_VERSION} && \
-  pip install --upgrade --no-deps --force-reinstall git+https://github.com/mdemoret-nv/streamz.git@async#egg=streamz
+  pip install --upgrade --no-deps --force-reinstall git+https://github.com/mdemoret-nv/streamz.git@on_completed#egg=streamz
 
 
 # Copy the source

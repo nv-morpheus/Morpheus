@@ -61,6 +61,13 @@ class from_iterable_done(Source):
         self._total_count = 0
         self._counters: typing.List[RefCounter] = []
 
+    async def _source_generator(self):
+        async for x in self._iterable:
+            yield self._emit(x)
+
+            if (self.stopped):
+                break
+
     @gen.coroutine
     def _ref_callback(self):
         self._total_count -= 1
@@ -116,6 +123,7 @@ class FileSourceStage(SingleOutputSource):
         self._batch_size = c.pipeline_batch_size
         self._input_count = None
         self._use_dask = c.use_dask
+        self._max_concurrent = c.num_threads
 
         # Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode
         # is good for interleaving source stages. Non-iterative is better for dask (uploads entire dataset in one call)
@@ -137,6 +145,7 @@ class FileSourceStage(SingleOutputSource):
         df = df_onread_cleanup(df)
 
         out_stream: Source = Stream.from_iterable_done(self._generate_frames(df),
+                                                       max_concurrent=self._max_concurrent,
                                                        asynchronous=True,
                                                        loop=IOLoop.current())
         out_type = cudf.DataFrame if self._iterative else typing.List[cudf.DataFrame]

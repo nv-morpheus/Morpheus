@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import collections
-
+import threading
 import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
+
+_tl = threading.local()
 
 Feature = collections.namedtuple(  # pylint: disable=invalid-name
     "Feature", ["input_ids", "input_mask", "segment_ids"])
@@ -53,7 +55,26 @@ def create_tokenizer(vocab_hash_file: str, do_lower_case: bool):
     return tokenizer
 
 
-def tokenize_text_series(tokenizer: SubwordTokenizer,
+def get_cached_tokenizer(vocab_hash_file: str, do_lower_case: bool):
+
+    hashed_inputs = hash((vocab_hash_file, do_lower_case))
+
+    cached_tokenizers = getattr(_tl, "cached_tokenizers", None)
+
+    # Set the initial dictionary if its not set
+    if (cached_tokenizers is None):
+        cached_tokenizers = {}
+        _tl.cached_tokenizers = cached_tokenizers
+
+    # Check for cache miss
+    if (hashed_inputs not in cached_tokenizers):
+        cached_tokenizers[hashed_inputs] = create_tokenizer(vocab_hash_file, do_lower_case)
+
+    return cached_tokenizers[hashed_inputs]
+
+
+def tokenize_text_series(vocab_hash_file: str,
+                         do_lower_case: bool,
                          text_ser: cudf.Series,
                          seq_len: int,
                          stride: int,
@@ -79,6 +100,8 @@ def tokenize_text_series(tokenizer: SubwordTokenizer,
         A dictionary with these keys {'token_ar':,'attention_ar':,'metadata':}
 
     """
+
+    tokenizer = get_cached_tokenizer(vocab_hash_file, do_lower_case)
 
     assert tokenizer is not None, "Must create tokenizer first using `create_tokenizer()`"
 

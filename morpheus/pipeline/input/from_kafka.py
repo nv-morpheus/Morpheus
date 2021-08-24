@@ -63,6 +63,7 @@ class KafkaSourceStage(SingleOutputSource):
         self._use_dask = use_dask
         self._poll_interval = poll_interval
         self._max_batch_size = c.pipeline_batch_size
+        self._max_concurrent = c.num_threads
         self._client = None
 
     @property
@@ -83,6 +84,7 @@ class KafkaSourceStage(SingleOutputSource):
                                                        dask=True,
                                                        engine="cudf",
                                                        poll_interval=self._poll_interval,
+                                                       max_concurrent=self._max_concurrent,
                                                        loop=IOLoop.current(),
                                                        max_batch_size=self._max_batch_size)
 
@@ -96,6 +98,7 @@ class KafkaSourceStage(SingleOutputSource):
                                                        dask=False,
                                                        engine="cudf",
                                                        poll_interval=self._poll_interval,
+                                                       max_concurrent=self._max_concurrent,
                                                        loop=IOLoop.current(),
                                                        max_batch_size=self._max_batch_size)
 

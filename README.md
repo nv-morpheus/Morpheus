@@ -83,7 +83,7 @@ conda env create -n morpheus \
 conda activate morpheus
 
 # Force reinstall of streamz fork
-pip install --upgrade --no-deps --force-reinstall git+https://github.com/mdemoret-nv/streamz.git@async#egg=streamz
+pip install --upgrade --no-deps --force-reinstall git+https://github.com/mdemoret-nv/streamz.git@on_completed#egg=streamz
 
 # Install the NVIDIA pip index
 pip install nvidia-pyindex
