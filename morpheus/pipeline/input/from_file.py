@@ -128,6 +128,7 @@ class FileSourceStage(SingleOutputSource):
         # Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode
         # is good for interleaving source stages. Non-iterative is better for dask (uploads entire dataset in one call)
         self._iterative = iterative if iterative is not None else not c.use_dask
+        self._repeat_count = 5
 
     @property
     def name(self) -> str:
@@ -177,18 +178,19 @@ class FileSourceStage(SingleOutputSource):
         count = 0
         out = []
 
-        for x in df.groupby(np.arange(len(df)) // self._batch_size):
-            y = x[1].reset_index(drop=True)
+        for _ in range(self._repeat_count):
+            for x in df.groupby(np.arange(len(df)) // self._batch_size):
+                y = x[1].reset_index(drop=True)
 
-            count += 1
+                count += 1
 
-            if (self._iterative):
-                yield y
-            else:
-                out.append(y)
+                if (self._iterative):
+                    yield y
+                else:
+                    out.append(y)
 
-        if (not self._iterative):
-            yield out
+            if (not self._iterative):
+                yield out
 
         # Indicate that we are stopping (not the best way of doing this)
         self._source_stream.stop()
