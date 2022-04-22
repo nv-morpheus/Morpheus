@@ -61,9 +61,9 @@ All of the following instructions assume several variables have been set:
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
-MORPHEUS_HOME=$(pwd)/morpheus
-git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_HOME
-cd $MORPHEUS_HOME
+MORPHEUS_ROOT=$(pwd)/morpheus
+git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
+cd $MORPHEUS_ROOT
 ```
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
