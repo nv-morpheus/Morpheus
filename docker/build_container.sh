@@ -64,6 +64,7 @@ echo "   PYTHON_VER      : ${PYTHON_VER}"
 echo "   TENSORRT_VERSION: ${TENSORRT_VERSION}"
 echo "   NEO_GIT_URL     : ${NEO_GIT_URL}"
 echo ""
-echo "   COMMAND: docker build ${DOCKER_ARGS} -f docker/Dockerfile ."
+echo "   COMMAND: docker buildx build ${DOCKER_ARGS} -f docker/Dockerfile ."
+echo "   Note: add '--progress plain' to DOCKER_ARGS to show all container build output"
 
 docker buildx build ${DOCKER_ARGS} -f docker/Dockerfile .
