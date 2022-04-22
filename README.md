@@ -26,9 +26,9 @@ git lfs install
 #### Clone the Repository
 
 ```bash
-MORPHEUS_HOME=$(pwd)/morpheus
-git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_HOME
-cd $MORPHEUS_HOME
+MORPHEUS_ROOT=$(pwd)/morpheus
+git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
+cd $MORPHEUS_ROOT
 ```
 
 **Note:** If the repository was cloned before `Git LFS` was installed, you can ensure you have downloaded the LFS files with the command:
