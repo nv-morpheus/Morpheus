@@ -45,12 +45,10 @@ Pre-built Morpheus Docker images can be downloaded from NGC. The `runtime` image
 docker pull nvcr.io/nvidia/morpheus/morpheus:runtime-22.04-latest
 ```
 
-**Note:** You must be enrolled in the Morpheus Early Access program to download the Morpheus image.
-
 Run the pre-built `runtime` container:
 
 ```bash
-DOCKER_IMAGE_TAG=runtime-v0.2-latest ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG=runtime-22.04-latest ./docker/run_container_release.sh
 ```
 
 #### Manually build `runtime` Docker image
