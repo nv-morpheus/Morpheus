@@ -1,0 +1,5 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 189
+
+{"name":"abp-nvsmi-xgb","versions":["1"],"platform":"fil","inputs":[{"name":"input__0","datatype":"FP32","shape":[-1,29]}],"outputs":[{"name":"output__0","datatype":"FP32","shape":[-1,1]}]}

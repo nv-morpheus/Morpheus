@@ -1,0 +1,23 @@
+HTTP/1.1 200 OK
+Content-Type: application/octet-stream
+{{#inject}}(()=>{
+    if(!this.counter) {
+        this.counter=0;
+    }
+
+    this.counter+=1;
+    this.filename = "payloads/abp/abp_infer_resp." + this.counter + ".body"
+
+    let inf_header_content_length = 155;
+    if (this.counter > 1) {
+        inf_header_content_length = 153;
+    }
+
+    // This seems like the only way to pass a variable to the file helper
+    request._nv_morpheus_params = {counter: this.counter, filename: this.filename};
+
+
+    return "Inference-Header-Content-Length: " + inf_header_content_length;
+})();{{/inject}}
+
+{{file path=request._nv_morpheus_params.filename}}

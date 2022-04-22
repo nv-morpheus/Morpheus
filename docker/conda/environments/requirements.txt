@@ -1,0 +1,17 @@
+# Note, to include this when using setup.py or pip, set the variable:
+# PIP_FIND_LINKS=https://download.pytorch.org/whl/cu113/torch_stable.html
+--find-links https://download.pytorch.org/whl/cu113/torch_stable.html
+
+####### Pip-only runtime dependencies (keep sorted!) #######
+click>=8
+configargparse
+datacompy
+docker
+git+https://github.com/efajardo-nv/dfencoder.git@nv-updates#egg=dfencoder
+grpcio-channelz
+networkx
+nvidia-pyindex
+torch==1.10.2+cu113
+tqdm
+tritonclient[all]
+typing-utils

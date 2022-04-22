@@ -1,0 +1,2 @@
+include versioneer.py
+include morpheus/_version.py

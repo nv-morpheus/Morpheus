@@ -1,0 +1,28 @@
+name: "log-parsing-onnx"
+platform: "onnxruntime_onnx"
+backend: "onnxruntime"
+max_batch_size: 32
+input [
+    {
+        name: "attention_mask"
+        data_type: TYPE_INT64
+        dims: [ 256 ]
+    },
+    {
+        name: "input_ids"
+        data_type: TYPE_INT64
+        dims: [ 256 ]
+    }
+]
+output [
+    {
+        name: "output"
+        data_type: TYPE_FP32
+        dims: [ -1, 23 ]
+    }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 1, 4, 8, 16, 32 ]
+  max_queue_delay_microseconds: 50000
+}

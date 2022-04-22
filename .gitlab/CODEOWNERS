@@ -1,0 +1,10 @@
+# Default Approval rule if one of the later sections does not apply
+* @morpheus/approvers
+
+# Engineering is requried for changes to the following
+/morpheus/ @morpheus/approvers-eng
+/cmake/ @morpheus/approvers-eng
+/tests/ @morpheus/approvers-eng
+
+# Data Science is requried for changes to `models`
+/models/ @morpheus/approvers-ds

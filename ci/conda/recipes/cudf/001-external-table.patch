@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+diff --git a/cpp/CMakeLists.txt b/cpp/CMakeLists.txt
+index 1dd3348a9c..0a115e471b 100644
+--- a/cpp/CMakeLists.txt
++++ b/cpp/CMakeLists.txt
+@@ -642,6 +642,7 @@ install(TARGETS cudf
+ install(DIRECTORY
+             ${CUDF_SOURCE_DIR}/include/cudf
+             ${CUDF_SOURCE_DIR}/include/cudf_test
++            ${CUDF_SOURCE_DIR}/include/nvtext
+         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ 
+ install(DIRECTORY
+diff --git a/python/cudf/cudf/_lib/column.pxd b/python/cudf/cudf/_lib/column.pxd
+index 2df958466c..bce326b125 100644
+--- a/python/cudf/cudf/_lib/column.pxd
++++ b/python/cudf/cudf/_lib/column.pxd
+@@ -10,7 +10,7 @@ from cudf._lib.cpp.column.column_view cimport column_view, mutable_column_view
+ from cudf._lib.cpp.types cimport size_type
+ 
+ 
+-cdef class Column:
++cdef public class Column[object PyColumn, type PyColumn_t]:
+     cdef public:
+         cdef int _offset
+         cdef int _size
+diff --git a/python/cudf/cudf/_lib/table.pxd b/python/cudf/cudf/_lib/table.pxd
+index 2299c924bb..fc8e461440 100644
+--- a/python/cudf/cudf/_lib/table.pxd
++++ b/python/cudf/cudf/_lib/table.pxd
+@@ -6,7 +6,7 @@ from cudf._lib.cpp.table.table cimport table
+ from cudf._lib.cpp.table.table_view cimport mutable_table_view, table_view
+ 
+ 
+-cdef class Table:
++cdef public class Table[object PyTable, type PyTable_t]:
+     cdef dict __dict__
+ 
+ cdef table_view table_view_from_columns(columns) except *

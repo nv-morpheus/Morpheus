@@ -1,0 +1,37 @@
+name: "sid-minibert-trt"
+platform: "tensorrt_plan"
+max_batch_size: 32
+# default_model_filename: "sid-minibert-trt_b1-8_b1-16_b1-32.engine"
+
+input [
+  {
+    name: "input_ids"
+    data_type: TYPE_INT32
+    dims: [ 256 ]
+  },
+  {
+    name: "attention_mask"
+    data_type: TYPE_INT32
+    dims: [ 256 ]
+  }
+]
+output [
+  {
+    name: "output"
+    data_type: TYPE_FP32
+    dims: [ 10 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 1, 4, 8, 12, 16, 20, 24, 28, 32 ]
+  max_queue_delay_microseconds: 50000
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    profile: ["2"]
+  }
+]

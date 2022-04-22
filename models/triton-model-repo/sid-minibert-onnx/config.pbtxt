@@ -1,0 +1,37 @@
+name: "sid-minibert-onnx"
+platform: "onnxruntime_onnx"
+max_batch_size: 32
+# default_model_filename: "sid-minibert.onnx"
+
+input [
+  {
+    name: "input_ids"
+    data_type: TYPE_INT32
+    dims: [ 256 ]
+  },
+  {
+    name: "attention_mask"
+    data_type: TYPE_INT32
+    dims: [ 256 ]
+  }
+]
+output [
+  {
+    name: "output"
+    data_type: TYPE_FP32
+    dims: [ 10 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 1, 4, 8, 16, 32 ]
+  max_queue_delay_microseconds: 50000
+}
+
+optimization { execution_accelerators {
+  gpu_execution_accelerator : [ {
+    name : "tensorrt"
+    parameters { key: "precision_mode" value: "FP16" }
+    parameters { key: "max_workspace_size_bytes" value: "1073741824" }
+    }]
+}}
