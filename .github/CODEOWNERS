@@ -2,9 +2,9 @@
 * @BartleyR @mdemoret-nv @pdmack @raykallen
 
 # Engineering is requried for changes to the following
-/morpheus/ @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv
-/cmake/    @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv
-/tests/    @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv
+/morpheus/ @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv @cwharris
+/cmake/    @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv @cwharris
+/tests/    @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv @cwharris
 
 # Data Science is requried for changes to `models`
 /models/ @BartleyR @mdemoret-nv @pdmack @bsuryadevara @raykallen @gbatmaz @tzemicheal 
