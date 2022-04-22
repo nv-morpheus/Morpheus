@@ -16,6 +16,13 @@
 
 set -e
 
+NUMARGS=$#
+ARGS=$*
+
+function hasArg {
+    (( ${NUMARGS} != 0 )) && (echo " ${ARGS} " | grep -q " $1 ")
+}
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # Need to build the development docker container to setup git safe.directory
@@ -30,15 +37,54 @@ echo "Building container"
 ${SCRIPT_DIR}/build_container_dev.sh
 
 # Now run the container with the volume mount to build the packages
-export DOCKER_EXTRA_ARGS=""
+CONDA_ARGS=()
+CONDA_ARGS+=("--output-folder" "/workspace/.conda-bld")
+CONDA_ARGS+=("--skip-existing")
+
+DOCKER_EXTRA_ARGS=()
+
+if hasArg libneo; then
+   # If libneo is specified, you must set NEO_GIT_URL
+   DOCKER_EXTRA_ARGS+=("--env" "NEO_GIT_URL=${NEO_GIT_URL:?"Cannot build libneo. Must set NEO_GIT_URL to git repo location to allow checkout of neo repository"}")
+
+   url=${NEO_GIT_URL}
+
+   # Remove the http/https/ssh
+   url="${url#http://}"
+   url="${url#https://}"
+   url="${url#ssh://}"
+
+   # Remove git@
+   url="${url#git@}"
+
+   # Remove username/password
+   url="${url#*:*@}"
+   url="${url#*@}"
+
+   # Remove remaining
+   url=${url%%/*}
+
+   port=${url##*:}
+   url=${url%%:*}
+
+   # Add the command to auto accept this url/port combo
+   if [[ -n "${port}" ]]; then
+      BUILD_SCRIPT="${BUILD_SCRIPT:+${BUILD_SCRIPT}\n}mkdir -p \$HOME/.ssh && ssh-keyscan -t rsa -p ${port} ${url} > ~/.ssh/known_hosts"
+   else
+      BUILD_SCRIPT="${BUILD_SCRIPT:+${BUILD_SCRIPT}\n}mkdir -p \$HOME/.ssh && ssh-keyscan -t rsa ${url} > ~/.ssh/known_hosts"
+   fi
+fi
+
+# Build the script to execute inside of the container (needed to set multiple statements in CONDA_ARGS)
+BUILD_SCRIPT="${BUILD_SCRIPT}
+export CONDA_ARGS=\"${CONDA_ARGS[@]}\"
+./ci/conda/recipes/run_conda_build.sh "$@"
+"
 
 echo "Running conda build"
 
-CONDA_ARGS="--output-folder=/workspace/.conda-bld"
-export DOCKER_EXTRA_ARGS="--env CONDA_ARGS=${CONDA_ARGS} --env NEO_GIT_URL=${NEO_GIT_URL:?"Cannot build libneo. Must set NEO_GIT_URL to git repo location to allow checkout of neo repository"}"
-
 # Run with an output folder that is mounted and skip existing to avoid repeated builds
-${SCRIPT_DIR}/run_container_dev.sh ./ci/conda/recipes/run_conda_build.sh libneo libcudf cudf
+DOCKER_EXTRA_ARGS="${DOCKER_EXTRA_ARGS[@]}" ${SCRIPT_DIR}/run_container_dev.sh bash -c "${BUILD_SCRIPT}"
 
 echo "Conda packages have been built. Use the following to install into an environment:"
-echo "    mamba install -c file://$(realpath ${MORPHEUS_ROOT}/.conda-bld) -c nvidia -c rapidsai -c conda-forge neo cudf"
+echo "    mamba install -c file://$(realpath ${MORPHEUS_ROOT}/.conda-bld) -c nvidia -c rapidsai -c conda-forge $@"
