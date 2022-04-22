@@ -55,13 +55,17 @@ The following instructions are for developers who are getting started with the M
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
  - `PYTHON_VER`: The desired Python version. Minimum required is 3.8
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton.
- - `CUDA_VER`: The desired CUDA version to use.
+ - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `21.10`
+ - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.4`
+
 
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
-MORPHEUS_ROOT=$(pwd)/morpheus
+export PYTHON_VER=3.8
+export RAPIDS_VER=21.10
+export CUDA_VER=11.4
+export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
@@ -153,38 +157,46 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 1. Create a new Conda environment
    ```bash
-   export CUDAToolkit_ROOT=/usr/local/cuda-{CUDA_VER}
-   mamba env create -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+   mamba create -n morpheus python=${PYTHON_VER}
    conda activate morpheus
    ```
-   This creates an environment named `morpheus` with all necessary dependencies, and activates that environment.
-2. Build cuDF
+
+   This creates a new environment named `morpheus`, and activates that environment.
+1. Build cuDF
    ```bash
-   # Clone cuDF
-   git clone -b branch-${RAPIDS_VER} --depth 1 https://github.com/rapidsai/cudf ${MORPHEUS_ROOT}/.cache/cudf
-   cd ${MORPHEUS_ROOT}/.cache/cudf
-   # Apply the Morpheus cuDF patch
-   git apply --whitespace=fix ${MORPHEUS_ROOT}/cmake/deps/patches/cudf.patch
-   # Build cuDF libraries
-   ./build.sh --ptds libcudf cudf libcudf_kafka cudf_kafka
-   cd ${MORPHEUS_ROOT}
+   ./docker/build_conda_packages.sh libcudf cudf
+   mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
    ```
    This will checkout, patch, build and install cuDF with the necessary fixes to allow Morpheus to work smoothly with cuDF DataFrames in C++.
-3. Build Morpheus
+1. Install remaining Morpheus dependencies
+   ```bash
+   mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+   ```
+1. Build Morpheus
    ```bash
    ./scripts/compile.sh
    ```
    This script will run both CMake Configure with default options and CMake build.
-4. Install Morpheus
+1. Install Morpheus
    ```bash
    pip install -e ${MORPHEUS_ROOT}
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
-5. Install camouflage, needed for the unittests
+1. Test the build (Note: some tests will be skipped)
    ```bash
-   npm install -g camouflage-server
+   pytest
    ```
-6. Run Morpheus
+1. Optional: Run full end-to-end tests
+   - Our end-to-end tests require the [camouflage](https://testinggospels.github.io/camouflage/) testing framework. Install camouflage with:
+      ```bash
+      npm install -g camouflage-server
+      ```
+
+   Run all tests:
+   ```bash
+   pytest --run_slow
+   ```
+1. Run Morpheus
    ```bash
    morpheus run pipeline-nlp ...
    ```
