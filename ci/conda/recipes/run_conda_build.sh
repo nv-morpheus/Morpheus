@@ -48,13 +48,6 @@ echo ""
 # Export variables for the cache
 export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
 
-# Ensure the build directory exists
-export CONDA_BLD_DIR=${CONDA_BLD_DIR:-"${MORPHEUS_CACHE_DIR}/conda-build"}
-mkdir -p ${CONDA_BLD_DIR}
-
-# Where the conda packages are saved to outside of the conda environment
-CONDA_BLD_OUTPUT=${CONDA_BLD_OUTPUT:-"${MORPHEUS_ROOT}/.conda-bld"}
-
 # Export CCACHE variables
 export CCACHE_DIR="${MORPHEUS_CACHE_DIR}/ccache"
 export CCACHE_NOHASHDIR=1
@@ -62,6 +55,10 @@ export CMAKE_GENERATOR="Ninja"
 export CMAKE_C_COMPILER_LAUNCHER="ccache"
 export CMAKE_CXX_COMPILER_LAUNCHER="ccache"
 export CMAKE_CUDA_COMPILER_LAUNCHER="ccache"
+
+# Ensure the necessary folders exist before continuing
+mkdir -p ${MORPHEUS_CACHE_DIR}
+mkdir -p ${CCACHE_DIR}
 
 # Holds the arguments in an array to allow for complex json objects
 CONDA_ARGS_ARRAY=()

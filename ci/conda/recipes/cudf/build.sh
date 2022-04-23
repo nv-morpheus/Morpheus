@@ -23,6 +23,9 @@ export CCACHE_DEBUGDIR=${SRC_DIR}/ccache_debug
 export CCACHE_SLOPPINESS="system_headers"
 export CCACHE_NOHASHDIR=1
 
+# Double check that the cache dir has been created
+mkdir -p ${CCACHE_DIR}
+
 # CMake with nvcc uses -isystem=/path instead of -isystem /path which ccache doesnt like. Replace that
 REPLACE_ISYSTEM="ARGS=()\nfor i in \"\${@}\"; do\n  ARGS+=(\${i/\"-isystem=/\"/\"-isystem /\"})\ndone\n"
 
