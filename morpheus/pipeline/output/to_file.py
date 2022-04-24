@@ -112,7 +112,7 @@ class WriteToFileStage(SinglePortStage):
         if (self._build_cpp_node()):
             to_file = neos.WriteToFileStage(seg,
                                             self.unique_name,
-                                            self._output_file, ("w+" if self._overwrite else "w"),
+                                            self._output_file, ("a" if self._overwrite else "w"),
                                             self._file_type)
         else:
 
