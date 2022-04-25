@@ -176,7 +176,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    eval `ssh-agent -s`
    ssh-add
    ```
-1. Build cuDF
+1. Build and install cuDF conda package
    ```bash
    ./docker/build_conda_packages.sh libcudf cudf
    mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
