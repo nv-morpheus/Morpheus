@@ -220,7 +220,7 @@ def onnx_to_trt(ctx: click.Context, **kwargs):
     try:
         import tensorrt
     except:
-        logger.error("onnx_to_trt requires the tensorrt module and runtime to be installed.")
+        logger.error("onnx-to-trt requires the tensorrt module and runtime to be installed.")
         return
 
     logger.info("Generating onnx file")
