@@ -89,6 +89,7 @@ add_module_names = False  # Remove namespaces from class/method signatures
 autodoc_mock_imports = [
     "morpheus.cli",  # Dont document the CLI in Sphinx
     "tqdm",
+    "tensorrt",
 ]
 
 # Config numpydoc

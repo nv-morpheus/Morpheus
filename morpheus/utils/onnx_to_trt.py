@@ -16,8 +16,16 @@ import logging
 
 from morpheus.config import ConfigOnnxToTRT
 
-
 logger = logging.getLogger(__name__)
+
+try:
+    import tensorrt as trt
+except ImportError:
+    logger.error("The onnx_to_trt module requires the TensorRT runtime and python package to be installed. "
+                 "To install the `tensorrt` python package, follow the instructions located "
+                 "here: https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html#installing-pip")
+    raise
+
 
 
 def gen_engine(c: ConfigOnnxToTRT):
@@ -32,11 +40,6 @@ def gen_engine(c: ConfigOnnxToTRT):
     """
 
     # Local imports to avoid requiring TensorRT to generate the docs
-    try:
-        import tensorrt as trt
-    except:
-        logger.error("onnx_to_trt requires the tensorrt module and runtime to be installed.")
-        return
 
     TRT_LOGGER = trt.Logger()
 
