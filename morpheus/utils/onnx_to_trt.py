@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
 from morpheus.config import ConfigOnnxToTRT
+
+
+logger = logging.getLogger(__name__)
 
 
 def gen_engine(c: ConfigOnnxToTRT):
@@ -27,7 +32,14 @@ def gen_engine(c: ConfigOnnxToTRT):
     """
 
     # Local imports to avoid requiring TensorRT to generate the docs
-    import tensorrt as trt
+
+
+    try:
+        import tensorrt as trt
+    except:
+        logger.error("onnx_to_trt requires the tensorrt module and runtime to be installed.")
+        return
+
     TRT_LOGGER = trt.Logger()
 
     input_model = c.input_model
