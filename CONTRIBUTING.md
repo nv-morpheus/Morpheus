@@ -171,6 +171,11 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    ```
 
    This creates a new environment named `morpheus`, and activates that environment.
+1. Set up `ssh-agent` to allow container to pull from private repos
+   ```bash
+   eval `ssh-agent -s`
+   ssh-add
+   ```
 1. Build cuDF
    ```bash
    ./docker/build_conda_packages.sh libcudf cudf
