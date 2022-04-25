@@ -2,17 +2,26 @@
 
 NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI framework and pre-trained AI capabilities that allow them to instantaneously inspect all IP traffic across their data center fabric. The Morpheus developer framework allows teams to build their own optimized pipelines that address cybersecurity and information security use cases. Bringing a new level of security to data centers, Morpheus provides development capabilities around dynamic protection, real-time telemetry, adaptive policies, and cyber defenses for detecting and remediating cybersecurity threats.
 
-## Getting Started
+There are two basic ways to get started with Morpheus - using the production  deployment containers on NGC or using GitHub to run the pre-built container or build from source.
 
-### Prerequisites
+## Getting Started with Containers on NGC
+
+Morpheus pre-built containers are hosted on NGC (NVIDIA GPU Cloud) and make it easy to get started running Morpheus. Use the link below to access the Morpheus collection.
+
+[https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus)
+
+Complete instructions on how to get up-and-running with the NGC containers are available in the Morpheus Quick Start Guide.
+
+## Getting Started with Installation via GitHub
+If you prefer to run Morpheus from GitLab, the instructions below provide guidelines on how to get started with the pre-built container or build from source.
+
+#### Prerequisites
 
 - Pascal architecture or better
 - NVIDIA driver `450.80.02` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [Git LFS](https://git-lfs.github.com/)
-
-### Installation
 
 #### Ensure Git LFS is Installed
 
@@ -45,12 +54,10 @@ Pre-built Morpheus Docker images can be downloaded from NGC. The `runtime` image
 docker pull nvcr.io/nvidia/morpheus/morpheus:runtime-22.04-latest
 ```
 
-**Note:** You must be enrolled in the Morpheus Early Access program to download the Morpheus image.
-
 Run the pre-built `runtime` container:
 
 ```bash
-DOCKER_IMAGE_TAG=runtime-v0.2-latest ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG=runtime-22.04-latest ./docker/run_container_release.sh
 ```
 
 #### Manually build `runtime` Docker image
@@ -177,6 +184,7 @@ See the `./examples` directory for examples on how to configure a pipeline via P
 ### Starting the Pipeline (via CLI)
 
 The provided CLI (`morpheus`) is capable of running the included tools as well as any linear pipeline. Instructions for using the CLI can be queried with:
+
 ```bash
 $ morpheus
 Usage: morpheus [OPTIONS] COMMAND [ARGS]...
@@ -198,6 +206,7 @@ Commands:
   tools  Run a utility tool
 ```
 Each command in the CLI has its own help information. Use `morpheus [command] [...sub-command] --help` to get instructions for each command and sub command. For example:
+
 ```bash
 $ morpheus run pipeline-nlp inf-triton --help
 Configuring Pipeline via CLI
@@ -226,10 +235,13 @@ Options:
 #### CLI Stage Configuration
 
 When configuring a pipeline via the CLI, you start with the command `morpheus run pipeline` and then list the stages in order from start to finish. The order that the commands are placed in will be the order that data flows from start to end. The output of each stage will be linked to the input of the next. For example, to build a simple pipeline that reads from kafka, deserializes messages, serializes them, and then writes to a file, use the following:
+
 ```bash
 $ morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json
 ```
+
 You should see some output similar to:
+
 ```log
 ====Building Pipeline====
 Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=test_pcap, group_id=custreamz, poll_interval=10millis)>
@@ -242,7 +254,9 @@ Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite
   └─ pandas.DataFrame -> pandas.DataFrame
 ====Building Pipeline Complete!====
 ```
+
 This is important because it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, you will see the following:
+
 ```bash
 $ morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize to-file --filename .tmp/temp_out.json --overwrite
 
@@ -257,11 +271,13 @@ Traceback (most recent call last):
     raise RuntimeError("The {} stage cannot handle input of {}. Accepted input types: {}".format(
 RuntimeError: The to-file stage cannot handle input of <class 'morpheus.pipeline.messages.MultiMessage'>. Accepted input types: (typing.List[str],)
 ```
+
 This indicates that the `to-file` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file, it only knows how to write strings. To ensure you have a valid pipeline, look at the `Accepted input types: (typing.List[str],)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.pipeline.messages.MultiMessage`, to `typing.List[str]`, which is exactly what the `serialize` stage does.
 
 ## Pipeline Stages
 
 A complete list of the pipeline stages will be added in the future. For now, you can query the available stages for each pipeline type via:
+
 ```bash
 $ morpheus run pipeline-nlp --help
 Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
@@ -291,7 +307,9 @@ Commands:
   to-kafka      Write all messages to a Kafka cluster
   validate      Validates pipeline output against an expected output
 ```
+
 And for the FIL pipeline:
+
 ```bash
 $ morpheus run pipeline-fil --help
 Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
@@ -320,7 +338,9 @@ Commands:
   to-kafka      Write all messages to a Kafka cluster
   validate      Validates pipeline output against an expected output
 ```
+
 And for AE pipeline:
+
 ```bash
 $ morpheus run pipeline-fil --help
 Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2

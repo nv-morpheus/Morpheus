@@ -34,8 +34,6 @@ CUR_UID=$(id -u ${LOGNAME})
 CUR_GID=$(id -g ${LOGNAME})
 
 MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
-mkdir -p ${MORPHEUS_ROOT}/.cache/ccache
-mkdir -p ${MORPHEUS_ROOT}/.cache/cpm
 
 echo "Building container"
 # Call the build script to get a container ready to build conda packages
