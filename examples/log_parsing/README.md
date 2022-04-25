@@ -53,7 +53,7 @@ docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvc
 Run the following in your Morpheus container to start the log parsing pipeline:
 
 ```
-python ./examples/log-parsing/run.py \
+python ./examples/log_parsing/run.py \
     --num_threads 1 \
     --input_file ./models/datasets/validation-data/log-parsing-validation-data-input.csv \
     --output_file ./log-parsing-output.jsonlines \
