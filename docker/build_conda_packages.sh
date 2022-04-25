@@ -30,6 +30,9 @@ export DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"morpheus"}
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"conda_build"}
 export DOCKER_TARGET=${DOCKER_TARGET:-"development"}
 
+CUR_UID=$(id -u ${LOGNAME})
+CUR_GID=$(id -g ${LOGNAME})
+
 MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 mkdir -p ${MORPHEUS_ROOT}/.cache/ccache
 mkdir -p ${MORPHEUS_ROOT}/.cache/cpm
@@ -87,6 +90,7 @@ echo "Running conda build"
 
 # Run with an output folder that is mounted and skip existing to avoid repeated builds
 DOCKER_EXTRA_ARGS="${DOCKER_EXTRA_ARGS[@]}" ${SCRIPT_DIR}/run_container_dev.sh bash -c "${BUILD_SCRIPT}"
+DOCKER_EXTRA_ARGS="${DOCKER_EXTRA_ARGS[@]}" ${SCRIPT_DIR}/run_container_dev.sh bash -c "chown -R ${CUR_UID}:${CUR_GID} .cache"
 
 echo "Conda packages have been built. Use the following to install into an environment:"
 echo "    mamba install -c file://$(realpath ${MORPHEUS_ROOT}/.conda-bld) -c nvidia -c rapidsai -c conda-forge $@"

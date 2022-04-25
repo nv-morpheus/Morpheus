@@ -144,9 +144,9 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 - Pascal architecture or better
 - NVIDIA driver `450.80.02` or higher
 - [CUDA 11.0+](https://developer.nvidia.com/cuda-downloads)
-- `conda` or `mamba`
+- `conda` and `mamba`
   - See the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
-  - [Optional] Install `mamba` to speed up the package solver (highly recommended):
+  - Install `mamba`:
 
       ```bash
       conda activate base
@@ -155,6 +155,15 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
   - **Note:** `mamba` should only be installed once in the base environment
 
+1. Setup env variables and clone the repo:
+   ```bash
+   export PYTHON_VER=3.8
+   export RAPIDS_VER=21.10
+   export CUDA_VER=11.4
+   export MORPHEUS_ROOT=$(pwd)/morpheus
+   git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
+   cd $MORPHEUS_ROOT
+   ```
 1. Create a new Conda environment
    ```bash
    mamba create -n morpheus python=${PYTHON_VER}
