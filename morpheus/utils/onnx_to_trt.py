@@ -32,8 +32,6 @@ def gen_engine(c: ConfigOnnxToTRT):
     """
 
     # Local imports to avoid requiring TensorRT to generate the docs
-
-
     try:
         import tensorrt as trt
     except:
