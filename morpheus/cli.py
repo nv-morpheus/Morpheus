@@ -306,6 +306,7 @@ def install(**kwargs):
 def run(ctx: click.Context, **kwargs):
 
     # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
+    CppConfig.set_should_use_cpp(kwargs.pop("use_cpp", CppConfig.get_should_use_cpp()))
 
     pass
 
