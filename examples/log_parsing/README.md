@@ -57,8 +57,8 @@ python ./examples/log_parsing/run.py \
     --num_threads 1 \
     --input_file ./models/datasets/validation-data/log-parsing-validation-data-input.csv \
     --output_file ./log-parsing-output.jsonlines \
-    --model_vocab_hash_file=./data/bert-base-cased-hash.txt \
-    --model_vocab_file=./data/bert-base-cased-vocab.txt \
+    --model_vocab_hash_file=./models/training-tuning-scripts/sid-models/resources/bert-base-cased-hash.txt \
+    --model_vocab_file=./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
     --model_seq_length=256 \
     --model_name log-parsing-onnx \
     --model_config_file=./models/log-parsing-models/log-parsing-config-20220418.json \
