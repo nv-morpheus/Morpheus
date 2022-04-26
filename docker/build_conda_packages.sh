@@ -84,13 +84,13 @@ fi
 BUILD_SCRIPT="${BUILD_SCRIPT}
 export CONDA_ARGS=\"${CONDA_ARGS[@]}\"
 ./ci/conda/recipes/run_conda_build.sh "$@"
+chown -R ${CUR_UID}:${CUR_GID} .cache .conda-bld
 "
 
 echo "Running conda build"
 
 # Run with an output folder that is mounted and skip existing to avoid repeated builds
 DOCKER_EXTRA_ARGS="${DOCKER_EXTRA_ARGS[@]}" ${SCRIPT_DIR}/run_container_dev.sh bash -c "${BUILD_SCRIPT}"
-DOCKER_EXTRA_ARGS="${DOCKER_EXTRA_ARGS[@]}" ${SCRIPT_DIR}/run_container_dev.sh bash -c "chown -R ${CUR_UID}:${CUR_GID} .cache"
 
 echo "Conda packages have been built. Use the following to install into an environment:"
 echo "    mamba install -c file://$(realpath ${MORPHEUS_ROOT}/.conda-bld) -c nvidia -c rapidsai -c conda-forge $@"
