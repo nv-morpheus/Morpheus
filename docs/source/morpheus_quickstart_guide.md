@@ -16,7 +16,7 @@
     -   [Create Kafka Topics](#create-kafka-topics)
 
 -   [Example Workflows](#example-workflows)
-    -   [Run AE Digital Fingerprinting Pipeline](#run-ae-digital-fingerprinting-pipeline)
+    -   [Run AutoEncoder Digital Fingerprinting Pipeline](#run-autoencoder-digital-fingerprinting-pipeline)
     -   [Run NLP Phishing Detection Pipeline](#run-nlp-phishing-detection-pipeline)
     -   [Run NLP Sensitive Information Detection Pipeline](#run-nlp-sensitive-information-detection-pipeline)
     -   [Run FIL Anomalous Behavior Profiling Pipeline](#run-fil-anomalous-behavior-profiling-pipeline)
@@ -33,7 +33,6 @@
 -   [Appendix B](#appendix-b)
     -   [Kafka Topic Commands](#kafka-topic-commands)
     -   [Using Morpheus SDK Client to Run Pipelines](#using-morpheus-sdk-client-to-run-pipelines)
-    -   [ONNX to TRT Conversion](#onnx-to-trt-conversion)
 
 -   [Appendix C](#appendix-c)
     -   [Additional Documentation](#additional-documentation)
@@ -126,7 +125,7 @@ The Morpheus AI Engine consists of the following components:
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvstaging/morpheus/charts/morpheus-ai-engine-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -168,7 +167,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following commands to pull and install the Morpheus CLI on your instance:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvstaging/morpheus/charts/morpheus-sdk-client-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 ```bash
@@ -195,8 +194,8 @@ Check the status of the pod to make sure it's up and running.
 
 ```bash
 $ kubectl -n $NAMESPACE get all | grep sdk-cli-helper
-
 ```
+
 Output:
 
 ```console
@@ -369,6 +368,12 @@ Publish and deploy abp-nvsmi-xgb model:
       -C "version=1"
 ```
 
+Exit from the container
+
+```bash
+(mlflow) root@mlflow-6d98:/mlflow# exit
+```
+
 ### Verify Model Deployment
 Run the following command to verify that the models were successfully deployed on the AI Engine:
 
@@ -392,15 +397,13 @@ We will need to create Kafka topics for input and output data to run some of the
 Check if any Kafka topics exist already. If any exist, you can either delete the previous topics or re-use them.
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -- kafka-topics \
-      --list  \
-      --zookeeper zookeeper:2181
+$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh --list  --zookeeper zookeeper:2181
 ```
 
 Run the following command twice, once to create an input topic, and again to create an output topic, making sure that the input topic and output topic have different names:
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -- kafka-topics \
+$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --create \
       --bootstrap-server broker:9092 \
       --replication-factor 1 \
@@ -412,7 +415,7 @@ $ kubectl -n $NAMESPACE exec deploy/broker -- kafka-topics \
 
 This section describes example workflows to run on Morpheus. Four sample pipelines are provided.
 
-1. AE pipeline performing Human as Machine & Machine as Human (HAMMAH)
+1. AutoEncoder pipeline performing Human as Machine & Machine as Human (HAMMAH)
 2. NLP pipeline performing Phishing Detection (PD)
 3. NLP pipeline performing Sensitive Information Detection (SID)
 4. FIL pipeline performing Anomalous Behavior Profiling (ABP).
@@ -423,6 +426,12 @@ We recommend only deploying one pipeline at a time. To remove previously deploye
 
 ```bash
 $ helm delete -n $NAMESPACE <YOUR_RELEASE_NAME>
+```
+
+To publish messages to a Kafka topic, we need to copy datasets to locations where they can be accessed from the host.
+
+```bash
+kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/data /common
 ```
 
 Refer to the Using Morpheus SDK Client to Run Pipelines section of the Appendix for more information regarding the commands.
@@ -437,7 +446,7 @@ Refer to the Using Morpheus SDK Client to Run Pipelines section of the Appendix 
 -   Replace **<YOUR_RELEASE_NAME>** with the name you want.
 
 
-### Run AE Digital Fingerprinting Pipeline
+### Run AutoEncoder Digital Fingerprinting Pipeline
 The following AutoEncoder pipeline example shows how to train and validate the AutoEncoder model and write the inference results to a specified location. Digital fingerprinting has also been referred to as **HAMMAH (Human as Machine <> Machine as Human)**.
 These use cases are currently implemented to detect user behavior changes that indicate a change from a human to a machine or a machine to a human. The model is an ensemble of an autoencoder and fast fourier transform reconstruction.
 
@@ -528,13 +537,15 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         --model_seq_length=128 \
         --labels_file=./data/labels_phishing.txt \
         from-file --filename=./data/email.jsonlines \
+        monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
         preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
         inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8001 --force_convert_inputs=True \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
         add-class --label=pred --threshold=0.7 \
-        serialize to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/phishing-bert-onnx-output.jsonlines --overwrite" \
+        serialize \
+        to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/phishing-bert-onnx-output.jsonlines --overwrite" \
     --namespace $NAMESPACE \
     <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
@@ -556,12 +567,12 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         --model_seq_length=128 \
         --labels_file=./data/labels_phishing.txt \
         from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
-        dropna \
+        monitor --description 'FromKafka Rate' --smoothing=0.001 \
         deserialize \
         preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
         inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8001 \
-        monitor --description='Inference rate' --smoothing=0.001 --unit inf \
+        monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
         add-class --label=pred --threshold=0.7 \
         serialize --exclude '^ts_' --output_type='json' \
         to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
@@ -576,7 +587,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -- kafka-console-producer \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/data/email.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: /opt/morpheus/common/data/email.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
@@ -594,7 +605,7 @@ Pipeline example to read data from a file, run inference using a `sid-minibert-o
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-      --num_threads=2 \
+      --num_threads=3 \
       --edge_buffer_size=4 \
       --use_cpp=True \
       --pipeline_batch_size=1024 \
@@ -602,6 +613,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       pipeline-nlp \
         --model_seq_length=256 \
         from-file --filename=./data/pcap_dump.jsonlines \
+        monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
         preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description='Preprocessing rate' \
@@ -622,7 +634,7 @@ Pipeline example to read messages from an input Kafka topic, run inference using
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=2 \
+        --num_threads=3 \
         --edge_buffer_size=4 \
         --use_cpp=True \
         --pipeline_batch_size=1024 \
@@ -630,14 +642,14 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         pipeline-nlp \
           --model_seq_length=256 \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
-          dropna \
+          monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
           preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
-          monitor --description='Preprocessing rate' \
+          monitor --description='Preprocessing Rate' \
           inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
-          monitor --description='Inference rate' --smoothing=0.001 --unit inf \
+          monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
           add-class \
-          serialize --exclude '^ts_' --output_type='json' \
+          serialize --exclude '^ts_' \
           to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
     <YOUR_RELEASE_NAME> \
@@ -667,18 +679,19 @@ Pipeline example to read data from a file, run inference using an `abp-nvsmi-xgb
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=2 \
+        --num_threads=3 \
         --edge_buffer_size=4 \
-        --pipeline_batch_size=3000 \
-        --model_max_batch_size=10000 \
+        --pipeline_batch_size=1024 \
+        --model_max_batch_size=64 \
         --use_cpp=True \
         pipeline-fil \
           from-file --filename=./data/nvsmi.jsonlines \
+          monitor --description 'FromFile Rate' --smoothing=0.001 \
           deserialize \
           preprocess \
-          monitor --description='Preprocessing rate' \
+          monitor --description='Preprocessing Rate' \
           inf-triton --model_name=abp-nvsmi-xgb --server_url=ai-engine:8001 --force_convert_inputs=True \
-          monitor --description='Inference rate' --smoothing=0.001 --unit inf \
+          monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
           add-class \
           serialize --exclude '^nvidia_smi_log' --exclude '^ts_' \
           to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/abp-nvsmi-xgb-output.jsonlines --overwrite" \
@@ -692,19 +705,20 @@ Pipeline example to read messages from an input Kafka topic, run inference using
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
-        --num_threads=8 \
-        --pipeline_batch_size=3000 \
-        --model_max_batch_size=10000 \
+        --num_threads=3 \
+        --pipeline_batch_size=1024 \
+        --model_max_batch_size=64 \
         --use_cpp=True \
         pipeline-fil \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
+          monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
           preprocess \
-          monitor --description='Preprocessing rate' \
+          monitor --description='Preprocessing Rate' \
           inf-triton --model_name=abp-nvsmi-xgb --server_url=ai-engine:8001 --force_convert_inputs=True \
-          monitor --description='Inference rate' --smoothing=0.001 --unit inf \
+          monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
           add-class \
-          serialize --exclude '^nvidia_smi_log' \ --exclude '^ts_' --output_type='json' \
+          serialize --exclude '^nvidia_smi_log' \ --exclude '^ts_' \
           to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
     <YOUR_RELEASE_NAME> \
@@ -833,7 +847,7 @@ Usage: morpheus run [OPTIONS] COMMAND [ARGS]...
 
 Options:
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
-                                  [default: 80; x>=1]
+                                  [default: 4; x>=1]
   --pipeline_batch_size INTEGER RANGE
                                   Internal batch size for the pipeline. Can be
                                   much larger than the model batch size. Also
@@ -857,14 +871,12 @@ Options:
   --help                          Show this message and exit.
 
 Commands:
-  dask          Place this command before a 'pipeline-*' command to run the
-                pipeline with multiple processes using dask
   pipeline-ae   Run the inference pipeline with an AutoEncoder model
   pipeline-fil  Run the inference pipeline with a FIL model
   pipeline-nlp  Run the inference pipeline with a NLP model
 ```
 
-Three different pipelines are currently supported, a pipeline running an NLP model, a pipeline running a FIL model, and a pipeline running an AE model.
+Three different pipelines are currently supported, a pipeline running an NLP model, a pipeline running a FIL model, and a pipeline running an AutoEncoder model.
 
 
 The Morpheus SDK Client provides the commands below to run the NLP pipeline:
@@ -995,7 +1007,7 @@ Commands:
   validate      Validates pipeline output against an expected output
 ```
 
-Morpheus SDK Client provides the commands below to run the AE pipeline:
+Morpheus SDK Client provides the commands below to run the AutoEncoder pipeline:
 
 ```bash
 (morpheus) root@sdk-cli:/workspace# morpheus run pipeline-ae --help
@@ -1057,165 +1069,6 @@ Commands:
   validate         Validates pipeline output against an expected output
 ```
 
-### ONNX to TRT Conversion
-TensorRT maximizes the performance of models for a particular machine. At best, any pre-compiled TensorRT engine file would have poor performance and most likely would not even load on other machines. Therefore, it is best to compile a TensorRT engine file for each machine that it will be run on. To facilitate this, Morpheus contains a utility to input an ONNX file and export the TensorRT engine file. To generate the necessary TensorRT engine file for this model, run the following commands.
-
-Run the following command to pull Morpheus Client charts if not already exists:
-
-```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
-```
-
-Install Morpheus SDK Client in sleep mode to use existing tools.
-
-```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
-               --namespace $NAMESPACE sdk-client-tools morpheus-sdk-client
-```
-
-Attach to SDK client pod to convert ONNX models to TensorRT, assuming required onnx models are at location */opt/morpheus/common/models* on host:
-
-```bash
-$ kubectl -n $NAMESPACE exec -it sdk-client-tools -- bash
-
-(morpheus) root@sdk-client-6d98:/workspace#
-```
-
-Verify access to the ONNX models
-
-```bash
-(morpheus) root@sdk-client-6d98:/workspace# ls -lrt /common/models
-```
-
-Output:
-```console
-drwxr-xr-x 3 root root 4096 Jul 27 20:12 abp-nvsmi-xgb
--rw-r--r-- 3 root root 4355096 Jul 27 22:41 phishing-bert-onnx
--rw-r--r-- 3 root root 4362096 Jul 27 22:41 sid-minibert-onnx
-```
-
-Convert sid-minibert-onnx to sid-minibert-trt
-
-```bash
-(morpheus) root@sdk-client-6d98:/workspace# morpheus tools onnx-to-trt \
-            --input_model /common/models/sid-minibert-onnx/1/model.onnx \
-            --output_model /common/models/sid-minibert-trt_b1-8_b1-16_b1-32.engine \
-            --batches 1 8 \
-            --batches 1 16 \
-            --batches 1 32 \
-            --seq_length 256 \
-            --max_workspace_size 4000
-```
-
-Similarly you can convert *phishing-bert-onnx* to *phishing-bert-trt*
-
-```bash
-(morpheus) root@sdk-client-6d98:/workspace# morpheus tools onnx-to-trt \
-            --input_model /common/models/phishing-bert-onnx/1/model.onnx \
-            --output_model /common/models/phishing-bert-trt_b1-8_b1-16_b1-32.engine \
-            --batches 1 8 \
-            --batches 1 16 \
-            --batches 1 32 \
-            --seq_length 128 \
-            --max_workspace_size 4000
-```
-
-**Note**: If you get an out-of-memory error, reduce the `--max_workspace_size`  argument until it runs successfully.
-
-TRT models are now available. Let's make a directory that Triton server will allow for  sid-minibert-trt model deployment.
-
-```bash
-(morpheus) root@sdk-client-6d98:/workspace# mkdir -p /common/models/sid-minibert-trt/1
-(morpheus) root@sdk-client-6d98:/workspace# mv /common/models/sid-minibert-trt_b1-8_b1-16_b1-32.engine /common/models/sid-minibert-trt/1
-(morpheus) root@sdk-client-6d98:/workspace# touch /common/models/sid-minibert-trt/config.pbtxt
-```
-
-Add the below configuration to `config.pbtxt`. Update instance group configuration as per your machine’s GPU specification.
-
-```conf
-name: "sid-minibert-trt"
-platform: "tensorrt_plan"
-max_batch_size: 32
-
-input [
-  {
-    name: "input_ids"
-    data_type: TYPE_INT32
-    dims: [ 256 ]
-  },
-  {
-    name: "attention_mask"
-    data_type: TYPE_INT32
-    dims: [ 256 ]
-  }
-]
-output [
-  {
-    name: "output"
-    data_type: TYPE_FP32
-    dims: [ 10 ]
-  }
-]
-
-dynamic_batching {
-  preferred_batch_size: [ 1, 4, 8, 12, 16, 20, 24, 28, 32 ]
-  max_queue_delay_microseconds: 50000
-}
-
-instance_group [
-  {
-    count: 1
-    kind: KIND_GPU
-    profile: ["2"]
-  }
-]
-```
-
-Similarly, let's make a directory that the Triton server will allow for `phishing-bert-trt` model deployment.
-
-```bash
-(morpheus) root@sdk-client-6d98:/workspace# mkdir -p /common/models/phishing-bert-trt/1
-(morpheus) root@sdk-client-6d98:/workspace# mv /common/models/phishing-bert-trt_b1-8_b1-16_b1-32.engine /common/models/phishing-bert-trt/1
-(morpheus) root@sdk-client-6d98:/workspace# touch /common/models/phishing-bert-trt/config.pbtxt
-```
-
-Add the below configuration to `config.pbtxt`. Update instance group configuration as per your machine’s GPU specification.
-
-```conf
-name: "phishing-bert-trt"
-platform: "tensorrt_plan"
-max_batch_size: 32
-
-input [
-  {
-    name: "input_ids"
-    data_type: TYPE_INT32
-    dims: [ 128 ]
-  },
-  {
-    name: "attention_mask"
-    data_type: TYPE_INT32
-    dims: [ 128 ]
-  }
-]
-output [
-  {
-    name: "output"
-    data_type: TYPE_FP32
-    dims: [ 2 ]
-  }
-]
-
-dynamic_batching {
-  preferred_batch_size: [ 1, 4, 8, 12, 16, 20, 24, 28, 32 ]
-  max_queue_delay_microseconds: 50000
-}
-```
-
-More information about the model configuration can be found [here][Triton Inference Server Model Configuration]
-
-Now follow [Model Deployment](#model-deployment) instructions to deploy TensorRT models to AI Engine.
-
 ## Appendix C
 
 ### Additional Documentation
@@ -1232,7 +1085,9 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 
 - Models Unloaded After Reboot
   - When the pod is restarted, K8s will not automatically load the models. Since models are deployed to *ai-engine* in explicit mode using MLFlow, we'd have to manually deploy them again using the [Model Deployment](#model-deployment) process.
-- Improve Piepline Message Processing Rate
+- AI Engine CPU Only Mode
+  - After a server restart, the ai-engine pod on k8s can start up before the gpu operator infrastructure is available, making it "think" there is no driver installed (i.e., CPU -only mode).
+- Improve Pipeline Message Processing Rate
   - Below settings need to be considered
     - Provide the workflow with the optimal number of threads (`—num threads`), as having more or fewer threads can have an impact on pipeline performance.
     - Consider adjusting `pipeline_batch_size` and `model_max_batch_size`
@@ -1246,14 +1101,14 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.#
 
 
+<!---
 ## Known Issues
 
 | Issue | Description |
 | ------ | ------ |
 | | |
-<!---
-Here an examplee
-| [#14](https://github.com/NVIDIA/Morpheus/issues/14) | to-file stage failure |
+
+Let's add any important issues that need to be brought to the attention of users here.
 -->
 
 [Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.04/examples
