@@ -438,9 +438,9 @@ $ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 This section describes example workflows to run on Morpheus. Four sample pipelines are provided.
 
-1. AutoEncoder pipeline performing Human as Machine & Machine as Human (HAMMAH)
-2. NLP pipeline performing Phishing Detection (PD)
-3. NLP pipeline performing Sensitive Information Detection (SID)
+1. AutoEncoder pipeline performing Human as Machine & Machine as Human (HAMMAH).
+2. NLP pipeline performing Phishing Detection (PD).
+3. NLP pipeline performing Sensitive Information Detection (SID).
 4. FIL pipeline performing Anomalous Behavior Profiling (ABP).
 
 Multiple command options are given for each pipeline, with varying data input/output methods, ranging from local files to Kafka Topics.
