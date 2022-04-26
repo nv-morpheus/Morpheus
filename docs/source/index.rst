@@ -71,7 +71,7 @@ To get started, first pull the NGC container:
 
 .. code-block:: console
 
-   $ docker pull nvcr.io/nvidia/morpheus/morpheus:runtime-22.04-latest
+   $ docker pull nvcr.io/nvidia/morpheus/morpheus:22.04-runtime
 
 Launch an interactive container to start using Morpheus:
 
