@@ -37,7 +37,6 @@
 -   [Appendix C](#appendix-c)
     -   [Additional Documentation](#additional-documentation)
 -   [Troubleshooting](#troubleshooting)
--   [Known Issues](#known-issues)
 
 
 ## Introduction
@@ -125,7 +124,7 @@ The Morpheus AI Engine consists of the following components:
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvstaging/morpheus/charts/morpheus-ai-engine-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -167,7 +166,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following commands to pull and install the Morpheus CLI on your instance:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvstaging/morpheus/charts/morpheus-sdk-client-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 ```bash
