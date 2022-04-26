@@ -36,12 +36,12 @@ logger = logging.getLogger(__name__)
 
 class CloudTrailSourceStage(SingleOutputSource):
     """
-    Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
-    testing performance and accuracy of a pipeline.
+    Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline
+     immediately. Useful for testing performance and accuracy of a pipeline.
 
     Parameters
     ----------
-    c : morpheus.config.Config
+    c : `morpheus.config.Config`
         Pipeline configuration instance.
     input_glob : str
         Input glob pattern to match files to read. For example, `./input_dir/*.json` would read all files with the
@@ -52,7 +52,7 @@ class CloudTrailSourceStage(SingleOutputSource):
         files. Any new files that are added that match the glob will then be processed.
     max_files: int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
-    file_type : FileSourceTypes, default = 'auto'
+    file_type : `morpheus.pipeline.file_types.FileTypes`, default = 'FileTypes.Auto'.
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1
@@ -83,7 +83,7 @@ class CloudTrailSourceStage(SingleOutputSource):
         self._rows_per_user: typing.Dict[str, int] = {}
 
         # Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode
-        # is good for interleaving source stages. Non-iterative is better for dask (uploads entire dataset in one call)
+        # is good for interleaving source stages.
         self._repeat_count = repeat
 
         self._watcher = DirectoryWatcher(input_glob=input_glob,
@@ -110,24 +110,24 @@ class CloudTrailSourceStage(SingleOutputSource):
     @staticmethod
     def read_file(filename: str, file_type: FileTypes) -> pd.DataFrame:
         """
-        Reads a file into a dataframe
+        Reads a file into a dataframe.
 
         Parameters
         ----------
         filename : str
-            Path to a file to read
-        file_type : FileTypes
-            What type of file to read. Leave as Auto to auto detect based on the file extension
+            Path to a file to read.
+        file_type : `morpheus.pipeline.file_types.FileTypes`
+            What type of file to read. Leave as Auto to auto detect based on the file extension.
 
         Returns
         -------
-        pd.DataFrame
-            The parsed dataframe
+        pandas.DataFrame
+            The parsed dataframe.
 
         Raises
         ------
         RuntimeError
-            If an unsupported file type is detected
+            If an unsupported file type is detected.
         """
 
         df = read_file_to_df(filename, file_type, df_type="pandas")
@@ -151,7 +151,7 @@ class CloudTrailSourceStage(SingleOutputSource):
 
         def remove_null(x):
             """
-            Util function that cleans up data
+            Util function that cleans up data.
             :param x:
             :return:
             """
@@ -163,7 +163,7 @@ class CloudTrailSourceStage(SingleOutputSource):
 
         def clean_column(cloudtrail_df):
             """
-            Clean a certain column based on lists inside
+            Clean a certain column based on lists inside.
             :param cloudtrail_df:
             :return:
             """

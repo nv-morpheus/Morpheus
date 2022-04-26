@@ -34,12 +34,12 @@ logger = logging.getLogger(__name__)
 
 class DirectoryWatcher():
     """
-    Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
-    testing performance and accuracy of a pipeline.
+    This class is in responsible of polling for new files in the supplied input glob of directories and 
+    forwarding them on to the pipeline for processing.
 
     Parameters
     ----------
-    c : morpheus.config.Config
+    c : `morpheus.config.Config`
         Pipeline configuration instance.
     input_glob : str
         Input glob pattern to match files to read. For example, `./input_dir/*.json` would read all files with the
@@ -83,7 +83,7 @@ class DirectoryWatcher():
         """
         Returns an async queue with tuples of `([files], is_event)` where `is_event` indicates if this is a file changed
         event (and we should wait for potentially more changes) or if these files were read on startup and should be
-        processed immediately
+        processed immediately.
         """
         q = FiberQueue(128)
 

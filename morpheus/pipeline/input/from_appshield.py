@@ -35,13 +35,13 @@ logger = logging.getLogger(__name__)
 
 class AppShieldSourceStage(SingleOutputSource):
     """
-    After loading Appshield messages from one or more plugins into a dataframe,
-    this SourceStage normalizes nested json messages and arranges them into a dataframe by snapshot
+    Source stage is used to load Appshield messages from one or more plugins into a dataframe.
+    It normalizes nested json messages and arranges them into a dataframe by snapshot
     and source(Determine which source generated the plugin messages).
 
     Parameters
     ----------
-    c : morpheus.config.Config
+    c : `morpheus.config.Config`
         Pipeline configuration instance.
     input_glob : str
         Input glob pattern to match files to read. For example, `./input_dir/<source>/snapshot-*/*.json` would read all
@@ -72,7 +72,7 @@ class AppShieldSourceStage(SingleOutputSource):
                  max_files: int = -1,
                  sort_glob: bool = False):
 
-        super().__init__(c)
+        SingleOutputSource.__init__(self, c)
 
         self._plugins_include = plugins_include
         self._cols_include = cols_include
@@ -97,19 +97,19 @@ class AppShieldSourceStage(SingleOutputSource):
     @staticmethod
     def fill_interested_cols(plugin_df: pd.DataFrame, cols_include: typing.List[str]):
         """
-        Fill missing interested plugin columns
+        Fill missing interested plugin columns.
 
         Parameters
         ----------
-        plugin_df : pd.DataFrame
+        plugin_df : pandas.DataFrame
             Snapshot plugin dataframe
         cols_include : typing.List[str]
-            Columns that needs to be included
+            Columns that needs to be included.
 
         Returns
         -------
-        pd.DataFrame
-            The columns added dataframe
+        pandas.DataFrame
+            The columns added dataframe.
         """
         cols_exists = plugin_df.columns
         for col in cols_include:
@@ -126,14 +126,14 @@ class AppShieldSourceStage(SingleOutputSource):
 
         Parameters
         ----------
-        file : io.TextIOWrapper
+        file : `io.TextIOWrapper`
             Input file object
         cols_exclude : typing.List[str]
             Dropping columns from a dataframe.
 
         Returns
         -------
-        pd.DataFrame
+        pandas.DataFrame
             The columns added dataframe
         """
         data = json.load(file)
@@ -157,19 +157,19 @@ class AppShieldSourceStage(SingleOutputSource):
     @staticmethod
     def load_df(filepath: str, cols_exclude: typing.List[str]) -> pd.DataFrame:
         """
-        Reads a file into a dataframe
+        Reads a file into a dataframe.
 
         Parameters
         ----------
         filepath : str
             Path to a file.
         cols_exclude : typing.List[str]
-            Columns that needs to exclude
+            Columns that needs to exclude.
 
         Returns
         -------
-        pd.DataFrame
-            The parsed dataframe
+        pandas.DataFrame
+            The parsed dataframe.
 
         Raises
         ------
@@ -193,19 +193,19 @@ class AppShieldSourceStage(SingleOutputSource):
     @staticmethod
     def load_meta_cols(filepath_split: typing.List[str], plugin: str, plugin_df: pd.DataFrame) -> pd.DataFrame:
         """
-        Loads meta columns to dataframe
+        Loads meta columns to dataframe.
 
         Parameters
         ----------
         filepath_split : typing.List[str]
             Splits of file path.
         plugin : str
-            Plugin name to which the data belongs to
+            Plugin name to which the data belongs to.
 
         Returns
         -------
-        pd.DataFrame
-            The parsed dataframe
+        pandas.DataFrame
+            The parsed dataframe.
         """
 
         source = filepath_split[-3]
@@ -228,14 +228,14 @@ class AppShieldSourceStage(SingleOutputSource):
         Parameters
         ----------
         x : typing.List[str]
-            Dataframes from multiple sources
+            Dataframes from multiple sources.
         source : str
-            source column name to group it
+            source column name to group it.
 
         Returns
         -------
-        typing.Dict[str, pd.DataFrame]
-            Grouped dataframes by source
+        typing.Dict[str, pandas.DataFrame]
+            Grouped dataframes by source.
         """
 
         combined_df = pd.concat(x)
