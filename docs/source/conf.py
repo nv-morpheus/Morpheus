@@ -61,9 +61,6 @@ version_obj = packaging.version.parse(release)
 # The short version
 version = f"{version_obj.major:02d}.{version_obj.minor:02d}"
 
-print(version)
-print(release)
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -105,6 +102,7 @@ nbsphinx_allow_errors = True  # Continue through Jupyter errors
 autodoc_typehints = "description"  # Sphinx-native method. Not as good as sphinx_autodoc_typehints
 autodoc_typehints_description_target = "documented"  # Dont double up on type hints
 add_module_names = False  # Remove namespaces from class/method signatures
+myst_heading_anchors = 4  # Generate links for markdown headers
 autodoc_mock_imports = [
     "morpheus.cli",  # Dont document the CLI in Sphinx
     "tqdm",

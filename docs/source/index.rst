@@ -208,6 +208,12 @@ version, respectively. Finally, build Morpheus:
 See :doc:`basics/overview` for more information on using the CLI.
 
 .. toctree::
+   :maxdepth: 20
+   :hidden:
+
+   morpheus_quickstart_guide
+
+.. toctree::
    :caption: Basic Usage via CLI
    :maxdepth: 20
    :hidden:
