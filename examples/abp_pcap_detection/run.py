@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import logging
+import os
 
 import click
-import psutil
 from abp_pcap_preprocessing import AbpPcapPreprocessingStage
 
 from morpheus.cli import FILE_TYPE_NAMES
@@ -37,7 +37,7 @@ from morpheus.utils.logging import configure_logging
 @click.command()
 @click.option(
     "--num_threads",
-    default=psutil.cpu_count(),
+    default=os.cpu_count(),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )
@@ -63,7 +63,7 @@ from morpheus.utils.logging import configure_logging
 )
 @click.option(
     "--output_file",
-    default="/tmp/pcap_out.jsonlines",
+    default="./pcap_out.jsonlines",
     help="The path to the file where the inference output will be saved.",
 )
 @click.option(
