@@ -16,4 +16,5 @@ limitations under the License.
 -->
 
 # Known Issues
- * Race condition
+
+There are no known issues at this time.

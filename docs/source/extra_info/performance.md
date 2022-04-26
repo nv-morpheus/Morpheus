@@ -16,14 +16,5 @@ limitations under the License.
 -->
 
 # Performance
-* Section will discuss everything related to performance from the users perspective
-  * This is higher level and more configuration focused than what a Morpheus developer might think when discussing performance
-* Should cover topics such as:
-  * Python stages and why they are bad
-  * The evil GIL and ways to avoid it
-    * Discuss things like cython and numba `nogil`
-  * Choosing the right batch size
-  * Choosing the right edge buffer size
-  * Choosing the right number of threads
-* Dedicated section to measuring and recording telemetry
-  * Cover the monitor stage and its pitfalls
+
+Performance tips will be added in a future release.
