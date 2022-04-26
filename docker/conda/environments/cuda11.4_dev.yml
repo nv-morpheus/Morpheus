@@ -52,6 +52,7 @@ dependencies:
     - myst-parser==0.17
     - neo 22.04.*
     - ninja=1.10
+    - nodejs=17.4.0
     - pandas=1.3
     - pip
     - protobuf=3.19
