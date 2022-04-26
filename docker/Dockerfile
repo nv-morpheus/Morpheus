@@ -74,7 +74,7 @@ RUN --mount=type=ssh \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
     # Run with --no-test for now until we can build with builtkit and default nvidia runtime
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
+    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" CONDA_CHANNEL_ALIAS="http://conda-mirror.gpuci.io/" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -128,7 +128,7 @@ RUN --mount=type=ssh \
     --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" CONDA_CHANNEL_ALIAS="http://conda-mirror.gpuci.io/" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
