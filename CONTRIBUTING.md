@@ -25,28 +25,22 @@ More information can be found at: [Contributor Code of Conduct](CODE_OF_CONDUCT.
 
 ### Your first issue
 
-1. Find an issue to work on. The best way is to look for the [good first issue](https://github.com/NVIDIA/Morpheus/issues).
+1. Find an issue to work on. The best way is to look for issues with the [good first issue](https://github.com/NVIDIA/Morpheus/issues) label.
 2. Comment on the issue stating that you are going to work on it.
 3. Code! Make sure to update unit tests! Ensure the [license headers are set properly](#Licensing).
 4. When done, [create your merge request](https://github.com/NVIDIA/Morpheus/compare).
 5. Wait for other developers to review your code and update code as needed.
-6. Once reviewed and approved, a Morpheus developer will merge your merge request.
+6. Once reviewed and approved, a Morpheus developer will merge your pull request.
 
-Remember, if you are unsure about anything, don't hesitate to comment on issues
-and ask for clarifications!
+Remember, if you are unsure about anything, don't hesitate to comment on issues and ask for clarifications!
 
 ### Seasoned developers
 
-Once you have gotten your feet wet and are more comfortable with the code, you
-can look at the prioritized issues for our next release in our [project boards](https://github.com/NVIDIA/Morpheus/projects).
+Once you have gotten your feet wet and are more comfortable with the code, you can look at the prioritized issues for our next release in our [project boards](https://github.com/NVIDIA/Morpheus/projects).
 
-> **Pro Tip:** Always look at the release board with the highest number for
-issues to work on. This is where Morpheus developers also focus their efforts.
+> **Pro Tip:** Always look at the release board with the highest number for issues to work on. This is where Morpheus developers also focus their efforts.
 
-Look at the unassigned issues, and find an issue to which you are comfortable
-contributing. Start with _Step 2_ above, commenting on the issue to let
-others know you are working on it. If you have any questions related to the
-implementation of the issue, ask them in the issue instead of the MR.
+Look at the unassigned issues, and find an issue to which you are comfortable contributing. Start with _Step 2_ above, commenting on the issue to let others know you are working on it. If you have any questions related to the implementation of the issue, ask them in the issue instead of the PR.
 
 ## Setting Up Your Build Environment
 
