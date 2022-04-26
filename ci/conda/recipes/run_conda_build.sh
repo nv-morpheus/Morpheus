@@ -37,6 +37,9 @@ export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 # Set the tag for the neo commit to use
 export NEO_GIT_TAG=${NEO_GIT_TAG:-"5b55e37c6320c1a5747311a1e29e7ebb049d12bc"}
 
+# Set CONDA_CHANNEL_ALIAS to mimic the conda config channel_alias property during the build
+CONDA_CHANNEL_ALIAS=${CONDA_CHANNEL_ALIAS:-""}
+
 export CUDA="$(conda list | grep cudatoolkit | egrep -o "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+")"
 export PYTHON_VER="$(python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")"
 export CUDA=11.4.1
@@ -74,8 +77,11 @@ fi
 # Choose default variants
 CONDA_ARGS_ARRAY+=("--variants" "{python: 3.8}")
 
-# And default channels
-CONDA_ARGS_ARRAY+=("-c" "rapidsai" "-c" "nvidia" "-c" "nvidia/label/dev" "-c" "conda-forge")
+# And default channels (with optional channel alias)
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS}rapidsai")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS}nvidia")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS}nvidia/label/dev")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS}conda-forge")
 
 if hasArg click_completion; then
    echo "Running conda-build for click_completion..."
