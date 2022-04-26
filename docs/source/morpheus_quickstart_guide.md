@@ -1133,7 +1133,7 @@ Let's add any important issues that need to be brought to the attention of users
 
 [Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.04/examples
 [Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.04/CONTRIBUTING.md
-[Morpheus Developer Guide]: https://github.com/bsuryadevara/Morpheus/tree/quickstart-guide-changes/docs/source/developer_guide/guides
+[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.04/docs/source/developer_guide/guides
 [Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
 [NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
 [NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1
