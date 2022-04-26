@@ -583,7 +583,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Make sure you create input and output Kafka topics before you start the pipeline. After the pipeline has been started, load the individual corresponding data files from the downloaded sample into the selected input topic using the command below:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker -- kafka-console-producer \
+$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: /opt/morpheus/common/data/email.jsonlines>
@@ -658,7 +658,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Make sure you create input and output Kafka topics before you start the pipeline. After the pipeline has been started, load the individual corresponding data files from the downloaded sample into the selected input topic using the command below:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker --kafka-console-producer \
+$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/data/pcap_dump.jsonlines>
@@ -727,7 +727,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Make sure you create input and output Kafka topics before you start the pipeline. After the pipeline has been started, load the individual corresponding data files from the downloaded sample into the selected input topic using the command below:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker --kafka-console-producer \
+$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/data/nvsmi.jsonlines>
@@ -794,7 +794,7 @@ $ kubectl -n $NAMESPACE exec deploy/broker -- kafka-topics \
 Create a partitioned Kafka topic with a single replication factor.
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -- kafka-topics \
+$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --create \
       --bootstrap-server broker:9092 \
       --replication-factor 1 \
@@ -805,8 +805,8 @@ $ kubectl -n $NAMESPACE exec deploy/broker -- kafka-topics \
 Load data from a file to Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker \
-       -- kafka-console-producer \
+$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker \
+       -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE>
@@ -818,8 +818,8 @@ $ kubectl -n $NAMESPACE exec -it deploy/broker \
 Consume messages from Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker  \
-       -- kafka-console-consumer \
+$ kubectl -n $NAMESPACE exec deploy/broker  -c broker \
+       -- kafka-console-consumer.sh \
        --bootstrap-server broker:9092 \
        --topic <YOUR_KAFKA_TOPIC> \
        --group <YOUR_CONSUMER_GROUP_ID>
@@ -828,8 +828,8 @@ $ kubectl -n $NAMESPACE exec deploy/broker  \
 Delete Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker \
-      -- kafka-topics \
+$ kubectl -n $NAMESPACE exec deploy/broker -c broker \
+      -- kafka-topics.sh \
       --delete --zookeeper zookeeper:2181 \
       --topic <YOUR_KAFKA_TOPIC>
 ```
