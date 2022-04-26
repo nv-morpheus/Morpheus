@@ -134,9 +134,16 @@ RUN --mount=type=ssh \
 # Setup container for runtime environment
 FROM conda_env as runtime
 
+ARG MORPHEUS_USER="root"
+
 # Manually need to install some pip-only dependencies. Once these can get moved to conda, they can be removed.
+COPY docker/scripts/create_user.sh ./docker/scripts
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 COPY docker/conda/environments/cuda${CUDA_VER}_runtime.yml ./docker/conda/environments/
+
+RUN docker/scripts/create_user.sh ${MORPHEUS_USER}
+USER ${MORPHEUS_USER}
+# TODO: do we need to chown any files?
 
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
