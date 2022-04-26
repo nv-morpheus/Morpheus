@@ -59,28 +59,18 @@ Below is a visualization of the pipeline showing all of the stages and data type
 
 ## Setup
 
-This example utilizes the Triton Inference Server to perform inference. We will be using a custom Triton backend that must be separately compiled in order to run FIL models.
-
-
-### Building the FIL Triton Backend
-
-The FIL Triton back end is stored in a separate repository that must be checked out and built using the following:
-
-```bash
-# Build FIL Backend for Triton
-git clone git@github.com:wphicks/triton_fil_backend.git
-cd triton_fil_backend
-docker build -t triton_fil -f ops/Dockerfile .
-```
-
-This will create a container with the tag `triton_fil:latest`. We will be using this image for the rest of the example
+This example utilizes the Triton Inference Server to perform inference.
 
 ### Launching Triton
 
-From the Morpheus repo root directory, run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
-
+Pull the Docker image for Triton:
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models triton_fil:latest tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
+docker pull nvcr.io/nvidia/tritonserver:22.02-py3
+```
+
+From the Morpheus repo root directory, run the following to launch Triton and load the `abp-nvsmi-xgb` XGBoost model:
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.02-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.
@@ -106,42 +96,76 @@ The following command line is the entire command to build and launch the pipelin
 ```bash
 export MORPHEUS_ROOT=../..
 # Launch Morpheus printing debug messages
-morpheus --debug --log_level=DEBUG \
+morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must be equal or less than Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
-   pipeline-fil --viz_file pipeline.png \
+   pipeline-fil --columns_file=$MORPHEUS_ROOT/data/columns_fil.txt \
    `# 1st Stage: Read from file` \
    from-file --filename=$MORPHEUS_ROOT/data/nvsmi.jsonlines \
-   `# 2nd Stage: Buffer upstream stage data (improves performance)` \
-   buffer \
-   `# 3rd Stage: Deserialize from JSON strings to objects` \
+   `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
-   `# 4th Stage: Preprocessing converts the input data into BERT tokens` \
+   `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess \
-   `# 5th Stage: Another buffer before inference for performance` \
-   buffer \
-   `# 6th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
+   `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
    inf-triton --model_name=abp-nvsmi-xgb --server_url=localhost:8001 \
-   `# 7th Stage: Monitor stage prints throughput information to the console` \
+   `# 5th Stage: Monitor stage prints throughput information to the console` \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
-   `# 8th Stage: Add results from inference to the messages` \
+   `# 6th Stage: Add results from inference to the messages` \
    add-class \
-   `# 9th Stage: Convert from objects back into strings. Ignore verbose input data` \
-   serialize --exclude '^nvidia_smi_log' --exclude '^_ts_' \
-   `# 10th Stage: Write out the JSON lines to the detections.jsonlines file` \
+   `# 7th Stage: Convert from objects back into strings. Ignore verbose input data` \
+   serialize --include 'mining' \
+   `# 8th Stage: Write out the JSON lines to the detections.jsonlines file` \
    to-file --filename=detections.jsonlines --overwrite
 ```
 
 If successful, you should see the following output:
-
 ```bash
 Configuring Pipeline via CLI
+Loaded columns. Current columns: [['nvidia_smi_log.gpu.pci.tx_util', 'nvidia_smi_log.gpu.pci.rx_util', 'nvidia_smi_log.gpu.fb_memory_usage.used', 'nvidia_smi_log.gpu.fb_memory_usage.free', 'nvidia_smi_log.gpu.bar1_memory_usage.total', 'nvidia_smi_log.gpu.bar1_memory_usage.used', 'nvidia_smi_log.gpu.bar1_memory_usage.free', 'nvidia_smi_log.gpu.utilization.gpu_util', 'nvidia_smi_log.gpu.utilization.memory_util', 'nvidia_smi_log.gpu.temperature.gpu_temp', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_threshold', 'nvidia_smi_log.gpu.temperature.gpu_temp_slow_threshold', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_gpu_threshold', 'nvidia_smi_log.gpu.temperature.memory_temp', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_mem_threshold', 'nvidia_smi_log.gpu.power_readings.power_draw', 'nvidia_smi_log.gpu.clocks.graphics_clock', 'nvidia_smi_log.gpu.clocks.sm_clock', 'nvidia_smi_log.gpu.clocks.mem_clock', 'nvidia_smi_log.gpu.clocks.video_clock', 'nvidia_smi_log.gpu.applications_clocks.graphics_clock', 'nvidia_smi_log.gpu.applications_clocks.mem_clock', 'nvidia_smi_log.gpu.default_applications_clocks.graphics_clock', 'nvidia_smi_log.gpu.default_applications_clocks.mem_clock', 'nvidia_smi_log.gpu.max_clocks.graphics_clock', 'nvidia_smi_log.gpu.max_clocks.sm_clock', 'nvidia_smi_log.gpu.max_clocks.mem_clock', 'nvidia_smi_log.gpu.max_clocks.video_clock', 'nvidia_smi_log.gpu.max_customer_boost_clocks.graphics_clock']]
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
 {
-  "debug": true,
+  "ae": null,
+  "class_labels": [
+    "mining"
+  ],
+  "debug": false,
+  "edge_buffer_size": 128,
   "feature_length": 29,
+  "fil": {
+    "feature_columns": [
+      "nvidia_smi_log.gpu.pci.tx_util",
+      "nvidia_smi_log.gpu.pci.rx_util",
+      "nvidia_smi_log.gpu.fb_memory_usage.used",
+      "nvidia_smi_log.gpu.fb_memory_usage.free",
+      "nvidia_smi_log.gpu.bar1_memory_usage.total",
+      "nvidia_smi_log.gpu.bar1_memory_usage.used",
+      "nvidia_smi_log.gpu.bar1_memory_usage.free",
+      "nvidia_smi_log.gpu.utilization.gpu_util",
+      "nvidia_smi_log.gpu.utilization.memory_util",
+      "nvidia_smi_log.gpu.temperature.gpu_temp",
+      "nvidia_smi_log.gpu.temperature.gpu_temp_max_threshold",
+      "nvidia_smi_log.gpu.temperature.gpu_temp_slow_threshold",
+      "nvidia_smi_log.gpu.temperature.gpu_temp_max_gpu_threshold",
+      "nvidia_smi_log.gpu.temperature.memory_temp",
+      "nvidia_smi_log.gpu.temperature.gpu_temp_max_mem_threshold",
+      "nvidia_smi_log.gpu.power_readings.power_draw",
+      "nvidia_smi_log.gpu.clocks.graphics_clock",
+      "nvidia_smi_log.gpu.clocks.sm_clock",
+      "nvidia_smi_log.gpu.clocks.mem_clock",
+      "nvidia_smi_log.gpu.clocks.video_clock",
+      "nvidia_smi_log.gpu.applications_clocks.graphics_clock",
+      "nvidia_smi_log.gpu.applications_clocks.mem_clock",
+      "nvidia_smi_log.gpu.default_applications_clocks.graphics_clock",
+      "nvidia_smi_log.gpu.default_applications_clocks.mem_clock",
+      "nvidia_smi_log.gpu.max_clocks.graphics_clock",
+      "nvidia_smi_log.gpu.max_clocks.sm_clock",
+      "nvidia_smi_log.gpu.max_clocks.mem_clock",
+      "nvidia_smi_log.gpu.max_clocks.video_clock",
+      "nvidia_smi_log.gpu.max_customer_boost_clocks.graphics_clock"
+    ]
+  },
   "log_config_file": null,
   "log_level": 10,
   "mode": "FIL",
@@ -149,56 +173,51 @@ Config:
   "num_threads": 8,
   "pipeline_batch_size": 1024
 }
-====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=../../data/nvsmi.jsonlines, iterative=None)>
-  └─> cudf.DataFrame
-Added stage: <buffer-1; BufferStage(count=1000)>
-  └─ cudf.DataFrame -> cudf.DataFrame
-Adding timestamp info for stage: 'deserialize'
-Added stage: <deserialize-2; DeserializeStage()>
-  └─ cudf.DataFrame -> morpheus.MultiMessage
-Adding timestamp info for stage: 'preprocess-fil'
-Added stage: <preprocess-fil-3; PreprocessFILStage()>
-  └─ morpheus.MultiMessage -> morpheus.MultiInferenceFILMessage
-Added stage: <buffer-4; BufferStage(count=1000)>
-  └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiInferenceFILMessage
-Adding timestamp info for stage: 'inference'
-Added stage: <inference-5; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8001, force_convert_inputs=False)>
-  └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <monitor-6; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, determine_count_fn=None)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <add-class-7; AddClassificationsStage(threshold=0.5, labels_file=None, labels=['mining'], prefix=)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <serialize-8; SerializeStage(include=[], exclude=['^nvidia_smi_log', '^_ts_'], as_cudf_df=False)>
-  └─ morpheus.MultiResponseProbsMessage -> List[str]
-Added stage: <to-file-9; WriteToFileStage(filename=detections.jsonlines, overwrite=True)>
-  └─ List[str] -> List[str]
-====Building Pipeline Complete!====
-Pipeline visualization saved to pipeline.png
+CPP Enabled: True
+====Registering Pipeline====
+====Registering Pipeline Complete!====
 ====Starting Pipeline====
+====Building Pipeline====
+Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/morpheus/data/nvsmi.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+  └─> morpheus.MessageMeta
+Added stage: <deserialize-1; DeserializeStage()>
+  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+Added stage: <preprocess-fil-2; PreprocessFILStage()>
+  └─ morpheus.MultiMessage -> morpheus.MultiInferenceFILMessage
+Added stage: <inference-3; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8001, force_convert_inputs=False, use_shared_memory=False)>
+  └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <serialize-6; SerializeStage(include=['mining'], exclude=['^ID$', '^_ts_'], fixed_columns=True)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
+Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
+  └─ morpheus.MessageMeta -> morpheus.MessageMeta
+====Building Pipeline Complete!====
+Starting! Time: 1650991285.1247575
 ====Pipeline Started====
-Inference Rate: 1242inf [00:09, 850.45inf/s]
+Inference Rate[Complete]: 1242inf [00:00, 6823.28inf/s]
+====Pipeline Complete====
 ```
 
-**Note:** The pipeline will not shut down when complete. Once the number of inferences has stopped changing, press Ctrl+C to exit.
-
-The output file `detections.jsonlines` will contain a single boolean value for each input line. At some point you should see it switch from `false` to `true`:
+The output file `detections.jsonlines` will contain a single boolean value for each input line. At some point you should see it switch from `0` to `1`:
 
 ```json
 ...
-{"mining": false}
-{"mining": false}
-{"mining": false}
-{"mining": false}
-{"mining": true}
-{"mining": true}
-{"mining": true}
-{"mining": true}
-{"mining": true}
-{"mining": true}
-{"mining": true}
-{"mining": true}
+{"mining": 0}
+{"mining": 0}
+{"mining": 0}
+{"mining": 0}
+{"mining": 1}
+{"mining": 1}
+{"mining": 1}
+{"mining": 1}
+{"mining": 1}
+{"mining": 1}
+{"mining": 1}
+{"mining": 1}
 ...
 ```
 
- We have stripped out most of the input data to make the detections easier to see. Ommitting the argument `--exclude '^nvidia_smi_log'` would show the input data in the detections file.
+ We have stripped out the input data to make the detections easier to see. Ommitting the argument `--include 'mining'` would show the input data in the detections file.
