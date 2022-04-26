@@ -30,7 +30,12 @@ export DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"morpheus"}
 export DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"conda_build"}
 export DOCKER_TARGET=${DOCKER_TARGET:-"development"}
 
+CUR_UID=$(id -u ${LOGNAME})
+CUR_GID=$(id -g ${LOGNAME})
+
 MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
+mkdir -p ${MORPHEUS_ROOT}/.cache/ccache
+mkdir -p ${MORPHEUS_ROOT}/.cache/cpm
 
 echo "Building container"
 # Call the build script to get a container ready to build conda packages
@@ -79,6 +84,7 @@ fi
 BUILD_SCRIPT="${BUILD_SCRIPT}
 export CONDA_ARGS=\"${CONDA_ARGS[@]}\"
 ./ci/conda/recipes/run_conda_build.sh "$@"
+chown -R ${CUR_UID}:${CUR_GID} .cache .conda-bld
 "
 
 echo "Running conda build"
