@@ -1,19 +1,43 @@
 # Morpheus Quickstart Guide
 
 ## Table of Contents
--   [Introduction](#introduction)
--   [Overview](#overview)
--   [Setup](#setup)
-    -   [Prerequisites](#prerequisites)
-    -   [Set up NGC API Key and Install NGC Registry CLI](#set-up-ngc-api-key-and-install-ngc-registry-cli)
-    -   [Create Namespace for Morpheus](#create-namespace-for-morpheus)
-    -   [Install Morpheus AI Engine](#install-morpheus-ai-engine)
-    -   [Install Morpheus SDK Client](#install-morpheus-sdk-client)
-        -   [Morpheus SDK Client in Sleep Mode](#morpheus-sdk-client-in-sleep-mode)
-    -   [Models for MLFlow Plugin Deployment](#models-for-mlflow-plugin-deployment)
-    -   [Install Morpheus MLFlow Triton Plugin](#install-morpheus-mlflow-triton-plugin)
-    -   [Verify Model Deployment](#verify-model-deployment)
-    -   [Create Kafka Topics](#create-kafka-topics)
+- [Morpheus Quickstart Guide](#morpheus-quickstart-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Overview](#overview)
+    - [Features](#features)
+  - [Setup](#setup)
+    - [Prerequisites](#prerequisites)
+    - [Set up NGC API Key and Install NGC Registry CLI](#set-up-ngc-api-key-and-install-ngc-registry-cli)
+    - [Create Namespace for Morpheus](#create-namespace-for-morpheus)
+    - [Install Morpheus AI Engine](#install-morpheus-ai-engine)
+    - [Install Morpheus SDK Client](#install-morpheus-sdk-client)
+      - [Morpheus SDK Client in Sleep Mode](#morpheus-sdk-client-in-sleep-mode)
+    - [Models for MLFlow Plugin Deployment](#models-for-mlflow-plugin-deployment)
+    - [Install Morpheus MLFlow Triton Plugin](#install-morpheus-mlflow-triton-plugin)
+    - [Model Deployment](#model-deployment)
+    - [Verify Model Deployment](#verify-model-deployment)
+    - [Create Kafka Topics](#create-kafka-topics)
+  - [Example Workflows](#example-workflows)
+    - [Run AutoEncoder Digital Fingerprinting Pipeline](#run-autoencoder-digital-fingerprinting-pipeline)
+    - [Run NLP Phishing Detection Pipeline](#run-nlp-phishing-detection-pipeline)
+    - [Run NLP Sensitive Information Detection Pipeline](#run-nlp-sensitive-information-detection-pipeline)
+    - [Run FIL Anomalous Behavior Profiling Pipeline](#run-fil-anomalous-behavior-profiling-pipeline)
+    - [Verify Running Pipeline](#verify-running-pipeline)
+  - [Appendix A](#appendix-a)
+    - [Prerequisites and Installation for AWS](#prerequisites-and-installation-for-aws)
+      - [Prerequisites](#prerequisites-1)
+      - [Install Cloud Native Core Stack for AWS](#install-cloud-native-core-stack-for-aws)
+    - [Prerequisites and Installation for Ubuntu](#prerequisites-and-installation-for-ubuntu)
+      - [Prerequisites](#prerequisites-2)
+    - [Installing Cloud Native Core Stack on NVIDIA Certified Systems](#installing-cloud-native-core-stack-on-nvidia-certified-systems)
+  - [Appendix B](#appendix-b)
+    - [Kafka Topic Commands](#kafka-topic-commands)
+    - [Using Morpheus SDK Client to Run Pipelines](#using-morpheus-sdk-client-to-run-pipelines)
+  - [Appendix C](#appendix-c)
+    - [Additional Documentation](#additional-documentation)
+    - [Troubleshooting](#troubleshooting)
+      - [Common Problems](#common-problems)
 
 -   [Example Workflows](#example-workflows)
     -   [Run AutoEncoder Digital Fingerprinting Pipeline](#run-autoencoder-digital-fingerprinting-pipeline)
@@ -63,7 +87,7 @@ NVIDIA Morpheus enables organizations to attack the issue of cybersecurity head 
 
 The Morpheus Developer Kit allows developers to quickly and easily set up example pipelines to run inference on different sample models provided from NVIDIA and experiment with the features and capabilities available within the Morpheus framework to address their cybersecurity and information security use cases.
 
-#### Features
+### Features
 
 - **Built on RAPIDS™**
 
