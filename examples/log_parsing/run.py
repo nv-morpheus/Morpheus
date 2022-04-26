@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import click
-import psutil
+import os
 from inference import LogParsingInferenceStage
 from postprocessing import LogParsingPostProcessingStage
 from preprocessing import PreprocessLogParsingStage
@@ -32,7 +32,7 @@ from morpheus.pipeline.preprocessing import DeserializeStage
 @click.command()
 @click.option(
     "--num_threads",
-    default=psutil.cpu_count(),
+    default=os.cpu_count(),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )
