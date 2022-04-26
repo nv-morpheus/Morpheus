@@ -120,7 +120,7 @@ class WriteToFileStage(SinglePortStage):
             def node_fn(input: neo.Observable, output: neo.Subscriber):
 
                 # Ensure our directory exists
-                os.makedirs(os.path.dirname(self._output_file), exist_ok=True)
+                os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)
 
                 # Open up the file handle
                 with open(self._output_file, "a") as out_file:
