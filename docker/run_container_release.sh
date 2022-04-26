@@ -24,7 +24,7 @@ y="\033[0;33m"
 x="\033[0m"
 
 DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus"}
-DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"runtime-$(git describe --tags --abbrev=0)"}
+DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"$(git describe --tags --abbrev=0)-release"}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 DOCKER_ARGS="--env WORKSPACE_VOLUME=${PWD} -v $PWD/models:/workspace/models --net=host --gpus=all ${DOCKER_EXTRA_ARGS}"
