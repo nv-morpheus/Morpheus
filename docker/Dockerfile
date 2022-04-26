@@ -164,6 +164,14 @@ CMD [ "morpheus" ]
 # Install and configure development only packages
 FROM conda_env_dev as development
 
+# Capture python version
+# TODO(Devin): scriptify + harden
+ARG PYTHON_VER
+RUN git clone -b ${PYTHON_VER} git@github.com:python/cpython.git \
+    && cd cpython \
+    && ./configure \
+    && make -j
+
 # Copy the source
 # COPY . ./
 
