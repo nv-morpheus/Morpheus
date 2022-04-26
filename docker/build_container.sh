@@ -29,7 +29,6 @@ LINUX_VER=${LINUX_VER:-20.04}
 RAPIDS_VER=${RAPIDS_VER:-21.10}
 PYTHON_VER=${PYTHON_VER:-3.8}
 TENSORRT_VERSION=${TENSORRT_VERSION:-8.2.1.3}
-NEO_GIT_URL=${NEO_GIT_URL:-UNKNOWN}
 
 DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
 DOCKER_ARGS="${DOCKER_ARGS} --target ${DOCKER_TARGET}"
@@ -40,7 +39,6 @@ DOCKER_ARGS="${DOCKER_ARGS} --build-arg LINUX_VER=${LINUX_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg RAPIDS_VER=${RAPIDS_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg PYTHON_VER=${PYTHON_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg TENSORRT_VERSION=${TENSORRT_VERSION}"
-DOCKER_ARGS="${DOCKER_ARGS} --build-arg NEO_GIT_URL=${NEO_GIT_URL}"
 DOCKER_ARGS="${DOCKER_ARGS} --network=host"
 
 if [[ "${DOCKER_BUILDKIT}" = "1" ]]; then
@@ -62,7 +60,6 @@ echo "   LINUX_VER       : ${LINUX_VER}"
 echo "   RAPIDS_VER      : ${RAPIDS_VER}"
 echo "   PYTHON_VER      : ${PYTHON_VER}"
 echo "   TENSORRT_VERSION: ${TENSORRT_VERSION}"
-echo "   NEO_GIT_URL     : ${NEO_GIT_URL}"
 echo ""
 echo "   COMMAND: docker buildx build ${DOCKER_ARGS} -f docker/Dockerfile ."
 echo "   Note: add '--progress plain' to DOCKER_ARGS to show all container build output"

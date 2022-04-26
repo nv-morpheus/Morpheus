@@ -113,6 +113,7 @@ outputs:
         - cudatoolkit {{ cuda_version }}.*
         - pytest
         - pytest-cov
+        - pytest-benchmark
       source_files:
         - pyproject.toml
         - tests/*

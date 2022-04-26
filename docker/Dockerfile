@@ -74,7 +74,8 @@ RUN --mount=type=ssh \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
     # Run with --no-test for now until we can build with builtkit and default nvidia runtime
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
+    # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
+    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" CONDA_CHANNEL_ALIAS="http://conda-mirror.gpuci.io/" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -113,7 +114,11 @@ COPY docker/conda/environments/cuda${CUDA_VER}_dev.yml ./docker/conda/environmen
 # Update the morpheus environment
 RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    # Temp add channel_alias to get around conda 404 errors
+    conda config --env --set channel_alias http://conda-mirror.gpuci.io/ &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_dev.yml &&\
+    # Remove channel_alias to use the normal channel in the container
+    conda config --env --remove-key channel_alias &&\
     # Clean and activate
     conda clean -afy
 
@@ -128,7 +133,8 @@ RUN --mount=type=ssh \
     --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
+    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" CONDA_CHANNEL_ALIAS="http://conda-mirror.gpuci.io/" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment

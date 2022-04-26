@@ -39,4 +39,6 @@ fi
 
 echo -e "${g}Launching ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}...${x}"
 
+set -x
 docker run --rm -ti ${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} "${@:-bash}"
+set +x
