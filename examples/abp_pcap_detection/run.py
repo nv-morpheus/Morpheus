@@ -13,15 +13,24 @@
 # limitations under the License.
 
 import logging
-import os
 
 import click
 import psutil
 from abp_pcap_preprocessing import AbpPcapPreprocessingStage
 
+from morpheus.cli import FILE_TYPE_NAMES
+from morpheus.cli import str_to_file_type
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
+from morpheus.pipeline.general_stages import AddClassificationsStage
+from morpheus.pipeline.general_stages import MonitorStage
+from morpheus.pipeline.inference.inference_triton import TritonInferenceStage
+from morpheus.pipeline.input.from_file import FileSourceStage
+from morpheus.pipeline.output.serialize import SerializeStage
+from morpheus.pipeline.output.to_file import WriteToFileStage
+from morpheus.pipeline.pipeline import LinearPipeline
+from morpheus.pipeline.preprocessing import DeserializeStage
 from morpheus.utils.logging import configure_logging
 
 
@@ -54,7 +63,7 @@ from morpheus.utils.logging import configure_logging
 )
 @click.option(
     "--output_file",
-    default="pcap_out.jsonlines",
+    default="/tmp/pcap_out.jsonlines",
     help="The path to the file where the inference output will be saved.",
 )
 @click.option(
@@ -78,7 +87,7 @@ from morpheus.utils.logging import configure_logging
 @click.option("--server_url", required=True, help="Tritonserver url")
 @click.option(
     "--file_type",
-    type=click.Choice(["auto", "json", "csv"], case_sensitive=False),
+    type=click.Choice(FILE_TYPE_NAMES, case_sensitive=False),
     default="auto",
     help=("Indicates what type of file to read. "
           "Specifying 'auto' will determine the file type from the extension."),
@@ -114,19 +123,8 @@ def run_pipeline(
 
     kwargs = {}
 
-    from morpheus.pipeline.pipeline import LinearPipeline
-
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
-
-    from morpheus.pipeline.general_stages import AddClassificationsStage
-    from morpheus.pipeline.general_stages import MonitorStage
-    from morpheus.pipeline.inference.inference_triton import TritonInferenceStage
-    from morpheus.pipeline.input.from_file import FileSourceStage
-    from morpheus.pipeline.input.from_file import FileTypes
-    from morpheus.pipeline.output.serialize import SerializeStage
-    from morpheus.pipeline.output.to_file import WriteToFileStage
-    from morpheus.pipeline.preprocessing import DeserializeStage
 
     # Set source stage
     pipeline.set_source(
@@ -134,7 +132,7 @@ def run_pipeline(
             config,
             filename=input_file,
             iterative=iterative,
-            file_type=FileTypes(file_type),
+            file_type=str_to_file_type(file_type.lower()),
             filter_null=False,
         ))
 
