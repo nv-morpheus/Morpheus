@@ -1094,7 +1094,7 @@ Commands:
 ### Additional Documentation
 For more information on how to use the Morpheus CLI to customize and run your own optimized AI pipelines, Refer to below documentation.
 - [Morpheus Contribution]
-- [Morpheus Pipeline Development]
+- [Morpheus Developer Guide]
 - [Morpheus Pipeline Examples]
 
 
@@ -1118,7 +1118,7 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   ```
   - Problem: If the standalone kafka cluster is receiving significant message throughput from the producer, this error may happen.
 
-  - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.#
+  - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.
 
 
 <!---
@@ -1133,7 +1133,7 @@ Let's add any important issues that need to be brought to the attention of users
 
 [Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.04/examples
 [Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.04/CONTRIBUTING.md
-[Morpheus Pipeline Development]: https://github.com/NVIDIA/Morpheus/blob/branch-22.04/docs/source/morpheus_developer_documentation.md
+[Morpheus Developer Guide]: https://github.com/bsuryadevara/Morpheus/tree/quickstart-guide-changes/docs/source/developer_guide/guides
 [Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
 [NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
 [NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1
