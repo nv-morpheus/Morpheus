@@ -787,7 +787,7 @@ On your NVIDIA-Certified System, follow the instructions in the linked document 
 List available Kafka topics.
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -- kafka-topics \
+$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --list  --zookeeper zookeeper:2181
 ```
 
@@ -805,8 +805,7 @@ $ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 Load data from a file to Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker \
-       -- kafka-console-producer.sh \
+$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE>
@@ -818,8 +817,7 @@ $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker \
 Consume messages from Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker  -c broker \
-       -- kafka-console-consumer.sh \
+$ kubectl -n $NAMESPACE exec deploy/broker  -c broker -- kafka-console-consumer.sh \
        --bootstrap-server broker:9092 \
        --topic <YOUR_KAFKA_TOPIC> \
        --group <YOUR_CONSUMER_GROUP_ID>
@@ -828,8 +826,7 @@ $ kubectl -n $NAMESPACE exec deploy/broker  -c broker \
 Delete Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -c broker \
-      -- kafka-topics.sh \
+$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --delete --zookeeper zookeeper:2181 \
       --topic <YOUR_KAFKA_TOPIC>
 ```
