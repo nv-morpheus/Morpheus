@@ -597,7 +597,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8001 \
         monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
         add-class --label=pred --threshold=0.7 \
-        serialize --exclude '^ts_' --output_type='json' \
+        serialize --exclude '^ts_' \
         to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
     <YOUR_RELEASE_NAME> \
