@@ -98,7 +98,7 @@ Launch an interactive container to start using Morpheus:
      run    Run one of the available pipelines
      tools  Run a utility tool
 
-See :doc:`basic_usage` for more information on using the CLI.
+See :doc:`basics/overview` for more information on using the CLI.
 
 Building Local Image
 ^^^^^^^^^^^^^^^^^^^^
@@ -187,18 +187,34 @@ version, respectively. Finally, build Morpheus:
    # Or for a debug/editable installation
    pip install -e .
 
-See :doc:`basic_usage` for more information on using the CLI and :doc:`advanced_usage` for more information on using the Python API.
+See :doc:`basics/overview` for more information on using the CLI.
+
+.. toctree::
+   :caption: Basic Usage via CLI
+   :maxdepth: 20
+   :hidden:
+
+   basics/overview
+   basics/building_a_pipeline
+   basics/examples
+
+.. toctree::
+   :caption: Developer Guide:
+   :maxdepth: 20
+   :hidden:
+
+   developer_guide/architecture
+   developer_guide/guides
+   api
 
 .. toctree::
    :maxdepth: 20
-   :caption: Contents:
+   :caption: Extra Information:
    :hidden:
 
-   basic_usage
-   advanced_usage
-   morpheus_developer_documentation
-   api
-
+   extra_info/performance
+   extra_info/troubleshooting
+   extra_info/known_issues
 
 Indices and tables
 ==================

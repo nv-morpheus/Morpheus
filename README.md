@@ -67,7 +67,7 @@ To manually build the `runtime` image, run the following from the repo root:
 
 #### Building locally (outside a container)
 
-To build Morpheus outside a container, all the necessary dependencies will need to be installed locally or in a virtual environment. Due to the increased complexity of installing outside of a container, this section has been moved to the `CONTRIBUTING.md`. Please see the "Build in a Conda Environment" section for more information.
+To build Morpheus outside a container, all the necessary dependencies will need to be installed locally or in a virtual environment. Due to the increased complexity of installing outside of a container, this section has been moved to the [`CONTRIBUTING.md`](CONTRIBUTING.md). Please see the "Build in a Conda Environment" section for more information.
 
 Note: Once `morpheus` CLI is installed, shell command completion can be installed with:
 ```bash

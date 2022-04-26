@@ -27,8 +27,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import importlib
 import os
 import sys
+
+import packaging
 
 sys.path.insert(0, os.path.abspath('sphinxext'))
 
@@ -40,10 +43,26 @@ project = 'morpheus'
 copyright = '2022, NVIDIA'
 author = 'NVIDIA'
 
-# The short X.Y version
-version = '0.2'
-# The full version, including alpha/beta/rc tags
-release = '0.2.1'
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+
+# Load the _version file according to https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+spec = importlib.util.spec_from_file_location("_version", "../../morpheus/_version.py")
+module = importlib.util.module_from_spec(spec)
+sys.modules["_version"] = module
+spec.loader.exec_module(module)
+
+# The full version including a/b/rc tags
+release = sys.modules["_version"].get_versions()["version"]
+
+version_obj = packaging.version.parse(release)
+
+# The short version
+version = f"{version_obj.major:02d}.{version_obj.minor:02d}"
+
+print(version)
+print(release)
 
 # -- General configuration ---------------------------------------------------
 
@@ -235,8 +254,3 @@ linkcode_resolve = make_linkcode_resolve(
 # backticks`) to be a python object. See
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-default_role
 default_role = "py:obj"
-
-# Set a flag to indicate that we are building with sphinx. See https://stackoverflow.com/a/65147676/634820
-import builtins
-
-builtins.__sphinx_build__ = True
