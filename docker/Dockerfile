@@ -114,7 +114,11 @@ COPY docker/conda/environments/cuda${CUDA_VER}_dev.yml ./docker/conda/environmen
 # Update the morpheus environment
 RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    # Temp add channel_alias to get around conda 404 errors
+    conda config --env --set channel_alias http://conda-mirror.gpuci.io/ &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_dev.yml &&\
+    # Remove channel_alias to use the normal channel in the container
+    conda config --env --remove-key channel_alias &&\
     # Clean and activate
     conda clean -afy
 
