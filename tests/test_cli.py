@@ -198,7 +198,7 @@ class TestCLI:
          to_file] = stages
 
         assert isinstance(cloud_trail, CloudTrailSourceStage)
-        assert cloud_trail._input_glob == "input_glob*.csv"
+        assert cloud_trail._watcher._input_glob == "input_glob*.csv"
 
         assert isinstance(train_ae, TrainAEStage)
         assert train_ae._train_data_glob == "train_glob*.csv"
@@ -282,7 +282,7 @@ class TestCLI:
         ] = stages
 
         assert isinstance(cloud_trail, CloudTrailSourceStage)
-        assert cloud_trail._input_glob == "input_glob*.csv"
+        assert cloud_trail._watcher._input_glob == "input_glob*.csv"
 
         assert isinstance(add_class, AddClassificationsStage)
         assert isinstance(filter_stage, FilterDetectionsStage)

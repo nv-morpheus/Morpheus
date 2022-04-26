@@ -119,6 +119,22 @@ class UserMessageMeta(MessageMeta, cpp_class=None):
 
 
 @dataclasses.dataclass
+class AppShieldMessageMeta(MessageMeta, cpp_class=None):
+    """
+    This is a container class to hold batch deserialized appshield plugin messages(normalized) meta.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input rows in dataframe.
+    source : str
+        Determines which source generated the snapshot messages.
+
+    """
+    source: str
+
+
+@dataclasses.dataclass
 class MultiMessage(MessageData, cpp_class=neom.MultiMessage):
     """
     This class holds data for multiple messages at a time. To avoid copying data for slicing operations, it

@@ -1,0 +1,26 @@
+Base,Block,CommitCharge,End VPN,File,GrantedAccess,HandleValue,InInit,InLoad,InMem,Name,Offset,PID,Parent,Path,PrivateMemory,Process,Protection,SHA256,Size,Start VPN,State,TID,Tag,Type,Value,Variable,WaitReason,plugin,snapshot_id,timestamp,source
+,,,,,,,,,,,0xffffc98180d02080,4,,,,System,,,,,5.0,12.0,,,,,0.0,threadlist,1,2022-01-30_10-26-01.670391,appshield
+,,,,,,,,,,,0xffffc98180d24080,4,,,,System,,,,,5.0,16.0,,,,,0.0,threadlist,1,2022-01-30_10-26-01.670391,appshield
+,,,,,,,,,,,0xffffc98180d57080,4,,,,System,,,,,5.0,20.0,,,,,0.0,threadlist,1,2022-01-30_10-26-01.670391,appshield
+,,,,,,,,,,,0xffffc98180d8a080,4,,,,System,,,,,5.0,24.0,,,,,15.0,threadlist,1,2022-01-30_10-26-01.670391,appshield
+,,,,,,,,,,,0xffffc98180d35080,4,,,,System,,,,,5.0,28.0,,,,,0.0,threadlist,1,2022-01-30_10-26-01.670391,appshield
+,,1.0,0x7ffe2000,,,,,,,,0xffffc98180c84200,4,0x0,,1.0,System,PAGE_READONLY ,,,0x7ffe1000,,,VadS,,,,,vadinfo,1,2022-01-30_10-26-02.785396,appshield
+,,1.0,0x7ffe1000,,,,,,,,0xffffc98180c84200,4,0xffffc98180c5b330,,1.0,System,PAGE_READONLY ,,,0x7ffe0000,,,VadS,,,,,vadinfo,1,2022-01-30_10-26-02.785396,appshield
+,,9.0,0x7778c000,\Windows\SysWOW64\ntdll.dll,,,,,,,0xffffc98180c84200,4,0xffffc98180c5b880,,0.0,System,PAGE_EXECUTE_WRITECOPY ,,,0x775f0000,,,Vad ,,,,,vadinfo,1,2022-01-30_10-26-02.785396,appshield
+,,9.0,0x7ffa16faf000,\Windows\System32\vertdll.dll,,,,,,,0xffffc98180c84200,4,0xffffc98180c5b330,,0.0,System,PAGE_EXECUTE_WRITECOPY ,,,0x7ffa16f80000,,,Vad ,,,,,vadinfo,1,2022-01-30_10-26-02.785396,appshield
+,,0.0,0x21380001000,,,,,,,,0xffffc98180c84200,4,0xffffc9818296b1a0,,0.0,System,PAGE_READWRITE ,,,0x21380000000,,,Vad ,,,,,vadinfo,1,2022-01-30_10-26-02.785396,appshield
+,0x22b3f4b0fe0,,,,,,,,,,,304,,,,smss.exe,,,,,,,,,C:\windows\System32,Path,,envars,1,2022-01-30_10-26-01.017250,appshield
+,0x22b3f4b0fe0,,,,,,,,,,,304,,,,smss.exe,,,,,,,,,C:,SystemDrive,,envars,1,2022-01-30_10-26-01.017250,appshield
+,0x22b3f4b0fe0,,,,,,,,,,,304,,,,smss.exe,,,,,,,,,C:\windows,SystemRoot,,envars,1,2022-01-30_10-26-01.017250,appshield
+,0x23e26750fe0,,,,,,,,,,,444,,,,csrss.exe,,,,,,,,,C:\windows\system32\cmd.exe,ComSpec,,envars,1,2022-01-30_10-26-01.017250,appshield
+,0x23e26750fe0,,,,,,,,,,,444,,,,csrss.exe,,,,,,,,,C:\Windows\System32\Drivers\DriverData,DriverData,,envars,1,2022-01-30_10-26-01.017250,appshield
+,,,,,x1fffff,0x4,,,,,0xc98180c84200,4,,,,System,,,,,,,,Process,,,,handles,1,2022-01-30_10-26-04.570268,appshield
+,,,,,x1fffff,0x8,,,,,0xc98180d35080,4,,,,System,,,,,,,,Thread,,,,handles,1,2022-01-30_10-26-04.570268,appshield
+,,,,,x1f0001,0xc,,,,,0xc98180c993c0,4,,,,System,,,,,,,,Mutant,,,,handles,1,2022-01-30_10-26-04.570268,appshield
+,,,,,xf000f,0x10,,,,,0xdf8112235340,4,,,,System,,,,,,,,Directory,,,,handles,1,2022-01-30_10-26-04.570268,appshield
+,,,,,xf000f,0x14,,,,,0xdf811222b8f0,4,,,,System,,,,,,,,Directory,,,,handles,1,2022-01-30_10-26-04.570268,appshield
+0x7ff7fb910000,,,,,,,False,True,True,smss.exe,,304,,\SystemRoot\System32\smss.exe,,smss.exe,,,0x26000,,,,,,,,,ldrmodules,1,2022-01-30_10-25-59.669333,appshield
+0x7ffa16fb0000,,,,,,,True,True,True,,,304,,C:\windows\SYSTEM32\ntdll.dll,,smss.exe,,,0x1ed000,,,,,,,,,ldrmodules,1,2022-01-30_10-25-59.669333,appshield
+0x0,,,,,,,True,True,True,,,5452,,,,WmiPrvSE.exe,,,0x0,,,,,,,,,ldrmodules,1,2022-01-30_10-25-59.669333,appshield
+0x7ff777eb0000,,,,,,,False,True,True,csrss.exe,,444,,C:\windows\system32\csrss.exe,,csrss.exe,,,0x7000,,,,,,,,,ldrmodules,1,2022-01-30_10-25-59.669333,appshield
+0x7ffa16fb0000,,,,,,,True,True,True,,,444,,C:\windows\SYSTEM32\ntdll.dll,,csrss.exe,,,0x1ed000,,,,,,,,,ldrmodules,1,2022-01-30_10-25-59.669333,appshield

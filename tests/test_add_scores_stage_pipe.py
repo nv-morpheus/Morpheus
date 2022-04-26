@@ -32,7 +32,7 @@ from utils import ConvMsg
 def test_add_scores_stage_pipe(config, tmp_path):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
-    input_file = os.path.join(TEST_DIRS.expeced_data_dir, "filter_probs.csv")
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
 
     pipe = LinearPipeline(config)

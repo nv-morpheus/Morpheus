@@ -1,0 +1,18 @@
+import json 
+import os
+file = open('/workspace/tests/tests_data/appshield/snapshot-1/envars_2022-01-30_10-26-01.017250.json', encoding="latin1")
+
+cols_exclude = ["PID"]
+data = json.load(file)
+features_plugin = data["titles"]
+features_plugin = [col for col in data['titles'] if col not in cols_exclude]
+
+try:
+    plugin_df = pd.DataFrame(columns=features_plugin, data=data["data"])
+except ValueError as val_error:
+    logger.error(val_error)
+    logger.info("Loading all columns in the data")
+    plugin_df = pd.DataFrame(columns=data['titles'], data=data["data"])
+    logger.info("Removing {} exclude columns".format(cols_exclude))
+    plugin_df = plugin_df[features_plugin]
+print(plugin_df)

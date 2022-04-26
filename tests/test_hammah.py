@@ -44,8 +44,8 @@ from utils import calc_error_val
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.pipeline.preprocess.autoencoder.AutoEncoder')
 def test_hammah_roleg(mock_ae, config, tmp_path):
-    tensor_data = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'hammah_roleg_tensor.csv'), delimiter=',')
-    anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'hammah_roleg_anomaly_score.csv'),
+    tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'hammah_roleg_tensor.csv'), delimiter=',')
+    anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'hammah_roleg_anomaly_score.csv'),
                                delimiter=',')
 
     mock_input_tesnsor = mock.MagicMock()
@@ -118,8 +118,8 @@ def test_hammah_roleg(mock_ae, config, tmp_path):
 @pytest.mark.usefixtures("reload_modules")
 @mock.patch('morpheus.pipeline.preprocess.autoencoder.AutoEncoder')
 def test_hammah_user123(mock_ae, config, tmp_path):
-    tensor_data = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'hammah_user123_tensor.csv'), delimiter=',')
-    anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'hammah_user123_anomaly_score.csv'),
+    tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'hammah_user123_tensor.csv'), delimiter=',')
+    anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'hammah_user123_anomaly_score.csv'),
                                delimiter=',')
 
     mock_input_tesnsor = mock.MagicMock()
