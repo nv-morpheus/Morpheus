@@ -19,7 +19,7 @@ limitations under the License.
 
 
 ## Setup
-To run this example, an instance of Triton Inference Server and a sample dataset is required along with an additional third-party library. The following steps will outline how to build and run Trtion with the provided FIL model.
+To run this example, an instance of Triton Inference Server and a sample dataset is required along with the psutil library for hardware resource queries. The following steps will outline how to build and run Trtion with the provided FIL model.
 
 ### Dependencies
 We are using the third-party [psutils](https://psutil.readthedocs.io/en/stable/) library. Install it into the current conda environment with:
