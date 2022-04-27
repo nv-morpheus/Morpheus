@@ -44,7 +44,7 @@ In the root directory, the file `model-information.csv` contains the following i
 
 # Model Card Info
 ## Sensitive Information Detection (SID)
-### Model Overview 
+### Model Overview
 SID is a classifier, designed to detect sensitive information (e.g., AWS credentials, GitHub credentials) in unencrypted data. This example model classifies text containing these 10 categories of sensitive information- address, bank account, credit card number, email address, government id number, full name, password, phone number, secret keys, and usernames.
 ### Model Architecture
 Compact BERT-mini transformer model
@@ -60,7 +60,7 @@ Multi-label sequence classification for 10 sensitive information categories
 Well-Read Students Learn Better: On the Importance of Pre-training Compact Models, 2019,  https://arxiv.org/abs/1908.08962
 
 ## Phishing Email Detection
-### Model Overview 
+### Model Overview
 Phishing email detection is a binary classifier differentiating between phishing and non-phishing emails.
 ### Model Architecture
 BERT-base uncased transformer model
@@ -74,8 +74,8 @@ Entire email as a string
 Binary sequence classification as phishing or non-phishing
 ### References
 - Radev, D. (2008), CLAIR collection of fraud email, ACL Data and Code Repository, ADCR2008T001, http://aclweb.org/aclwiki
-- Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding 
-https://arxiv.org/abs/1810.04805 
+- Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+https://arxiv.org/abs/1810.04805
 
 
 ## Anomalous Behavior Profiling (ABP)
@@ -86,7 +86,7 @@ XGBoost
 ### Training
 Training consisted of ~1000 labeled nv-smi logs generated from processes running either GPU malware or bengin GPU-based workflows.
 ### How To Use This Model
-This model can be used to flag anomalous GPU activity. 
+This model can be used to flag anomalous GPU activity.
 #### Input
 nv-smi data
 #### Output
@@ -108,8 +108,8 @@ aws-cloudtrail logs
 ### Output
 Anomalous score of Autoencoder, Binary classification of time series anomaly detection
 ### References
-- https://github.com/AlliedToasters/dfencoder/blob/master/dfencoder/autoencoder.py 
-- https://github.com/rapidsai/clx/blob/branch-22.04/notebooks/anomaly_detection/FFT_Outlier_Detection.ipynb 
+- https://github.com/AlliedToasters/dfencoder/blob/master/dfencoder/autoencoder.py
+- https://github.com/rapidsai/clx/blob/branch-22.06/notebooks/anomaly_detection/FFT_Outlier_Detection.ipynb
 - Rasheed Peng Alhajj Rokne Jon: Fourier Transform Based Spatial Outlier Mining 2009 - https://link.springer.com/chapter/10.1007/978-3-642-04394-9_39
 
 ## Flexible Log Parsing
@@ -126,16 +126,16 @@ raw apache web logs
 #### Output
 parsed apache web log as jsonlines
 ### References
-- Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding 
+- Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
 - https://arxiv.org/abs/1810.04805
 - https://medium.com/rapids-ai/cybert-28b35a4c81c4
 - https://www.splunk.com/en_us/blog/it/how-splunk-is-parsing-machine-logs-with-machine-learning-on-nvidia-s-triton-and-morpheus.html
 
-## Fraud Detection 
+## Fraud Detection
 ### Model Overview
-This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks. 
+This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks.
 ### Model Architecture
-It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogenous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding. 
+It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogenous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.
 ### Training
 A training data consists of raw 753 labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. The `GraphSAGE` is trained to output embedded representation of transactions out of the graph. The `XGBoost` is trained using the embedded features as a binary classifier to classify fraud and genuine transactions.
 ### How To Use This Model
@@ -143,7 +143,7 @@ This model is an example of a fraud detection pipeline using a graph neural netw
 #### Input
 Transaction data with nodes including transaction, client, and merchant.
 #### Output
-An anomalous score of transactions indicates a probability score of being a fraud. 
+An anomalous score of transactions indicates a probability score of being a fraud.
 ### References
 - https://stellargraph.readthedocs.io/en/stable/hinsage.html?highlight=hinsage
 - https://github.com/rapidsai/clx/blob/branch-0.20/examples/forest_inference/xgboost_training.ipynb
