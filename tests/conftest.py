@@ -172,9 +172,7 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     """
     Executes a test in the tmp_path directory
     """
-    print(tmp_path)
     os.chdir(tmp_path)
-    print(1)
     yield
     os.chdir(request.config.invocation_dir)
 
