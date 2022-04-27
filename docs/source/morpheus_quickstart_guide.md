@@ -148,7 +148,7 @@ The Morpheus AI Engine consists of the following components:
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -190,7 +190,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following commands to pull and install the Morpheus CLI on your instance:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 ```bash
@@ -239,7 +239,7 @@ The Morpheus MLFlow Triton Plugin is used to deploy, update, and remove models f
 Follow the below steps to install Morpheus MlFLow Triton Plugin:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -1131,9 +1131,9 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 Let's add any important issues that need to be brought to the attention of users here.
 -->
 
-[Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.04/examples
-[Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.04/CONTRIBUTING.md
-[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.04/docs/source/developer_guide/guides
+[Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.06/examples
+[Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.06/CONTRIBUTING.md
+[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.06/docs/source/developer_guide/guides
 [Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
 [NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
 [NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1
