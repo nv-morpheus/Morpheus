@@ -213,10 +213,10 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    pytest --run_slow ${MORPHEUS_ROOT}/tests
    ```
 1. Run Morpheus
-    ```bash
-    morpheus run pipeline-nlp ...
-    ```
-    At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
+   ```bash
+   morpheus run pipeline-nlp ...
+   ```
+   At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
 
 ### Troubleshooting the Build
 
