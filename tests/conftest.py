@@ -79,6 +79,18 @@ def pytest_collection_modifyitems(items):
             item.add_marker(pytest.mark.use_cpp)
 
 
+def clear_handlers(logger):
+    handlers = logger.handlers.copy()
+    for h in handlers:
+        logger.removeHandler(h)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_runtest_teardown(item, nextitem):
+    clear_handlers(logging.getLogger("morpheus"))
+    clear_handlers(logging.getLogger())
+
+
 @pytest.fixture(scope="function")
 def config_only_cpp():
     """
