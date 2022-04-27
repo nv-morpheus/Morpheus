@@ -52,3 +52,23 @@ def test_file_rw_pipe(tmp_path, config, output_type):
     # Somehow 0.7 ends up being 0.7000000000000001
     output_data = np.around(output_data, 2)
     assert output_data.tolist() == input_data.tolist()
+
+
+@pytest.mark.use_python
+@pytest.mark.usefixtures("chdir_tmpdir")
+def test_to_file_no_path(tmp_path, config):
+    """
+    Test to ensure issue #48 is fixed
+    """
+    input_file = os.path.join(TEST_DIRS.expeced_data_dir, "filter_probs.csv")
+    out_file = "test.csv"
+
+    assert os.path.realpath(os.curdir) == tmp_path.as_posix()
+
+    assert not os.path.exists(tmp_path / out_file)
+    pipe = LinearPipeline(config)
+    pipe.set_source(FileSourceStage(config, filename=input_file))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    pipe.run()
+
+    assert os.path.exists(tmp_path / out_file)
