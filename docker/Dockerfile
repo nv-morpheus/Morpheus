@@ -151,11 +151,20 @@ FROM conda_env as runtime
 
 ARG MORPHEUS_USER="root"
 
-# Add user account creation script
-COPY docker/scripts/create_user.sh docker/scripts/
+# Conditionally create user and install sudo
+RUN if [ ! -z "${MORPHEUS_USER}" ] && [ "${MORPHEUS_USER}" != "root" ] ; then \
+    useradd -ms /workspace ${MORPHEUS_USER} \
+      && usermod -aG sudo ${MORPHEUS_USER} \
+      && apt-get update \
+      && apt-get install -y sudo \
+      && apt-get clean \
+      && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
+    else \
+      echo "Skipping user creation..." ;\
+    fi
 
-# Create a new default user for the container if MORPHEUS_USER was specified as something other than root.
-RUN docker/scripts/create_user.sh ${MORPHEUS_USER}
+# Allow default user to execute sudo commands in container
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Manually need to install some pip-only dependencies. Once these can get moved to conda, they can be removed.
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
@@ -191,19 +200,17 @@ FROM conda_env_dev as development
 
 ARG MORPHEUS_USER="root"
 
-# Add user account creation script
-COPY docker/scripts/create_user.sh docker/scripts/
-
-# Create a new default user for the container if MORPHEUS_USER was specified as something other than root.
-RUN docker/scripts/create_user.sh ${MORPHEUS_USER}
-
-# Install sudo
-RUN apt-get update \
-    && apt-get install -y sudo \
-    && apt-get clean
-
-# Allow default user to execute sudo commands in container
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# Conditionally create user, install sudo, and allow user to run sudo commands
+RUN if [ ! -z "${MORPHEUS_USER}" ] && [ "${MORPHEUS_USER}" != "root" ] ; then \
+    useradd -ms /workspace ${MORPHEUS_USER} \
+      && usermod -aG sudo ${MORPHEUS_USER} \
+      && apt-get update \
+      && apt-get install -y sudo \
+      && apt-get clean \
+      && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
+    else \
+      echo "Skipping user creation..." ;\
+    fi
 
 # Copy the source
 # COPY . ./
