@@ -167,6 +167,16 @@ def reload_modules(request: pytest.FixtureRequest):
             importlib.reload(mod)
 
 
+@pytest.fixture(scope="function")
+def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
+    """
+    Executes a test in the tmp_path directory
+    """
+    os.chdir(tmp_path)
+    yield
+    os.chdir(request.config.invocation_dir)
+
+
 def wait_for_camouflage(popen, root_dir, host="localhost", port=8000, timeout=5):
     ready = False
     elapsed_time = 0.0
