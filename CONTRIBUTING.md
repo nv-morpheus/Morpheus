@@ -177,8 +177,15 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    ```
    This will checkout, patch, build and install cuDF with the necessary fixes to allow Morpheus to work smoothly with cuDF DataFrames in C++.
 1. Install remaining Morpheus dependencies
+
+   **With conda-managed compiler toolchain.**
    ```bash
    mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+   ```
+   
+   **Without conda-managed compiler toolchains.**
+   ```bash
+   mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev_nogcc.yml
    ```
 1. Build Morpheus
    ```bash
@@ -192,17 +199,18 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    Once Morpheus has been built, it can be installed into the current virtual environment.
 1. Test the build (Note: some tests will be skipped)
    ```bash
-   pytest
+   pytest ${MORPHEUS_ROOT}/tests
    ```
 1. Optional: Run full end-to-end tests
    - Our end-to-end tests require the [camouflage](https://testinggospels.github.io/camouflage/) testing framework. Install camouflage with:
       ```bash
+      mamba install -c conda-forge nodejs
       npm install -g camouflage-server
       ```
 
    Run all tests:
    ```bash
-   pytest --run_slow
+   pytest --run_slow ${MORPHEUS_ROOT}/tests
    ```
 1. Run Morpheus
    ```bash
