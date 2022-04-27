@@ -151,14 +151,15 @@ FROM conda_env as runtime
 
 ARG MORPHEUS_USER="root"
 
+# Add user account creation script
+COPY docker/scripts/create_user.sh docker/scripts/
+
+# Create a new default user for the container if MORPHEUS_USER was specified as something other than root.
+RUN docker/scripts/create_user.sh ${MORPHEUS_USER}
+
 # Manually need to install some pip-only dependencies. Once these can get moved to conda, they can be removed.
-COPY docker/scripts/create_user.sh ./docker/scripts
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 COPY docker/conda/environments/cuda${CUDA_VER}_runtime.yml ./docker/conda/environments/
-
-RUN docker/scripts/create_user.sh ${MORPHEUS_USER}
-USER ${MORPHEUS_USER}
-# TODO: do we need to chown any files?
 
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
@@ -179,12 +180,22 @@ COPY "./models" "./models"
 COPY "./scripts" "./scripts"
 COPY ["*.md", "LICENSE", "./"]
 
+USER ${MORPHEUS_USER}
+
 # Use morpheus by default
 CMD [ "morpheus" ]
 
 # ============ Stage: development ============
 # Install and configure development only packages
 FROM conda_env_dev as development
+
+ARG MORPHEUS_USER="root"
+
+# Add user account creation script
+COPY docker/scripts/create_user.sh docker/scripts/
+
+# Create a new default user for the container if MORPHEUS_USER was specified as something other than root.
+RUN docker/scripts/create_user.sh ${MORPHEUS_USER}
 
 # Copy the source
 # COPY . ./
@@ -196,3 +207,5 @@ RUN npm install -g camouflage-server
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
 # development
 RUN git config --global --add safe.directory "*"
+
+USER ${MORPHEUS_USER}
