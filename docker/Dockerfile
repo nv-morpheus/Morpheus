@@ -197,6 +197,14 @@ COPY docker/scripts/create_user.sh docker/scripts/
 # Create a new default user for the container if MORPHEUS_USER was specified as something other than root.
 RUN docker/scripts/create_user.sh ${MORPHEUS_USER}
 
+# Install sudo
+RUN apt-get update \
+    && apt-get install -y sudo \
+    && apt-get clean
+
+# Allow default user to execute sudo commands in container
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 # Copy the source
 # COPY . ./
 

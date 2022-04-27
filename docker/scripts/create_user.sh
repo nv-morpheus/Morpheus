@@ -11,7 +11,9 @@ create_user() {
     exit
   fi
 
+  # Create user and add them to sudo list
   useradd -ms /workspace $MORPHEUS_USER
+  usermod -aG sudo $MORPHEUS_USER
 }
 
 if [[ $# -ne 1 ]]; then
