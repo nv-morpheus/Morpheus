@@ -158,25 +158,25 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
    ```
-2. Create a new Conda environment
+1. Create a new Conda environment
    ```bash
    mamba create -n morpheus python=${PYTHON_VER}
    conda activate morpheus
    ```
 
    This creates a new environment named `morpheus`, and activates that environment.
-3. Set up `ssh-agent` to allow container to pull from private repos
+1. Set up `ssh-agent` to allow container to pull from private repos
    ```bash
    eval `ssh-agent -s`
    ssh-add
    ```
-4. Build and install cuDF conda package
+1. Build and install cuDF conda package
    ```bash
    ./docker/build_conda_packages.sh libcudf cudf
    mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
    ```
    This will checkout, patch, build and install cuDF with the necessary fixes to allow Morpheus to work smoothly with cuDF DataFrames in C++.
-5. Install remaining Morpheus dependencies
+1. Install remaining Morpheus dependencies
 
    **With conda-managed compiler toolchain.**
    ```bash
@@ -187,21 +187,21 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    ```bash
    mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev_nogcc.yml
    ```
-6. Build Morpheus
+1. Build Morpheus
    ```bash
    ./scripts/compile.sh
    ```
    This script will run both CMake Configure with default options and CMake build.
-7. Install Morpheus
+1. Install Morpheus
    ```bash
    pip install -e ${MORPHEUS_ROOT}
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
-8. Test the build (Note: some tests will be skipped)
+1. Test the build (Note: some tests will be skipped)
    ```bash
    pytest ${MORPHEUS_ROOT}/tests
    ```
-9. Optional: Run full end-to-end tests
+1. Optional: Run full end-to-end tests
    - Our end-to-end tests require the [camouflage](https://testinggospels.github.io/camouflage/) testing framework. Install camouflage with:
       ```bash
       mamba install -c conda-forge nodejs
@@ -212,7 +212,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    ```bash
    pytest --run_slow ${MORPHEUS_ROOT}/tests
    ```
-10. Run Morpheus
+1. Run Morpheus
     ```bash
     morpheus run pipeline-nlp ...
     ```
