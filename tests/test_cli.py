@@ -146,6 +146,7 @@ class TestCLI:
                                env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
+    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae(self, config, callback_values):
         """
@@ -188,6 +189,11 @@ class TestCLI:
         assert isinstance(config.ae, ConfigAutoEncoder)
         config.ae.userid_column_name = "user_col"
         config.ae.userid_filter = "user321"
+
+        with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae.txt')) as fh:
+            expected_columns = [line.strip() for line in fh]
+
+        assert config.ae.feature_columns == expected_columns
 
         pipe = callback_values['pipe']
         assert pipe is not None
@@ -329,6 +335,7 @@ class TestCLI:
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
         assert to_kafka._output_topic == 'test_topic'
 
+    @pytest.mark.usefixtures("chdir_tmpdir")
     @pytest.mark.replace_callback('pipeline_fil')
     def test_pipeline_fil(self, config, callback_values, tmp_path):
         """
@@ -346,6 +353,11 @@ class TestCLI:
         config = obj["config"]
         assert config.mode == PipelineModes.FIL
         assert config.class_labels == ["mining"]
+
+        with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
+            expected_columns = [line.strip() for line in fh]
+
+        assert config.fil.feature_columns == expected_columns
 
         assert config.ae is None
 
@@ -516,7 +528,7 @@ class TestCLI:
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_nlp')
-    def test_pipeline_nlp(selff, config, callback_values, tmp_path):
+    def test_pipeline_nlp(self, config, callback_values, tmp_path):
         """
         Build a pipeline roughly ressembles the phishing validation script
         """
@@ -745,3 +757,33 @@ class TestCLI:
         config = obj["config"]
         # Ensure our config is populated correctly
         assert config.mode == PipelineModes.NLP
+
+    @pytest.mark.usefixtures("chdir_tmpdir")
+    @pytest.mark.replace_callback('pipeline_nlp')
+    def test_pipeline_nlp_relative_paths(self, config, callback_values, tmp_path):
+        """
+        Build a pipeline roughly ressembles the phishing validation script
+        """
+
+        vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
+        args = (GENERAL_ARGS + ['pipeline-nlp'] +
+                FILE_SRC_ARGS + [
+                    'deserialize',
+                    'preprocess',
+                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS +
+                ['serialize'] + TO_FILE_ARGS)
+
+        obj = {}
+        runner = CliRunner()
+        result = runner.invoke(cli.cli, args, obj=obj)
+        assert result.exit_code == 47, result.output
+
+        # Ensure our config is populated correctly
+        config = obj["config"]
+        assert config.class_labels == ["score", "pred"]
+
+        stages = callback_values['stages']
+        # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
+
+        assert process_nlp._vocab_hash_file == vocab_file_name
