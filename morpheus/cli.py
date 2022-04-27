@@ -20,6 +20,7 @@ from functools import update_wrapper
 import click
 from click.globals import get_current_context
 
+import morpheus
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigBase
@@ -41,7 +42,7 @@ DEFAULT_CONFIG = Config()
 # List all of the options in from morpheus._lib.file_types.FileTypes without importing the object. This slows down
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
-
+MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.dirname(os.path.dirname(morpheus.__file__)))
 
 def str_to_file_type(file_type_str: str):
     from morpheus._lib.file_types import FileTypes
@@ -324,7 +325,7 @@ def run(ctx: click.Context, **kwargs):
                     "do_truncate == False, there will be multiple returned sequences containing the "
                     "overflowing token-ids. Default value is 256"))
 @click.option('--labels_file',
-              default="data/labels_nlp.txt",
+              default=os.path.join(MORPHEUS_ROOT, "data/labels_nlp.txt"),
               type=click.Path(dir_okay=False, exists=True, file_okay=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
                     "A label file is a simple text file where each line corresponds to a label"))
@@ -386,7 +387,7 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
                     "A label file is a simple text file where each line corresponds to a label. "
                     "If unspecified, only a single output label is created for FIL"))
 @click.option('--columns_file',
-              default="data/columns_fil.txt",
+              default=os.path.join(MORPHEUS_ROOT, "data/columns_fil.txt"),
               type=click.Path(dir_okay=False, exists=True, file_okay=True),
               help=("Specifies a file to read column features."))
 @click.option('--viz_file',
@@ -449,7 +450,7 @@ def pipeline_fil(ctx: click.Context, **kwargs):
              cls=AliasedGroup,
              **command_kwargs)
 @click.option('--columns_file',
-              default="data/columns_ae.txt",
+              default=os.path.join(MORPHEUS_ROOT, "data/columns_ae.txt"),
               type=click.Path(dir_okay=False, exists=True, file_okay=True),
               help=(""))
 @click.option('--labels_file',
@@ -827,7 +828,7 @@ def train_ae(ctx: click.Context, **kwargs):
 
 @click.command(name="preprocess", short_help="Convert messages to tokens", **command_kwargs)
 @click.option('--vocab_hash_file',
-              default="data/bert-base-cased-hash.txt",
+              default=os.path.join(MORPHEUS_ROOT, "data/bert-base-cased-hash.txt"),
               type=click.Path(exists=True, dir_okay=False),
               help=("Path to hash file containing vocabulary of words with token-ids. "
                     "This can be created from the raw vocabulary using the cudf.utils.hash_vocab_utils.hash_vocab "

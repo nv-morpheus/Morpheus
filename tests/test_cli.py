@@ -762,10 +762,10 @@ class TestCLI:
     @pytest.mark.replace_callback('pipeline_nlp')
     def test_pipeline_nlp_relative_paths(self, config, callback_values, tmp_path):
         """
-        Build a pipeline roughly ressembles the phishing validation script
+        Ensure that the default paths in the nlp pipeline are valid when run from outside the morpheus repo
         """
 
-        vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
+        vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
         args = (GENERAL_ARGS + ['pipeline-nlp'] +
                 FILE_SRC_ARGS + [
                     'deserialize',
@@ -778,9 +778,12 @@ class TestCLI:
         result = runner.invoke(cli.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
+        with open(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt')) as fh:
+            expected_labels = [line.strip() for line in fh]
+
         # Ensure our config is populated correctly
         config = obj["config"]
-        assert config.class_labels == ["score", "pred"]
+        assert config.class_labels == expected_labels
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
