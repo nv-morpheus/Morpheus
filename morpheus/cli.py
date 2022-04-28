@@ -52,7 +52,6 @@ def str_to_file_type(file_type_str: str):
 
 command_kwargs = {
     "context_settings": dict(show_default=True, ),
-    "no_args_is_help": True,
 }
 
 ALIASES = {
@@ -125,8 +124,6 @@ def prepare_command(parse_config: bool = False):
 
             kwargs = _without_empty_args(kwargs)
 
-            CppConfig.set_should_use_cpp(kwargs.pop("use_cpp", CppConfig.get_should_use_cpp()))
-
             # Apply the config if desired
             if parse_config:
                 config = get_config_from_ctx(ctx)
@@ -170,7 +167,12 @@ def _parse_log_level(ctx, param, value):
     return x
 
 
-@click.group(name="morpheus", chain=False, invoke_without_command=True, cls=AliasedGroup, **command_kwargs)
+@click.group(name="morpheus",
+             chain=False,
+             invoke_without_command=True,
+             no_args_is_help=True,
+             cls=AliasedGroup,
+             **command_kwargs)
 @click.option('--debug/--no-debug', default=False)
 @click.option("--log_level",
               default=logging.getLevelName(DEFAULT_CONFIG.log_level),
@@ -201,7 +203,7 @@ def cli(ctx: click.Context,
     logger = logging.getLogger("morpheus.cli")
 
 
-@cli.group(short_help="Run a utility tool", **command_kwargs)
+@cli.group(short_help="Run a utility tool", no_args_is_help=True, **command_kwargs)
 @prepare_command()
 def tools(ctx: click.Context, **kwargs):
 
@@ -233,7 +235,9 @@ def onnx_to_trt(ctx: click.Context, **kwargs):
     gen_engine(c)
 
 
-@tools.group(short_help="Utility for installing/updating/removing shell completion for Morpheus", **command_kwargs)
+@tools.group(short_help="Utility for installing/updating/removing shell completion for Morpheus",
+             no_args_is_help=True,
+             **command_kwargs)
 def autocomplete(**kwargs):
     pass
 
@@ -273,7 +277,7 @@ def install(**kwargs):
     click.echo('%s completion installed in %s' % (shell, path))
 
 
-@cli.group(short_help="Run one of the available pipelines", cls=AliasedGroup, **command_kwargs)
+@cli.group(short_help="Run one of the available pipelines", no_args_is_help=True, cls=AliasedGroup, **command_kwargs)
 @click.option('--num_threads',
               default=os.cpu_count(),
               type=click.IntRange(min=1),
@@ -302,11 +306,16 @@ def install(**kwargs):
 def run(ctx: click.Context, **kwargs):
 
     # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
+    CppConfig.set_should_use_cpp(kwargs.pop("use_cpp", CppConfig.get_should_use_cpp()))
 
     pass
 
 
-@click.group(chain=True, short_help="Run the inference pipeline with a NLP model", cls=AliasedGroup, **command_kwargs)
+@click.group(chain=True,
+             short_help="Run the inference pipeline with a NLP model",
+             no_args_is_help=True,
+             cls=AliasedGroup,
+             **command_kwargs)
 @click.option('--model_seq_length',
               default=256,
               type=click.IntRange(min=1),
@@ -361,7 +370,11 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
     return p
 
 
-@click.group(chain=True, short_help="Run the inference pipeline with a FIL model", cls=AliasedGroup, **command_kwargs)
+@click.group(chain=True,
+             short_help="Run the inference pipeline with a FIL model",
+             no_args_is_help=True,
+             cls=AliasedGroup,
+             **command_kwargs)
 @click.option('--model_fea_length',
               default=29,
               type=click.IntRange(min=1),
@@ -432,6 +445,7 @@ def pipeline_fil(ctx: click.Context, **kwargs):
 
 @click.group(chain=True,
              short_help="Run the inference pipeline with an AutoEncoder model",
+             no_args_is_help=True,
              cls=AliasedGroup,
              **command_kwargs)
 @click.option('--columns_file',
@@ -1378,7 +1392,7 @@ pipeline_ae.add_command(validate)
 
 
 def run_cli():
-    cli(obj={}, auto_envvar_prefix='CLX', show_default=True, prog_name="morpheus")
+    cli(obj={}, auto_envvar_prefix='MORPHEUS', show_default=True, prog_name="morpheus")
 
 
 if __name__ == '__main__':

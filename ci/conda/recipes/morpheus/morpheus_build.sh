@@ -26,6 +26,9 @@ export CCACHE_BASEDIR=$(realpath ${SRC_DIR}/..)
 if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
    # Set the cache variable, then set the Staging prefix to allow for host searching
    CMAKE_ARGS="-DMORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR} ${CMAKE_ARGS}"
+
+   # Double check that the cache dir has been created
+   mkdir -p ${MORPHEUS_CACHE_DIR}
 fi
 
 CMAKE_ARGS="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON ${CMAKE_ARGS}"

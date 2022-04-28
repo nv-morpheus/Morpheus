@@ -112,14 +112,15 @@ class WriteToFileStage(SinglePortStage):
         if (self._build_cpp_node()):
             to_file = neos.WriteToFileStage(seg,
                                             self.unique_name,
-                                            self._output_file, ("w+" if self._overwrite else "w"),
+                                            self._output_file,
+                                            "w",
                                             self._file_type)
         else:
 
             def node_fn(input: neo.Observable, output: neo.Subscriber):
 
                 # Ensure our directory exists
-                os.makedirs(os.path.dirname(self._output_file), exist_ok=True)
+                os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)
 
                 # Open up the file handle
                 with open(self._output_file, "a") as out_file:

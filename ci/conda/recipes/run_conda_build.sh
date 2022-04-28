@@ -37,6 +37,9 @@ export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 # Set the tag for the neo commit to use
 export NEO_GIT_TAG=${NEO_GIT_TAG:-"5b55e37c6320c1a5747311a1e29e7ebb049d12bc"}
 
+# Set CONDA_CHANNEL_ALIAS to mimic the conda config channel_alias property during the build
+CONDA_CHANNEL_ALIAS=${CONDA_CHANNEL_ALIAS:-""}
+
 export CUDA="$(conda list | grep cudatoolkit | egrep -o "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+")"
 export PYTHON_VER="$(python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")"
 export CUDA=11.4.1
@@ -48,13 +51,6 @@ echo ""
 # Export variables for the cache
 export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
 
-# Ensure the build directory exists
-export CONDA_BLD_DIR=${CONDA_BLD_DIR:-"${MORPHEUS_CACHE_DIR}/conda-build"}
-mkdir -p ${CONDA_BLD_DIR}
-
-# Where the conda packages are saved to outside of the conda environment
-CONDA_BLD_OUTPUT=${CONDA_BLD_OUTPUT:-"${MORPHEUS_ROOT}/.conda-bld"}
-
 # Export CCACHE variables
 export CCACHE_DIR="${MORPHEUS_CACHE_DIR}/ccache"
 export CCACHE_NOHASHDIR=1
@@ -62,6 +58,10 @@ export CMAKE_GENERATOR="Ninja"
 export CMAKE_C_COMPILER_LAUNCHER="ccache"
 export CMAKE_CXX_COMPILER_LAUNCHER="ccache"
 export CMAKE_CUDA_COMPILER_LAUNCHER="ccache"
+
+# Ensure the necessary folders exist before continuing
+mkdir -p ${MORPHEUS_CACHE_DIR}
+mkdir -p ${CCACHE_DIR}
 
 # Holds the arguments in an array to allow for complex json objects
 CONDA_ARGS_ARRAY=()
@@ -77,15 +77,11 @@ fi
 # Choose default variants
 CONDA_ARGS_ARRAY+=("--variants" "{python: 3.8}")
 
-# And default channels
-CONDA_ARGS_ARRAY+=("-c" "rapidsai" "-c" "nvidia" "-c" "nvidia/label/dev" "-c" "conda-forge")
-
-if hasArg click_completion; then
-   echo "Running conda-build for click_completion..."
-   set -x
-   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/click_completion
-   set +x
-fi
+# And default channels (with optional channel alias)
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapidsai")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
+CONDA_ARGS_ARRAY+=("-c" "conda-forge")
 
 if hasArg libneo; then
 

@@ -33,6 +33,9 @@ ARG RAPIDS_VER=21.10
 ARG PYTHON_VER=3.8
 ARG CONDA_CHANNEL=rapidsai
 
+# Temp option to set conda channel_alias property during build
+ARG CONDA_CHANNEL_ALIAS
+
 # The TensorRT Version must be the full version (i.e. 7.2.2.3) and match Triton EXACTLY
 ARG TENSORRT_VERSION=8.2.1.3
 
@@ -64,6 +67,8 @@ RUN conda config --set ssl_verify false &&\
 # Now build the conda dependency packages
 FROM base as conda_bld_deps
 
+ARG CONDA_CHANNEL_ALIAS
+
 # COPY the files necessary to build the cudf package. Dont copy more otherwise the cache will get invalided often
 COPY ci/conda/recipes/cudf/ ./ci/conda/recipes/cudf/
 COPY ci/conda/recipes/libcudf/ ./ci/conda/recipes/libcudf/
@@ -74,6 +79,7 @@ RUN --mount=type=ssh \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
     # Run with --no-test for now until we can build with builtkit and default nvidia runtime
+    # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
     MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 # ============ Stage: conda_env ============
@@ -106,6 +112,8 @@ SHELL ["/bin/bash", "-c"]
 # Create the development conda environment
 FROM conda_env as conda_env_dev
 
+ARG CONDA_CHANNEL_ALIAS
+
 # Copy the development dependencies file
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 COPY docker/conda/environments/cuda${CUDA_VER}_dev.yml ./docker/conda/environments/
@@ -113,13 +121,19 @@ COPY docker/conda/environments/cuda${CUDA_VER}_dev.yml ./docker/conda/environmen
 # Update the morpheus environment
 RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    # Temp add channel_alias to get around conda 404 errors
+    conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"} &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_dev.yml &&\
+    # Remove channel_alias to use the normal channel in the container
+    conda config --env --remove-key channel_alias &&\
     # Clean and activate
     conda clean -afy
 
 # ============ Stage: conda_bld_morpheus ============
 # Now build the morpheus conda package
 FROM conda_bld_deps as conda_bld_morpheus
+
+ARG CONDA_CHANNEL_ALIAS
 
 # Copy the source
 COPY . ./
@@ -128,6 +142,7 @@ RUN --mount=type=ssh \
     --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
+    # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
     MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # ============ Stage: runtime ============
