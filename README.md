@@ -8,7 +8,7 @@ There are two basic ways to get started with Morpheus - using the production  de
 
 Morpheus pre-built containers are hosted on NGC (NVIDIA GPU Cloud) and make it easy to get started running Morpheus. Use the link below to access the Morpheus collection.
 
-[https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus)
+[https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_)
 
 Complete instructions on how to get up-and-running with the NGC containers are available in the Morpheus Quick Start Guide.
 
