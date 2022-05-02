@@ -19,7 +19,6 @@ from functools import partial
 import neo
 
 import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
@@ -80,7 +79,6 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
         self._do_lower_case = do_lower_case
         self._add_special_tokens = add_special_tokens
 
-        self._tokenizer: SubwordTokenizer = None
 
     @property
     def name(self) -> str:
