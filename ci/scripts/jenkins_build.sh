@@ -19,7 +19,8 @@ set -e
 echo "Env Setup"
 export MORPHEUS_ROOT=$(pwd)
 source /opt/conda/etc/profile.d/conda.sh
-
+whoami
+env | sort
 
 apt-get update
 apt-get upgrade -y
