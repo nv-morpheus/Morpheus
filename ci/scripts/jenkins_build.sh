@@ -19,13 +19,12 @@ set -e
 echo "Env Setup"
 export MORPHEUS_ROOT=$(pwd)
 source /opt/conda/etc/profile.d/conda.sh
-whoami
 env | sort
 
-apt-get update
-apt-get upgrade -y
+#apt-get update
+#apt-get upgrade -y
 
-apt-get install --no-install-recommends -y build-essential pkg-config curl unzip tar zip openssh-client bc jq
+#apt-get install --no-install-recommends -y build-essential pkg-config curl unzip tar zip openssh-client bc jq
 
 conda config --set ssl_verify false
 conda config --add pkgs_dirs /opt/conda/pkgs &&
