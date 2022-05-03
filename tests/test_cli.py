@@ -121,6 +121,13 @@ def mlflow_uri(tmp_path):
 @pytest.mark.usefixtures("reload_modules")
 @pytest.mark.use_python
 class TestCLI:
+    def _read_data_file(self, data_file):
+        """
+        Used to read in labels and columns files
+        """
+        with open(data_file) as fh:
+            return [line.strip() for line in fh]
+
 
     def test_help(self):
         runner = CliRunner()
@@ -190,9 +197,7 @@ class TestCLI:
         config.ae.userid_column_name = "user_col"
         config.ae.userid_filter = "user321"
 
-        with open(os.path.join(TEST_DIRS.data_dir, 'columns_ae.txt')) as fh:
-            expected_columns = [line.strip() for line in fh]
-
+        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae.txt'))
         assert config.ae.feature_columns == expected_columns
 
         pipe = callback_values['pipe']
@@ -354,9 +359,7 @@ class TestCLI:
         assert config.mode == PipelineModes.FIL
         assert config.class_labels == ["mining"]
 
-        with open(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')) as fh:
-            expected_columns = [line.strip() for line in fh]
-
+        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt'))
         assert config.fil.feature_columns == expected_columns
 
         assert config.ae is None
@@ -778,8 +781,7 @@ class TestCLI:
         result = runner.invoke(cli.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
-        with open(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt')) as fh:
-            expected_labels = [line.strip() for line in fh]
+        expected_labels = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
 
         # Ensure our config is populated correctly
         config = obj["config"]
