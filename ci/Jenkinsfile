@@ -1,9 +1,29 @@
+@Library('jenkins_shared_lib') _
+
 pipeline {
     agent any
     stages {
         stage('Build') {
-            steps {
-                sh 'echo "hello"'
+            environment {
+                PARALLEL_LEVEL = '4'
+                PYTHON_VER = '3.8'
+                RAPIDS_VER = '21.10'
+                CUDA_VER = '11.4'
+                CMAKE_BUILD_ALL_FEATURES = "-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON"
+            }
+            node("cpu") {
+                agent {
+                    docker { image 'docker.io/gpuci/miniforge-cuda:11.4-devel-ubuntu20.04' }
+                }
+                cleanWs (
+                    deleteDirs: true,
+                    externalDelete: 'sudo rm -rf %s'
+                )
+                checkout scm
+                steps {
+                    sh './ci/scripts/jenkins_build.sh'
+                }
+
             }
         }
     }
