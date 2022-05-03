@@ -26,19 +26,16 @@ env | sort
 
 #apt-get install --no-install-recommends -y build-essential pkg-config curl unzip tar zip openssh-client bc jq
 
-conda create -n morpheus python=${PYTHON_VER}
+conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 conda config --env --add channels conda-forge
-conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
-mamba install -y -c rapidsai-nightly gpuci-tools
+conda install -q -y -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
+mamba install -q -y -c rapidsai-nightly gpuci-tools
 
 gpuci_logger "Check versions"
 python3 --version
 gcc --version
 g++ --version
-echo $(which cmake)
-cmake --version
-echo $(which ninja)
 
 gpuci_logger "Check conda environment"
 conda info
@@ -49,10 +46,10 @@ gpuci_logger "Building cuDF"
 /docker/build_conda_packages.sh libcudf cudf
 
 gpuci_logger "Installing cuDF"
-mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
+mamba install -q -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
 
 gpuci_logger "Installing dependencies"
-mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
 gpuci_logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja -DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON .
