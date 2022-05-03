@@ -19,7 +19,7 @@ pipeline {
                     deleteDirs: true,
                     externalDelete: 'sudo rm -rf %s'
                 )
-                sh './ci/scripts/jenkins_build.sh'
+                sh "./ci/scripts/jenkins_build.sh"
             }
         }
     }
