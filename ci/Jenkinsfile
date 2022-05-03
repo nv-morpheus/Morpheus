@@ -1,18 +1,19 @@
 pipeline {
     agent any
-    environment {
-        PARALLEL_LEVEL = '4'
-        PYTHON_VER = '3.8'
-        RAPIDS_VER = '21.10'
-        CUDA_VER = '11.4'
-    }
     stages {
         stage('Build') {
-            agent {
-                docker { image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04' }
-                label 'cpu'
+            environment {
+                PARALLEL_LEVEL = '4'
+                PYTHON_VER = '3.8'
+                RAPIDS_VER = '21.10'
+                CUDA_VER = '11.4'
             }
-
+            agent {
+                docker {
+                  image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04'
+                  label 'cpu'
+                }
+            }
             steps {
                 cleanWs (
                     deleteDirs: true,
@@ -20,7 +21,6 @@ pipeline {
                 )
                 sh './ci/scripts/jenkins_build.sh'
             }
-
         }
     }
 }
