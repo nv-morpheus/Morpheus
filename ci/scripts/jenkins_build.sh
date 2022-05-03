@@ -34,8 +34,8 @@ mamba install -y -c rapidsai-nightly gpuci-tools
 
 gpuci_logger "Check versions"
 python3 --version
-$CC --version
-$CXX --version
+gcc --version
+g++ --version
 echo $(which cmake)
 cmake --version
 echo $(which ninja)
