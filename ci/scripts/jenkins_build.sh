@@ -58,7 +58,7 @@ gpuci_logger "Installing dependencies"
 mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
 gpuci_logger "Configuring cmake for Morpheus"
-cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} .
+cmake -B build -G Ninja -DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON .
 
 gpuci_logger "Building Morpheus"
 cmake --build build -j
