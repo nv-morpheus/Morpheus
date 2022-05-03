@@ -15,11 +15,11 @@ pipeline {
                 }
             }
             steps {
+                sh "./ci/scripts/jenkins_build.sh"
                 cleanWs (
                     deleteDirs: true,
                     externalDelete: 'sudo rm -rf %s'
                 )
-                sh "./ci/scripts/jenkins_build.sh"
             }
         }
     }
