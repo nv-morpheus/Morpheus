@@ -26,13 +26,10 @@ env | sort
 
 #apt-get install --no-install-recommends -y build-essential pkg-config curl unzip tar zip openssh-client bc jq
 
-conda config --set ssl_verify false
-conda config --add pkgs_dirs /opt/conda/pkgs &&
-conda config --env --add channels conda-forge &&
-/opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
-
-mamba create -n morpheus python=${PYTHON_VER}
+conda create -n morpheus python=${PYTHON_VER}
 conda activate morpheus
+conda config --env --add channels conda-forge
+conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
 mamba install -y gpuci-tools
 
 gpuci_logger "Check versions"
