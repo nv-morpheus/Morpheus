@@ -30,7 +30,7 @@ conda create -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 conda config --env --add channels conda-forge
 conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
-mamba install -y gpuci-tools
+mamba install -y -c rapidsai gpuci-tools
 
 gpuci_logger "Check versions"
 python3 --version
