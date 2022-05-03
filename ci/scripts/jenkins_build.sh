@@ -43,7 +43,7 @@ conda config --show-sources
 conda list --show-channel-urls
 
 gpuci_logger "Building cuDF"
-/docker/build_conda_packages.sh libcudf cudf
+${MORPHEUS_ROOT}/docker/build_conda_packages.sh libcudf cudf
 
 gpuci_logger "Installing cuDF"
 mamba install -q -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
