@@ -44,10 +44,10 @@ conda list --show-channel-urls
 
 gpuci_logger "Building cuDF"
 #${MORPHEUS_ROOT}/docker/build_conda_packages.sh libcudf cudf
-CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
+CONDA_ARGS="--no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 gpuci_logger "Installing cuDF"
-mamba install -q -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
+mamba install -q -y -c file://${CONDA_PREFIX}/conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
 
 gpuci_logger "Installing dependencies"
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
