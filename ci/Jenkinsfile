@@ -4,7 +4,6 @@ pipeline {
         stage('Build') {
             options {
                 timeout(time: 6, unit: 'HOURS')
-                disableConcurrentBuilds(abortPrevious: true)
             }
             environment {
                 PARALLEL_LEVEL = '4'
