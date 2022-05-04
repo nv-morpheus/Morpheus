@@ -20,12 +20,12 @@ echo "Env Setup"
 export MORPHEUS_ROOT=$(pwd)
 env | sort
 
+conda create -q -y -n morpheus python=${PYTHON_VER}
+conda activate morpheus
 conda config --set ssl_verify false
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda install -q -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
-conda create -q -y -n morpheus python=${PYTHON_VER}
-conda activate morpheus
 mamba install -q -y -c gpuci gpuci-tools
 
 gpuci_logger "Check versions"
