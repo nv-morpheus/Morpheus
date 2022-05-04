@@ -18,17 +18,16 @@ set -e
 
 echo "Env Setup"
 source /opt/conda/etc/profile.d/conda.sh
+
 export MORPHEUS_ROOT=$(pwd)
-export MORPHEUS_CONDA_PREFIX=${WORKSPACE_TMP:-"/tmp"}/conda
 env | sort
 
-mkdir -p ${MORPHEUS_CONDA_PREFIX}
-conda create --prefix ${MORPHEUS_CONDA_PREFIX} -q -y -n morpheus python=${PYTHON_VER}
+conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 conda config --set ssl_verify false
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
-conda install -q -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
+conda install -q -y -c conda-forge "mamba >=0.22" "boa >=0.10"
 mamba install -q -y -c gpuci gpuci-tools
 
 gpuci_logger "Check versions"
@@ -53,10 +52,7 @@ gpuci_logger "Installing other dependencies"
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
-gpuci_logger "Check versions (cmake edition)"
-python3 --version
-gcc --version
-g++ --version
+gpuci_logger "Check cmake & ninja"
 cmake --version
 ninja --version
 
