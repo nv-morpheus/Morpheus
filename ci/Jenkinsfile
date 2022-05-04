@@ -10,6 +10,7 @@ pipeline {
                 PYTHON_VER = '3.8'
                 RAPIDS_VER = '21.10'
                 CUDA_VER = '11.4'
+                HOME = "${WORKSPACE}"
             }
             agent {
                 docker {
