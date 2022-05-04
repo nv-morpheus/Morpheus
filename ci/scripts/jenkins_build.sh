@@ -17,10 +17,10 @@
 set -e
 
 echo "Env Setup"
+source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=$(pwd)
 env | sort
 
-source /opt/conda/etc/profile.d/conda.sh
 conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 conda config --set ssl_verify false
