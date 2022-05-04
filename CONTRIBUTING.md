@@ -100,14 +100,13 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
     (morpheus) user@host:/workspace# conda list | grep python
     python                    3.8.13          py3.8.13_dbg_morpheus    local
    ```
-   1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be 
-2. mounted into a running container. This allows for faster incremental builds during development.
-3. Set up `ssh-agent` to allow container to pull from private repos
+   1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
+2. Set up `ssh-agent` to allow container to pull from private repos
    ```bash
    eval `ssh-agent -s`
    ssh-add
    ```
-4. Run the development container
+3. Run the development container
    ```bash
    ./docker/run_container_dev.sh
    ```
@@ -122,17 +121,17 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       ./docker/install_docker.sh
       ```
 
-5. Compile Morpheus
+4. Compile Morpheus
    ```bash
    ./scripts/compile.sh
    ```
    This script will run both CMake Configure with default options and CMake build.
-6. Install Morpheus
+5. Install Morpheus
    ```bash
    pip install -e /workspace
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
-7. [Run Morpheus](./README.md#running-morpheus)
+6. [Run Morpheus](./README.md#running-morpheus)
    ```bash
    morpheus run pipeline-nlp ...
    ```
