@@ -51,7 +51,6 @@ mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-fo
 
 gpuci_logger "Installing other dependencies"
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
-npm install --silent -g camouflage-server
 
 gpuci_logger "Check cmake & ninja"
 cmake --version
@@ -65,3 +64,9 @@ cmake --build build -j
 
 gpuci_logger "Installing Morpheus"
 pip install -e ${MORPHEUS_ROOT}
+
+
+# Needed for tests
+# npm install --silent -g camouflage-server
+# mamba install -q -y -c conda-forge "git-lfs=3.1.4"
+# git lfs pull
