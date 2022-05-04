@@ -51,13 +51,14 @@ mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-fo
 
 gpuci_logger "Installing other dependencies"
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+npm install --silent -g camouflage-server
 
 gpuci_logger "Check cmake & ninja"
 cmake --version
 ninja --version
 
 gpuci_logger "Configuring cmake for Morpheus"
-cmake -B build -G Ninja -DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON .
+cmake -B build -G Ninja -DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=ON .
 
 gpuci_logger "Building Morpheus"
 cmake --build build -j
