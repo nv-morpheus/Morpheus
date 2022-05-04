@@ -1,4 +1,4 @@
-ARG FROM_IMAGE=gpuci/miniconda-cuda
+ARG FROM_IMAGE=gpuci/miniforge-cuda
 ARG CUDA_VER=11.4
 ARG LINUX_VER=ubuntu20.04
 ARG TRITON_VER=r22.02
@@ -10,7 +10,7 @@ COPY . ./
 
 # need to do an upgrade in case gpuci is stale for whatever reason
 RUN apt-get update && apt upgrade -y && apt-get install -y procps vim
-RUN /opt/conda/bin/conda env create -f docker/conda/environment.yml
+RUN /opt/conda/bin/conda env create -f docker/conda/mlflow-env.yml
 RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]

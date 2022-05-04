@@ -5,7 +5,7 @@ are included for publishing TensorRT, ONNX and FIL models to your MLFlow Model R
 
 ## Requirements
 
-* MLflow (tested on 1.21.0)
+* MLflow (tested on 1.24.0)
 * Python (tested on 3.8)
 
 ## Install Triton Docker Image
@@ -51,7 +51,7 @@ docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v /opt/triton_mode
 Build MLFlow image from Dockerfile:
 
 ```
-docker build -t mlflow-morpheus:latest -f docker/Dockerfile .
+docker build -t mlflow-triton-plugin:latest -f docker/Dockerfile .
 ```
 
 Create MLFlow container with volume mount to Triton model repository:
