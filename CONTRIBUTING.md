@@ -90,13 +90,24 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       DOCKER_IMAGE_TAG=my_tag ./docker/build_container_dev.sh
       ```
       Would build the container `morpheus:my_tag`.
-   1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
-2. Set up `ssh-agent` to allow container to pull from private repos
+   1. To build the container with a debugging version of cpython installed, modify your build command as:
+   ```shell
+   DOCKER_EXTRA_ARGS="--build-arg MORPHEUS_WITH_PYDEBUG=true" docker/build_container_dev.sh
+   ```
+   1. Note: When debugging python code, you just need to add `/usr/local/src/python-dbg` to your debugger's source path.
+   1. Note: Now when running the container, conda should list your python version as `pyxxx_dbg_morpheus`.
+   ```shell
+    (morpheus) user@host:/workspace# conda list | grep python
+    python                    3.8.13          py3.8.13_dbg_morpheus    local
+   ```
+   1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be 
+2. mounted into a running container. This allows for faster incremental builds during development.
+3. Set up `ssh-agent` to allow container to pull from private repos
    ```bash
    eval `ssh-agent -s`
    ssh-add
    ```
-3. Run the development container
+4. Run the development container
    ```bash
    ./docker/run_container_dev.sh
    ```
@@ -111,17 +122,17 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       ./docker/install_docker.sh
       ```
 
-4. Compile Morpheus
+5. Compile Morpheus
    ```bash
    ./scripts/compile.sh
    ```
    This script will run both CMake Configure with default options and CMake build.
-5. Install Morpheus
+6. Install Morpheus
    ```bash
    pip install -e /workspace
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
-6. [Run Morpheus](./README.md#running-morpheus)
+7. [Run Morpheus](./README.md#running-morpheus)
    ```bash
    morpheus run pipeline-nlp ...
    ```

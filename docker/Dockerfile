@@ -178,18 +178,31 @@ COPY ["*.md", "LICENSE", "./"]
 # Use morpheus by default
 CMD [ "morpheus" ]
 
-# ============ Stage: development ============
-# Install and configure development only packages
-FROM conda_env_dev as development
+# ============ Stage: development_deps ===========
+# Configure and build cpython with debugging symbols
+FROM conda_env_dev as development_deps
 
 # Capture python version
-# TODO(Devin): scriptify + harden
 ARG PYTHON_VER
-RUN git clone -b ${PYTHON_VER} git@github.com:python/cpython.git \
-    && cd cpython \
-    && ./configure \
-    && make -j
+COPY ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
 
+# Flag indicating if we're going to build cpython
+ARG MORPHEUS_WITH_PYDEBUG=0
+
+RUN if [[ "${MORPHEUS_WITH_PYDEBUG}" =~ ^(TRUE|True|true|1)$ ]]; then \
+      ## Figure out which python version is in the existing environment -- we will build its debug equivalent \
+      source activate morpheus \
+      && \
+        MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2) \
+        CONDA_BLD_PATH=/opt/conda/conda-bld \
+        CONDA_ARGS="--no-test" \
+      conda mambabuild -c conda-forge -c system ./ci/conda/recipes/python-dbg \
+      ; \
+    fi
+
+# ============ Stage: development ============
+# Install and configure development only packages
+FROM development_deps as development
 # Copy the source
 # COPY . ./
 
@@ -200,3 +213,29 @@ RUN npm install -g camouflage-server
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
 # development
 RUN git config --global --add safe.directory "*"
+
+# Temporary until #68 goes in
+ARG MORPHEUS_USER="root"
+RUN --mount=type=bind,from=development_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
+    # swap out python binary if it was built \
+    if [[ "${MORPHEUS_WITH_PYDEBUG}" =~ ^(TRUE|True|true|1)$ ]]; then \
+      source activate morpheus \
+      && export source_file=$( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
+      && export install_file=$( ls /opt/conda/conda-bld/linux-64/python-${PYTHON_VER}*.tar.bz2 ) \
+      && mamba install --use-local ${install_file} \
+      && export debug_py_ver=$(python --version | cut -d ' ' -f2) \
+      ## Copy python includes from python3.xd to python3.x so CMake can find them \
+      && cp -R /opt/conda/envs/morpheus/include/python${PYTHON_VER}d/* \
+        /opt/conda/envs/morpheus/include/python${PYTHON_VER} \
+      # Extract cpython source to /workspace \
+      && for src in Include Misc Modules Objects Python; do  \
+          tar --strip-components=1 --extract --wildcards --file=${source_file} Python-${debug_py_ver}/${src}/* \
+          && mkdir -p /usr/local/src/python-dbg/${src} \
+          && cp -R ./${src} /usr/local/src/python-dbg/${src} \
+          ; \
+         done \
+      # Move cpython gdb helper macros to ${HOME}/.gdbinit \
+      # See: https://github.com/python/cpython/blob/main/Misc/gdbinit
+      && cp Misc/gdbinit $(eval echo "~${MORPHEUS_USER}")/.gdbinit \
+      ; \
+    fi
