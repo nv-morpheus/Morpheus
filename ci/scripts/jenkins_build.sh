@@ -20,6 +20,7 @@ echo "Env Setup"
 export MORPHEUS_ROOT=$(pwd)
 env | sort
 
+source /opt/conda/etc/profile.d/conda.sh
 conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 conda config --set ssl_verify false
@@ -49,6 +50,13 @@ mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-fo
 gpuci_logger "Installing dependencies"
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+
+gpuci_logger "Check versions (cmake edition)"
+python3 --version
+gcc --version
+g++ --version
+cmake --version
+ninja --version
 
 gpuci_logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja -DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON .
