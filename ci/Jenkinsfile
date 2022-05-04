@@ -2,6 +2,10 @@ pipeline {
     agent any
     stages {
         stage('Build') {
+            options {
+                timeout(time: 6, unit: 'HOURS')
+                disableConcurrentBuilds(abortPrevious: true)
+            }
             environment {
                 PARALLEL_LEVEL = '4'
                 PYTHON_VER = '3.8'
@@ -10,16 +14,12 @@ pipeline {
             }
             agent {
                 docker {
-                  image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                  image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04'
                   label 'cpu'
                 }
             }
             steps {
                 sh "./ci/scripts/jenkins_build.sh"
-                cleanWs (
-                    deleteDirs: true,
-                    externalDelete: 'sudo rm -rf %s'
-                )
             }
         }
     }

@@ -18,19 +18,15 @@ set -e
 
 echo "Env Setup"
 export MORPHEUS_ROOT=$(pwd)
-source /opt/conda/etc/profile.d/conda.sh
 env | sort
 
-#apt-get update
-#apt-get upgrade -y
-
-#apt-get install --no-install-recommends -y build-essential pkg-config curl unzip tar zip openssh-client bc jq
-
+conda config --set ssl_verify false
+conda config --add pkgs_dirs /opt/conda/pkgs
+conda config --env --add channels conda-forge
+conda install -q -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
 conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
-conda config --env --add channels conda-forge
-conda install -q -y -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
-mamba install -q -y -c rapidsai-nightly gpuci-tools
+mamba install -q -y -c gpuci gpuci-tools
 
 gpuci_logger "Check versions"
 python3 --version
@@ -43,13 +39,15 @@ conda config --show-sources
 conda list --show-channel-urls
 
 gpuci_logger "Building cuDF"
-#${MORPHEUS_ROOT}/docker/build_conda_packages.sh libcudf cudf
-CONDA_ARGS="--no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
+CONDA_BLD_DIR=/opt/conda/conda-bld
+mkdir -p ${CONDA_BLD_DIR}
+CONDA_ARGS="--output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 gpuci_logger "Installing cuDF"
-mamba install -q -y -c file://${CONDA_PREFIX}/conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
+mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-forge libcudf cudf
 
 gpuci_logger "Installing dependencies"
+conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
 gpuci_logger "Configuring cmake for Morpheus"
