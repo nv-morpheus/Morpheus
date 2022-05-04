@@ -19,9 +19,11 @@ set -e
 echo "Env Setup"
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=$(pwd)
+export MORPHEUS_CONDA_PREFIX=${WORKSPACE_TMP:-"/tmp"}/conda
 env | sort
 
-conda create -q -y -n morpheus python=${PYTHON_VER}
+mkdir -p ${MORPHEUS_CONDA_PREFIX}
+conda create --prefix ${MORPHEUS_CONDA_PREFIX} -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 conda config --set ssl_verify false
 conda config --add pkgs_dirs /opt/conda/pkgs
@@ -47,7 +49,7 @@ CONDA_ARGS="--output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHE
 gpuci_logger "Installing cuDF"
 mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-forge libcudf cudf
 
-gpuci_logger "Installing dependencies"
+gpuci_logger "Installing other dependencies"
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
