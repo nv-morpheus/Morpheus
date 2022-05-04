@@ -25,10 +25,11 @@ conda activate base
 conda config --set ssl_verify false
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
+conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 conda install -q -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
 conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
-mamba install -q -y -c gpuci gpuci-tools
+mamba install -q -y -c conda-forge -c gpuci gpuci-tools "pkg-config=0.29.2"
 
 gpuci_logger "Check versions"
 python3 --version
@@ -49,7 +50,6 @@ gpuci_logger "Installing cuDF"
 mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-forge libcudf cudf
 
 gpuci_logger "Installing other dependencies"
-conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
 gpuci_logger "Check cmake & ninja"
