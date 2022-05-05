@@ -1,0 +1,11 @@
+ name: Automatic requirements.txt for Python Projects
+  # You may pin to the exact commit or the version.
+  # uses: ryan-rozario/pipreqs-action@071f0f2af11e5e65226d8b7353bf76465adb86a2
+  uses: ryan-rozario/pipreqs-action@v2.0.0
+  with:
+    # Gives the path of the project
+    PROJECT_PATH: # default is .
+    # Folder where requirements.txt has to be saved in
+    REQUIREMENT_PATH: # default is requirements.txt
+    # Name of the project to include in the commit
+    PROJECT_NAME: morpheus
