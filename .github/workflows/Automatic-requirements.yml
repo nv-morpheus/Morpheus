@@ -4,24 +4,17 @@
   uses: ryan-rozario/pipreqs-action@v2.0.0
   with:
     # Gives the path of the project
-     docs/requirement.txt
-  docker/conda/environments/requirements.txt
-  examples/gnn_fraud_detection_pipeline/requirements.yml
-  models/validation-inference-scripts/abp-models/requirements.txt
-  models/validation-inference-scripts/hammah-models/requirements.txt
-  models/validation-inference-scripts/phishing-models/requirements.txt
-  models/training-tuning-scripts/fraud-detection-models/requirements.txt
     PROJECT_PATH: 
-              name:
-       uses:
-              name:
-       uses:
-              name:
-       uses:
-              name:
-       uses:
-              name:
-       uses:
+              name: GitHub Docs
+       uses: docs/requirement.txt
+              name: Conda
+       uses: docker/conda/environments/requirements.txt
+              name: GNN Fraud Detection Pipeline
+       uses: examples/gnn_fraud_detection_pipeline/requirements.yml
+              name: ABP Models
+       uses: models/validation-inference-scripts/abp-models/requirements.txt
+              name: Hammah Models
+       uses:  models/validation-inference-scripts/hammah-models/requirements.txt
               name: Phishing Models, Validation
        uses: models/validation-inference-scripts/phishing-models/requirements.txt
               name: Fraud Detection, Training
