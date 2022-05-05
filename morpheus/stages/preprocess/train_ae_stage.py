@@ -28,47 +28,19 @@ from dfencoder import AutoEncoder
 from neo.core import operators as ops
 
 from morpheus.config import Config
-from morpheus.pipeline.file_types import FileTypes
-from morpheus.stages.inference.inference_ae import MultiInferenceAEMessage
-from morpheus.stages.input.from_cloudtrail import CloudTrailSourceStage
 from morpheus.messages import InferenceMemoryAE
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import UserMessageMeta
+from morpheus.pipeline.file_types import FileTypes
 from morpheus.pipeline.pipeline import MultiMessageStage
 from morpheus.pipeline.pipeline import StreamPair
-from morpheus.stages.preprocess.preprocessing import PreprocessBaseStage
+from morpheus.stages.inference.inference_ae import MultiInferenceAEMessage
+from morpheus.stages.input.from_cloudtrail import CloudTrailSourceStage
 
 logger = logging.getLogger(__name__)
 
-
-@dataclasses.dataclass
-class MultiAEMessage(MultiMessage):
-
-    model: AutoEncoder
-
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
-
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
-
-        Returns
-        -------
-        morpheus.pipeline.preprocess.autoencoder.MultiAEMessage
-            A new `MultiAEMessage` with sliced offset and count.
-
-        """
-        return MultiAEMessage(meta=self.meta, mess_offset=start, mess_count=stop - start, model=self.model)
-
-
-class UserModelManager(object):
+class _UserModelManager(object):
 
     def __init__(self,
                  c: Config,
@@ -188,7 +160,7 @@ class TrainAEStage(MultiMessageStage):
         self._pretrained_model: AutoEncoder = None
 
         # Per user model data
-        self._user_models: typing.Dict[str, UserModelManager] = {}
+        self._user_models: typing.Dict[str, _UserModelManager] = {}
 
     @property
     def name(self) -> str:
@@ -218,7 +190,7 @@ class TrainAEStage(MultiMessageStage):
     def _train_model(self, x: UserMessageMeta) -> typing.List[MultiAEMessage]:
 
         if (x.user_id not in self._user_models):
-            self._user_models[x.user_id] = UserModelManager(self._config,
+            self._user_models[x.user_id] = _UserModelManager(self._config,
                                                             x.user_id,
                                                             False,
                                                             self._train_epochs,
@@ -257,7 +229,7 @@ class TrainAEStage(MultiMessageStage):
                                                                      self._config.ae.userid_filter)
 
             for user_id, df in user_to_df.items():
-                self._user_models[user_id] = UserModelManager(self._config,
+                self._user_models[user_id] = _UserModelManager(self._config,
                                                               user_id,
                                                               True,
                                                               self._train_epochs,
@@ -295,85 +267,3 @@ class TrainAEStage(MultiMessageStage):
         stream = node
 
         return stream, MultiAEMessage
-
-
-class PreprocessAEStage(PreprocessBaseStage):
-    """
-    Autoencoder usecases are preprocessed with this stage class.
-
-    Parameters
-    ----------
-    c : morpheus.config.Config
-        Pipeline configuration instance.
-
-    """
-
-    def __init__(self, c: Config):
-        super().__init__(c)
-
-        self._fea_length = c.feature_length
-        self._feature_columns = c.ae.feature_columns
-
-    @property
-    def name(self) -> str:
-        return "preprocess-ae"
-
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Returns accepted input types for this stage.
-        """
-        return (MultiAEMessage, )
-
-    def supports_cpp_node(self):
-        return False
-
-    @staticmethod
-    def pre_process_batch(x: MultiAEMessage, fea_len: int,
-                          feature_columns: typing.List[str]) -> MultiInferenceAEMessage:
-        """
-        This function performs pre-processing for autoencoder.
-
-        Parameters
-        ----------
-        x : morpheus.pipeline.preprocess.autoencoder.MultiAEMessage
-            Input rows received from Deserialized stage.
-
-        Returns
-        -------
-        morpheus.pipeline.inference.inference_ae.MultiInferenceAEMessage
-            Autoencoder inference message.
-
-        """
-
-        meta_df = x.get_meta(x.meta.df.columns.intersection(feature_columns))
-        autoencoder = x.model
-
-        data = autoencoder.prepare_df(meta_df)
-        input = autoencoder.build_input_tensor(data)
-        input = cp.asarray(input.detach())
-
-        count = input.shape[0]
-
-        seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
-        seg_ids[:, 2] = fea_len - 1
-
-        memory = InferenceMemoryAE(count=count, input=input, seq_ids=seg_ids)
-
-        infer_message = MultiInferenceAEMessage(meta=x.meta,
-                                                mess_offset=x.mess_offset,
-                                                mess_count=x.mess_count,
-                                                memory=memory,
-                                                offset=0,
-                                                count=memory.count,
-                                                model=autoencoder)
-
-        return infer_message
-
-    def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
-        return partial(PreprocessAEStage.pre_process_batch,
-                       fea_len=self._fea_length,
-                       feature_columns=self._feature_columns)
-
-    def _get_preprocess_node(self, seg: neo.Segment):
-        raise NotImplementedError("No C++ node for AE")

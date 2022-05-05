@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.messages.multi_inference_message import InferenceMemory
 from morpheus.messages.multi_inference_message import InferenceMemoryAE
 from morpheus.messages.multi_inference_message import InferenceMemoryFIL
@@ -29,11 +30,12 @@ from morpheus.messages.multi_response_message import ResponseMemoryAE
 from morpheus.messages.multi_response_message import ResponseMemoryProbs
 
 __all__ = [
-    "MessageMeta",
     "InferenceMemory",
     "InferenceMemoryAE",
     "InferenceMemoryFIL",
     "InferenceMemoryNLP",
+    "MessageMeta",
+    "MultiAEMessage",
     "MultiInferenceFILMessage",
     "MultiInferenceMessage",
     "MultiInferenceNLPMessage",

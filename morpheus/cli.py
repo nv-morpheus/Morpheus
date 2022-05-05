@@ -816,7 +816,7 @@ def train_ae(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.preprocess.autoencoder import TrainAEStage
+    from morpheus.stages.preprocess.preprocess_ae_stage import TrainAEStage
 
     stage = TrainAEStage(config, **kwargs)
 
@@ -887,7 +887,7 @@ def preprocess_ae(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.preprocess.autoencoder import PreprocessAEStage
+    from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 
     stage = PreprocessAEStage(config, **kwargs)
 
@@ -1094,7 +1094,7 @@ def serialize(ctx: click.Context, **kwargs):
     kwargs["include"] = list(kwargs["include"])
     kwargs["exclude"] = list(kwargs["exclude"])
 
-    from morpheus.stages.output.serialize import SerializeStage
+    from morpheus.stages.postprocess.serialize import SerializeStage
 
     stage = SerializeStage(config, **kwargs)
 
@@ -1248,7 +1248,7 @@ def validate(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.output.validation import ValidationStage
+    from morpheus.stages.postprocess.validation import ValidationStage
 
     stage = ValidationStage(config, **kwargs)
 
@@ -1314,7 +1314,7 @@ def gen_viz(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.output.gen_viz_frames import GenerateVizFramesStage
+    from morpheus.stages.postprocess.gen_viz_frames import GenerateVizFramesStage
 
     stage = GenerateVizFramesStage(config, **kwargs)
 
