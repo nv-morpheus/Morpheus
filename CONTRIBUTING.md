@@ -95,8 +95,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       ```bash
       DOCKER_EXTRA_ARGS="--build-arg MORPHEUS_USER=[YOUR_USER_NAME]" ./docker/build_container_dev.sh
       ```
-   1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be 
-   1. mounted into a running container. This allows for faster incremental builds during development.
+   1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
 2. Set up `ssh-agent` to allow container to pull from private repos
    ```bash
    eval `ssh-agent -s`
