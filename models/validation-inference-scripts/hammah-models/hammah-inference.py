@@ -70,7 +70,6 @@ def infer(validationdata,model,output):
     scores = model.get_anomaly_score(X_val)
     X_val['ae_anomaly_score'] = scores
 
-    X_val['ae_anomaly_score'] = scores
     X_val.sort_values('ae_anomaly_score', ascending=False).head(10)
     #since inference is done, add the original columns back so the output will be the same as the input format
     #X_val['ts_anomaly']=X_val_original['ts_anomaly']
