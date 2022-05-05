@@ -26,7 +26,7 @@ from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.stages.output import utils
+from morpheus.io import serializers
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 
@@ -91,9 +91,9 @@ class WriteToFileStage(SinglePortStage):
 
     def _convert_to_strings(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
         if (self._file_type == FileTypes.JSON):
-            output_strs = utils.df_to_json(df)
+            output_strs = serializers.df_to_json(df)
         elif (self._file_type == FileTypes.CSV):
-            output_strs = utils.df_to_csv(df, include_header=self._is_first)
+            output_strs = serializers.df_to_csv(df, include_header=self._is_first)
             self._is_first = False
         else:
             raise NotImplementedError("Unknown file type: {}".format(self._file_type))

@@ -25,8 +25,8 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general_stages import BufferStage
 from morpheus.stages.general_stages import MonitorStage
-from morpheus.stages.input.from_file import FileSourceStage
-from morpheus.stages.output.to_file import WriteToFileStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.preprocess.preprocessing import DeserializeStage
 
 

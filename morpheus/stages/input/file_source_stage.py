@@ -23,7 +23,7 @@ import morpheus._lib.stages as neos
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.pipeline.file_types import FileTypes
-from morpheus.stages.input.utils import read_file_to_df
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import SingleOutputSource
 from morpheus.pipeline.pipeline import StreamPair

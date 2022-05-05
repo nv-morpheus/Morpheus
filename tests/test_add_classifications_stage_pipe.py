@@ -21,9 +21,9 @@ import pandas as pd
 
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general_stages import AddClassificationsStage
-from morpheus.stages.input.from_file import FileSourceStage
-from morpheus.stages.postprocess.serialize import SerializeStage
-from morpheus.stages.output.to_file import WriteToFileStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.preprocess.preprocessing import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg

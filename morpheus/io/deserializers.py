@@ -22,23 +22,6 @@ import cudf
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
 
-
-def filter_null_data(x: typing.Union[cudf.DataFrame, pd.DataFrame]):
-    """
-    Filters out null row in a dataframe's 'data' column if it exists.
-
-    Parameters
-    ----------
-    x : typing.Union[cudf.DataFrame, pandas.DataFrame]
-        The dataframe to fix.
-    """
-
-    if ("data" not in x):
-        return x
-
-    return x[~x['data'].isna()]
-
-
 def cudf_json_onread_cleanup(x: typing.Union[cudf.DataFrame, pd.DataFrame]):
     """
     Fixes parsing issues when reading from a file. When loading a JSON file, cuDF converts ``\\n`` to

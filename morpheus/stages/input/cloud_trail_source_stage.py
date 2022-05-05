@@ -31,7 +31,7 @@ from morpheus.messages import UserMessageMeta
 from morpheus.pipeline.file_types import FileTypes
 from morpheus.pipeline.pipeline import SingleOutputSource
 from morpheus.pipeline.pipeline import StreamPair
-from morpheus.stages.input.utils import read_file_to_df
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)

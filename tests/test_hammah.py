@@ -26,11 +26,11 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general_stages import AddScoresStage
 from morpheus.stages.general_stages import MonitorStage
 from morpheus.stages.inference.inference_ae import AutoEncoderInferenceStage
-from morpheus.stages.input.from_cloudtrail import CloudTrailSourceStage
-from morpheus.stages.postprocess.serialize import SerializeStage
-from morpheus.stages.output.to_file import WriteToFileStage
-from morpheus.stages.postprocess.validation import ValidationStage
-from morpheus.stages.postprocess.timeseries import TimeSeriesStage
+from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.validation_stage import ValidationStage
+from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 from morpheus.stages.preprocess import preprocess_ae_stage
 from utils import TEST_DIRS
 from utils import calc_error_val

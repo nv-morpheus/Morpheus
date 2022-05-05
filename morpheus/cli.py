@@ -584,7 +584,7 @@ def from_file(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.input.from_file import FileSourceStage
+    from morpheus.stages.input.file_source_stage import FileSourceStage
 
     file_type = str_to_file_type(kwargs.pop("file_type").lower())
 
@@ -626,7 +626,7 @@ def from_kafka(ctx: click.Context, **kwargs):
     if ("bootstrap_servers" in kwargs and kwargs["bootstrap_servers"] == "auto"):
         kwargs["bootstrap_servers"] = auto_determine_bootstrap()
 
-    from morpheus.stages.input.from_kafka import KafkaSourceStage
+    from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 
     stage = KafkaSourceStage(config, **kwargs)
 
@@ -667,7 +667,7 @@ def from_cloudtrail(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.input.from_cloudtrail import CloudTrailSourceStage
+    from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 
     file_type = str_to_file_type(kwargs.pop("file_type").lower())
 
@@ -1094,7 +1094,7 @@ def serialize(ctx: click.Context, **kwargs):
     kwargs["include"] = list(kwargs["include"])
     kwargs["exclude"] = list(kwargs["exclude"])
 
-    from morpheus.stages.postprocess.serialize import SerializeStage
+    from morpheus.stages.postprocess.serialize_stage import SerializeStage
 
     stage = SerializeStage(config, **kwargs)
 
@@ -1141,7 +1141,7 @@ def mlflow_drift(ctx: click.Context, **kwargs):
     # Ensure labels is not a tuple
     kwargs["labels"] = list(kwargs["labels"])
 
-    from morpheus.stages.postprocess.mlflow_drift import MLFlowDriftStage
+    from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage
 
     stage = MLFlowDriftStage(config, **kwargs)
 
@@ -1196,7 +1196,7 @@ def timeseries(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.postprocess.timeseries import TimeSeriesStage
+    from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 
     stage = TimeSeriesStage(config, **kwargs)
 
@@ -1248,7 +1248,7 @@ def validate(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.postprocess.validation import ValidationStage
+    from morpheus.stages.postprocess.validation_stage import ValidationStage
 
     stage = ValidationStage(config, **kwargs)
 
@@ -1266,7 +1266,7 @@ def to_file(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.output.to_file import WriteToFileStage
+    from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 
     stage = WriteToFileStage(config, **kwargs)
 
@@ -1292,7 +1292,7 @@ def to_kafka(ctx: click.Context, **kwargs):
     if ("bootstrap_servers" in kwargs and kwargs["bootstrap_servers"] == "auto"):
         kwargs["bootstrap_servers"] = auto_determine_bootstrap()
 
-    from morpheus.stages.output.to_kafka import WriteToKafkaStage
+    from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 
     stage = WriteToKafkaStage(config, **kwargs)
 
@@ -1314,7 +1314,7 @@ def gen_viz(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.postprocess.gen_viz_frames import GenerateVizFramesStage
+    from morpheus.stages.postprocess.generate_viz_frames_stage import GenerateVizFramesStage
 
     stage = GenerateVizFramesStage(config, **kwargs)
 

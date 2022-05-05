@@ -22,7 +22,7 @@ from neo.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
-from morpheus.stages.output import utils
+from morpheus.io import serializers
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 
@@ -96,7 +96,7 @@ class WriteToKafkaStage(SinglePortStage):
                                      msg.error())
                         output.on_error(msg.error())
 
-                records = utils.df_to_json(x.df, strip_newlines=True)
+                records = serializers.df_to_json(x.df, strip_newlines=True)
                 for m in records:
 
                     # Push all of the messages

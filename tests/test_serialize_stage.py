@@ -22,7 +22,7 @@ import cudf
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.stages.postprocess.serialize import SerializeStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 
 
 @pytest.mark.use_python
