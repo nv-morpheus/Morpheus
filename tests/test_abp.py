@@ -24,8 +24,8 @@ from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general_stages import AddClassificationsStage
-from morpheus.stages.general_stages import MonitorStage
+from morpheus.stages.general.general_stages import AddClassificationsStage
+from morpheus.stages.general.general_stages import MonitorStage
 from morpheus.stages.inference.inference_triton import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage

@@ -23,8 +23,8 @@ import pytest
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general_stages import AddScoresStage
-from morpheus.stages.general_stages import MonitorStage
+from morpheus.stages.general.general_stages import AddScoresStage
+from morpheus.stages.general.general_stages import MonitorStage
 from morpheus.stages.inference.inference_ae import AutoEncoderInferenceStage
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage

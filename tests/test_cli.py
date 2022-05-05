@@ -26,10 +26,10 @@ from morpheus import cli
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.stages.general_stages import AddClassificationsStage
-from morpheus.stages.general_stages import AddScoresStage
-from morpheus.stages.general_stages import FilterDetectionsStage
-from morpheus.stages.general_stages import MonitorStage
+from morpheus.stages.general.general_stages import AddClassificationsStage
+from morpheus.stages.general.general_stages import AddScoresStage
+from morpheus.stages.general.general_stages import FilterDetectionsStage
+from morpheus.stages.general.general_stages import MonitorStage
 from morpheus.stages.inference.inference_ae import AutoEncoderInferenceStage
 from morpheus.stages.inference.inference_identity import IdentityInferenceStage
 from morpheus.stages.inference.inference_pytorch import PyTorchInferenceStage

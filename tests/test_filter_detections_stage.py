@@ -19,7 +19,7 @@ from unittest import mock
 import cupy as cp
 import pytest
 
-from morpheus.stages.general_stages import FilterDetectionsStage
+from morpheus.stages.general.general_stages import FilterDetectionsStage
 
 
 def test_constructor(config):

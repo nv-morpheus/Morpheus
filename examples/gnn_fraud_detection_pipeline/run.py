@@ -23,7 +23,7 @@ from stages.graph_sage_stage import GraphSAGEStage
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.stages.general_stages import MonitorStage
+from morpheus.stages.general.general_stages import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage

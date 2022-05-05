@@ -697,7 +697,7 @@ def monitor(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general_stages import MonitorStage
+    from morpheus.stages.general.general_stages import MonitorStage
 
     stage = MonitorStage(config, **kwargs)
 
@@ -714,7 +714,7 @@ def buffer(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general_stages import BufferStage
+    from morpheus.stages.general.general_stages import BufferStage
 
     stage = BufferStage(config, **kwargs)
 
@@ -750,7 +750,7 @@ def trigger(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general_stages import TriggerStage
+    from morpheus.stages.general.general_stages import TriggerStage
 
     stage = TriggerStage(config, **kwargs)
 
@@ -767,7 +767,7 @@ def delay(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general_stages import DelayStage
+    from morpheus.stages.general.general_stages import DelayStage
 
     stage = DelayStage(config, **kwargs)
 
@@ -1005,7 +1005,7 @@ def add_class(ctx: click.Context, **kwargs):
 
         del kwargs["label"]
 
-    from morpheus.stages.general_stages import AddClassificationsStage
+    from morpheus.stages.general.general_stages import AddClassificationsStage
 
     stage = AddClassificationsStage(config, **kwargs)
 
@@ -1040,7 +1040,7 @@ def add_scores(ctx: click.Context, **kwargs):
 
         del kwargs["label"]
 
-    from morpheus.stages.general_stages import AddScoresStage
+    from morpheus.stages.general.general_stages import AddScoresStage
 
     stage = AddScoresStage(config, **kwargs)
 
@@ -1061,7 +1061,7 @@ def filter_command(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general_stages import FilterDetectionsStage
+    from morpheus.stages.general.general_stages import FilterDetectionsStage
 
     stage = FilterDetectionsStage(config, **kwargs)
 

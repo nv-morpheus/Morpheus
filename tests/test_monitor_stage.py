@@ -21,7 +21,7 @@ import pytest
 
 import cudf
 
-from morpheus.stages import general_stages as gs
+from morpheus.stages.general import general_stages as gs
 from morpheus.messages import MultiMessage
 
 

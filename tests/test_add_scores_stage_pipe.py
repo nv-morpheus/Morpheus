@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general_stages import AddScoresStage
+from morpheus.stages.general.general_stages import AddScoresStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage

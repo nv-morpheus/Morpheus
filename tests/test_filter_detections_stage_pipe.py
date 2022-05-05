@@ -19,7 +19,7 @@ import os
 import numpy as np
 
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general_stages import FilterDetectionsStage
+from morpheus.stages.general.general_stages import FilterDetectionsStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
