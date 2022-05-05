@@ -1,0 +1,96 @@
+name: build docs
+
+on:
+  push:
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: [3.7, 3.8, 3.9]
+        exclude:
+          - os: windows-latest
+            python-version: 3.8
+          - os: windows-latest
+            python-version: 3.9
+    env:
+      DISPLAY: ':99.0'
+      OS: ${{ matrix.os }}
+      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
+        # if we upload to ghpages we need the full
+        # history to generate correct version info
+      if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
+    - uses: actions/checkout@v3
+      if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
+    - name: setup ubuntu-latest xvfb
+      uses: ./.github/actions/setup-ubuntu-latest-xvfb
+      if: runner.os == 'Linux'
+    - name: install pandoc linux
+      run: sudo apt install pandoc
+      if: runner.os == 'Linux'
+    - name: Install pandoc on windows
+      uses: crazy-max/ghaction-chocolatey@v1.7.0
+      with:
+        args: install pandoc
+      if: runner.os == 'Windows'
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: prepare pip cache
+      id: prepare-cache-pip
+      uses: ./.github/actions/prepare-cache-pip
+    - name: pip cache
+      uses: actions/cache@v3.0.2
+      with:
+        path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/docs_requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-pip-
+
+    - name: install requirements.txt
+      run: |
+        pip install -r requirements.txt
+    - name: install docs_requirements.txt
+      run: |
+        pip install -r docs_requirements.txt
+    - name: install nanotune
+      run: pip install -e .
+    - name: Build docs on linux
+      run: |
+        cd docs
+        export SPHINXOPTS="-W -v"
+        make html
+      if: runner.os == 'Linux'
+    - name: Build docs on windows
+      run: |
+        cd docs
+        $env:SPHINXOPTS = "-W -v"
+        ./make.bat html
+      if: runner.os == 'Windows'
+    - name: Upload build docs
+      uses: actions/upload-artifact@v3
+      with:
+        name: docs_${{ matrix.python-version }}_${{ matrix.os }}
+        path: ${{ github.workspace }}/docs/_build/html
+    - name: Deploy to gh pages
+      uses: JamesIves/github-pages-deploy-action@v4.3.3
+      with:
+        branch: gh-pages
+        folder: ${{ github.workspace }}/docs/_build/html
+        clean: true
+        git-config-email: "bot"
+        git-config-name: "Documentation Bot"
+      if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
