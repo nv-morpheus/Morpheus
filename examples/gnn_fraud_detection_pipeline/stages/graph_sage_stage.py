@@ -8,8 +8,8 @@ from stellargraph.mapper import HinSAGENodeGenerator
 import cudf
 
 from morpheus.config import Config
-from morpheus.messages.messages import MessageMeta
-from morpheus.messages.messages import MultiMessage
+from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 

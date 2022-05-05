@@ -21,9 +21,9 @@ from morpheus.config import Config
 from morpheus.pipeline.file_types import FileTypes
 from morpheus.stages.inference import inference_stage
 from morpheus.stages.input.utils import read_file_to_df
-from morpheus.messages.messages import MultiMessage
-from morpheus.messages.messages import MultiResponseProbsMessage
-from morpheus.messages.messages import ResponseMemoryProbs
+from morpheus.messages import MultiMessage
+from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import ResponseMemoryProbs
 from morpheus.pipeline.pipeline import SinglePortStage
 
 

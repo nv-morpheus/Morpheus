@@ -24,7 +24,7 @@ import cudf
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.messages.messages import MessageMeta
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import SingleOutputSource
 from morpheus.pipeline.pipeline import StreamPair
 

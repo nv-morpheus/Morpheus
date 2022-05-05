@@ -35,9 +35,9 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
-from morpheus.messages.messages import MultiInferenceMessage
-from morpheus.messages.messages import ResponseMemory
-from morpheus.messages.messages import ResponseMemoryProbs
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import ResponseMemory
+from morpheus.messages import ResponseMemoryProbs
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)

@@ -22,10 +22,10 @@ import neo
 from neo.core import operators as ops
 
 from morpheus.config import Config
-from morpheus.messages.messages import MultiInferenceMessage
-from morpheus.messages.messages import MultiResponseProbsMessage
-from morpheus.messages.messages import ResponseMemory
-from morpheus.messages.messages import ResponseMemoryProbs
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import ResponseMemory
+from morpheus.messages import ResponseMemoryProbs
 from morpheus.pipeline.pipeline import MultiMessageStage
 from morpheus.pipeline.pipeline import StreamPair
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue

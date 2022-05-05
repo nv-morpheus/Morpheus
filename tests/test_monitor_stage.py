@@ -22,7 +22,7 @@ import pytest
 import cudf
 
 from morpheus.stages import general_stages as gs
-from morpheus.messages.messages import MultiMessage
+from morpheus.messages import MultiMessage
 
 
 def test_constructor(config):

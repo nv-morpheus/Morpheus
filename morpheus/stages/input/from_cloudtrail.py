@@ -27,7 +27,7 @@ from neo.core import operators as ops
 from morpheus._lib.common import FiberQueue
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
-from morpheus.messages.messages import UserMessageMeta
+from morpheus.messages import UserMessageMeta
 from morpheus.pipeline.file_types import FileTypes
 from morpheus.pipeline.pipeline import SingleOutputSource
 from morpheus.pipeline.pipeline import StreamPair

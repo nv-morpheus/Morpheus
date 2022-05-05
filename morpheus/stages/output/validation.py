@@ -28,7 +28,7 @@ import cudf
 from morpheus.config import Config
 from morpheus.pipeline.file_types import FileTypes
 from morpheus.stages.input.utils import read_file_to_df
-from morpheus.messages.messages import MultiMessage
+from morpheus.messages import MultiMessage
 from morpheus.pipeline.pipeline import MultiMessageStage
 from morpheus.pipeline.pipeline import StreamPair
 

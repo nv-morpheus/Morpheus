@@ -23,10 +23,10 @@ import cudf
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.messages.messages import InferenceMemoryFIL
-from morpheus.messages.messages import MultiInferenceFILMessage
-from morpheus.messages.messages import MultiInferenceMessage
-from morpheus.messages.messages import MultiMessage
+from morpheus.messages import InferenceMemoryFIL
+from morpheus.messages import MultiInferenceFILMessage
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocessing import PreprocessBaseStage
 
 

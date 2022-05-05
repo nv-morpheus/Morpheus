@@ -22,10 +22,10 @@ import cudf
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.messages.messages import InferenceMemoryNLP
-from morpheus.messages.messages import MultiInferenceMessage
-from morpheus.messages.messages import MultiInferenceNLPMessage
-from morpheus.messages.messages import MultiMessage
+from morpheus.messages import InferenceMemoryNLP
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiInferenceNLPMessage
+from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocessing import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 

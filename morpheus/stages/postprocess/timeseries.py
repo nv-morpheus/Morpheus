@@ -26,8 +26,8 @@ import pandas as pd
 from neo.core import operators as ops
 
 from morpheus.config import Config
-from morpheus.messages.messages import MultiResponseAEMessage
-from morpheus.messages.messages import MultiResponseMessage
+from morpheus.messages import MultiResponseAEMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 

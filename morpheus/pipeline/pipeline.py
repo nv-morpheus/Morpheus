@@ -32,7 +32,7 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.config import CppConfig
-from morpheus.messages.messages import MultiMessage
+from morpheus.messages import MultiMessage
 from morpheus.utils.atomic_integer import AtomicInteger
 from morpheus.utils.type_utils import _DecoratorType
 from morpheus.utils.type_utils import greatest_ancestor

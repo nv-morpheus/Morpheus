@@ -20,8 +20,8 @@ import pytest
 
 import cudf
 
-from morpheus.messages.messages import MessageMeta
-from morpheus.messages.messages import MultiMessage
+from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.stages.output.serialize import SerializeStage
 
 

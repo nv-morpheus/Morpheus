@@ -21,7 +21,7 @@ import cupy as cp
 import pytest
 
 from morpheus.stages.inference import inference_stage
-from morpheus.messages.messages import ResponseMemoryProbs
+from morpheus.messages import ResponseMemoryProbs
 from utils import IW
 
 

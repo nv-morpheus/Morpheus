@@ -25,7 +25,7 @@ import morpheus._lib.stages as neos
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
-from morpheus.messages.messages import MessageMeta
+from morpheus.messages import MessageMeta
 from morpheus.stages.output import utils
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
