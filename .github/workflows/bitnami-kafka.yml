@@ -1,0 +1,13 @@
+- name: Setup Bitnami Kafka
+  # You may pin to the exact commit or the version.
+  # uses: bbcCorp/kafka-actions@a59640ca64d45f642a6a48bbafa0262af6424ea2
+  uses: bbcCorp/kafka-actions@v1
+  with:
+    # Version of Bitnami Kafka to use
+    kafka version: # optional, default is latest
+    # Version of Bitnami Zookeeper to use
+    zookeeper version: # optional, default is latest
+    # The port of Kafka host
+    kafka port: # optional, default is 9092
+    # The port of Zookeeper host
+    zookeeper port: # optional, default is 2181
