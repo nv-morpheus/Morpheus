@@ -1,4 +1,4 @@
-- name: Setup Vulkan SDK
+ name: Setup Vulkan SDK
   # You may pin to the exact commit or the version.
   # uses: humbletim/setup-vulkan-sdk@72eed4b9dbeac5de168f83da8e30b1d0f8ac7f14
   uses: humbletim/setup-vulkan-sdk@v1.2.0
