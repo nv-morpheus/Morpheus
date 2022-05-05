@@ -18,7 +18,7 @@ pipeline {
             agent {
                 docker {
                   image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04'
-                  label 'cpu4'
+                  label 'gpu4'
                 }
             }
             steps {
