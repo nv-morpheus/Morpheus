@@ -917,7 +917,7 @@ def inf_triton(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.inference.inference_triton import TritonInferenceStage
+    from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 
     stage = TritonInferenceStage(config, **kwargs)
 
@@ -933,7 +933,7 @@ def inf_identity(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.inference.inference_identity import IdentityInferenceStage
+    from morpheus.stages.inference.identity_inference_stage import IdentityInferenceStage
 
     stage = IdentityInferenceStage(config, **kwargs)
 
@@ -953,7 +953,7 @@ def inf_pytorch(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.inference.inference_pytorch import PyTorchInferenceStage
+    from morpheus.stages.inference.pytorch_inference_stage import PyTorchInferenceStage
 
     stage = PyTorchInferenceStage(config, **kwargs)
 
@@ -969,7 +969,7 @@ def inf_pytorch_ae(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.inference.inference_ae import AutoEncoderInferenceStage
+    from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
 
     stage = AutoEncoderInferenceStage(config, **kwargs)
 

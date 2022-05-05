@@ -35,7 +35,7 @@ from morpheus.messages import UserMessageMeta
 from morpheus.pipeline.file_types import FileTypes
 from morpheus.pipeline.pipeline import MultiMessageStage
 from morpheus.pipeline.pipeline import StreamPair
-from morpheus.stages.inference.inference_ae import MultiInferenceAEMessage
+from morpheus.stages.inference.auto_encoder_inference_stage import MultiInferenceAEMessage
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 
 logger = logging.getLogger(__name__)

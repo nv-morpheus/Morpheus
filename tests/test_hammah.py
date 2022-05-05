@@ -25,7 +25,7 @@ from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.general_stages import AddScoresStage
 from morpheus.stages.general.general_stages import MonitorStage
-from morpheus.stages.inference.inference_ae import AutoEncoderInferenceStage
+from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage

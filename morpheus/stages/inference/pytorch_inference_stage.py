@@ -17,11 +17,11 @@ import typing
 import cupy as cp
 
 from morpheus.config import Config
-from morpheus.stages.inference.inference_stage import InferenceStage
-from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 try:
@@ -36,7 +36,7 @@ except ImportError:
     raise
 
 
-class PyTorchInference(InferenceWorker):
+class _PyTorchInferenceWorker(InferenceWorker):
     """
     Inference worker used by PyTorchInferenceStage.
 
@@ -124,4 +124,4 @@ class PyTorchInferenceStage(InferenceStage):
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 
-        return PyTorchInference(inf_queue, self._config, model_filename=self._model_filename)
+        return _PyTorchInferenceWorker(inf_queue, self._config, model_filename=self._model_filename)

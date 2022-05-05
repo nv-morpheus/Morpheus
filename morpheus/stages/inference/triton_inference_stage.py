@@ -33,11 +33,11 @@ from tritonclient.utils import triton_to_np_dtype
 import morpheus._lib.stages as neos
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.stages.inference.inference_stage import InferenceStage
-from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)
@@ -371,7 +371,7 @@ class ShmInputWrapper(InputWrapper):
 
 
 # This class is exclusively run in the worker thread. Separating the classes helps keeps the threads separate
-class TritonInferenceWorker(InferenceWorker):
+class _TritonInferenceWorker(InferenceWorker):
     """
     This is a base class for all Triton inference server requests.
 
@@ -598,7 +598,7 @@ class TritonInferenceWorker(InferenceWorker):
                                         outputs=outputs)
 
 
-class TritonInferenceNLP(TritonInferenceWorker):
+class TritonInferenceNLP(_TritonInferenceWorker):
     """
     This class extends TritonInference to deal with scenario-specific NLP models inference requests like building
     response.
@@ -670,7 +670,7 @@ class TritonInferenceNLP(TritonInferenceWorker):
         return mem
 
 
-class TritonInferenceFIL(TritonInferenceWorker):
+class TritonInferenceFIL(_TritonInferenceWorker):
     """
     This class extends `TritonInference` to deal with scenario-specific FIL models inference requests like
     building response.
@@ -738,7 +738,7 @@ class TritonInferenceFIL(TritonInferenceWorker):
         return mem
 
 
-class TritonInferenceAE(TritonInferenceWorker):
+class TritonInferenceAE(_TritonInferenceWorker):
     """
     This class extends `TritonInference` to deal with inference processing specific to the AutoEncoder.
 

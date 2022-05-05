@@ -19,6 +19,7 @@ import cupy as cp
 from dfencoder.autoencoder import AutoEncoder
 
 from morpheus.config import Config
+from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.messages import MultiInferenceMessage
@@ -28,83 +29,7 @@ from morpheus.messages import ResponseMemoryProbs
 from morpheus.messages import UserMessageMeta
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
-
-@dataclasses.dataclass
-class MultiInferenceAEMessage(MultiInferenceMessage):
-    """
-    A stronger typed version of `MultiInferenceMessage` that is used for AE workloads. Helps ensure the
-    proper inputs are set and eases debugging. Associates a user ID with a message.
-    """
-
-    model: AutoEncoder
-
-    @property
-    def user_id(self):
-        """
-        Returns the user ID associated with this message.
-
-        """
-
-        return typing.cast(UserMessageMeta, self.meta).user_id
-
-    @property
-    def input(self):
-        """
-        Returns autoecoder input tensor.
-
-        Returns
-        -------
-        cupy.ndarray
-            The autoencoder input tensor.
-
-        """
-
-        return self.get_input("input")
-
-    @property
-    def seq_ids(self):
-        """
-        Returns sequence ids, which are used to keep track of messages in a multi-threaded environment.
-
-        Returns
-        -------
-        cupy.ndarray
-            seq_ids
-
-        """
-
-        return self.get_input("seq_ids")
-
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
-
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
-
-        Returns
-        -------
-        `MultiInferenceAEMessage`
-            A new `MultiInferenceAEMessage` with sliced offset and count.
-
-        """
-        mess_start = self.mess_offset + self.seq_ids[start, 0].item()
-        mess_stop = self.mess_offset + self.seq_ids[stop - 1, 0].item() + 1
-        return MultiInferenceAEMessage(meta=self.meta,
-                                       mess_offset=mess_start,
-                                       mess_count=mess_stop - mess_start,
-                                       memory=self.memory,
-                                       offset=start,
-                                       count=stop - start,
-                                       model=self.model)
-
-
-class AutoEncoderInference(InferenceWorker):
+class _AutoEncoderInferenceWorker(InferenceWorker):
 
     def __init__(self, inf_queue: ProducerConsumerQueue, c: Config):
         super().__init__(inf_queue)
@@ -192,4 +117,4 @@ class AutoEncoderInferenceStage(InferenceStage):
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 
-        return AutoEncoderInference(inf_queue, self._config)
+        return _AutoEncoderInferenceWorker(inf_queue, self._config)

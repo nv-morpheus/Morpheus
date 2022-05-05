@@ -36,7 +36,7 @@ from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.file_types import FileTypes
 from morpheus.pipeline.pipeline import MultiMessageStage
 from morpheus.pipeline.pipeline import StreamPair
-from morpheus.stages.inference.inference_ae import MultiInferenceAEMessage
+from morpheus.stages.inference.auto_encoder_inference_stage import MultiInferenceAEMessage
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 

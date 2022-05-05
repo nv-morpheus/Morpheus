@@ -30,10 +30,10 @@ from morpheus.stages.general.general_stages import AddClassificationsStage
 from morpheus.stages.general.general_stages import AddScoresStage
 from morpheus.stages.general.general_stages import FilterDetectionsStage
 from morpheus.stages.general.general_stages import MonitorStage
-from morpheus.stages.inference.inference_ae import AutoEncoderInferenceStage
-from morpheus.stages.inference.inference_identity import IdentityInferenceStage
-from morpheus.stages.inference.inference_pytorch import PyTorchInferenceStage
-from morpheus.stages.inference.inference_triton import TritonInferenceStage
+from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
+from morpheus.stages.inference.identity_inference_stage import IdentityInferenceStage
+from morpheus.stages.inference.pytorch_inference_stage import PyTorchInferenceStage
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage

@@ -25,7 +25,7 @@ from morpheus.messages import ResponseMemoryProbs
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 
-class IdentityInferenceWorker(InferenceWorker):
+class _IdentityInferenceWorker(InferenceWorker):
     """
     Worker used by IdentityInferenceStage to set inference probabilities to zeros.
 
@@ -75,4 +75,4 @@ class IdentityInferenceStage(InferenceStage):
         self._config = c
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
-        return IdentityInferenceWorker(inf_queue=inf_queue, c=self._config)
+        return _IdentityInferenceWorker(inf_queue=inf_queue, c=self._config)
