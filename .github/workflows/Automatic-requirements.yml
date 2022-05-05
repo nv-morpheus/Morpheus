@@ -1,6 +1,5 @@
  name: Automatic requirements.txt for Python Projects
   # You may pin to the exact commit or the version.
-  # uses: ryan-rozario/pipreqs-action@071f0f2af11e5e65226d8b7353bf76465adb86a2
   uses: ryan-rozario/pipreqs-action@v2.0.0
   with:
     # Gives the path of the project
@@ -40,3 +39,5 @@
               name: Fraud Detection, Validation
        uses: models/validation-inference-scripts/fraud-detection-models/requirements.txt
     PROJECT_NAME: morpheus
+    
+      # uses: ryan-rozario/pipreqs-action@071f0f2af11e5e65226d8b7353bf76465adb86a2
