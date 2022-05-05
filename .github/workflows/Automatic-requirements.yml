@@ -4,8 +4,46 @@
   uses: ryan-rozario/pipreqs-action@v2.0.0
   with:
     # Gives the path of the project
-    PROJECT_PATH: # default is .
-    # Folder where requirements.txt has to be saved in
-    REQUIREMENT_PATH: # default is requirements.txt
-    # Name of the project to include in the commit
+     docs/requirement.txt
+  docker/conda/environments/requirements.txt
+  examples/gnn_fraud_detection_pipeline/requirements.yml
+  models/validation-inference-scripts/abp-models/requirements.txt
+  models/validation-inference-scripts/hammah-models/requirements.txt
+  models/validation-inference-scripts/phishing-models/requirements.txt
+  models/training-tuning-scripts/fraud-detection-models/requirements.txt
+    PROJECT_PATH: 
+              name:
+       uses:
+              name:
+       uses:
+              name:
+       uses:
+              name:
+       uses:
+              name:
+       uses:
+              name: Phishing Models, Validation
+       uses: models/validation-inference-scripts/phishing-models/requirements.txt
+              name: Fraud Detection, Training
+       uses: models/training-tuning-scripts/fraud-detection-models/requirements.txt
+              name: Fraud Detection, Validation
+       uses: models/validation-inference-scripts/fraud-detection-models/requirements.txt
+    
+    REQUIREMENT_PATH:
+              name:
+       uses:
+              name:
+       uses:
+              name:
+       uses:
+              name:
+       uses:
+              name:
+       uses:
+              name: Phishing Models, Validation
+       uses: models/validation-inference-scripts/phishing-models/requirements.txt
+              name: Fraud Detection, Training
+       uses: models/training-tuning-scripts/fraud-detection-models/requirements.txt
+              name: Fraud Detection, Validation
+       uses: models/validation-inference-scripts/fraud-detection-models/requirements.txt
     PROJECT_NAME: morpheus
