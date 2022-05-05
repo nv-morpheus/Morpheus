@@ -1,4 +1,4 @@
-- name: JulieOps
+ name: JulieOps
   # You may pin to the exact commit or the version.
   # uses: kafka-ops/julieops-github-action@ea25f12c0be4466271eb93f9bef7c0fd206190a1
   uses: kafka-ops/julieops-github-action@v1
