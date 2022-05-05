@@ -8,8 +8,8 @@ from stellargraph.mapper import HinSAGENodeGenerator
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.messages import MultiMessage
+from morpheus.messages.messages import MessageMeta
+from morpheus.messages.messages import MultiMessage
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 
@@ -23,15 +23,14 @@ class GraphSAGEMultiMessage(MultiMessage):
 
 
 class GraphSAGEStage(SinglePortStage):
-    def __init__(
-        self,
-        c: Config,
-        model_hinsage_file: str,
-        batch_size: int = 5,
-        sample_size = [2, 32],
-        record_id:str = "index",
-        target_node:str ="transaction"
-    ):
+
+    def __init__(self,
+                 c: Config,
+                 model_hinsage_file: str,
+                 batch_size: int = 5,
+                 sample_size=[2, 32],
+                 record_id: str = "index",
+                 target_node: str = "transaction"):
         super().__init__(c)
         self._keras_model = tf.keras.models.load_model(model_hinsage_file)
         self._batch_size = batch_size
@@ -56,7 +55,6 @@ class GraphSAGEStage(SinglePortStage):
         # The mapper feeds data from sampled subgraph to HinSAGE model
         generator = HinSAGENodeGenerator(graph, self._batch_size, self._sample_size, head_node_type=self._target_node)
         test_gen_not_shuffled = generator.flow(node_identifiers, shuffle=False)
-
 
         inductive_emb = trained_model.predict(test_gen_not_shuffled)
         inductive_emb = cudf.DataFrame(inductive_emb, index=node_identifiers)

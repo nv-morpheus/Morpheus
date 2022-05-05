@@ -23,11 +23,11 @@ from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import BufferStage
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.preprocessing import DeserializeStage
+from morpheus.stages.general_stages import BufferStage
+from morpheus.stages.general_stages import MonitorStage
+from morpheus.stages.input.from_file import FileSourceStage
+from morpheus.stages.output.to_file import WriteToFileStage
+from morpheus.stages.preprocess.preprocessing import DeserializeStage
 
 
 @click.command()

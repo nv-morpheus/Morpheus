@@ -21,8 +21,8 @@ import neo
 from neo.core import operators as ops
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.output import utils
+from morpheus.messages.messages import MessageMeta
+from morpheus.stages.output import utils
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 

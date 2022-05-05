@@ -9,7 +9,7 @@ from stellargraph import StellarGraph
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MultiMessage
+from morpheus.messages.messages import MultiMessage
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 
@@ -20,6 +20,7 @@ class FraudGraphMultiMessage(MultiMessage):
 
 
 class FraudGraphConstructionStage(SinglePortStage):
+
     def __init__(self, c: Config, training_file: str):
         super().__init__(c)
         self._training_data = cudf.read_csv(training_file)

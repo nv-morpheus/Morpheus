@@ -29,15 +29,15 @@ from neo.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.inference.inference_ae import MultiInferenceAEMessage
-from morpheus.pipeline.input.from_cloudtrail import CloudTrailSourceStage
-from morpheus.pipeline.messages import InferenceMemoryAE
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.messages import UserMessageMeta
+from morpheus.stages.inference.inference_ae import MultiInferenceAEMessage
+from morpheus.stages.input.from_cloudtrail import CloudTrailSourceStage
+from morpheus.messages.messages import InferenceMemoryAE
+from morpheus.messages.messages import MultiInferenceMessage
+from morpheus.messages.messages import MultiMessage
+from morpheus.messages.messages import UserMessageMeta
 from morpheus.pipeline.pipeline import MultiMessageStage
 from morpheus.pipeline.pipeline import StreamPair
-from morpheus.pipeline.preprocessing import PreprocessBaseStage
+from morpheus.stages.preprocess.preprocessing import PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
 

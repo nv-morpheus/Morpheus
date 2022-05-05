@@ -23,7 +23,7 @@ from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
+from morpheus.messages.messages import MessageMeta
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 

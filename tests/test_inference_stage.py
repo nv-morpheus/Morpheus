@@ -20,8 +20,8 @@ from unittest import mock
 import cupy as cp
 import pytest
 
-from morpheus.pipeline.inference import inference_stage
-from morpheus.pipeline.messages import ResponseMemoryProbs
+from morpheus.stages.inference import inference_stage
+from morpheus.messages.messages import ResponseMemoryProbs
 from utils import IW
 
 

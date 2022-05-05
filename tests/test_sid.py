@@ -22,15 +22,15 @@ import pytest
 
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import AddClassificationsStage
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.inference.inference_triton import TritonInferenceStage
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.output.validation import ValidationStage
-from morpheus.pipeline.preprocessing import DeserializeStage
-from morpheus.pipeline.preprocessing import PreprocessNLPStage
+from morpheus.stages.general_stages import AddClassificationsStage
+from morpheus.stages.general_stages import MonitorStage
+from morpheus.stages.inference.inference_triton import TritonInferenceStage
+from morpheus.stages.input.from_file import FileSourceStage
+from morpheus.stages.output.serialize import SerializeStage
+from morpheus.stages.output.to_file import WriteToFileStage
+from morpheus.stages.output.validation import ValidationStage
+from morpheus.stages.preprocess.preprocessing import DeserializeStage
+from morpheus.stages.preprocess.preprocessing import PreprocessNLPStage
 from utils import TEST_DIRS
 from utils import calc_error_val
 

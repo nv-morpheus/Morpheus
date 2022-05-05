@@ -21,9 +21,9 @@ import pytest
 
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.input.utils import read_file_to_df
-from morpheus.pipeline.output.to_file import WriteToFileStage
+from morpheus.stages.input.from_file import FileSourceStage
+from morpheus.stages.input.utils import read_file_to_df
+from morpheus.stages.output.to_file import WriteToFileStage
 from utils import TEST_DIRS
 
 

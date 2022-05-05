@@ -21,8 +21,8 @@ import pytest
 
 import cudf
 
-from morpheus.pipeline import general_stages as gs
-from morpheus.pipeline.messages import MultiMessage
+from morpheus.stages import general_stages as gs
+from morpheus.messages.messages import MultiMessage
 
 
 def test_constructor(config):

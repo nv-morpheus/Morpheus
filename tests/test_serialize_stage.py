@@ -20,9 +20,9 @@ import pytest
 
 import cudf
 
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.output.serialize import SerializeStage
+from morpheus.messages.messages import MessageMeta
+from morpheus.messages.messages import MultiMessage
+from morpheus.stages.output.serialize import SerializeStage
 
 
 @pytest.mark.use_python

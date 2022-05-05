@@ -19,13 +19,13 @@ import cupy as cp
 from dfencoder.autoencoder import AutoEncoder
 
 from morpheus.config import Config
-from morpheus.pipeline.inference.inference_stage import InferenceStage
-from morpheus.pipeline.inference.inference_stage import InferenceWorker
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import MultiResponseAEMessage
-from morpheus.pipeline.messages import ResponseMemory
-from morpheus.pipeline.messages import ResponseMemoryProbs
-from morpheus.pipeline.messages import UserMessageMeta
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
+from morpheus.messages.messages import MultiInferenceMessage
+from morpheus.messages.messages import MultiResponseAEMessage
+from morpheus.messages.messages import ResponseMemory
+from morpheus.messages.messages import ResponseMemoryProbs
+from morpheus.messages.messages import UserMessageMeta
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 

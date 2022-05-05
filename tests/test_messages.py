@@ -20,7 +20,7 @@ import cupy as cp
 import pytest
 
 import morpheus._lib.messages as neom
-from morpheus.pipeline import messages
+from morpheus.messages import messages
 
 
 def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp_class: bool, args: tuple):

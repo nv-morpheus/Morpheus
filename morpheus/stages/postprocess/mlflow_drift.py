@@ -21,8 +21,8 @@ import mlflow
 import neo
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MultiResponseMessage
-from morpheus.pipeline.messages import MultiResponseProbsMessage
+from morpheus.messages.messages import MultiResponseMessage
+from morpheus.messages.messages import MultiResponseProbsMessage
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 

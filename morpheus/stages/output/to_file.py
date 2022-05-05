@@ -25,8 +25,8 @@ import morpheus._lib.stages as neos
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.output import utils
+from morpheus.messages.messages import MessageMeta
+from morpheus.stages.output import utils
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 
@@ -110,11 +110,7 @@ class WriteToFileStage(SinglePortStage):
 
         # Sink to file
         if (self._build_cpp_node()):
-            to_file = neos.WriteToFileStage(seg,
-                                            self.unique_name,
-                                            self._output_file,
-                                            "w",
-                                            self._file_type)
+            to_file = neos.WriteToFileStage(seg, self.unique_name, self._output_file, "w", self._file_type)
         else:
 
             def node_fn(input: neo.Observable, output: neo.Subscriber):

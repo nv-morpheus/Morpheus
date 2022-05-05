@@ -27,11 +27,11 @@ from neo.core import operators as ops
 from morpheus._lib.common import FiberQueue
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
+from morpheus.messages.messages import UserMessageMeta
 from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.input.utils import read_file_to_df
-from morpheus.pipeline.messages import UserMessageMeta
 from morpheus.pipeline.pipeline import SingleOutputSource
 from morpheus.pipeline.pipeline import StreamPair
+from morpheus.stages.input.utils import read_file_to_df
 from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)

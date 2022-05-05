@@ -29,9 +29,9 @@ import morpheus._lib.stages as neos
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.pipeline import Stage
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.messages import MultiResponseProbsMessage
+from morpheus.messages.messages import MessageMeta
+from morpheus.messages.messages import MultiMessage
+from morpheus.messages.messages import MultiResponseProbsMessage
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 from morpheus.utils.logging import deprecated_stage_warning

@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MultiResponseProbsMessage
+from morpheus.messages.messages import MultiResponseProbsMessage
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 

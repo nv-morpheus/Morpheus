@@ -19,11 +19,11 @@ import os
 import numpy as np
 
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import FilterDetectionsStage
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.preprocessing import DeserializeStage
+from morpheus.stages.general_stages import FilterDetectionsStage
+from morpheus.stages.input.from_file import FileSourceStage
+from morpheus.stages.output.serialize import SerializeStage
+from morpheus.stages.output.to_file import WriteToFileStage
+from morpheus.stages.preprocess.preprocessing import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
 

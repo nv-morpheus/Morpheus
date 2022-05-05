@@ -6,8 +6,8 @@ import cudf
 import cuml
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.messages import MultiMessage
+from morpheus.messages.messages import MessageMeta
+from morpheus.messages.messages import MultiMessage
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 
@@ -15,6 +15,7 @@ from .graph_sage_stage import GraphSAGEMultiMessage
 
 
 class ClassificationStage(SinglePortStage):
+
     def __init__(self, c: Config, model_xgb_file: str):
         super().__init__(c)
 

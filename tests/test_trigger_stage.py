@@ -18,7 +18,7 @@ from unittest import mock
 
 import pytest
 
-from morpheus.pipeline.general_stages import TriggerStage
+from morpheus.stages.general_stages import TriggerStage
 
 
 def test_constructor(config):

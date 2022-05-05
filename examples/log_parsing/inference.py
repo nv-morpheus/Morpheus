@@ -28,12 +28,12 @@ from neo.core import operators as ops
 from scipy.special import softmax
 
 from morpheus.config import Config
-from morpheus.pipeline.inference.inference_stage import InferenceStage
-from morpheus.pipeline.inference.inference_stage import InferenceWorker
-from morpheus.pipeline.inference.inference_triton import InputWrapper
-from morpheus.pipeline.inference.inference_triton import TritonInferenceWorker
-from morpheus.pipeline.messages import InferenceMemory
-from morpheus.pipeline.messages import MultiInferenceMessage
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
+from morpheus.stages.inference.inference_triton import InputWrapper
+from morpheus.stages.inference.inference_triton import TritonInferenceWorker
+from morpheus.messages.messages import InferenceMemory
+from morpheus.messages.messages import MultiInferenceMessage
 from morpheus.pipeline.pipeline import StreamPair
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
