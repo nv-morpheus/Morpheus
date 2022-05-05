@@ -1,4 +1,4 @@
-- name: Setup Kafka
+ name: Setup Kafka
   # You may pin to the exact commit or the version.
   # uses: 280780363/kafka-action@a66f129ffd34e42d6245b7e25d69e94659a1d444
   uses: 280780363/kafka-action@v1.0
