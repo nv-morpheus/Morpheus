@@ -5,39 +5,38 @@
  with:
     # Gives the path of the project
     PROJECT_PATH: 
-    name: GitHub Docs
-    uses: docs/requirement.txt
-     uses: docker/conda/environments/requirements.txt
-              name: GNN Fraud Detection Pipeline
-       uses: examples/gnn_fraud_detection_pipeline/requirements.yml
-              name: ABP Models
-       uses: models/validation-inference-scripts/abp-models/requirements.txt
-              name: Hammah Models
-       uses:  models/validation-inference-scripts/hammah-models/requirements.txt
-              name: Phishing Models, Validation
-       uses: models/validation-inference-scripts/phishing-models/requirements.txt
-              name: Fraud Detection, Training
-       uses: models/training-tuning-scripts/fraud-detection-models/requirements.txt
-              name: Fraud Detection, Validation
-       uses: models/validation-inference-scripts/fraud-detection-models/requirements.txt
-    
+     name: GitHub Docs
+     uses: docs/requirement.txt
+     #uses: docker/conda/environments/requirements.txt
+      #        name: GNN Fraud Detection Pipeline
+       #uses: examples/gnn_fraud_detection_pipeline/requirements.yml
+        #      name: ABP Models
+       #uses: models/validation-inference-scripts/abp-models/requirements.txt
+       #       name: Hammah Models
+       #uses:  models/validation-inference-scripts/hammah-models/requirements.txt
+       #       name: Phishing Models, Validation
+       #uses: models/validation-inference-scripts/phishing-models/requirements.txt
+       #       name: Fraud Detection, Training
+       #uses: models/training-tuning-scripts/fraud-detection-models/requirements.txt
+       #       name: Fraud Detection, Validation
+       #uses: models/validation-inference-scripts/fraud-detection-models/requirements.txt
     REQUIREMENT_PATH:
-              name: GitHub Docs
-       uses: docs/requirement.txt
-              name: Conda
-       uses: docker/conda/environments/requirements.txt
-              name: GNN Fraud Detection Pipeline
-       uses: examples/gnn_fraud_detection_pipeline/requirements.yml
-              name: ABP Models
-       uses: models/validation-inference-scripts/abp-models/requirements.txt
-              name: Hammah Models
-       uses:  models/validation-inference-scripts/hammah-models/requirements.txt
-              name: Phishing Models, Validation
-       uses: models/validation-inference-scripts/phishing-models/requirements.txt
-              name: Fraud Detection, Training
-       uses: models/training-tuning-scripts/fraud-detection-models/requirements.txt
-              name: Fraud Detection, Validation
-       uses: models/validation-inference-scripts/fraud-detection-models/requirements.txt
-    PROJECT_NAME: morpheus
+     name: GitHub Docs
+     uses: docs/requirement.txt
+      #        name: Conda
+      # uses: docker/conda/environments/requirements.txt
+      #        name: GNN Fraud Detection Pipeline
+      # uses: examples/gnn_fraud_detection_pipeline/requirements.yml
+      #        name: ABP Models
+      # uses: models/validation-inference-scripts/abp-models/requirements.txt
+      #        name: Hammah Models
+      # uses:  models/validation-inference-scripts/hammah-models/requirements.txt
+      #        name: Phishing Models, Validation
+      # uses: models/validation-inference-scripts/phishing-models/requirements.txt
+      #        name: Fraud Detection, Training
+      # uses: models/training-tuning-scripts/fraud-detection-models/requirements.txt
+      #        name: Fraud Detection, Validation
+      # uses: models/validation-inference-scripts/fraud-detection-models/requirements.txt
+      PROJECT_NAME: morpheus
     
       # uses: ryan-rozario/pipreqs-action@071f0f2af11e5e65226d8b7353bf76465adb86a2
