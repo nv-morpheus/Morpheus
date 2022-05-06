@@ -16,13 +16,7 @@
 
 set -e
 
-echo "Env Setup"
-source /opt/conda/etc/profile.d/conda.sh
-export MORPHEUS_ROOT=$(pwd)
-echo "Procs: $(nproc)"
-echo "Memory"
-/usr/bin/free -g
-/usr/bin/nvidia-smi
+source ci/scripts/jenkins_common.sh
 
 conda activate base
 conda config --set ssl_verify false
@@ -35,18 +29,6 @@ conda activate morpheus
 
 echo "Installing CI dependencies"
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_ci.yml
-
-# S3 vars
-export ARTIFACT_DIR="ci/morpheus/pull-request/${CHANGE_ID}/${GIT_COMMIT}/amd64"
-
-# Set sccache env vars
-export SCCACHE_S3_KEY_PREFIX=morpheus-linux64
-export SCCACHE_BUCKET=rapids-sccache
-export SCCACHE_REGION=us-west-2
-export SCCACHE_IDLE_TIMEOUT=32768
-#export SCCACHE_LOG=debug
-
-env | sort
 
 gpuci_logger "Check versions"
 python3 --version
