@@ -43,16 +43,26 @@ git lfs pull
 
 #### Using the Pre-built `runtime` Docker Image
 
-Pre-built Morpheus Docker images can be downloaded from NGC. See [here](docs/source/morpheus_quickstart_guide.md#set-up-ngc-api-key-and-install-ngc-registry-cli) for details on accessing NGC. The `runtime` image includes pre-installed Morpheus and dependencies:
+Pre-built Morpheus Docker images can be downloaded from NGC. See [here](docs/source/morpheus_quickstart_guide.md#set-up-ngc-api-key-and-install-ngc-registry-cli) for details on accessing NGC. The `runtime` image includes Morpheus pre-built and its dependencies:
 
 ```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus:22.06-runtime
+docker pull nvcr.io/nvidia/morpheus/morpheus:<version>-runtime
+```
+where `<version>` refers to the build of Morpheus you want. For example, if you want release 22.04, use the command:
+
+```bash
+docker pull nvcr.io/nvidia/morpheus/morpheus:22.04-runtime
 ```
 
-Run the pre-built `runtime` container:
+You can then run the pre-built `runtime` container using the provided script:
 
 ```bash
-DOCKER_IMAGE_TAG=22.06-runtime ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG=<version>-runtime ./docker/run_container_release.sh
+```
+Again replacing `<version>` with the appropriate release number. For v22.04, it becomes:
+
+```bash
+DOCKER_IMAGE_TAG=22.04-runtime ./docker/run_container_release.sh
 ```
 
 #### Manually Build the `runtime` Docker Image
@@ -75,6 +85,11 @@ Run the manually built `runtime` container:
 
 ```bash
 ./docker/run_container_release.sh
+```
+You can specify the specific image version by passing the script the `DOCKER_IMAGE_TAG` variable:
+
+```bash
+DOCKER_IMAGE_TAG=<version> ./docker/run_container_release.sh
 ```
 
 #### Build from Source
