@@ -23,7 +23,9 @@ pipeline {
                   inside """--runtime=nvidia
                             -e NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER
                          """
-                  sh "./ci/scripts/jenkins_build.sh"
+                  steps {
+                      sh "./ci/scripts/jenkins_build.sh"
+                  }
                 }
             }
 
