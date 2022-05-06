@@ -23,7 +23,15 @@ pipeline {
                 }
             }
             steps {
-                sh "./ci/scripts/jenkins_build.sh"
+                withCredentials([[
+                $class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: "aws-s3-gpuci",
+                accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]])
+                {
+                    sh "./ci/scripts/jenkins_build.sh"
+                }
             }
         }
     }
