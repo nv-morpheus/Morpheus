@@ -49,25 +49,25 @@ echo "PYTHON_VER  : ${PYTHON_VER}"
 echo "NEO_GIT_TAG : ${NEO_GIT_TAG}"
 echo ""
 
+export CMAKE_GENERATOR="Ninja"
+
 # Export variables for the cache
 export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
-mkdir -p ${MORPHEUS_CACHE_DIR}
+export CCACHE_DIR="${MORPHEUS_CACHE_DIR}/ccache"
+export CCACHE_NOHASHDIR=1
 
-export CMAKE_GENERATOR="Ninja"
+# Ensure the necessary folders exist before continuing
+mkdir -p ${MORPHEUS_CACHE_DIR}
+mkdir -p ${CCACHE_DIR}
 
 # Local builds use ccache
 # ci builds will use sccache which is a ccache work-alike but uses an S3 backend
 # (https://github.com/mozilla/sccache)
 if [[ "${USE_SCCACHE}" == "" ]]; then
    # Export CCACHE variables
-   export CCACHE_DIR="${MORPHEUS_CACHE_DIR}/ccache"
-   export CCACHE_NOHASHDIR=1
    export CMAKE_C_COMPILER_LAUNCHER="ccache"
    export CMAKE_CXX_COMPILER_LAUNCHER="ccache"
    export CMAKE_CUDA_COMPILER_LAUNCHER="ccache"
-
-   # Ensure the necessary folders exist before continuing
-   mkdir -p ${CCACHE_DIR}
 else
    export CMAKE_C_COMPILER_LAUNCHER="sccache"
    export CMAKE_CXX_COMPILER_LAUNCHER="sccache"
