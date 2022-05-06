@@ -19,8 +19,7 @@ pipeline {
                 docker {
                   image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04'
                   label 'gpu4'
-                  --runtime 'nvidia'
-                  -e 'NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER'
+                  args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                 }
             }
             steps {
