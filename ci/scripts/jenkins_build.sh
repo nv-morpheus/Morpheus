@@ -34,7 +34,9 @@ conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.ana
 conda install -q -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
 conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
-mamba install -q -y -c conda-forge -c gpuci gpuci-tools "pkg-config=0.29.2" "sccache=0.3.0"
+
+echo "Installing CI dependencies"
+mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_ci.yml
 
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-linux64
@@ -57,6 +59,7 @@ gpuci_logger "Building cuDF"
 CONDA_BLD_DIR=/opt/conda/conda-bld
 mkdir -p ${CONDA_BLD_DIR}
 sccache --zero-stats
+# The --no-build-id bit is needed for sccache
 USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 gpuci_logger "sccache usage for cudf build:"
