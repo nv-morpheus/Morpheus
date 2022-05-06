@@ -9,7 +9,7 @@ pipeline {
                 timeout(time: 6, unit: 'HOURS')
             }
             environment {
-                PARALLEL_LEVEL = '16'
+                PARALLEL_LEVEL = '10'
                 PYTHON_VER = '3.8'
                 RAPIDS_VER = '21.10'
                 CUDA_VER = '11.4'

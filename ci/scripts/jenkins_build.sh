@@ -19,6 +19,9 @@ set -e
 echo "Env Setup"
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=$(pwd)
+echo "Procs: $(nproc)"
+echo "Memory"
+/usr/bin/free -g
 env | sort
 
 conda activate base
