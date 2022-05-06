@@ -22,6 +22,8 @@ export MORPHEUS_ROOT=$(pwd)
 echo "Procs: $(nproc)"
 echo "Memory"
 /usr/bin/free -g
+/usr/bin/nvidia-smi
+
 env | sort
 
 conda activate base

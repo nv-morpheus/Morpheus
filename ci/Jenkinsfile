@@ -16,7 +16,12 @@ pipeline {
                 HOME = "${WORKSPACE}"
             }
             agent {
-                docker {
+                docker
+                .inside("""
+                  --runtime=nvidia
+                  -e NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER
+                """)
+                {
                   image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04'
                   label 'driver-495'
                 }
