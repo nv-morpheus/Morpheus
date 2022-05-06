@@ -57,7 +57,7 @@ gpuci_logger "Building cuDF"
 CONDA_BLD_DIR=/opt/conda/conda-bld
 mkdir -p ${CONDA_BLD_DIR}
 sccache --zero-stats
-USE_SCCACHE=1 CONDA_ARGS="--output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
+USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 gpuci_logger "sccache usage for cudf build:"
 sccache --show-stats
