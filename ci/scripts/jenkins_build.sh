@@ -41,8 +41,7 @@ export SCCACHE_S3_KEY_PREFIX=morpheus-linux64
 export SCCACHE_BUCKET=rapids-sccache
 export SCCACHE_REGION=us-west-2
 export SCCACHE_IDLE_TIMEOUT=32768
-export SCCACHE_ERROR_LOG=/tmp/sccache_log.txt
-export SCCACHE_LOG=debug
+#export SCCACHE_LOG=debug
 
 gpuci_logger "Check versions"
 python3 --version
@@ -96,9 +95,6 @@ sccache --show-stats
 
 gpuci_logger "Installing Morpheus"
 pip install -e ${MORPHEUS_ROOT}
-
-gpuci_logger "sccache log"
-cat /tmp/sccache_log.txt
 
 gpuci_logger "Success!"
 
