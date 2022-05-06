@@ -9,27 +9,23 @@ pipeline {
                 timeout(time: 6, unit: 'HOURS')
             }
             environment {
-                PARALLEL_LEVEL = '10'
+                PARALLEL_LEVEL = '16'
                 PYTHON_VER = '3.8'
                 RAPIDS_VER = '21.10'
                 CUDA_VER = '11.4'
                 HOME = "${WORKSPACE}"
             }
-            node {
-                docker
-                {
+            agent {
+                docker {
                   image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04'
-                  label 'driver-495'
-                  inside """--runtime=nvidia
-                            -e NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER
-                         """
-                  steps {
-                      sh "./ci/scripts/jenkins_build.sh"
-                  }
+                  label 'gpu4'
+                  --runtime 'nvidia'
+                  -e 'NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER'
                 }
             }
-
-
+            steps {
+                sh "./ci/scripts/jenkins_build.sh"
+            }
         }
     }
 }
