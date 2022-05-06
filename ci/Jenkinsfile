@@ -15,7 +15,7 @@ pipeline {
                 CUDA_VER = '11.4'
                 HOME = "${WORKSPACE}"
             }
-            agent {
+            node {
                 docker
                 {
                   image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04'
@@ -23,11 +23,11 @@ pipeline {
                   inside """--runtime=nvidia
                             -e NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER
                          """
+                  sh "./ci/scripts/jenkins_build.sh"
                 }
             }
-            steps {
-                sh "./ci/scripts/jenkins_build.sh"
-            }
+
+
         }
     }
 }
