@@ -4,23 +4,13 @@
 
 NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI framework and pre-trained AI capabilities that allow them to instantaneously inspect all IP traffic across their data center fabric. The Morpheus developer framework allows teams to build their own optimized pipelines that address cybersecurity and information security use cases. Bringing a new level of security to data centers, Morpheus provides development capabilities around dynamic protection, real-time telemetry, adaptive policies, and cyber defenses for detecting and remediating cybersecurity threats.
 
-There are two basic ways to get started with Morpheus - (1) using the production deployment containers on NGC or (2) building the container/source from GitHub.
-
 ## Documentation
 Full documentation (including a quick start guide, a developer/user guide, and API documentation) is available online at [https://docs.nvidia.com/morpheus/](https://docs.nvidia.com/morpheus/).
 
-## Getting Started with Containers on NGC
+## Getting Started with Morpheus 
+The instructions below provide guidelines on how to get started with the pre-built Docker container, build the Morpheus Docker contianer yourself, or build Morpheus from source.
 
-Morpheus pre-built containers are hosted on NGC (NVIDIA GPU Cloud) and make it easy to get started with running Morpheus. Use the link below to access the Morpheus collection.
-
-[https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_)
-
-Complete instructions on how to get up-and-running with the NGC containers are available in the Morpheus Quick Start Guide.
-
-## Getting Started with Installation via GitHub
-If you prefer to run Morpheus from GitHub, the instructions below provide guidelines on how to get started with the pre-built container or build from source.
-
-#### Prerequisites
+### Prerequisites
 
 - Pascal architecture or better
 - NVIDIA driver `450.80.02` or higher
@@ -37,7 +27,7 @@ If `Git LFS` is not installed before cloning the repository, the large files wil
 git lfs install
 ```
 
-#### Clone the Repository
+### Clone the Repository
 
 ```bash
 MORPHEUS_ROOT=$(pwd)/morpheus
@@ -51,7 +41,7 @@ cd $MORPHEUS_ROOT
 git lfs pull
 ```
 
-#### Pre-built `runtime` Docker Image
+#### Using the Pre-built `runtime` Docker Image
 
 Pre-built Morpheus Docker images can be downloaded from NGC. See [here](docs/source/morpheus_quickstart_guide.md#set-up-ngc-api-key-and-install-ngc-registry-cli) for details on accessing NGC. The `runtime` image includes pre-installed Morpheus and dependencies:
 
@@ -65,16 +55,17 @@ Run the pre-built `runtime` container:
 DOCKER_IMAGE_TAG=22.06-runtime ./docker/run_container_release.sh
 ```
 
-#### Manually Build `runtime` Docker Image
+#### Manually Build the `runtime` Docker Image
 
 The Morpheus `runtime` image can also be built manually. This allows you to use a Morpheus build from the development branch or another branch/tag.
 To manually build the `runtime` image, run the following from the repo's root:
 
-#### Building Locally (Outside a Container)
+#### Build Locally (Outside a Container)
 
 To build Morpheus outside a container, all the necessary dependencies will need to be installed locally or in a virtual environment. Due to the increased complexity of installing outside of a container, this section has been moved to [`CONTRIBUTING.md`](CONTRIBUTING.md). Please see the "Build in a Conda Environment" section for more information.
 
 Note: Once `morpheus` CLI is installed, shell command completion can be installed with:
+
 ```bash
 ./docker/build_container_release.sh
 ```
@@ -99,44 +90,52 @@ Depending on your configuration, it may be necessary to start additional service
    - See the Quick Launch Kafka section.
  - `inf-triton`
    - Requires a running Triton server
-   - See the launching Triton section.
+   - See the Launching Triton Server section.
 
-### Quick-Launch Kafka Cluster
+### Quick Launch Kafka Cluster
 
 Launching a full production Kafka cluster is outside the scope of this project. However, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. See [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in-depth information:
 
 1. Install `docker-compose` if not already installed:
+   
    ```bash
    conda install -c conda-forge docker-compose
    ```
 2. Clone the `kafka-docker` repo from the Morpheus repo root:
+   
    ```bash
    git clone https://github.com/wurstmeister/kafka-docker.git
    ```
 3. Change directory to `kafka-docker`:
+   
    ```bash
    cd kafka-docker
    ```
 4. Export the IP address of your Docker `bridge` network:
+   
    ```bash
    export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
    ```
 5. Update the `kafka-docker/docker-compose.yml` so the environment variable `KAFKA_ADVERTISED_HOST_NAME` matches the previous step. For example, the line should look like:
+
    ```yml
    environment:
       KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
    ```
    Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
+   
    ```bash
    $ echo $KAFKA_ADVERTISED_HOST_NAME
    "172.17.0.1"
    ```
 6. Launch kafka with 3 instances:
+
    ```bash
    docker-compose up -d --scale kafka=3
    ```
    In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
 7. Create the topic:
+
    ```bash
    ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=$MY_INPUT_TOPIC_NAME --bootstrap-server `broker-list.sh`
@@ -156,6 +155,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
          ```
          In order for this to work, your input file must be accessible from `$PWD`.
    2. You can view the messages with:
+  
          ```bash
          ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
          $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=$MY_TOPIC --bootstrap-server `broker-list.sh`
@@ -164,6 +164,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
 ### Launching Triton Server
 
 To launch Triton server, use the following command:
+
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models \
   nvcr.io/nvidia/tritonserver:21.12-py3 \
