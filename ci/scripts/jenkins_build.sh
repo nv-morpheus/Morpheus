@@ -70,6 +70,7 @@ cmake --build build -j
 gpuci_logger "Installing Morpheus"
 pip install -e ${MORPHEUS_ROOT}
 
+gpuci_logger "Success!"
 
 # Needed for tests
 # npm install --silent -g camouflage-server
