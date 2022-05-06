@@ -19,5 +19,5 @@ make install
 
 
 cd $PREFIX/bin
-ln -s python${PYTHON_VER} python
-ln -s pydoc${PYTHON_VER} pydoc
+ln -s python${PY_VER} python
+ln -s pydoc${PY_VER} pydoc

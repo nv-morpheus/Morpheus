@@ -90,11 +90,12 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       DOCKER_IMAGE_TAG=my_tag ./docker/build_container_dev.sh
       ```
       Would build the container `morpheus:my_tag`.
-   1. To build the container with a debugging version of cpython installed, modify your build command as:
+   1. To build the container with a debugging version of cpython installed, update the docker target as follows:
    ```shell
-   DOCKER_EXTRA_ARGS="--build-arg MORPHEUS_WITH_PYDEBUG=true" docker/build_container_dev.sh
+   DOCKER_TARGET=development_pydbg ./docker/build_container_dev.sh
    ```
-   1. Note: When debugging python code, you just need to add `/usr/local/src/python-dbg` to your debugger's source path.
+   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's 
+   source path.
    1. Note: Now when running the container, conda should list your python version as `pyxxx_dbg_morpheus`.
    ```shell
     (morpheus) user@host:/workspace# conda list | grep python

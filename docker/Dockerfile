@@ -83,7 +83,7 @@ RUN --mount=type=ssh \
     source activate base &&\
     # Run with --no-test for now until we can build with builtkit and default nvidia runtime
     # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
+    MORPHEUS_ROOT=/workspace CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -146,7 +146,7 @@ RUN --mount=type=ssh \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
     # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    MORPHEUS_ROOT=/workspace CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
@@ -178,31 +178,9 @@ COPY ["*.md", "LICENSE", "./"]
 # Use morpheus by default
 CMD [ "morpheus" ]
 
-# ============ Stage: development_deps ===========
-# Configure and build cpython with debugging symbols
-FROM conda_env_dev as development_deps
-
-# Capture python version
-ARG PYTHON_VER
-COPY ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
-
-# Flag indicating if we're going to build cpython
-ARG MORPHEUS_WITH_PYDEBUG=0
-
-RUN if [[ "${MORPHEUS_WITH_PYDEBUG}" =~ ^(TRUE|True|true|1)$ ]]; then \
-      ## Figure out which python version is in the existing environment -- we will build its debug equivalent \
-      source activate morpheus \
-      && \
-        MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2) \
-        CONDA_BLD_PATH=/opt/conda/conda-bld \
-        CONDA_ARGS="--no-test" \
-      conda mambabuild -c conda-forge -c system ./ci/conda/recipes/python-dbg \
-      ; \
-    fi
-
 # ============ Stage: development ============
 # Install and configure development only packages
-FROM development_deps as development
+FROM conda_env_dev as development
 # Copy the source
 # COPY . ./
 
@@ -214,28 +192,30 @@ RUN npm install -g camouflage-server
 # development
 RUN git config --global --add safe.directory "*"
 
+# ============ Stage: python_debug_bld ===========
+# Configure and build cpython with debugging symbols
+FROM development as development_pydbg
+
+COPY ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
+COPY ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
+COPY ci/conda/recipes/python_dbg_install.sh ./ci/conda/recipes/python_dbg_install.sh
+
+ARG PYTHON_VER
 # Temporary until #68 goes in
 ARG MORPHEUS_USER="root"
-RUN --mount=type=bind,from=development_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
-    # swap out python binary if it was built \
-    if [[ "${MORPHEUS_WITH_PYDEBUG}" =~ ^(TRUE|True|true|1)$ ]]; then \
-      source activate morpheus \
-      && export source_file=$( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
-      && export install_file=$( ls /opt/conda/conda-bld/linux-64/python-${PYTHON_VER}*.tar.bz2 ) \
-      && mamba install --use-local ${install_file} \
-      && export debug_py_ver=$(python --version | cut -d ' ' -f2) \
-      ## Copy python includes from python3.xd to python3.x so CMake can find them \
-      && cp -R /opt/conda/envs/morpheus/include/python${PYTHON_VER}d/* \
-        /opt/conda/envs/morpheus/include/python${PYTHON_VER} \
-      # Extract cpython source to /workspace \
-      && for src in Include Misc Modules Objects Python; do  \
-          tar --strip-components=1 --extract --wildcards --file=${source_file} Python-${debug_py_ver}/${src}/* \
-          && mkdir -p /usr/local/src/python-dbg/${src} \
-          && cp -R ./${src} /usr/local/src/python-dbg/${src} \
-          ; \
-         done \
-      # Move cpython gdb helper macros to ${HOME}/.gdbinit \
-      # See: https://github.com/python/cpython/blob/main/Misc/gdbinit
-      && cp Misc/gdbinit $(eval echo "~${MORPHEUS_USER}")/.gdbinit \
-      ; \
-    fi
+
+SHELL ["/bin/bash", "-c"]
+
+# Build and install debug cpython
+RUN source activate morpheus \
+    && MORPHEUS_ROOT=/workspace \
+       CONDA_BLD_PATH=/opt/conda/conda-bld \
+       CONDA_ARGS="--no-test" \
+       ./ci/conda/recipes/run_conda_build.sh pydebug
+
+RUN source activate morpheus \
+    && ./ci/conda/recipes/python_dbg_install.sh \
+       -s $( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
+       -c $( ls /opt/conda/conda-bld/linux-64/python-${PYTHON_VER}*.tar.bz2 ) \
+       -i ./ci/conda/recipes/python-dbg/source \
+       -g $(eval echo "~${MORPHEUS_USER}")/.gdbinit
