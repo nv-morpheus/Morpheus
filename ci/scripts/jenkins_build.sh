@@ -60,7 +60,7 @@ CONDA_BLD_DIR=/opt/conda/conda-bld
 mkdir -p ${CONDA_BLD_DIR}
 sccache --zero-stats
 # The --no-build-id bit is needed for sccache
-USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
+USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" time ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 gpuci_logger "sccache usage for cudf build:"
 sccache --show-stats
@@ -77,7 +77,7 @@ ninja --version
 
 gpuci_logger "Configuring cmake for Morpheus"
 sccache --zero-stats
-cmake -B build -G Ninja \
+time cmake -B build -G Ninja \
       -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
       -DMORPHEUS_BUILD_BENCHMARKS=ON \
       -DMORPHEUS_BUILD_EXAMPLES=ON \
@@ -91,7 +91,7 @@ cmake -B build -G Ninja \
       .
 
 gpuci_logger "Building Morpheus"
-cmake --build build -j
+time cmake --build build -j
 
 gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
