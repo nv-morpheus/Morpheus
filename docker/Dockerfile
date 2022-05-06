@@ -200,20 +200,15 @@ COPY ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
 COPY ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
 COPY ci/conda/recipes/python_dbg_install.sh ./ci/conda/recipes/python_dbg_install.sh
 
-ARG PYTHON_VER
 # Temporary until #68 goes in
 ARG MORPHEUS_USER="root"
-
-SHELL ["/bin/bash", "-c"]
 
 # Build and install debug cpython
 RUN source activate morpheus \
     && MORPHEUS_ROOT=/workspace \
        CONDA_BLD_PATH=/opt/conda/conda-bld \
        CONDA_ARGS="--no-test" \
-       ./ci/conda/recipes/run_conda_build.sh pydebug
-
-RUN source activate morpheus \
+       ./ci/conda/recipes/run_conda_build.sh pydebug \
     && ./ci/conda/recipes/python_dbg_install.sh \
        -s $( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
        -c $( ls /opt/conda/conda-bld/linux-64/python-${PYTHON_VER}*.tar.bz2 ) \
