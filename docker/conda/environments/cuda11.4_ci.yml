@@ -20,6 +20,7 @@ channels:
     - conda-forge
 dependencies:
     - awscli=1.23.8
+    - conda-pack=0.7.0
     - gpuci-tools
     - groff=1.22.4 # needed by awscli
     - pkg-config=0.29.2

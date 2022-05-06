@@ -24,8 +24,6 @@ echo "Memory"
 /usr/bin/free -g
 /usr/bin/nvidia-smi
 
-env | sort
-
 conda activate base
 conda config --set ssl_verify false
 conda config --add pkgs_dirs /opt/conda/pkgs
@@ -38,12 +36,17 @@ conda activate morpheus
 echo "Installing CI dependencies"
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_ci.yml
 
+# S3 vars
+export ARTIFACT_DIR="ci/morpheus/pull-request/${CHANGE_ID}/${GIT_COMMIT}/amd64"
+
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-linux64
 export SCCACHE_BUCKET=rapids-sccache
 export SCCACHE_REGION=us-west-2
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
+
+env | sort
 
 gpuci_logger "Check versions"
 python3 --version
@@ -60,7 +63,7 @@ CONDA_BLD_DIR=/opt/conda/conda-bld
 mkdir -p ${CONDA_BLD_DIR}
 sccache --zero-stats
 # The --no-build-id bit is needed for sccache
-USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" time ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
+USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 gpuci_logger "sccache usage for cudf build:"
 sccache --show-stats
@@ -77,7 +80,7 @@ ninja --version
 
 gpuci_logger "Configuring cmake for Morpheus"
 sccache --zero-stats
-time cmake -B build -G Ninja \
+cmake -B build -G Ninja \
       -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
       -DMORPHEUS_BUILD_BENCHMARKS=ON \
       -DMORPHEUS_BUILD_EXAMPLES=ON \
@@ -91,7 +94,7 @@ time cmake -B build -G Ninja \
       .
 
 gpuci_logger "Building Morpheus"
-time cmake --build build -j
+cmake --build build -j
 
 gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
@@ -99,9 +102,13 @@ sccache --show-stats
 gpuci_logger "Installing Morpheus"
 pip install -e ${MORPHEUS_ROOT}
 
-gpuci_logger "Success!"
+gpuci_logger "Archiving results"
+mamba pack --n-threads ${PARALLEL_LEVEL} -n morpheus ${WORKSPACE_TMP}/conda.tar.gz
+tar cfz ${WORKSPACE_TMP}/build.tar.gz build
 
-# Needed for tests
+aws s3 cp ${WORKSPACE_TMP}/conda.tar.gz "s3://rapids-downloads/${ARTIFACT_DIR}/conda.tar.gz"
+aws s3 cp ${WORKSPACE_TMP}/build.tar.gz "s3://rapids-downloads/${ARTIFACT_DIR}/build.tar.gz"
+
 # npm install --silent -g camouflage-server
 # mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 # git lfs pull
