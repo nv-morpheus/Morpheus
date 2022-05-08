@@ -199,7 +199,7 @@ def wait_for_camouflage(popen, root_dir, host="localhost", port=8000, timeout=5)
             r = requests.get(url, timeout=1)
             if r.status_code == 200:
                 ready = r.json()['message'] == 'I am alive.'
-        except Exception:
+        except:
             pass
 
         if not ready:
