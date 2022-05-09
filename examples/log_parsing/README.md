@@ -56,7 +56,7 @@ python ./examples/log_parsing/run.py \
 Use `--help` to display information about the command line options:
 
 ```
-python ./examples/log-parsing/run.py --help
+python ./examples/log_parsing/run.py --help
 
 Options:
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
