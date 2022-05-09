@@ -24,7 +24,8 @@ CONDA_ENV_COMMIT=$(git log -n 1 --pretty=format:%H -- docker/conda/environments)
 CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar"
 CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar"
 
-aws s3 mv --no-progress "${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz" ${CONDA_PKG_CACHE_URL}
+aws s3 cp --no-progress "${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz" ${CONDA_PKG_TAR}
+aws s3 cp --no-progress ${CONDA_PKG_TAR} ${CONDA_PKG_CACHE_URL}
 exit 1
 
 echo "Checking ${CONDA_PKG_CACHE_URL}"
