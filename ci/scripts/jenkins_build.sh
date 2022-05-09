@@ -43,7 +43,7 @@ CONDA_BLD_DIR=/opt/conda/conda-bld
 
 gpuci_logger "Checking S3 cuDF cache"
 CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
-CUDF_CONDA_CACHE_URL="${S3_URL}/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/cudf_conda.tar.gz"
+CUDF_CONDA_CACHE_URL="${S3_URL}/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
 CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
 
 set +e
@@ -107,5 +107,5 @@ mamba pack --quiet --force --ignore-missing-files --ignore-editable-packages --n
 tar cfz ${WORKSPACE_TMP}/build.tar.gz build
 
 gpuci_logger "Pushing results to S3"
-aws_cp ${WORKSPACE_TMP}/conda.tar.gz "${ARTIFACT_URL}/conda.tar.gz"
-aws_cp ${WORKSPACE_TMP}/build.tar.gz "${ARTIFACT_URL}/build.tar.gz"
+aws_cp "${WORKSPACE_TMP}/conda.tar.gz" "${ARTIFACT_URL}/conda.tar.gz"
+aws_cp "${WORKSPACE_TMP}/build.tar.gz" "${ARTIFACT_URL}/build.tar.gz"
