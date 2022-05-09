@@ -18,19 +18,6 @@ set -e
 
 source ci/scripts/jenkins_common.sh
 
-#WIP
-CONDA_BLD_DIR=/opt/conda/conda-bld
-CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
-CUDF_CONDA_CACHE_URL="${S3_URL}/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
-CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
-aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
-tar xf ${CUDF_CONDA_TAR} --directory /
-cd /opt/conda
-rm -f ${CUDF_CONDA_TAR}
-tar cfz ${CUDF_CONDA_TAR} conda-bld
-aws s3 cp --no-progress ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
-exit 1
-
 gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
@@ -80,7 +67,9 @@ if [[ "${CACHE_CHECK}" != "0" ]]; then
 else
       gpuci_logger "Cache hit, using cached cuDF"
       aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
-      tar xf ${CUDF_CONDA_TAR} --directory /
+      cd /opt/conda
+      tar xf ${CUDF_CONDA_TAR}
+      cd -
 fi
 
 gpuci_logger "Installing cuDF"
