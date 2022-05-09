@@ -67,7 +67,7 @@ if [[ "${CACHE_CHECK}" != "0" ]]; then
 else
       gpuci_logger "Cache hit, using cached cuDF"
       aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
-      tar xf ${CUDF_CONDA_TAR} --directory /opt/conda
+      tar xvf ${CUDF_CONDA_TAR} --directory /opt/conda
 fi
 
 gpuci_logger "Installing cuDF"
