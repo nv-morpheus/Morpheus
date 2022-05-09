@@ -68,6 +68,7 @@ else
       gpuci_logger "Cache hit, using cached cuDF"
       aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
       tar xf ${CUDF_CONDA_TAR}
+      ls ${CONDA_BLD_DIR}
 fi
 
 gpuci_logger "Installing cuDF"
