@@ -20,24 +20,29 @@ source ci/scripts/jenkins_common.sh
 
 gpuci_logger "Checking S3 conda-pkg cache"
 CONDA_PKG_DIR=/opt/conda/pkgs
+CACHED_CONDA_PKG_DIR=/opt/conda/cached_pkgs
 CONDA_ENV_COMMIT=$(git log -n 1 --pretty=format:%H -- docker/conda/environments)
-CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar"
-CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar"
+CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz"
+CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar.gz"
 
 echo "Checking ${CONDA_PKG_CACHE_URL}"
 set +e
-aws s3 cp --no-progress ${CONDA_PKG_CACHE_URL} ${CONDA_PKG_TAR}
-CONDA_PKG_CACHE_CHECK=$?
+#aws s3 cp --no-progress ${CONDA_PKG_CACHE_URL} ${CONDA_PKG_TAR}
+#CONDA_PKG_CACHE_CHECK=$?
+CONDA_PKG_CACHE_CHECK=1
 set -e
 
 if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
-	cd $(dirname ${CONDA_PKG_DIR})
-	tar xf ${CONDA_PKG_TAR}
+	cd $(dirname ${CACHED_CONDA_PKG_DIR})
+	tar xf ${CONDA_PKG_TAR} --directory ${CACHED_CONDA_PKG_DIR}
       cd -
+else
+      mkdir -p ${CACHED_CONDA_PKG_DIR}
 fi
 
 gpuci_logger "Creating conda env"
-conda config --add pkgs_dirs /opt/conda/pkgs
+conda config --add pkgs_dirs ${CACHED_CONDA_PKG_DIR}
+conda config --add pkgs_dirs ${CONDA_PKG_DIR}
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 mamba install -q -y -n base -c conda-forge "boa >=0.10" python=${PYTHON_VER}
@@ -100,7 +105,7 @@ mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_d
 if [[ "${CONDA_PKG_CACHE_CHECK}" != "0" ]]; then
       gpuci_logger "Archiving cached conda packages"
 	cd $(dirname ${CONDA_PKG_DIR})
-	tar cf ${CONDA_PKG_TAR} $(basename ${CONDA_PKG_DIR})/*.tar.bz2
+	tar cfz ${CONDA_PKG_TAR} --exclude="*.bz2" --exclude="pkgs/cudatoolkit-${CUDA_VER}*" --exclude="pkgs/libcudf-${RAPIDS_VER}*" --exclude="pkgs/cudf-${RAPIDS_VER}*" $(basename ${CONDA_PKG_DIR})
 	cd -
 	aws s3 cp --no-progress ${CONDA_PKG_TAR} ${CONDA_PKG_CACHE_URL}
 fi
