@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-echo "Env Setup"
-source /opt/conda/etc/profile.d/conda.sh
+gpuci_logger "Env Setup"
 export MORPHEUS_ROOT=$(pwd)
 echo "Procs: $(nproc)"
 echo "Memory"
@@ -23,8 +22,8 @@ echo "Memory"
 /usr/bin/nvidia-smi
 
 # S3 vars
-export
-export ARTIFACT_DIR="ci/morpheus/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+export S3_URL="s3://rapids-downloads/"
+export ARTIFACT_URL="${S3_URL}ci/morpheus/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
 
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}

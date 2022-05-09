@@ -16,12 +16,8 @@
 # Morpheus dependencies only needed during a CI build
 name: morpheus
 channels:
-    - gpuci
     - conda-forge
 dependencies:
-    - awscli=1.23.8
     - conda-pack=0.7.0
-    - gpuci-tools
-    - groff=1.22.4 # needed by awscli
     - pkg-config=0.29.2
     - sccache=0.3.0

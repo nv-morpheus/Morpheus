@@ -18,16 +18,14 @@ set -e
 
 source ci/scripts/jenkins_common.sh
 
-conda activate base
-conda config --set ssl_verify false
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
-conda install -q -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
+conda install -q -y -n base -c conda-forge "boa >=0.10" python=${PYTHON_VER}
 conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 
-echo "Installing CI dependencies"
+gpuci_logger "Installing CI dependencies"
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_ci.yml
 
 gpuci_logger "Check versions"
@@ -43,7 +41,7 @@ conda list --show-channel-urls
 gpuci_logger "Building cuDF"
 CONDA_BLD_DIR=/opt/conda/conda-bld
 mkdir -p ${CONDA_BLD_DIR}
-sccache --zero-stats
+ZS=$(sccache --zero-stats)
 # The --no-build-id bit is needed for sccache
 USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
@@ -61,7 +59,7 @@ cmake --version
 ninja --version
 
 gpuci_logger "Configuring cmake for Morpheus"
-sccache --zero-stats
+ZS=$(sccache --zero-stats)
 cmake -B build -G Ninja \
       -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
       -DMORPHEUS_BUILD_BENCHMARKS=ON \
@@ -85,12 +83,9 @@ gpuci_logger "Installing Morpheus"
 pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Archiving results"
-mamba pack --n-threads ${PARALLEL_LEVEL} -n morpheus ${WORKSPACE_TMP}/conda.tar.gz
+mamba pack --force --ignore-missing-files --ignore-editable-packages --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda.tar.gz
 tar cfz ${WORKSPACE_TMP}/build.tar.gz build
 
-aws s3 cp ${WORKSPACE_TMP}/conda.tar.gz "s3://rapids-downloads/${ARTIFACT_DIR}/conda.tar.gz"
-aws s3 cp ${WORKSPACE_TMP}/build.tar.gz "s3://rapids-downloads/${ARTIFACT_DIR}/build.tar.gz"
-
-# npm install --silent -g camouflage-server
-# mamba install -q -y -c conda-forge "git-lfs=3.1.4"
-# git lfs pull
+gpuci_logger "Pushing results to S3"
+aws s3 cp ${WORKSPACE_TMP}/conda.tar.gz "${ARTIFACT_URL}/conda.tar.gz"
+aws s3 cp ${WORKSPACE_TMP}/build.tar.gz "${ARTIFACT_URL}/build.tar.gz"
