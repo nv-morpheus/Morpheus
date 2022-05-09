@@ -37,9 +37,10 @@ mkdir -p /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/conda.tar.gz" --directory /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/build.tar.gz" --directory ./
 
-gpuci_logger "Setting up test deps"
+gpuci_logger "Setting test env"
 conda activate morpheus
 conda-unpack
+pip install -e ${MORPHEUS_ROOT}
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"

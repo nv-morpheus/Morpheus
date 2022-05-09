@@ -62,12 +62,14 @@ if [[ "${CACHE_CHECK}" != "0" ]]; then
       ZS=$(sccache --zero-stats)
 
       gpuci_logger "Archiving cuDF build"
-      tar cfz ${CUDF_CONDA_TAR} ${CONDA_BLD_DIR}
+      cd $(dirname ${CONDA_BLD_DIR})
+      tar cfz ${CUDF_CONDA_TAR} $(basename ${CONDA_BLD_DIR})
+      cd -
       aws s3 cp --no-progress ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
 else
       gpuci_logger "Cache hit, using cached cuDF"
       aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
-      cd /opt/conda
+      cd $(dirname ${CONDA_BLD_DIR})
       tar xf ${CUDF_CONDA_TAR}
       cd -
 fi
