@@ -99,7 +99,7 @@ mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_d
 if [[ "${CONDA_PKG_CACHE_CHECK}" != "0" ]]; then
       gpuci_logger "Archiving cached conda packages"
 	cd $(dirname ${CONDA_PKG_DIR})
-	tar cvf ${CONDA_PKG_TAR} $(basename ${CONDA_PKG_DIR})/*.tar.bz2  $(basename ${CONDA_PKG_DIR})/*.conda
+	tar cvf ${CONDA_PKG_TAR} $(basename ${CONDA_PKG_DIR})/*.tar.bz2
 	cd -
 	aws s3 cp --no-progress ${CONDA_PKG_TAR} ${CONDA_PKG_CACHE_URL}
 fi
