@@ -108,5 +108,8 @@ mamba pack --quiet --force --ignore-missing-files --ignore-editable-packages --n
 tar cfz ${WORKSPACE_TMP}/build.tar.gz build
 
 gpuci_logger "Pushing results to ${ARTIFACT_URL}"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/conda.tar.gz" "${ARTIFACT_URL}/conda.tar.gz"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/build.tar.gz" "${ARTIFACT_URL}/build.tar.gz"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/conda.tar.gz" "${ARTIFACT_URL}/conda.tar.gz"
+
+gpuci_logger "Success"
+exit 0

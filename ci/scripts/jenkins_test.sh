@@ -45,6 +45,7 @@ npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
 gpuci_logger "Pulling LFS assets"
+git lfs install
 git lfs pull
 
 gpuci_logger "Running tests"
