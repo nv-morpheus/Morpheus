@@ -47,6 +47,7 @@ CUDF_CONDA_CACHE_URL="${S3_URL}/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_C
 CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
 
 set +e
+echo "Checking ${CUDF_CONDA_CACHE_URL}"
 aws s3 ls ${CUDF_CONDA_CACHE_URL}
 CACHE_CHECK=$?
 set -e
@@ -62,10 +63,10 @@ if [[ "${CACHE_CHECK}" != "0" ]]; then
 
       gpuci_logger "Archiving cuDF build"
       tar cfz ${CUDF_CONDA_TAR} ${CONDA_BLD_DIR}
-      aws_cp ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
+      aws s3 cp --no-progress ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
 else
       gpuci_logger "Cache hit, using cached cuDF"
-      aws_cp ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
+      aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
       tar xf ${CUDF_CONDA_TAR} --directory /opt/conda
 fi
 
@@ -106,6 +107,6 @@ gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --ignore-editable-packages --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda.tar.gz
 tar cfz ${WORKSPACE_TMP}/build.tar.gz build
 
-gpuci_logger "Pushing results to S3"
-aws_cp "${WORKSPACE_TMP}/conda.tar.gz" "${ARTIFACT_URL}/conda.tar.gz"
-aws_cp "${WORKSPACE_TMP}/build.tar.gz" "${ARTIFACT_URL}/build.tar.gz"
+gpuci_logger "Pushing results to ${ARTIFACT_URL}"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/conda.tar.gz" "${ARTIFACT_URL}/conda.tar.gz"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/build.tar.gz" "${ARTIFACT_URL}/build.tar.gz"

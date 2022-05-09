@@ -3,17 +3,18 @@ pipeline {
     options {
         disableConcurrentBuilds(abortPrevious: true)
     }
+    environment {
+        PARALLEL_LEVEL = '16'
+        PYTHON_VER = '3.8'
+        RAPIDS_VER = '21.10'
+        CUDA_VER = '11.4'
+        HOME = "${WORKSPACE}"
+    }
+
     stages {
         stage('Build') {
             options {
-                timeout(time: 6, unit: 'HOURS')
-            }
-            environment {
-                PARALLEL_LEVEL = '16'
-                PYTHON_VER = '3.8'
-                RAPIDS_VER = '21.10'
-                CUDA_VER = '11.4'
-                HOME = "${WORKSPACE}"
+                timeout(time: 2, unit: 'HOURS')
             }
             agent {
                 docker {
@@ -31,6 +32,30 @@ pipeline {
                 ]])
                 {
                     sh "./ci/scripts/jenkins_build.sh"
+                }
+            }
+        }
+
+        stage('Test') {
+            options {
+                timeout(time: 1, unit: 'HOURS')
+            }
+            agent {
+                docker {
+                  image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                  label 'driver-495'
+                  args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
+                }
+            }
+            steps {
+                withCredentials([[
+                $class: 'AmazonWebServicesCredentialsBinding',
+                credentialsId: "aws-s3-gpuci",
+                accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]])
+                {
+                    sh "./ci/scripts/jenkins_test.sh"
                 }
             }
         }
