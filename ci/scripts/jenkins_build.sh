@@ -21,8 +21,11 @@ source ci/scripts/jenkins_common.sh
 gpuci_logger "Checking S3 conda-pkg cache"
 CONDA_PKG_DIR=/opt/conda/pkgs
 CONDA_ENV_COMMIT=$(git log -n 1 --pretty=format:%H -- docker/conda/environments)
-CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz"
+CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar"
 CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar"
+
+aws s3 mv --no-progress "${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz" ${CONDA_PKG_CACHE_URL}
+exit 1
 
 echo "Checking ${CONDA_PKG_CACHE_URL}"
 set +e
@@ -33,13 +36,14 @@ set -e
 if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
 	cd $(dirname ${CONDA_PKG_DIR})
 	tar xf ${CONDA_PKG_TAR}
+      cd -
 fi
 
 gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
-conda install -q -y -n base -c conda-forge "boa >=0.10" python=${PYTHON_VER}
+mamba install -q -y -n base -c conda-forge "boa >=0.10" python=${PYTHON_VER}
 conda create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 
