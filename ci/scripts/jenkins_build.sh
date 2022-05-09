@@ -18,6 +18,23 @@ set -e
 
 source ci/scripts/jenkins_common.sh
 
+gpuci_logger "Checking S3 conda-pkg cache"
+CONDA_PKG_DIR=/opt/conda/pkgs
+CONDA_ENV_COMMIT=$(git log -n 1 --pretty=format:%H -- docker/conda/environments)
+CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz"
+CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar.gz"
+
+echo "Checking ${CONDA_PKG_CACHE_URL}"
+set +e
+aws s3 cp --no-progress ${CONDA_PKG_CACHE_URL} ${CONDA_PKG_TAR}
+CONDA_PKG_CACHE_CHECK=$?
+set -e
+
+if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
+	cd $(dirname ${CONDA_PKG_DIR})
+	tar xf ${CONDA_PKG_TAR}
+fi
+
 gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
@@ -45,13 +62,13 @@ CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
 CUDF_CONDA_CACHE_URL="${S3_URL}/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
 CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
 
-set +e
 echo "Checking ${CUDF_CONDA_CACHE_URL}"
-aws s3 ls ${CUDF_CONDA_CACHE_URL}
-CACHE_CHECK=$?
+set +e
+aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
+CUDF_CACHE_CHECK=$?
 set -e
 
-if [[ "${CACHE_CHECK}" != "0" ]]; then
+if [[ "${CUDF_CACHE_CHECK}" != "0" ]]; then
       gpuci_logger "Cache miss, Building cuDF"
       mkdir -p ${CONDA_BLD_DIR}
       # The --no-build-id bit is needed for sccache
@@ -68,7 +85,6 @@ if [[ "${CACHE_CHECK}" != "0" ]]; then
       aws s3 cp --no-progress ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
 else
       gpuci_logger "Cache hit, using cached cuDF"
-      aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
       cd $(dirname ${CONDA_BLD_DIR})
       tar xf ${CUDF_CONDA_TAR}
       cd -
@@ -79,6 +95,14 @@ mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-fo
 
 gpuci_logger "Installing other dependencies"
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+
+if [[ "${CONDA_PKG_CACHE_CHECK}" != "0" ]]; then
+      gpuci_logger "Archiving cached conda packages"
+	cd $(dirname ${CONDA_PKG_DIR})
+	tar cvfz ${CONDA_PKG_TAR} $(basename ${CONDA_PKG_DIR})
+	cd -
+	aws s3 cp --no-progress ${CONDA_PKG_TAR} ${CONDA_PKG_CACHE_URL}
+fi
 
 gpuci_logger "Check cmake & ninja"
 cmake --version
