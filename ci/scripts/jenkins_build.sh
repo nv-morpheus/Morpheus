@@ -39,15 +39,35 @@ conda info
 conda config --show-sources
 conda list --show-channel-urls
 
-gpuci_logger "Building cuDF"
 CONDA_BLD_DIR=/opt/conda/conda-bld
-mkdir -p ${CONDA_BLD_DIR}
-ZS=$(sccache --zero-stats)
-# The --no-build-id bit is needed for sccache
-USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
-gpuci_logger "sccache usage for cudf build:"
-sccache --show-stats
+gpuci_logger "Checking S3 cuDF cache"
+CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
+CUDF_CONDA_CACHE_URL="${S3_URL}/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/cudf_conda.tar.gz"
+CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
+
+set +e
+aws s3 ls ${CUDF_CONDA_CACHE_URL}
+CACHE_CHECK=$?
+set -e
+
+if [[ "${CACHE_CHECK}" != "0" ]]; then
+      gpuci_logger "Cache miss, Building cuDF"
+      # The --no-build-id bit is needed for sccache
+      USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
+
+      gpuci_logger "sccache usage for cudf build:"
+      sccache --show-stats
+      ZS=$(sccache --zero-stats)
+
+      gpuci_logger "Archiving cuDF build"
+      tar cfz ${CUDF_CONDA_TAR} ${CONDA_BLD_DIR}
+      aws_cp ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
+else
+      gpuci_logger "Cache hit, using cached cuDF"
+      aws_cp ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
+      tar xf ${CUDF_CONDA_TAR} --directory /opt/conda
+fi
 
 gpuci_logger "Installing cuDF"
 mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-forge libcudf cudf
@@ -60,7 +80,6 @@ cmake --version
 ninja --version
 
 gpuci_logger "Configuring cmake for Morpheus"
-ZS=$(sccache --zero-stats)
 cmake -B build -G Ninja \
       -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
       -DMORPHEUS_BUILD_BENCHMARKS=ON \
@@ -84,9 +103,9 @@ gpuci_logger "Installing Morpheus"
 pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Archiving results"
-mamba pack --force --ignore-missing-files --ignore-editable-packages --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda.tar.gz
+mamba pack --quiet --force --ignore-missing-files --ignore-editable-packages --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda.tar.gz
 tar cfz ${WORKSPACE_TMP}/build.tar.gz build
 
 gpuci_logger "Pushing results to S3"
-aws s3 cp ${WORKSPACE_TMP}/conda.tar.gz "${ARTIFACT_URL}/conda.tar.gz"
-aws s3 cp ${WORKSPACE_TMP}/build.tar.gz "${ARTIFACT_URL}/build.tar.gz"
+aws_cp ${WORKSPACE_TMP}/conda.tar.gz "${ARTIFACT_URL}/conda.tar.gz"
+aws_cp ${WORKSPACE_TMP}/build.tar.gz "${ARTIFACT_URL}/build.tar.gz"

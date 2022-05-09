@@ -25,6 +25,7 @@ echo "Memory"
 # S3 vars
 export S3_URL="s3://rapids-downloads/"
 export ARTIFACT_URL="${S3_URL}ci/morpheus/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+alias aws_cp='aws s3 cp --no-progress'
 
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
