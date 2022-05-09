@@ -3,18 +3,17 @@ pipeline {
     options {
         disableConcurrentBuilds(abortPrevious: true)
     }
-    environment {
-        PARALLEL_LEVEL = '16'
-        PYTHON_VER = '3.8'
-        RAPIDS_VER = '21.10'
-        CUDA_VER = '11.4'
-        HOME = "${WORKSPACE}"
-    }
-
     stages {
         stage('Build') {
             options {
                 timeout(time: 2, unit: 'HOURS')
+            }
+            environment {
+                PARALLEL_LEVEL = '16'
+                PYTHON_VER = '3.8'
+                RAPIDS_VER = '21.10'
+                CUDA_VER = '11.4'
+                HOME = "${WORKSPACE}"
             }
             agent {
                 docker {
@@ -39,6 +38,13 @@ pipeline {
         stage('Test') {
             options {
                 timeout(time: 1, unit: 'HOURS')
+            }
+            environment {
+                PARALLEL_LEVEL = '16'
+                PYTHON_VER = '3.8'
+                RAPIDS_VER = '21.10'
+                CUDA_VER = '11.4'
+                HOME = "${WORKSPACE}"
             }
             agent {
                 docker {
