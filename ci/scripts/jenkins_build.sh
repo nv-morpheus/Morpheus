@@ -22,7 +22,7 @@ gpuci_logger "Checking S3 conda-pkg cache"
 CONDA_PKG_DIR=/opt/conda/pkgs
 CONDA_ENV_COMMIT=$(git log -n 1 --pretty=format:%H -- docker/conda/environments)
 CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz"
-CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar.gz"
+CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar"
 
 echo "Checking ${CONDA_PKG_CACHE_URL}"
 set +e
