@@ -157,15 +157,10 @@ html_logo = '_static/main_nv_logo_square.png'
 html_theme_options = {
     'logo_only': True,
     'display_version': True,
-    # 'prev_next_buttons_location': 'bottom',
-    # 'style_external_links': False,
     'style_nav_header_background': '#000000',
     # Toc options
     'collapse_navigation': False,
-    # 'sticky_navigation': True,
     'navigation_depth': 6,
-    # 'includehidden': False,
-    # 'titles_only': False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
