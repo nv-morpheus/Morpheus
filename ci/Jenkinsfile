@@ -17,7 +17,7 @@ pipeline {
             }
             agent {
                 docker {
-                  image 'gpuci/miniforge-cuda:11.4-devel-ubuntu20.04'
+                  image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
                   label 'driver-495'
                   args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                 }
