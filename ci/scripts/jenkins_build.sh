@@ -18,6 +18,19 @@ set -e
 
 source ci/scripts/jenkins_common.sh
 
+#WIP
+CONDA_BLD_DIR=/opt/conda/conda-bld
+CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
+CUDF_CONDA_CACHE_URL="${S3_URL}/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
+CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
+aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
+tar xf ${CUDF_CONDA_TAR} --directory /
+cd /opt/conda
+rm -f ${CUDF_CONDA_TAR}
+tar cfz ${CUDF_CONDA_TAR} conda-bld
+aws s3 cp --no-progress ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
+exit 1
+
 gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
@@ -39,9 +52,8 @@ conda info
 conda config --show-sources
 conda list --show-channel-urls
 
-CONDA_BLD_DIR=/opt/conda/conda-bld
-
 gpuci_logger "Checking S3 cuDF cache"
+CONDA_BLD_DIR=/opt/conda/conda-bld
 CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
 CUDF_CONDA_CACHE_URL="${S3_URL}/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
 CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
@@ -54,6 +66,7 @@ set -e
 
 if [[ "${CACHE_CHECK}" != "0" ]]; then
       gpuci_logger "Cache miss, Building cuDF"
+      mkdir -p ${CONDA_BLD_DIR}
       # The --no-build-id bit is needed for sccache
       USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
@@ -67,8 +80,7 @@ if [[ "${CACHE_CHECK}" != "0" ]]; then
 else
       gpuci_logger "Cache hit, using cached cuDF"
       aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
-      tar xf ${CUDF_CONDA_TAR}
-      ls ${CONDA_BLD_DIR}
+      tar xf ${CUDF_CONDA_TAR} --directory /
 fi
 
 gpuci_logger "Installing cuDF"
