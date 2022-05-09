@@ -23,8 +23,8 @@ echo "Memory"
 /usr/bin/nvidia-smi
 
 # S3 vars
-export S3_URL="s3://rapids-downloads/"
-export ARTIFACT_URL="${S3_URL}ci/morpheus/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+export S3_URL="s3://rapids-downloads/ci/morpheus"
+export ARTIFACT_URL="${S3_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
 
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}

@@ -18,6 +18,9 @@ set -e
 
 source ci/scripts/jenkins_common.sh
 
+aws s3 mv s3://rapids-downloads//11.4/3.8/21.10/be89a85fc915750c887f6dd48a7f7b9f8317a6d4/x86_64/cudf_conda.tar.gz s3://rapids-downloads/ci/morpheus/cudf/11.4/3.8/21.10/be89a85fc915750c887f6dd48a7f7b9f8317a6d4/x86_64/cudf_conda.tar.gz
+exit 1
+
 gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
@@ -43,7 +46,7 @@ CONDA_BLD_DIR=/opt/conda/conda-bld
 
 gpuci_logger "Checking S3 cuDF cache"
 CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
-CUDF_CONDA_CACHE_URL="${S3_URL}/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
+CUDF_CONDA_CACHE_URL="${S3_URL}/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
 CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
 
 set +e
