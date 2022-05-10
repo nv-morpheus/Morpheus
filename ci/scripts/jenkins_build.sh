@@ -24,7 +24,6 @@ CACHED_CONDA_PKG_DIR=/opt/conda/cached_pkgs
 CONDA_ENV_COMMIT=$(git log -n 1 --pretty=format:%H -- docker/conda/environments)
 CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz"
 CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar.gz"
-mkdir -p ${CACHED_CONDA_PKG_DIR}
 
 echo "Checking ${CONDA_PKG_CACHE_URL}"
 set +e
@@ -33,11 +32,10 @@ CONDA_PKG_CACHE_CHECK=$?
 set -e
 
 if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
-	cd $(dirname ${CACHED_CONDA_PKG_DIR})
-	tar xf ${CONDA_PKG_TAR} --directory ${CACHED_CONDA_PKG_DIR}
-      cd -
-      ls  ${CACHED_CONDA_PKG_DIR}
-      find  ${CACHED_CONDA_PKG_DIR}
+	tar xf ${CONDA_PKG_TAR} --directory /tmp
+      mv /tmp/pkgs ${CACHED_CONDA_PKG_DIR}
+else
+      mkdir -p ${CACHED_CONDA_PKG_DIR}
 fi
 
 
