@@ -25,4 +25,4 @@ gpuci_logger "Runing Python style checks"
 ci/scripts/python_checks.sh
 
 gpuci_logger "Checking copyright headers"
-python ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits "origin/${CHANGE_TARGET}" ${GIT_COMMIT}
+python ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
