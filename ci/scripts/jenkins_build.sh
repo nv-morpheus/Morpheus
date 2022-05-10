@@ -27,9 +27,8 @@ CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar.gz"
 
 echo "Checking ${CONDA_PKG_CACHE_URL}"
 set +e
-#aws s3 cp --no-progress ${CONDA_PKG_CACHE_URL} ${CONDA_PKG_TAR}
-#CONDA_PKG_CACHE_CHECK=$?
-CONDA_PKG_CACHE_CHECK=1
+aws s3 cp --no-progress ${CONDA_PKG_CACHE_URL} ${CONDA_PKG_TAR}
+CONDA_PKG_CACHE_CHECK=$?
 set -e
 
 if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
