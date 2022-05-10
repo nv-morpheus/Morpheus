@@ -17,7 +17,6 @@
 import os
 from unittest import mock
 
-import dfencoder
 import numpy as np
 import pytest
 

@@ -81,7 +81,8 @@ class LinearPipeline(_pipeline.Pipeline):
         """
 
         assert len(self._linear_stages) > 0, "A source must be set on a LinearPipeline before adding any stages"
-        assert isinstance(stage, _pipeline.SinglePortStage), "Only `SinglePortStage` stages are accepted in `add_stage()`"
+        assert isinstance(stage, _pipeline.SinglePortStage), ("Only `SinglePortStage` stages are accepted in "
+                                                              "`add_stage()`")
 
         # Make an edge between the last node and this one
         self.add_edge(self._linear_stages[-1], stage)

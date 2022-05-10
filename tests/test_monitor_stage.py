@@ -36,7 +36,9 @@ def test_constructor(config):
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
 
-    two_x = lambda x: x * 2
+    def two_x(x):
+        return x * 2
+
     m = MonitorStage(config, description="Test Description", smoothing=0.7, unit='units', determine_count_fn=two_x)
     assert m._description == "Test Description"
     assert m._smoothing == 0.7
