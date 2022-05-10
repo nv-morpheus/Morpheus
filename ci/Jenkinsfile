@@ -18,9 +18,7 @@ pipeline {
                 }
             }
             steps {
-                {
-                    sh "./ci/scripts/jenkins_build.sh"
-                }
+                sh "./ci/scripts/jenkins_build.sh"
             }
         }
         stage('Build') {
