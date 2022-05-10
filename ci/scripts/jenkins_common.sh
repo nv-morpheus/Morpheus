@@ -20,21 +20,21 @@ export MORPHEUS_ROOT=$(pwd)
 echo "Procs: $(nproc)"
 echo "Memory"
 
-
-env | sort
-
 /usr/bin/free -g
-/usr/bin/nvidia-smi
 
-# S3 vars
-export S3_URL="s3://rapids-downloads/ci/morpheus"
-export ARTIFACT_URL="${S3_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+if [[ "${STAGE_NAME}" != "CHECK" ]]; then
+    /usr/bin/nvidia-smi
 
-# Set sccache env vars
-export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
-export SCCACHE_BUCKET=rapids-sccache
-export SCCACHE_REGION=us-west-2
-export SCCACHE_IDLE_TIMEOUT=32768
-#export SCCACHE_LOG=debug
+    # S3 vars
+    export S3_URL="s3://rapids-downloads/ci/morpheus"
+    export ARTIFACT_URL="${S3_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+
+    # Set sccache env vars
+    export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
+    export SCCACHE_BUCKET=rapids-sccache
+    export SCCACHE_REGION=us-west-2
+    export SCCACHE_IDLE_TIMEOUT=32768
+    #export SCCACHE_LOG=debug
+fi
 
 env | sort
