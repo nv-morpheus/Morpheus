@@ -17,8 +17,10 @@ pipeline {
                   label 'cpu'
                 }
             }
-            {
-                sh "./ci/scripts/jenkins_build.sh"
+            steps {
+                {
+                    sh "./ci/scripts/jenkins_build.sh"
+                }
             }
         }
         stage('Build') {
