@@ -139,7 +139,6 @@ pip install ${MORPHEUS_ROOT}/build
 
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda.tar.gz
-tar cfz ${WORKSPACE_TMP}/build.tar.gz build
 
 gpuci_logger "Pushing results to ${ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda.tar.gz" "${ARTIFACT_URL}/conda.tar.gz"
