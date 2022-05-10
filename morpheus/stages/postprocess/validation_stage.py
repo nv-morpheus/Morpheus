@@ -25,8 +25,8 @@ from neo.core import operators as ops
 
 import cudf
 
-from morpheus.config import Config
 from morpheus._lib.file_types import FileTypes
+from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage

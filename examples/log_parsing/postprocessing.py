@@ -19,9 +19,9 @@ from collections import defaultdict
 import neo
 import numpy as np
 import pandas as pd
+
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
-
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage

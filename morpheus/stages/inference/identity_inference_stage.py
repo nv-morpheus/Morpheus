@@ -17,11 +17,11 @@ import typing
 import cupy as cp
 
 from morpheus.config import Config
-from morpheus.stages.inference.inference_stage import InferenceStage
-from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 

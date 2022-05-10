@@ -12,22 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
 import typing
 
 import cupy as cp
-from dfencoder.autoencoder import AutoEncoder
 
 from morpheus.config import Config
-from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
-from morpheus.stages.inference.inference_stage import InferenceStage
-from morpheus.stages.inference.inference_stage import InferenceWorker
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
-from morpheus.messages import UserMessageMeta
+from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
+
 
 class _AutoEncoderInferenceWorker(InferenceWorker):
 
