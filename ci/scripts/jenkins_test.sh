@@ -30,17 +30,14 @@ conda list --show-channel-urls
 
 gpuci_logger "Downloading build artifacts"
 aws s3 cp --no-progress "${ARTIFACT_URL}/conda.tar.gz" "${WORKSPACE_TMP}/conda.tar.gz"
-aws s3 cp --no-progress "${ARTIFACT_URL}/build.tar.gz" "${WORKSPACE_TMP}/build.tar.gz"
 
 gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/conda.tar.gz" --directory /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/build.tar.gz" --directory ./
 
 gpuci_logger "Setting test env"
 conda activate morpheus
 conda-unpack
-pip install -e ${MORPHEUS_ROOT}
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
