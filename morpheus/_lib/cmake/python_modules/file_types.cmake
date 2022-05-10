@@ -29,8 +29,6 @@ morpheus_add_pybind11_module(
       ${MORPHEUS_LIB_INSTALL_DIR}
 )
 
-list(APPEND PYBIND11_TARGETS ${file_types_target})
-
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
   inplace_build_copy(${file_types_target} ${MORPHEUS_LIB_ROOT})
 endif()
