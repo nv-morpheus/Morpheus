@@ -36,6 +36,8 @@ if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
 	cd $(dirname ${CACHED_CONDA_PKG_DIR})
 	tar xf ${CONDA_PKG_TAR} --directory ${CACHED_CONDA_PKG_DIR}
       cd -
+      ls  ${CACHED_CONDA_PKG_DIR}
+      find  ${CACHED_CONDA_PKG_DIR}
 fi
 
 
