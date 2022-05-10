@@ -38,6 +38,7 @@ if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
       cd -
 fi
 
+
 gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs ${CACHED_CONDA_PKG_DIR}
 conda config --add pkgs_dirs ${CONDA_PKG_DIR}
