@@ -291,6 +291,3 @@ def listFilesToCheck(filesDirs, filter=None):
                 if filter is None or filter(f_):
                     allFiles.append(f_)
     return allFiles
-
-import pprint
-
