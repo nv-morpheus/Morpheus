@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# If set, this disables all CPP class creation
-import os
-
-NO_CPP = os.getenv("MORPHEUS_NO_CPP", 'False').lower() in ('true', '1', 't')
-
 # isort: off
 
 from morpheus.messages.message_base import MessageBase

@@ -14,11 +14,9 @@
 
 import abc
 import dataclasses
-import os
 import typing
 
 from morpheus.config import CppConfig
-from morpheus.messages import NO_CPP
 
 
 class MessageImpl(abc.ABCMeta):
@@ -35,7 +33,7 @@ class MessageImpl(abc.ABCMeta):
         result = super().__new__(cls, classname, bases, classdict)
 
         # Set the C++ class type into the object to use for creation later if desired
-        result._cpp_class = None if NO_CPP else cpp_class
+        result._cpp_class = cpp_class
 
         # Register the C++ class as an instances of this metaclass to support isinstance(cpp_instance, PythonClass)
         if (cpp_class is not None):
