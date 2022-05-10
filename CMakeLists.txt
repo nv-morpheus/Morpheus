@@ -88,6 +88,7 @@ file(GLOB_RECURSE MORPHEUS_PYTHON_FILES
 )
 
 set(MORPHEUS_ROOT_PYTHON_FILES
+  "py.typed"
   "pyproject.toml"
   "setup.cfg"
   "setup.py"
