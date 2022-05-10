@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.file_types import FileTypes
+from morpheus._lib.file_types import FileTypes
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage

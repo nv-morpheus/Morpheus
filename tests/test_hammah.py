@@ -17,21 +17,23 @@
 import os
 from unittest import mock
 
+import dfencoder
 import numpy as np
 import pytest
 
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general.general_stages import AddScoresStage
-from morpheus.stages.general.general_stages import MonitorStage
+from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.validation_stage import ValidationStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
+from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess import preprocess_ae_stage
+from morpheus.stages.preprocess import train_ae_stage
 from utils import TEST_DIRS
 from utils import calc_error_val
 
@@ -41,8 +43,9 @@ from utils import calc_error_val
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules(preprocess_ae_stage)
+@pytest.mark.reload_modules(train_ae_stage)
 @pytest.mark.usefixtures("reload_modules")
-@mock.patch('morpheus.pipeline.preprocess.autoencoder.AutoEncoder')
+@mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_hammah_roleg(mock_ae, config, tmp_path):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'hammah_roleg_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'hammah_roleg_anomaly_score.csv'),
@@ -79,7 +82,7 @@ def test_hammah_roleg(mock_ae, config, tmp_path):
 
     pipe = LinearPipeline(config)
     pipe.set_source(CloudTrailSourceStage(config, input_glob=input_glob, sort_glob=True))
-    pipe.add_stage(preprocess_ae_stage.TrainAEStage(config, train_data_glob=train_data_glob, seed=42, sort_glob=True))
+    pipe.add_stage(train_ae_stage.TrainAEStage(config, train_data_glob=train_data_glob, seed=42, sort_glob=True))
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_stage(AddScoresStage(config))
@@ -115,8 +118,9 @@ def test_hammah_roleg(mock_ae, config, tmp_path):
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules(preprocess_ae_stage)
+@pytest.mark.reload_modules(train_ae_stage)
 @pytest.mark.usefixtures("reload_modules")
-@mock.patch('morpheus.pipeline.preprocess.autoencoder.AutoEncoder')
+@mock.patch('morpheus.stages.preprocess.train_ae_stage.AutoEncoder')
 def test_hammah_user123(mock_ae, config, tmp_path):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'hammah_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'hammah_user123_anomaly_score.csv'),
@@ -152,7 +156,7 @@ def test_hammah_user123(mock_ae, config, tmp_path):
 
     pipe = LinearPipeline(config)
     pipe.set_source(CloudTrailSourceStage(config, input_glob=input_glob, sort_glob=True))
-    pipe.add_stage(preprocess_ae_stage.TrainAEStage(config, train_data_glob=train_data_glob, seed=42, sort_glob=True))
+    pipe.add_stage(train_ae_stage.TrainAEStage(config, train_data_glob=train_data_glob, seed=42, sort_glob=True))
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_stage(AddScoresStage(config))

@@ -18,9 +18,7 @@ import os
 import typing
 
 from morpheus.config import CppConfig
-
-# If set, this disables all CPP class creation
-NO_CPP = os.getenv("MORPHEUS_NO_CPP", 'False').lower() in ('true', '1', 't')
+from morpheus.messages import NO_CPP
 
 
 class MessageImpl(abc.ABCMeta):

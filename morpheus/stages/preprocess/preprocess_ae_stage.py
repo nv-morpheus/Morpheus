@@ -33,15 +33,14 @@ from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.pipeline import MultiMessageStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus._lib.file_types import FileTypes
+from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.inference.auto_encoder_inference_stage import MultiInferenceAEMessage
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
-
 
 
 class PreprocessAEStage(PreprocessBaseStage):

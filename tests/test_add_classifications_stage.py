@@ -19,7 +19,7 @@ from unittest import mock
 import cupy as cp
 import pytest
 
-from morpheus.stages.general.general_stages import AddClassificationsStage
+from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 
 
 def test_constructor(config):

@@ -28,8 +28,8 @@ from neo.core import operators as ops
 from morpheus.config import Config
 from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import MultiResponseMessage
-from morpheus.pipeline.pipeline import SinglePortStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 

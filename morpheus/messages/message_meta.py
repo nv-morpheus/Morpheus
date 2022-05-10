@@ -46,3 +46,19 @@ class MessageMeta(MessageBase, cpp_class=neom.MessageMeta):
         """
 
         return len(self.df)
+
+
+@dataclasses.dataclass
+class UserMessageMeta(MessageMeta, cpp_class=None):
+    """
+    This class extends MessageMeta to also hold userid corresponding to batched metadata.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input rows in dataframe.
+    user_id : str
+        User id.
+
+    """
+    user_id: str

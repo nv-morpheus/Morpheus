@@ -32,11 +32,12 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline import Stage
-from morpheus.pipeline.pipeline import SinglePortStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.logging import deprecated_stage_warning
 
 logger = logging.getLogger(__name__)
+
 
 class FilterDetectionsStage(SinglePortStage):
     """

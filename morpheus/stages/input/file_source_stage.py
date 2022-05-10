@@ -20,13 +20,13 @@ import typing_utils
 from neo.core import operators as ops
 
 import morpheus._lib.stages as neos
+from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
 from morpheus.config import CppConfig
-from morpheus.pipeline.file_types import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
-from morpheus.pipeline.pipeline import SingleOutputSource
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class FileSourceStage(SingleOutputSource):
     iterative: boolean
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
-    file_type : `morpheus.pipeline.file_types.FileTypes`, default = 'auto'
+    file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1

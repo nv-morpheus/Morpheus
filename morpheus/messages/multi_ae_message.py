@@ -13,36 +13,17 @@
 # limitations under the License.
 
 import dataclasses
-import glob
 import logging
-import typing
-from functools import partial
 
-import cupy as cp
-import dill
-import neo
-import numpy as np
-import pandas as pd
-import torch
 from dfencoder import AutoEncoder
-from neo.core import operators as ops
 
-from morpheus.config import Config
-from morpheus.messages import InferenceMemoryAE
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import UserMessageMeta
-from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.pipeline import MultiMessageStage
-from morpheus.pipeline.pipeline import StreamPair
-from morpheus.stages.inference.auto_encoder_inference_stage import MultiInferenceAEMessage
-from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
+import morpheus.messages as _messages
 
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class MultiAEMessage(MultiMessage):
+class MultiAEMessage(_messages.MultiMessage):
 
     model: AutoEncoder
 

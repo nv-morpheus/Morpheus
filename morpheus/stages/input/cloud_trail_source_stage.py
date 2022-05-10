@@ -25,13 +25,13 @@ import pandas as pd
 from neo.core import operators as ops
 
 from morpheus._lib.common import FiberQueue
+from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
-from morpheus.messages import UserMessageMeta
-from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.pipeline import SingleOutputSource
-from morpheus.pipeline.pipeline import StreamPair
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.messages import UserMessageMeta
+from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class CloudTrailSourceStage(SingleOutputSource):
         files. Any new files that are added that match the glob will then be processed.
     max_files: int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
-    file_type : `morpheus.pipeline.file_types.FileTypes`, default = 'FileTypes.Auto'.
+    file_type : `morpheus._lib.file_types.FileTypes`, default = 'FileTypes.Auto'.
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1
@@ -129,7 +129,7 @@ class CloudTrailSourceStage(SingleOutputSource):
         ----------
         filename : str
             Path to a file to read.
-        file_type : `morpheus.pipeline.file_types.FileTypes`
+        file_type : `morpheus._lib.file_types.FileTypes`
             What type of file to read. Leave as Auto to auto detect based on the file extension.
 
         Returns

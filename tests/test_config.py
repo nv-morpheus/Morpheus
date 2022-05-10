@@ -18,8 +18,6 @@ import json
 import os
 from unittest import mock
 
-import pytest
-
 import morpheus
 
 # Using morpheus.config to distinguish between the config package and the pytest fixture of the same name

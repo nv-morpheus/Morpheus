@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
 import glob
 import logging
 import typing
-from functools import partial
 
-import cupy as cp
 import dill
 import neo
 import numpy as np
@@ -27,18 +24,16 @@ import torch
 from dfencoder import AutoEncoder
 from neo.core import operators as ops
 
+from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
-from morpheus.messages import InferenceMemoryAE
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import UserMessageMeta
-from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.pipeline import MultiMessageStage
-from morpheus.pipeline.pipeline import StreamPair
-from morpheus.stages.inference.auto_encoder_inference_stage import MultiInferenceAEMessage
+from morpheus.messages.message_meta import UserMessageMeta
+from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 
 logger = logging.getLogger(__name__)
+
 
 class _UserModelManager(object):
 
@@ -191,11 +186,11 @@ class TrainAEStage(MultiMessageStage):
 
         if (x.user_id not in self._user_models):
             self._user_models[x.user_id] = _UserModelManager(self._config,
-                                                            x.user_id,
-                                                            False,
-                                                            self._train_epochs,
-                                                            self._train_max_history,
-                                                            self._seed)
+                                                             x.user_id,
+                                                             False,
+                                                             self._train_epochs,
+                                                             self._train_max_history,
+                                                             self._seed)
 
         model = self._user_models[x.user_id].train(x.df)
 
@@ -230,11 +225,11 @@ class TrainAEStage(MultiMessageStage):
 
             for user_id, df in user_to_df.items():
                 self._user_models[user_id] = _UserModelManager(self._config,
-                                                              user_id,
-                                                              True,
-                                                              self._train_epochs,
-                                                              self._train_max_history,
-                                                              self._seed)
+                                                               user_id,
+                                                               True,
+                                                               self._train_epochs,
+                                                               self._train_max_history,
+                                                               self._seed)
 
                 self._user_models[user_id].train(df)
 

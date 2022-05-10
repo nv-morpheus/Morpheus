@@ -26,10 +26,7 @@ from morpheus import cli
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.stages.general.general_stages import AddClassificationsStage
-from morpheus.stages.general.general_stages import AddScoresStage
-from morpheus.stages.general.general_stages import FilterDetectionsStage
-from morpheus.stages.general.general_stages import MonitorStage
+from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
 from morpheus.stages.inference.identity_inference_stage import IdentityInferenceStage
 from morpheus.stages.inference.pytorch_inference_stage import PyTorchInferenceStage
@@ -37,18 +34,21 @@ from morpheus.stages.inference.triton_inference_stage import TritonInferenceStag
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
-from morpheus.stages.postprocess.validation_stage import ValidationStage
+from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
+from morpheus.stages.postprocess.validation_stage import ValidationStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.preprocess.drop_null_stage import DropNullStage
 from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
-from morpheus.stages.preprocess.preprocess_ae_stage import TrainAEStage
-from morpheus.stages.preprocess.preprocessing import DeserializeStage
-from morpheus.stages.preprocess.preprocessing import DropNullStage
-from morpheus.stages.preprocess.preprocessing import PreprocessFILStage
-from morpheus.stages.preprocess.preprocessing import PreprocessNLPStage
+from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
+from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
+from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from utils import TEST_DIRS
 
 GENERAL_ARGS = ['run', '--num_threads=12', '--pipeline_batch_size=1024', '--model_max_batch_size=1024', '--use_cpp=0']

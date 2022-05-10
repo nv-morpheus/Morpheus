@@ -30,11 +30,9 @@ from tqdm import tqdm
 
 import cudf
 
+import morpheus.pipeline as _pipeline
 from morpheus.config import Config
-from morpheus.config import CppConfig
-from morpheus.messages import MultiMessage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.pipeline.stream_wrapper import StreamWrapper
 from morpheus.utils.atomic_integer import AtomicInteger
 from morpheus.utils.type_utils import _DecoratorType
 from morpheus.utils.type_utils import greatest_ancestor
@@ -43,7 +41,7 @@ from morpheus.utils.type_utils import pretty_print_type_name
 logger = logging.getLogger(__name__)
 
 
-class Stage(StreamWrapper):
+class Stage(_pipeline.StreamWrapper):
     """
     This class serves as the base for all pipeline stage implementations that are not source objects.
 

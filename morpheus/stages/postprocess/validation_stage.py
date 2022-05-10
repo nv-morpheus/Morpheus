@@ -26,11 +26,11 @@ from neo.core import operators as ops
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.file_types import FileTypes
+from morpheus._lib.file_types import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiMessage
-from morpheus.pipeline.pipeline import MultiMessageStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 

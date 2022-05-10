@@ -24,15 +24,15 @@ from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general.general_stages import AddClassificationsStage
-from morpheus.stages.general.general_stages import MonitorStage
+from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
-from morpheus.stages.preprocess.preprocessing import DeserializeStage
-from morpheus.stages.preprocess.preprocessing import PreprocessFILStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from utils import TEST_DIRS
 from utils import calc_error_val
 

@@ -26,8 +26,8 @@ from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
-from morpheus.pipeline.pipeline import MultiMessageStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 

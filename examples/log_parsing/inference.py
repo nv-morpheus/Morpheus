@@ -34,7 +34,7 @@ from morpheus.stages.inference.triton_inference_stage import InputWrapper
 from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)

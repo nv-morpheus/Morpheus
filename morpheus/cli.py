@@ -697,7 +697,7 @@ def monitor(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general.general_stages import MonitorStage
+    from morpheus.stages.general.monitor_stage import MonitorStage
 
     stage = MonitorStage(config, **kwargs)
 
@@ -714,7 +714,7 @@ def buffer(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general.general_stages import BufferStage
+    from morpheus.stages.general.buffer_stage import BufferStage
 
     stage = BufferStage(config, **kwargs)
 
@@ -731,7 +731,7 @@ def dropna(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.preprocess.preprocessing import DropNullStage
+    from morpheus.stages.preprocess.drop_null_stage import DropNullStage
 
     stage = DropNullStage(config, **kwargs)
 
@@ -750,7 +750,7 @@ def trigger(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general.general_stages import TriggerStage
+    from morpheus.stages.general.trigger_stage import TriggerStage
 
     stage = TriggerStage(config, **kwargs)
 
@@ -767,7 +767,7 @@ def delay(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general.general_stages import DelayStage
+    from morpheus.stages.general.delay_stage import DelayStage
 
     stage = DelayStage(config, **kwargs)
 
@@ -783,7 +783,7 @@ def deserialize(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.preprocess.preprocessing import DeserializeStage
+    from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
     stage = DeserializeStage(config, **kwargs)
 
@@ -816,7 +816,7 @@ def train_ae(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.preprocess.preprocess_ae_stage import TrainAEStage
+    from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 
     stage = TrainAEStage(config, **kwargs)
 
@@ -855,7 +855,7 @@ def preprocess_nlp(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.preprocess.preprocessing import PreprocessNLPStage
+    from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
     stage = PreprocessNLPStage(config, **kwargs)
 
@@ -871,7 +871,7 @@ def preprocess_fil(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.preprocess.preprocessing import PreprocessFILStage
+    from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
     stage = PreprocessFILStage(config, **kwargs)
 
@@ -1005,7 +1005,7 @@ def add_class(ctx: click.Context, **kwargs):
 
         del kwargs["label"]
 
-    from morpheus.stages.general.general_stages import AddClassificationsStage
+    from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 
     stage = AddClassificationsStage(config, **kwargs)
 
@@ -1040,7 +1040,7 @@ def add_scores(ctx: click.Context, **kwargs):
 
         del kwargs["label"]
 
-    from morpheus.stages.general.general_stages import AddScoresStage
+    from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 
     stage = AddScoresStage(config, **kwargs)
 
@@ -1061,7 +1061,7 @@ def filter_command(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.general.general_stages import FilterDetectionsStage
+    from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 
     stage = FilterDetectionsStage(config, **kwargs)
 

@@ -15,22 +15,13 @@
 import dataclasses
 import typing
 
-import cupy as cp
 from dfencoder.autoencoder import AutoEncoder
 
-from morpheus.config import Config
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiResponseAEMessage
-from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
-from morpheus.messages import UserMessageMeta
-from morpheus.stages.inference.inference_stage import InferenceStage
-from morpheus.stages.inference.inference_stage import InferenceWorker
-from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
+import morpheus.messages as _messages
 
 
 @dataclasses.dataclass
-class MultiInferenceAEMessage(MultiInferenceMessage):
+class MultiInferenceAEMessage(_messages.MultiInferenceMessage):
     """
     A stronger typed version of `MultiInferenceMessage` that is used for AE workloads. Helps ensure the
     proper inputs are set and eases debugging. Associates a user ID with a message.
@@ -45,7 +36,7 @@ class MultiInferenceAEMessage(MultiInferenceMessage):
 
         """
 
-        return typing.cast(UserMessageMeta, self.meta).user_id
+        return typing.cast(_messages.UserMessageMeta, self.meta).user_id
 
     @property
     def input(self):

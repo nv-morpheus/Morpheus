@@ -21,6 +21,8 @@ import cudf
 
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
+from morpheus.io.utils import filter_null_data
+
 
 def cudf_json_onread_cleanup(x: typing.Union[cudf.DataFrame, pd.DataFrame]):
     """

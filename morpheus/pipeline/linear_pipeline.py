@@ -12,39 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-import collections
-import inspect
 import logging
-import os
-import signal
-import time
 import typing
-from abc import ABC
-from abc import abstractmethod
 
-import neo
-import networkx
-import typing_utils
-from tqdm import tqdm
-
-import cudf
-
+import morpheus.pipeline as _pipeline
 from morpheus.config import Config
-from morpheus.config import CppConfig
-from morpheus.messages import MultiMessage
-from morpheus.pipeline.pipeline import Pipeline
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.source_stage import SourceStage
-from morpheus.pipeline.stream_wrapper import StreamWrapper
-from morpheus.utils.atomic_integer import AtomicInteger
-from morpheus.utils.type_utils import _DecoratorType
-from morpheus.utils.type_utils import greatest_ancestor
-from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
-class LinearPipeline(Pipeline):
+
+class LinearPipeline(_pipeline.Pipeline):
     """
     This class is used to build linear pipelines where we have a single output source stage followed by stages that are
     executed sequentially in the order they were added.
@@ -58,9 +35,9 @@ class LinearPipeline(Pipeline):
     def __init__(self, c: Config):
         super().__init__(c)
 
-        self._linear_stages: typing.List[StreamWrapper] = []
+        self._linear_stages: typing.List[_pipeline.StreamWrapper] = []
 
-    def set_source(self, source: SourceStage):
+    def set_source(self, source: _pipeline.SourceStage):
         """
         Set a pipeline's source stage to consume messages before it begins executing stages. This must be
         called once before `build_and_start`.
@@ -91,7 +68,7 @@ class LinearPipeline(Pipeline):
         # Store this as the first one in the linear stages. Must be index 0
         self._linear_stages.append(source)
 
-    def add_stage(self, stage: SinglePortStage):
+    def add_stage(self, stage: _pipeline.SinglePortStage):
         """
         Add stages to the pipeline. All `Stage` classes added with this method will be executed sequentially
         inthe order they were added.
@@ -104,7 +81,7 @@ class LinearPipeline(Pipeline):
         """
 
         assert len(self._linear_stages) > 0, "A source must be set on a LinearPipeline before adding any stages"
-        assert isinstance(stage, SinglePortStage), "Only `SinglePortStage` stages are accepted in `add_stage()`"
+        assert isinstance(stage, _pipeline.SinglePortStage), "Only `SinglePortStage` stages are accepted in `add_stage()`"
 
         # Make an edge between the last node and this one
         self.add_edge(self._linear_stages[-1], stage)

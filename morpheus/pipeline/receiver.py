@@ -12,34 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-import collections
-import inspect
 import logging
-import os
-import signal
-import time
 import typing
-from abc import ABC
-from abc import abstractmethod
 
-import neo
-import networkx
 import typing_utils
-from tqdm import tqdm
 
-import cudf
-
-from morpheus.config import Config
-from morpheus.config import CppConfig
-from morpheus.messages import MultiMessage
-from morpheus.pipeline.stream_wrapper import StreamWrapper
-from morpheus.utils.atomic_integer import AtomicInteger
-from morpheus.utils.type_utils import _DecoratorType
+import morpheus.pipeline as _pipeline
+from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_utils import greatest_ancestor
-from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
+
 
 class Receiver():
     """
@@ -53,7 +36,7 @@ class Receiver():
             Receiver port number.
     """
 
-    def __init__(self, parent: "StreamWrapper", port_number: int):
+    def __init__(self, parent: "_pipeline.StreamWrapper", port_number: int):
 
         self._parent = parent
         self.port_number = port_number
@@ -63,7 +46,7 @@ class Receiver():
         self._input_type = None
         self._input_stream = None
 
-        self._input_senders: typing.List[Sender] = []
+        self._input_senders: typing.List[_pipeline.Sender] = []
 
     @property
     def parent(self):
