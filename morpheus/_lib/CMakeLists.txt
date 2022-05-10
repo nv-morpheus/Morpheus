@@ -37,6 +37,9 @@ include(cmake/libraries/cudf_helpers.cmake)
 include(cmake/libraries/morpheus.cmake)
 
 ########### py_morpheus ########
+# Create list to store all pybind11 targets
+set(PYBIND11_TARGETS "")
+
 #----------morpheus._lib.stages---------
 include(cmake/python_modules/stages.cmake)
 
@@ -48,5 +51,60 @@ include(cmake/python_modules/common.cmake)
 
 #----------morpheus._lib.file_types---------
 include(cmake/python_modules/file_types.cmake)
+
+# message(STATUS "PYBIND11_TARGETS: ${PYBIND11_TARGETS}")
+
+# # Build up the list of output files
+# set(stub_output_files "")
+
+# foreach(pybind11_target ${PYBIND11_TARGETS})
+
+#   # Determine the stub file in the build folder
+#   string(REPLACE "." "/" pybind11_target_path ${pybind11_target})
+
+#   message(STATUS "pybind11_target_path: ${pybind11_target_path}")
+
+#   set(build_stub_file "${PROJECT_BINARY_DIR}/${pybind11_target_path}/__init__.pyi")
+
+#   message(STATUS "build_stub_file: ${build_stub_file}")
+#   message(STATUS "Stub gen command: ${Python3_EXECUTABLE} -m pybind11_stubgen ${pybind11_target} --no-setup-py -o ${pybind11_target_path} --root-module-suffix \"\"")
+
+#   # Create the custom command to generate the stub
+#   add_custom_command(
+#     OUTPUT  ${build_stub_file}
+#     COMMAND ${Python3_EXECUTABLE} -m pybind11_stubgen ${pybind11_target} --no-setup-py -o ./ --root-module-suffix \"\"
+#     DEPENDS ${pybind11_target} copy_python_source
+#     COMMENT "Building stub for python module ${pybind11_target}..."
+#     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+#   )
+
+#   # Add the build stub to the outputs
+#   list(APPEND stub_output_files ${build_stub_file})
+
+#   if(MORPHEUS_PYTHON_INPLACE_BUILD)
+#     # Determine the src stub path
+#     set(src_stub_file "${PROJECT_SOURCE_DIR}/${pybind11_target_path}/__init__.pyi")
+
+#     # Copy from build back to src
+#     add_custom_command(
+#       OUTPUT  ${src_stub_file}
+#       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${build_stub_file} ${src_stub_file}
+#       DEPENDS ${build_stub_file}
+#       COMMENT "Copying stub ${build_stub_file} to ${src_stub_file}"
+#     )
+
+#     # Add the src stub to the outputs
+#     list(APPEND stub_output_files ${src_stub_file})
+#   endif()
+
+# endforeach()
+
+# message(STATUS "stub_output_files: ${stub_output_files}")
+
+# # Add a custom target to depend on the custom command
+# add_custom_target(build_pybind11_stubs ALL
+#   DEPENDS ${stub_output_files}
+# )
+
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
