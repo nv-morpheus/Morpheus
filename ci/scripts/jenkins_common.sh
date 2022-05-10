@@ -19,6 +19,10 @@ source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=$(pwd)
 echo "Procs: $(nproc)"
 echo "Memory"
+
+
+env | sort
+
 /usr/bin/free -g
 /usr/bin/nvidia-smi
 

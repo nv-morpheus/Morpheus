@@ -16,7 +16,6 @@
 
 set -e
 
-#
 source ci/scripts/jenkins_common.sh
 
 gpuci_logger "Installing CI dependencies"
