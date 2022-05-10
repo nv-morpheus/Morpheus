@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Morpheus dependencies only needed during a CI build.
-#
+# Morpheus dependencies only needed during a CI build
 name: morpheus
 channels:
     - conda-forge
