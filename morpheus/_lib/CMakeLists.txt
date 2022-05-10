@@ -37,7 +37,6 @@ include(cmake/libraries/cudf_helpers.cmake)
 include(cmake/libraries/morpheus.cmake)
 
 ########### py_morpheus ########
-
 #----------morpheus._lib.stages---------
 include(cmake/python_modules/stages.cmake)
 
@@ -49,6 +48,5 @@ include(cmake/python_modules/common.cmake)
 
 #----------morpheus._lib.file_types---------
 include(cmake/python_modules/file_types.cmake)
-
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

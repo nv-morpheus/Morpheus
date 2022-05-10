@@ -51,7 +51,7 @@ PYBIND11_MODULE(stages, m)
     neo::pyneo::import(m, "morpheus._lib.messages");
 
     py::class_<AddClassificationsStage, neo::SegmentObject, std::shared_ptr<AddClassificationsStage>>(
-        m, "AddClassificationsStage", py::multiple_inheritance(), "This is the AddClassificationsStage docstring")
+        m, "AddClassificationsStage", py::multiple_inheritance())
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
@@ -60,7 +60,7 @@ PYBIND11_MODULE(stages, m)
              py::arg("idx2label"));
 
     py::class_<AddScoresStage, neo::SegmentObject, std::shared_ptr<AddScoresStage>>(
-        m, "AddScoresStage", py::multiple_inheritance(), "This is the AddScoresStage docstring")
+        m, "AddScoresStage", py::multiple_inheritance())
         .def(py::init<>(&AddScoresStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
@@ -68,14 +68,14 @@ PYBIND11_MODULE(stages, m)
              py::arg("idx2label"));
 
     py::class_<DeserializeStage, neo::SegmentObject, std::shared_ptr<DeserializeStage>>(
-        m, "DeserializeStage", py::multiple_inheritance(), "This is the DeserializeStage docstring")
+        m, "DeserializeStage", py::multiple_inheritance())
         .def(py::init<>(&DeserializeStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
              py::arg("batch_size"));
 
     py::class_<FileSourceStage, neo::SegmentObject, std::shared_ptr<FileSourceStage>>(
-        m, "FileSourceStage", py::multiple_inheritance(), "This is the FileSourceStage docstring")
+        m, "FileSourceStage", py::multiple_inheritance())
         .def(py::init<>(&FileSourceStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
