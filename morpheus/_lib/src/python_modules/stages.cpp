@@ -84,7 +84,7 @@ PYBIND11_MODULE(stages, m)
              py::arg("repeat"));
 
     py::class_<FilterDetectionsStage, neo::SegmentObject, std::shared_ptr<FilterDetectionsStage>>(
-        m, "FilterDetectionsStage", py::multiple_inheritance(), "This is the FilterDetectionsStage docstring")
+        m, "FilterDetectionsStage", py::multiple_inheritance())
         .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
