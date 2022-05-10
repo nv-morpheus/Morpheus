@@ -49,6 +49,7 @@ PYBIND11_MODULE(stages, m)
 
     neo::pyneo::import(m, "cupy");
     neo::pyneo::import(m, "morpheus._lib.messages");
+    neo::pyneo::import(m, "morpheus._lib.file_types");
 
     py::class_<AddClassificationsStage, neo::SegmentObject, std::shared_ptr<AddClassificationsStage>>(
         m, "AddClassificationsStage", py::multiple_inheritance())
