@@ -22,7 +22,8 @@ echo "Memory"
 
 /usr/bin/free -g
 
-if [[ "${STAGE_NAME}" != "CHECK" ]]; then
+echo "${STAGE_NAME}"
+if [[ "${STAGE_NAME}" != "Check" ]]; then
     /usr/bin/nvidia-smi
 
     # S3 vars
