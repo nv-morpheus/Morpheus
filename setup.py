@@ -25,20 +25,12 @@ setup(
     description="Morpheus",
     classifiers=[
         "Development Status :: 3 - Alpha",
-
-        # Utilizes NVIDIA GPUs
         "Environment :: GPU :: NVIDIA CUDA",
-
-        # Audience (TODO: (MDD) Audit these)
         "Intended Audience :: Developers",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Security",
         "Topic :: System :: Networking :: Monitoring",
-
-        # License
         "License :: OSI Approved :: Apache Software License",
-
-        # Only support Python 3.8+
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
