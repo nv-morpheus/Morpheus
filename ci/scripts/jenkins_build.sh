@@ -34,6 +34,7 @@ set -e
 if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
 	tar xfz ${CONDA_PKG_TAR} --directory /tmp
       mv /tmp/pkgs ${CACHED_CONDA_PKG_DIR}
+      ls ${CACHED_CONDA_PKG_DIR}
 else
       mkdir -p ${CACHED_CONDA_PKG_DIR}
 fi
