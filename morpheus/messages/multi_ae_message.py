@@ -17,13 +17,13 @@ import logging
 
 from dfencoder import AutoEncoder
 
-import morpheus.messages as _messages
+from morpheus.messages.multi_message import MultiMessage
 
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class MultiAEMessage(_messages.MultiMessage):
+class MultiAEMessage(MultiMessage):
 
     model: AutoEncoder
 

@@ -17,11 +17,12 @@ import typing
 
 from dfencoder.autoencoder import AutoEncoder
 
-import morpheus.messages as _messages
+from morpheus.messages.message_meta import UserMessageMeta
+from morpheus.messages.multi_inference_message import MultiInferenceMessage
 
 
 @dataclasses.dataclass
-class MultiInferenceAEMessage(_messages.MultiInferenceMessage):
+class MultiInferenceAEMessage(MultiInferenceMessage):
     """
     A stronger typed version of `MultiInferenceMessage` that is used for AE workloads. Helps ensure the
     proper inputs are set and eases debugging. Associates a user ID with a message.
@@ -36,7 +37,7 @@ class MultiInferenceAEMessage(_messages.MultiInferenceMessage):
 
         """
 
-        return typing.cast(_messages.UserMessageMeta, self.meta).user_id
+        return typing.cast(UserMessageMeta, self.meta).user_id
 
     @property
     def input(self):

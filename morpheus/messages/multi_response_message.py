@@ -19,9 +19,9 @@ import typing
 import cupy as cp
 
 import morpheus._lib.messages as neom
-import morpheus.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.message_base import MessageData
+from morpheus.messages.multi_message import MultiMessage
 
 
 def get_output(instance: "ResponseMemory", name: str):
@@ -103,7 +103,7 @@ class ResponseMemoryAE(ResponseMemoryProbs, cpp_class=None):
 
 
 @dataclasses.dataclass
-class MultiResponseMessage(_messages.MultiMessage, cpp_class=neom.MultiResponseMessage):
+class MultiResponseMessage(MultiMessage, cpp_class=neom.MultiResponseMessage):
     """
     This class contains several inference responses as well as the cooresponding message metadata.
 

@@ -19,9 +19,9 @@ import typing
 import cupy as cp
 
 import morpheus._lib.messages as neom
-import morpheus.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.message_base import MessageData
+from morpheus.messages.multi_message import MultiMessage
 
 
 @dataclasses.dataclass
@@ -163,7 +163,7 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
 
 
 @dataclasses.dataclass
-class MultiInferenceMessage(_messages.MultiMessage, cpp_class=neom.MultiInferenceMessage):
+class MultiInferenceMessage(MultiMessage, cpp_class=neom.MultiInferenceMessage):
     """
     This is a container class that holds the InferenceMemory container and the metadata of the data contained
     within it. Builds on top of the `MultiMessage` class to add additional data for inferencing.

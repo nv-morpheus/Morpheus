@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Import order is very important here. Import base classes before child ones
 # isort: off
 
 from morpheus.messages.message_base import MessageBase
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_message import MultiMessage
-
-# isort: on
-
-# These must come after the imports above
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.messages.multi_inference_message import InferenceMemory
 from morpheus.messages.multi_inference_message import InferenceMemoryAE

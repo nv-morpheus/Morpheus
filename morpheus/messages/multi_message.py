@@ -19,8 +19,8 @@ import typing
 import cudf
 
 import morpheus._lib.messages as neom
-import morpheus.messages as _messages
 from morpheus.messages.message_base import MessageData
+from morpheus.messages.message_meta import MessageMeta
 
 
 @dataclasses.dataclass
@@ -39,7 +39,7 @@ class MultiMessage(MessageData, cpp_class=neom.MultiMessage):
         Messages count.
 
     """
-    meta: _messages.MessageMeta = dataclasses.field(repr=False)
+    meta: MessageMeta = dataclasses.field(repr=False)
     mess_offset: int
     mess_count: int
 
