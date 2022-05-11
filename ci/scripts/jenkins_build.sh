@@ -65,10 +65,11 @@ conda list --show-channel-urls
 gpuci_logger "Checking S3 cuDF cache"
 CONDA_BLD_DIR=/opt/conda/conda-bld
 CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
-CUDF_CONDA_CACHE_URL="${S3_URL}/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
+CUDF_CONDA_CACHE_PATH="/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
+CUDF_CONDA_CACHE_URL="${S3_URL}${CUDF_CONDA_CACHE_PATH}"
 CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
 
-echo "Checking ${CUDF_CONDA_CACHE_URL}"
+echo "Checking ${DISPLAY_URL}${CUDF_CONDA_CACHE_PATH}"
 set +e
 aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
 CUDF_CACHE_CHECK=$?
@@ -140,7 +141,7 @@ pip install ${MORPHEUS_ROOT}/build
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda.tar.gz
 
-gpuci_logger "Pushing results to ${ARTIFACT_URL}"
+gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda.tar.gz" "${ARTIFACT_URL}/conda.tar.gz"
 
 gpuci_logger "Success"

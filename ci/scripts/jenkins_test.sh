@@ -28,7 +28,7 @@ conda info
 conda config --show-sources
 conda list --show-channel-urls
 
-gpuci_logger "Downloading build artifacts"
+gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${ARTIFACT_URL}/conda.tar.gz" "${WORKSPACE_TMP}/conda.tar.gz"
 
 gpuci_logger "Extracting"
@@ -47,5 +47,9 @@ git lfs install
 git lfs pull
 
 gpuci_logger "Running tests"
-pytest --run_slow
-exit $?
+pytest --junit-xml=${WORKSPACE_TMP}/report_pytest.xml --run_slow
+
+gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+aws s3 cp ${WORKSPACE_TMP}/report_pytest.xml "${ARTIFACT_URL}/report_pytest.xml"
+
+exit 0

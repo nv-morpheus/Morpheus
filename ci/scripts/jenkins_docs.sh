@@ -18,7 +18,7 @@ set -e
 
 NO_GPU=1 source ci/scripts/jenkins_common.sh
 
-gpuci_logger "Downloading build artifacts"
+gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${ARTIFACT_URL}/conda.tar.gz" "${WORKSPACE_TMP}/conda.tar.gz"
 
 gpuci_logger "Extracting"
@@ -39,7 +39,7 @@ make html
 gpuci_logger "Tarring the docs"
 tar cvfj build/docs.tar.bz build/html
 
-gpuci_logger "Pushing results to ${ARTIFACT_URL}"
+gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress build/docs.tar.bz "${ARTIFACT_URL}/docs.tar.bz"
 
 gpuci_logger "Success"
