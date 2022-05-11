@@ -110,7 +110,7 @@ pipeline {
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins_build.sh"
+                            sh "./ci/scripts/jenkins_docs.sh"
                         }
                     }
                 }

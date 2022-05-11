@@ -28,7 +28,7 @@ conda info
 conda config --show-sources
 conda list --show-channel-urls
 
-gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
+gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}/conda.tar.gz"
 aws s3 cp --no-progress "${ARTIFACT_URL}/conda.tar.gz" "${WORKSPACE_TMP}/conda.tar.gz"
 
 gpuci_logger "Extracting"
