@@ -41,6 +41,11 @@ gpuci_logger "Setting test env"
 conda activate morpheus
 conda-unpack
 
+gpuci_logger "Just the sos"
+find ./ -name "*.so"
+gpuci_logger "Everything"
+find ./
+
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
