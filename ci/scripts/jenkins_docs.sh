@@ -18,11 +18,29 @@ set -e
 
 NO_GPU=1 source ci/scripts/jenkins_common.sh
 
-gpuci_logger "Installing CI dependencies"
-mamba install -q -y -c conda-forge "yapf=0.32.0"
+gpuci_logger "Downloading build artifacts"
+aws s3 cp --no-progress "${ARTIFACT_URL}/conda.tar.gz" "${WORKSPACE_TMP}/conda.tar.gz"
 
-gpuci_logger "Runing Python style checks"
-ci/scripts/python_checks.sh
+gpuci_logger "Extracting"
+mkdir -p /opt/conda/envs/morpheus
+tar xf "${WORKSPACE_TMP}/conda.tar.gz" --directory /opt/conda/envs/morpheus
 
-gpuci_logger "Checking copyright headers"
-python ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
+gpuci_logger "Setting test env"
+conda activate morpheus
+conda-unpack
+
+cd ${WORKSPACE}/docs
+gpuci_logger "Installing Documentation dependencies"
+pip install -r requirement.txt
+
+gpuci_logger "Building docs"
+make html
+
+gpuci_logger "Tarring the docs"
+tar cvfj build/docs.tar.bz build/html
+
+gpuci_logger "Pushing results to ${ARTIFACT_URL}"
+aws s3 cp --no-progress build/docs.tar.bz "${ARTIFACT_URL}/docs.tar.bz"
+
+gpuci_logger "Success"
+exit 0

@@ -26,19 +26,20 @@ echo "Memory"
 # the checkout it isn't recognized by git without the origin/ prefix
 export CHANGE_TARGET="origin/${CHANGE_TARGET}"
 
-if [[ "${STAGE_NAME}" != "Check" ]]; then
+if [[ "${NO_GPU}" == "" ]]; then
     /usr/bin/nvidia-smi
-
-    # S3 vars
-    export S3_URL="s3://rapids-downloads/ci/morpheus"
-    export ARTIFACT_URL="${S3_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
-
-    # Set sccache env vars
-    export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
-    export SCCACHE_BUCKET=rapids-sccache
-    export SCCACHE_REGION=us-west-2
-    export SCCACHE_IDLE_TIMEOUT=32768
-    #export SCCACHE_LOG=debug
 fi
+
+# S3 vars
+export S3_URL="s3://rapids-downloads/ci/morpheus"
+export ARTIFACT_URL="${S3_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+
+# Set sccache env vars
+export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
+export SCCACHE_BUCKET=rapids-sccache
+export SCCACHE_REGION=us-west-2
+export SCCACHE_IDLE_TIMEOUT=32768
+#export SCCACHE_LOG=debug
+
 
 env | sort
