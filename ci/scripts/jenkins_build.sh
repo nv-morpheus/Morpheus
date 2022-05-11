@@ -122,7 +122,7 @@ cmake -B build -G Ninja \
       -DMORPHEUS_BUILD_EXAMPLES=ON \
       -DMORPHEUS_BUILD_TESTS=ON \
       -DMORPHEUS_USE_CONDA=ON \
-      -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF \
+      -DMORPHEUS_PYTHON_INPLACE_BUILD=ON \
       -DMORPHEUS_USE_CCACHE=OFF \
       -DCMAKE_C_COMPILER_LAUNCHER=sccache \
       -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
@@ -140,8 +140,10 @@ pip install ${MORPHEUS_ROOT}/build
 
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
+tar cfj ${WORKSPACE_TMP}/morpheus.tar.bz morpheus
 
-gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}/conda_env.tar.gz"
+gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/morpheus.tar.bz" "${ARTIFACT_URL}/morpheus.tar.bz"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
 
 gpuci_logger "Success"
