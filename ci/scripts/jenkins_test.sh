@@ -28,16 +28,19 @@ conda info
 conda config --show-sources
 conda list --show-channel-urls
 
-gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}/conda.tar.gz"
-aws s3 cp --no-progress "${ARTIFACT_URL}/conda.tar.gz" "${WORKSPACE_TMP}/conda.tar.gz"
+gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}/conda_env.tar.gz"
+aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
 
 gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda.tar.gz" --directory /opt/conda/envs/morpheus
+tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
 
 gpuci_logger "Setting test env"
 conda activate morpheus
 conda-unpack
+
+# Work-around for issue where libmorpheus_utils.so cannot be found
+export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib:${LD_LIBRARY_PATH}
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"

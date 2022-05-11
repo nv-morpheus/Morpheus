@@ -18,12 +18,12 @@ set -e
 
 NO_GPU=1 source ci/scripts/jenkins_common.sh
 
-gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}/conda.tar.gz"
-aws s3 cp --no-progress "${ARTIFACT_URL}/conda.tar.gz" "${WORKSPACE_TMP}/conda.tar.gz"
+gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}/conda_env.tar.gz"
+aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
 
 gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda.tar.gz" --directory /opt/conda/envs/morpheus
+tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
 
 gpuci_logger "Setting test env"
 conda activate morpheus
