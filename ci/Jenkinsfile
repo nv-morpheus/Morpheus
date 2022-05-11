@@ -25,6 +25,7 @@ pipeline {
                             deleteDirs: true,
                             externalDelete: 'sudo rm -rf %s'
                         )
+                        checkout scm
                         sh "./ci/scripts/jenkins_checks.sh"
                     }
                 }
@@ -51,6 +52,7 @@ pipeline {
                             deleteDirs: true,
                             externalDelete: 'sudo rm -rf %s'
                         )
+                        checkout scm
                         withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
                         credentialsId: "aws-s3-gpuci",
@@ -90,6 +92,7 @@ pipeline {
                             deleteDirs: true,
                             externalDelete: 'sudo rm -rf %s'
                         )
+                        checkout scm
                         withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
                         credentialsId: "aws-s3-gpuci",
@@ -119,6 +122,7 @@ pipeline {
                             deleteDirs: true,
                             externalDelete: 'sudo rm -rf %s'
                         )
+                        checkout scm
                         withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
                         credentialsId: "aws-s3-gpuci",
