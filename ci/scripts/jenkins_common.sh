@@ -34,7 +34,7 @@ fi
 export S3_URL="s3://rapids-downloads/ci/morpheus"
 export DISPLAY_URL="https://downloads.rapids.ai/ci/morpheus"
 export ARTIFACT_URL="${S3_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
-export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}/"
 
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
