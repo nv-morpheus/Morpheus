@@ -45,8 +45,8 @@ gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs ${CONDA_PKG_DIR}
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
-mamba install -q -y -n base -c conda-forge "boa >=0.10" python=${PYTHON_VER}
-conda create -q -y -n morpheus python=${PYTHON_VER}
+mamba install -q -y -n base -c conda-forge "boa >=0.10"
+mamba create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 
 gpuci_logger "Installing CI dependencies"
@@ -140,7 +140,8 @@ pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-editable-packages --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
-tar cfj ${WORKSPACE_TMP}/workspace.tar.bz --exclude=".git" ./
+tar cfj ${WORKSPACE_TMP}/workspace.tar.bz --exclude=".git" --exclude="models" ./
+ls -lh ${WORKSPACE_TMP}/
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
