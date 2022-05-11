@@ -50,9 +50,12 @@ git lfs install
 git lfs pull
 
 gpuci_logger "Running tests"
+set +e
 pytest --junit-xml=${WORKSPACE_TMP}/report_pytest.xml --run_slow
+PYTEST_RESULTS=$?
+set -e
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp ${WORKSPACE_TMP}/report_pytest.xml "${ARTIFACT_URL}/report_pytest.xml"
 
-exit 0
+exit ${PYTEST_RESULTS}
