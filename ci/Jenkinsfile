@@ -137,4 +137,12 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+                cleanWs(
+                    deleteDirs: true,
+                    externalDelete: 'sudo rm -rf %s'
+                )
+        }
+    }
 }
