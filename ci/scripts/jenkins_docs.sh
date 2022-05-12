@@ -16,7 +16,7 @@
 
 set -e
 
-NO_GPU=1 source ci/scripts/jenkins_common.sh
+source ci/scripts/jenkins_common.sh
 
 gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"

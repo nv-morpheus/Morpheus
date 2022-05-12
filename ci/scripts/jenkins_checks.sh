@@ -16,7 +16,7 @@
 
 set -e
 
-NO_GPU=1 source ci/scripts/jenkins_common.sh
+source ci/scripts/jenkins_common.sh
 
 gpuci_logger "Installing CI dependencies"
 mamba install -q -y -c conda-forge "yapf=0.32.0"

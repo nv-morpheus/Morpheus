@@ -26,10 +26,6 @@ echo "Memory"
 # the checkout it isn't recognized by git without the origin/ prefix
 export CHANGE_TARGET="origin/${CHANGE_TARGET}"
 
-if [[ "${NO_GPU}" == "" ]]; then
-    /usr/bin/nvidia-smi
-fi
-
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
 export DISPLAY_URL="https://downloads.rapids.ai/ci/morpheus"

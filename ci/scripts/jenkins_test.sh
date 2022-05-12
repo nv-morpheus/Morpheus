@@ -17,6 +17,7 @@
 set -e
 
 source ci/scripts/jenkins_common.sh
+/usr/bin/nvidia-smi
 
 gpuci_logger "Check versions"
 python3 --version
