@@ -36,11 +36,10 @@ gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/workspace.tar.bz"
+
+# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
-ls -latr
-ls -latr morpheus/
-ls -latr morpheus/_lib
-ldd morpheus/_lib/libmorpheus.so
+
 
 gpuci_logger "Setting test env"
 conda activate morpheus
@@ -53,7 +52,7 @@ gpuci_logger "Pulling LFS assets"
 git lfs install
 git lfs pull
 
-pip install -e ${MORPHEUS_ROOT}
+#pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Running tests"
 set +e
