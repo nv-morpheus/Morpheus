@@ -36,6 +36,7 @@ gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/workspace.tar.bz"
+ls -latr
 
 gpuci_logger "Setting test env"
 conda activate morpheus
@@ -48,7 +49,7 @@ gpuci_logger "Pulling LFS assets"
 git lfs install
 git lfs pull
 
-#pip install -e ${MORPHEUS_ROOT}
+pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Running tests"
 set +e
