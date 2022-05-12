@@ -31,7 +31,7 @@ pipeline {
                 }
                 stage('Build:linux:x86_64:gcc') {
                     options {
-                        timeout(time: 2, unit: 'HOURS')
+                        timeout(time: 4, unit: 'HOURS')
                     }
                     environment {
                         PARALLEL_LEVEL = '16'
