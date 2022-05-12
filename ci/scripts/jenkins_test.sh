@@ -37,6 +37,9 @@ mkdir -p /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/workspace.tar.bz"
 ls -latr
+ls -latr morpheus/
+ls -latr morpheus/_lib
+ldd morpheus/_lib/libmorpheus.so
 
 gpuci_logger "Setting test env"
 conda activate morpheus
