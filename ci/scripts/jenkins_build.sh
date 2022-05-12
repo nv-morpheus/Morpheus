@@ -44,7 +44,7 @@ CONDA_BLD_DIR=/opt/conda/conda-bld
 CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
 CUDF_CONDA_CACHE_PATH="/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
 CUDF_CONDA_CACHE_URL="${S3_URL}${CUDF_CONDA_CACHE_PATH}"
-CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.gz"
+CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.bz"
 
 echo "Checking ${DISPLAY_URL}${CUDF_CONDA_CACHE_PATH}"
 set +e
@@ -64,7 +64,7 @@ if [[ "${CUDF_CACHE_CHECK}" != "0" ]]; then
 
       gpuci_logger "Archiving cuDF build"
       cd $(dirname ${CONDA_BLD_DIR})
-      tar cfz ${CUDF_CONDA_TAR} $(basename ${CONDA_BLD_DIR})
+      tar cfj ${CUDF_CONDA_TAR} $(basename ${CONDA_BLD_DIR})
       cd -
       aws s3 cp --no-progress ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
 else
