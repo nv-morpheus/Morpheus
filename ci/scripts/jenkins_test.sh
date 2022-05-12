@@ -36,6 +36,7 @@ gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/workspace.tar.bz"
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 ls -latr
 ls -latr morpheus/
 ls -latr morpheus/_lib
