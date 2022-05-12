@@ -53,7 +53,7 @@ gpuci_logger "Pulling LFS assets"
 git lfs install
 git lfs pull
 
-#pip install -e ${MORPHEUS_ROOT}
+pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Running tests"
 set +e
