@@ -18,31 +18,8 @@ set -e
 
 source ci/scripts/jenkins_common.sh
 
-# gpuci_logger "Checking S3 conda-pkg cache"
-CONDA_PKG_DIR=/opt/conda/pkgs
-# CACHED_CONDA_PKG_DIR=/opt/conda/cached_pkgs
-# CONDA_ENV_COMMIT=$(git log -n 1 --pretty=format:%H -- docker/conda/environments)
-# CONDA_PKG_CACHE_URL="${S3_URL}/conda-pkgs/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CONDA_ENV_COMMIT}/${NVARCH}/conda_pkgs.tar.gz"
-# CONDA_PKG_TAR="${WORKSPACE_TMP}/conda_pkgs.tar.gz"
-
-# echo "Checking ${CONDA_PKG_CACHE_URL}"
-# set +e
-# aws s3 cp --no-progress ${CONDA_PKG_CACHE_URL} ${CONDA_PKG_TAR}
-# CONDA_PKG_CACHE_CHECK=$?
-# set -e
-
-# if [[ "${CONDA_PKG_CACHE_CHECK}" == "0" ]]; then
-#     tar xfz ${CONDA_PKG_TAR} --directory /tmp
-#     mv /tmp/pkgs ${CACHED_CONDA_PKG_DIR}
-#     ls ${CACHED_CONDA_PKG_DIR}
-# else
-#      mkdir -p ${CACHED_CONDA_PKG_DIR}
-# fi
-
-
 gpuci_logger "Creating conda env"
-# conda config --add pkgs_dirs ${CACHED_CONDA_PKG_DIR}
-conda config --add pkgs_dirs ${CONDA_PKG_DIR}
+conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 mamba install -q -y -n base -c conda-forge "boa >=0.10"
@@ -103,14 +80,6 @@ mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-fo
 gpuci_logger "Installing other dependencies"
 mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
-#if [[ "${CONDA_PKG_CACHE_CHECK}" != "0" ]]; then
-#      gpuci_logger "Archiving cached conda packages"
-#	cd $(dirname ${CONDA_PKG_DIR})
-#	tar cfz ${CONDA_PKG_TAR} --exclude="pkgs/cudatoolkit-${CUDA_VER}*" --exclude="pkgs/libcudf-${RAPIDS_VER}*" --exclude="pkgs/cudf-${RAPIDS_VER}*" $(basename ${CONDA_PKG_DIR})
-#	cd -
-#	aws s3 cp --no-progress ${CONDA_PKG_TAR} ${CONDA_PKG_CACHE_URL}
-#fi
-
 gpuci_logger "Check cmake & ninja"
 cmake --version
 ninja --version
@@ -146,6 +115,20 @@ ls -lh ${WORKSPACE_TMP}/
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/workspace.tar.bz" "${ARTIFACT_URL}/workspace.tar.bz"
+
+gpuci_logger "Running conda build for morpheus"
+ZS=$(sccache --zero-stats)
+USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus
+
+gpuci_logger "sccache usage for morpheus conda build:"
+sccache --show-stats
+
+gpuci_logger "Archiving conda builds"
+tar cfj ${WORKSPACE_TMP}/conda_build.tar.bz ${CONDA_BLD_DIR}
+ls -lh ${WORKSPACE_TMP}/
+
+gpuci_logger "Pushing conda builds to ${DISPLAY_ARTIFACT_URL}"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_build.tar.bz" "${ARTIFACT_URL}/conda_build.tar.bz"
 
 gpuci_logger "Success"
 exit 0
