@@ -57,11 +57,17 @@ pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Running tests"
 set +e
-pytest --junit-xml=${WORKSPACE_TMP}/report_pytest.xml --run_slow
+pytest --run_slow \
+       --junit-xml=${WORKSPACE_TMP}/report_pytest.xml \
+       --cov=morpheus \
+       --cov-report term-missing \
+       --cov-report=xml:${WORKSPACE_TMP}/report_pytest_coverage.xml
+
 PYTEST_RESULTS=$?
 set -e
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp ${WORKSPACE_TMP}/report_pytest.xml "${ARTIFACT_URL}/report_pytest.xml"
+aws s3 cp ${WORKSPACE_TMP}/report_pytest_coverage.xml "${ARTIFACT_URL}/report_pytest_coverage.xml"
 
 exit ${PYTEST_RESULTS}
