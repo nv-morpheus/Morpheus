@@ -140,7 +140,7 @@ pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-editable-packages --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
-tar cfj ${WORKSPACE_TMP}/workspace.tar.bz --exclude=".git" --exclude="models" ./
+tar cfj ${WORKSPACE_TMP}/workspace.tar.bz --exclude=".git" --exclude="models" --exclude=".cache" ./
 ls -lh ${WORKSPACE_TMP}/
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
