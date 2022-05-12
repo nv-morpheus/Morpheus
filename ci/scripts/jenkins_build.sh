@@ -16,7 +16,7 @@
 
 set -e
 
-source ci/scripts/jenkins_common.sh
+NO_GPU=1 source ci/scripts/jenkins_common.sh
 
 # gpuci_logger "Checking S3 conda-pkg cache"
 CONDA_PKG_DIR=/opt/conda/pkgs
