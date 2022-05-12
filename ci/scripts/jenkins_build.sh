@@ -42,7 +42,7 @@ conda list --show-channel-urls
 gpuci_logger "Checking S3 cuDF cache"
 CONDA_BLD_DIR=/opt/conda/conda-bld
 CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
-CUDF_CONDA_CACHE_PATH="/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.gz"
+CUDF_CONDA_CACHE_PATH="/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.bz"
 CUDF_CONDA_CACHE_URL="${S3_URL}${CUDF_CONDA_CACHE_PATH}"
 CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.bz"
 
