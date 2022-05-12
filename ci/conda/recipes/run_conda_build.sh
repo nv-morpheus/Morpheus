@@ -64,7 +64,7 @@ mkdir -p ${CCACHE_DIR}
 # ci builds will use sccache which is a ccache work-alike but uses an S3 backend
 # (https://github.com/mozilla/sccache)
 if [[ "${USE_SCCACHE}" == "" ]]; then
-   # Export CCACHE variables
+   # Export CCACHE variables.
    export CMAKE_C_COMPILER_LAUNCHER="ccache"
    export CMAKE_CXX_COMPILER_LAUNCHER="ccache"
    export CMAKE_CUDA_COMPILER_LAUNCHER="ccache"
