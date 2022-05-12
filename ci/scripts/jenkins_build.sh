@@ -99,7 +99,7 @@ cmake -B build -G Ninja \
       .
 
 gpuci_logger "Building Morpheus"
-cmake --build build -j
+cmake --build build -j --parallel ${PARALLEL_LEVEL}
 
 gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
