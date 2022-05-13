@@ -230,7 +230,7 @@ pod/sdk-cli-helper           1/1     Running   0               41s
 Connect to the **sdk-cli-helper** and copy models to `/common`, which is mapped to `/opt/morpheus/common` on the host and where MLFlow will have access to model files.
 
 ```bash
-$ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/models /common
+$ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 ```
 
 ### Install Morpheus MLFlow Triton Plugin
