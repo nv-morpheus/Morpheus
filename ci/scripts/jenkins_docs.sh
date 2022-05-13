@@ -30,10 +30,8 @@ conda activate morpheus
 conda-unpack
 
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-#export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
-
-#pip install -e ${MORPHEUS_ROOT}
-ldd /opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/_lib/libmorpheus.so
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
+ldd ${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib/libmorpheus.so
 
 cd ${WORKSPACE}/docs
 gpuci_logger "Installing Documentation dependencies"

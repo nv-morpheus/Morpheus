@@ -105,10 +105,7 @@ gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
 
 gpuci_logger "Installing Morpheus"
-pip install ${MORPHEUS_ROOT}
-ls ${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
 pip install ${MORPHEUS_ROOT}/build
-ls ${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
 
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
