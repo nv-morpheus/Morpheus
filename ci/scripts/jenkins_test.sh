@@ -42,8 +42,6 @@ conda-unpack
 
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
-ldd ${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib/libmorpheus.so
-
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
@@ -52,7 +50,7 @@ gpuci_logger "Pulling LFS assets"
 git lfs install
 git lfs pull
 
-#pip install -e ${MORPHEUS_ROOT}
+pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Running tests"
 set +e
