@@ -56,7 +56,7 @@ if [[ "${CUDF_CACHE_CHECK}" != "0" ]]; then
       gpuci_logger "Cache miss, Building cuDF"
       mkdir -p ${CONDA_BLD_DIR}
       # The --no-build-id bit is needed for sccache
-      USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
+      CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
 
       gpuci_logger "sccache usage for cudf build:"
       sccache --show-stats
@@ -118,7 +118,7 @@ aws s3 cp --no-progress "${WORKSPACE_TMP}/workspace.tar.bz" "${ARTIFACT_URL}/wor
 
 # gpuci_logger "Running conda build for morpheus"
 # ZS=$(sccache --zero-stats)
-# USE_SCCACHE=1 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus
+# CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus
 
 # gpuci_logger "sccache usage for morpheus conda build:"
 # sccache --show-stats
