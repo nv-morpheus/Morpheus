@@ -20,27 +20,27 @@ import cupy as cp
 import neo
 import numpy as np
 import tritonclient.grpc as tritonclient
+from neo.core import operators as ops
+from scipy.special import softmax
+
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
 from messages import PostprocMemoryLogParsing
 from messages import ResponseMemoryLogParsing
-from neo.core import operators as ops
-from scipy.special import softmax
-
 from morpheus.config import Config
-from morpheus.pipeline.inference.inference_stage import InferenceStage
-from morpheus.pipeline.inference.inference_stage import InferenceWorker
-from morpheus.pipeline.inference.inference_triton import InputWrapper
-from morpheus.pipeline.inference.inference_triton import TritonInferenceWorker
-from morpheus.pipeline.messages import InferenceMemory
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages import InferenceMemory
+from morpheus.messages import MultiInferenceMessage
+from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
+from morpheus.stages.inference.triton_inference_stage import InputWrapper
+from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)
 
 
-class TritonInferenceLogParsing(TritonInferenceWorker):
+class TritonInferenceLogParsing(_TritonInferenceWorker):
     """
     This class extends TritonInference to deal with scenario-specific NLP models inference requests like building
     response.

@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.
+# Copyright (c) 2021-2022, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@ import cudf
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.pipeline.messages import InferenceMemoryFIL
-from morpheus.pipeline.messages import MultiInferenceFILMessage
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.preprocessing import PreprocessBaseStage
+from morpheus.messages import InferenceMemoryFIL
+from morpheus.messages import MultiInferenceFILMessage
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiMessage
+from morpheus.stages.preprocess.preprocessing import PreprocessBaseStage
 
 
 class AbpPcapPreprocessingStage(PreprocessBaseStage):
+
     def __init__(self, c: Config):
         super().__init__(c)
 

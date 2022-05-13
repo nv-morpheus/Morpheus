@@ -18,6 +18,7 @@ Contains configuration objects used to run pipeline and utilities.
 import dataclasses
 import json
 import logging
+import os
 import typing
 from enum import Enum
 
@@ -135,6 +136,11 @@ class CppConfig:
     meaning C++ should be used where an implementation is available. Can be set to False to use Python implementations.
     This can be useful for debugging but C++ should be preferred for performance.
     """
+    # allow_cpp lets us disable C++ regardless of the runtime value. This way, you can use an environment variable to
+    # override the runtime options
+    __allow_cpp: bool = not os.getenv("MORPHEUS_NO_CPP", 'False').lower() in ('true', '1', 't')
+
+    # Runtime option for whether or not C++ should be used
     __use_cpp: bool = True
 
     @staticmethod
@@ -142,7 +148,7 @@ class CppConfig:
         """
         Gets the global option for whether to use C++ node and message types or otherwise prefer Python.
         """
-        return CppConfig.__use_cpp
+        return CppConfig.__use_cpp and CppConfig.__allow_cpp
 
     @staticmethod
     def set_should_use_cpp(value: bool):
