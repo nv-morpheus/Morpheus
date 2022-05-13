@@ -31,6 +31,9 @@ gpuci_logger "Setting test env"
 conda activate morpheus
 conda-unpack
 
+# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
+
 pip install -e ${MORPHEUS_ROOT}
 
 cd ${WORKSPACE}/docs
