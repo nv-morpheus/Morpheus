@@ -31,6 +31,8 @@ gpuci_logger "Setting test env"
 conda activate morpheus
 conda-unpack
 
+pip install -e ${MORPHEUS_ROOT}
+
 cd ${WORKSPACE}/docs
 gpuci_logger "Installing Documentation dependencies"
 pip install -r requirement.txt
