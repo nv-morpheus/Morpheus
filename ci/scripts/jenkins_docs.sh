@@ -33,6 +33,7 @@ conda-unpack
 #export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 
 #pip install -e ${MORPHEUS_ROOT}
+ldd /opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/_lib/libmorpheus.so
 
 cd ${WORKSPACE}/docs
 gpuci_logger "Installing Documentation dependencies"
