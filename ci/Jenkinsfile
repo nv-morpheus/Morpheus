@@ -16,7 +16,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai-driver:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
                             label 'cpu'
                         }
                     }
@@ -112,7 +112,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai-driver:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
                             label 'cpu'
                         }
                     }
