@@ -31,19 +31,17 @@ conda list --show-channel-urls
 
 gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
-aws s3 cp --no-progress "${ARTIFACT_URL}/workspace.tar.bz" "${WORKSPACE_TMP}/workspace.tar.bz"
 
 gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
 tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/workspace.tar.bz"
 
 gpuci_logger "Setting test env"
 conda activate morpheus
 conda-unpack
 
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
+#export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
@@ -52,7 +50,7 @@ gpuci_logger "Pulling LFS assets"
 git lfs install
 git lfs pull
 
-pip install -e ${MORPHEUS_ROOT}
+#pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Running tests"
 set +e
