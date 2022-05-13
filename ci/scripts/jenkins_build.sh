@@ -91,7 +91,7 @@ cmake -B build -G Ninja \
       -DMORPHEUS_BUILD_EXAMPLES=ON \
       -DMORPHEUS_BUILD_TESTS=ON \
       -DMORPHEUS_USE_CONDA=ON \
-      -DMORPHEUS_PYTHON_INPLACE_BUILD=ON \
+      -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF \
       -DMORPHEUS_USE_CCACHE=OFF \
       -DCMAKE_C_COMPILER_LAUNCHER=sccache \
       -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
@@ -105,16 +105,13 @@ gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
 
 gpuci_logger "Installing Morpheus"
-pip install -e ${MORPHEUS_ROOT}
+pip install ${MORPHEUS_ROOT}
 
 gpuci_logger "Archiving results"
-mamba pack --quiet --force --ignore-editable-packages --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
-tar cfj ${WORKSPACE_TMP}/workspace.tar.bz --exclude=".git" --exclude="models" --exclude=".cache" ./
-ls -lh ${WORKSPACE_TMP}/
+mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/workspace.tar.bz" "${ARTIFACT_URL}/workspace.tar.bz"
 
 # gpuci_logger "Running conda build for morpheus"
 # ZS=$(sccache --zero-stats)
