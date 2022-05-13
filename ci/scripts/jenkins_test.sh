@@ -42,6 +42,8 @@ conda-unpack
 
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
 #export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
+ldd /opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/_lib/libmorpheus.so
+
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
