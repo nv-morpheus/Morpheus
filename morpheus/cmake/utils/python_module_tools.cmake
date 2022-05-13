@@ -16,13 +16,40 @@
 
 function(inplace_build_copy TARGET_NAME INPLACE_DIR)
   message(STATUS " Inplace build: (${TARGET_NAME}) ${INPLACE_DIR}")
+
   add_custom_command(
-        TARGET
-          ${TARGET_NAME}
-        POST_BUILD
-          COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${TARGET_NAME}> ${INPLACE_DIR}
-          COMMENT "Moving target ${TARGET_NAME} to ${INPLACE_DIR} for inplace build"
+    TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${TARGET_NAME}> ${INPLACE_DIR}
+    COMMENT "Moving target ${TARGET_NAME} to ${INPLACE_DIR} for inplace build"
+  )
+
+  # See if there are any resources associated with this target
+  get_target_property(target_resources ${TARGET_NAME} RESOURCE)
+
+  if(target_resources)
+
+    # Get the build and src locations
+    get_target_property(target_build_dir ${TARGET_NAME} BINARY_DIR)
+
+    set(resource_outputs "")
+
+    # Create the copy command for each resource
+    foreach(resource ${target_resources})
+      add_custom_command(
+        OUTPUT  ${INPLACE_DIR}/${resource}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${target_build_dir}/${resource} ${INPLACE_DIR}/${resource}
+        DEPENDS ${target_build_dir}/${resource}
+        COMMENT "Copying stub ${target_build_dir}/${resource} to ${INPLACE_DIR}/${resource}"
+      )
+      list(APPEND resource_outputs ${INPLACE_DIR}/${resource})
+    endforeach()
+
+    # Final target to depend on the copied files
+    add_custom_target(${TARGET_NAME}-resource-inplace ALL
+      DEPENDS ${resource_outputs}
     )
+  endif()
+
 endfunction()
 
 #[=======================================================================[
@@ -111,6 +138,11 @@ macro(add_python_module MODULE_NAME)
       OUTPUT_RELATIVE_PATH SOURCE_RELATIVE_PATH
       )
 
+  # Ensure the custom target all_python_targets has been created
+  if (NOT TARGET all_python_targets)
+    message(FATAL_ERROR "You must call `add_custom_target(all_python_targets)` before the first call to add_python_module")
+  endif()
+
   # Create the module target
   if (PYMOD_IS_PYBIND11)
     message(STATUS "Adding Pybind11 Module: ${TARGET_NAME}")
@@ -137,8 +169,8 @@ macro(add_python_module MODULE_NAME)
   endif()
 
   target_link_libraries(${TARGET_NAME}
-      PUBLIC
-        ${pymod_link_libs}
+    PUBLIC
+      ${pymod_link_libs}
   )
 
   # Tell CMake to use relative paths in the build directory. This is necessary for relocatable packages
@@ -159,15 +191,46 @@ macro(add_python_module MODULE_NAME)
     )
   endif()
 
+  # Set all_python_targets to depend on this module. This ensures that all python targets have been built before any
+  # post build actions are taken. This is often necessary to allow post build actions that load the python modules to
+  # succeed
+  add_dependencies(all_python_targets ${TARGET_NAME})
+
+  # Before installing, create the custom command to generate the stubs
+  set(pybind11_stub_file "${MODULE_NAME}/__init__.pyi")
+
+  add_custom_command(
+    OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${pybind11_stub_file}
+    COMMAND ${Python3_EXECUTABLE} -m pybind11_stubgen ${TARGET_NAME} --no-setup-py --log-level WARN -o ./ --root-module-suffix \"\"
+    DEPENDS ${TARGET_NAME} all_python_targets
+    COMMENT "Building stub for python module ${TARGET_NAME}..."
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  )
+
+  # Add a custom target to ensure the stub generation runs
+  add_custom_target(${TARGET_NAME}-stubs ALL
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${pybind11_stub_file}
+  )
+
+  # Save the output as a target property
+  set_target_properties(${TARGET_NAME} PROPERTIES RESOURCE "${pybind11_stub_file}")
+
+  unset(pybind11_stub_file)
+
   if (PYMOD_INSTALL_DEST)
     message(STATUS " Install dest: (${TARGET_NAME}) ${PYMOD_INSTALL_DEST}")
     install(
-        TARGETS
-          ${TARGET_NAME}
-        EXPORT
-          ${PROJECT_NAME}-exports
-        LIBRARY DESTINATION
+      TARGETS
+        ${TARGET_NAME}
+      EXPORT
+        ${PROJECT_NAME}-exports
+      LIBRARY
+        DESTINATION
           "${PYMOD_INSTALL_DEST}"
+        COMPONENT Wheel
+      RESOURCE
+        DESTINATION
+          "${PYMOD_INSTALL_DEST}/${MODULE_NAME}"
         COMPONENT Wheel
     )
   endif()
