@@ -149,6 +149,23 @@ RUN --mount=type=ssh \
 # Setup container for runtime environment
 FROM conda_env as runtime
 
+ARG MORPHEUS_USER="root"
+
+# Conditionally create user and install sudo
+RUN if [ ! -z "${MORPHEUS_USER}" ] && [ "${MORPHEUS_USER}" != "root" ] ; then \
+    useradd -ms /workspace ${MORPHEUS_USER} \
+      && usermod -aG sudo ${MORPHEUS_USER} \
+      && apt-get update \
+      && apt-get install -y sudo \
+      && apt-get clean \
+      && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
+    else \
+      echo "Skipping user creation..." ;\
+    fi
+
+# Allow default user to execute sudo commands in container
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 # Manually need to install some pip-only dependencies. Once these can get moved to conda, they can be removed.
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 COPY docker/conda/environments/cuda${CUDA_VER}_runtime.yml ./docker/conda/environments/
@@ -172,12 +189,28 @@ COPY "./models" "./models"
 COPY "./scripts" "./scripts"
 COPY ["*.md", "LICENSE", "./"]
 
+USER ${MORPHEUS_USER}
+
 # Use morpheus by default
 CMD [ "morpheus" ]
 
 # ============ Stage: development ============
 # Install and configure development only packages
 FROM conda_env_dev as development
+
+ARG MORPHEUS_USER="root"
+
+# Conditionally create user, install sudo, and allow user to run sudo commands
+RUN if [ ! -z "${MORPHEUS_USER}" ] && [ "${MORPHEUS_USER}" != "root" ] ; then \
+    useradd -ms /workspace ${MORPHEUS_USER} \
+      && usermod -aG sudo ${MORPHEUS_USER} \
+      && apt-get update \
+      && apt-get install -y sudo \
+      && apt-get clean \
+      && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
+    else \
+      echo "Skipping user creation..." ;\
+    fi
 
 # Copy the source
 # COPY . ./
@@ -189,3 +222,5 @@ RUN npm install -g camouflage-server
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
 # development
 RUN git config --global --add safe.directory "*"
+
+USER ${MORPHEUS_USER}
