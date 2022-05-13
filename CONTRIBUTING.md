@@ -96,6 +96,17 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
    ```
    1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's 
    source path.
+   1. Once created, you will be able to introspect python objects from within GDB. For example, if we were to break
+   within a generator setup call and examine it's PyFrame_Object `f`, it might look like this:
+   ```shell
+    #4  0x000056498ce685f4 in gen_send_ex (gen=0x7f3ecc07ad40, arg=<optimized out>, exc=<optimized out>, closing=<optimized out>) at Objects/genobject.c:222
+    (gdb) pyo f
+    object address  : 0x7f3eb3888750
+    object refcount : 1
+    object type     : 0x56498cf99c00
+    object type name: frame
+    object repr     : <frame at 0x7f3eb3888750, file '/workspace/morpheus/pipeline/pipeline.py', line 902, code join
+   ```
    1. Note: Now when running the container, conda should list your python version as `pyxxx_dbg_morpheus`.
    ```shell
     (morpheus) user@host:/workspace# conda list | grep python

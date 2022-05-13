@@ -14,7 +14,6 @@
 # limitations under the License.
 
 set -e
-set -x
 
 function usage {
   echo "$0 -s [CPYTHON_SOURCE] -p [CONDA_INSTALL_FILE_PATH] -i [SOURCE_INSTALL_PATH] -g [GDBINIT_INSTALL_PATH]"
