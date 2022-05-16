@@ -25,7 +25,8 @@ pipeline {
                     }
                     steps {
                         cleanWs(
-                            deleteDirs: true
+                            deleteDirs: true,
+                            externalDelete: 'sudo rm -rf %s'
                         )
                         checkout scm
                         sh "./ci/scripts/jenkins_checks.sh"
@@ -47,7 +48,8 @@ pipeline {
                     }
                     steps {
                         cleanWs(
-                            deleteDirs: true
+                            deleteDirs: true,
+                            externalDelete: 'sudo rm -rf %s'
                         )
                         checkout scm
                         withCredentials([[
@@ -79,7 +81,8 @@ pipeline {
                     }
                     steps {
                         cleanWs(
-                            deleteDirs: true
+                            deleteDirs: true,
+                            externalDelete: 'sudo rm -rf %s'
                         )
                         checkout scm
                         withCredentials([[
@@ -106,7 +109,8 @@ pipeline {
                     }
                     steps {
                         cleanWs(
-                            deleteDirs: true
+                            deleteDirs: true,
+                            externalDelete: 'sudo rm -rf %s'
                         )
                         checkout scm
                         withCredentials([[
@@ -126,7 +130,8 @@ pipeline {
     post {
         always {
                 cleanWs(
-                    deleteDirs: true
+                    deleteDirs: true,
+                    externalDelete: 'sudo rm -rf %s'
                 )
         }
     }
