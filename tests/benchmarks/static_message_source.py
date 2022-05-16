@@ -22,9 +22,9 @@ import typing_utils
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.pipeline import SingleOutputSource
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages import MessageMeta
+from morpheus.pipeline import SingleOutputSource
+from morpheus.pipeline import StreamPair
 
 
 class StaticMessageSource(SingleOutputSource):

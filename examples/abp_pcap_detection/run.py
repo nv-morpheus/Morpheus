@@ -23,14 +23,14 @@ from morpheus.cli import str_to_file_type
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.pipeline.general_stages import AddClassificationsStage
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.inference.inference_triton import TritonInferenceStage
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.pipeline import LinearPipeline
-from morpheus.pipeline.preprocessing import DeserializeStage
+from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logging import configure_logging
 
 

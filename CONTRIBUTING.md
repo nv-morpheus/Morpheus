@@ -28,7 +28,7 @@ More information can be found at: [Contributor Code of Conduct](CODE_OF_CONDUCT.
 1. Find an issue to work on. The best way is to look for issues with the [good first issue](https://github.com/NVIDIA/Morpheus/issues) label.
 2. Comment on the issue stating that you are going to work on it.
 3. Code! Make sure to update unit tests! Ensure the [license headers are set properly](#Licensing).
-4. When done, [create your merge request](https://github.com/NVIDIA/Morpheus/compare).
+4. When done, [create your pull request](https://github.com/NVIDIA/Morpheus/compare).
 5. Wait for other developers to review your code and update code as needed.
 6. Once reviewed and approved, a Morpheus developer will merge your pull request.
 
