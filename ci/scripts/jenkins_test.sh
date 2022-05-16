@@ -52,7 +52,8 @@ echo "Setting LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 echo "installing test packages"
 which npm
-npm install --silent -g camouflage-server
+$(which npm) install --silent -g camouflage-server
+echo "Installing git-lfs"
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
 gpuci_logger "Pulling LFS assets"
