@@ -103,7 +103,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Docutation') {
+                stage('Documentation') {
                     options {
                         timeout(time: 1, unit: 'HOURS')
                     }
