@@ -54,7 +54,7 @@ pip install -e ${MORPHEUS_ROOT}
 
 gpuci_logger "Running tests"
 set +e
-pytest --run_slow \
+python -I -m pytest --run_slow \
        --junit-xml=${WORKSPACE_TMP}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \
