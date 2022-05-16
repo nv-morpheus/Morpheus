@@ -43,13 +43,15 @@ conda activate morpheus
 echo "Unpacking env"
 conda-unpack
 gpuci_logger "Packages installed in morpheus env"
+conda deactivate
+conda activate morpheus
 conda list --show-channel-urls
 
 echo "Setting LD_LIBRARY_PATH"
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 echo "installing test packages"
-
+which npm
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
