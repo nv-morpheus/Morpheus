@@ -38,8 +38,9 @@ tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
 
 gpuci_logger "Setting test env"
 conda activate morpheus
+echo "Unpacking env"
 conda-unpack
-
+echo "Setting LD_LIBRARY_PATH"
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
 
