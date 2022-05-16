@@ -25,8 +25,7 @@ pipeline {
                     }
                     steps {
                         cleanWs(
-                            deleteDirs: true,
-                            disableDeferredWipeout: true
+                            deleteDirs: true
                         )
                         checkout scm
                         sh "./ci/scripts/jenkins_checks.sh"
@@ -48,8 +47,7 @@ pipeline {
                     }
                     steps {
                         cleanWs(
-                            deleteDirs: true,
-                            disableDeferredWipeout: true
+                            deleteDirs: true
                         )
                         checkout scm
                         withCredentials([[
@@ -81,8 +79,7 @@ pipeline {
                     }
                     steps {
                         cleanWs(
-                            deleteDirs: true,
-                            disableDeferredWipeout: true
+                            deleteDirs: true
                         )
                         checkout scm
                         withCredentials([[
@@ -109,8 +106,7 @@ pipeline {
                     }
                     steps {
                         cleanWs(
-                            deleteDirs: true,
-                            disableDeferredWipeout: true
+                            deleteDirs: true
                         )
                         checkout scm
                         withCredentials([[
@@ -130,8 +126,7 @@ pipeline {
     post {
         always {
                 cleanWs(
-                    deleteDirs: true,
-                    disableDeferredWipeout: true
+                    deleteDirs: true
                 )
         }
     }
