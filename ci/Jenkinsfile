@@ -3,6 +3,12 @@ pipeline {
     options {
         disableConcurrentBuilds(abortPrevious: true)
     }
+    environment {
+        PYTHON_VER = '3.8'
+        RAPIDS_VER = '21.10'
+        CUDA_VER = '11.4'
+        HOME = "${WORKSPACE}"
+    }
     stages {
         stage('Checks & Builds') {
             failFast true
@@ -10,9 +16,6 @@ pipeline {
                 stage('Check') {
                     options {
                         timeout(time: 1, unit: 'HOURS')
-                    }
-                    environment {
-                        HOME = "${WORKSPACE}"
                     }
                     agent {
                         docker {
@@ -35,11 +38,7 @@ pipeline {
                     }
                     environment {
                         PARALLEL_LEVEL = '16'
-                        PYTHON_VER = '3.8'
-                        RAPIDS_VER = '21.10'
-                        CUDA_VER = '11.4'
                         USE_SCCACHE = '1'
-                        HOME = "${WORKSPACE}"
                     }
                     agent {
                         docker {
@@ -73,12 +72,6 @@ pipeline {
                     options {
                         timeout(time: 1, unit: 'HOURS')
                     }
-                    environment {
-                        PYTHON_VER = '3.8'
-                        RAPIDS_VER = '21.10'
-                        CUDA_VER = '11.4'
-                        HOME = "${WORKSPACE}"
-                    }
                     agent {
                         docker {
                             image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
@@ -106,9 +99,6 @@ pipeline {
                 stage('Documentation') {
                     options {
                         timeout(time: 1, unit: 'HOURS')
-                    }
-                    environment {
-                        HOME = "${WORKSPACE}"
                     }
                     agent {
                         docker {
