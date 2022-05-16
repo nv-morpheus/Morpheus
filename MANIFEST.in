@@ -1,3 +1,4 @@
 include versioneer.py
 include morpheus/_version.py
-graft data
+include morpheus/data
+recursive-include morpheus *.so
