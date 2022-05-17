@@ -83,7 +83,7 @@ Options:
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided at `<MORPHEUS_ROOT>/data`, run the following:
+To launch the configured Morpheus pipeline with the sample data that is provided at `<MORPHEUS_ROOT>/morpheus/data`, run the following:
 
 ```bash
 python run.py \

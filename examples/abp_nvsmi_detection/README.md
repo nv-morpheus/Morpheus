@@ -102,7 +102,7 @@ morpheus --log_level=DEBUG \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-fil --model_fea_length 3 \
    `# 1st Stage: Read from file` \
-   from-file --filename=$MORPHEUS_ROOT/data/nvsmi.jsonlines \
+   from-file --filename=$MORPHEUS_ROOT/morpheus/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
