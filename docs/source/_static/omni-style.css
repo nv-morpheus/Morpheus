@@ -1,0 +1,308 @@
+:root {
+	--sidebar-color:#000000;
+	--sidebar-alt-color: #333333;
+	--sidebar-headline-color: #76b900;
+	--sidebar-text-color: #cccccc;
+	--table-color: #dddddd;
+	--text-main-color: #333333;
+	--text-h1-color: #76b900;
+	--text-h1-background-color: #000000;
+	--text-h2-color: #76b900;
+	--text-h2-border-color: #777777;
+	--text-h3-color: #777777;
+	--text-h3-border-color:#cccccc;
+	--text-h4-color: #999999;
+	--text-alt-table: #333333;
+	--note-background-color: #76b900;
+	--note-background-alt-color: #cccccc;
+	--important-background-color: #f44336;
+	--important-background-alt-color: #cccccc;
+	--link-color: #76b900;
+    --link-visited-color: #76b900;
+    --link-hover-color: #004831;
+	  }
+
+
+
+
+/* Width of template */
+
+.wy-nav-content {
+    max-width: 1200px !important;
+}
+
+/* Alert Boxes */
+
+/* Background color Note Box */
+
+.wy-alert.wy-alert-info .wy-alert-title, .rst-content .note .wy-alert-title, .rst-content .wy-alert-info.attention .wy-alert-title, .rst-content .wy-alert-info.caution .wy-alert-title, .rst-content .wy-alert-info.danger .wy-alert-title, .rst-content .wy-alert-info.error .wy-alert-title, .rst-content .wy-alert-info.hint .wy-alert-title, .rst-content .wy-alert-info.important .wy-alert-title, .rst-content .wy-alert-info.tip .wy-alert-title, .rst-content .wy-alert-info.warning .wy-alert-title, .rst-content .seealso .wy-alert-title, .rst-content .wy-alert-info.admonition-todo .wy-alert-title, .rst-content .wy-alert-info.admonition .wy-alert-title, .wy-alert.wy-alert-info .rst-content .admonition-title, .rst-content .wy-alert.wy-alert-info .admonition-title, .rst-content .note .admonition-title, .rst-content .wy-alert-info.attention .admonition-title, .rst-content .wy-alert-info.caution .admonition-title, .rst-content .wy-alert-info.danger .admonition-title, .rst-content .wy-alert-info.error .admonition-title, .rst-content .wy-alert-info.hint .admonition-title, .rst-content .wy-alert-info.important .admonition-title, .rst-content .wy-alert-info.tip .admonition-title, .rst-content .wy-alert-info.warning .admonition-title, .rst-content .seealso .admonition-title, .rst-content .wy-alert-info.admonition-todo .admonition-title, .rst-content .wy-alert-info.admonition .admonition-title
+{
+    background: var(--note-background-color) !important;
+}
+
+.wy-alert.wy-alert-info, .rst-content .note, .rst-content .wy-alert-info.attention, .rst-content .wy-alert-info.caution, .rst-content .wy-alert-info.danger, .rst-content .wy-alert-info.error, .rst-content .wy-alert-info.hint, .rst-content .wy-alert-info.important, .rst-content .wy-alert-info.tip, .rst-content .wy-alert-info.warning, .rst-content .seealso, .rst-content .wy-alert-info.admonition-todo, .rst-content .wy-alert-info.admonition {
+    background: var(--note-background-alt-color) !important;
+}
+
+
+/* Background color Important Box */
+
+.wy-alert.wy-alert-success .wy-alert-title, .rst-content .wy-alert-success.note .wy-alert-title, .rst-content .wy-alert-success.attention .wy-alert-title, .rst-content .wy-alert-success.caution .wy-alert-title, .rst-content .wy-alert-success.danger .wy-alert-title, .rst-content .wy-alert-success.error .wy-alert-title, .rst-content .hint .wy-alert-title, .rst-content .important .wy-alert-title, .rst-content .tip .wy-alert-title, .rst-content .wy-alert-success.warning .wy-alert-title, .rst-content .wy-alert-success.seealso .wy-alert-title, .rst-content .wy-alert-success.admonition-todo .wy-alert-title, .rst-content .wy-alert-success.admonition .wy-alert-title, .wy-alert.wy-alert-success .rst-content .admonition-title, .rst-content .wy-alert.wy-alert-success .admonition-title, .rst-content .wy-alert-success.note .admonition-title, .rst-content .wy-alert-success.attention .admonition-title, .rst-content .wy-alert-success.caution .admonition-title, .rst-content .wy-alert-success.danger .admonition-title, .rst-content .wy-alert-success.error .admonition-title, .rst-content .hint .admonition-title, .rst-content .important .admonition-title, .rst-content .tip .admonition-title, .rst-content .wy-alert-success.warning .admonition-title, .rst-content .wy-alert-success.seealso .admonition-title, .rst-content .wy-alert-success.admonition-todo .admonition-title, .rst-content .wy-alert-success.admonition .admonition-title {
+    background: var(--important-background-color);
+}
+
+.wy-alert.wy-alert-success, .rst-content .wy-alert-success.note, .rst-content .wy-alert-success.attention, .rst-content .wy-alert-success.caution, .rst-content .wy-alert-success.danger, .rst-content .wy-alert-success.error, .rst-content .hint, .rst-content .important, .rst-content .tip, .rst-content .wy-alert-success.warning, .rst-content .wy-alert-success.seealso, .rst-content .wy-alert-success.admonition-todo, .rst-content .wy-alert-success.admonition {
+    background: var(--important-background-alt-color);
+}
+
+
+/* Standard Text Formatting */
+/* Replace majority of Fonts in RTD with DIN Pro*/
+
+body {
+    font-family: din-2014,sans-serif;
+	font-weight: 400;
+	font-style: normal;
+}
+
+/* Headline Formatting */
+
+h1
+{
+	color: var(--text-h1-color);
+    text-align: center;
+	background-color: var(--text-h1-background-color);
+	font-family: din-2014,sans-serif;
+	font-weight: 500;
+	font-style: normal;
+	text-transform: uppercase;
+	padding: 10px;
+	margin-top: 15px;
+	margin-bottom: 15px;
+	margin-right: 5px;
+	margin-left: 0px;
+}
+
+h2
+{
+	color: var(--text-h2-color);
+	border-color: var(--text-h2-border-color) !important;
+	border-top: solid 1px;
+	border-bottom: solid 1px;
+	background-color: transparent;
+    padding-top: 5px;
+	padding-bottom: 5px;
+	padding-left: 0px;
+	padding-right: 0px;
+	margin-top: 15px;
+	margin-bottom: 15px;
+	margin-right: 0px;
+	margin-left: 0px;
+	font-family: din-2014,sans-serif;
+	font-weight: 500;
+	font-style: normal;
+	text-transform: uppercase;
+}
+
+h3
+{
+	color: var(--text-h3-color);
+	border-bottom: solid 1px;
+	border-color: var(--text-h3-border-color) !important;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	padding-left: 0px;
+	padding-right: 5px;
+	margin-top: 15px;
+	margin-bottom: 15px;
+	margin-right: 5px;
+	margin-left: 0px;
+	font-family: din-2014-narrow,sans-serif;
+	font-weight: 400;
+	font-style: normal;
+	text-transform: uppercase;
+	/*border-bottom: solid 3px;*/
+}
+
+h4
+{
+	color: var(--text-h4-color);
+	margin-top: 15px;
+	margin-bottom: 15px;
+	margin-right: 5px;
+	margin-left: 0px;
+	font-family: din-2014-narrow,sans-serif;
+	font-weight: 400;
+	font-style: normal;
+	text-transform: uppercase;
+}
+
+/* Paragraph Formatting */
+
+p
+{
+	margin-top: 15px;
+	margin-bottom: 15px;
+	margin-right: 5px;
+	margin-left: 0px;
+	color: var(--text-main-color);
+}
+
+
+/* Link Colors */
+a
+{
+    color: var(--link-color);
+}
+
+a:visited
+{
+    color: var(--link-visited-color);
+}
+
+a:hover
+{
+    color: var(--link-hover-color);
+}
+
+/* tables */
+.rst-content table.docutils td,
+.rst-content table.field-list td,
+.wy-table td
+{
+    /* line wrap cells */
+    white-space: normal !important;
+    vertical-align: top;
+
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+}
+
+/* odd rows have grey background */
+.rst-content table.docutils:not(.field-list)
+tr:nth-child(2n-1) td,
+.wy-table-backed,
+.wy-table-odd td,
+.wy-table-striped tr:nth-child(2n-1) td
+{
+    background-color: var(--table-color);
+    color: #333333
+}
+
+/* table header is white on black */
+.rst-content table.docutils thead th,
+.rst-content table.field-list thead th,
+.wy-table thead th,
+.rst-content table.docutils thead th p,
+.rst-content table.field-list thead th p,
+.wy-table thead th p
+{
+    background-color: var(--sidebar-color);
+    color: var(--sidebar-text-color);
+    border: 0px;
+}
+
+/* no border in table header */
+html.writer-html5 .rst-content table.docutils th
+{
+    border: 0px;
+}
+
+/* table header text */
+html.writer-html5 .rst-content table.docutils th>p
+{
+    color: var(--sidebar-text-color);
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+}
+
+/* cell text */
+html.writer-html5 .rst-content table.docutils td>p,
+html.writer-html5 .rst-content table.docutils th>p 
+{
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+}
+
+/* remove weird top margin in first paragraph of a cell */
+.wy-table td p:first-child,
+.rst-content table.docutils td p:first-child,
+.rst-content table.field-list td p:first-child,
+.wy-table th p:first-child,
+.rst-content table.docutils th p:first-child,
+.rst-content table.field-list th p:first-child 
+{
+    margin-top: 0px;
+}
+
+/* remove weird bottom margin in last paragraph of a cell */
+.wy-table td p:last-child,
+.rst-content table.docutils td p:last-child,
+.rst-content table.field-list td p:last-child,
+.wy-table th p:last-child,
+.rst-content table.docutils th p:last-child,
+.rst-content table.field-list th p:last-child 
+{
+    margin-bottom: 0px;
+}
+
+/* Sidebar */
+.wy-nav-side
+{
+	color: var(--sidebar-headline-color);
+	background: var(--sidebar-color);
+}
+
+.wy-menu-vertical p.caption
+{
+	/* line wrap */
+	white-space: normal !important;
+	vertical-align: top;
+	min-height: 100%;
+	height: 100%;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	line-height: var(--body-line-height);
+	color: var(--sidebar-headline-color);
+	background-color: var(--sidebar-alt-color);
+}
+
+.wy-side-nav-search>a img.logo, .wy-side-nav-search .wy-dropdown>a img.logo
+{
+	margin: 0px 0px 0px 0px;
+	padding: 0px
+}
+
+.wy-nav-content
+{
+	margin: 0;
+	min-height: 100%;
+	height: 100%;
+	background: #fdfdfd;
+}
+
+.wy-menu-vertical a
+{
+	color: var(--sidebar-text-color);
+	padding-left: 35px;
+	padding-right: 10px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+/* Remove padding around logo */
+
+.wy-side-nav-search>a {
+    padding: 0px;
+}
+
+/* Math should inherit its color */
+
+span[id*=MathJax-Span] {
+    color: inherit;
+}
+
+/* Section title on main page has math and needs a bit more padding */
+#mathrm-co-2-2-omniverse-carbonite-sdk h1:first-of-type {
+    padding: 5px;
+}

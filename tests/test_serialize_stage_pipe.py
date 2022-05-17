@@ -19,13 +19,13 @@ import os
 import numpy as np
 import pytest
 
-from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.input.utils import read_file_to_df
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.preprocessing import DeserializeStage
+from morpheus._lib.file_types import FileTypes
+from morpheus.io.deserializers import read_file_to_df
+from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 
 

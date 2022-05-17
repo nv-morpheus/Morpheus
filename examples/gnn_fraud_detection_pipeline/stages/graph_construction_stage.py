@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import dataclasses
 import typing
 
@@ -9,9 +24,9 @@ from stellargraph import StellarGraph
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.pipeline import SinglePortStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages import MultiMessage
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 
 @dataclasses.dataclass
@@ -20,6 +35,7 @@ class FraudGraphMultiMessage(MultiMessage):
 
 
 class FraudGraphConstructionStage(SinglePortStage):
+
     def __init__(self, c: Config, training_file: str):
         super().__init__(c)
         self._training_data = cudf.read_csv(training_file)

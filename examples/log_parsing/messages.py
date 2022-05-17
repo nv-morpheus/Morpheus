@@ -16,15 +16,15 @@ import dataclasses
 
 import cupy as cp
 
-from morpheus.pipeline.messages import DataClassProp
-from morpheus.pipeline.messages import InferenceMemory
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import MultiResponseMessage
-from morpheus.pipeline.messages import ResponseMemory
-from morpheus.pipeline.messages import get_input
-from morpheus.pipeline.messages import get_output
-from morpheus.pipeline.messages import set_input
-from morpheus.pipeline.messages import set_output
+from morpheus.messages import DataClassProp
+from morpheus.messages import InferenceMemory
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ResponseMemory
+from morpheus.messages import get_input
+from morpheus.messages import get_output
+from morpheus.messages import set_input
+from morpheus.messages import set_output
 
 
 @dataclasses.dataclass
