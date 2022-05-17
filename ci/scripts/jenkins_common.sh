@@ -16,7 +16,7 @@
 
 gpuci_logger "Env Setup"
 source /opt/conda/etc/profile.d/conda.sh
-export MORPHEUS_ROOT=$(pwd)
+export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 echo "Procs: $(nproc)"
 echo "Memory"
 
