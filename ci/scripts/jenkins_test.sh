@@ -47,10 +47,7 @@ conda list --show-channel-urls
 echo "installing test packages"
 which npm
 $(which npm) --help
-echo "user info"
-whoami
-groups
-id
+
 echo "dir info"
 ls -ld $(dirname ${CONDA_PREFIX})
 ls -ld ${CONDA_PREFIX}
