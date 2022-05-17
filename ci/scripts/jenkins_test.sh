@@ -35,8 +35,8 @@ aws s3 cp --no-progress "${ARTIFACT_URL}/workspace.tar.bz" "${WORKSPACE_TMP}/wor
 
 gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/workspace.tar.bz"
+tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
+tar xf "${WORKSPACE_TMP}/workspace.tar.bz" --no-same-owner
 
 gpuci_logger "Setting test env"
 conda activate morpheus
@@ -44,15 +44,16 @@ conda-unpack
 gpuci_logger "Packages installed in morpheus env"
 conda list --show-channel-urls
 
-echo "installing test packages"
-which npm
-$(which npm) --help
-
 echo "dir info"
 ls -ld $(dirname ${CONDA_PREFIX})
 ls -ld ${CONDA_PREFIX}
 ls -ld ${CONDA_PREFIX}/lib
 ls -ld ${CONDA_PREFIX}/lib/node_modules
+
+echo "installing test packages"
+which npm
+$(which npm) --help
+
 #$(which npm) root -g
 $(which npm) install --slient -g camouflage-server
 echo "Installing git-lfs"

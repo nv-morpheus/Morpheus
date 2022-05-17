@@ -24,8 +24,8 @@ aws s3 cp --no-progress "${ARTIFACT_URL}/workspace.tar.bz" "${WORKSPACE_TMP}/wor
 
 gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/workspace.tar.bz"
+tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
+tar xf "${WORKSPACE_TMP}/workspace.tar.bz" --no-same-owner
 
 gpuci_logger "Setting test env"
 conda activate morpheus
