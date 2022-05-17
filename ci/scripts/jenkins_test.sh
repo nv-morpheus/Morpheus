@@ -40,19 +40,15 @@ tar xf "${WORKSPACE_TMP}/workspace.tar.bz"
 
 gpuci_logger "Setting test env"
 conda activate morpheus
-echo "Unpacking env"
 conda-unpack
 gpuci_logger "Packages installed in morpheus env"
-conda deactivate
-conda activate morpheus
 conda list --show-channel-urls
 
-echo "Setting LD_LIBRARY_PATH"
-# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 echo "installing test packages"
 which npm
-$(which npm) install --silent -g camouflage-server
+$(which npm) --help
+$(which npm) root -g
+$(which npm) install -g camouflage-server
 echo "Installing git-lfs"
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
@@ -61,6 +57,9 @@ git lfs install
 git lfs pull
 
 pip install -e ${MORPHEUS_ROOT}
+
+# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 
 gpuci_logger "Running tests"
 set +e
