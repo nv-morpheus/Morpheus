@@ -47,8 +47,8 @@ conda list --show-channel-urls
 echo "installing test packages"
 which npm
 $(which npm) --help
-$(which npm) root -g
-$(which npm) install -g camouflage-server
+#$(which npm) root -g
+$(which npm) install camouflage-server
 echo "Installing git-lfs"
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
