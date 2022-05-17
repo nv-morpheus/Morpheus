@@ -54,6 +54,9 @@ git lfs pull
 pip install -e ${MORPHEUS_ROOT}
 
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
+# The build and test nodes have different workspace paths (/jenkins vs. /var/lib/jenkins)
+# Typically these are fixed by conda-unpack but since we did an in-place build we will
+# have to fix this ourselves by setting LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 
 gpuci_logger "Running tests"
