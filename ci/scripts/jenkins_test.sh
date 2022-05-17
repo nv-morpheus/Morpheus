@@ -55,7 +55,7 @@ which npm
 
 npm root -g
 echo ${HOME}
-npm install --slient -g camouflage-server
+npm install --unsafe-perm=true --allow-root --slient -g camouflage-server
 echo "Installing git-lfs"
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
