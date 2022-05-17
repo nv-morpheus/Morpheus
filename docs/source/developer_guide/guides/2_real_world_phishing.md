@@ -211,9 +211,9 @@ We set our pipeline mode to NLP. Next, we use the third-party [psutils](https://
 
 The `feature_length` property needs to match the length of the model inputs, which we queried from the model's config endpoint in the previous section.
 
-Ground truth classification labels are read from the `data/labels_phishing.txt` file included in Morpheus.
+Ground truth classification labels are read from the `morpheus/data/labels_phishing.txt` file included in Morpheus.
 
-Now that our config object is populated we move on to the pipeline itself. We are using the same input file from the previous examples, and to tokenize the input data we add Morpheus' `PreprocessNLPStage` with the `data/bert-base-uncased-hash.txt` vocabulary file.
+Now that our config object is populated we move on to the pipeline itself. We are using the same input file from the previous examples, and to tokenize the input data we add Morpheus' `PreprocessNLPStage` with the `morpheus/data/bert-base-uncased-hash.txt` vocabulary file.
 
 ```python
 pipeline.add_stage(

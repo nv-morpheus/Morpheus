@@ -83,11 +83,11 @@ Options:
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided at `<MORPHEUS_ROOT>/data`, run the following:
+To launch the configured Morpheus pipeline with the sample data that is provided at `<MORPHEUS_ROOT>/morpheus/data`, run the following:
 
 ```bash
 python run.py \
-	--input_file ../../data/abp_pcap_dump.jsonlines \
+	--input_file ../../morpheus/data/abp_pcap_dump.jsonlines \
 	--output_file ./pcap_out.jsonlines \
 	--model_name 'abp-pcap-xgb' \
 	--server_url localhost:8001

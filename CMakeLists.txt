@@ -93,6 +93,7 @@ set(MORPHEUS_ROOT_PYTHON_FILES
   "setup.cfg"
   "setup.py"
   "versioneer.py"
+  "MANIFEST.in"
 )
 
 # Add the root python files to the list
@@ -136,5 +137,10 @@ install(
     PATTERN "py.typed"
 )
 
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/morpheus/data
+  DESTINATION ${MORPHEUS_PY_INSTALL_DIR}/morpheus
+  COMPONENT Wheel
+)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
