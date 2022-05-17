@@ -80,7 +80,7 @@ RUN --mount=type=ssh \
     source activate base &&\
     # Run with --no-test for now until we can build with builtkit and default nvidia runtime
     # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
+    MORPHEUS_ROOT=/workspace CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
@@ -143,7 +143,7 @@ RUN --mount=type=ssh \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
     # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    MORPHEUS_ROOT=/workspace CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
@@ -178,7 +178,6 @@ CMD [ "morpheus" ]
 # ============ Stage: development ============
 # Install and configure development only packages
 FROM conda_env_dev as development
-
 # Copy the source
 # COPY . ./
 
@@ -189,3 +188,26 @@ RUN npm install -g camouflage-server
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
 # development
 RUN git config --global --add safe.directory "*"
+
+# ============ Stage: python_debug_bld ===========
+# Configure and build cpython with debugging symbols
+FROM development as development_pydbg
+
+COPY ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
+COPY ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
+COPY ci/conda/recipes/python_dbg_install.sh ./ci/conda/recipes/python_dbg_install.sh
+
+# Temporary until #68 goes in
+ARG MORPHEUS_USER="root"
+
+# Build and install debug cpython
+RUN source activate morpheus \
+    && MORPHEUS_ROOT=/workspace \
+       CONDA_BLD_PATH=/opt/conda/conda-bld \
+       CONDA_ARGS="--no-test" \
+       ./ci/conda/recipes/run_conda_build.sh pydebug \
+    && ./ci/conda/recipes/python_dbg_install.sh \
+       -s $( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
+       -c $( ls /opt/conda/conda-bld/linux-64/python-${PYTHON_VER}*.tar.bz2 ) \
+       -i ./ci/conda/recipes/python-dbg/source \
+       -g $(eval echo "~${MORPHEUS_USER}")/.gdbinit

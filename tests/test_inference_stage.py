@@ -20,8 +20,8 @@ from unittest import mock
 import cupy as cp
 import pytest
 
-from morpheus.pipeline.inference import inference_stage
-from morpheus.pipeline.messages import ResponseMemoryProbs
+from morpheus.messages import ResponseMemoryProbs
+from morpheus.stages.inference import inference_stage
 from utils import IW
 
 
@@ -107,7 +107,7 @@ def test_py_inf_fn(config):
 
 @pytest.mark.use_python
 @mock.patch('neo.Future')
-@mock.patch('morpheus.pipeline.inference.inference_stage.ops')
+@mock.patch('morpheus.stages.inference.inference_stage.ops')
 def test_py_inf_fn_on_next(mock_ops, mock_future, config):
     mock_future.return_value = mock_future
     mock_node = mock.MagicMock()

@@ -85,6 +85,7 @@ file(GLOB_RECURSE MORPHEUS_PYTHON_FILES
   LIST_DIRECTORIES FALSE
   CONFIGURE_DEPENDS
   "morpheus/*.py"
+  "morpheus/py.typed"
 )
 
 set(MORPHEUS_ROOT_PYTHON_FILES
@@ -132,6 +133,7 @@ install(
   COMPONENT Wheel
   FILES_MATCHING
     PATTERN "*.py"
+    PATTERN "py.typed"
 )
 
 

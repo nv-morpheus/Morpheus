@@ -34,13 +34,13 @@ aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/con
 
 gpuci_logger "Extracting"
 mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --directory /opt/conda/envs/morpheus
+tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
 
 gpuci_logger "Setting test env"
 conda activate morpheus
-echo "Unpacking env"
 conda-unpack
 echo "Setting LD_LIBRARY_PATH"
+
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
 
@@ -52,6 +52,12 @@ git lfs install
 git lfs pull
 
 pip install -e ${MORPHEUS_ROOT}
+
+# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
+# The build and test nodes have different workspace paths (/jenkins vs. /var/lib/jenkins)
+# Typically these are fixed by conda-unpack but since we did an in-place build we will
+# have to fix this ourselves by setting LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 
 gpuci_logger "Running tests"
 set +e

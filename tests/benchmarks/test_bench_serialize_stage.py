@@ -24,9 +24,9 @@ import cudf
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.pipeline import LinearPipeline
-from morpheus.pipeline.preprocessing import DeserializeStage
+from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logging import configure_logging
 
 
