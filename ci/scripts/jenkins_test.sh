@@ -47,8 +47,17 @@ conda list --show-channel-urls
 echo "installing test packages"
 which npm
 $(which npm) --help
+echo "user info"
+whoami
+groups
+id
+echo "dir info"
+ls -ld $(dirname ${CONDA_PREFIX})
+ls -ld ${CONDA_PREFIX}
+ls -ld ${CONDA_PREFIX}/lib
+ls -ld ${CONDA_PREFIX}/lib/node_modules
 #$(which npm) root -g
-$(which npm) install camouflage-server
+$(which npm) install --slient -g camouflage-server
 echo "Installing git-lfs"
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
