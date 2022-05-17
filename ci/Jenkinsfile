@@ -39,6 +39,7 @@ pipeline {
                     environment {
                         PARALLEL_LEVEL = '10'
                         USE_SCCACHE = '1'
+                        HOME = "${WORKSPACE}"
                     }
                     agent {
                         docker {
@@ -113,6 +114,7 @@ pipeline {
                     }
                     environment {
                         HOME = "${WORKSPACE}"
+                        MORPHEUS_NO_CPP = '1'
                     }
                     steps {
                         cleanWs(
