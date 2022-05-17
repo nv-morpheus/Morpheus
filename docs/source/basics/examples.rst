@@ -35,7 +35,7 @@ This example will copy the values from Kafka into ``out.jsonlines``.
 Remove Fields from JSON Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This example will only copy the fiels 'timestamp', 'src_ip' and 'dest_ip' from ``data/pcap_dump.jsonlines`` to
+This example will only copy the fiels 'timestamp', 'src_ip' and 'dest_ip' from ``morpheus/data/pcap_dump.jsonlines`` to
 ``out.jsonlines``.
 
 .. image:: img/remove_fields_from_json_objects.png
@@ -43,7 +43,7 @@ This example will only copy the fiels 'timestamp', 'src_ip' and 'dest_ip' from `
 .. code-block:: bash
 
    morpheus run pipeline-nlp --viz_file=basic_usage_img/remove_fields_from_json_objects.png \
-      from-file --filename data/pcap_dump.jsonlines \
+      from-file --filename morpheus/data/pcap_dump.jsonlines \
       deserialize \
       serialize --include 'timestamp' --include 'src_ip' --include 'dest_ip' \
       to-file --filename out.jsonlines
@@ -58,7 +58,7 @@ This example will report the throughput on the command line.
 .. code-block:: console
 
    $ morpheus run pipeline-nlp --viz_file=basic_usage_img/monitor_throughput.png  \
-      from-file --filename data/pcap_dump.jsonlines \
+      from-file --filename morpheus/data/pcap_dump.jsonlines \
       deserialize \
       monitor --description "Lines Throughput" --smoothing 0.1 --unit "lines" \
       serialize \
@@ -79,7 +79,7 @@ decouple one stage from the next. Without the buffers, all montioring would show
 .. code-block:: console
 
    $ morpheus run pipeline-nlp --viz_file=basic_usage_img/multi_monitor_throughput.png  \
-      from-file --filename data/pcap_dump.jsonlines \
+      from-file --filename morpheus/data/pcap_dump.jsonlines \
       monitor --description "From File Throughput" \
       buffer \
       deserialize \
@@ -107,7 +107,7 @@ This example shows an NLP Pipeline which uses most stages available in Morpheus.
 
    $ morpheus run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
       pipeline-nlp --viz_file=basic_usage_img/nlp_kitchen_sink.png  \
-      from-file --filename data/pcap_dump.jsonlines \
+      from-file --filename morpheus/data/pcap_dump.jsonlines \
       buffer --count=500 \
       deserialize \
       preprocess \

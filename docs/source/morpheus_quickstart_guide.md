@@ -558,11 +558,11 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
-        --labels_file=./data/labels_phishing.txt \
-        from-file --filename=./data/email.jsonlines \
+        --labels_file=./morpheus/data/labels_phishing.txt \
+        from-file --filename=./morpheus/data/email.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
         inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8001 --force_convert_inputs=True \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
@@ -588,11 +588,11 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
-        --labels_file=./data/labels_phishing.txt \
+        --labels_file=./morpheus/data/labels_phishing.txt \
         from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
         monitor --description 'FromKafka Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
         inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8001 \
         monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
@@ -635,10 +635,10 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --model_max_batch_size=32 \
       pipeline-nlp \
         --model_seq_length=256 \
-        from-file --filename=./data/pcap_dump.jsonlines \
+        from-file --filename=./morpheus/data/pcap_dump.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description='Preprocessing rate' \
         inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
         monitor --description='Inference rate' --smoothing=0.001 --unit inf \
@@ -667,7 +667,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
-          preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+          preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
           monitor --description='Preprocessing Rate' \
           inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
           monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
@@ -685,7 +685,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/data/pcap_dump.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/morpheus/data/pcap_dump.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
@@ -708,7 +708,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         --model_max_batch_size=64 \
         --use_cpp=True \
         pipeline-fil \
-          from-file --filename=./data/nvsmi.jsonlines \
+          from-file --filename=./morpheus/data/nvsmi.jsonlines \
           monitor --description 'FromFile Rate' --smoothing=0.001 \
           deserialize \
           preprocess \
@@ -754,7 +754,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/data/nvsmi.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/morpheus/data/nvsmi.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
@@ -937,7 +937,7 @@ Options:
                                   order to convert class IDs into labels. A
                                   label file is a simple text file where each
                                   line corresponds to a label  [default:
-                                  data/labels_nlp.txt]
+                                  morpheus/data/labels_nlp.txt]
   --viz_file FILE                 Save a visualization of the pipeline at the
                                   specified location
   --help                          Show this message and exit.
@@ -1000,7 +1000,7 @@ Options:
                                   only a single output label is created for
                                   FIL
   --columns_file FILE             Specifies a file to read column features.
-                                  [default: data/columns_fil.txt]
+                                  [default: morpheus/data/columns_fil.txt]
   --viz_file FILE                 Save a visualization of the pipeline at the
                                   specified location
   --help                          Show this message and exit.
@@ -1052,7 +1052,7 @@ Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
   4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
 
 Options:
-  --columns_file FILE        [default: data/columns_ae.txt]
+  --columns_file FILE        [default: morpheus/data/columns_ae.txt]
   --labels_file FILE         Specifies a file to read labels from in order to
                              convert class IDs into labels. A label file is a
                              simple text file where each line corresponds to a
