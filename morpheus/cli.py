@@ -42,7 +42,6 @@ DEFAULT_CONFIG = Config()
 # List all of the options in from morpheus._lib.file_types.FileTypes without importing the object. This slows down
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
-MORPHEUS_ROOT = os.environ.get('MORPHEUS_ROOT', os.path.dirname(os.path.dirname(morpheus.__file__)))
 
 def str_to_file_type(file_type_str: str):
     from morpheus._lib.file_types import FileTypes
