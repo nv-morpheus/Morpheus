@@ -46,7 +46,7 @@ $ nvidia-smi dmon
 
 Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and you can see the SM% and Mem% increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurriences without needing additional information from the host machine.
 
-In this example we will be using the `data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
+In this example we will be using the `morpheus/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
 
 ## Pipeline Architecture
 
@@ -100,7 +100,7 @@ morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must be equal or less than Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
-   pipeline-fil --columns_file=$MORPHEUS_ROOT/data/columns_fil.txt \
+   pipeline-fil --model_fea_length 3 \
    `# 1st Stage: Read from file` \
    from-file --filename=$MORPHEUS_ROOT/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
