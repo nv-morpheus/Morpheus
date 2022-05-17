@@ -41,21 +41,8 @@ tar xf "${WORKSPACE_TMP}/workspace.tar.bz" --no-same-owner
 gpuci_logger "Setting test env"
 conda activate morpheus
 conda-unpack
-gpuci_logger "Packages installed in morpheus env"
 conda list --show-channel-urls
 
-echo "dir info"
-ls -ld $(dirname ${CONDA_PREFIX})
-ls -ld ${CONDA_PREFIX}
-ls -ld ${CONDA_PREFIX}/lib
-ls -ld ${CONDA_PREFIX}/lib/node_modules
-
-echo "installing test packages"
-which npm
-
-npm root -g
-echo ${HOME}
-export NPM_CONFIG_PREFIX=${WORKSPACE_TMP}/npm-global
 npm install --slient -g camouflage-server
 echo "Installing git-lfs"
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"

@@ -79,6 +79,9 @@ pipeline {
                             args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
                     }
+                    environment {
+                        HOME = "${WORKSPACE}"
+                    }
                     steps {
                         cleanWs(
                             deleteDirs: true,
@@ -106,6 +109,9 @@ pipeline {
                             label 'driver-495'
                             args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
+                    }
+                    environment {
+                        HOME = "${WORKSPACE}"
                     }
                     steps {
                         cleanWs(
