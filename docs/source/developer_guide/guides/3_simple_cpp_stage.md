@@ -60,7 +60,7 @@ template <typename SinkT, typename SourceT = SinkT>  // by default, emit type ==
 class PythonNode : ...
 ```
 
-Both the `PythonSource` & `PythonNode` classes are defined in the `pyneo/node.hpp` header.
+Both the `PythonSource` and `PythonNode` classes are defined in the `pyneo/node.hpp` header.
 
 Note: `SourceT` and `SinkT` types are required to be `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`.
 
