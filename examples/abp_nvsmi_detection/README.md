@@ -100,7 +100,7 @@ morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must be equal or less than Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
-   pipeline-fil --model_fea_length 3 \
+   pipeline-fil \
    `# 1st Stage: Read from file` \
    from-file --filename=$MORPHEUS_ROOT/morpheus/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
