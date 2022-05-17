@@ -232,7 +232,7 @@ pipeline.add_stage(
 ```
 
 In addition to providing the `Config` object that we defined above, we also configure this stage to:
-* Use the `data/bert-base-uncased-hash.txt` vocabulary file for its subword token ids (`vocab_hash_file=vocab_file`)
+* Use the `data/bert-base-uncased-hash.txt` vocabulary file for its subword token ids (`vocab_hash_file=vocab_file`).
 * Truncate the length of the text to a max number of tokens (`truncation=True`)
 * Change the casing to all lowercase (`do_lower_case=True`)
 * Refrain from adding the default BERT special tokens like `[SEP]` for separation between two sentences and `[CLS]` at the start of the text (`add_special_tokens=False`).
