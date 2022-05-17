@@ -140,3 +140,12 @@ if hasArg morpheus; then
    conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
    set +x
 fi
+
+if hasArg pydebug; then
+  export MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2)
+
+  echo "Running conda-build for python-dbg..."
+  set -x
+  conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
+  set +x
+fi
