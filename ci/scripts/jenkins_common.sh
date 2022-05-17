@@ -23,8 +23,8 @@ echo "Memory"
 /usr/bin/free -g
 
 echo "user info"
-whoami
-groups
+#whoami
+#groups
 id
 
 # Change target is the branch name we are merging into but due to the weird way jenkins does
