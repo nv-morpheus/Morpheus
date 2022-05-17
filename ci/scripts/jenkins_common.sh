@@ -22,9 +22,7 @@ echo "Memory"
 
 /usr/bin/free -g
 
-echo "user info"
-#whoami
-#groups
+echo "User Info"
 id
 
 # Change target is the branch name we are merging into but due to the weird way jenkins does
@@ -45,5 +43,22 @@ export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
 echo "Environ:"
-
 env | sort
+
+function restore_conda_env() {
+
+    gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
+    aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
+
+    gpuci_logger "Extracting"
+    mkdir -p /opt/conda/envs/morpheus
+    tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
+
+    gpuci_logger "Setting test env"
+    conda activate morpheus
+    conda-unpack
+
+    # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
+    # The build and test nodes have different workspace paths (/jenkins vs. /var/lib/jenkins)
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
+}

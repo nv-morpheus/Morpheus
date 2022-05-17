@@ -18,31 +18,7 @@ set -e
 
 source ci/scripts/jenkins_common.sh
 /usr/bin/nvidia-smi
-
-gpuci_logger "Check versions"
-python3 --version
-gcc --version
-g++ --version
-
-gpuci_logger "Check conda environment"
-conda info
-conda config --show-sources
-conda list --show-channel-urls
-
-gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
-
-gpuci_logger "Extracting"
-mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
-
-gpuci_logger "Setting test env"
-conda activate morpheus
-conda-unpack
-echo "Setting LD_LIBRARY_PATH"
-
-# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
+$(restore_conda_env)
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
@@ -50,14 +26,6 @@ mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 gpuci_logger "Pulling LFS assets"
 git lfs install
 git lfs pull
-
-pip install -e ${MORPHEUS_ROOT}
-
-# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-# The build and test nodes have different workspace paths (/jenkins vs. /var/lib/jenkins)
-# Typically these are fixed by conda-unpack but since we did an in-place build we will
-# have to fix this ourselves by setting LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
 
 gpuci_logger "Running tests"
 set +e

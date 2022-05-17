@@ -18,19 +18,7 @@ set -e
 
 source ci/scripts/jenkins_common.sh
 
-gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
-
-gpuci_logger "Extracting"
-mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
-
-gpuci_logger "Setting test env"
-conda activate morpheus
-conda-unpack
-
-# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
+$(restore_conda_env)
 
 cd ${WORKSPACE}/docs
 gpuci_logger "Installing Documentation dependencies"
