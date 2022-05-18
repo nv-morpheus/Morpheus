@@ -64,3 +64,10 @@ function restore_conda_env() {
     # The build and test nodes have different workspace paths (/jenkins vs. /var/lib/jenkins)
     export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
 }
+
+function show_conda_info() {
+    gpuci_logger "Check conda environment"
+    conda info
+    conda config --show-sources
+    conda list --show-channel-urls
+}

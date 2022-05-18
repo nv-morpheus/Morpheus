@@ -23,10 +23,7 @@ conda activate rapids
 gpuci_logger "Installing CI dependencies"
 mamba install -q -y -c conda-forge "yapf=0.32"
 
-gpuci_logger "Check conda environment"
-conda info
-conda config --show-sources
-conda list --show-channel-urls
+$(show_conda_info)
 
 gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
