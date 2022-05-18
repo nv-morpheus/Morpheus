@@ -35,7 +35,7 @@ This example will copy the values from Kafka into ``out.jsonlines``.
 Remove Fields from JSON Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This example will only copy the fiels 'timestamp', 'src_ip' and 'dest_ip' from ``morpheus/data/pcap_dump.jsonlines`` to
+This example will only copy the fields 'timestamp', 'src_ip' and 'dest_ip' from ``morpheus/data/pcap_dump.jsonlines`` to
 ``out.jsonlines``.
 
 .. image:: img/remove_fields_from_json_objects.png
