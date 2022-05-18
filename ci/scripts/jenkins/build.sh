@@ -34,7 +34,7 @@ python3 --version
 gcc --version
 g++ --version
 
-$(show_conda_info)
+show_conda_info
 
 gpuci_logger "Checking S3 cuDF cache"
 CONDA_BLD_DIR=/opt/conda/conda-bld
