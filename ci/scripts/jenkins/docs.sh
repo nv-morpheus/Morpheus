@@ -16,7 +16,7 @@
 
 set -e
 
-source ci/scripts/jenkins_common.sh
+source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
 gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
@@ -32,11 +32,11 @@ conda activate morpheus
 conda-unpack
 
 # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MORPHEUS_ROOT}/morpheus/_lib
 
 pip install -e ${MORPHEUS_ROOT}
 
-cd ${WORKSPACE}/docs
+cd ${MORPHEUS_ROOT}/docs
 gpuci_logger "Installing Documentation dependencies"
 pip install -r requirement.txt
 
@@ -44,10 +44,10 @@ gpuci_logger "Building docs"
 make html
 
 gpuci_logger "Tarring the docs"
-tar cfj build/docs.tar.bz build/html
+tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/html
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress build/docs.tar.bz "${ARTIFACT_URL}/docs.tar.bz"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/docs.tar.bz" "${ARTIFACT_URL}/docs.tar.bz"
 
 gpuci_logger "Success"
 exit 0

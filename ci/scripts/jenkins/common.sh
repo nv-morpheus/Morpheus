@@ -17,14 +17,12 @@
 gpuci_logger "Env Setup"
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
-echo "Procs: $(nproc)"
-echo "Memory"
+gpuci_logger "Procs: $(nproc)"
+gpuci_logger "Memory"
 
 /usr/bin/free -g
 
-echo "user info"
-#whoami
-#groups
+gpuci_logger "user info"
 id
 
 # Change target is the branch name we are merging into but due to the weird way jenkins does
@@ -44,6 +42,5 @@ export SCCACHE_REGION=us-west-2
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
-echo "Environ:"
-
+gpuci_logger "Environ:"
 env | sort

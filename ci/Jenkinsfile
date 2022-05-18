@@ -29,7 +29,7 @@ pipeline {
                             externalDelete: 'sudo rm -rf %s'
                         )
                         checkout scm
-                        sh "./ci/scripts/jenkins_checks.sh"
+                        sh "./ci/scripts/jenkins/checks.sh"
                     }
                 }
                 stage('Build:linux:x86_64:gcc') {
@@ -61,7 +61,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins_build.sh"
+                            sh "./ci/scripts/jenkins/build.sh"
                         }
                     }
                 }
@@ -97,7 +97,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins_test.sh"
+                            sh "./ci/scripts/jenkins/test.sh"
                         }
                     }
                 }
@@ -107,9 +107,8 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
-                            label 'driver-495'
-                            args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
+                            image 'gpuci/rapidsai-driver:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                            label 'cpu'
                         }
                     }
                     environment {
@@ -129,7 +128,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins_docs.sh"
+                            sh "./ci/scripts/jenkins/docs.sh"
                         }
                     }
                 }

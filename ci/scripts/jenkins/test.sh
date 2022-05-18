@@ -16,7 +16,7 @@
 
 set -e
 
-source ci/scripts/jenkins_common.sh
+source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
 
 gpuci_logger "Check versions"
@@ -44,10 +44,10 @@ conda-unpack
 conda list --show-channel-urls
 
 npm install --slient -g camouflage-server
-echo "Installing git-lfs"
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
 gpuci_logger "Pulling LFS assets"
+cd ${MORPHEUS_ROOT}
 git lfs install
 git lfs pull
 
@@ -57,7 +57,7 @@ pip install -e ${MORPHEUS_ROOT}
 # The build and test nodes have different workspace paths (/jenkins vs. /var/lib/jenkins)
 # Typically these are fixed by conda-unpack but since we did an in-place build we will
 # have to fix this ourselves by setting LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${WORKSPACE}/morpheus/_lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MORPHEUS_ROOT}/morpheus/_lib
 
 gpuci_logger "Running tests"
 set +e
