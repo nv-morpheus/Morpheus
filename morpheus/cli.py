@@ -43,6 +43,7 @@ DEFAULT_CONFIG = Config()
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
 
+
 def str_to_file_type(file_type_str: str):
     from morpheus._lib.file_types import FileTypes
     file_type_members = {name.lower(): t for (name, t) in FileTypes.__members__.items()}

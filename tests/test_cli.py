@@ -121,13 +121,13 @@ def mlflow_uri(tmp_path):
 @pytest.mark.usefixtures("reload_modules")
 @pytest.mark.use_python
 class TestCLI:
+
     def _read_data_file(self, data_file):
         """
         Used to read in labels and columns files
         """
         with open(data_file) as fh:
             return [line.strip() for line in fh]
-
 
     def test_help(self):
         runner = CliRunner()
@@ -769,12 +769,10 @@ class TestCLI:
         """
 
         vocab_file_name = os.path.join(TEST_DIRS.data_dir, 'bert-base-cased-hash.txt')
-        args = (GENERAL_ARGS + ['pipeline-nlp'] +
-                FILE_SRC_ARGS + [
-                    'deserialize',
-                    'preprocess',
-                ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS +
-                ['serialize'] + TO_FILE_ARGS)
+        args = (GENERAL_ARGS + ['pipeline-nlp'] + FILE_SRC_ARGS + [
+            'deserialize',
+            'preprocess',
+        ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
         runner = CliRunner()
