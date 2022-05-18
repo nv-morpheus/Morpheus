@@ -29,7 +29,7 @@ pipeline {
                             externalDelete: 'sudo rm -rf %s'
                         )
                         checkout scm
-                        sh "./ci/scripts/jenkins/checks.sh"
+                        sh "${WORKSPACE}/ci/scripts/jenkins/checks.sh"
                     }
                 }
                 stage('Build:linux:x86_64:gcc') {
@@ -61,7 +61,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins/build.sh"
+                            sh "${WORKSPACE}/ci/scripts/jenkins/build.sh"
                         }
                     }
                 }
@@ -97,7 +97,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins/test.sh"
+                            sh "${WORKSPACE}/ci/scripts/jenkins/test.sh"
                         }
                     }
                 }
@@ -128,7 +128,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins/docs.sh"
+                            sh "${WORKSPACE}/ci/scripts/jenkins/docs.sh"
                         }
                     }
                 }
