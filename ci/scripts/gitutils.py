@@ -76,7 +76,7 @@ def repo_version_major_minor():
     match = re.match(r"^v?(?P<major>[0-9]+)(?:\.(?P<minor>[0-9]+))?", full_repo_version)
 
     if (match is None):
-        print("   [DEBUG] Could not determine repo major minor version. " f"Full repo version: {full_repo_version}.")
+        # print("   [DEBUG] Could not determine repo major minor version. " f"Full repo version: {full_repo_version}.")
         return None
 
     out_version = match.group("major")
@@ -115,8 +115,8 @@ def determine_merge_commit(current_branch="HEAD"):
         # Try to determine the target branch from the most recent tag
         head_branch = __git("describe", "--all", "--tags", "--match='branch-*'", "--abbrev=0")
     except subprocess.CalledProcessError:
-        print("   [DEBUG] Could not determine target branch from most recent "
-              "tag. Falling back to 'branch-{major}.{minor}.")
+        # print("   [DEBUG] Could not determine target branch from most recent "
+        #      "tag. Falling back to 'branch-{major}.{minor}.")
         head_branch = None
 
     if (head_branch is not None):
@@ -132,20 +132,20 @@ def determine_merge_commit(current_branch="HEAD"):
 
             head_branch = "branch-{}".format(version)
         except Exception:
-            print("   [DEBUG] Could not determine branch version falling back to main")
+            # print("   [DEBUG] Could not determine branch version falling back to main")
             head_branch = "main"
 
     try:
         # Now get the remote tracking branch
         remote_branch = __git("rev-parse", "--abbrev-ref", "--symbolic-full-name", head_branch + "@{upstream}")
     except subprocess.CalledProcessError:
-        print("   [DEBUG] Could not remote tracking reference for " f"branch {head_branch}.")
+        # print("   [DEBUG] Could not remote tracking reference for " f"branch {head_branch}.")
         remote_branch = None
 
     if (remote_branch is None):
         return None
 
-    print(f"   [DEBUG] Determined TARGET_BRANCH as: '{remote_branch}'. " "Finding common ancestor.")
+    # print(f"   [DEBUG] Determined TARGET_BRANCH as: '{remote_branch}'. " "Finding common ancestor.")
 
     common_commit = __git("merge-base", remote_branch, current_branch)
 
@@ -227,13 +227,13 @@ def modifiedFiles(pathFilter=None):
     targetBranch = os.environ.get("TARGET_BRANCH")
     commitHash = os.environ.get("COMMIT_HASH")
     currentBranch = branch()
-    print(f"   [DEBUG] TARGET_BRANCH={targetBranch}, COMMIT_HASH={commitHash}, " f"currentBranch={currentBranch}")
+    # print(f"   [DEBUG] TARGET_BRANCH={targetBranch}, COMMIT_HASH={commitHash}, " f"currentBranch={currentBranch}")
 
     if targetBranch and commitHash and (currentBranch == "current-pr-branch"):
-        print("   [DEBUG] Assuming a CI environment.")
+        # print("   [DEBUG] Assuming a CI environment.")
         allFiles = changedFilesBetween(targetBranch, currentBranch, commitHash)
     else:
-        print("   [DEBUG] Did not detect CI environment. " "Determining TARGET_BRANCH locally.")
+        # print("   [DEBUG] Did not detect CI environment. " "Determining TARGET_BRANCH locally.")
 
         common_commit = determine_merge_commit(currentBranch)
 
@@ -252,7 +252,7 @@ def modifiedFiles(pathFilter=None):
             files.append(f)
 
     filesToCheckString = "\n\t".join(files) if files else "<None>"
-    print(f"   [DEBUG] Found files to check:\n\t{filesToCheckString}\n")
+    # print(f"   [DEBUG] Found files to check:\n\t{filesToCheckString}\n")
     return files
 
 

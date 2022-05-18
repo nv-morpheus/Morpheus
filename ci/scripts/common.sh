@@ -17,7 +17,7 @@
 
 export SCRIPT_DIR=${SCRIPT_DIR:-"$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"}
 export REPO_DIR=$(realpath ${REPO_DIR:-"${SCRIPT_DIR}/../.."})
-export PY_ROOT="."
+export PY_ROOT="${REPO_DIR}"
 export PY_CFG="${PY_ROOT}/setup.cfg"
 export PY_DIRS="${PY_ROOT} ci/scripts"
 
@@ -25,7 +25,7 @@ export PY_DIRS="${PY_ROOT} ci/scripts"
 export YAPF_EXCLUDE_FLAGS="-e ${PY_ROOT}/versioneer.py -e ${PY_ROOT}/morpheus/_version.py"
 
 # Determine the commits to compare against. If running in CI, these will be set. Otherwise, diff with main
-export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-main}}
+export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-$(${SCRIPT_DIR}/get_merge_target.py)}}
 export COMMIT_SHA=${GIT_COMMIT:-${COMMIT_SHA:-HEAD}}
 
 export CPP_FILE_REGEX='^(\.\/)?(src|include|tests|benchmarks|python)\/.*\.(cc|cpp|h|hpp)$'
