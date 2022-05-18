@@ -16,11 +16,11 @@
 
 set -e
 
-source ci/scripts/jenkins_common.sh
+source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
 $(restore_conda_env)
 
-cd ${WORKSPACE}/docs
+cd ${MORPHEUS_ROOT}/docs
 gpuci_logger "Installing Documentation dependencies"
 pip install -r requirement.txt
 
@@ -28,10 +28,10 @@ gpuci_logger "Building docs"
 make html
 
 gpuci_logger "Tarring the docs"
-tar cfj build/docs.tar.bz build/html
+tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/html
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress build/docs.tar.bz "${ARTIFACT_URL}/docs.tar.bz"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/docs.tar.bz" "${ARTIFACT_URL}/docs.tar.bz"
 
 gpuci_logger "Success"
 exit 0

@@ -16,13 +16,13 @@
 
 set -e
 
-source ci/scripts/jenkins_common.sh
+source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
 gpuci_logger "Installing CI dependencies"
-mamba install -q -y -c conda-forge "yapf=0.32.0"
+mamba install -q -y -c conda-forge "yapf=0.32"
 
 gpuci_logger "Runing Python style checks"
-ci/scripts/python_checks.sh
+${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 gpuci_logger "Checking copyright headers"
-python ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
+python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}

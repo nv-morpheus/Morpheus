@@ -29,7 +29,7 @@ pipeline {
                             externalDelete: 'sudo rm -rf %s'
                         )
                         checkout scm
-                        sh "./ci/scripts/jenkins_checks.sh"
+                        sh "${WORKSPACE}/ci/scripts/jenkins/checks.sh"
                     }
                 }
                 stage('Build:linux:x86_64:gcc') {
@@ -37,13 +37,15 @@ pipeline {
                         timeout(time: 4, unit: 'HOURS')
                     }
                     environment {
-                        PARALLEL_LEVEL = '16'
+                        PARALLEL_LEVEL = '10'
                         USE_SCCACHE = '1'
+                        HOME = "${WORKSPACE}"
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai-driver:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
-                            label 'cpu4'
+                            image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                            label 'driver-495'
+                            args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
                     }
                     steps {
@@ -59,7 +61,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins_build.sh"
+                            sh "${WORKSPACE}/ci/scripts/jenkins/build.sh"
                         }
                     }
                 }
@@ -95,7 +97,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins_test.sh"
+                            sh "${WORKSPACE}/ci/scripts/jenkins/test.sh"
                         }
                     }
                 }
@@ -112,6 +114,7 @@ pipeline {
                     }
                     environment {
                         HOME = "${WORKSPACE}"
+                        MORPHEUS_NO_CPP = '1'
                     }
                     steps {
                         cleanWs(
@@ -126,7 +129,7 @@ pipeline {
                             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                         ]])
                         {
-                            sh "./ci/scripts/jenkins_docs.sh"
+                            sh "${WORKSPACE}/ci/scripts/jenkins/docs.sh"
                         }
                     }
                 }

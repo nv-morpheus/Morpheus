@@ -16,7 +16,7 @@
 
 set -e
 
-source ci/scripts/jenkins_common.sh
+source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
 $(restore_conda_env)
 
@@ -24,6 +24,7 @@ npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
 gpuci_logger "Pulling LFS assets"
+cd ${MORPHEUS_ROOT}
 git lfs install
 git lfs pull
 

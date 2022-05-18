@@ -16,7 +16,7 @@
 
 set -e
 
-source ci/scripts/jenkins_common.sh
+source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
 gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
@@ -27,7 +27,7 @@ mamba create -q -y -n morpheus python=${PYTHON_VER}
 conda activate morpheus
 
 gpuci_logger "Installing CI dependencies"
-mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_ci.yml
+mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
 
 gpuci_logger "Check versions"
 python3 --version
@@ -46,7 +46,7 @@ CUDF_CONDA_CACHE_PATH="/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_COND
 CUDF_CONDA_CACHE_URL="${S3_URL}${CUDF_CONDA_CACHE_PATH}"
 CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.bz"
 
-echo "Checking ${DISPLAY_URL}${CUDF_CONDA_CACHE_PATH}"
+gpuci_logger "Checking ${DISPLAY_URL}${CUDF_CONDA_CACHE_PATH}"
 set +e
 aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
 CUDF_CACHE_CHECK=$?
@@ -78,7 +78,7 @@ gpuci_logger "Installing cuDF"
 mamba install -q -y -c file://${CONDA_BLD_DIR} -c nvidia -c rapidsai -c conda-forge libcudf cudf
 
 gpuci_logger "Installing other dependencies"
-mamba env update -q -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
+mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
 gpuci_logger "Check cmake & ninja"
 cmake --version
