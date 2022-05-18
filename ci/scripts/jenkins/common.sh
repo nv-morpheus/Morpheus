@@ -63,10 +63,6 @@ function restore_conda_env() {
     gpuci_logger "Setting test env"
     conda activate morpheus
     conda-unpack
-
-    # Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-    # The build and test nodes have different workspace paths (/jenkins vs. /var/lib/jenkins)
-    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib/python3.8/site-packages/morpheus/_lib
 }
 
 function show_conda_info() {
