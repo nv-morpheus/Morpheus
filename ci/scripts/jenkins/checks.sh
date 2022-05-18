@@ -18,6 +18,8 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
+conda activate rapids
+
 gpuci_logger "Installing CI dependencies"
 mamba install -q -y -c conda-forge "yapf=0.32"
 
