@@ -67,7 +67,7 @@ function restore_conda_env() {
 
 function show_conda_info() {
 
-    gpuci_logger "Check conda environment"
+    gpuci_logger "Check Conda info"
     conda info
     conda config --show-sources
     conda list --show-channel-urls
