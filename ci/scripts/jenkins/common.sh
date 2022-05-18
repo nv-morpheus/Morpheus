@@ -48,7 +48,11 @@ env | sort
 function restore_conda_env() {
 
     gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
-    aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
+    if [[ "${USE_S3_CURL}" == "1" ]]; then
+        curl "${DISPLAY_ARTIFACT_URL}conda_env.tar.gz" -o  "${WORKSPACE_TMP}/conda_env.tar.gz"
+    else
+        aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
+    fi
 
     gpuci_logger "Extracting"
     mkdir -p /opt/conda/envs/morpheus
