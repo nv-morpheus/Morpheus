@@ -18,7 +18,7 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
-$(restore_conda_env)
+restore_conda_env
 
 cd ${MORPHEUS_ROOT}/docs
 gpuci_logger "Installing Documentation dependencies"

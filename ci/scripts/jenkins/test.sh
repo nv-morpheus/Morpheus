@@ -18,7 +18,8 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
-$(restore_conda_env)
+
+restore_conda_env
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
