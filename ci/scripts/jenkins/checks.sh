@@ -21,6 +21,15 @@ source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 gpuci_logger "Installing CI dependencies"
 mamba install -q -y -c conda-forge "yapf=0.32"
 
+gpuci_logger "Check conda environment"
+conda info
+conda config --show-sources
+conda list --show-channel-urls
+
+echo "------------"
+which python
+which python3
+
 gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
