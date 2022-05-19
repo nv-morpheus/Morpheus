@@ -15,9 +15,12 @@
 # limitations under the License.
 #
 
+import logging
+
 import gitutils  # noqa: E402
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.ERROR)
     currentBranch = gitutils.branch()
     target = gitutils.determine_merge_commit(currentBranch)
     print(target)
