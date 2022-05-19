@@ -139,7 +139,7 @@ Next, we will build a Morpheus `Config` object. We will cover setting some commo
 config = Config()
 ```
 
-In this example, we will use the `FileSourceStage` class to read a large JSON file in which each line corresponds to an email message. The stage will take these lines and package them as Morpheus message objects for our pass-through stage to consume. Let's setup our source stage:
+In this example, we will use the `FileSourceStage` class to read a large file in which each line is a JSON object that represents an email message. The stage will take these lines and package them as Morpheus message objects for our pass-through stage to consume. Let's setup our source stage:
 ```python
 pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False))
 ```
