@@ -221,7 +221,7 @@ There are situations in which a C++ stage does need to interact with Python, and
 }
 ```
 
-We scoped the acquisition of the GIL such that it is held only for the parts of the code where it is strictly necessary. In the above example, when we exit the code block, the `gil` variable will go out of scope and release the GIL.
+We scoped the acquisition of the GIL such that it is held only for the parts of the code where it is strictly necessary. In the above example, when we exit the code block, the `gil` variable will go out of scope and release the global interpreter lock.
 
 ## Python Proxy and Interface
 
