@@ -76,7 +76,7 @@ Next, we will define an edge connecting our new node to our parent node:
 seg.make_edge(input_stream[0], node)
 ```
 
-Finally, we will return a new tuple of our node and output type. Since this is a pass-through node that can accept any input type, we will return our parent's type.
+Finally, we will return a new tuple of our node and output type. Since this is a pass through node that can accept any input type, we will return our parent's type.
 ```python
 return node, input_stream[1]
 ```
