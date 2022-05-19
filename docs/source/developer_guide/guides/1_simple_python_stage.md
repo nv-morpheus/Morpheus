@@ -110,7 +110,7 @@ class PassThruStage(SinglePortStage):
 ```
 
 ## Testing our new Stage
-To start testing our new pass-through stage, we are going to construct a simple pipeline and add our new stage to it. This pipeline will do the minimum work necessary to verify our pass-through stage. Data will flow through our simple pipeline as follows:
+To start testing our new pass through stage, we are going to construct a simple pipeline and add our new stage to it. This pipeline will do the minimum work necessary to verify our pass through stage. Data will flow through our simple pipeline as follows:
 1. A source stage will produce data and inject it into the pipeline.
 1. This data will be read and processed by our pass through stage, in this case simply forwarding on the data.
 1. A monitoring stage will record the messages from our pass-through stage and terminate the pipeline.
