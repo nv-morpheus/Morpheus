@@ -68,7 +68,7 @@ Note: The C++ implementation of a stage must receive and emit the same message t
 
 Note: The "Python" in the `PythonSource` & `PythonNode` class names refers to the fact that these classes contain Python interfaces, not the implementation language.
 
-## A Simple Pass-Through Stage
+## A Simple Pass Through Stage
 
 As in our Python guide, we will start with a simple pass-through stage which can be used as a starting point for future development of other stages. Note that by convention, C++ classes in Morpheus have the same name as their corresponding Python classes and are located under a directory named `_lib`. We will be following that convention. To start, we will create a `_lib` directory and a new empty `__init__.py` file.
 
