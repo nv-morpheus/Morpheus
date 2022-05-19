@@ -62,7 +62,7 @@ class PythonNode : ...
 
 Both the `PythonSource` and `PythonNode` classes are defined in the `pyneo/node.hpp` header.
 
-Note: `SourceT` and `SinkT` types are required to be `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`.
+Note: `SourceT` and `SinkT` types are typically `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`.
 
 Note: The C++ implementation of a stage must receive and emit the same message types as the Python implementation.
 
