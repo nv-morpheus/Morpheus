@@ -55,7 +55,7 @@ The stage identifier is a unique string used in both logging and creating the st
 ### Type Inference
 To perform work, each stage needs to know what type of data it will be operating on. Since Morpheus can pass any type of data from stage to stage, the pipeline must ensure compatible types at every edge connection between stages. This process is called stage type inference and is performed during the pipeline build phase.
 
-Stage type inference is necessary because the output type of some stages may depend on the output type of the previous stage. For example, consider a simple pass-through stage that passes the input message to the next stage unmodified. If our pass-through stage is preceded by a stage generating a string, its output type will be a string. Instead, if it's preceded by a stage generating an integer, its output type will be an integer.
+Stage type inference is necessary because the output type of some stages may depend on the output type of the previous stage. For example, consider a simple pass through stage that passes the input message to the next stage unmodified. If our pass through stage is preceded by a stage generating a string, its output type will be a string. Instead, if it's preceded by a stage generating an integer, its output type will be an integer.
 
 Due to the dynamic nature of the output type of a stage, stages must specify a type inference function that accepts an input type and returns the output type. Starting at the source stages, the pipeline will use this function to determine the output type of the source stages. This result will then be passed to the type inference function of the next stage, and so on until the input and output types of every stage in the pipeline have been determined.
 
