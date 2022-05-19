@@ -410,7 +410,7 @@ def _build_source(self, seg: neo.Segment) -> StreamPair:
     return node, MessageMeta
 ```
 
-The `source_generator` method is where most of the RabbitMQ-specific code exists. Source node methods receive an instance of `neo.Subscriber` as their first argument. When we receive a message that we wish to emit into the pipeline, we call the `neo.Subscriber.on_next` method.
+The `source_generator` method is where most of the RabbitMQ-specific code exists. Source node methods receive an instance of `neo.Subscriber` as their first argument. When we have a message that we wish to emit into the pipeline, we call the `neo.Subscriber.on_next` method.
 
 ```python
 def source_generator(self, subscriber: neo.Subscriber):
