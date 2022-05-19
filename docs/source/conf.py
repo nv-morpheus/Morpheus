@@ -30,8 +30,20 @@
 import importlib
 import os
 import sys
+from unittest import mock
 
+import neo
 import packaging
+
+neo_mocks = []
+for attr in dir(neo):
+    if not attr.startswith('_'):
+        p = mock.patch('neo.{}'.format(attr), create=True)
+        p.start()
+        neo_mocks.append(p)
+
+#morpheus_lib_mock = mock.patch('morpheus._lib', create=True)
+#morpheus_lib_mock.start()
 
 sys.path.insert(0, os.path.abspath('sphinxext'))
 
