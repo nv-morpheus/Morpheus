@@ -31,6 +31,12 @@ git lfs install
 git lfs pull
 
 gpuci_logger "Running tests"
+# Running the tests from the tests dir. Normally this isn't nescesary, however since
+# we are testing the installed version of morpheus in site-packages and not the one
+# in the repo dir, the pytest coverage module reports incorrect coverage stats.
+# Note: The -I flag prevents python from automatically adding the current dir to path,
+# so this bug appears to be specific to the coverage plugin
+cd ${MORPHEUS_ROOT}/tests
 set +e
 python -I -m pytest --run_slow \
        --junit-xml=${WORKSPACE_TMP}/report_pytest.xml \
