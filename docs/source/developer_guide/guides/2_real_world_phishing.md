@@ -121,7 +121,7 @@ class RecipientFeaturesStage(SinglePortStage):
 
 ### Testing the Preprocessing Stage
 
-To test our new stage, we will modify the pipeline from the previous guide by replacing the pass-through stage with our new one.
+To test our new stage, we will modify the pipeline from the previous guide by replacing the pass through stage with our new one.
 To do this, just update these lines from the previous guide:
 
 ```python
