@@ -42,8 +42,8 @@ for attr in dir(neo):
         p.start()
         neo_mocks.append(p)
 
-# morpheus_lib_mock = mock.patch('morpheus._lib', create=True)
-# morpheus_lib_mock.start()
+#morpheus_lib_mock = mock.patch('morpheus._lib', create=True)
+#morpheus_lib_mock.start()
 
 sys.path.insert(0, os.path.abspath('sphinxext'))
 
@@ -95,10 +95,10 @@ extensions = [
     'sphinx.ext.linkcode',
 ]
 
-# Include Python objects as they appear in source files
-# Default: alphabetically ('alphabetical')
+## Include Python objects as they appear in source files
+## Default: alphabetically ('alphabetical')
 # autodoc_member_order = 'groupwise'
-# Default flags used by autodoc directives
+## Default flags used by autodoc directives
 # autodoc_default_options = {
 #     'members': True,
 #     'show-inheritance': True,
@@ -157,7 +157,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'alabaster'
+#html_theme = 'alabaster'
 html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
