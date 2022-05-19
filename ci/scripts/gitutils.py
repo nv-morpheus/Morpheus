@@ -251,7 +251,7 @@ def modifiedFiles(pathFilter=None):
         if pathFilter is None or pathFilter(f):
             files.append(f)
 
-    filesToCheckString = "\n\t".join(files) if files else "<None>"
+    # filesToCheckString = "\n\t".join(files) if files else "<None>"
     # print(f"   [DEBUG] Found files to check:\n\t{filesToCheckString}\n")
     return files
 
