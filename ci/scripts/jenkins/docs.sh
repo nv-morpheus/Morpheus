@@ -17,7 +17,6 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
-/usr/bin/nvidia-smi
 
 restore_conda_env
 

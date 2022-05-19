@@ -42,8 +42,8 @@ for attr in dir(neo):
         p.start()
         neo_mocks.append(p)
 
-# morpheus_lib_mock = mock.patch('morpheus._lib', create=True)
-# morpheus_lib_mock.start()
+morpheus_lib_mock = mock.patch('morpheus._lib', create=True)
+morpheus_lib_mock.start()
 
 sys.path.insert(0, os.path.abspath('sphinxext'))
 
