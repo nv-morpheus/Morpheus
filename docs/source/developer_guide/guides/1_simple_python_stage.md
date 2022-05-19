@@ -21,7 +21,7 @@ limitations under the License.
 
 Morpheus makes use of the Neo graph-execution framework. Morpheus pipelines are built on top of Neo pipelines. Pipelines in Neo are made up of segments; however, in many common cases, a Neo pipeline will consist of only a single segment. Our Morpheus stages will interact with the Neo segment to build nodes and add them to the Neo graph. In the common case, a Morpheus stage will add a single node to the graph, but in some cases it will add multiple nodes to the graph.
 
-## The Pass-Through Stage
+## The Pass Through Stage
 
 To start, we will implement a single stage that could be included in a pipeline. For illustration, this stage will do nothing but take the input from the previous stage and forward it to the next stage. All Morpheus stages have several things in common, so while this doesn't do too much, it ends up being a good starting point for writing a new stage. From there, we can add our functionality as needed.
 
