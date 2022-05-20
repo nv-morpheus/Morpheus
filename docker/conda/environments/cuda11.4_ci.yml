@@ -18,6 +18,7 @@ name: morpheus
 channels:
     - conda-forge
 dependencies:
+    - boa >=0.10
     - conda-pack=0.7
     - pkg-config=0.29
     - sccache=0.3
