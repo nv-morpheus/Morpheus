@@ -53,6 +53,7 @@ function fetch_s3() {
         curl -f "${DISPLAY_URL}${ENDPOINT}" -o "${DESTINATION}"
         RET=$?
     else
+        echo "${S3_URL}${ENDPOINT}"
         aws s3 cp --no-progress "${S3_URL}${ENDPOINT}" "${DESTINATION}"
         RET=$?
     fi
