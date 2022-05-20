@@ -45,10 +45,10 @@ CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.bz"
 
 gpuci_logger "Checking ${DISPLAY_URL}${CUDF_CONDA_CACHE_PATH}"
 set +e
-CUDF_CACHE_CHECK=$(fetch_s3 "${CUDF_CONDA_CACHE_PATH}" "${CUDF_CONDA_TAR}")
+fetch_s3 "${CUDF_CONDA_CACHE_PATH}" "${CUDF_CONDA_TAR}"
 set -e
 
-if [[ "${CUDF_CACHE_CHECK}" != "0" ]]; then
+if [[ "${FETCH_STATUS}" != "0" ]]; then
       gpuci_logger "Cache miss, Building cuDF"
       mkdir -p ${CONDA_BLD_DIR}
       # The --no-build-id bit is needed for sccache

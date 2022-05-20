@@ -43,6 +43,8 @@ export SCCACHE_REGION=us-west-2
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
+export FETCH_STATUS=0
+
 gpuci_logger "Environ:"
 env | sort
 
@@ -51,14 +53,11 @@ function fetch_s3() {
     DESTINATION=$2
     if [[ "${USE_S3_CURL}" == "1" ]]; then
         curl -f "${DISPLAY_URL}${ENDPOINT}" -o "${DESTINATION}"
-        RET=$?
+        FETCH_STATUS=$?
     else
-        echo "${S3_URL}${ENDPOINT}"
         aws s3 cp --no-progress "${S3_URL}${ENDPOINT}" "${DESTINATION}"
-        RET=$?
+        FETCH_STATUS=$?
     fi
-
-    echo $RET
 }
 
 function restore_conda_env() {
