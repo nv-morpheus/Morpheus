@@ -32,7 +32,8 @@ export CHANGE_TARGET="origin/${CHANGE_TARGET}"
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
 export DISPLAY_URL="https://downloads.rapids.ai/ci/morpheus"
-export ARTIFACT_URL="${S3_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+export ARTIFACT_ENDPOINT="/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+export ARTIFACT_URL="${S3_URL}${ARTIFACT_ENDPOINT}"
 export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}/"
 
 # Set sccache env vars
@@ -45,14 +46,24 @@ export SCCACHE_IDLE_TIMEOUT=32768
 gpuci_logger "Environ:"
 env | sort
 
+function fetch_s3() {
+    ENDPOINT=$1
+    DESTINATION=$2
+    if [[ "${USE_S3_CURL}" == "1" ]]; then
+        curl -f "${DISPLAY_URL}${ENDPOINT}" -o "${DESTINATION}"
+        RET=$?
+    else
+        aws s3 cp --no-progress "${S3_URL}${ENDPOINT}" ${DESTINATION}
+        RET=$?
+    fi
+
+    echo $RET
+}
+
 function restore_conda_env() {
 
     gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
-    if [[ "${USE_S3_CURL}" == "1" ]]; then
-        curl "${DISPLAY_ARTIFACT_URL}conda_env.tar.gz" -o  "${WORKSPACE_TMP}/conda_env.tar.gz"
-    else
-        aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
-    fi
+    fetch_s3 "${ARTIFACT_ENDPOINT}" "${WORKSPACE_TMP}/conda_env.tar.gz"
 
     gpuci_logger "Extracting"
     mkdir -p /opt/conda/envs/morpheus
