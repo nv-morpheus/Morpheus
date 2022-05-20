@@ -112,6 +112,7 @@ aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/con
 gpuci_logger "Running conda build for morpheus"
 ZS=$(sccache --zero-stats)
 # git config --global --add safe.directory ${MORPHEUS_ROOT}
+mkdir -p ${CONDA_BLD_DIR}
 CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus
 
 gpuci_logger "sccache usage for morpheus conda build:"

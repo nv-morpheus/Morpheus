@@ -23,7 +23,7 @@ function hasArg {
 }
 
 function get_version() {
-   echo "$(git describe --tags | grep -o -E '^([^-]*?)')"
+   echo "$(git describe --tags --always | grep -o -E '^([^-]*?)')"
 }
 
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
@@ -145,9 +145,11 @@ if hasArg morpheus; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
    # Do this after neo in case they are different
    export GIT_VERSION="$(get_version)"
+   echo ${GIT_VERSION}
 
    echo "Running conda-build for morpheus..."
    set -x
+   echo ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
    conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
    set +x
 fi

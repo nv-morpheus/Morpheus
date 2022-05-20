@@ -25,6 +25,10 @@ gpuci_logger "Memory"
 gpuci_logger "User Info"
 id
 
+gpuci_logger "Git info"
+git describe --tags --always
+
+
 # Change target is the branch name we are merging into but due to the weird way jenkins does
 # the checkout it isn't recognized by git without the origin/ prefix
 export CHANGE_TARGET="origin/${CHANGE_TARGET}"
