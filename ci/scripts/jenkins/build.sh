@@ -88,10 +88,8 @@ cmake -B build -G Ninja \
       -DMORPHEUS_BUILD_TESTS=ON \
       -DMORPHEUS_USE_CONDA=ON \
       -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF \
-      -DMORPHEUS_USE_CCACHE=OFF \
-      -DCMAKE_C_COMPILER_LAUNCHER=sccache \
-      -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
-      -DCMAKE_CUDA_COMPILER_LAUNCHER=sccache \
+      -DMORPHEUS_USE_CCACHE=ON \
+      -DCCACHE_PROGRAM_PATH=$(which sccache) \
       .
 
 gpuci_logger "Building Morpheus"
