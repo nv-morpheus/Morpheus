@@ -80,11 +80,11 @@ cudf::io::table_with_metadata from_json(const std::string &body) const;
 void close();
 ```
 
-The `build_observable` method is responsible for constructing a Neo `Observable` for our source type, the result of which will be passed into our base's constructor. A Neo `Observable` is constructed by passing it a reference to a function (typically a lambda) which receives a reference to a Neo `Subscriber`. Typically, this function is the center of a source stage, making calls to the `Subscriber`'s `on_next`, `on_error` and `on_completed` methods. For this example, the RabbitMQ specific logic was broken out into the `source_generator` method, which should be analogous to the `source_generator` method from the Python class, and will emit new messages into the pipeline by calling `subscriber.on_next(message)`.
+The `build_observable` method is responsible for constructing a Neo `Observable` for our source type, the result of which will be passed into our base's constructor. A Neo `Observable` is constructed by passing it a reference to a function (typically a lambda) which receives a reference to a Neo `Subscriber`. Typically, this function is the center of a source stage, making calls to the `Subscriber`'s `on_next`, `on_error`, and `on_completed` methods. For this example, the RabbitMQ-specific logic was broken out into the `source_generator` method, which should be analogous to the `source_generator` method from the Python class, and will emit new messages into the pipeline by calling `subscriber.on_next(message)`.
 
 The `from_json` method parses a JSON string to a cuDF [table_with_metadata](https://docs.rapids.ai/api/libcudf/stable/structcudf_1_1io_1_1table__with__metadata.html). Lastly, the `close` method disconnects from the RabbitMQ exchange.
 
-We will also need three private attributes specific to our interactions with RabbitMQ, our polling interval, the name of the queue we are listening to, and a pointer to our channel object.
+We will also need three private attributes specific to our interactions with RabbitMQ: our polling interval, the name of the queue we are listening to, and a pointer to our channel object.
 
 ```cpp
 std::chrono::milliseconds m_poll_interval;
@@ -92,7 +92,7 @@ std::string m_queue_name;
 AmqpClient::Channel::ptr_t m_channel;
 ```
 
-Wrapping it all together our header file should look like this:
+Wrapping it all together, our header file should look like this:
 `examples/rabbitmq/_lib/rabbitmq_source.hpp`
 
 ```cpp
@@ -189,12 +189,12 @@ Our includes section looks like:
 #include <vector>
 ```
 
-The two Neo includes bringing in the actual definitions for Neo `Segment` and `SegmentObject`. The [Google Logging Library](https://github.com/google/glog) (glog) is used by Morpheus for logging; however, the choice of a logger is up to the individual developer.
+The two Neo includes bring in the actual definitions for Neo `Segment` and `SegmentObject`. The [Google Logging Library](https://github.com/google/glog) (glog) is used by Morpheus for logging; however, the choice of a logger is up to the individual developer.
 
 Neo uses the [Boost.Fiber](https://www.boost.org/doc/libs/1_77_0/libs/fiber/doc/html/fiber/overview.html) library to perform task scheduling. In the future, Neo will likely expose a configuration option to choose between fibers or `std::thread`.
 For now, all Morpheus stages, both Python and C++, are executed within a fiber. In general, authors of a stage don't need to be too concerned about this detail, with two notable exceptions:
-1. Rather than yielding or sleeping a thread,  stage authors should instead call [boost::this_fiber::yield](https://www.boost.org/doc/libs/master/libs/fiber/doc/html/fiber/fiber_mgmt/this_fiber.html#this_fiber_yield) and [boost::this_fiber::sleep_for](https://www.boost.org/doc/libs/master/libs/fiber/doc/html/fiber/fiber_mgmt/this_fiber.html#this_fiber_sleep_for) respectively.
-1. In cases where thread-local-storage is desired, [fiber local storage](https://www.boost.org/doc/libs/1_77_0/libs/fiber/doc/html/fiber/fls.html) should be used instead.
+1. Rather than yielding or sleeping a thread, stage authors should instead call [boost::this_fiber::yield](https://www.boost.org/doc/libs/master/libs/fiber/doc/html/fiber/fiber_mgmt/this_fiber.html#this_fiber_yield) and [boost::this_fiber::sleep_for](https://www.boost.org/doc/libs/master/libs/fiber/doc/html/fiber/fiber_mgmt/this_fiber.html#this_fiber_sleep_for), respectively.
+1. In cases where thread-local storage is desired, [fiber local storage](https://www.boost.org/doc/libs/1_77_0/libs/fiber/doc/html/fiber/fls.html) should be used instead.
 
 Authors of stages that require concurrency are free to choose their own concurrency models. Launching new processes, threads, or fibers from within a stage is permissible as long as the management of those resources is contained within the stage. Newly launched threads are also free to use thread-local storage so long as it doesn't occur within the thread the stage is executed from.
 
@@ -219,13 +219,13 @@ RabbitMQSourceStage::RabbitMQSourceStage(const neo::Segment &segment,
 }
 ```
 
-The key thing to note is the third argument in the invocation of our base's constructor is our observable:
+The key thing to note is that the third argument in the invocation of our base's constructor is our observable:
 
 ```cpp
 base_t(segment, name, build_observable())
 ```
 
-The observable argument to the constructor contains an empty default value, allowing stage authors to later define the observable by calling the `set_source_observable` method; the constructor could instead be written as:
+The observable argument to the constructor contains an empty default value, allowing stage authors to later define the observable by calling the `set_source_observable` method. The constructor could instead be written as:
 
 ```cpp
 base_t(segment, name)
@@ -238,7 +238,7 @@ Our `build_observable` method returns an observable, which needs to do three thi
 1. Emit data into the pipeline by calling `Subscriber`'s `on_next` method. In our example, this occurs in the `source_generator` method.
 1. When an error occurs, call the `Subscriber`'s `on_error` method.
 1. When we are done, call the `Subscriber`'s `on_complete` method.
-Note: Some source stages, such as ones that read input data from a file, there is a clear point where the stage is complete. Others such as this one are intended to continue running until it is shut down. For these situations, the stage can poll the `Subscriber`'s `is_subscribed` method, which will return a value of `false` on shut-down.
+Note: For some source stages, such as ones that read input data from a file, there is a clear point where the stage is complete. Others such as this one are intended to continue running until it is shut down. For the latter situation, the stage can poll the `Subscriber`'s `is_subscribed` method, which will return a value of `false` on shut down.
 
 ```cpp
 neo::Observable<RabbitMQSourceStage::source_type_t> RabbitMQSourceStage::build_observable()
@@ -294,9 +294,9 @@ void RabbitMQSourceStage::source_generator(neo::Subscriber<RabbitMQSourceStage::
 
 ## A note on performance:
 
-We don't yet know how large the messages we are going to be receiving from RabbitMQ, but we should assume that they may be quite large. As such, we try to limit the number of copies of this data, preferring to instead pass by reference or move data. The `SimpleAmqpClient`'s `Body()` method returns a const reference to the payload, which we also pass by reference into the `from_json` method. Since our stage has no need for the data itself after it's emitted into the pipeline, we move our cuDF data table when we construct our `MessageMeta` instance, and again, we then move the message into the subscriber's `on_next` method.
+We don't yet know the size of the messages that we are going to receive from RabbitMQ, but we should assume that they may be quite large. As such, we try to limit the number of copies of this data, preferring to instead pass by reference or move data. The `SimpleAmqpClient`'s `Body()` method returns a const reference to the payload, which we also pass by reference into the `from_json` method. Since our stage has no need for the data itself after it's emitted into the pipeline, we move our cuDF data table when we construct our `MessageMeta` instance, and then we once again move the message into the subscriber's `on_next` method.
 
-Our `from_json` and `close` methods are rather straight forward:
+Our `from_json` and `close` methods are rather straightforward:
 
 ```cpp
 cudf::io::table_with_metadata RabbitMQSourceStage::from_json(const std::string &body) const
@@ -352,7 +352,7 @@ PYBIND11_MODULE(morpheus_rabbit, m)
 }
 ```
 
-Wrapping it all together our source file should look like:
+Wrapping it all together, our source file should look like:
 `examples/rabbitmq/_lib/rabbitmq_source.cpp`
 
 ```cpp
@@ -492,7 +492,7 @@ PYBIND11_MODULE(morpheus_rabbit, m)
 
 ## Python Changes
 
-Previously, our stage connected to the RabbitMQ server in the constructor. This is no longer advantageous to us when C++ execution is enabled; instead, we will record our constructor arguments and move the connection code to a new `connect` method. Our new constructor and `connect` methods are updated to:
+Previously, our stage connected to the RabbitMQ server in the constructor. This is no longer advantageous to us when C++ execution is enabled. Instead, we will record our constructor arguments and move the connection code to a new `connect` method. Our new constructor and `connect` methods are updated to:
 
 ```python
 def __init__(self,
@@ -534,7 +534,7 @@ def connect(self):
         exchange=self._exchange, queue=self._queue_name)
 ```
 
-Lastly our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig` is configured to `True`.
+Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig` is configured to `True`.
 
 ```python
 def _build_source(self, seg: neo.Segment) -> StreamPair:
