@@ -101,7 +101,7 @@ gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
 
 gpuci_logger "Installing Morpheus"
-cmake --install build --prefix build/wheel
+cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
 pip install ${MORPHEUS_ROOT}/build/wheel
 
 gpuci_logger "Archiving results"
