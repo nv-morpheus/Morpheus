@@ -113,7 +113,7 @@ gpuci_logger "Running conda build for morpheus"
 ZS=$(sccache --zero-stats)
 # git config --global --add safe.directory ${MORPHEUS_ROOT}
 mkdir -p ${CONDA_BLD_DIR}
-CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus
+CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus
 
 gpuci_logger "sccache usage for morpheus conda build:"
 sccache --show-stats
