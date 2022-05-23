@@ -135,12 +135,8 @@ install(
   FILES_MATCHING
     PATTERN "*.py"
     PATTERN "py.typed"
+    PATTERN "data/*"
 )
 
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/morpheus/data
-  DESTINATION ${MORPHEUS_PY_INSTALL_DIR}/morpheus
-  COMPONENT Wheel
-)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
