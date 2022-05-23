@@ -60,7 +60,7 @@ if [[ "${CUDF_CACHE_CHECK}" != "0" ]]; then
 
       gpuci_logger "sccache usage for cudf build:"
       sccache --show-stats
-      ZS=$(sccache --zero-stats)
+      sccache --zero-stats 2>&1 > /dev/null
 
       gpuci_logger "Archiving cuDF build"
       cd $(dirname ${CONDA_BLD_DIR})
