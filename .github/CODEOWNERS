@@ -1,10 +1,15 @@
 # Default Approval rule if one of the later sections does not apply
-* @BartleyR @mdemoret-nv @pdmack @raykallen
+* @nv-morpheus/morpheus-codeowners
 
-# Engineering is requried for changes to the following
-/morpheus/ @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv @cwharris
-/cmake/    @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv @cwharris
-/tests/    @BartleyR @mdemoret-nv @pdmack @bsuryadevara @dagardner-nv @drobison00 @efajardo-nv @cwharris
+# Engineering is requried for changes to the following:
+/ci/       @nv-morpheus/morpheus-codeowners-eng
+/cmake/    @nv-morpheus/morpheus-codeowners-eng
+/docker/   @nv-morpheus/morpheus-codeowners-eng
+/docs/     @nv-morpheus/morpheus-codeowners-eng
+/examples/ @nv-morpheus/morpheus-codeowners-eng
+/morpheus/ @nv-morpheus/morpheus-codeowners-eng
+/scripts/  @nv-morpheus/morpheus-codeowners-eng
+/tests/    @nv-morpheus/morpheus-codeowners-eng
 
 # Data Science is requried for changes to `models`
-/models/ @BartleyR @mdemoret-nv @pdmack @bsuryadevara @raykallen @gbatmaz @tzemicheal 
+/models/ @nv-morpheus/morpheus-codeowners-ds
