@@ -108,5 +108,20 @@ mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
 
+gpuci_logger "Running conda build for morpheus"
+sccache --zero-stats 2>&1 > /dev/null
+CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus
+
+gpuci_logger "sccache usage for morpheus conda build:"
+sccache --show-stats
+
+gpuci_logger "Archiving conda builds"
+tar cfj ${WORKSPACE_TMP}/conda_build.tar.bz ${CONDA_BLD_DIR}
+ls -lh ${WORKSPACE_TMP}/
+
+gpuci_logger "Pushing conda builds to ${DISPLAY_ARTIFACT_URL}"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_build.tar.bz" "${ARTIFACT_URL}/conda_build.tar.bz"
+
+
 gpuci_logger "Success"
 exit 0
