@@ -34,14 +34,7 @@ python3 --version
 gcc --version
 g++ --version
 
-<<<<<<< HEAD
 show_conda_info
-=======
-gpuci_logger "Check conda environment"
-conda info
-conda config --show-sources
-conda list --show-channel-urls
->>>>>>> david-cli-rel-paths
 
 gpuci_logger "Checking S3 cuDF cache"
 CUDF_CONDA_BLD_DIR=/opt/conda/conda-bld
@@ -52,18 +45,10 @@ CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.bz"
 
 gpuci_logger "Checking ${DISPLAY_URL}${CUDF_CONDA_CACHE_PATH}"
 set +e
-<<<<<<< HEAD
 fetch_s3 "${CUDF_CONDA_CACHE_PATH}" "${CUDF_CONDA_TAR}"
 set -e
 
 if [[ "${FETCH_STATUS}" != "0" ]]; then
-=======
-aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
-CUDF_CACHE_CHECK=$?
-set -e
-
-if [[ "${CUDF_CACHE_CHECK}" != "0" ]]; then
->>>>>>> david-cli-rel-paths
       gpuci_logger "Cache miss, Building cuDF"
       mkdir -p ${CUDF_CONDA_BLD_DIR}
       # The --no-build-id bit is needed for sccache
