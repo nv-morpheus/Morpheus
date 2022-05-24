@@ -35,13 +35,16 @@ function(inplace_build_copy TARGET_NAME INPLACE_DIR)
 
     # Create the copy command for each resource
     foreach(resource ${target_resources})
+      # Get the relative path to the build directory
+      file(RELATIVE_PATH relative_resource ${target_build_dir} ${resource})
+
       add_custom_command(
-        OUTPUT  ${INPLACE_DIR}/${resource}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${target_build_dir}/${resource} ${INPLACE_DIR}/${resource}
-        DEPENDS ${target_build_dir}/${resource}
-        COMMENT "Copying stub ${target_build_dir}/${resource} to ${INPLACE_DIR}/${resource}"
+        OUTPUT  ${INPLACE_DIR}/${relative_resource}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${resource} ${INPLACE_DIR}/${relative_resource}
+        DEPENDS ${resource}
+        COMMENT "Copying stub ${resource} to ${INPLACE_DIR}/${relative_resource}"
       )
-      list(APPEND resource_outputs ${INPLACE_DIR}/${resource})
+      list(APPEND resource_outputs ${INPLACE_DIR}/${relative_resource})
     endforeach()
 
     # Final target to depend on the copied files
@@ -196,30 +199,26 @@ macro(add_python_module MODULE_NAME)
   # succeed
   add_dependencies(all_python_targets ${TARGET_NAME})
 
-  if (MORPHEUS_PYTHON_INPLACE_BUILD)
-    # Before installing, create the custom command to generate the stubs
-    set(pybind11_stub_file "${MODULE_NAME}/__init__.pyi")
+  # Before installing, create the custom command to generate the stubs
+  set(pybind11_stub_file "${CMAKE_CURRENT_BINARY_DIR}/${MODULE_NAME}/__init__.pyi")
 
-    add_custom_command(
-      OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${pybind11_stub_file}
-      COMMAND ${Python3_EXECUTABLE} -m pybind11_stubgen ${TARGET_NAME} --no-setup-py --log-level WARN -o ./ --root-module-suffix \"\"
-      DEPENDS ${TARGET_NAME} all_python_targets
-      COMMENT "Building stub for python module ${TARGET_NAME}..."
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    )
+  add_custom_command(
+    OUTPUT  ${pybind11_stub_file}
+    COMMAND ${Python3_EXECUTABLE} -m pybind11_stubgen ${TARGET_NAME} --no-setup-py --log-level WARN -o ./ --root-module-suffix \"\"
+    DEPENDS ${TARGET_NAME} all_python_targets
+    COMMENT "Building stub for python module ${TARGET_NAME}..."
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  )
 
-    # Add a custom target to ensure the stub generation runs
-    add_custom_target(${TARGET_NAME}-stubs ALL
-      DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${pybind11_stub_file}
-    )
+  # Add a custom target to ensure the stub generation runs
+  add_custom_target(${TARGET_NAME}-stubs ALL
+    DEPENDS ${pybind11_stub_file}
+  )
 
+  # Save the output as a target property
+  set_target_properties(${TARGET_NAME} PROPERTIES RESOURCE "${pybind11_stub_file}")
 
-    # Save the output as a target property
-    set_target_properties(${TARGET_NAME} PROPERTIES RESOURCE "${pybind11_stub_file}")
-
-    unset(pybind11_stub_file)
-  endif()
-
+  unset(pybind11_stub_file)
 
   if (PYMOD_INSTALL_DEST)
     message(STATUS " Install dest: (${TARGET_NAME}) ${PYMOD_INSTALL_DEST}")
