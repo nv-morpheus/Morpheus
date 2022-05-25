@@ -27,26 +27,6 @@
 #include <cxxabi.h>
 #endif
 
-// Utility to wrap all elements of a tuple with another type
-template <size_t N, template <typename...> class WrappingT, typename TupleTypeT>
-struct WrapTupleElems;
-
-template <size_t N, template <typename...> class WrappingT, typename... TupleArgsT>
-struct WrapTupleElems<N, WrappingT, std::tuple<TupleArgsT...>>
-{
-    using type_t = typename std::tuple<WrappingT<TupleArgsT>...>;
-};
-
-inline std::string demangle_type_str(const std::string& instr)
-{
-#ifndef NDEBUG
-    int status;
-    return abi::__cxa_demangle(instr.c_str(), nullptr, nullptr, &status);
-#else
-    return instr;
-#endif
-}
-
 namespace morpheus {
 
 // Pulled from cuDF
