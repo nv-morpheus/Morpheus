@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/neo_wrapped_tensor.hpp>
+#include <morpheus/objects/wrapped_tensor.hpp>
 
 #include <morpheus/objects/tensor_object.hpp>
 
@@ -27,9 +27,8 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorObject****************************************/
-// TODO(Devin) defined in Neo
-/****** NeoTensorObjectInterfaceProxy *************************/
-pybind11::dict NeoTensorObjectInterfaceProxy::cuda_array_interface(TensorObject &self)
+/****** TensorObjectInterfaceProxy *************************/
+pybind11::dict TensorObjectInterfaceProxy::cuda_array_interface(TensorObject &self)
 {
     pybind11::dict array_interface;
 

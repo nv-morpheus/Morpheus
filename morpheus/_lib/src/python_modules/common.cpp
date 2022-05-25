@@ -16,7 +16,7 @@
  */
 
 #include <morpheus/objects/fiber_queue.hpp>
-#include <morpheus/objects/neo_wrapped_tensor.hpp>
+#include <morpheus/objects/wrapped_tensor.hpp>
 #include <morpheus/utilities/cudf_util.hpp>
 
 #include <pybind11/pybind11.h>
@@ -43,7 +43,7 @@ PYBIND11_MODULE(common, m)
 
     // TODO(Devin) -- This should not be defined in morpheus -- should be imported from pyneo -- wrapping for now.
     py::class_<TensorObject>(m, "Tensor")
-        .def_property_readonly("__cuda_array_interface__", &NeoTensorObjectInterfaceProxy::cuda_array_interface);
+        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
 
     py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))

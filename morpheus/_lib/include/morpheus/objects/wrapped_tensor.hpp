@@ -40,7 +40,7 @@ namespace morpheus {
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct NeoTensorObjectInterfaceProxy
+struct TensorObjectInterfaceProxy
 {
     static pybind11::dict cuda_array_interface(TensorObject &self);
 };
