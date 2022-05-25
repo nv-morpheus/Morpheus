@@ -21,7 +21,7 @@
 #include <morpheus/utilities/type_util.hpp>
 
 #include <neo/cuda/sync.hpp>
-#include <neo/core/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <matx.h>
 

@@ -19,40 +19,42 @@
 
 #include <morpheus/objects/tensor.hpp>
 
-#include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>
+#include <cudf/io/types.hpp>
 
 #include <string>
 #include <vector>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** ResponseMemory****************************************/
+/****** Component public implementations *******************/
+/****** ResponseMemory****************************************/
+/**
+ * TODO(Documentation)
+ */
+class ResponseMemory
+{
+  public:
+    ResponseMemory(size_t count);
+
+    size_t count{0};
+    std::map<std::string, TensorObject> outputs;
+
     /**
      * TODO(Documentation)
      */
-    class ResponseMemory {
-    public:
-        ResponseMemory(size_t count);
+    bool has_output(const std::string &name) const;
+};
 
-        size_t count{0};
-        std::map<std::string, neo::TensorObject> outputs;
-
-        /**
-         * TODO(Documentation)
-         */
-        bool has_output(const std::string &name) const;
-    };
-
-    /****** ResponseMemoryInterfaceProxy *************************/
+/****** ResponseMemoryInterfaceProxy *************************/
 #pragma GCC visibility push(default)
-    /**
-     * @brief Interface proxy, used to insulate python bindings.
-     */
-    struct ResponseMemoryInterfaceProxy {
-        static pybind11::object get_output(ResponseMemory &self, const std::string &name);
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct ResponseMemoryInterfaceProxy
+{
+    static pybind11::object get_output(ResponseMemory &self, const std::string &name);
 
-        static neo::TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
-    };
+    static TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

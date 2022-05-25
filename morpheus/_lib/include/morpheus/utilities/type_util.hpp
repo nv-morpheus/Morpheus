@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <neo/utils/type_utils.hpp>
+#include <morpheus/utilities/type_util_detail.hpp>
 
 #include <cudf/types.hpp>
 #include <cudf/utilities/traits.hpp>
@@ -25,38 +25,39 @@
 #include <memory>
 #include <stdexcept>
 
-
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** DType****************************************/
-    struct DType : neo::DataType  // NOLINT
+/****** Component public implementations *******************/
+/****** DType****************************************/
+struct DType : neo::DataType  // NOLINT
+{
+    DType(const neo::DataType &dtype);
+
+    DType(neo::TypeId tid);
+
+    // Cudf representation
+    cudf::type_id cudf_type_id() const;
+
+    // Returns the triton string representation
+    std::string triton_str() const;
+
+    // from template
+    template <typename T>
+    static DType create()
     {
-        DType(const neo::DataType &dtype);
-
-        DType(neo::TypeId tid);
-
-        // Cudf representation
-        cudf::type_id cudf_type_id() const;
-
-        // Returns the triton string representation
-        std::string triton_str() const;
-
-        // from template
-        template<typename T>
-        static DType create() {
-            return DType(neo::DataType::create<T>());
-        }
-
-        // From cudf
-        static DType from_cudf(cudf::type_id tid);
-
-        // From triton
-        static DType from_triton(const std::string &type_str);
-    };
-
-    template<typename T>
-    DType type_to_dtype() {
-        return DType::from_triton(cudf::type_to_id<T>);
+        return DType(neo::DataType::create<T>());
     }
+
+    // From cudf
+    static DType from_cudf(cudf::type_id tid);
+
+    // From triton
+    static DType from_triton(const std::string &type_str);
+};
+
+template <typename T>
+DType type_to_dtype()
+{
+    return DType::from_triton(cudf::type_to_id<T>);
+}
 
 }  // namespace morpheus

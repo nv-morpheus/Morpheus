@@ -24,12 +24,13 @@
 #include <memory>
 
 namespace morpheus {
-    namespace py = pybind11;
+namespace py = pybind11;
 
-    PYBIND11_MODULE(common, m) {
-        google::InitGoogleLogging("morpheus");
+PYBIND11_MODULE(common, m)
+{
+    google::InitGoogleLogging("morpheus");
 
-        m.doc() = R"pbdoc(
+    m.doc() = R"pbdoc(
         -----------------------
         .. currentmodule:: morpheus.common
         .. autosummary::
@@ -37,32 +38,23 @@ namespace morpheus {
             TODO(Documentation)
         )pbdoc";
 
-        // Load the cudf helpers
-        load_cudf_helpers();
+    // Load the cudf helpers
+    load_cudf_helpers();
 
-        // TODO(Devin) -- This should not be defined in morpheus -- should be imported from pyneo -- wrapping for now.
-        py::class_<neo::TensorObject>(m, "Tensor")
-                .def_property_readonly("__cuda_array_interface__",
-                                       &NeoTensorObjectInterfaceProxy::cuda_array_interface);
+    // TODO(Devin) -- This should not be defined in morpheus -- should be imported from pyneo -- wrapping for now.
+    py::class_<TensorObject>(m, "Tensor")
+        .def_property_readonly("__cuda_array_interface__", &NeoTensorObjectInterfaceProxy::cuda_array_interface);
 
-        py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
-                .def(py::init<>(&FiberQueueInterfaceProxy::init),
-                     py::arg("max_size"))
-                .def("get",
-                     &FiberQueueInterfaceProxy::get,
-                     py::arg("block") = true,
-                     py::arg("timeout") = 0.0)
-                .def("put",
-                     &FiberQueueInterfaceProxy::put,
-                     py::arg("item"),
-                     py::arg("block") = true,
-                     py::arg("timeout") = 0.0)
-                .def("close", &FiberQueueInterfaceProxy::close);
+    py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
+        .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))
+        .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
+        .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
+        .def("close", &FiberQueueInterfaceProxy::close);
 
 #ifdef VERSION_INFO
-        m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
+    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else
-        m.attr("__version__") = "dev";
+    m.attr("__version__") = "dev";
 #endif
-    }
+}
 }  // namespace morpheus

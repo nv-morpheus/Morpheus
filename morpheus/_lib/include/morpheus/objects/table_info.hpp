@@ -20,7 +20,7 @@
 #include <morpheus/objects/data_table.hpp>
 
 #include <cudf/table/table_view.hpp>
-#include <neo/utils/type_utils.hpp>
+#include <morpheus/utilities/type_util_detail.hpp>
 
 #include <memory>
 #include <string>

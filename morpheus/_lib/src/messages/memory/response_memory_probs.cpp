@@ -25,46 +25,54 @@
 
 #include <pybind11/pytypes.h>
 
+#include <cstddef>
 #include <memory>
 #include <utility>
-#include <cstddef>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** ResponseMemoryProbs****************************************/
-    ResponseMemoryProbs::ResponseMemoryProbs(size_t count, neo::TensorObject probs) : ResponseMemory(count) {
-        this->outputs["probs"] = std::move(probs);
-    }
-
-    const neo::TensorObject &ResponseMemoryProbs::get_probs() const {
-        auto found = this->outputs.find("probs");
-        if (found == this->outputs.end()) {
-            throw std::runtime_error("Tensor: 'probs' not found in memory");
-        }
-
-        return found->second;
-    }
-
-    void ResponseMemoryProbs::set_probs(neo::TensorObject probs) {
-        this->outputs["probs"] = std::move(probs);
-    }
-
-    /****** ResponseMemoryProbsInterfaceProxy *************************/
-    std::shared_ptr<ResponseMemoryProbs>
-    ResponseMemoryProbsInterfaceProxy::init(cudf::size_type count, pybind11::object probs) {
-        // Conver the cupy arrays to tensors
-        return std::make_shared<ResponseMemoryProbs>(count, std::move(CupyUtil::cupy_to_tensor(probs)));
-    }
-
-    std::size_t ResponseMemoryProbsInterfaceProxy::count(ResponseMemoryProbs &self) {
-        return self.count;
-    }
-
-    pybind11::object ResponseMemoryProbsInterfaceProxy::get_probs(ResponseMemoryProbs &self) {
-        return CupyUtil::tensor_to_cupy(self.get_probs());
-    }
-
-    void ResponseMemoryProbsInterfaceProxy::set_probs(ResponseMemoryProbs &self, pybind11::object cupy_values) {
-        self.set_probs(CupyUtil::cupy_to_tensor(cupy_values));
-    }
+/****** Component public implementations *******************/
+/****** ResponseMemoryProbs****************************************/
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : ResponseMemory(count)
+{
+    this->outputs["probs"] = std::move(probs);
 }
+
+const TensorObject &ResponseMemoryProbs::get_probs() const
+{
+    auto found = this->outputs.find("probs");
+    if (found == this->outputs.end())
+    {
+        throw std::runtime_error("Tensor: 'probs' not found in memory");
+    }
+
+    return found->second;
+}
+
+void ResponseMemoryProbs::set_probs(TensorObject probs)
+{
+    this->outputs["probs"] = std::move(probs);
+}
+
+/****** ResponseMemoryProbsInterfaceProxy *************************/
+std::shared_ptr<ResponseMemoryProbs> ResponseMemoryProbsInterfaceProxy::init(cudf::size_type count,
+                                                                             pybind11::object probs)
+{
+    // Conver the cupy arrays to tensors
+    return std::make_shared<ResponseMemoryProbs>(count, std::move(CupyUtil::cupy_to_tensor(probs)));
+}
+
+std::size_t ResponseMemoryProbsInterfaceProxy::count(ResponseMemoryProbs &self)
+{
+    return self.count;
+}
+
+pybind11::object ResponseMemoryProbsInterfaceProxy::get_probs(ResponseMemoryProbs &self)
+{
+    return CupyUtil::tensor_to_cupy(self.get_probs());
+}
+
+void ResponseMemoryProbsInterfaceProxy::set_probs(ResponseMemoryProbs &self, pybind11::object cupy_values)
+{
+    self.set_probs(CupyUtil::cupy_to_tensor(cupy_values));
+}
+}  // namespace morpheus

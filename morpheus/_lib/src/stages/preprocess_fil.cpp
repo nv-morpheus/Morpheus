@@ -21,8 +21,8 @@
 #include <morpheus/utilities/matx_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
+#include <morpheus/utilities/type_util_detail.hpp>
 #include <neo/core/segment.hpp>
-#include <neo/utils/type_utils.hpp>
 #include <pyneo/node.hpp>
 
 #include <http_client.h>

@@ -17,63 +17,76 @@
 
 #include <morpheus/messages/multi_response_probs.hpp>
 
-#include <morpheus/objects/tensor.hpp>
 #include <morpheus/messages/meta.hpp>
+#include <morpheus/objects/tensor.hpp>
 #include <morpheus/utilities/cupy_util.hpp>
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
+#include <cudf/types.hpp>
 
 #include <memory>
 #include <utility>
 #include <vector>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** MultiResponseProbsMessage****************************************/
-    MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                                                         size_t mess_offset, size_t mess_count,
-                                                         std::shared_ptr<morpheus::ResponseMemory> memory,
-                                                         size_t offset, size_t count) :
-            MultiResponseMessage(meta, mess_offset, mess_count, memory, offset, count) {}
+/****** Component public implementations *******************/
+/****** MultiResponseProbsMessage****************************************/
+MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+                                                     size_t mess_offset,
+                                                     size_t mess_count,
+                                                     std::shared_ptr<morpheus::ResponseMemory> memory,
+                                                     size_t offset,
+                                                     size_t count) :
+  MultiResponseMessage(meta, mess_offset, mess_count, memory, offset, count)
+{}
 
-    const neo::TensorObject MultiResponseProbsMessage::get_probs() const {
-        return this->get_output("probs");
-    }
-
-    void MultiResponseProbsMessage::set_probs(const neo::TensorObject &probs) {
-        this->set_output("probs", probs);
-    }
-
-    /****** MultiResponseProbsMessageInterfaceProxy *************************/
-    /**
-     * @brief Interface proxy, used to insulate python bindings.
-     */
-    std::shared_ptr<MultiResponseProbsMessage>
-    MultiResponseProbsMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta, cudf::size_type mess_offset,
-                                                  cudf::size_type mess_count, std::shared_ptr<ResponseMemory> memory,
-                                                  cudf::size_type offset, cudf::size_type count) {
-        return std::make_shared<MultiResponseProbsMessage>(
-                std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
-    }
-
-    std::shared_ptr<morpheus::ResponseMemory>
-    MultiResponseProbsMessageInterfaceProxy::memory(MultiResponseProbsMessage &self) {
-        return self.memory;
-    }
-
-    std::size_t MultiResponseProbsMessageInterfaceProxy::offset(MultiResponseProbsMessage &self) {
-        return self.offset;
-    }
-
-    std::size_t MultiResponseProbsMessageInterfaceProxy::count(MultiResponseProbsMessage &self) {
-        return self.count;
-    }
-
-    pybind11::object MultiResponseProbsMessageInterfaceProxy::probs(MultiResponseProbsMessage &self) {
-        // Get and convert
-        auto tensor = self.get_probs();
-
-        return CupyUtil::tensor_to_cupy(tensor);
-    }
+const TensorObject MultiResponseProbsMessage::get_probs() const
+{
+    return this->get_output("probs");
 }
+
+void MultiResponseProbsMessage::set_probs(const TensorObject &probs)
+{
+    this->set_output("probs", probs);
+}
+
+/****** MultiResponseProbsMessageInterfaceProxy *************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+std::shared_ptr<MultiResponseProbsMessage> MultiResponseProbsMessageInterfaceProxy::init(
+    std::shared_ptr<MessageMeta> meta,
+    cudf::size_type mess_offset,
+    cudf::size_type mess_count,
+    std::shared_ptr<ResponseMemory> memory,
+    cudf::size_type offset,
+    cudf::size_type count)
+{
+    return std::make_shared<MultiResponseProbsMessage>(
+        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
+}
+
+std::shared_ptr<morpheus::ResponseMemory> MultiResponseProbsMessageInterfaceProxy::memory(
+    MultiResponseProbsMessage &self)
+{
+    return self.memory;
+}
+
+std::size_t MultiResponseProbsMessageInterfaceProxy::offset(MultiResponseProbsMessage &self)
+{
+    return self.offset;
+}
+
+std::size_t MultiResponseProbsMessageInterfaceProxy::count(MultiResponseProbsMessage &self)
+{
+    return self.count;
+}
+
+pybind11::object MultiResponseProbsMessageInterfaceProxy::probs(MultiResponseProbsMessage &self)
+{
+    // Get and convert
+    auto tensor = self.get_probs();
+
+    return CupyUtil::tensor_to_cupy(tensor);
+}
+}  // namespace morpheus

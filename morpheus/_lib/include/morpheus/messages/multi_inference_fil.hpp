@@ -26,71 +26,73 @@
 #include <memory>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** MultiInferenceFILMessage****************************************/
+/****** Component public implementations *******************/
+/****** MultiInferenceFILMessage****************************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class MultiInferenceFILMessage : public MultiInferenceMessage
+{
+  public:
+    MultiInferenceFILMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+                             size_t mess_offset,
+                             size_t mess_count,
+                             std::shared_ptr<morpheus::InferenceMemory> memory,
+                             size_t offset,
+                             size_t count);
+
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class MultiInferenceFILMessage : public MultiInferenceMessage {
-    public:
-        MultiInferenceFILMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                                 size_t mess_offset,
-                                 size_t mess_count,
-                                 std::shared_ptr<morpheus::InferenceMemory> memory,
-                                 size_t offset,
-                                 size_t count);
+    const TensorObject get_input__0() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        const neo::TensorObject get_input__0() const;
-
-        /**
-         * TODO(Documentation)
-         */
-        void set_input__0(const neo::TensorObject &input__0);
-
-        /**
-         * TODO(Documentation)
-         */
-        const neo::TensorObject get_seq_ids() const;
-
-        /**
-         * TODO(Documentation)
-         */
-        void set_seq_ids(const neo::TensorObject &seq_ids);
-    };
-
-    /****** MultiInferenceFILMessageInterfaceProxy *************************/
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * TODO(Documentation)
      */
-    struct MultiInferenceFILMessageInterfaceProxy {
-        /**
-         * @brief Create and initialize a MultiInferenceFILMessage, and return a shared pointer to the result.
-         */
-        static std::shared_ptr<MultiInferenceFILMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                              cudf::size_type mess_offset,
-                                                              cudf::size_type mess_count,
-                                                              std::shared_ptr<InferenceMemory> memory,
-                                                              cudf::size_type offset,
-                                                              cudf::size_type count);
+    void set_input__0(const TensorObject& input__0);
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceFILMessage& self);
+    /**
+     * TODO(Documentation)
+     */
+    const TensorObject get_seq_ids() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::size_t offset(MultiInferenceFILMessage& self);
+    /**
+     * TODO(Documentation)
+     */
+    void set_seq_ids(const TensorObject& seq_ids);
+};
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::size_t count(MultiInferenceFILMessage& self);
-    };
+/****** MultiInferenceFILMessageInterfaceProxy *************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct MultiInferenceFILMessageInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a MultiInferenceFILMessage, and return a shared pointer to the result.
+     */
+    static std::shared_ptr<MultiInferenceFILMessage> init(std::shared_ptr<MessageMeta> meta,
+                                                          cudf::size_type mess_offset,
+                                                          cudf::size_type mess_count,
+                                                          std::shared_ptr<InferenceMemory> memory,
+                                                          cudf::size_type offset,
+                                                          cudf::size_type count);
+
+    /**
+     * TODO(Documentation)
+     */
+    static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceFILMessage& self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static std::size_t offset(MultiInferenceFILMessage& self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static std::size_t count(MultiInferenceFILMessage& self);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

@@ -27,30 +27,35 @@
 #include <vector>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** ResponseMemory****************************************/
-    ResponseMemory::ResponseMemory(size_t count)  : count(count) {}
+/****** Component public implementations *******************/
+/****** ResponseMemory****************************************/
+ResponseMemory::ResponseMemory(size_t count) : count(count) {}
 
-    bool ResponseMemory::has_output(const std::string &name) const {
-        return this->outputs.find(name) != this->outputs.end();
-    }
-
-    /****** ResponseMemoryInterfaceProxy *************************/
-    pybind11::object ResponseMemoryInterfaceProxy::get_output(ResponseMemory &self, const std::string &name) {
-        // Directly return the tensor object
-        if (!self.has_output(name)) {
-            throw pybind11::key_error();
-        }
-
-        return CupyUtil::tensor_to_cupy(self.outputs[name]);
-    }
-
-    neo::TensorObject ResponseMemoryInterfaceProxy::get_output_tensor(ResponseMemory &self, const std::string &name) {
-        // Directly return the tensor object
-        if (!self.has_output(name)) {
-            throw pybind11::key_error();
-        }
-
-        return self.outputs[name];
-    }
+bool ResponseMemory::has_output(const std::string &name) const
+{
+    return this->outputs.find(name) != this->outputs.end();
 }
+
+/****** ResponseMemoryInterfaceProxy *************************/
+pybind11::object ResponseMemoryInterfaceProxy::get_output(ResponseMemory &self, const std::string &name)
+{
+    // Directly return the tensor object
+    if (!self.has_output(name))
+    {
+        throw pybind11::key_error();
+    }
+
+    return CupyUtil::tensor_to_cupy(self.outputs[name]);
+}
+
+TensorObject ResponseMemoryInterfaceProxy::get_output_tensor(ResponseMemory &self, const std::string &name)
+{
+    // Directly return the tensor object
+    if (!self.has_output(name))
+    {
+        throw pybind11::key_error();
+    }
+
+    return self.outputs[name];
+}
+}  // namespace morpheus
