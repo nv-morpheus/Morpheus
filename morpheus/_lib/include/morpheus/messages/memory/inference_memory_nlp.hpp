@@ -19,6 +19,7 @@
 
 #include <morpheus/messages/memory/inference_memory.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <pybind11/pytypes.h>
 

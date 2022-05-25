@@ -20,8 +20,8 @@
 #include <morpheus/messages/memory/inference_memory_fil.hpp>
 #include <morpheus/utilities/matx_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
-
 #include <morpheus/utilities/type_util_detail.hpp>
+
 #include <neo/core/segment.hpp>
 #include <pyneo/node.hpp>
 

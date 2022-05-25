@@ -19,6 +19,7 @@
 
 #include <morpheus/messages/multi_inference.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <cudf/types.hpp>
 

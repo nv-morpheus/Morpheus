@@ -18,7 +18,6 @@
 #pragma once
 
 #include <morpheus/objects/tensor.hpp>
-
 #include <morpheus/objects/tensor_object.hpp>
 
 #include <cstddef>

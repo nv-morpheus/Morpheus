@@ -19,9 +19,9 @@
 
 #include <morpheus/objects/dev_mem_info.hpp>
 #include <morpheus/utilities/type_util.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <neo/cuda/sync.hpp>
-#include <morpheus/objects/tensor_object.hpp>
 
 #include <matx.h>
 

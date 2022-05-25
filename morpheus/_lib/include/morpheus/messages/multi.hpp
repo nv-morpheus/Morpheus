@@ -20,6 +20,7 @@
 #include <morpheus/messages/meta.hpp>
 #include <morpheus/objects/table_info.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>

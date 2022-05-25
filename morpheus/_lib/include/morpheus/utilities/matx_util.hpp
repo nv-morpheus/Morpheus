@@ -19,7 +19,6 @@
 
 #include <morpheus/objects/dev_mem_info.hpp>
 #include <morpheus/objects/rmm_tensor.hpp>
-
 #include <morpheus/objects/tensor_object.hpp>
 #include <morpheus/utilities/type_util_detail.hpp>
 

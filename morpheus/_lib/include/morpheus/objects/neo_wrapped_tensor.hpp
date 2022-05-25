@@ -18,9 +18,10 @@
 
 #pragma once
 
+#include <morpheus/objects/tensor_object.hpp>
+
 #include <boost/fiber/buffered_channel.hpp>
 #include <boost/fiber/channel_op_status.hpp>
-#include <morpheus/objects/tensor_object.hpp>
 
 #include <pybind11/pytypes.h>
 

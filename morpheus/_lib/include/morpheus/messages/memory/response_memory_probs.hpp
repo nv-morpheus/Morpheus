@@ -19,6 +19,7 @@
 
 #include <morpheus/messages/memory/response_memory.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>

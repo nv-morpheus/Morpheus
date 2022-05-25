@@ -22,6 +22,7 @@
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/objects/table_info.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 #include <morpheus/utilities/table_util.hpp>
 
 #include <cudf/types.hpp>
