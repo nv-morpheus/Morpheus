@@ -187,24 +187,24 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 ```
 
 ### Install Morpheus SDK Client
-Run the following commands to pull and install the Morpheus CLI on your instance:
+Run the following command to pull the Morpheus SDK Client on your instance:
 
 ```bash
 $ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
+**Note**: For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's get to the next step.
+
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
-               --set sdk.args="<YOUR_WORKFLOW_RUN_COMMAND>" \
+               --set sdk.args="<REPLACE_RUN_PIPELINE_COMMAND_HERE>" \
                --namespace $NAMESPACE \
                <YOUR_RELEASE_NAME> \
                morpheus-sdk-client
 ```
 
-**Note**: The install command references the run pipeline command argument, provided in the [example workflows](#example-workflows) below.
-
 #### Morpheus SDK Client in Sleep Mode
-Using the default `sdk.args` from the charts, Morpheus SDK Client would be put into sleep mode.
+Install the Morpheus SDK client in sleep mode to save sample datasets and models from the container to a shared location that other pods can access. If no `sdk.args` is supplied, the default value `/bin/sleep infinity` from the charts is used in the following command.
 
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
