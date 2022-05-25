@@ -17,10 +17,10 @@
 
 #pragma once
 
+#include <morpheus/objects/tensor_object.hpp>
 #include <morpheus/utilities/matx_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
-#include <morpheus/objects/tensor_object.hpp>
 #include <pyneo/node.hpp>
 
 #include <cudf/types.hpp>
@@ -42,14 +42,14 @@ namespace morpheus {
 /**
  * TODO(Documentation)
  */
-class RMMTensor : public neo::ITensor
+class RMMTensor : public ITensor
 {
   public:
     RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
               size_t offset,
               DType dtype,
-              std::vector<neo::TensorIndex> shape,
-              std::vector<neo::TensorIndex> stride = {});
+              std::vector<TensorIndex> shape,
+              std::vector<TensorIndex> stride = {});
 
     ~RMMTensor() = default;
 
@@ -61,28 +61,28 @@ class RMMTensor : public neo::ITensor
     /**
      * TODO(Documentation)
      */
-    neo::DataType dtype() const override;
+    DataType dtype() const override;
 
     /**
      * TODO(Documentation)
      */
-    neo::RankType rank() const final;
+    RankType rank() const final;
 
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<neo::ITensor> deep_copy() const override;
+    std::shared_ptr<ITensor> deep_copy() const override;
 
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<neo::ITensor> reshape(const std::vector<neo::TensorIndex> &dims) const override;
+    std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex> &dims) const override;
 
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<neo::ITensor> slice(const std::vector<neo::TensorIndex> &min_dims,
-                                        const std::vector<neo::TensorIndex> &max_dims) const override;
+    std::shared_ptr<ITensor> slice(const std::vector<TensorIndex> &min_dims,
+                                   const std::vector<TensorIndex> &max_dims) const override;
 
     /**
      * TODO(Documentation)
@@ -117,14 +117,14 @@ class RMMTensor : public neo::ITensor
     /**
      * TODO(Documentation)
      */
-    void get_shape(std::vector<neo::TensorIndex> &s) const;
+    void get_shape(std::vector<TensorIndex> &s) const;
 
     /**
      * TODO(Documentation)
      */
-    void get_stride(std::vector<neo::TensorIndex> &s) const;
+    void get_stride(std::vector<TensorIndex> &s) const;
 
-    // Tensor reshape(std::vector<neo::TensorIndex> shape)
+    // Tensor reshape(std::vector<TensorIndex> shape)
     // {
     //     CHECK(is_compact());
     //     return Tensor(descriptor_shared(), dtype_size(), shape);
@@ -133,7 +133,7 @@ class RMMTensor : public neo::ITensor
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<ITensor> as_type(neo::DataType dtype) const override;
+    std::shared_ptr<ITensor> as_type(DataType dtype) const override;
 
   protected:
   private:
@@ -152,7 +152,7 @@ class RMMTensor : public neo::ITensor
     DType m_dtype;
 
     // Shape info
-    std::vector<neo::TensorIndex> m_shape;
-    std::vector<neo::TensorIndex> m_stride;
+    std::vector<TensorIndex> m_shape;
+    std::vector<TensorIndex> m_stride;
 };
 }  // namespace morpheus

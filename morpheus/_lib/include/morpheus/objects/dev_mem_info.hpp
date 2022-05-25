@@ -35,7 +35,7 @@ struct DevMemInfo
     // Number of elements in the buffer
     size_t element_count;
     // Type of elements in the buffer
-    neo::TypeId type_id;
+    TypeId type_id;
     // Buffer of data
     std::shared_ptr<rmm::device_buffer> buffer;
     // Offset from head of data in bytes

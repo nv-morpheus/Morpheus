@@ -33,15 +33,13 @@ struct MatxUtil
      * @brief Convert one device_buffer type to another
      * @return
      */
-    static std::shared_ptr<rmm::device_buffer> cast(const DevMemInfo &input, neo::TypeId output_type);
+    static std::shared_ptr<rmm::device_buffer> cast(const DevMemInfo &input, TypeId output_type);
 
     /**
      * @brief Builds a Nx3 segment ID matrix
      * @return
      */
-    static std::shared_ptr<rmm::device_buffer> create_seg_ids(size_t row_count,
-                                                              size_t fea_len,
-                                                              neo::TypeId output_type);
+    static std::shared_ptr<rmm::device_buffer> create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type);
 
     /**
      * @brief Calculate logits on device_buffer
@@ -63,7 +61,7 @@ struct MatxUtil
     static std::shared_ptr<rmm::device_buffer> threshold(const DevMemInfo &input,
                                                          size_t rows,
                                                          size_t cols,
-                                                         const std::vector<neo::TensorIndex> &stride,
+                                                         const std::vector<TensorIndex> &stride,
                                                          double thresh_val,
                                                          bool by_row);
 };

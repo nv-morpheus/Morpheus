@@ -89,7 +89,7 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
     pybind11::tuple shape_tup = arr_interface["shape"];
 
     pybind11::print(shape_tup);
-    auto shape = shape_tup.cast<std::vector<neo::TensorIndex>>();
+    auto shape = shape_tup.cast<std::vector<TensorIndex>>();
 
     std::string typestr = arr_interface["typestr"].cast<std::string>();
 
@@ -97,13 +97,13 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
 
     uintptr_t data_ptr = data_tup[0].cast<uintptr_t>();
 
-    std::vector<neo::TensorIndex> strides{};
+    std::vector<TensorIndex> strides{};
 
     if (arr_interface.contains("strides") && !arr_interface["strides"].is_none())
     {
         pybind11::tuple strides_tup = arr_interface["strides"];
 
-        strides = strides_tup.cast<std::vector<neo::TensorIndex>>();
+        strides = strides_tup.cast<std::vector<TensorIndex>>();
     }
 
     //  Get the size finally

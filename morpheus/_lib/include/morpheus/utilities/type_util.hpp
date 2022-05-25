@@ -28,11 +28,11 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** DType****************************************/
-struct DType : neo::DataType  // NOLINT
+struct DType : DataType  // NOLINT
 {
-    DType(const neo::DataType &dtype);
+    DType(const DataType &dtype);
 
-    DType(neo::TypeId tid);
+    DType(TypeId tid);
 
     // Cudf representation
     cudf::type_id cudf_type_id() const;
@@ -44,7 +44,7 @@ struct DType : neo::DataType  // NOLINT
     template <typename T>
     static DType create()
     {
-        return DType(neo::DataType::create<T>());
+        return DType(DataType::create<T>());
     }
 
     // From cudf

@@ -82,7 +82,7 @@ void MultiMessage::set_meta(const std::string &col_name, TensorObject tensor)
 
 void MultiMessage::set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors)
 {
-    std::vector<neo::TypeId> tensor_types{tensors.size()};
+    std::vector<TypeId> tensor_types{tensors.size()};
     for (size_t i = 0; i < tensors.size(); ++i)
     {
         tensor_types[i] = tensors[i].dtype().type_id();

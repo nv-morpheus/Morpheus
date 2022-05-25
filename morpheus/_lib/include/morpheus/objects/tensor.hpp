@@ -81,8 +81,8 @@ class Tensor
      */
     static TensorObject create(std::shared_ptr<rmm::device_buffer> buffer,
                                DType dtype,
-                               std::vector<neo::TensorIndex> shape,
-                               std::vector<neo::TensorIndex> strides,
+                               std::vector<TensorIndex> shape,
+                               std::vector<TensorIndex> strides,
                                size_t offset = 0);
 
   private:

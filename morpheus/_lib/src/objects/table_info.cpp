@@ -95,8 +95,7 @@ pybind11::object TableInfo::as_py_object() const
     }
 }
 
-void TableInfo::insert_columns(const std::vector<std::string> &column_names,
-                               const std::vector<neo::TypeId> &column_types)
+void TableInfo::insert_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types)
 {
     CHECK(column_names.size() == column_types.size());
     const auto num_existing_cols = m_column_names.size();
@@ -112,7 +111,7 @@ void TableInfo::insert_columns(const std::vector<std::string> &column_names,
 
         for (std::size_t i = 0; i < column_names.size(); ++i)
         {
-            auto empty_array = cupy_zeros(num_rows, neo::DataType(column_types[i]).type_str());
+            auto empty_array = cupy_zeros(num_rows, DataType(column_types[i]).type_str());
             table.attr("insert")(num_existing_cols + i, column_names[i], empty_array);
             m_column_names.push_back(column_names[i]);
         }
@@ -120,12 +119,12 @@ void TableInfo::insert_columns(const std::vector<std::string> &column_names,
 }
 
 void TableInfo::insert_missing_columns(const std::vector<std::string> &column_names,
-                                       const std::vector<neo::TypeId> &column_types)
+                                       const std::vector<TypeId> &column_types)
 {
     CHECK(column_names.size() == column_types.size());
 
     std::vector<std::string> missing_names;
-    std::vector<neo::TypeId> missing_types;
+    std::vector<TypeId> missing_types;
     for (std::size_t i = 0; i < column_names.size(); ++i)
     {
         if (std::find(m_column_names.begin(), m_column_names.end(), column_names[i]) == m_column_names.end())

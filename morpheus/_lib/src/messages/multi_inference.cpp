@@ -89,8 +89,8 @@ std::shared_ptr<MultiMessage> MultiInferenceMessage::internal_get_slice(std::siz
         auto seq_ids = this->get_input("seq_ids");
 
         // Convert to MatX to access elements
-        mess_start = this->mess_offset + seq_ids.read_element<int32_t>({(neo::TensorIndex)start, 0});
-        mess_stop  = this->mess_offset + seq_ids.read_element<int32_t>({(neo::TensorIndex)stop - 1, 0}) + 1;
+        mess_start = this->mess_offset + seq_ids.read_element<int32_t>({(TensorIndex)start, 0});
+        mess_stop  = this->mess_offset + seq_ids.read_element<int32_t>({(TensorIndex)stop - 1, 0}) + 1;
     }
 
     return std::make_shared<MultiInferenceMessage>(

@@ -37,8 +37,8 @@ namespace morpheus {
 RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
                      size_t offset,
                      DType dtype,
-                     std::vector<neo::TensorIndex> shape,
-                     std::vector<neo::TensorIndex> stride) :
+                     std::vector<TensorIndex> shape,
+                     std::vector<TensorIndex> stride) :
   m_md(std::move(device_buffer)),
   m_offset(offset),
   m_dtype(std::move(dtype)),
@@ -47,7 +47,7 @@ RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
 {
     if (m_stride.empty())
     {
-        neo::detail::validate_stride(this->m_shape, this->m_stride);
+        detail::validate_stride(this->m_shape, this->m_stride);
     }
 
     DCHECK(m_offset + this->bytes() <= m_md->size())
@@ -64,12 +64,12 @@ void *RMMTensor::data() const
     return static_cast<uint8_t *>(m_md->data()) + this->offset_bytes();
 }
 
-neo::RankType RMMTensor::rank() const
+RankType RMMTensor::rank() const
 {
     return m_shape.size();
 }
 
-neo::DataType RMMTensor::dtype() const
+DataType RMMTensor::dtype() const
 {
     return m_dtype;
 }
@@ -96,13 +96,13 @@ std::size_t RMMTensor::stride(std::size_t idx) const
     return m_stride.at(idx);
 }
 
-void RMMTensor::get_shape(std::vector<neo::TensorIndex> &s) const
+void RMMTensor::get_shape(std::vector<TensorIndex> &s) const
 {
     s.resize(rank());
     std::copy(m_shape.begin(), m_shape.end(), s.begin());
 }
 
-void RMMTensor::get_stride(std::vector<neo::TensorIndex> &s) const
+void RMMTensor::get_stride(std::vector<TensorIndex> &s) const
 {
     s.resize(rank());
     std::copy(m_stride.begin(), m_stride.end(), s.begin());
@@ -110,7 +110,7 @@ void RMMTensor::get_stride(std::vector<neo::TensorIndex> &s) const
 
 bool RMMTensor::is_compact() const
 {
-    neo::TensorIndex ttl = 1;
+    TensorIndex ttl = 1;
     for (int i = rank() - 1; i >= 0; i--)
     {
         if (stride(i) != ttl)
@@ -123,15 +123,15 @@ bool RMMTensor::is_compact() const
     return true;
 }
 
-std::shared_ptr<neo::ITensor> RMMTensor::slice(const std::vector<neo::TensorIndex> &min_dims,
-                                               const std::vector<neo::TensorIndex> &max_dims) const
+std::shared_ptr<ITensor> RMMTensor::slice(const std::vector<TensorIndex> &min_dims,
+                                          const std::vector<TensorIndex> &max_dims) const
 {
     // Calc new offset
     size_t offset = std::transform_reduce(
         m_stride.begin(), m_stride.end(), min_dims.begin(), m_offset, std::plus<>(), std::multiplies<>());
 
     // Calc new shape
-    std::vector<neo::TensorIndex> shape;
+    std::vector<TensorIndex> shape;
     std::transform(max_dims.begin(), max_dims.end(), min_dims.begin(), std::back_inserter(shape), std::minus<>());
 
     // Stride remains the same
@@ -139,12 +139,12 @@ std::shared_ptr<neo::ITensor> RMMTensor::slice(const std::vector<neo::TensorInde
     return std::make_shared<RMMTensor>(m_md, offset, m_dtype, shape, m_stride);
 }
 
-std::shared_ptr<neo::ITensor> RMMTensor::reshape(const std::vector<neo::TensorIndex> &dims) const
+std::shared_ptr<ITensor> RMMTensor::reshape(const std::vector<TensorIndex> &dims) const
 {
     return std::make_shared<RMMTensor>(m_md, 0, m_dtype, dims, m_stride);
 }
 
-std::shared_ptr<neo::ITensor> RMMTensor::deep_copy() const
+std::shared_ptr<ITensor> RMMTensor::deep_copy() const
 {
     // Deep copy
     std::shared_ptr<rmm::device_buffer> copied_buffer =
@@ -153,7 +153,7 @@ std::shared_ptr<neo::ITensor> RMMTensor::deep_copy() const
     return std::make_shared<RMMTensor>(copied_buffer, m_offset, m_dtype, m_shape, m_stride);
 }
 
-std::shared_ptr<neo::ITensor> RMMTensor::as_type(neo::DataType dtype) const
+std::shared_ptr<ITensor> RMMTensor::as_type(DataType dtype) const
 {
     DType new_dtype(dtype.type_id());
 
