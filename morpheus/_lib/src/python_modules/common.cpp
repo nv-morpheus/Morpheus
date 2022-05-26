@@ -41,7 +41,6 @@ PYBIND11_MODULE(common, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    // TODO(Devin) -- This should not be defined in morpheus -- should be imported from pyneo -- wrapping for now.
     py::class_<TensorObject>(m, "Tensor")
         .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
 
