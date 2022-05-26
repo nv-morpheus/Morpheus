@@ -20,7 +20,7 @@ add_executable(test_libmorpheus
   test_cuda.cu
   test_main.cpp
   test_tensor.cpp
-  test_type_utils.cpp
+  test_type_util_detail.cpp
 )
 
 target_link_libraries(test_libmorpheus
