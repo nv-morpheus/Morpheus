@@ -34,7 +34,6 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorObject****************************************/
-// TODO(Devin) defined in neo
 /****** <NAME>InterfaceProxy *************************/
 #pragma GCC visibility push(default)
 /**
