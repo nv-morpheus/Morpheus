@@ -112,7 +112,6 @@ mamba pack --quiet --force --ignore-editable-packages --ignore-missing-files --n
 tar cfj ${WORKSPACE_TMP}/workspace.tar.bz --exclude=".git" --exclude="models" --exclude=".cache" ./
 ls -lh ${WORKSPACE_TMP}/
 
-
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/workspace.tar.bz" "${ARTIFACT_URL}/workspace.tar.bz"
