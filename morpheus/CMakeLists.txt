@@ -31,14 +31,14 @@ set(MORPHEUS_PY_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 # Determine the install directory for built modules
 file(RELATIVE_PATH python_relative_install ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} ${Python3_SITELIB})
 
+# Must be set before find_package(Cython) is called
+set(CYTHON_FLAGS "--directive binding=True,boundscheck=False,wraparound=False,embedsignature=True,always_allow_keywords=True" CACHE STRING "The directives for Cython compilation.")
+
 # Find dependencies
 find_package(CUDAToolkit REQUIRED)
 find_package(Cython REQUIRED)
 find_package(pybind11 REQUIRED)
 
-set(CYTHON_FLAGS "--directive binding=True,boundscheck=False,wraparound=False,embedsignature=True,always_allow_keywords=True" CACHE STRING "The directives for Cython compilation.")
-
 add_subdirectory(_lib)
-
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

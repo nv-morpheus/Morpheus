@@ -17,15 +17,23 @@
 
 #include <morpheus/utilities/matx_util.hpp>
 
-#include <morpheus/objects/dev_mem_info.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
 #include <neo/cuda/sync.hpp>
-#include <neo/core/tensor.hpp>
 
+#include <cudf/utilities/traits.hpp>
+#include <cudf/strings/string_view.hpp>
+#include <cudf/lists/list_view.cuh>
+#include <cudf/structs/struct_view.hpp>
 #include <matx.h>
 
 namespace morpheus {
+
+    template <typename T>
+    constexpr inline bool is_supported_numeric()
+    {
+        return cudf::is_numeric<T>() && sizeof(T) < 128;
+    }
 
     // Component-private classes.
     // ************ MatxUtil__MatxCast**************//
@@ -33,6 +41,13 @@ namespace morpheus {
      * TODO(Documentation)
      */
     struct MatxUtil__MatxCast { // NOLINT
+
+        template <typename InputT, typename OutputT>
+        static constexpr inline bool is_supported()
+        {
+            return is_supported_numeric<InputT>() && is_supported_numeric<OutputT>();
+        }
+
         size_t element_count;
         rmm::cuda_stream_view stream;
 
@@ -41,7 +56,7 @@ namespace morpheus {
          */
         template<typename InputT,
                 typename OutputT,
-                std::enable_if_t<!cudf::is_numeric<InputT>() || !cudf::is_numeric<OutputT>()> * = nullptr>
+                std::enable_if_t<!is_supported<InputT, OutputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
             throw std::invalid_argument("Unsupported conversion");
         }
@@ -51,7 +66,7 @@ namespace morpheus {
          */
         template<typename InputT,
                 typename OutputT,
-                std::enable_if_t<cudf::is_numeric<InputT>() && cudf::is_numeric<OutputT>()> * = nullptr>
+                std::enable_if_t<is_supported<InputT, OutputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
             matx::tensorShape_t<1> shape({static_cast<matx::index_t>(element_count)});
 
@@ -67,6 +82,13 @@ namespace morpheus {
      * TODO(Documentation)
      */
     struct MatxUtil__MatxCreateSegIds {
+
+        template <typename OutputT>
+        static constexpr inline bool is_supported()
+        {
+            return std::is_integral_v<OutputT>;
+        }
+
         size_t element_count;
         size_t fea_len;
         rmm::cuda_stream_view stream;
@@ -74,7 +96,7 @@ namespace morpheus {
         /**
          * TODO(Documentation)
          */
-        template<typename OutputT, std::enable_if_t<!std::is_integral_v<OutputT>> * = nullptr>
+        template<typename OutputT, std::enable_if_t<!is_supported<OutputT>()> * = nullptr>
         void operator()(void *output_data) {
             throw std::invalid_argument("Unsupported conversion");
         }
@@ -82,19 +104,20 @@ namespace morpheus {
         /**
          * TODO(Documentation)
          */
-        template<typename OutputT, std::enable_if_t<std::is_integral_v<OutputT>> * = nullptr>
+        template<typename OutputT, std::enable_if_t<is_supported<OutputT>()> * = nullptr>
         void operator()(void *output_data) {
-            matx::tensorShape_t<2> shape({static_cast<matx::index_t>(element_count), 3});
+            // matx::tensorShape_t<2> shape({static_cast<matx::index_t>(element_count), 3});
 
-            matx::tensor_t<OutputT, 2> output_tensor(static_cast<OutputT *>(output_data), shape);
+            // matx::tensor_t<OutputT, 2> output_tensor(static_cast<OutputT *>(output_data), shape);
 
-            auto col0 = output_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
-            auto col2 = output_tensor.template Slice<1>({0, 2}, {matx::matxEnd, matx::matxDropDim});
-            auto range_col =
-                    matx::range_x<OutputT>(matx::tensorShape_t<1>({static_cast<matx::index_t>(element_count)}), 0, 1);
+            // auto col0 = output_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
+            // auto col2 = output_tensor.template Slice<1>({0, 2}, {matx::matxEnd, matx::matxDropDim});
+            // auto range_col =
+            //         matx::range_x<OutputT>(matx::tensorShape_t<1>({static_cast<matx::index_t>(element_count)}), 0, 1);
 
-            (col0 = range_col).run(stream.value());
-            (col2 = fea_len - 1).run(stream.value());
+            // (col0 = range_col).run(stream.value());
+            // (col2 = fea_len - 1).run(stream.value());
+            throw std::invalid_argument("Unsupported conversion");
         }
     };  // NOLINT
 
@@ -103,13 +126,19 @@ namespace morpheus {
      * TODO(Documentation)
      */
     struct MatxUtil__MatxLogits { // NOLINT
+        template <typename InputT>
+        static constexpr inline bool is_supported()
+        {
+            return cudf::is_floating_point<InputT>();
+        }
+
         size_t element_count;
         rmm::cuda_stream_view stream;
 
         /**
          * TODO(Documentation)
          */
-        template<typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()> * = nullptr>
+        template<typename InputT, std::enable_if_t<!is_supported<InputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
             throw std::invalid_argument("Unsupported conversion");
         }
@@ -117,7 +146,7 @@ namespace morpheus {
         /**
          * TODO(Documentation)
          */
-        template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
+        template<typename InputT, std::enable_if_t<is_supported<InputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
             matx::tensorShape_t<1> shape({static_cast<matx::index_t>(element_count)});
 
@@ -134,6 +163,12 @@ namespace morpheus {
      * TODO(Documentation)
      */
     struct MatxUtil__MatxTranspose { // NOLINT
+        template <typename InputT>
+        static constexpr inline bool is_supported()
+        {
+            return is_supported_numeric<InputT>();
+        }
+
         size_t element_count;
         rmm::cuda_stream_view stream;
         size_t rows;
@@ -142,7 +177,7 @@ namespace morpheus {
         /**
          * TODO(Documentation)
          */
-        template<typename InputT, std::enable_if_t<!cudf::is_numeric<InputT>()> * = nullptr>
+        template<typename InputT, std::enable_if_t<!is_supported<InputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
             throw std::invalid_argument("Unsupported conversion");
         }
@@ -150,7 +185,7 @@ namespace morpheus {
         /**
          * TODO(Documentation)
          */
-        template<typename InputT, std::enable_if_t<cudf::is_numeric<InputT>()> * = nullptr>
+        template<typename InputT, std::enable_if_t<is_supported<InputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
             matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
             matx::tensorShape_t<2> output_shape({static_cast<matx::index_t>(cols), static_cast<matx::index_t>(rows)});
@@ -167,6 +202,12 @@ namespace morpheus {
      * TODO(Documentation)
      */
     struct MatxUtil__MatxThreshold { // NOLINT
+        template <typename InputT>
+        static constexpr inline bool is_supported()
+        {
+            return cudf::is_floating_point<InputT>();
+        }
+
         size_t rows;
         size_t cols;
         bool by_row;
@@ -175,7 +216,7 @@ namespace morpheus {
         /**
          * TODO(Documentation)
          */
-        template<typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()> * = nullptr>
+        template<typename InputT, std::enable_if_t<!is_supported<InputT>()> * = nullptr>
         void
         operator()(void *input_data, void *output_data, double threshold, const std::vector<neo::TensorIndex> &stride) {
             throw std::invalid_argument("Unsupported conversion");
@@ -184,7 +225,7 @@ namespace morpheus {
         /**
          * TODO(Documentation)
          */
-        template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
+        template<typename InputT, std::enable_if_t<is_supported<InputT>()> * = nullptr>
         void
         operator()(void *input_data, void *output_data, double threshold, const std::vector<neo::TensorIndex> &stride) {
             if (by_row) {

@@ -15,21 +15,21 @@
 
 
 # 21.10 is currently required because we pull in private cuDF functionality that has changed in 21.12+
-set(RAPIDS_VERSION "21.10" CACHE STRING "Global default version for all Rapids project dependencies")
-# RAPIDS_CMAKE 21.12 is required for libcudacxx.cmake
-set(RAPIDS_CMAKE_VERSION "21.12" CACHE STRING "Version of rapids-cmake to use")
+set(RAPIDS_VERSION "22.04" CACHE STRING "Global default version for all Rapids project dependencies")
+set(RAPIDS_CMAKE_VERSION "${RAPIDS_VERSION}" CACHE STRING "Version of rapids-cmake to use")
 
 # Download and load the repo according to the rapids-cmake instructions if it does not exist
-if(NOT EXISTS ${CMAKE_BINARY_DIR}/RAPIDS.cmake)
+# NOTE: Use a different file than RAPIDS.cmake because MatX will just override it: https://github.com/NVIDIA/MatX/blob/main/CMakeLists.txt#L37-39
+if(NOT EXISTS ${CMAKE_BINARY_DIR}/RAPIDS_CMAKE.cmake)
    message(STATUS "Downloading RAPIDS CMake Version: ${RAPIDS_CMAKE_VERSION}")
    file(
       DOWNLOAD https://raw.githubusercontent.com/rapidsai/rapids-cmake/branch-${RAPIDS_CMAKE_VERSION}/RAPIDS.cmake
-      ${CMAKE_BINARY_DIR}/RAPIDS.cmake
+      ${CMAKE_BINARY_DIR}/RAPIDS_CMAKE.cmake
    )
 endif()
 
 # Now load the file
-include(${CMAKE_BINARY_DIR}/RAPIDS.cmake)
+include(${CMAKE_BINARY_DIR}/RAPIDS_CMAKE.cmake)
 
 # Load Rapids Cmake packages
 include(rapids-cmake)

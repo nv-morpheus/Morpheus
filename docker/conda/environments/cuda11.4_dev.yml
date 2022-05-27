@@ -28,10 +28,10 @@ dependencies:
     - cachetools=5.0.0
     - ccache>=3.7
     - cmake=3.22
-    - cuda-nvml-dev=11.4
-    - cudatoolkit=11.4
-    - cudf 21.10.* *morpheus
-    - cudf_kafka 21.10.*
+    - cuda-nvml-dev=11.5
+    - cudatoolkit=11.5
+    - cudf 22.04
+    - cudf_kafka 22.04.*
     - cupy=9.3.0
     - cython=0.29.24
     - docker-compose=1.29.2

@@ -22,7 +22,6 @@ from neo.core import operators as ops
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -52,6 +51,9 @@ class DeserializeStage(MultiMessageStage):
 
         # Mark these stages to log timestamps if requested
         self._should_log_timestamps = True
+
+    def supports_cpp_node(self):
+        return True
 
     @property
     def name(self) -> str:
@@ -98,7 +100,7 @@ class DeserializeStage(MultiMessageStage):
             input.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
                        ops.flatten()).subscribe(output)
 
-        if CppConfig.get_should_use_cpp():
+        if self._build_cpp_node():
             stream = neos.DeserializeStage(seg, self.unique_name, self._batch_size)
         else:
             stream = seg.make_node_full(self.unique_name, node_fn)

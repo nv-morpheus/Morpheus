@@ -17,7 +17,7 @@ add_library(cuda_utils
       ${MORPHEUS_LIB_ROOT}/src/objects/dev_mem_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/table_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/utilities/matx_util.cu
-      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cu
+      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cpp
 )
 
 target_include_directories(cuda_utils
