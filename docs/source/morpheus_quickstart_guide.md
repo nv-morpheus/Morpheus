@@ -559,7 +559,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       pipeline-nlp \
         --model_seq_length=128 \
         --labels_file=./morpheus/data/labels_phishing.txt \
-        from-file --filename=./morpheus/data/email.jsonlines \
+        from-file --filename=./examples/data/email.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
         preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
@@ -635,7 +635,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --model_max_batch_size=32 \
       pipeline-nlp \
         --model_seq_length=256 \
-        from-file --filename=./morpheus/data/pcap_dump.jsonlines \
+        from-file --filename=./examples/data/pcap_dump.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
         preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
@@ -685,7 +685,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/morpheus/data/pcap_dump.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/examples/data/pcap_dump.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
@@ -708,7 +708,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         --model_max_batch_size=64 \
         --use_cpp=True \
         pipeline-fil \
-          from-file --filename=./morpheus/data/nvsmi.jsonlines \
+          from-file --filename=./examples/data/nvsmi.jsonlines \
           monitor --description 'FromFile Rate' --smoothing=0.001 \
           deserialize \
           preprocess \
@@ -754,7 +754,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/morpheus/data/nvsmi.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/examples/data/nvsmi.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
