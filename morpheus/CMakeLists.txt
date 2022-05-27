@@ -19,6 +19,7 @@ option(MORPHEUS_PYTHON_INPLACE_BUILD
         "Whether or not to copy built python modules back to the source tree for debug purposes." OFF)
 
 set(Python3_FIND_VIRTUALENV "FIRST")
+set(Python3_FIND_STRATEGY "LOCATION")
 find_package(Python3 REQUIRED COMPONENTS Development Interpreter NumPy)
 
 # Check if SKlearn is installed
