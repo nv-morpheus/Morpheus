@@ -33,7 +33,7 @@ target_link_libraries(test_libmorpheus
 )
 
 add_test(
-  NAME libmorpheus
+  NAME test_libmorpheus
   COMMAND $<TARGET_FILE:test_libmorpheus>
 )
 
