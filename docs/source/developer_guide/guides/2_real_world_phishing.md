@@ -185,12 +185,13 @@ From this information, we can see that the expected shape of the model inputs is
 Let's set up the paths for our input and output files. For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository. In a production deployment, it may be more prudent to replace our usage of environment variables with command-line flags or a dedicated configuration management library.
 
 ```python
+import morpheus
+
 root_dir = os.environ['MORPHEUS_ROOT']
 out_dir = os.environ.get('OUT_DIR', '/tmp')
 
-data_dir = os.path.join(root_dir, 'data')
-labels_file = os.path.join(data_dir, 'labels_phishing.txt')
-vocab_file = os.path.join(data_dir, 'bert-base-uncased-hash.txt')
+labels_file = os.path.join(morpheus.DATA_DIR, 'labels_phishing.txt')
+vocab_file = os.path.join(morpheus.DATA_DIR, 'bert-base-uncased-hash.txt')
 
 input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
 results_file = os.path.join(out_dir, 'detections.jsonlines')
@@ -213,9 +214,9 @@ First we set our pipeline mode to NLP. Next, we use the third-party [psutils](ht
 
 The `feature_length` property needs to match the length of the model inputs, which we got from Triton in the previous section using the model's `/config` endpoint.
 
-Ground truth classification labels are read from the `data/labels_phishing.txt` file included in Morpheus.
+Ground truth classification labels are read from the `morpheus/data/labels_phishing.txt` file included in Morpheus.
 
-Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous examples, and to tokenize the input data we will use Morpheus' `PreprocessNLPStage`.  
+Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous examples, and to tokenize the input data we will use Morpheus' `PreprocessNLPStage`.
 
 This stage uses the [cudf subword tokenizer](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.core.subword_tokenizer.SubwordTokenizer.__call__.html) to transform strings into a tensor of numbers to be fed into the neural network model. Rather than split the string by characters or whitespaces, we split them into meaningful subwords based upon the occurrence of the subwords in a large training corpus. You can find more details here: [https://arxiv.org/abs/1810.04805v2](https://arxiv.org/abs/1810.04805v2). All we need to know for now is that the text will be converted to subword token ids based on the vocabulary file that we provide (`vocab_hash_file=vocab file`).
 
@@ -232,7 +233,7 @@ pipeline.add_stage(
 ```
 
 In addition to providing the `Config` object that we defined above, we also configure this stage to:
-* Use the `data/bert-base-uncased-hash.txt` vocabulary file for its subword token ids (`vocab_hash_file=vocab_file`).
+* Use the `morpheus/data/bert-base-uncased-hash.txt` vocabulary file for its subword token ids (`vocab_hash_file=vocab_file`).
 * Truncate the length of the text to a max number of tokens (`truncation=True`).
 * Change the casing to all lowercase (`do_lower_case=True`).
 * Refrain from adding the default BERT special tokens like `[SEP]` for separation between two sentences and `[CLS]` at the start of the text (`add_special_tokens=False`).
@@ -258,7 +259,7 @@ pipeline.add_stage(MonitorStage(config, description="Inference Rate", smoothing=
 pipeline.add_stage(FilterDetectionsStage(config, threshold=0.9))
 ```
 
-Lastly, we will save our results to disk. For this purpose, we are using two stages that are often used in conjunction with each other: `SerializeStage` and `WriteToFileStage`. 
+Lastly, we will save our results to disk. For this purpose, we are using two stages that are often used in conjunction with each other: `SerializeStage` and `WriteToFileStage`.
 
 The `SerializeStage` is used to include and exclude columns as desired in the output. Importantly, it also handles conversion from the `MultiMessage`-derived output type that is used by the `FilterDetectionsStage` to the `MessageMeta` class that is expected as input by the `WriteToFileStage`.
 
@@ -285,6 +286,7 @@ import os
 
 import psutil
 
+import morpheus
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
@@ -308,9 +310,8 @@ def run_pipeline():
     root_dir = os.environ['MORPHEUS_ROOT']
     out_dir = os.environ.get('OUT_DIR', '/tmp')
 
-    data_dir = os.path.join(root_dir, 'data')
-    labels_file = os.path.join(data_dir, 'labels_phishing.txt')
-    vocab_file = os.path.join(data_dir, 'bert-base-uncased-hash.txt')
+    labels_file = os.path.join(morpheus.DATA_DIR, 'labels_phishing.txt')
+    vocab_file = os.path.join(morpheus.DATA_DIR, 'bert-base-uncased-hash.txt')
 
     input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
     results_file = os.path.join(out_dir, 'detections.jsonlines')
@@ -377,7 +378,7 @@ if __name__ == "__main__":
 
 In our previous examples, we didn't define a constructor for the Python classes that we were building for our stages. However, there are many cases where we will need to receive configuration parameters. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments.
 
-Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started. 
+Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started.
 
 In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
 

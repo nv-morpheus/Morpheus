@@ -27,7 +27,7 @@ from morpheus.messages import InferenceMemoryFIL
 from morpheus.messages import MultiInferenceFILMessage
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
-from morpheus.stages.preprocess.preprocessing import PreprocessBaseStage
+from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
 class AbpPcapPreprocessingStage(PreprocessBaseStage):

@@ -39,9 +39,6 @@ setup(
     author="NVIDIA Corporation",
     include_package_data=True,
     packages=find_packages(include=["morpheus", "morpheus.*"], exclude=['tests']),
-    package_data={
-        "morpheus": ["*.so", "**/*.so", "py.typed", "*.pyi", "**/*.pyi", "**/**/*.pyi"],
-    },
     install_requires=[
         "click>=8",
         "datacompy",
