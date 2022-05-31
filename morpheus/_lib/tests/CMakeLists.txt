@@ -37,12 +37,16 @@ add_test(
   COMMAND $<TARGET_FILE:test_libmorpheus>
 )
 
-if(NOT MORPHEUS_PYTHON_INPLACE_BUILD)
-  set_target_properties(test_libmorpheus
-    PROPERTIES
-      INSTALL_RPATH "${Python3_SITELIB}/${PROJECT_NAME}/_lib"
-  )
+if(MORPHEUS_PYTHON_INPLACE_BUILD)
+  set(test_rpath "${MORPHEUS_LIB_ROOT}")
+else()
+  set(test_rpath "${Python3_SITELIB}/${PROJECT_NAME}/_lib")
 endif()
+
+set_target_properties(test_libmorpheus
+  PROPERTIES
+    INSTALL_RPATH "${test_rpath}"
+)
 
 install(
     TARGETS
