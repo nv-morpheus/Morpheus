@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
  */
 
 #include <morpheus/objects/fiber_queue.hpp>
-#include <morpheus/objects/neo_wrapped_tensor.hpp>
+#include <morpheus/objects/wrapped_tensor.hpp>
 #include <morpheus/utilities/cudf_util.hpp>
 
 #include <pybind11/pybind11.h>
@@ -28,7 +28,7 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(common, m)
 {
-    // google::InitGoogleLogging("morpheus");
+    google::InitGoogleLogging("morpheus");
 
     m.doc() = R"pbdoc(
         -----------------------
@@ -41,9 +41,8 @@ PYBIND11_MODULE(common, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    // TODO(Devin) -- This should not be defined in morpheus -- should be imported from pyneo -- wrapping for now.
-    py::class_<neo::TensorObject>(m, "Tensor")
-        .def_property_readonly("__cuda_array_interface__", &NeoTensorObjectInterfaceProxy::cuda_array_interface);
+    py::class_<TensorObject>(m, "Tensor")
+        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
 
     py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))

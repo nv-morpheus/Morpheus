@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -90,23 +90,23 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                     cudf::cast(token_results.tensor_token_ids->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
 
-                memory->inputs["input_ids"] = std::move(Tensor::create(
-                    std::move(input_ids_released.data),
-                    DType::create<int32_t>(),
-                    std::vector<neo::TensorIndex>{length, static_cast<int>(token_results.sequence_length)},
-                    std::vector<neo::TensorIndex>{},
-                    0));
+                memory->inputs["input_ids"] = std::move(
+                    Tensor::create(std::move(input_ids_released.data),
+                                   DType::create<int32_t>(),
+                                   std::vector<TensorIndex>{length, static_cast<int>(token_results.sequence_length)},
+                                   std::vector<TensorIndex>{},
+                                   0));
 
                 length = token_results.tensor_attention_mask->size() / token_results.sequence_length;
                 auto input_mask_released =
                     cudf::cast(token_results.tensor_attention_mask->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
-                memory->inputs["input_mask"] = std::move(Tensor::create(
-                    std::move(input_mask_released.data),
-                    DType::create<int32_t>(),
-                    std::vector<neo::TensorIndex>{length, static_cast<int>(token_results.sequence_length)},
-                    std::vector<neo::TensorIndex>{},
-                    0));
+                memory->inputs["input_mask"] = std::move(
+                    Tensor::create(std::move(input_mask_released.data),
+                                   DType::create<int32_t>(),
+                                   std::vector<TensorIndex>{length, static_cast<int>(token_results.sequence_length)},
+                                   std::vector<TensorIndex>{},
+                                   0));
 
                 length = token_results.tensor_metadata->size() / 3;
                 auto seq_ids_released =
@@ -114,8 +114,8 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 memory->inputs["seq_ids"] =
                     std::move(Tensor::create(std::move(seq_ids_released.data),
                                              DType::create<int32_t>(),
-                                             std::vector<neo::TensorIndex>{length, static_cast<int32_t>(3)},
-                                             std::vector<neo::TensorIndex>{},
+                                             std::vector<TensorIndex>{length, static_cast<int32_t>(3)},
+                                             std::vector<TensorIndex>{},
                                              0));
 
                 auto next = std::make_shared<MultiInferenceMessage>(

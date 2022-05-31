@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,33 +17,34 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** CupyUtil****************************************/
+/****** Component public implementations *******************/
+/****** CupyUtil****************************************/
+/**
+ * @brief Structure that encapsulates cupy utilities.
+ */
+struct CupyUtil
+{
+    static pybind11::object cp_module;  // handle to cupy module
+
     /**
-     * @brief Structure that encapsulates cupy utilities.
+     * TODO(Documentation)
      */
-    struct CupyUtil {
-        static pybind11::object cp_module; // handle to cupy module
+    static pybind11::module_ get_cp();
 
-        /**
-         * TODO(Documentation)
-         */
-        static pybind11::module_ get_cp();
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object tensor_to_cupy(const TensorObject &tensor);
 
-        /**
-         * TODO(Documentation)
-         */
-        static pybind11::object tensor_to_cupy(const neo::TensorObject &tensor);
-
-        /**
-         * TODO(Documentation)
-         */
-        static neo::TensorObject cupy_to_tensor(pybind11::object cupy_array);
-    };
-}
+    /**
+     * TODO(Documentation)
+     */
+    static TensorObject cupy_to_tensor(pybind11::object cupy_array);
+};
+}  // namespace morpheus

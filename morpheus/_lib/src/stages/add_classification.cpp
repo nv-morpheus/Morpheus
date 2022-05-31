@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,7 +63,7 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 // Depending on the input the stride is given in bytes or elements,
                 // divide the stride elements by the smallest item to ensure tensor_stride is defined in
                 // terms of elements
-                std::vector<neo::TensorIndex> tensor_stride(stride.size());
+                std::vector<TensorIndex> tensor_stride(stride.size());
                 auto min_stride = std::min_element(stride.cbegin(), stride.cend());
 
                 std::transform(stride.cbegin(),
@@ -83,20 +83,19 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 auto tensor_obj = Tensor::create(
                     thresh_bool_buffer,
                     DType::create<bool>(),
-                    std::vector<neo::TensorIndex>{static_cast<long long>(shape[0]), static_cast<long long>(shape[1])},
+                    std::vector<TensorIndex>{static_cast<long long>(shape[0]), static_cast<long long>(shape[1])},
                     tensor_stride);
 
                 std::vector<std::string> columns(m_idx2label.size());
-                std::vector<neo::TensorObject> tensors(m_idx2label.size());
+                std::vector<TensorObject> tensors(m_idx2label.size());
 
                 std::size_t i = 0;
                 for (const auto& [column_num, column_name] : m_idx2label)
                 {
                     columns[i] = column_name;
-                    tensors[i] =
-                        tensor_obj.slice(std::vector<neo::TensorIndex>{0, static_cast<neo::TensorIndex>(column_num)},
-                                         std::vector<neo::TensorIndex>{static_cast<neo::TensorIndex>(num_rows),
-                                                                       static_cast<neo::TensorIndex>(column_num + 1)});
+                    tensors[i] = tensor_obj.slice(std::vector<TensorIndex>{0, static_cast<TensorIndex>(column_num)},
+                                                  std::vector<TensorIndex>{static_cast<TensorIndex>(num_rows),
+                                                                           static_cast<TensorIndex>(column_num + 1)});
 
                     ++i;
                 }

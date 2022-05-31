@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,19 +67,9 @@ InferenceClientStage::InferenceClientStage(std::string model_name,
                                            bool needs_logits,
                                            std::map<std::string, std::string> inout_mapping) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_model_name(std::move(model_name)),
-  m_server_url(std::move(server_url)),
-  m_force_convert_inputs(force_convert_inputs),
-  m_use_shared_memory(use_shared_memory),
-  m_needs_logits(needs_logits),
-  m_inout_mapping(std::move(inout_mapping)),
   m_options(m_model_name)
-{
-    // Connect with the server to setup the inputs/outputs
-    this->connect_with_server();  // TODO(Devin)
-}
 
-InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
+      InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         std::unique_ptr<triton::client::InferenceServerHttpClient> client;
@@ -104,13 +94,12 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     auto output_buffer = std::make_shared<rmm::device_buffer>(
                         elem_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
 
-                    reponse_memory->outputs[model_output.mapped_name] =
-                        Tensor::create(std::move(output_buffer),
-                                       model_output.datatype,
-                                       std::vector<neo::TensorIndex>{static_cast<int>(total_shape[0]),
-                                                                     static_cast<int>(total_shape[1])},
-                                       std::vector<neo::TensorIndex>{},
-                                       0);
+                    reponse_memory->outputs[model_output.mapped_name] = Tensor::create(
+                        std::move(output_buffer),
+                        model_output.datatype,
+                        std::vector<TensorIndex>{static_cast<int>(total_shape[0]), static_cast<int>(total_shape[1])},
+                        std::vector<TensorIndex>{},
+                        0);
                 }
 
                 // This will be the final output of all mini-batches
@@ -124,9 +113,9 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     size_t start = i;
                     size_t stop  = std::min(i + m_max_batch_size, x->count);
 
-                    sink_type_t mini_batch_input =
+                    reader_type_t mini_batch_input =
                         std::static_pointer_cast<MultiInferenceMessage>(x->get_slice(start, stop));
-                    source_type_t mini_batch_output =
+                    writer_type_t mini_batch_output =
                         std::static_pointer_cast<MultiResponseProbsMessage>(response->get_slice(start, stop));
 
                     // Iterate on the model inputs in case the model takes less than what tensors are available
@@ -216,9 +205,9 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                             model_output.mapped_name,
                             Tensor::create(std::move(output_buffer),
                                            model_output.datatype,
-                                           std::vector<neo::TensorIndex>{static_cast<int>(output_shape[0]),
-                                                                         static_cast<int>(output_shape[1])},
-                                           std::vector<neo::TensorIndex>{},
+                                           std::vector<TensorIndex>{static_cast<int>(output_shape[0]),
+                                                                    static_cast<int>(output_shape[1])},
+                                           std::vector<TensorIndex>{},
                                            0));
                     }
                 }

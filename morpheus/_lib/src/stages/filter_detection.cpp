@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,7 +58,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     // Depending on the input the stride is given in bytes or elements,
                     // divide the stride elements by the smallest item to ensure tensor_stride is defined in
                     // terms of elements
-                    std::vector<neo::TensorIndex> tensor_stride(stride.size());
+                    std::vector<TensorIndex> tensor_stride(stride.size());
                     auto min_stride = std::min_element(stride.cbegin(), stride.cend());
 
                     std::transform(stride.cbegin(),
