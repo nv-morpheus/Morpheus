@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,7 @@
 #pragma once
 
 #include <morpheus/objects/tensor.hpp>
-
-#include <neo/core/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <cstddef>
 #include <map>
@@ -27,32 +26,34 @@
 
 namespace morpheus {
 
+/**
+ * TODO(Documentation)
+ */
+class InferenceMemory
+{
+  public:
+    InferenceMemory(size_t count);
+
+    std::size_t count{0};
+    std::map<std::string, TensorObject> inputs;
+
     /**
      * TODO(Documentation)
      */
-    class InferenceMemory {
-    public:
-        InferenceMemory(size_t count);
+    bool has_input(const std::string& name) const;
+};
 
-        std::size_t count{0};
-        std::map<std::string, neo::TensorObject> inputs;
-
-        /**
-         * TODO(Documentation)
-         */
-        bool has_input(const std::string &name) const;
-    };
-
-    /****** InferenceMemoryInterfaceProxy *************************/
+/****** InferenceMemoryInterfaceProxy *************************/
 #pragma GCC visibility push(default)
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct InferenceMemoryInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * TODO(Documentation)
      */
-    struct InferenceMemoryInterfaceProxy {
-        /**
-         * TODO(Documentation)
-         */
-        static std::size_t get_count(InferenceMemory& self);
-    };
+    static std::size_t get_count(InferenceMemory& self);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

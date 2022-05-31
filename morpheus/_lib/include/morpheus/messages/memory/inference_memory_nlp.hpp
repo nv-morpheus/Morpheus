@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,104 +19,104 @@
 
 #include <morpheus/messages/memory/inference_memory.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <pybind11/pytypes.h>
 
-#include <memory>
 #include <cstddef>
+#include <memory>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** InferenceMemoryNLP**********************************/
+/****** Component public implementations *******************/
+/****** InferenceMemoryNLP**********************************/
+/**
+ * TODO(Documentation)
+ */
+class InferenceMemoryNLP : public InferenceMemory
+{
+  public:
+    InferenceMemoryNLP(std::size_t count, TensorObject input_ids, TensorObject input_mask, TensorObject seq_ids);
+
     /**
      * TODO(Documentation)
      */
-    class InferenceMemoryNLP : public InferenceMemory {
-    public:
-        InferenceMemoryNLP(std::size_t count,
-                           neo::TensorObject input_ids,
-                           neo::TensorObject input_mask,
-                           neo::TensorObject seq_ids);
+    const TensorObject& get_input_ids() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        const neo::TensorObject &get_input_ids() const;
-
-        /**
-         * TODO(Documentation)
-         */
-        const neo::TensorObject &get_input_mask() const;
-
-        /**
-         * TODO(Documentation)
-         */
-        const neo::TensorObject &get_seq_ids() const;
-
-        /**
-         * TODO(Documentation)
-         */
-        void set_input_ids(neo::TensorObject input_ids);
-
-        /**
-         * TODO(Documentation)
-         */
-        void set_input_mask(neo::TensorObject input_mask);
-
-        /**
-         * TODO(Documentation)
-         */
-        void set_seq_ids(neo::TensorObject seq_ids);
-    };
-
-    /****** InferenceMemoryNLPInterfaceProxy********************/
-#pragma GCC visibility push(default)
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * TODO(Documentation)
      */
-    struct InferenceMemoryNLPInterfaceProxy {
-        /**
-         * @brief Create and initialize an InferenceMemoryNLP object, and return a shared pointer to the result.
-         */
-        static std::shared_ptr<InferenceMemoryNLP>
-        init(cudf::size_type count, pybind11::object input_ids, pybind11::object input_mask, pybind11::object seq_ids);
+    const TensorObject& get_input_mask() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::size_t count(InferenceMemoryNLP& self);
+    /**
+     * TODO(Documentation)
+     */
+    const TensorObject& get_seq_ids() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        static pybind11::object get_input_ids(InferenceMemoryNLP& self);
+    /**
+     * TODO(Documentation)
+     */
+    void set_input_ids(TensorObject input_ids);
 
-        /**
-         * TODO(Documentation)
-         */
-        static void set_input_ids(InferenceMemoryNLP& self, pybind11::object cupy_values);
+    /**
+     * TODO(Documentation)
+     */
+    void set_input_mask(TensorObject input_mask);
 
-        /**
-         * TODO(Documentation)
-         */
-         static pybind11::object get_input_mask(InferenceMemoryNLP& self);
+    /**
+     * TODO(Documentation)
+     */
+    void set_seq_ids(TensorObject seq_ids);
+};
 
+/****** InferenceMemoryNLPInterfaceProxy********************/
+#pragma GCC visibility push(default)
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct InferenceMemoryNLPInterfaceProxy
+{
+    /**
+     * @brief Create and initialize an InferenceMemoryNLP object, and return a shared pointer to the result.
+     */
+    static std::shared_ptr<InferenceMemoryNLP> init(cudf::size_type count,
+                                                    pybind11::object input_ids,
+                                                    pybind11::object input_mask,
+                                                    pybind11::object seq_ids);
 
-        /**
-         * TODO(Documentation)
-         */
-         static void set_input_mask(InferenceMemoryNLP& self, pybind11::object cupy_values);
+    /**
+     * TODO(Documentation)
+     */
+    static std::size_t count(InferenceMemoryNLP& self);
 
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_input_ids(InferenceMemoryNLP& self);
 
-        /**
-         * TODO(Documentation)
-         */
-         static pybind11::object get_seq_ids(InferenceMemoryNLP& self);
+    /**
+     * TODO(Documentation)
+     */
+    static void set_input_ids(InferenceMemoryNLP& self, pybind11::object cupy_values);
 
-        /**
-         * TODO(Documentation)
-         */
-         static void set_seq_ids(InferenceMemoryNLP& self, pybind11::object cupy_values);
-    };
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_input_mask(InferenceMemoryNLP& self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static void set_input_mask(InferenceMemoryNLP& self, pybind11::object cupy_values);
+
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_seq_ids(InferenceMemoryNLP& self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static void set_seq_ids(InferenceMemoryNLP& self, pybind11::object cupy_values);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

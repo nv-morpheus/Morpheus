@@ -1,6 +1,6 @@
 
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,12 @@
 
 #pragma once
 
-#include <neo/core/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
+
 #include <boost/fiber/buffered_channel.hpp>
 #include <boost/fiber/channel_op_status.hpp>
 
 #include <pybind11/pytypes.h>
-
 
 #include <chrono>
 #include <memory>
@@ -32,16 +32,16 @@
 #include <vector>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** neo::TensorObject****************************************/
-    // TODO(Devin) defined in neo
-    /****** <NAME>InterfaceProxy *************************/
+/****** Component public implementations *******************/
+/****** TensorObject****************************************/
+/****** <NAME>InterfaceProxy *************************/
 #pragma GCC visibility push(default)
-    /**
-     * @brief Interface proxy, used to insulate python bindings.
-     */
-    struct NeoTensorObjectInterfaceProxy {
-        static pybind11::dict cuda_array_interface(neo::TensorObject &self);
-    };
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct TensorObjectInterfaceProxy
+{
+    static pybind11::dict cuda_array_interface(TensorObject &self);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus
