@@ -339,10 +339,10 @@ class KafkaSourceStage(SingleOutputSource):
                                            self._consumer_params,
                                            self._disable_commit,
                                            self._disable_pre_filtering)
-            source.concurrency = self._max_concurrent
+            source.launch_options.pe_count = self._max_concurrent
         else:
             source = seg.make_source(self.unique_name, self._source_generator)
 
-        source.concurrency = self._max_concurrent
+        source.launch_options.pe_count = self._max_concurrent
 
         return source, MessageMeta

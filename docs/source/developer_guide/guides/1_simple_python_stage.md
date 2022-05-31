@@ -61,7 +61,7 @@ Our `on_data` method accepts the incoming message and returns a message. The ret
 
 Finally, the `_build_single` method will be used at build time to wire our stage into the pipeline. `_build_single` receives an instance of the Neo pipeline segment along with a `StreamPair` instance. We will be using the segment instance to build a node from our stage and add it to the pipeline segment. The `StreamPair` argument is a tuple; the first element is our parent node, and the second is our parent node's output type. The return type of this method is also a `StreamPair`. Typically, we will be returning our newly constructed node along with our output type.
 ```python
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_node(self.unique_name, self.on_data)
         seg.make_edge(input_stream[0], node)
 ```
@@ -102,7 +102,7 @@ class PassThruStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_node(self.unique_name, self.on_data)
         seg.make_edge(input_stream[0], node)
 

@@ -76,7 +76,7 @@ def test_build_single(config):
 
     mock_segment.make_node_full.assert_called_once()
     mock_segment.make_edge.assert_called_once()
-    assert mock_node.concurrency == 17
+    assert mock_node.launch_options.pe_count == 17
 
 
 @pytest.mark.use_python
@@ -171,7 +171,7 @@ def test_build_single_cpp(config):
 
     mock_segment.make_node_full.assert_not_called()
     mock_segment.make_edge.assert_called_once()
-    assert mock_node.concurrency == 17
+    assert mock_node.launch_options.pe_count == 17
 
 
 @pytest.mark.use_cpp

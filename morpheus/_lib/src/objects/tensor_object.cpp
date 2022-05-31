@@ -19,7 +19,6 @@
 
 #include <morpheus/utilities/tensor_util.hpp>
 
-#include <neo/core/memory.hpp>       // for MemoryDescriptor
 #include <neo/memory/blob.hpp>       // for blob
 #include <neo/utils/type_utils.hpp>  // for DataType
 
@@ -74,27 +73,6 @@ bool TensorView::is_contiguous() const
     return TensorUtils::has_contiguous_stride(shape(), stride());
 }
 
-GenericTensor::GenericTensor(std::shared_ptr<neo::MemoryDescriptor> md,
-                             size_t offset,
-                             DataType dtype,
-                             const std::vector<TensorIndex>& shape,
-                             const std::vector<TensorIndex>& stride) :
-  m_md(std::move(md)),
-  m_offset(offset),
-  m_dtype(std::move(dtype)),
-  m_shape(std::move(shape)),
-  m_stride(std::move(stride))
-{
-    if (m_stride.empty())
-    {
-        TensorUtils::set_contiguous_stride(m_shape, m_stride);
-    }
-
-    CHECK_EQ(m_shape.size(), m_stride.size());
-
-    // throw_on_invalid_storage();
-}
-
 const DataType& TensorView::dtype() const
 {
     return m_dtype;
@@ -107,4 +85,26 @@ const std::vector<TensorIndex>& TensorView::stride() const
 {
     return m_stride;
 }
+
+// GenericTensor::GenericTensor(std::shared_ptr<neo::MemoryDescriptor> md,
+//                              size_t offset,
+//                              DataType dtype,
+//                              const std::vector<TensorIndex>& shape,
+//                              const std::vector<TensorIndex>& stride) :
+//   m_md(std::move(md)),
+//   m_offset(offset),
+//   m_dtype(std::move(dtype)),
+//   m_shape(std::move(shape)),
+//   m_stride(std::move(stride))
+// {
+//     if (m_stride.empty())
+//     {
+//         TensorUtils::set_contiguous_stride(m_shape, m_stride);
+//     }
+
+//     CHECK_EQ(m_shape.size(), m_stride.size());
+
+//     // throw_on_invalid_storage();
+// }
+
 }  // namespace morpheus

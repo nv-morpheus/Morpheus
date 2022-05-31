@@ -17,6 +17,7 @@ import typing
 from functools import reduce
 
 import neo
+from neo.core import operators as ops
 from tqdm import TMonitor
 from tqdm import TqdmSynchronisationWarning
 from tqdm import tqdm
@@ -212,9 +213,6 @@ class MonitorStage(SinglePortStage):
 
     def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def sink_on_error(x):
-            logger.error("Node: '%s' received error: %s", self.unique_name, x)
-
         def sink_on_completed():
             # Set the name to complete. This refreshes the display
             self._progress.set_description_str(self._progress.desc + "[Complete]")
@@ -228,11 +226,15 @@ class MonitorStage(SinglePortStage):
                 MorpheusTqdm.monitor.exit()
                 MorpheusTqdm.monitor = None
 
-        stream = seg.make_sink(self.unique_name, self._progress_sink, sink_on_error, sink_on_completed)
+        def node_fn(input: neo.Observable, output: neo.Subscriber):
+
+            input.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(output)
+
+        stream = seg.make_node_full(self.unique_name, node_fn)
 
         seg.make_edge(input_stream[0], stream)
 
-        return input_stream
+        return stream, input_stream[1]
 
     def _refresh_progress(self, _):
         self._progress.refresh()
@@ -247,12 +249,14 @@ class MonitorStage(SinglePortStage):
 
         # Skip incase we have empty objects
         if (self._determine_count_fn is None):
-            return
+            return x
 
         # Do our best to determine the count
         n = self._determine_count_fn(x)
 
         self._progress.update(n=n)
+
+        return x
 
     def _auto_count_fn(self, x):
 

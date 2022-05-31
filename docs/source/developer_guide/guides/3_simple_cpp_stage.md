@@ -316,7 +316,7 @@ As mentioned in the previous section, we will need to override the `supports_cpp
 def supports_cpp_node(cls):
    return True
 
-def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
    if CppConfig.get_should_use_cpp():
       print("building cpp")
       node = morpheus_example_cpp.PassThruStage(seg, self.unique_name)

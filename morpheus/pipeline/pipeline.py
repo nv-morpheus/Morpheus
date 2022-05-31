@@ -60,7 +60,7 @@ class Pipeline():
 
         self._exec_options = neo.Options()
         self._exec_options.topology.user_cpuset = "0-{}".format(c.num_threads - 1)
-        # self._exec_options.engine_factories.default_engine_type = neo.core.options.EngineType.Thread
+        self._exec_options.engine_factories.default_engine_type = neo.core.options.EngineType.Thread
 
         # Set the default channel size
         neo.Config.default_channel_size = c.edge_buffer_size

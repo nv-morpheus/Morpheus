@@ -112,7 +112,7 @@ class RecipientFeaturesStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_node(self.unique_name, self.on_data)
         seg.make_edge(input_stream[0], node)
 
@@ -406,7 +406,7 @@ In this example, we will create a source that reads messages from a [RabbitMQ](h
 The `_build_source` method is similar to the `_build_single` method; it receives an instance of the pipeline segment and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have parent stages and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
 
 ```python
-def _build_source(self, seg: neo.Segment) -> StreamPair:
+def _build_source(self, seg: neo.Builder) -> StreamPair:
     node = seg.make_source(self.unique_name, self.source_generator)
     return node, MessageMeta
 ```
@@ -511,7 +511,7 @@ class RabbitMQSourceStage(SingleOutputSource):
     def name(self) -> str:
         return "from-rabbitmq"
 
-    def _build_source(self, seg: neo.Segment) -> StreamPair:
+    def _build_source(self, seg: neo.Builder) -> StreamPair:
         node = seg.make_source(self.unique_name, self.source_generator)
         return node, MessageMeta
 
@@ -550,7 +550,7 @@ class WriteToRabbitMQStage(SinglePortStage):
 
 In our `_build_single` we will be making use of the `make_sink` method rather than `make_node` or `make_source`
 ```python
-def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
     node = seg.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
     seg.make_edge(input_stream[0], node)
     return input_stream
@@ -645,7 +645,7 @@ class WriteToRabbitMQStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MessageMeta, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
         seg.make_edge(input_stream[0], node)
         return input_stream

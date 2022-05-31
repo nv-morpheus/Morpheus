@@ -256,7 +256,7 @@ class InferenceStage(MultiMessageStage):
             node = seg.make_node_full(self.unique_name, py_inference_fn)
 
         # Set the concurrency level to be up with the thread count
-        node.concurrency = self._thread_count
+        node.launch_options.pe_count = self._thread_count
         seg.make_edge(stream, node)
 
         stream = node

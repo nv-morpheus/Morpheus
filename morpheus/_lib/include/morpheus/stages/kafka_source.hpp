@@ -39,6 +39,9 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
+
+struct KafkaSourceStage__Rebalancer;
+
 class KafkaSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
@@ -84,12 +87,12 @@ class KafkaSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<Message
     /**
      * TODO(Documentation)
      */
-    neo::SharedFuture<bool> launch_tasks(std::vector<std::function<bool()>> &&tasks);
+    // neo::SharedFuture<bool> launch_tasks(std::vector<std::function<bool()>> &&tasks);
 
     /**
      * TODO(Documentation)
      */
-    std::unique_ptr<RdKafka::KafkaConsumer> create_consumer();
+    std::unique_ptr<RdKafka::KafkaConsumer> create_consumer(KafkaSourceStage__Rebalancer &rebalancer);
 
     /**
      * TODO(Documentation)
@@ -111,7 +114,7 @@ class KafkaSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<Message
     bool m_disable_commit{false};
     bool m_disable_pre_filtering{false};
     bool m_requires_commit{false};  // Whether or not manual committing is required
-    std::vector<std::shared_ptr<neo::TaskQueue<neo::FiberMetaData>>> m_task_queues;
+    // std::vector<std::shared_ptr<neo::TaskQueue<neo::FiberMetaData>>> m_task_queues;
 
     void *m_rebalancer;
 };

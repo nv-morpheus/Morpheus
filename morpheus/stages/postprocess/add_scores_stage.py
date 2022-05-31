@@ -101,7 +101,7 @@ class AddScoresStage(SinglePortStage):
         # Return passthrough
         return x
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         if CppConfig.get_should_use_cpp():

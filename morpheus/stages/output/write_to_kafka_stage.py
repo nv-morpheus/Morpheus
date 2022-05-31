@@ -133,7 +133,7 @@ class WriteToKafkaStage(SinglePortStage):
         # Write to kafka
         node = seg.make_node_full(self.unique_name, node_fn)
         seg.make_edge(stream, node)
-        # node.concurrency = self._max_concurrent
+        # node.launch_options.pe_count = self._max_concurrent
 
         # Return input unchanged
         return input_stream

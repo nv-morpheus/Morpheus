@@ -67,9 +67,19 @@ InferenceClientStage::InferenceClientStage(std::string model_name,
                                            bool needs_logits,
                                            std::map<std::string, std::string> inout_mapping) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
+  m_model_name(std::move(model_name)),
+  m_server_url(std::move(server_url)),
+  m_force_convert_inputs(force_convert_inputs),
+  m_use_shared_memory(use_shared_memory),
+  m_needs_logits(needs_logits),
+  m_inout_mapping(std::move(inout_mapping)),
   m_options(m_model_name)
+{
+    // Connect with the server to setup the inputs/outputs
+    this->connect_with_server();  // TODO(Devin)
+}
 
-      InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
+InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         std::unique_ptr<triton::client::InferenceServerHttpClient> client;
@@ -113,9 +123,9 @@ InferenceClientStage::InferenceClientStage(std::string model_name,
                     size_t start = i;
                     size_t stop  = std::min(i + m_max_batch_size, x->count);
 
-                    reader_type_t mini_batch_input =
+                    sink_type_t mini_batch_input =
                         std::static_pointer_cast<MultiInferenceMessage>(x->get_slice(start, stop));
-                    writer_type_t mini_batch_output =
+                    source_type_t mini_batch_output =
                         std::static_pointer_cast<MultiResponseProbsMessage>(response->get_slice(start, stop));
 
                     // Iterate on the model inputs in case the model takes less than what tensors are available
