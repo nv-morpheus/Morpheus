@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 #include <morpheus/messages/memory/inference_memory.hpp>
 #include <morpheus/messages/memory/inference_memory_fil.hpp>
 #include <morpheus/messages/memory/inference_memory_nlp.hpp>

@@ -21,46 +21,47 @@
 
 #include <pyneo/node.hpp>
 
-#include <string>
 #include <memory>
-
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** FileSourceStage*************************************/
+/****** Component public implementations *******************/
+/****** FileSourceStage*************************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class FileSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>
+{
+  public:
+    using base_t = neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t::source_type_t;
+
+    FileSourceStage(const neo::Segment &parent, const std::string &name, std::string filename, int repeat = 1);
+
+  private:
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class FileSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>> {
-    public:
-        using base_t = neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>;
-        using base_t::source_type_t;
+    cudf::io::table_with_metadata load_table();
 
-        FileSourceStage(const neo::Segment &parent, const std::string &name, std::string filename, int repeat = 1);
+    std::string m_filename;
+    int m_repeat{1};
+};
 
-    private:
-
-        /**
-         * TODO(Documentation)
-         */
-        cudf::io::table_with_metadata load_table();
-
-        std::string m_filename;
-        int m_repeat{1};
-    };
-
-
-    /****** FileSourceStageInterfaceProxy***********************/
+/****** FileSourceStageInterfaceProxy***********************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct FileSourceStageInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * @brief Create and initialize a FileSourceStage, and return the result.
      */
-    struct FileSourceStageInterfaceProxy {
-        /**
-         * @brief Create and initialize a FileSourceStage, and return the result.
-         */
-        static std::shared_ptr<FileSourceStage>
-        init(neo::Segment &parent, const std::string &name, std::string filename, int repeat = 1);
-    };
+    static std::shared_ptr<FileSourceStage> init(neo::Segment &parent,
+                                                 const std::string &name,
+                                                 std::string filename,
+                                                 int repeat = 1);
+};
 #pragma GCC visibility pop
-} // Morpheus
+}  // namespace morpheus

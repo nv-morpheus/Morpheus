@@ -26,82 +26,83 @@
 
 #include <http_client.h>
 
-#include <string>
 #include <memory>
-
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** InferenceClientStage********************************/
+/****** Component public implementations *******************/
+/****** InferenceClientStage********************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class InferenceClientStage
+  : public neo::pyneo::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
+{
+  public:
+    using base_t =
+        neo::pyneo::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>;
+    using base_t::operator_fn_t;
+    using base_t::reader_type_t;
+    using base_t::writer_type_t;
+
+    InferenceClientStage(const neo::Segment &parent,
+                         const std::string &name,
+                         std::string model_name,
+                         std::string server_url,
+                         bool force_convert_inputs,
+                         bool use_shared_memory,
+                         bool needs_logits,
+                         std::map<std::string, std::string> inout_mapping = {});
+
+  private:
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class InferenceClientStage
-            : public neo::pyneo::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>> {
-    public:
-        using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>;
-        using base_t::operator_fn_t;
-        using base_t::reader_type_t;
-        using base_t::writer_type_t;
+    bool is_default_grpc_port(std::string &server_url);
 
-        InferenceClientStage(const neo::Segment &parent,
-                             const std::string &name,
-                             std::string model_name,
-                             std::string server_url,
-                             bool force_convert_inputs,
-                             bool use_shared_memory,
-                             bool needs_logits,
-                             std::map<std::string, std::string> inout_mapping = {});
-
-    private:
-        /**
-         * TODO(Documentation)
-         */
-        bool is_default_grpc_port(std::string &server_url);
-
-        /**
-         * TODO(Documentation)
-         */
-        void connect_with_server();
-
-        /**
-         * TODO(Documentation)
-         */
-        operator_fn_t build_operator();
-
-        std::string m_model_name;
-        std::string m_server_url;
-        bool m_force_convert_inputs;
-        bool m_use_shared_memory;
-        bool m_needs_logits{true};
-        std::map<std::string, std::string> m_inout_mapping;
-
-        // Below are settings created during handshake with server
-        // std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
-        std::vector<TritonInOut> m_model_inputs;
-        std::vector<TritonInOut> m_model_outputs;
-        triton::client::InferOptions m_options;
-        int m_max_batch_size{-1};
-    };
-
-
-    /****** InferenceClientStageInferenceProxy******************/
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * TODO(Documentation)
      */
-    struct InferenceClientStageInterfaceProxy {
-        /**
-         * @brief Create and initialize a InferenceClientStage, and return the result.
-         */
-        static std::shared_ptr<InferenceClientStage> init(neo::Segment &parent,
-                                                          const std::string &name,
-                                                          std::string model_name,
-                                                          std::string server_url,
-                                                          bool force_convert_inputs,
-                                                          bool use_shared_memory,
-                                                          bool needs_logits,
-                                                          std::map<std::string, std::string> inout_mapping);
-    };
+    void connect_with_server();
+
+    /**
+     * TODO(Documentation)
+     */
+    operator_fn_t build_operator();
+
+    std::string m_model_name;
+    std::string m_server_url;
+    bool m_force_convert_inputs;
+    bool m_use_shared_memory;
+    bool m_needs_logits{true};
+    std::map<std::string, std::string> m_inout_mapping;
+
+    // Below are settings created during handshake with server
+    // std::shared_ptr<triton::client::InferenceServerHttpClient> m_client;
+    std::vector<TritonInOut> m_model_inputs;
+    std::vector<TritonInOut> m_model_outputs;
+    triton::client::InferOptions m_options;
+    int m_max_batch_size{-1};
+};
+
+/****** InferenceClientStageInferenceProxy******************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct InferenceClientStageInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a InferenceClientStage, and return the result.
+     */
+    static std::shared_ptr<InferenceClientStage> init(neo::Segment &parent,
+                                                      const std::string &name,
+                                                      std::string model_name,
+                                                      std::string server_url,
+                                                      bool force_convert_inputs,
+                                                      bool use_shared_memory,
+                                                      bool needs_logits,
+                                                      std::map<std::string, std::string> inout_mapping);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

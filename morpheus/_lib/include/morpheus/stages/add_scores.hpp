@@ -17,60 +17,59 @@
 
 #pragma once
 
-
 #include <morpheus/messages/multi_response_probs.hpp>
 
 #include <neo/core/segment.hpp>
 #include <pyneo/node.hpp>
 
-#include <string>
 #include <memory>
-
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** AddScoresStage********************************/
+/****** Component public implementations *******************/
+/****** AddScoresStage********************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class AddScoresStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+                                                     std::shared_ptr<MultiResponseProbsMessage>>
+{
+  public:
+    using base_t =
+        neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using base_t::operator_fn_t;
+    using base_t::reader_type_t;
+    using base_t::writer_type_t;
+
+    AddScoresStage(const neo::Segment &parent,
+                   const std::string &name,
+                   std::size_t num_class_labels,
+                   std::map<std::size_t, std::string> idx2label);
+
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class AddScoresStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-            std::shared_ptr<MultiResponseProbsMessage>> {
-    public:
-        using base_t =
-        neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-        using base_t::operator_fn_t;
-        using base_t::reader_type_t;
-        using base_t::writer_type_t;
+    operator_fn_t build_operator();
 
-        AddScoresStage(const neo::Segment &parent,
-                       const std::string &name,
-                       std::size_t num_class_labels,
-                       std::map<std::size_t, std::string> idx2label);
+    std::size_t m_num_class_labels;
+    std::map<std::size_t, std::string> m_idx2label;
+};
 
-        /**
-         * TODO(Documentation)
-         */
-        operator_fn_t build_operator();
-
-        std::size_t m_num_class_labels;
-        std::map<std::size_t, std::string> m_idx2label;
-    };
-
-    /****** AddScoresStageInterfaceProxy******************/
+/****** AddScoresStageInterfaceProxy******************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct AddScoresStageInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * @brief Create and initialize a AddScoresStage, and return the result.
      */
-    struct AddScoresStageInterfaceProxy {
-
-        /**
-         * @brief Create and initialize a AddScoresStage, and return the result.
-         */
-        static std::shared_ptr<AddScoresStage> init(neo::Segment &parent,
-                                                    const std::string &name,
-                                                    std::size_t num_class_labels,
-                                                    std::map<std::size_t, std::string> idx2label);
-    };
+    static std::shared_ptr<AddScoresStage> init(neo::Segment &parent,
+                                                const std::string &name,
+                                                std::size_t num_class_labels,
+                                                std::map<std::size_t, std::string> idx2label);
+};
 
 #pragma GCC visibility pop
-}
+}  // namespace morpheus
