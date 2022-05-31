@@ -20,6 +20,9 @@ source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
 
 restore_conda_env
+fetch_s3 "${ARTIFACT_ENDPOINT}/cpp_tests.tar.bz" "${WORKSPACE_TMP}/cpp_tests.tar.bz"
+tar --directory ${WORKSPACE_TMP} xf "${WORKSPACE_TMP}/cpp_tests.tar.bz"
+CPP_TESTS=($(tar tf "${WORKSPACE_TMP}/cpp_tests.tar.bz"))
 
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
@@ -30,25 +33,47 @@ cd ${MORPHEUS_ROOT}
 git lfs install
 git lfs pull
 
-gpuci_logger "Running tests"
-# Running the tests from the tests dir. Normally this isn't nescesary, however since
+REPORTS_DIR="${WORKSPACE_TMP}/reports"
+mkdir -p ${WORKSPACE_TMP}/reports
+
+TEST_RESULTS=0
+for cpp_test in "${CPP_TESTS[@]}"; do
+       test_name=$(basename ${cpp_test})
+       gpuci_logger "Running ${test_name}"
+       set +e
+
+       ${WORKSPACE_TMP}/$cpp_test --gtest_output="xml:${REPORTS_DIR}/report_${test_name}.xml"
+       TEST_RESULT=$?
+       TEST_RESULTS=$(($TEST_RESULTS+$TEST_RESULT))
+
+       set -e
+done
+
+gpuci_logger "Running Python tests"
+# Running Python the tests from the tests dir. Normally this isn't nescesary, however since
 # we are testing the installed version of morpheus in site-packages and not the one
 # in the repo dir, the pytest coverage module reports incorrect coverage stats.
 # Note: The -I flag prevents python from automatically adding the current dir to path,
 # so this bug appears to be specific to the coverage plugin
 cd ${MORPHEUS_ROOT}/tests
 set +e
+
 python -I -m pytest --run_slow \
-       --junit-xml=${WORKSPACE_TMP}/report_pytest.xml \
+       --junit-xml=${REPORTS_DIR}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \
-       --cov-report=xml:${WORKSPACE_TMP}/report_pytest_coverage.xml
+       --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml
 
 PYTEST_RESULTS=$?
+TEST_RESULTS=$(($TEST_RESULTS+$PYTEST_RESULTS))
+
 set -e
 
-gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp ${WORKSPACE_TMP}/report_pytest.xml "${ARTIFACT_URL}/report_pytest.xml"
-aws s3 cp ${WORKSPACE_TMP}/report_pytest_coverage.xml "${ARTIFACT_URL}/report_pytest_coverage.xml"
+gpuci_logger "Archiving test reports"
+cd $(dirname ${REPORTS_DIR})
+tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
 
-exit ${PYTEST_RESULTS}
+gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+aws s3 cp ${WORKSPACE_TMP}/test_reports.tar.bz "${ARTIFACT_URL}/test_reports.tar.bz"
+
+exit ${TEST_RESULTS}
