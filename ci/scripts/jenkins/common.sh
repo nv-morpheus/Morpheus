@@ -71,7 +71,7 @@ function restore_conda_env() {
     # We are using the --no-same-owner flag since user id & group id's are inconsistent between nodes in our CI pool
     tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
 
-    gpuci_logger "Setting test env"
+    gpuci_logger "Setting conda env"
     conda activate morpheus
     conda-unpack
 }
