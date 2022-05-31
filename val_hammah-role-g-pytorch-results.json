@@ -1,0 +1,28 @@
+{
+  "diff_rows": 3,
+  "extra_cols": [
+    "tlsDetailsclientProvidedHostHeader"
+  ],
+  "matching_cols": [
+    "eventID",
+    "eventTime",
+    "userIdentityaccountId",
+    "eventSource",
+    "eventName",
+    "sourceIPAddress",
+    "userAgent",
+    "userIdentitytype",
+    "apiVersion",
+    "userIdentityprincipalId",
+    "userIdentityarn",
+    "userIdentityaccessKeyId",
+    "userIdentitysessionContextsessionIssueruserName",
+    "errorCode",
+    "errorMessage",
+    "ae_anomaly_score",
+    "ts_anomaly"
+  ],
+  "matching_rows": 311,
+  "missing_cols": [],
+  "total_rows": 314
+}

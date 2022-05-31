@@ -38,7 +38,7 @@ class TestDirectories(object):
         self.datasets_dir = os.path.join(self.models_dir, 'datasets')
         self.training_data_dir = os.path.join(self.datasets_dir, 'training-data')
         self.validation_data_dir = os.path.join(self.datasets_dir, 'validation-data')
-        self.expeced_data_dir = os.path.join(self.tests_dir, 'expected_data')
+        self.tests_data_dir = os.path.join(self.tests_dir, 'tests_data')
         self.mock_triton_servers_dir = os.path.join(self.tests_dir, 'mock_triton_server')
 
 
