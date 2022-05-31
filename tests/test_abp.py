@@ -105,7 +105,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
 
     pipe.run()
     results = calc_error_val(results_file_name)
-    assert results.diff_rows == 1
+    assert results.diff_rows == 0
 
 
 @pytest.mark.slow

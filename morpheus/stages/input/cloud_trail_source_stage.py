@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 class CloudTrailSourceStage(SingleOutputSource):
     """
     Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline
-     immediately. Useful for testing performance and accuracy of a pipeline.
+    immediately. Useful for testing performance and accuracy of a pipeline.
 
     Parameters
     ----------
@@ -118,7 +118,7 @@ class CloudTrailSourceStage(SingleOutputSource):
         ----------
         filename : str
             Path to a file to read.
-        file_type : `morpheus.pipeline.file_types.FileTypes`
+        file_type : `morpheus._lib.file_types.FileTypes`
             What type of file to read. Leave as Auto to auto detect based on the file extension.
 
         Returns

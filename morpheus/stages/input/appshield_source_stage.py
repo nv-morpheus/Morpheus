@@ -76,7 +76,6 @@ class AppShieldSourceStage(SingleOutputSource):
         self._plugins_include = plugins_include
         self._cols_include = cols_include
         self._cols_exclude = cols_exclude
-
         self._input_count = None
 
         self._watcher = DirectoryWatcher(input_glob=input_glob,
@@ -139,14 +138,14 @@ class AppShieldSourceStage(SingleOutputSource):
             plugin_df = pd.DataFrame(columns=features_plugin, data=data["data"])
         except ValueError:
             logger.exception("Error while loading file content to datframe with 'cols_exclude' filter")
-
             logger.info("Attempting to populate the dataframe with all columns.")
 
             plugin_df = pd.DataFrame(columns=data['titles'], data=data["data"])
-
+            
             logger.info("Applying 'cols_exclude' filter on dataframe")
-
+            
             plugin_df = plugin_df[features_plugin]
+
         return plugin_df
 
     @staticmethod
@@ -174,7 +173,6 @@ class AppShieldSourceStage(SingleOutputSource):
                 plugin_df = AppShieldSourceStage.read_file_to_df(file, cols_exclude)
         except JSONDecodeError as e:
             logger.error('Unable to load %s to dataframe with latin1 encoding : %s', filepath, e)
-
             logger.info('Retrying... Attempting to load file with utf-8 encoding')
 
             with open(filepath, encoding='utf8') as file:
@@ -277,7 +275,6 @@ class AppShieldSourceStage(SingleOutputSource):
 
             # Now make a AppShieldMessageMeta with the source name
             meta = AppShieldMessageMeta(df, source)
-
             metas.append(meta)
 
         return metas
