@@ -24,16 +24,16 @@ from utils import TEST_DIRS
 
 
 @pytest.mark.use_python
-@pytest.mark.parametrize('watch_directory', [False])
+@pytest.mark.parametrize('watch_directory', [True])
 @pytest.mark.parametrize('max_files', [-1])
-@pytest.mark.parametrize('sort_glob', [False])
+@pytest.mark.parametrize('sort_glob', [True])
 def test_build_node(watch_directory, max_files, sort_glob):
     input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', '*', '*.json')
     watcher = DirectoryWatcher(input_glob, watch_directory, max_files, sort_glob)
 
-    assert watcher._watch_directory == False
+    assert watcher._sort_glob
+    assert watcher._watch_directory
     assert watcher._max_files == -1
-    assert watcher._sort_glob == False
 
     mock_files = mock.MagicMock()
     mock_segment = mock.MagicMock()

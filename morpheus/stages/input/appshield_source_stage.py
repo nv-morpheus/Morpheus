@@ -38,6 +38,7 @@ class AppShieldSourceStage(SingleOutputSource):
     Source stage is used to load Appshield messages from one or more plugins into a dataframe.
     It normalizes nested json messages and arranges them into a dataframe by snapshot
     and source(Determine which source generated the plugin messages).
+
     Parameters
     ----------
     c : `morpheus.config.Config`
@@ -96,12 +97,14 @@ class AppShieldSourceStage(SingleOutputSource):
     def fill_interested_cols(plugin_df: pd.DataFrame, cols_include: typing.List[str]):
         """
         Fill missing interested plugin columns.
+
         Parameters
         ----------
         plugin_df : pandas.DataFrame
             Snapshot plugin dataframe
         cols_include : typing.List[str]
             Columns that needs to be included.
+
         Returns
         -------
         pandas.DataFrame
@@ -119,12 +122,14 @@ class AppShieldSourceStage(SingleOutputSource):
     def read_file_to_df(file: io.TextIOWrapper, cols_exclude: typing.List[str]):
         """
         Read file content to dataframe.
+
         Parameters
         ----------
         file : `io.TextIOWrapper`
             Input file object
         cols_exclude : typing.List[str]
             Dropping columns from a dataframe.
+
         Returns
         -------
         pandas.DataFrame
@@ -141,9 +146,9 @@ class AppShieldSourceStage(SingleOutputSource):
             logger.info("Attempting to populate the dataframe with all columns.")
 
             plugin_df = pd.DataFrame(columns=data['titles'], data=data["data"])
-            
+
             logger.info("Applying 'cols_exclude' filter on dataframe")
-            
+
             plugin_df = plugin_df[features_plugin]
 
         return plugin_df
@@ -152,16 +157,19 @@ class AppShieldSourceStage(SingleOutputSource):
     def load_df(filepath: str, cols_exclude: typing.List[str]) -> pd.DataFrame:
         """
         Reads a file into a dataframe.
+
         Parameters
         ----------
         filepath : str
             Path to a file.
         cols_exclude : typing.List[str]
             Columns that needs to exclude.
+
         Returns
         -------
         pandas.DataFrame
             The parsed dataframe.
+
         Raises
         ------
         JSONDecodeError
@@ -184,12 +192,14 @@ class AppShieldSourceStage(SingleOutputSource):
     def load_meta_cols(filepath_split: typing.List[str], plugin: str, plugin_df: pd.DataFrame) -> pd.DataFrame:
         """
         Loads meta columns to dataframe.
+
         Parameters
         ----------
         filepath_split : typing.List[str]
             Splits of file path.
         plugin : str
             Plugin name to which the data belongs to.
+
         Returns
         -------
         pandas.DataFrame
@@ -212,12 +222,14 @@ class AppShieldSourceStage(SingleOutputSource):
     def batch_source_split(x: typing.List[pd.DataFrame], source: str) -> typing.Dict[str, pd.DataFrame]:
         """
         Combines plugin dataframes from multiple snapshot and split dataframe per source.
+
         Parameters
         ----------
         x : typing.List[str]
             Dataframes from multiple sources.
         source : str
             source column name to group it.
+
         Returns
         -------
         typing.Dict[str, pandas.DataFrame]

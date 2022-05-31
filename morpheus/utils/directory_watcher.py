@@ -34,8 +34,9 @@ logger = logging.getLogger(__name__)
 
 class DirectoryWatcher():
     """
-    This class is in responsible of polling for new files in the supplied input glob of directories and 
+    This class is in responsible of polling for new files in the supplied input glob of directories and
     forwarding them on to the pipeline for processing.
+
     Parameters
     ----------
     c : `morpheus.config.Config`

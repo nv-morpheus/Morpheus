@@ -30,7 +30,6 @@ from morpheus.messages import UserMessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.directory_watcher import DirectoryWatcher
-from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +69,7 @@ class CloudTrailSourceStage(SingleOutputSource):
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
                  sort_glob: bool = False):
-        
+
         SingleOutputSource.__init__(self, c)
 
         self._file_type = file_type
