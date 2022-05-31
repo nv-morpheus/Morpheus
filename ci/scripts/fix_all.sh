@@ -57,13 +57,13 @@ if [[ "${SKIP_CLANG_TIDY}" == "" ]]; then
 fi
 
 # Run include-what-you-use
-if [[ "${SKIP_IWYU}" == "" ]]; then
+if [[ "${SKIP_IWYU}" == "" && "${CPP_MODIFIED_FILES}" != "" ]]; then
 
    IWYU_TOOL=$(find_iwyu_tool)
 
    if [[ -x "${IWYU_TOOL}" ]]; then
       echo "Running include-what-you-use from '${IWYU_TOOL}'..."
-      ${IWYU_TOOL} -j 0 -p ${BUILD_DIR} ${CPP_MODIFIED_FILES[@]} 2>&1
+      ${IWYU_TOOL} -j $(nproc) -p ${BUILD_DIR} ${CPP_MODIFIED_FILES[@]} 2>&1
    else
       echo "Skipping include-what-you-use. Could not find iwyu_tool.py at '${IWYU_TOOL}'"
    fi
