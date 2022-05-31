@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import logging
+import os
 
 import click
-import psutil
 
 from morpheus.config import Config
 from morpheus.config import CppConfig
@@ -35,7 +35,7 @@ from stages.graph_sage_stage import GraphSAGEStage
 @click.command()
 @click.option(
     "--num_threads",
-    default=psutil.cpu_count(),
+    default=os.cpu_count(),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )

@@ -99,6 +99,7 @@ set(MORPHEUS_ROOT_PYTHON_FILES
   "setup.cfg"
   "setup.py"
   "versioneer.py"
+  "MANIFEST.in"
 )
 
 # Add the root python files to the list
@@ -140,6 +141,7 @@ install(
   FILES_MATCHING
     PATTERN "*.py"
     PATTERN "py.typed"
+    PATTERN "data/*"
 )
 
 

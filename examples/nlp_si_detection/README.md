@@ -108,13 +108,13 @@ morpheus --debug --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
-   pipeline-nlp --model_seq_length=256 --labels_file=$MORPHEUS_ROOT/data/labels_nlp.txt \
+   pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
-   from-file --filename=$MORPHEUS_ROOT/data/pcap_dump.jsonlines \
+   from-file --filename=$MORPHEUS_ROOT/morpheus/data/pcap_dump.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
-   preprocess --vocab_hash_file=$MORPHEUS_ROOT/data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
+   preprocess --vocab_hash_file=$MORPHEUS_ROOT/morpheus/data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
    inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8001 --force_convert_inputs=True \
    `# 5th Stage: Monitor stage prints throughput information to the console` \
