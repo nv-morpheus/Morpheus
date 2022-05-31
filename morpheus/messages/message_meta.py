@@ -68,6 +68,7 @@ class UserMessageMeta(MessageMeta, cpp_class=None):
 class AppShieldMessageMeta(MessageMeta, cpp_class=None):
     """
     This class extends MessageMeta to also hold source corresponding to batched metadata.
+
     Parameters
     ----------
     df : pd.DataFrame
