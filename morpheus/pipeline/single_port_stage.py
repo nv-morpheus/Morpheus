@@ -69,10 +69,10 @@ class SinglePortStage(_pipeline.Stage):
         return in_ports_pairs
 
     @abstractmethod
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
         pass
 
-    def _build(self, seg: neo.Segment, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, seg: neo.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
         # True source object separate from the output stream. If any other operators need to be added after the source,
         # use `_post_build`
@@ -83,11 +83,11 @@ class SinglePortStage(_pipeline.Stage):
 
         return [self._build_single(seg, in_ports_streams[0])]
 
-    def _post_build_single(self, seg: neo.Segment, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, seg: neo.Builder, out_pair: StreamPair) -> StreamPair:
         return out_pair
 
     @typing.final
-    def _post_build(self, seg: neo.Segment, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, seg: neo.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         ret_val = self._post_build_single(seg, out_ports_pair[0])
 

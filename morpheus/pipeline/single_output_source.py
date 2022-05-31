@@ -40,11 +40,11 @@ class SingleOutputSource(_pipeline.SourceStage):
 
         self._create_ports(0, 1)
 
-    def _post_build_single(self, seg: neo.Segment, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, seg: neo.Builder, out_pair: StreamPair) -> StreamPair:
         return out_pair
 
     @typing.final
-    def _post_build(self, seg: neo.Segment, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, seg: neo.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         ret_val = self._post_build_single(seg, out_ports_pair[0])
 

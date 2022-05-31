@@ -28,7 +28,7 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(common, m)
 {
-    google::InitGoogleLogging("morpheus");
+    // google::InitGoogleLogging("morpheus");
 
     m.doc() = R"pbdoc(
         -----------------------

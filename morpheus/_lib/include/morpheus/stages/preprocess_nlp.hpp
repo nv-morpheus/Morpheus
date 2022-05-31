@@ -20,6 +20,7 @@
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/messages/multi_inference.hpp>
 
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <memory>
@@ -37,13 +38,11 @@ class PreprocessNLPStage
 {
   public:
     using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-    PreprocessNLPStage(const neo::Segment &parent,
-                       const std::string &name,
-                       std::string vocab_hash_file,
+    PreprocessNLPStage(std::string vocab_hash_file,
                        uint32_t sequence_length,
                        bool truncation,
                        bool do_lower_case,
@@ -54,7 +53,7 @@ class PreprocessNLPStage
     /**
      * TODO(Documentation)
      */
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     std::string m_vocab_hash_file;
     uint32_t m_sequence_length;
@@ -73,14 +72,14 @@ struct PreprocessNLPStageInterfaceProxy
     /**
      * @brief Create and initialize a ProcessNLPStage, and return the result.
      */
-    static std::shared_ptr<PreprocessNLPStage> init(neo::Segment &parent,
-                                                    const std::string &name,
-                                                    std::string vocab_hash_file,
-                                                    uint32_t sequence_length,
-                                                    bool truncation,
-                                                    bool do_lower_case,
-                                                    bool add_special_token,
-                                                    int stride = -1);
+    static std::shared_ptr<neo::segment::Object<PreprocessNLPStage>> init(neo::segment::Builder &parent,
+                                                                          const std::string &name,
+                                                                          std::string vocab_hash_file,
+                                                                          uint32_t sequence_length,
+                                                                          bool truncation,
+                                                                          bool do_lower_case,
+                                                                          bool add_special_token,
+                                                                          int stride = -1);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

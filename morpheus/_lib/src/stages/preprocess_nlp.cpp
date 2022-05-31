@@ -20,7 +20,7 @@
 #include <morpheus/messages/multi_inference.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <librdkafka/rdkafkacpp.h>
@@ -37,16 +37,13 @@
 namespace morpheus {
 // Component public implementations
 // ************ PreprocessNLPStage ************************* //
-PreprocessNLPStage::PreprocessNLPStage(const neo::Segment &parent,
-                                       const std::string &name,
-                                       std::string vocab_hash_file,
+PreprocessNLPStage::PreprocessNLPStage(std::string vocab_hash_file,
                                        uint32_t sequence_length,
                                        bool truncation,
                                        bool do_lower_case,
                                        bool add_special_token,
                                        int stride) :
-  neo::SegmentObject(parent, name),
-  PythonNode(parent, name, build_operator()),
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_vocab_hash_file(std::move(vocab_hash_file)),
   m_sequence_length(sequence_length),
   m_truncation(truncation),
@@ -55,9 +52,9 @@ PreprocessNLPStage::PreprocessNLPStage(const neo::Segment &parent,
   m_stride(stride)
 {}
 
-PreprocessNLPStage::operator_fn_t PreprocessNLPStage::build_operator()
+PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t> &input, neo::Subscriber<writer_type_t> &output) {
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         uint32_t stride = m_stride;
 
         // Auto calc stride to be 75% of sequence length
@@ -67,8 +64,8 @@ PreprocessNLPStage::operator_fn_t PreprocessNLPStage::build_operator()
             stride = stride + stride / 2;
         }
 
-        return input.subscribe(neo::make_observer<reader_type_t>(
-            [this, stride, &output](reader_type_t &&x) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output, stride](sink_type_t x) {
                 // Convert to string view
                 auto string_col = cudf::strings_column_view{x->get_meta("data").get_column(0)};
 
@@ -132,19 +129,18 @@ PreprocessNLPStage::operator_fn_t PreprocessNLPStage::build_operator()
 }
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
-std::shared_ptr<PreprocessNLPStage> PreprocessNLPStageInterfaceProxy::init(neo::Segment &parent,
-                                                                           const std::string &name,
-                                                                           std::string vocab_hash_file,
-                                                                           uint32_t sequence_length,
-                                                                           bool truncation,
-                                                                           bool do_lower_case,
-                                                                           bool add_special_token,
-                                                                           int stride)
+std::shared_ptr<neo::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
+    neo::segment::Builder &parent,
+    const std::string &name,
+    std::string vocab_hash_file,
+    uint32_t sequence_length,
+    bool truncation,
+    bool do_lower_case,
+    bool add_special_token,
+    int stride)
 {
-    auto stage = std::make_shared<PreprocessNLPStage>(
-        parent, name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride);
-
-    parent.register_node<PreprocessNLPStage>(stage);
+    auto stage = parent.construct_object<PreprocessNLPStage>(
+        name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride);
 
     return stage;
 }

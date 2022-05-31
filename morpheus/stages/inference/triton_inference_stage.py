@@ -889,7 +889,7 @@ class TritonInferenceStage(InferenceStage):
 
         return worker_cls(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
-    def _get_cpp_inference_node(self, seg: neo.Segment):
+    def _get_cpp_inference_node(self, seg: neo.Builder):
 
         return neos.InferenceClientStage(seg,
                                          name=self.unique_name,

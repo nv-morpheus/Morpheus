@@ -17,7 +17,7 @@
 
 #include <morpheus/stages/file_source.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
@@ -42,16 +42,15 @@
 namespace morpheus {
 // Component public implementations
 // ************ FileSourceStage ************* //
-FileSourceStage::FileSourceStage(const neo::Segment &parent,
-                                 const std::string &name,
-                                 std::string filename,
-                                 int repeat) :
-  neo::SegmentObject(parent, name),
-  base_t(parent, name),
+FileSourceStage::FileSourceStage(std::string filename, int repeat) :
+  PythonSource(build()),
   m_filename(std::move(filename)),
   m_repeat(repeat)
+{}
+
+FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
-    this->set_source_observable(neo::Observable<source_type_t>([this](neo::Subscriber<source_type_t> &sub) {
+    return [this](rxcpp::subscriber<source_type_t> output) {
         auto data_table = this->load_table();
 
         // Using 0 will default to creating a new range index
@@ -84,7 +83,7 @@ FileSourceStage::FileSourceStage(const neo::Segment &parent,
         auto meta = MessageMeta::create_from_cpp(std::move(data_table), index_col_count);
 
         // Always push at least 1
-        sub.on_next(meta);
+        output.on_next(meta);
 
         for (cudf::size_type repeat_idx = 1; repeat_idx < m_repeat; ++repeat_idx)
         {
@@ -104,11 +103,11 @@ FileSourceStage::FileSourceStage(const neo::Segment &parent,
                 meta = MessageMeta::create_from_python(std::move(df));
             }
 
-            sub.on_next(meta);
+            output.on_next(meta);
         }
 
-        sub.on_completed();
-    }));
+        output.on_completed();
+    };
 }
 
 cudf::io::table_with_metadata FileSourceStage::load_table()
@@ -160,14 +159,10 @@ cudf::io::table_with_metadata FileSourceStage::load_table()
 }
 
 // ************ FileSourceStageInterfaceProxy ************ //
-std::shared_ptr<FileSourceStage> FileSourceStageInterfaceProxy::init(neo::Segment &parent,
-                                                                     const std::string &name,
-                                                                     std::string filename,
-                                                                     int repeat)
+std::shared_ptr<neo::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    neo::segment::Builder &parent, const std::string &name, std::string filename, int repeat)
 {
-    auto stage = std::make_shared<FileSourceStage>(parent, name, filename, repeat);
-
-    parent.register_node<FileSourceStage>(stage);
+    auto stage = parent.construct_object<FileSourceStage>(name, filename, repeat);
 
     return stage;
 }

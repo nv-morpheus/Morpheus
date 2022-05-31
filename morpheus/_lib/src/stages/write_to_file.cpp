@@ -27,13 +27,8 @@
 namespace morpheus {
 // Component public implementations
 // ************ WriteToFileStage **************************** //
-WriteToFileStage::WriteToFileStage(const neo::Segment &parent,
-                                   const std::string &name,
-                                   const std::string &filename,
-                                   std::ios::openmode mode,
-                                   FileTypes file_type) :
-  neo::SegmentObject(parent, name),
-  PythonNode(parent, name, build_operator()),
+WriteToFileStage::WriteToFileStage(const std::string &filename, std::ios::openmode mode, FileTypes file_type) :
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_is_first(true)
 {
     if (file_type == FileTypes::Auto)
@@ -61,6 +56,18 @@ WriteToFileStage::WriteToFileStage(const neo::Segment &parent,
     m_fstream.open(filename, mode);
 }
 
+void WriteToFileStage::write_json(WriteToFileStage::sink_type_t &msg)
+{
+    // Call df_to_json passing our fstream
+    df_to_json(msg->get_info(), m_fstream);
+}
+
+void WriteToFileStage::write_csv(WriteToFileStage::sink_type_t &msg)
+{
+    // Call df_to_csv passing our fstream
+    df_to_csv(msg->get_info(), m_fstream, m_is_first);
+}
+
 void WriteToFileStage::close()
 {
     if (m_fstream.is_open())
@@ -69,11 +76,11 @@ void WriteToFileStage::close()
     }
 }
 
-WriteToFileStage::operator_fn_t WriteToFileStage::build_operator()
+WriteToFileStage::subscribe_fn_t WriteToFileStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t> &input, neo::Subscriber<writer_type_t> &output) {
-        return input.subscribe(neo::make_observer<reader_type_t>(
-            [this, &output](reader_type_t &&msg) {
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t msg) {
                 this->m_write_func(msg);
                 m_is_first = false;
                 output.on_next(std::move(msg));
@@ -90,11 +97,12 @@ WriteToFileStage::operator_fn_t WriteToFileStage::build_operator()
 }
 
 // ************ WriteToFileStageInterfaceProxy ************* //
-std::shared_ptr<WriteToFileStage> WriteToFileStageInterfaceProxy::init(neo::Segment &parent,
-                                                                       const std::string &name,
-                                                                       const std::string &filename,
-                                                                       const std::string &mode,
-                                                                       FileTypes file_type)
+std::shared_ptr<neo::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
+    neo::segment::Builder &parent,
+    const std::string &name,
+    const std::string &filename,
+    const std::string &mode,
+    FileTypes file_type)
 {
     std::ios::openmode fsmode = std::ios::out;
 
@@ -130,9 +138,7 @@ std::shared_ptr<WriteToFileStage> WriteToFileStageInterfaceProxy::init(neo::Segm
         throw std::runtime_error(std::string("Unsupported file mode. Must choose either 'w' or 'a'. Mode: ") + mode);
     }
 
-    auto stage = std::make_shared<WriteToFileStage>(parent, name, filename, fsmode, file_type);
-
-    parent.register_node<WriteToFileStage>(stage);
+    auto stage = parent.construct_object<WriteToFileStage>(name, filename, fsmode, file_type);
 
     return stage;
 }

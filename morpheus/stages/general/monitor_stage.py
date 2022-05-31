@@ -210,7 +210,7 @@ class MonitorStage(SinglePortStage):
 
             self._progress.reset()
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         def sink_on_error(x):
             logger.error("Node: '%s' received error: %s", self.unique_name, x)

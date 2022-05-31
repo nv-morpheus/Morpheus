@@ -43,7 +43,7 @@ class SourceStage(_pipeline.StreamWrapper):
         self._start_callbacks: typing.List[typing.Callable] = []
         self._stop_callbacks: typing.List[typing.Callable] = []
 
-        self._source_stream: neo.Node = None
+        self._source_stream: neo.SegmentObject = None
 
     @property
     def input_count(self) -> int:
@@ -59,7 +59,7 @@ class SourceStage(_pipeline.StreamWrapper):
         return None
 
     @abstractmethod
-    def _build_source(self, seg: neo.Segment) -> StreamPair:
+    def _build_source(self, seg: neo.Builder) -> StreamPair:
         """
         Abstract method all derived Source classes should implement. Returns the same value as `build`.
 
@@ -69,13 +69,13 @@ class SourceStage(_pipeline.StreamWrapper):
         -------
 
         `morpheus.pipeline.pipeline.StreamPair`:
-            A tuple containing the output `neo.Node` object from this stage and the message data type.
+            A tuple containing the output `neo.SegmentObject` object from this stage and the message data type.
         """
 
         pass
 
     @typing.final
-    def _build(self, seg: neo.Segment, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, seg: neo.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
         # True source object separate from the output stream. If any other operators need to be added after the source,
         # use `_post_build`
@@ -92,7 +92,7 @@ class SourceStage(_pipeline.StreamWrapper):
 
         return [source_pair]
 
-    def _post_build(self, seg: neo.Segment, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, seg: neo.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         return out_ports_pair
 
@@ -103,4 +103,4 @@ class SourceStage(_pipeline.StreamWrapper):
         self._source_stream.stop()
 
     async def join(self):
-        self._source_stream.join()
+        pass

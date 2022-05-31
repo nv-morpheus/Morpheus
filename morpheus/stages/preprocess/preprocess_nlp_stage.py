@@ -165,7 +165,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                        truncation=self._truncation,
                        add_special_tokens=self._add_special_tokens)
 
-    def _get_preprocess_node(self, seg: neo.Segment):
+    def _get_preprocess_node(self, seg: neo.Builder):
         return neos.PreprocessNLPStage(seg,
                                        self.unique_name,
                                        self._vocab_hash_file,

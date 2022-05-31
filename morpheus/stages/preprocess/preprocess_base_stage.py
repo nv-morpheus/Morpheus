@@ -55,10 +55,10 @@ class PreprocessBaseStage(MultiMessageStage):
         pass
 
     @abstractmethod
-    def _get_preprocess_node(self, seg: neo.Segment):
+    def _get_preprocess_node(self, seg: neo.Builder):
         pass
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiInferenceMessage

@@ -19,7 +19,7 @@
 
 #include <morpheus/messages/multi_response_probs.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <memory>
@@ -38,16 +38,14 @@ class AddClassificationsStage : public neo::pyneo::PythonNode<std::shared_ptr<Mu
   public:
     using base_t =
         neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
     /**
      * TODO(Documentation)
      */
-    AddClassificationsStage(const neo::Segment &parent,
-                            const std::string &name,
-                            float threshold,
+    AddClassificationsStage(float threshold,
                             std::size_t num_class_labels,
                             std::map<std::size_t, std::string> idx2label);
 
@@ -55,7 +53,7 @@ class AddClassificationsStage : public neo::pyneo::PythonNode<std::shared_ptr<Mu
     /**
      * TODO(Documentation)
      */
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     float m_threshold;
     std::size_t m_num_class_labels;
@@ -72,11 +70,12 @@ struct AddClassificationStageInterfaceProxy
     /**
      * @brief Create and initialize a AddClassificationStage, and return the result.
      */
-    static std::shared_ptr<AddClassificationsStage> init(neo::Segment &parent,
-                                                         const std::string &name,
-                                                         float threshold,
-                                                         std::size_t num_class_labels,
-                                                         std::map<std::size_t, std::string> idx2label);
+    static std::shared_ptr<neo::segment::Object<AddClassificationsStage>> init(
+        neo::segment::Builder &parent,
+        const std::string &name,
+        float threshold,
+        std::size_t num_class_labels,
+        std::map<std::size_t, std::string> idx2label);
 };
 
 #pragma GCC visibility pop

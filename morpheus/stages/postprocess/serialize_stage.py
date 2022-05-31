@@ -116,7 +116,7 @@ class SerializeStage(SinglePortStage):
 
         return MessageMeta(df=df)
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
             stream = neos.SerializeStage(seg,
                                          self.unique_name,

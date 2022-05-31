@@ -21,7 +21,7 @@
 #include <morpheus/utilities/matx_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <neo/utils/type_utils.hpp>
 #include <pyneo/node.hpp>
 
@@ -33,6 +33,7 @@
 #include <cudf/io/json.hpp>
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <rxcpp/rx-observable.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -44,19 +45,16 @@
 namespace morpheus {
 // Component public implementations
 // ************ PreprocessFILStage ************************* //
-PreprocessFILStage::PreprocessFILStage(const neo::Segment &parent,
-                                       const std::string &name,
-                                       const std::vector<std::string> &features) :
-  neo::SegmentObject(parent, name),
-  PythonNode(parent, name, build_operator()),
+PreprocessFILStage::PreprocessFILStage(const std::vector<std::string> &features) :
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_fea_cols(std::move(features))
 {}
 
-PreprocessFILStage::operator_fn_t PreprocessFILStage::build_operator()
+PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t> &input, neo::Subscriber<writer_type_t> &output) {
-        return input.subscribe(neo::make_observer<reader_type_t>(
-            [this, &output](reader_type_t &&x) {
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [&output, this](sink_type_t x) {
                 // TODO(MDD): Add some sort of lock here to prevent fixing columns after they have been accessed
                 auto df_meta           = x->get_meta(m_fea_cols);
                 auto df_meta_col_names = df_meta.get_column_names();
@@ -162,13 +160,10 @@ PreprocessFILStage::operator_fn_t PreprocessFILStage::build_operator()
 }
 
 // ************ PreprocessFILStageInterfaceProxy *********** //
-std::shared_ptr<PreprocessFILStage> PreprocessFILStageInterfaceProxy::init(neo::Segment &parent,
-                                                                           const std::string &name,
-                                                                           const std::vector<std::string> &features)
+std::shared_ptr<neo::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
+    neo::segment::Builder &parent, const std::string &name, const std::vector<std::string> &features)
 {
-    auto stage = std::make_shared<PreprocessFILStage>(parent, name, features);
-
-    parent.register_node<PreprocessFILStage>(stage);
+    auto stage = parent.construct_object<PreprocessFILStage>(name, features);
 
     return stage;
 }

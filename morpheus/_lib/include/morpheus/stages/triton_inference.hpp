@@ -18,10 +18,10 @@
 #pragma once
 
 #include <morpheus/messages/multi_inference.hpp>
-#include <morpheus/messages/multi_response.hpp>
+#include <morpheus/messages/multi_response_probs.hpp>
 #include <morpheus/objects/triton_in_out.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <http_client.h>
@@ -37,18 +37,16 @@ namespace morpheus {
  */
 #pragma GCC visibility push(default)
 class InferenceClientStage
-  : public neo::pyneo::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
+  : public neo::pyneo::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>
 {
   public:
     using base_t =
-        neo::pyneo::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+        neo::pyneo::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-    InferenceClientStage(const neo::Segment &parent,
-                         const std::string &name,
-                         std::string model_name,
+    InferenceClientStage(std::string model_name,
                          std::string server_url,
                          bool force_convert_inputs,
                          bool use_shared_memory,
@@ -69,7 +67,7 @@ class InferenceClientStage
     /**
      * TODO(Documentation)
      */
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     std::string m_model_name;
     std::string m_server_url;
@@ -95,14 +93,15 @@ struct InferenceClientStageInterfaceProxy
     /**
      * @brief Create and initialize a InferenceClientStage, and return the result.
      */
-    static std::shared_ptr<InferenceClientStage> init(neo::Segment &parent,
-                                                      const std::string &name,
-                                                      std::string model_name,
-                                                      std::string server_url,
-                                                      bool force_convert_inputs,
-                                                      bool use_shared_memory,
-                                                      bool needs_logits,
-                                                      std::map<std::string, std::string> inout_mapping);
+    static std::shared_ptr<neo::segment::Object<InferenceClientStage>> init(
+        neo::segment::Builder &parent,
+        const std::string &name,
+        std::string model_name,
+        std::string server_url,
+        bool force_convert_inputs,
+        bool use_shared_memory,
+        bool needs_logits,
+        std::map<std::string, std::string> inout_mapping);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

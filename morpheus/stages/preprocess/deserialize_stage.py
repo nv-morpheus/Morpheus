@@ -88,7 +88,7 @@ class DeserializeStage(MultiMessageStage):
 
         return output
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiMessage

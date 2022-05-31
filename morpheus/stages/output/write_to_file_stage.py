@@ -104,7 +104,7 @@ class WriteToFileStage(SinglePortStage):
 
         return output_strs
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
@@ -139,4 +139,4 @@ class WriteToFileStage(SinglePortStage):
         stream = to_file
 
         # Return input unchanged to allow passthrough
-        return input_stream
+        return stream, input_stream[1]

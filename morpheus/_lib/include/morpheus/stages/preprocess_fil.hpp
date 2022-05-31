@@ -20,6 +20,7 @@
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/messages/multi_inference.hpp>
 
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <memory>
@@ -37,17 +38,17 @@ class PreprocessFILStage
 {
   public:
     using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-    PreprocessFILStage(const neo::Segment& parent, const std::string& name, const std::vector<std::string>& features);
+    PreprocessFILStage(const std::vector<std::string>& features);
 
   private:
     /**
      * TODO(Documentation)
      */
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     std::vector<std::string> m_fea_cols;
     std::string m_vocab_file;
@@ -62,8 +63,8 @@ struct PreprocessFILStageInterfaceProxy
     /**
      * @brief Create and initialize a PreprocessFILStage, and return the result.
      */
-    static std::shared_ptr<PreprocessFILStage> init(neo::Segment& parent,
-                                                    const std::string& name,
+    static std::shared_ptr<neo::segment::Object<PreprocessFILStage>> init(neo::segment::Builder &parent,
+                                                                          const std::string &name,
                                                     const std::vector<std::string>& features);
 };
 #pragma GCC visibility pop

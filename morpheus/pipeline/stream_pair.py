@@ -17,4 +17,4 @@ import typing
 
 import neo
 
-StreamPair = typing.Tuple[neo.Node, typing.Type]
+StreamPair = typing.Tuple[neo.SegmentObject, typing.Type]

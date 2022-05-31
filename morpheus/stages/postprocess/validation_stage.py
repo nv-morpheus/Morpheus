@@ -219,7 +219,7 @@ class ValidationStage(MultiMessageStage):
         with open(self._results_file_name, "w") as f:
             json.dump(output, f, indent=2, sort_keys=True)
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         self._val_df: pd.DataFrame = read_file_to_df(self._val_file_name, FileTypes.Auto, df_type="pandas")
 

@@ -58,7 +58,7 @@ class DelayStage(SinglePortStage):
         """
         return (typing.Any, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         # This stage is no longer needed and is just a pass thru stage
         deprecated_stage_warning(logger, type(self), self.unique_name)

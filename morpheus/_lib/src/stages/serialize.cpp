@@ -30,13 +30,10 @@ constexpr std::regex_constants::syntax_option_type RegexOptions =
 
 // Component public implementations
 // ************ WriteToFileStage **************************** //
-SerializeStage::SerializeStage(const neo::Segment &parent,
-                               const std::string &name,
-                               const std::vector<std::string> &include,
+SerializeStage::SerializeStage(const std::vector<std::string> &include,
                                const std::vector<std::string> &exclude,
                                bool fixed_columns) :
-  neo::SegmentObject(parent, name),
-  PythonNode(parent, name, build_operator()),
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_fixed_columns{fixed_columns}
 {
     make_regex_objs(include, m_include);
@@ -80,7 +77,7 @@ bool SerializeStage::exclude_column(const std::string &column) const
     return match_column(m_exclude, column);
 }
 
-TableInfo SerializeStage::get_meta(reader_type_t &msg)
+TableInfo SerializeStage::get_meta(sink_type_t &msg)
 {
     // If none of the columns match the include regex patterns or are all are excluded this has the effect
     // of including all of the rows since calling msg->get_meta({}) will return a view with all columns.
@@ -100,12 +97,11 @@ TableInfo SerializeStage::get_meta(reader_type_t &msg)
     return msg->get_meta(m_column_names);
 }
 
-neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>::operator_fn_t
-SerializeStage::build_operator()
+SerializeStage::subscribe_fn_t SerializeStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t> &input, neo::Subscriber<writer_type_t> &output) {
-        return input.subscribe(neo::make_observer<reader_type_t>(
-            [this, &output](reader_type_t &&msg) {
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t msg) {
                 auto table_info = this->get_meta(msg);
                 std::shared_ptr<MessageMeta> meta;
                 {
@@ -120,15 +116,14 @@ SerializeStage::build_operator()
 }
 
 // ************ WriteToFileStageInterfaceProxy ************* //
-std::shared_ptr<SerializeStage> SerializeStageInterfaceProxy::init(neo::Segment &parent,
-                                                                   const std::string &name,
-                                                                   const std::vector<std::string> &include,
-                                                                   const std::vector<std::string> &exclude,
-                                                                   bool fixed_columns)
+std::shared_ptr<neo::segment::Object<SerializeStage>> SerializeStageInterfaceProxy::init(
+    neo::segment::Builder &parent,
+    const std::string &name,
+    const std::vector<std::string> &include,
+    const std::vector<std::string> &exclude,
+    bool fixed_columns)
 {
-    auto stage = std::make_shared<SerializeStage>(parent, name, include, exclude, fixed_columns);
-
-    parent.register_node<SerializeStage>(stage);
+    auto stage = parent.construct_object<SerializeStage>(name, include, exclude, fixed_columns);
 
     return stage;
 }

@@ -122,5 +122,5 @@ class PreprocessFILStage(PreprocessBaseStage):
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
         return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
-    def _get_preprocess_node(self, seg: neo.Segment):
+    def _get_preprocess_node(self, seg: neo.Builder):
         return neos.PreprocessFILStage(seg, self.unique_name, self.features)

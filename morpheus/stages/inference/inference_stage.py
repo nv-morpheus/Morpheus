@@ -20,6 +20,7 @@ from functools import reduce
 import cupy as cp
 import neo
 from neo.core import operators as ops
+from neo.core.subscriber import Observable
 
 from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
@@ -196,10 +197,10 @@ class InferenceStage(MultiMessageStage):
         """
         pass
 
-    def _get_cpp_inference_node(self, seg: neo.Segment) -> neo.SegmentObject:
+    def _get_cpp_inference_node(self, seg: neo.Builder) -> neo.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiResponseProbsMessage

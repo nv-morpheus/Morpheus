@@ -187,5 +187,5 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
             fea_cols=self.features,
         )
 
-    def _get_preprocess_node(self, seg: neo.Segment):
+    def _get_preprocess_node(self, seg: neo.Builder):
         return neos.AbpPcapPreprocessingStage(seg, self.unique_name)

@@ -28,7 +28,7 @@
 #include <morpheus/stages/write_to_file.hpp>
 #include <morpheus/utilities/cudf_util.hpp>
 
-#include <neo/core/segment_object.hpp>
+#include <neo/segment/object.hpp>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -51,7 +51,9 @@ PYBIND11_MODULE(stages, m)
     neo::pyneo::import(m, "morpheus._lib.messages");
     neo::pyneo::import(m, "morpheus._lib.file_types");
 
-    py::class_<AddClassificationsStage, neo::SegmentObject, std::shared_ptr<AddClassificationsStage>>(
+    py::class_<neo::segment::Object<AddClassificationsStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<AddClassificationsStage>>>(
         m, "AddClassificationsStage", py::multiple_inheritance())
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
              py::arg("parent"),
@@ -60,37 +62,45 @@ PYBIND11_MODULE(stages, m)
              py::arg("num_class_labels"),
              py::arg("idx2label"));
 
-    py::class_<AddScoresStage, neo::SegmentObject, std::shared_ptr<AddScoresStage>>(
-        m, "AddScoresStage", py::multiple_inheritance())
+    py::class_<neo::segment::Object<AddScoresStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<AddScoresStage>>>(m, "AddScoresStage", py::multiple_inheritance())
         .def(py::init<>(&AddScoresStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
              py::arg("num_class_labels"),
              py::arg("idx2label"));
 
-    py::class_<DeserializeStage, neo::SegmentObject, std::shared_ptr<DeserializeStage>>(
+    py::class_<neo::segment::Object<DeserializeStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<DeserializeStage>>>(
         m, "DeserializeStage", py::multiple_inheritance())
         .def(py::init<>(&DeserializeStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
              py::arg("batch_size"));
 
-    py::class_<FileSourceStage, neo::SegmentObject, std::shared_ptr<FileSourceStage>>(
-        m, "FileSourceStage", py::multiple_inheritance())
+    py::class_<neo::segment::Object<FileSourceStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<FileSourceStage>>>(m, "FileSourceStage", py::multiple_inheritance())
         .def(py::init<>(&FileSourceStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("repeat"));
 
-    py::class_<FilterDetectionsStage, neo::SegmentObject, std::shared_ptr<FilterDetectionsStage>>(
+    py::class_<neo::segment::Object<FilterDetectionsStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<FilterDetectionsStage>>>(
         m, "FilterDetectionsStage", py::multiple_inheritance())
         .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
              py::arg("threshold"));
 
-    py::class_<InferenceClientStage, neo::SegmentObject, std::shared_ptr<InferenceClientStage>>(
+    py::class_<neo::segment::Object<InferenceClientStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<InferenceClientStage>>>(
         m, "InferenceClientStage", py::multiple_inheritance())
         .def(py::init<>(&InferenceClientStageInterfaceProxy::init),
              py::arg("parent"),
@@ -102,7 +112,9 @@ PYBIND11_MODULE(stages, m)
              py::arg("needs_logits"),
              py::arg("inout_mapping") = py::dict());
 
-    py::class_<KafkaSourceStage, neo::SegmentObject, std::shared_ptr<KafkaSourceStage>>(
+    py::class_<neo::segment::Object<KafkaSourceStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<KafkaSourceStage>>>(
         m, "KafkaSourceStage", py::multiple_inheritance())
         .def(py::init<>(&KafkaSourceStageInterfaceProxy::init),
              py::arg("parent"),
@@ -114,14 +126,18 @@ PYBIND11_MODULE(stages, m)
              py::arg("disable_commits")       = false,
              py::arg("disable_pre_filtering") = false);
 
-    py::class_<PreprocessFILStage, neo::SegmentObject, std::shared_ptr<PreprocessFILStage>>(
+    py::class_<neo::segment::Object<PreprocessFILStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<PreprocessFILStage>>>(
         m, "PreprocessFILStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessFILStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
              py::arg("features"));
 
-    py::class_<PreprocessNLPStage, neo::SegmentObject, std::shared_ptr<PreprocessNLPStage>>(
+    py::class_<neo::segment::Object<PreprocessNLPStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<PreprocessNLPStage>>>(
         m, "PreprocessNLPStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init),
              py::arg("parent"),
@@ -133,8 +149,9 @@ PYBIND11_MODULE(stages, m)
              py::arg("add_special_token"),
              py::arg("stride"));
 
-    py::class_<SerializeStage, neo::SegmentObject, std::shared_ptr<SerializeStage>>(
-        m, "SerializeStage", py::multiple_inheritance())
+    py::class_<neo::segment::Object<SerializeStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<SerializeStage>>>(m, "SerializeStage", py::multiple_inheritance())
         .def(py::init<>(&SerializeStageInterfaceProxy::init),
              py::arg("parent"),
              py::arg("name"),
@@ -142,7 +159,9 @@ PYBIND11_MODULE(stages, m)
              py::arg("exclude"),
              py::arg("fixed_columns") = true);
 
-    py::class_<WriteToFileStage, neo::SegmentObject, std::shared_ptr<WriteToFileStage>>(
+    py::class_<neo::segment::Object<WriteToFileStage>,
+               neo::segment::ObjectProperties,
+               std::shared_ptr<neo::segment::Object<WriteToFileStage>>>(
         m, "WriteToFileStage", py::multiple_inheritance())
         .def(py::init<>(&WriteToFileStageInterfaceProxy::init),
              py::arg("parent"),

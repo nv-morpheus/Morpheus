@@ -328,7 +328,7 @@ class KafkaSourceStage(SingleOutputSource):
                 kafka_datasource.unsubscribe()
                 kafka_datasource.close(batch_timeout)
 
-    def _build_source(self, seg: neo.Segment) -> StreamPair:
+    def _build_source(self, seg: neo.Builder) -> StreamPair:
 
         if (self._build_cpp_node()):
             source = neos.KafkaSourceStage(seg,

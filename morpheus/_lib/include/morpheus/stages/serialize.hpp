@@ -19,7 +19,7 @@
 
 #include <morpheus/messages/multi.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <fstream>
@@ -38,13 +38,11 @@ class SerializeStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiMessag
 {
   public:
     using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-    SerializeStage(const neo::Segment &parent,
-                   const std::string &name,
-                   const std::vector<std::string> &include,
+    SerializeStage(const std::vector<std::string> &include,
                    const std::vector<std::string> &exclude,
                    bool fixed_columns = true);
 
@@ -57,9 +55,9 @@ class SerializeStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiMessag
 
     bool exclude_column(const std::string &column) const;
 
-    TableInfo get_meta(reader_type_t &msg);
+    TableInfo get_meta(sink_type_t &msg);
 
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     bool m_fixed_columns;
     std::vector<std::regex> m_include;
@@ -76,11 +74,11 @@ struct SerializeStageInterfaceProxy
     /**
      * @brief Create and initialize a SerializeStage, and return the result.
      */
-    static std::shared_ptr<SerializeStage> init(neo::Segment &parent,
-                                                const std::string &name,
-                                                const std::vector<std::string> &include,
-                                                const std::vector<std::string> &exclude,
-                                                bool fixed_columns = true);
+    static std::shared_ptr<neo::segment::Object<SerializeStage>> init(neo::segment::Builder &parent,
+                                                                      const std::string &name,
+                                                                      const std::vector<std::string> &include,
+                                                                      const std::vector<std::string> &exclude,
+                                                                      bool fixed_columns = true);
 };
 
 #pragma GCC visibility pop

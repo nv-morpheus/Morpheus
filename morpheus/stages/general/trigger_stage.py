@@ -56,7 +56,7 @@ class TriggerStage(SinglePortStage):
         """
         return (typing.Any, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then push them
         def node_fn(input: neo.Observable, output: neo.Subscriber):

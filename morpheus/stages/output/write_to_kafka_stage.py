@@ -69,7 +69,7 @@ class WriteToKafkaStage(SinglePortStage):
         """
         return (MessageMeta, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         stream = input_stream[0]

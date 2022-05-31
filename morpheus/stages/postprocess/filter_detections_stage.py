@@ -114,7 +114,7 @@ class FilterDetectionsStage(SinglePortStage):
 
         return output_list
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert list back to single MultiResponseProbsMessage
         def flatten_fn(input: neo.Observable, output: neo.Subscriber):

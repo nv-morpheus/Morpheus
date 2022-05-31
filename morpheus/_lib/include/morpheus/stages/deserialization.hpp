@@ -20,7 +20,7 @@
 #include <morpheus/messages/meta.hpp>
 #include <morpheus/messages/multi.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <memory>
@@ -37,17 +37,17 @@ class DeserializeStage : public neo::pyneo::PythonNode<std::shared_ptr<MessageMe
 {
   public:
     using base_t = neo::pyneo::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-    DeserializeStage(const neo::Segment &parent, const std::string &name, size_t batch_size);
+    DeserializeStage(size_t batch_size);
 
   private:
     /**
      * TODO(Documentation)
      */
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     size_t m_batch_size;
 };
@@ -61,7 +61,9 @@ struct DeserializeStageInterfaceProxy
     /**
      * @brief Create and initialize a DeserializationStage, and return the result.
      */
-    static std::shared_ptr<DeserializeStage> init(neo::Segment &parent, const std::string &name, size_t batch_size);
+    static std::shared_ptr<neo::segment::Object<DeserializeStage>> init(neo::segment::Builder &parent,
+                                                                        const std::string &name,
+                                                                        size_t batch_size);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

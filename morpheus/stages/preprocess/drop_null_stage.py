@@ -60,7 +60,7 @@ class DropNullStage(SinglePortStage):
         """
         return (MessageMeta, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
         # Finally, flatten to a single stream

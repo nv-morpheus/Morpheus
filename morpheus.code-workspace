@@ -441,7 +441,7 @@
 					// "--use_cpp=False",
 					"pipeline-fil",
 					"from-file",
-					"--filename=models/datasets/validation-data/phishing-email-validation-data.jsonlines",
+					"--filename=models/datasets/validation-data/abp-validation-data.csv",
 					"--repeat=10",
 					"--iterative",
 					// "from-kafka",

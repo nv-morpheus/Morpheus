@@ -27,18 +27,17 @@
 namespace morpheus {
 // Component public implementations
 // ************ FilterDetectionStage **************************** //
-FilterDetectionsStage::FilterDetectionsStage(const neo::Segment &parent, const std::string &name, float threshold) :
-  neo::SegmentObject(parent, name),
-  PythonNode(parent, name, build_operator()),
+FilterDetectionsStage::FilterDetectionsStage(float threshold) :
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_threshold(threshold)
 {}
 
-FilterDetectionsStage::operator_fn_t FilterDetectionsStage::build_operator()
+FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 {
     return
-        [this](neo::Observable<reader_type_t> &input, neo::Subscriber<writer_type_t> &output) {
-            return input.subscribe(neo::make_observer<reader_type_t>(
-                [this, &output](reader_type_t &&x) {
+        [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+            return input.subscribe(rxcpp::make_observer<sink_type_t>(
+                [this, &output](sink_type_t x) {
                     const auto &probs  = x->get_probs();
                     const auto &shape  = probs.get_shape();
                     const auto &stride = probs.get_stride();
@@ -113,13 +112,10 @@ FilterDetectionsStage::operator_fn_t FilterDetectionsStage::build_operator()
 }
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
-std::shared_ptr<FilterDetectionsStage> FilterDetectionStageInterfaceProxy::init(neo::Segment &parent,
-                                                                                const std::string &name,
-                                                                                float threshold)
+std::shared_ptr<neo::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
+    neo::segment::Builder &parent, const std::string &name, float threshold)
 {
-    auto stage = std::make_shared<FilterDetectionsStage>(parent, name, threshold);
-
-    parent.register_node<FilterDetectionsStage>(stage);
+    auto stage = parent.construct_object<FilterDetectionsStage>(name, threshold);
 
     return stage;
 }

@@ -17,7 +17,7 @@
 
 #include <morpheus/stages/deserialization.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <cstddef>
@@ -29,17 +29,16 @@
 namespace morpheus {
 // Component public implementations
 // ************ DeserializationStage **************************** //
-DeserializeStage::DeserializeStage(const neo::Segment &parent, const std::string &name, size_t batch_size) :
-  neo::SegmentObject(parent, name),
-  PythonNode(parent, name, build_operator()),
+DeserializeStage::DeserializeStage(size_t batch_size) :
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_batch_size(batch_size)
 {}
 
-DeserializeStage::operator_fn_t DeserializeStage::build_operator()
+DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t> &input, neo::Subscriber<writer_type_t> &output) {
-        return input.subscribe(neo::make_observer<reader_type_t>(
-            [this, &output](reader_type_t &&x) {
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t x) {
                 // Make one large MultiMessage
                 auto full_message = std::make_shared<MultiMessage>(x, 0, x->count());
 
@@ -57,13 +56,10 @@ DeserializeStage::operator_fn_t DeserializeStage::build_operator()
 }
 
 // ************ DeserializationStageInterfaceProxy ************* //
-std::shared_ptr<DeserializeStage> DeserializeStageInterfaceProxy::init(neo::Segment &parent,
-                                                                       const std::string &name,
-                                                                       size_t batch_size)
+std::shared_ptr<neo::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
+    neo::segment::Builder &parent, const std::string &name, size_t batch_size)
 {
-    auto stage = std::make_shared<DeserializeStage>(parent, name, batch_size);
-
-    parent.register_node<DeserializeStage>(stage);
+    auto stage = parent.construct_object<DeserializeStage>(name, batch_size);
 
     return stage;
 }

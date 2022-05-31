@@ -19,7 +19,7 @@
 
 #include <morpheus/messages/multi_response_probs.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <memory>
@@ -38,19 +38,16 @@ class AddScoresStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiRespon
   public:
     using base_t =
         neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-    AddScoresStage(const neo::Segment &parent,
-                   const std::string &name,
-                   std::size_t num_class_labels,
-                   std::map<std::size_t, std::string> idx2label);
+    AddScoresStage(std::size_t num_class_labels, std::map<std::size_t, std::string> idx2label);
 
     /**
      * TODO(Documentation)
      */
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
@@ -65,10 +62,10 @@ struct AddScoresStageInterfaceProxy
     /**
      * @brief Create and initialize a AddScoresStage, and return the result.
      */
-    static std::shared_ptr<AddScoresStage> init(neo::Segment &parent,
-                                                const std::string &name,
-                                                std::size_t num_class_labels,
-                                                std::map<std::size_t, std::string> idx2label);
+    static std::shared_ptr<neo::segment::Object<AddScoresStage>> init(neo::segment::Builder &parent,
+                                                                      const std::string &name,
+                                                                      std::size_t num_class_labels,
+                                                                      std::map<std::size_t, std::string> idx2label);
 };
 
 #pragma GCC visibility pop

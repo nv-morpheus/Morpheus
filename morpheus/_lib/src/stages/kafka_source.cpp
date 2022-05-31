@@ -21,7 +21,8 @@
 #include <morpheus/utilities/stage_util.hpp>
 #include <morpheus/utilities/string_util.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/runnable/context.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <glog/logging.h>
@@ -298,31 +299,34 @@ bool KafkaSourceStage__Rebalancer::is_rebalanced()
 
 // Component public implementations
 // ************ KafkaStage ************************* //
-KafkaSourceStage::KafkaSourceStage(const neo::Segment &parent,
-                                   const std::string &name,
-                                   std::size_t max_batch_size,
+KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
                                    std::string topic,
                                    int32_t batch_timeout_ms,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering) :
-  neo::SegmentObject(parent, name),
-  base_t(parent, name),
+  PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topic(std::move(topic)),
   m_batch_timeout_ms(batch_timeout_ms),
   m_config(std::move(config)),
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering)
+{}
+
+KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 {
-    this->set_source_observable(neo::Observable<source_type_t>([this](neo::Subscriber<source_type_t> &sub) {
+    return [this](rxcpp::subscriber<source_type_t> sub) {
         // Build rebalancer
         KafkaSourceStage__Rebalancer rebalancer(
             [this](std::vector<std::function<bool()>> &&tasks) { return this->launch_tasks(std::move(tasks)); },
             [this]() { return this->batch_timeout_ms(); },
             [this]() { return this->max_batch_size(); },
-            [this](const std::string str_to_display) { return this->display_str(str_to_display); },
-            [&sub, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
+            [this](const std::string str_to_display) {
+                auto &ctx = neo::runnable::Context::get_runtime_context();
+                return CONCAT_STR(ctx.info() << " " << str_to_display);
+            },
+            [sub, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
                 // If we are unsubscribed, throw an error to break the loops
                 if (!sub.is_subscribed())
                 {
@@ -370,7 +374,7 @@ KafkaSourceStage::KafkaSourceStage(const neo::Segment &parent,
         m_rebalancer = nullptr;
 
         sub.on_completed();
-    }));
+    };
 }
 
 std::size_t KafkaSourceStage::max_batch_size()
@@ -383,19 +387,19 @@ int32_t KafkaSourceStage::batch_timeout_ms()
     return m_batch_timeout_ms;
 }
 
-void KafkaSourceStage::start()
-{
-    // Save off the queues before setting our concurrency back to 1
-    for (size_t i = 0; i < this->concurrency(); ++i)
-    {
-        m_task_queues.push_back(this->resources().fiber_pool().next_task_queue());
-    }
+// void KafkaSourceStage::start()
+// {
+//     // Save off the queues before setting our concurrency back to 1
+//     for (size_t i = 0; i < this->concurrency(); ++i)
+//     {
+//         m_task_queues.push_back(this->resources().fiber_pool().next_task_queue());
+//     }
 
-    this->concurrency(1);
+//     this->concurrency(1);
 
-    // Call the default start
-    neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>::start();
-}
+//     // Call the default start
+//     neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>::start();
+// }
 
 std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map<std::string, std::string> &config_in)
 {
@@ -528,7 +532,8 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer()
 
     std::map<std::string, std::vector<int32_t>> topic_parts;
 
-    VLOG(10) << this->display_str(CONCAT_STR("Subscribed to " << md->topics()->size() << " topics:"));
+    auto &ctx = neo::runnable::Context::get_runtime_context();
+    VLOG(10) << ctx.info() << CONCAT_STR(" Subscribed to " << md->topics()->size() << " topics:");
 
     for (auto const &topic : *(md->topics()))
     {
@@ -560,11 +565,13 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer()
         auto positions =
             foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition> &x) { return x->offset(); });
 
-        VLOG(10) << this->display_str(CONCAT_STR(
-            "   Topic: '" << topic->topic()
-                          << "', Parts: " << StringUtil::array_to_str(part_ids.begin(), part_ids.end())
-                          << ", Committed: " << StringUtil::array_to_str(committed.begin(), committed.end())
-                          << ", Positions: " << StringUtil::array_to_str(positions.begin(), positions.end())));
+        auto &ctx = neo::runnable::Context::get_runtime_context();
+        VLOG(10) << ctx.info()
+                 << CONCAT_STR("   Topic: '"
+                               << topic->topic()
+                               << "', Parts: " << StringUtil::array_to_str(part_ids.begin(), part_ids.end())
+                               << ", Committed: " << StringUtil::array_to_str(committed.begin(), committed.end())
+                               << ", Positions: " << StringUtil::array_to_str(positions.begin(), positions.end()));
     }
 
     return std::move(consumer);
@@ -641,19 +648,18 @@ std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
 }
 
 // ************ KafkaStageInterfaceProxy ************ //
-std::shared_ptr<KafkaSourceStage> KafkaSourceStageInterfaceProxy::init(neo::Segment &parent,
-                                                                       const std::string &name,
-                                                                       size_t max_batch_size,
-                                                                       std::string topic,
-                                                                       int32_t batch_timeout_ms,
-                                                                       std::map<std::string, std::string> config,
-                                                                       bool disable_commits,
-                                                                       bool disable_pre_filtering)
+std::shared_ptr<neo::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
+    neo::segment::Builder &parent,
+    const std::string &name,
+    size_t max_batch_size,
+    std::string topic,
+    int32_t batch_timeout_ms,
+    std::map<std::string, std::string> config,
+    bool disable_commits,
+    bool disable_pre_filtering)
 {
-    auto stage = std::make_shared<KafkaSourceStage>(
-        parent, name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering);
-
-    parent.register_node<KafkaSourceStage>(stage);
+    auto stage = parent.construct_object<KafkaSourceStage>(
+        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering);
 
     return stage;
 }

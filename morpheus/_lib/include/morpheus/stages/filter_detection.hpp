@@ -19,7 +19,7 @@
 
 #include <morpheus/messages/multi_response_probs.hpp>
 
-#include <neo/core/segment.hpp>
+#include <neo/segment/builder.hpp>
 #include <pyneo/node.hpp>
 
 #include <memory>
@@ -38,14 +38,14 @@ class FilterDetectionsStage : public neo::pyneo::PythonNode<std::shared_ptr<Mult
   public:
     using base_t =
         neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-    FilterDetectionsStage(const neo::Segment &parent, const std::string &name, float threshold);
+    FilterDetectionsStage(float threshold);
 
   private:
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     float m_threshold;
     std::size_t m_num_class_labels;
@@ -61,7 +61,9 @@ struct FilterDetectionStageInterfaceProxy
     /**
      * @brief Create and initialize a FilterDetectionStage, and return the result.
      */
-    static std::shared_ptr<FilterDetectionsStage> init(neo::Segment &parent, const std::string &name, float threshold);
+    static std::shared_ptr<neo::segment::Object<FilterDetectionsStage>> init(neo::segment::Builder &parent,
+                                                                             const std::string &name,
+                                                                             float threshold);
 };
 
 #pragma GCC visibility pop
