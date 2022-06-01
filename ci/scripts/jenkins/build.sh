@@ -102,6 +102,15 @@ gpuci_logger "Installing Morpheus"
 cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
 pip install ${MORPHEUS_ROOT}/build/wheel
 
+gpuci_logger "Running conda build for morpheus"
+sccache --zero-stats 2>&1 > /dev/null
+# git config --global --add safe.directory ${MORPHEUS_ROOT}
+mkdir -p ${CONDA_BLD_DIR}
+CONDA_ARGS="--no-build-id --output-folder ${CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh morpheus
+
+gpuci_logger "sccache usage for morpheus conda build:"
+sccache --show-stats
+
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
 tar cfj "${WORKSPACE_TMP}/cpp_tests.tar.bz" $(find build/wheel/ -name "*.x")

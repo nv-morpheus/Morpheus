@@ -146,7 +146,7 @@ if hasArg morpheus; then
    # Do this after neo in case they are different
    export GIT_VERSION="$(get_version)"
 
-   echo "Running conda-build for morpheus..."
+   echo "Running conda-build for morpheus...gv=${GIT_VERSION} cc=${CONDA_COMMAND} caa=${CONDA_ARGS_ARRAY[@]} ca=${CONDA_ARGS}"
    set -x
    conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
    set +x
