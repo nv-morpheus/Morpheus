@@ -300,4 +300,4 @@ def lfsPull(include_paths=None, pull_all=False):
     else:
         raise ValueError("lfsFetch requires either include_paths to be specified or pull_all=True")
 
-    __git('lfs', 'pull', '-I', '"{}"'.format(include_paths_))
+    return __git('lfs', 'pull', '-I', '"{}"'.format(include_paths_))
