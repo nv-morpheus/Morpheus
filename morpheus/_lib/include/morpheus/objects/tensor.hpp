@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,18 +17,17 @@
 
 #pragma once
 
-
 #include <morpheus/objects/rmm_tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 #include <morpheus/utilities/matx_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
-#include <neo/core/tensor.hpp>
 #include <pyneo/node.hpp>
 
 #include <cudf/types.hpp>
 
-#include <rmm/device_uvector.hpp>
 #include <rmm/device_buffer.hpp>
+#include <rmm/device_uvector.hpp>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -39,54 +38,55 @@
 #include <vector>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** Tensor****************************************/
+/****** Component public implementations *******************/
+/****** Tensor****************************************/
+/**
+ * TODO(Documentation)
+ */
+class Tensor
+{
+  public:
+    Tensor(std::shared_ptr<rmm::device_buffer> buffer,
+           std::string init_typestr,
+           std::vector<int32_t> init_shape,
+           std::vector<int32_t> init_strides,
+           size_t init_offset = 0);
+
+    std::vector<int32_t> shape;
+    std::vector<int32_t> strides;
+    std::string typestr;
+
     /**
      * TODO(Documentation)
      */
-    class Tensor {
-    public:
-        Tensor(std::shared_ptr<rmm::device_buffer> buffer,
-               std::string init_typestr,
-               std::vector<int32_t> init_shape,
-               std::vector<int32_t> init_strides,
-               size_t init_offset = 0);
+    void *data() const;
 
-        std::vector<int32_t> shape;
-        std::vector<int32_t> strides;
-        std::string typestr;
+    /**
+     * TODO(Documentation)
+     */
+    size_t bytes_count() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        void *data() const;
+    /**
+     * TODO(Documentation)
+     */
+    std::vector<uint8_t> get_host_data() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        size_t bytes_count() const;
+    /**
+     * TODO(Documentation)
+     */
+    auto get_stream() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        std::vector<uint8_t> get_host_data() const;
+    /**
+     * TODO(Documentation)
+     */
+    static TensorObject create(std::shared_ptr<rmm::device_buffer> buffer,
+                               DType dtype,
+                               std::vector<TensorIndex> shape,
+                               std::vector<TensorIndex> strides,
+                               size_t offset = 0);
 
-        /**
-         * TODO(Documentation)
-         */
-        auto get_stream() const;
-
-        /**
-         * TODO(Documentation)
-         */
-        static neo::TensorObject create(std::shared_ptr<rmm::device_buffer> buffer,
-                                        DType dtype,
-                                        std::vector<neo::TensorIndex> shape,
-                                        std::vector<neo::TensorIndex> strides,
-                                        size_t offset = 0);
-
-    private:
-        size_t m_offset;
-        std::shared_ptr<rmm::device_buffer> m_device_buffer;
-    };
-}
+  private:
+    size_t m_offset;
+    std::shared_ptr<rmm::device_buffer> m_device_buffer;
+};
+}  // namespace morpheus

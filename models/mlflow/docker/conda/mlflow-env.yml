@@ -1,0 +1,13 @@
+name: mlflow
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pip
+  - onnx
+  - openssl>=1.1.1o
+  - pip:
+    - onnxruntime
+    - mlflow
+

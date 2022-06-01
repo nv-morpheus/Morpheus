@@ -17,14 +17,15 @@ import collections
 import json
 import os
 
+import morpheus
+from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
-from morpheus.pipeline.file_types import FileTypes
-from morpheus.pipeline.inference import inference_stage
-from morpheus.pipeline.input.utils import read_file_to_df
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.messages import MultiResponseProbsMessage
-from morpheus.pipeline.messages import ResponseMemoryProbs
-from morpheus.pipeline.pipeline import SinglePortStage
+from morpheus.io.deserializers import read_file_to_df
+from morpheus.messages import MultiMessage
+from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import ResponseMemoryProbs
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.stages.inference import inference_stage
 
 
 class TestDirectories(object):
@@ -32,7 +33,7 @@ class TestDirectories(object):
     def __init__(self, cur_file=__file__) -> None:
         self.tests_dir = os.path.dirname(cur_file)
         self.morpheus_root = os.environ.get('MORPHEUS_ROOT', os.path.dirname(self.tests_dir))
-        self.data_dir = os.path.join(self.morpheus_root, 'data')
+        self.data_dir = morpheus.DATA_DIR
         self.models_dir = os.path.join(self.morpheus_root, 'models')
         self.datasets_dir = os.path.join(self.models_dir, 'datasets')
         self.training_data_dir = os.path.join(self.datasets_dir, 'training-data')

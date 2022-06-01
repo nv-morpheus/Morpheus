@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <neo/utils/type_utils.hpp>
+#include <morpheus/utilities/type_util_detail.hpp>
 
 #include <rmm/device_buffer.hpp>
 
@@ -25,25 +25,26 @@
 #include <memory>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** DevMemInfo******************************************/
-    /**
-     * @brief Simple object that just holds 4 things: element count, element dtype, device_buffer, and bytes_offset
-     */
-    struct DevMemInfo {
-        // Number of elements in the buffer
-        size_t element_count;
-        // Type of elements in the buffer
-        neo::TypeId type_id;
-        // Buffer of data
-        std::shared_ptr<rmm::device_buffer> buffer;
-        // Offset from head of data in bytes
-        size_t offset;
+/****** Component public implementations *******************/
+/****** DevMemInfo******************************************/
+/**
+ * @brief Simple object that just holds 4 things: element count, element dtype, device_buffer, and bytes_offset
+ */
+struct DevMemInfo
+{
+    // Number of elements in the buffer
+    size_t element_count;
+    // Type of elements in the buffer
+    TypeId type_id;
+    // Buffer of data
+    std::shared_ptr<rmm::device_buffer> buffer;
+    // Offset from head of data in bytes
+    size_t offset;
 
-        /**
-         * TODO(Documentation)
-         */
-        void *data() const;
-    };
+    /**
+     * TODO(Documentation)
+     */
+    void *data() const;
+};
 
 }  // namespace morpheus

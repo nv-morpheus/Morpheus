@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import dataclasses
 import typing
 
@@ -8,10 +23,9 @@ from stellargraph.mapper import HinSAGENodeGenerator
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.pipeline import SinglePortStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages import MultiMessage
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 from .graph_construction_stage import FraudGraphMultiMessage
 
@@ -23,15 +37,14 @@ class GraphSAGEMultiMessage(MultiMessage):
 
 
 class GraphSAGEStage(SinglePortStage):
-    def __init__(
-        self,
-        c: Config,
-        model_hinsage_file: str,
-        batch_size: int = 5,
-        sample_size = [2, 32],
-        record_id:str = "index",
-        target_node:str ="transaction"
-    ):
+
+    def __init__(self,
+                 c: Config,
+                 model_hinsage_file: str,
+                 batch_size: int = 5,
+                 sample_size=[2, 32],
+                 record_id: str = "index",
+                 target_node: str = "transaction"):
         super().__init__(c)
         self._keras_model = tf.keras.models.load_model(model_hinsage_file)
         self._batch_size = batch_size
@@ -56,7 +69,6 @@ class GraphSAGEStage(SinglePortStage):
         # The mapper feeds data from sampled subgraph to HinSAGE model
         generator = HinSAGENodeGenerator(graph, self._batch_size, self._sample_size, head_node_type=self._target_node)
         test_gen_not_shuffled = generator.flow(node_identifiers, shuffle=False)
-
 
         inductive_emb = trained_model.predict(test_gen_not_shuffled)
         inductive_emb = cudf.DataFrame(inductive_emb, index=node_identifiers)

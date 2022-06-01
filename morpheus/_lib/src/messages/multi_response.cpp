@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,93 +35,105 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiResponseMessage****************************************/
-    MultiResponseMessage::MultiResponseMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                                               std::size_t mess_offset,
-                                               std::size_t mess_count,
-                                               std::shared_ptr<ResponseMemory> memory,
-                                               std::size_t offset,
-                                               std::size_t count) :
-            MultiMessage(meta, mess_offset, mess_count),
-            memory(std::move(memory)),
-            offset(offset),
-            count(count) {}
+MultiResponseMessage::MultiResponseMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+                                           std::size_t mess_offset,
+                                           std::size_t mess_count,
+                                           std::shared_ptr<ResponseMemory> memory,
+                                           std::size_t offset,
+                                           std::size_t count) :
+  MultiMessage(meta, mess_offset, mess_count),
+  memory(std::move(memory)),
+  offset(offset),
+  count(count)
+{}
 
-    neo::TensorObject MultiResponseMessage::get_output(const std::string &name) {
-        CHECK(this->memory->has_output(name)) << "Could not find output: " << name;
+TensorObject MultiResponseMessage::get_output(const std::string &name)
+{
+    CHECK(this->memory->has_output(name)) << "Could not find output: " << name;
 
-        // check if we are getting the entire input
-        if (this->offset == 0 && this->count == this->memory->count) {
-            return this->memory->outputs[name];
-        }
-
-        // TODO(MDD): This really needs to return the slice of the tensor
-        return this->memory->outputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
-                                                 {static_cast<cudf::size_type>(this->offset + this->count), -1});
+    // check if we are getting the entire input
+    if (this->offset == 0 && this->count == this->memory->count)
+    {
+        return this->memory->outputs[name];
     }
 
-    const neo::TensorObject MultiResponseMessage::get_output(const std::string &name) const {
-        CHECK(this->memory->has_output(name)) << "Could not find output: " << name;
+    // TODO(MDD): This really needs to return the slice of the tensor
+    return this->memory->outputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
+                                             {static_cast<cudf::size_type>(this->offset + this->count), -1});
+}
 
-        // check if we are getting the entire input
-        if (this->offset == 0 && this->count == this->memory->count) {
-            return this->memory->outputs[name];
-        }
+const TensorObject MultiResponseMessage::get_output(const std::string &name) const
+{
+    CHECK(this->memory->has_output(name)) << "Could not find output: " << name;
 
-        // TODO(MDD): This really needs to return the slice of the tensor
-        return this->memory->outputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
-                                                 {static_cast<cudf::size_type>(this->offset + this->count), -1});
+    // check if we are getting the entire input
+    if (this->offset == 0 && this->count == this->memory->count)
+    {
+        return this->memory->outputs[name];
     }
 
-    const void MultiResponseMessage::set_output(const std::string &name, const neo::TensorObject &value) {
-        // Get the input slice first
-        auto slice = this->get_output(name);
+    // TODO(MDD): This really needs to return the slice of the tensor
+    return this->memory->outputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
+                                             {static_cast<cudf::size_type>(this->offset + this->count), -1});
+}
 
-        // Set the value to use assignment
-        slice = value;
-    }
+const void MultiResponseMessage::set_output(const std::string &name, const TensorObject &value)
+{
+    // Get the input slice first
+    auto slice = this->get_output(name);
 
-    std::shared_ptr<MultiResponseMessage> MultiResponseMessage::get_slice(std::size_t start, std::size_t stop) const {
-        // This can only cast down
-        return std::static_pointer_cast<MultiResponseMessage>(this->internal_get_slice(start, stop));
-    }
+    // Set the value to use assignment
+    slice = value;
+}
 
-    std::shared_ptr<MultiMessage> MultiResponseMessage::internal_get_slice(std::size_t start, std::size_t stop) const {
-        CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
+std::shared_ptr<MultiResponseMessage> MultiResponseMessage::get_slice(std::size_t start, std::size_t stop) const
+{
+    // This can only cast down
+    return std::static_pointer_cast<MultiResponseMessage>(this->internal_get_slice(start, stop));
+}
 
-        auto mess_start = this->mess_offset + start;
-        auto mess_stop = this->mess_offset + stop;
+std::shared_ptr<MultiMessage> MultiResponseMessage::internal_get_slice(std::size_t start, std::size_t stop) const
+{
+    CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
 
-        return std::make_shared<MultiResponseMessage>(
-                this->meta, mess_start, mess_stop - mess_start, this->memory, start, stop - start);
-    }
+    auto mess_start = this->mess_offset + start;
+    auto mess_stop  = this->mess_offset + stop;
+
+    return std::make_shared<MultiResponseMessage>(
+        this->meta, mess_start, mess_stop - mess_start, this->memory, start, stop - start);
+}
 
 /****** MultiResponseMessageInterfaceProxy *************************/
-    std::shared_ptr<MultiResponseMessage> MultiResponseMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
-                                                                                   cudf::size_type mess_offset,
-                                                                                   cudf::size_type mess_count,
-                                                                                   std::shared_ptr<ResponseMemory> memory,
-                                                                                   cudf::size_type offset,
-                                                                                   cudf::size_type count) {
-        return std::make_shared<MultiResponseMessage>(
-                std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
-    }
+std::shared_ptr<MultiResponseMessage> MultiResponseMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
+                                                                               cudf::size_type mess_offset,
+                                                                               cudf::size_type mess_count,
+                                                                               std::shared_ptr<ResponseMemory> memory,
+                                                                               cudf::size_type offset,
+                                                                               cudf::size_type count)
+{
+    return std::make_shared<MultiResponseMessage>(
+        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
+}
 
-    std::shared_ptr<morpheus::ResponseMemory> MultiResponseMessageInterfaceProxy::memory(MultiResponseMessage &self) {
-        return self.memory;
-    }
+std::shared_ptr<morpheus::ResponseMemory> MultiResponseMessageInterfaceProxy::memory(MultiResponseMessage &self)
+{
+    return self.memory;
+}
 
-    std::size_t MultiResponseMessageInterfaceProxy::offset(MultiResponseMessage &self) {
-        return self.offset;
-    }
+std::size_t MultiResponseMessageInterfaceProxy::offset(MultiResponseMessage &self)
+{
+    return self.offset;
+}
 
-    std::size_t MultiResponseMessageInterfaceProxy::count(MultiResponseMessage &self) {
-        return self.count;
-    }
+std::size_t MultiResponseMessageInterfaceProxy::count(MultiResponseMessage &self)
+{
+    return self.count;
+}
 
-    pybind11::object
-    MultiResponseMessageInterfaceProxy::get_output(MultiResponseMessage &self, const std::string &name) {
-        auto tensor = self.get_output(name);
+pybind11::object MultiResponseMessageInterfaceProxy::get_output(MultiResponseMessage &self, const std::string &name)
+{
+    auto tensor = self.get_output(name);
 
-        return CupyUtil::tensor_to_cupy(tensor);
-    }
+    return CupyUtil::tensor_to_cupy(tensor);
+}
 }  // namespace morpheus

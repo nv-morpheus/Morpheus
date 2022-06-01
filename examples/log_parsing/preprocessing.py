@@ -19,15 +19,14 @@ from functools import partial
 import neo
 
 import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.pipeline.messages import InferenceMemoryNLP
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import MultiInferenceNLPMessage
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.preprocessing import PreprocessBaseStage
+from morpheus.messages import InferenceMemoryNLP
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiInferenceNLPMessage
+from morpheus.messages import MultiMessage
+from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
 
@@ -79,8 +78,6 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
         self._truncation = truncation
         self._do_lower_case = do_lower_case
         self._add_special_tokens = add_special_tokens
-
-        self._tokenizer: SubwordTokenizer = None
 
     @property
     def name(self) -> str:

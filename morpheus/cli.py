@@ -20,6 +20,7 @@ from functools import update_wrapper
 import click
 from click.globals import get_current_context
 
+import morpheus
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigBase
@@ -324,7 +325,7 @@ def run(ctx: click.Context, **kwargs):
                     "do_truncate == False, there will be multiple returned sequences containing the "
                     "overflowing token-ids. Default value is 256"))
 @click.option('--labels_file',
-              default="data/labels_nlp.txt",
+              default=os.path.join(morpheus.DATA_DIR, "labels_nlp.txt"),
               type=click.Path(dir_okay=False, exists=True, file_okay=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
                     "A label file is a simple text file where each line corresponds to a label"))
@@ -386,7 +387,7 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
                     "A label file is a simple text file where each line corresponds to a label. "
                     "If unspecified, only a single output label is created for FIL"))
 @click.option('--columns_file',
-              default="data/columns_fil.txt",
+              default=os.path.join(morpheus.DATA_DIR, "columns_fil.txt"),
               type=click.Path(dir_okay=False, exists=True, file_okay=True),
               help=("Specifies a file to read column features."))
 @click.option('--viz_file',
@@ -449,7 +450,7 @@ def pipeline_fil(ctx: click.Context, **kwargs):
              cls=AliasedGroup,
              **command_kwargs)
 @click.option('--columns_file',
-              default="data/columns_ae.txt",
+              default=os.path.join(morpheus.DATA_DIR, "columns_ae.txt"),
               type=click.Path(dir_okay=False, exists=True, file_okay=True),
               help=(""))
 @click.option('--labels_file',
@@ -584,7 +585,7 @@ def from_file(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.input.from_file import FileSourceStage
+    from morpheus.stages.input.file_source_stage import FileSourceStage
 
     file_type = str_to_file_type(kwargs.pop("file_type").lower())
 
@@ -626,7 +627,7 @@ def from_kafka(ctx: click.Context, **kwargs):
     if ("bootstrap_servers" in kwargs and kwargs["bootstrap_servers"] == "auto"):
         kwargs["bootstrap_servers"] = auto_determine_bootstrap()
 
-    from morpheus.pipeline.input.from_kafka import KafkaSourceStage
+    from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 
     stage = KafkaSourceStage(config, **kwargs)
 
@@ -667,7 +668,7 @@ def from_cloudtrail(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.input.from_cloudtrail import CloudTrailSourceStage
+    from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 
     file_type = str_to_file_type(kwargs.pop("file_type").lower())
 
@@ -697,7 +698,7 @@ def monitor(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.general_stages import MonitorStage
+    from morpheus.stages.general.monitor_stage import MonitorStage
 
     stage = MonitorStage(config, **kwargs)
 
@@ -714,7 +715,7 @@ def buffer(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.general_stages import BufferStage
+    from morpheus.stages.general.buffer_stage import BufferStage
 
     stage = BufferStage(config, **kwargs)
 
@@ -731,7 +732,7 @@ def dropna(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.preprocessing import DropNullStage
+    from morpheus.stages.preprocess.drop_null_stage import DropNullStage
 
     stage = DropNullStage(config, **kwargs)
 
@@ -750,7 +751,7 @@ def trigger(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.general_stages import TriggerStage
+    from morpheus.stages.general.trigger_stage import TriggerStage
 
     stage = TriggerStage(config, **kwargs)
 
@@ -767,7 +768,7 @@ def delay(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.general_stages import DelayStage
+    from morpheus.stages.general.delay_stage import DelayStage
 
     stage = DelayStage(config, **kwargs)
 
@@ -783,7 +784,7 @@ def deserialize(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.preprocessing import DeserializeStage
+    from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
     stage = DeserializeStage(config, **kwargs)
 
@@ -816,7 +817,7 @@ def train_ae(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.preprocess.autoencoder import TrainAEStage
+    from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 
     stage = TrainAEStage(config, **kwargs)
 
@@ -827,7 +828,7 @@ def train_ae(ctx: click.Context, **kwargs):
 
 @click.command(name="preprocess", short_help="Convert messages to tokens", **command_kwargs)
 @click.option('--vocab_hash_file',
-              default="data/bert-base-cased-hash.txt",
+              default=os.path.join(morpheus.DATA_DIR, "bert-base-cased-hash.txt"),
               type=click.Path(exists=True, dir_okay=False),
               help=("Path to hash file containing vocabulary of words with token-ids. "
                     "This can be created from the raw vocabulary using the cudf.utils.hash_vocab_utils.hash_vocab "
@@ -855,7 +856,7 @@ def preprocess_nlp(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.preprocessing import PreprocessNLPStage
+    from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 
     stage = PreprocessNLPStage(config, **kwargs)
 
@@ -871,7 +872,7 @@ def preprocess_fil(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.preprocessing import PreprocessFILStage
+    from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
     stage = PreprocessFILStage(config, **kwargs)
 
@@ -887,7 +888,7 @@ def preprocess_ae(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.preprocess.autoencoder import PreprocessAEStage
+    from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 
     stage = PreprocessAEStage(config, **kwargs)
 
@@ -917,7 +918,7 @@ def inf_triton(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.inference.inference_triton import TritonInferenceStage
+    from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 
     stage = TritonInferenceStage(config, **kwargs)
 
@@ -933,7 +934,7 @@ def inf_identity(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.inference.inference_identity import IdentityInferenceStage
+    from morpheus.stages.inference.identity_inference_stage import IdentityInferenceStage
 
     stage = IdentityInferenceStage(config, **kwargs)
 
@@ -953,7 +954,7 @@ def inf_pytorch(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.inference.inference_pytorch import PyTorchInferenceStage
+    from morpheus.stages.inference.pytorch_inference_stage import PyTorchInferenceStage
 
     stage = PyTorchInferenceStage(config, **kwargs)
 
@@ -969,7 +970,7 @@ def inf_pytorch_ae(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.inference.inference_ae import AutoEncoderInferenceStage
+    from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
 
     stage = AutoEncoderInferenceStage(config, **kwargs)
 
@@ -1005,7 +1006,7 @@ def add_class(ctx: click.Context, **kwargs):
 
         del kwargs["label"]
 
-    from morpheus.pipeline.general_stages import AddClassificationsStage
+    from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 
     stage = AddClassificationsStage(config, **kwargs)
 
@@ -1040,7 +1041,7 @@ def add_scores(ctx: click.Context, **kwargs):
 
         del kwargs["label"]
 
-    from morpheus.pipeline.general_stages import AddScoresStage
+    from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 
     stage = AddScoresStage(config, **kwargs)
 
@@ -1061,7 +1062,7 @@ def filter_command(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.general_stages import FilterDetectionsStage
+    from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 
     stage = FilterDetectionsStage(config, **kwargs)
 
@@ -1094,7 +1095,7 @@ def serialize(ctx: click.Context, **kwargs):
     kwargs["include"] = list(kwargs["include"])
     kwargs["exclude"] = list(kwargs["exclude"])
 
-    from morpheus.pipeline.output.serialize import SerializeStage
+    from morpheus.stages.postprocess.serialize_stage import SerializeStage
 
     stage = SerializeStage(config, **kwargs)
 
@@ -1141,7 +1142,7 @@ def mlflow_drift(ctx: click.Context, **kwargs):
     # Ensure labels is not a tuple
     kwargs["labels"] = list(kwargs["labels"])
 
-    from morpheus.pipeline.postprocess.mlflow_drift import MLFlowDriftStage
+    from morpheus.stages.postprocess.ml_flow_drift_stage import MLFlowDriftStage
 
     stage = MLFlowDriftStage(config, **kwargs)
 
@@ -1196,7 +1197,7 @@ def timeseries(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.postprocess.timeseries import TimeSeriesStage
+    from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
 
     stage = TimeSeriesStage(config, **kwargs)
 
@@ -1248,7 +1249,7 @@ def validate(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.output.validation import ValidationStage
+    from morpheus.stages.postprocess.validation_stage import ValidationStage
 
     stage = ValidationStage(config, **kwargs)
 
@@ -1266,7 +1267,7 @@ def to_file(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.output.to_file import WriteToFileStage
+    from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 
     stage = WriteToFileStage(config, **kwargs)
 
@@ -1292,7 +1293,7 @@ def to_kafka(ctx: click.Context, **kwargs):
     if ("bootstrap_servers" in kwargs and kwargs["bootstrap_servers"] == "auto"):
         kwargs["bootstrap_servers"] = auto_determine_bootstrap()
 
-    from morpheus.pipeline.output.to_kafka import WriteToKafkaStage
+    from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 
     stage = WriteToKafkaStage(config, **kwargs)
 
@@ -1314,7 +1315,7 @@ def gen_viz(ctx: click.Context, **kwargs):
     config = get_config_from_ctx(ctx)
     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.pipeline.output.gen_viz_frames import GenerateVizFramesStage
+    from morpheus.stages.postprocess.generate_viz_frames_stage import GenerateVizFramesStage
 
     stage = GenerateVizFramesStage(config, **kwargs)
 

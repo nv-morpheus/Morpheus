@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
 import os
+
+import click
 from inference import LogParsingInferenceStage
 from postprocessing import LogParsingPostProcessingStage
 from preprocessing import PreprocessLogParsingStage
@@ -22,11 +23,11 @@ from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import BufferStage
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.preprocessing import DeserializeStage
+from morpheus.stages.general.buffer_stage import BufferStage
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 
 
 @click.command()

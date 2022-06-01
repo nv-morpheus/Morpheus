@@ -148,7 +148,7 @@ The Morpheus AI Engine consists of the following components:
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -190,7 +190,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following command to pull the Morpheus SDK Client chart on to your instance:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 **Note**: For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
@@ -230,7 +230,7 @@ pod/sdk-cli-helper           1/1     Running   0               41s
 Connect to the **sdk-cli-helper** and copy models to `/common`, which is mapped to `/opt/morpheus/common` on the host and where MLFlow will have access to model files.
 
 ```bash
-$ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/models /common
+$ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 ```
 
 ### Install Morpheus MLFlow Triton Plugin
@@ -239,7 +239,7 @@ The Morpheus MLFlow Triton Plugin is used to deploy, update, and remove models f
 Follow the below steps to install Morpheus MlFLow Triton Plugin:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.04.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -558,11 +558,11 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
-        --labels_file=./data/labels_phishing.txt \
-        from-file --filename=./data/email.jsonlines \
+        --labels_file=./morpheus/data/labels_phishing.txt \
+        from-file --filename=./morpheus/data/email.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
         inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8001 --force_convert_inputs=True \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
@@ -588,11 +588,11 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
-        --labels_file=./data/labels_phishing.txt \
+        --labels_file=./morpheus/data/labels_phishing.txt \
         from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
         monitor --description 'FromKafka Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
         inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8001 \
         monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
@@ -635,10 +635,10 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --model_max_batch_size=32 \
       pipeline-nlp \
         --model_seq_length=256 \
-        from-file --filename=./data/pcap_dump.jsonlines \
+        from-file --filename=./morpheus/data/pcap_dump.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description='Preprocessing rate' \
         inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
         monitor --description='Inference rate' --smoothing=0.001 --unit inf \
@@ -667,7 +667,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
-          preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+          preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
           monitor --description='Preprocessing Rate' \
           inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
           monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
@@ -685,7 +685,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/data/pcap_dump.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/morpheus/data/pcap_dump.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
@@ -708,7 +708,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         --model_max_batch_size=64 \
         --use_cpp=True \
         pipeline-fil \
-          from-file --filename=./data/nvsmi.jsonlines \
+          from-file --filename=./morpheus/data/nvsmi.jsonlines \
           monitor --description 'FromFile Rate' --smoothing=0.001 \
           deserialize \
           preprocess \
@@ -754,7 +754,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/data/nvsmi.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/morpheus/data/nvsmi.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
@@ -937,7 +937,7 @@ Options:
                                   order to convert class IDs into labels. A
                                   label file is a simple text file where each
                                   line corresponds to a label  [default:
-                                  data/labels_nlp.txt]
+                                  morpheus/data/labels_nlp.txt]
   --viz_file FILE                 Save a visualization of the pipeline at the
                                   specified location
   --help                          Show this message and exit.
@@ -1000,7 +1000,7 @@ Options:
                                   only a single output label is created for
                                   FIL
   --columns_file FILE             Specifies a file to read column features.
-                                  [default: data/columns_fil.txt]
+                                  [default: morpheus/data/columns_fil.txt]
   --viz_file FILE                 Save a visualization of the pipeline at the
                                   specified location
   --help                          Show this message and exit.
@@ -1052,7 +1052,7 @@ Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
   4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
 
 Options:
-  --columns_file FILE        [default: data/columns_ae.txt]
+  --columns_file FILE        [default: morpheus/data/columns_ae.txt]
   --labels_file FILE         Specifies a file to read labels from in order to
                              convert class IDs into labels. A label file is a
                              simple text file where each line corresponds to a
@@ -1131,9 +1131,9 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 Let's add any important issues that need to be brought to the attention of users here.
 -->
 
-[Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.04/examples
-[Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.04/CONTRIBUTING.md
-[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.04/docs/source/developer_guide/guides
+[Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.06/examples
+[Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.06/CONTRIBUTING.md
+[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.06/docs/source/developer_guide/guides
 [Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
 [NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
 [NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1

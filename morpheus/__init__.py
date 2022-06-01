@@ -15,6 +15,7 @@ Root module for the Morpheus library.
 """
 
 import logging
+import os
 
 # Create a default null logger to prevent log messages from being propagated to users of this library unless otherwise
 # configured. Use the `utils.logging` module to configure Morpheus logging
@@ -22,4 +23,5 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 from . import _version
 
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 __version__ = _version.get_versions()['version']
