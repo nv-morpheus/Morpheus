@@ -291,3 +291,13 @@ def listFilesToCheck(filesDirs, filter=None):
                 if filter is None or filter(f_):
                     allFiles.append(f_)
     return allFiles
+
+def lfsPull(include_paths=None, pull_all=False):
+    if pull_all:
+        include_paths_ = '**'
+    elif include_paths is not None:
+        include_paths_ = ','.join(include_paths)
+    else:
+        raise ValueError("lfsFetch requires either include_paths to be specified or pull_all=True")
+
+    __git('lfs', 'pull', '-I', '"{}"'.format(include_paths_))
