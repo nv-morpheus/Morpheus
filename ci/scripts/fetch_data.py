@@ -19,14 +19,20 @@ import logging
 
 import gitutils  # noqa: E402
 
-LFS_DATASETS = ['all', 'examples', 'models', 'tests']
+LFS_DATASETS = {
+    'all': '**',
+    'examples': 'examples/**',
+    'models': 'models/**',
+    'tests': 'tests/**',
+    'validation': 'models/datasets/validation-data/**'
+}
 
 
 def parse_args():
     argparser = argparse.ArgumentParser("Fetches data not included in the repository by default")
     argparser.add_argument("data_set",
                            nargs='*',
-                           choices=LFS_DATASETS,
+                           choices=LFS_DATASETS.keys(),
                            help="Data set to fetch")
     args = argparser.parse_args()
     return args
@@ -35,13 +41,9 @@ def parse_args():
 def main():
     args = parse_args()
     logging.basicConfig(level=logging.INFO)
-    lfs_pull_args = {}
-    if 'all' in args.data_set:
-        lfs_pull_args['pull_all'] = True
-    else:
-        lfs_pull_args['include_paths'] = ['{}/**'.format(p) for p in args.data_set]
+    include_paths = [LFS_DATASETS[p] for p in args.data_set]
 
-    print(gitutils.lfsPull(**lfs_pull_args))
+    print(gitutils.lfsPull(include_paths))
 
 
 if __name__ == "__main__":
