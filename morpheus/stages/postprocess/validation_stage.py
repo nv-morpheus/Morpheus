@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import re
+import threading
 import typing
 
 import neo
@@ -165,7 +166,10 @@ class ValidationStage(MultiMessageStage):
             if (self._index_col.startswith("_index_")):
                 results_df.index.name = str(results_df.index.name).replace("_index_", "", 1)
 
+        print("Processing on thread\n\n\n\n\nSTUFF: {}".format(threading.current_thread().ident))
         val_df = self._filter_df(self._val_df)
+        # del self._val_df
+        # val_df = self._filter_df(read_file_to_df(self._val_file_name, FileTypes.Auto, df_type="pandas"))
 
         # Now start the comparison
         missing_columns = val_df.columns.difference(results_df.columns)
@@ -222,6 +226,7 @@ class ValidationStage(MultiMessageStage):
     def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
 
         self._val_df: pd.DataFrame = read_file_to_df(self._val_file_name, FileTypes.Auto, df_type="pandas")
+        print("Loading on thread: {}".format(threading.current_thread().ident))
 
         # Store all messages until on_complete is called and then build the dataframe and compare
         def node_fn(input: neo.Observable, output: neo.Subscriber):
