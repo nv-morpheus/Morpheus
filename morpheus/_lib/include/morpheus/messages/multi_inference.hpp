@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,97 +21,100 @@
 #include <morpheus/messages/meta.hpp>
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
+#include <cudf/types.hpp>
 
+#include <cstddef>
 #include <memory>
 #include <string>
-#include <cstddef>
-
 
 namespace morpheus {
-    /****** Component public implementations********************/
-    /****** MultiInferenceMessage*******************************/
+/****** Component public implementations********************/
+/****** MultiInferenceMessage*******************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class MultiInferenceMessage : public MultiMessage
+{
+  public:
+    MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+                          std::size_t mess_offset,
+                          std::size_t mess_count,
+                          std::shared_ptr<morpheus::InferenceMemory> memory,
+                          std::size_t offset,
+                          std::size_t count);
+
+    std::shared_ptr<morpheus::InferenceMemory> memory;
+    std::size_t offset{0};
+    std::size_t count{0};
+
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class MultiInferenceMessage : public MultiMessage {
-    public:
-        MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                              std::size_t mess_offset,
-                              std::size_t mess_count,
-                              std::shared_ptr<morpheus::InferenceMemory> memory,
-                              std::size_t offset,
-                              std::size_t count);
+    const TensorObject get_input(const std::string &name) const;
 
-        std::shared_ptr<morpheus::InferenceMemory> memory;
-        std::size_t offset{0};
-        std::size_t count{0};
-
-        /**
-         * TODO(Documentation)
-         */
-        const neo::TensorObject get_input(const std::string &name) const;
-
-        /**
-         * TODO(Documentation)
-         */
-        const void set_input(const std::string &name, const neo::TensorObject &value);
-
-        /**
-         * TODO(Documentation)
-         */
-        std::shared_ptr<MultiInferenceMessage> get_slice(std::size_t start, std::size_t stop) const;
-
-    protected:
-        /**
-         * TODO(Documentation)
-         */
-        std::shared_ptr<MultiMessage> internal_get_slice(std::size_t start, std::size_t stop) const override;
-    };
-
-    /****** MultiInferenceMessageInterfaceProxy****************/
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * TODO(Documentation)
      */
-    struct MultiInferenceMessageInterfaceProxy {
-        /**
-         * @brief Create and initialize a MultiInferenceMessage object, and return a shared pointer to the result.
-         */
-        static std::shared_ptr<MultiInferenceMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                           cudf::size_type mess_offset,
-                                                           cudf::size_type mess_count,
-                                                           std::shared_ptr<InferenceMemory> memory,
-                                                           cudf::size_type offset,
-                                                           cudf::size_type count);
+    const void set_input(const std::string &name, const TensorObject &value);
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceMessage &self);
+    /**
+     * TODO(Documentation)
+     */
+    std::shared_ptr<MultiInferenceMessage> get_slice(std::size_t start, std::size_t stop) const;
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::size_t offset(MultiInferenceMessage &self);
+  protected:
+    /**
+     * TODO(Documentation)
+     */
+    std::shared_ptr<MultiMessage> internal_get_slice(std::size_t start, std::size_t stop) const override;
+};
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::size_t count(MultiInferenceMessage &self);
+/****** MultiInferenceMessageInterfaceProxy****************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct MultiInferenceMessageInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a MultiInferenceMessage object, and return a shared pointer to the result.
+     */
+    static std::shared_ptr<MultiInferenceMessage> init(std::shared_ptr<MessageMeta> meta,
+                                                       cudf::size_type mess_offset,
+                                                       cudf::size_type mess_count,
+                                                       std::shared_ptr<InferenceMemory> memory,
+                                                       cudf::size_type offset,
+                                                       cudf::size_type count);
 
-        /**
-         * TODO(Documentation)
-         */
-        static pybind11::object get_input(MultiInferenceMessage &self, const std::string &name);
+    /**
+     * TODO(Documentation)
+     */
+    static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceMessage &self);
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::shared_ptr<MultiInferenceMessage>
-        get_slice(MultiInferenceMessage &self, std::size_t start, std::size_t stop);
-    };
+    /**
+     * TODO(Documentation)
+     */
+    static std::size_t offset(MultiInferenceMessage &self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static std::size_t count(MultiInferenceMessage &self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_input(MultiInferenceMessage &self, const std::string &name);
+
+    /**
+     * TODO(Documentation)
+     */
+    static std::shared_ptr<MultiInferenceMessage> get_slice(MultiInferenceMessage &self,
+                                                            std::size_t start,
+                                                            std::size_t stop);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

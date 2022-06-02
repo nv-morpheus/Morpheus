@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,9 @@
 #pragma once
 
 #include <morpheus/objects/data_table.hpp>
+#include <morpheus/utilities/type_util_detail.hpp>
 
 #include <cudf/table/table_view.hpp>
-#include <neo/utils/type_utils.hpp>
 
 #include <memory>
 #include <string>
@@ -81,13 +81,12 @@ struct TableInfo
     /**
      * TODO(Documentation)
      */
-    void insert_columns(const std::vector<std::string> &column_names, const std::vector<neo::TypeId> &column_types);
+    void insert_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
 
     /**
      * TODO(Documentation)
      */
-    void insert_missing_columns(const std::vector<std::string> &column_names,
-                                const std::vector<neo::TypeId> &column_types);
+    void insert_missing_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
 
     /**
      * TODO(Documentation)
