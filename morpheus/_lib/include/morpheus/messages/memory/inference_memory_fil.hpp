@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,10 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/objects/python_data_table.hpp>
 #include <morpheus/messages/memory/inference_memory.hpp>
+#include <morpheus/objects/python_data_table.hpp>
+#include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
 #include <cudf/io/types.hpp>
 
@@ -30,76 +31,78 @@
 #include <memory>
 #include <string>
 
-
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** InferenceMemoryFIL****************************************/
-    class InferenceMemoryFIL : public InferenceMemory {
-    public:
-        InferenceMemoryFIL(size_t count, neo::TensorObject input__0, neo::TensorObject seq_ids);
+/****** Component public implementations *******************/
+/****** InferenceMemoryFIL****************************************/
+class InferenceMemoryFIL : public InferenceMemory
+{
+  public:
+    InferenceMemoryFIL(size_t count, TensorObject input__0, TensorObject seq_ids);
 
-        /**
-         * TODO(Documentation)
-         */
-        const neo::TensorObject &get_input__0() const;
-
-        /**
-         * TODO(Documentation)
-         */
-        const neo::TensorObject &get_seq_ids() const;
-
-        /**
-         * TODO(Documentation)
-         */
-        void set_input__0(neo::TensorObject input_ids);
-
-        /**
-         * TODO(Documentation)
-         */
-        void set_seq_ids(neo::TensorObject input_mask);
-    };
-
-    /****** InferenceMemoryFILInterfaceProxy *************************/
-#pragma GCC visibility push(default)
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * TODO(Documentation)
      */
-    struct InferenceMemoryFILInterfaceProxy {
-        /**
-         * @brief Create and initialize an InferenceMemoryFIL object, and return a shared pointer to the result.
-         */
-        static std::shared_ptr<InferenceMemoryFIL>
-        init(cudf::size_type count, pybind11::object input__0, pybind11::object seq_ids);
+    const TensorObject& get_input__0() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        static std::size_t count(InferenceMemoryFIL& self);
+    /**
+     * TODO(Documentation)
+     */
+    const TensorObject& get_seq_ids() const;
 
-        /**
-         * TODO(Documentation)
-         */
-        static neo::TensorObject get_tensor(InferenceMemoryFIL& self, const std::string& name);
+    /**
+     * TODO(Documentation)
+     */
+    void set_input__0(TensorObject input_ids);
 
-        /**
-         * TODO(Documentation)
-         */
-        static pybind11::object get_input__0(InferenceMemoryFIL& self);
+    /**
+     * TODO(Documentation)
+     */
+    void set_seq_ids(TensorObject input_mask);
+};
 
-        /**
-         * TODO(Documentation)
-         */
-        static void set_input__0(InferenceMemoryFIL& self, pybind11::object cupy_values);
+/****** InferenceMemoryFILInterfaceProxy *************************/
+#pragma GCC visibility push(default)
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct InferenceMemoryFILInterfaceProxy
+{
+    /**
+     * @brief Create and initialize an InferenceMemoryFIL object, and return a shared pointer to the result.
+     */
+    static std::shared_ptr<InferenceMemoryFIL> init(cudf::size_type count,
+                                                    pybind11::object input__0,
+                                                    pybind11::object seq_ids);
 
-        /**
-         * TODO(Documentation)
-         */
-        static pybind11::object get_seq_ids(InferenceMemoryFIL& self);
+    /**
+     * TODO(Documentation)
+     */
+    static std::size_t count(InferenceMemoryFIL& self);
 
-        /**
-         * TODO(Documentation)
-         */
-        static void set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values);
-    };
+    /**
+     * TODO(Documentation)
+     */
+    static TensorObject get_tensor(InferenceMemoryFIL& self, const std::string& name);
+
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_input__0(InferenceMemoryFIL& self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static void set_input__0(InferenceMemoryFIL& self, pybind11::object cupy_values);
+
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get_seq_ids(InferenceMemoryFIL& self);
+
+    /**
+     * TODO(Documentation)
+     */
+    static void set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus
