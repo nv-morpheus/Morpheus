@@ -57,7 +57,7 @@ The dataset that this workflow was designed to process is PCAP, or Packet Captur
 }
 ```
 
-In this example, we will be using a simulated PCAP dataset that is known to contain SI from each of the 10 categories the model was trained for. The dataset is located at `examples/data/pcap_dump.jsonlines`. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed. This will all be handled by Morpheus.
+In this example, we will be using a simulated PCAP dataset that is known to contain SI from each of the 10 categories the model was trained for. The dataset is located at `examples/data/pcap_dump.jsonlines`. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed. This will all be handled by Morpheus.
 
 ## Pipeline Architecture
 
@@ -101,6 +101,7 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
 
+From the `examples/nlp_si_detection` directory run:
 ```bash
 export MORPHEUS_ROOT=../..
 # Launch Morpheus printing debug messages
