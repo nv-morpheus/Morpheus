@@ -201,7 +201,7 @@ class AppShieldSourceStage(SingleOutputSource):
         except JSONDecodeError as decode_error:
             logger.error('Unable to load %s to dataframe with %s encoding : %s',
                          filepath,
-                         file.encoding,
+                         encoding,
                          decode_error)
 
             encoding = encoding.lower()
