@@ -52,14 +52,30 @@ class DirectoryWatcher():
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
     sort_glob : bool
         If true the list of files matching `input_glob` will be processed in sorted order.
+    recursive: bool
+        If true, events will be emitted for the files in subdirectories matching `input_glob`.
+    queue_max_size: int
+        Maximum queue size to hold the file paths to be processed that match `input_glob`.
+    batch_timeout: float
+        Timeout to retrieve batch messages from the queue.
     """
 
-    def __init__(self, input_glob: str, watch_directory: bool, max_files: int, sort_glob: bool):
+    def __init__(self,
+                 input_glob: str,
+                 watch_directory: bool,
+                 max_files: int,
+                 sort_glob: bool,
+                 recursive: bool,
+                 queue_max_size: int,
+                 batch_timeout: float):
 
         self._input_glob = input_glob
         self._watch_directory = watch_directory
         self._max_files = max_files
         self._sort_glob = sort_glob
+        self._recursive = recursive
+        self._queue_max_size = queue_max_size
+        self._batch_timeout = batch_timeout
 
         # Determine the directory to watch and the match pattern from the glob
         glob_split = self._input_glob.split("*", 1)
@@ -85,7 +101,7 @@ class DirectoryWatcher():
         event (and we should wait for potentially more changes) or if these files were read on startup and should be
         processed immediately.
         """
-        q = FiberQueue(128)
+        q = FiberQueue(self._queue_max_size)
 
         if (self._watch_directory):
 
@@ -103,7 +119,7 @@ class DirectoryWatcher():
 
             event_handler.on_created = process_dir_change
 
-            self._watcher.schedule(event_handler, self._dir_to_watch, recursive=True)
+            self._watcher.schedule(event_handler, self._dir_to_watch, recursive=self._recursive)
 
             self._watcher.start()
 
@@ -129,14 +145,14 @@ class DirectoryWatcher():
     def _generate_via_polling(self):
 
         # Its a bit ugly, but utilize a filber queue to yield the thread. This will be improved in the future
-        file_queue = FiberQueue(128)
+        file_queue = FiberQueue(self._queue_max_size)
 
         snapshot = EmptyDirectorySnapshot()
 
         while (True):
 
             # Get a new snapshot
-            new_snapshot = DirectorySnapshot(self._dir_to_watch, recursive=True)
+            new_snapshot = DirectorySnapshot(self._dir_to_watch, recursive=self._recursive)
 
             # Take the diff from the last one
             diff_events = DirectorySnapshotDiff(snapshot, new_snapshot)
@@ -158,8 +174,7 @@ class DirectoryWatcher():
                 file_queue.close()
 
             try:
-                batch_timeout = 5.0
-                files = file_queue.get(timeout=batch_timeout)
+                files = file_queue.get(timeout=self._batch_timeout)
 
                 # We must have gotten a group at startup, process immediately
                 if len(files) > 0:
@@ -182,14 +197,12 @@ class DirectoryWatcher():
         # Gets a queue of filenames as they come in. Returns list[str]
         file_queue: FiberQueue = self._get_filename_queue()
 
-        batch_timeout = 5.0
-
         files_to_process = []
 
         while True:
 
             try:
-                files, is_event = file_queue.get(timeout=batch_timeout)
+                files, is_event = file_queue.get(timeout=self._batch_timeout)
 
                 if (is_event):
                     # We may be getting files one at a time from the folder watcher, wait a bit

@@ -59,6 +59,12 @@ class CloudTrailSourceStage(SingleOutputSource):
         How many times to repeat the dataset. Useful for extending small datasets in debugging.
     sort_glob : bool, default = False
         If true the list of files matching `input_glob` will be processed in sorted order.
+    recursive: bool, default = True
+        If true, events will be emitted for the files in subdirectories that match `input_glob`.
+    queue_max_size: int, default = 128
+        Maximum queue size to hold the file paths to be processed that match `input_glob`.
+    batch_timeout: float, default = 5.0
+        Timeout to retrieve batch messages from the queue.
     """
 
     def __init__(self,
@@ -68,7 +74,10 @@ class CloudTrailSourceStage(SingleOutputSource):
                  max_files: int = -1,
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
-                 sort_glob: bool = False):
+                 sort_glob: bool = False,
+                 recursive: bool = True,
+                 queue_max_size: int = 128,
+                 batch_timeout: float = 5.0):
 
         SingleOutputSource.__init__(self, c)
 
@@ -90,7 +99,10 @@ class CloudTrailSourceStage(SingleOutputSource):
         self._watcher = DirectoryWatcher(input_glob=input_glob,
                                          watch_directory=watch_directory,
                                          max_files=max_files,
-                                         sort_glob=sort_glob)
+                                         sort_glob=sort_glob,
+                                         recursive=recursive,
+                                         queue_max_size=queue_max_size,
+                                         batch_timeout=batch_timeout)
 
     @property
     def name(self) -> str:

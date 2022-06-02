@@ -27,9 +27,18 @@ from utils import TEST_DIRS
 @pytest.mark.parametrize('watch_directory', [True])
 @pytest.mark.parametrize('max_files', [-1])
 @pytest.mark.parametrize('sort_glob', [True])
-def test_build_node(watch_directory, max_files, sort_glob):
+@pytest.mark.parametrize('recursive', [True])
+@pytest.mark.parametrize('queue_max_size', [128])
+@pytest.mark.parametrize('batch_timeout', [5.0])
+def test_build_node(watch_directory, max_files, sort_glob, recursive, queue_max_size, batch_timeout):
     input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', '*', '*.json')
-    watcher = DirectoryWatcher(input_glob, watch_directory, max_files, sort_glob)
+    watcher = DirectoryWatcher(input_glob,
+                               watch_directory,
+                               max_files,
+                               sort_glob,
+                               recursive,
+                               queue_max_size,
+                               batch_timeout)
 
     assert watcher._sort_glob
     assert watcher._watch_directory

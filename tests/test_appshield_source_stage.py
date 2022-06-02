@@ -155,12 +155,13 @@ def test_read_file_to_df(cols_exclude, expected_df):
         })
     ],
 )
-def test_load_df(cols_exclude, expected_df):
+@pytest.mark.parametrize('encoding', ['latin1'])
+def test_load_df(cols_exclude, expected_df, encoding):
     input_file = os.path.join(TEST_DIRS.tests_data_dir,
                               'appshield',
                               'snapshot-1',
                               'envars_2022-01-30_10-26-01.017250.json')
-    output_df = AppShieldSourceStage.load_df(input_file, cols_exclude)
+    output_df = AppShieldSourceStage.load_df(input_file, cols_exclude, encoding)
 
     assert list(output_df.columns) == ['PID', 'Process']
     assert_frame_equal(output_df, expected_df)
@@ -260,10 +261,15 @@ def test_batch_source_split(input_dfs, source_col, expected_appshield_df):
 @pytest.mark.parametrize('cols_exclude', [['SHA256']])
 @pytest.mark.parametrize('plugins_include', [['ldrmodules', 'threadlist', 'envars', 'vadinfo', 'handles']])
 @pytest.mark.parametrize('meta_columns', ['snapshot_id', 'timestamp', 'source', 'plugin'])
-def test_files_to_dfs(cols_include, cols_exclude, plugins_include, meta_columns):
+@pytest.mark.parametrize('encoding', ['latin1'])
+def test_files_to_dfs(cols_include, cols_exclude, plugins_include, meta_columns, encoding):
     input_glob = os.path.join(TEST_DIRS.tests_data_dir, 'appshield', 'snapshot-1', '*.json')
     file_list = glob.glob(input_glob)
-    output_df_per_source = AppShieldSourceStage.files_to_dfs(file_list, cols_include, cols_exclude, plugins_include)
+    output_df_per_source = AppShieldSourceStage.files_to_dfs(file_list,
+                                                             cols_include,
+                                                             cols_exclude,
+                                                             plugins_include,
+                                                             encoding)
 
     assert len(output_df_per_source) == 1
     assert 'appshield' in output_df_per_source
