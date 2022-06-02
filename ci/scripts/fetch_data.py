@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import argparse
+import logging
 
 import gitutils  # noqa: E402
 
@@ -31,7 +32,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-
+    logging.basicConfig()
     lfs_pull_args = {}
     if 'all' in args.data_set:
         lfs_pull_args['pull_all'] = True
