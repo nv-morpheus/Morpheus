@@ -21,6 +21,7 @@ import gitutils  # noqa: E402
 
 LFS_DATASETS = ['all', 'examples', 'models', 'tests']
 
+
 def parse_args():
     argparser = argparse.ArgumentParser("Fetches data not included in the repository by default")
     argparser.add_argument("data_set",
@@ -29,6 +30,7 @@ def parse_args():
                            help="Data set to fetch")
     args = argparser.parse_args()
     return args
+
 
 def main():
     args = parse_args()
@@ -40,6 +42,7 @@ def main():
         lfs_pull_args['include_paths'] = ['{}/**'.format(p) for p in args.data_set]
 
     print(gitutils.lfsPull(**lfs_pull_args))
+
 
 if __name__ == "__main__":
     main()

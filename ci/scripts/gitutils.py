@@ -38,14 +38,11 @@ def __git(*opts, echo=False, poll_interval=0.1):
         ret = subprocess.check_output(cmd, shell=True)
         return ret.decode("UTF-8").rstrip("\n")
     else:
-        #cmd = ['git'] + list(opts)
         popen = subprocess.Popen(cmd,
                                  shell=True,
                                  universal_newlines=True,
                                  stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
-
-
 
         outpipe = popen.stdout
         returncode = None
@@ -332,6 +329,7 @@ def listFilesToCheck(filesDirs, filter=None):
                 if filter is None or filter(f_):
                     allFiles.append(f_)
     return allFiles
+
 
 def lfsPull(include_paths=None, pull_all=False):
     if pull_all:
