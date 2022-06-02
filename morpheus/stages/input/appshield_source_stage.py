@@ -198,11 +198,20 @@ class AppShieldSourceStage(SingleOutputSource):
         try:
             with open(filepath, encoding=encoding) as file:
                 plugin_df = AppShieldSourceStage.read_file_to_df(file, cols_exclude)
-        except JSONDecodeError as e:
-            logger.error('Unable to load %s to dataframe with %s encoding : %s', filepath, encoding, e)
-            logger.info('Retrying... Attempting to load a file with utf-8 encoding')
+        except JSONDecodeError as decode_error:
+            logger.error('Unable to load %s to dataframe with %s encoding : %s',
+                         filepath,
+                         file.encoding,
+                         decode_error)
 
-            with open(filepath, encoding='utf8') as file:
+            encoding = encoding.lower()
+            # To avoid retrying with utf-8, check if the given encoding is utf.
+            if encoding.startswith('utf'):
+                raise decode_error
+
+            logger.info('Retrying... Attempting to load %s with utf-8 encoding', filepath)
+
+            with open(filepath, encoding='utf-8') as file:
                 plugin_df = AppShieldSourceStage.read_file_to_df(file, cols_exclude)
 
         return plugin_df
