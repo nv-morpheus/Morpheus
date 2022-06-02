@@ -49,7 +49,7 @@ mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 git lfs install
-${MORPHEUS_ROOT}/ci/scripts/fetch_data.py tests
+${MORPHEUS_ROOT}/ci/scripts/fetch_data.py tests validation
 
 pip install -e ${MORPHEUS_ROOT}
 
