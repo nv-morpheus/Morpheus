@@ -1,1 +1,3 @@
-{ "plugin": "ldrmodules", "titles": [ "PID", "Process", "Base", "Size", "InLoad", "InInit", "InMem", "Name", "Path" ], "data": [ [ "304", "smss.exe", "0x7ff7fb910000", "0x26000", "True", "False", "True", "smss.exe", "\\SystemRoot\\System32\\smss.exe" ], [ "304", "smss.exe", "0x7ffa16fb0000", "0x1ed000", "True", "True", "True", "", "C:\\windows\\SYSTEM32\\ntdll.dll" ], [ "5452", "WmiPrvSE.exe", "0x0", "0x0", "True", "True", "True", "", "" ], [ "444", "csrss.exe", "0x7ff777eb0000", "0x7000", "True", "False", "True", "csrss.exe", "C:\\windows\\system32\\csrss.exe" ], [ "444", "csrss.exe", "0x7ffa16fb0000", "0x1ed000", "True", "True", "True", "", "C:\\windows\\SYSTEM32\\ntdll.dll" ] ], "count": 5 }
+version https://git-lfs.github.com/spec/v1
+oid sha256:79c2c14a8ff6139e0c54e0e6331f3083d98c07ef6c8402c632ec5e980d046691
+size 703

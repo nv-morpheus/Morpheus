@@ -1,4 +1,4 @@
 morpheus/_version.py export-subst
 morpheus/data/* filter=lfs diff=lfs merge=lfs -text
-tests/tests_data/** filter=lfs diff=lfs merge=lfs -text
 tests/mock_triton_server/payloads/** filter=lfs diff=lfs merge=lfs -text
+tests/tests_data/** filter=lfs diff=lfs merge=lfs -text

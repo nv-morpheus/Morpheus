@@ -1,1 +1,3 @@
-{ "plugin": "envars", "titles": [ "PID", "Process", "Block", "Variable", "Value" ], "data": [ [ "304", "smss.exe", "0x22b3f4b0fe0", "Path", "C:\\windows\\System32" ], [ "304", "smss.exe", "0x22b3f4b0fe0", "SystemDrive", "C:" ], [ "304", "smss.exe", "0x22b3f4b0fe0", "SystemRoot", "C:\\windows" ], [ "444", "csrss.exe", "0x23e26750fe0", "ComSpec", "C:\\windows\\system32\\cmd.exe" ], [ "444", "csrss.exe", "0x23e26750fe0", "DriverData", "C:\\Windows\\System32\\Drivers\\DriverData" ] ], "count": 5 }
+version https://git-lfs.github.com/spec/v1
+oid sha256:61329c9bb7aa6af28eb0c09bc8ffd9071f840fe818cd395f5eb62816d323eec2
+size 498

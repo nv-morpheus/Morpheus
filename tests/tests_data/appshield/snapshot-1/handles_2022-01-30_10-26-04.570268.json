@@ -1,1 +1,3 @@
-{ "plugin": "handles", "titles": [ "PID", "Process", "Offset", "HandleValue", "Type", "GrantedAccess", "Name" ], "data": [ [ "4", "System", "0xc98180c84200", "0x4", "Process", "x1fffff", "" ], [ "4", "System", "0xc98180d35080", "0x8", "Thread", "x1fffff", "" ], [ "4", "System", "0xc98180c993c0", "0xc", "Mutant", "x1f0001", "" ], [ "4", "System", "0xdf8112235340", "0x10", "Directory", "xf000f", "" ], [ "4", "System", "0xdf811222b8f0", "0x14", "Directory", "xf000f", "" ] ], "count": 5 }
+version https://git-lfs.github.com/spec/v1
+oid sha256:a37be906217673676076f2b77e0b938d29b0b4b68329b0901f26b36424da8b45
+size 489
