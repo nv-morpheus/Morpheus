@@ -93,6 +93,7 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way (you can copy/paste the entire command with comments).
 
+From the `examples/abp_nvsmi_detection` directory run:
 ```bash
 export MORPHEUS_ROOT=../..
 # Launch Morpheus printing debug messages
