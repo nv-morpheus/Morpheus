@@ -32,7 +32,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    logging.basicConfig()
+    logging.basicConfig(level=logging.INFO)
     lfs_pull_args = {}
     if 'all' in args.data_set:
         lfs_pull_args['pull_all'] = True
