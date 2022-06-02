@@ -41,7 +41,7 @@ function run_pipeline_sid_minibert(){
       pipeline-nlp --model_seq_length=256 \
       from-file --filename=${INPUT_FILE} \
       deserialize \
-      preprocess --vocab_hash_file=${MORPHEUS_ROOT}/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+      preprocess --vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
       ${INFERENCE_STAGE} \
       monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
       add-class --prefix="si_" \
@@ -62,7 +62,7 @@ function run_pipeline_sid_bert(){
       pipeline-nlp --model_seq_length=256 \
       from-file --filename=${INPUT_FILE} \
       deserialize \
-      preprocess --vocab_hash_file=${MORPHEUS_ROOT}/data/bert-base-cased-hash.txt --truncation=True --do_lower_case=False --add_special_tokens=False \
+      preprocess --vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-cased-hash.txt --truncation=True --do_lower_case=False --add_special_tokens=False \
       ${INFERENCE_STAGE} \
       monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
       add-class --prefix="si_" \
@@ -101,10 +101,10 @@ function run_pipeline_phishing_email(){
    VAL_OUTPUT=$5
 
    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=32 --use_cpp=${USE_CPP} \
-      pipeline-nlp --model_seq_length=128 --labels_file=${MORPHEUS_ROOT}/data/labels_phishing.txt \
+      pipeline-nlp --model_seq_length=128 --labels_file=${MORPHEUS_ROOT}/morpheus/data/labels_phishing.txt \
       from-file --filename=${INPUT_FILE} \
       deserialize \
-      preprocess --vocab_hash_file=${MORPHEUS_ROOT}/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+      preprocess --vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
       ${INFERENCE_STAGE} \
       monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
       add-class --label=pred --threshold=0.7 \
