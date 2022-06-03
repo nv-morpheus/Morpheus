@@ -25,12 +25,7 @@ def isFileEmpty(f):
 
 
 def __git(*opts):
-    """
-    Runs a git command and returns its output
-    When `echo` is `True` git's output is echo'd to Python's logger while it is running.
-    Useful for long running git commands like `git lfs pull`, the subprocess will be
-    checked for output every `poll_interval` seconds.
-    """
+    """Runs a git command and returns its output"""
     cmd = "git " + " ".join(list(opts))
     ret = subprocess.check_output(cmd, shell=True)
     return ret.decode("UTF-8").rstrip("\n")
