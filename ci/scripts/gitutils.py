@@ -15,12 +15,9 @@
 #
 
 import datetime
-import logging
 import os
 import re
 import subprocess
-import tempfile
-import time
 
 
 def isFileEmpty(f):
@@ -299,43 +296,3 @@ def listFilesToCheck(filesDirs, filter=None):
                 if filter is None or filter(f_):
                     allFiles.append(f_)
     return allFiles
-
-
-def lfsPull(include_paths, poll_interval=1):
-    """
-    Performs a git lfs pull.
-    This can take upwards of a minute to complete we will make use of the
-    GIT_LFS_PROGRESS hook to send progress to a file which we can then tail
-    while the command is executing.
-    """
-    cmd = 'git lfs pull -I "{}"'.format(','.join(include_paths))
-
-    with tempfile.NamedTemporaryFile() as progress_file:
-        env = os.environ.copy()
-        env['GIT_LFS_PROGRESS'] = progress_file.name
-        popen = subprocess.Popen(cmd,
-                                 env=env,
-                                 shell=True,
-                                 universal_newlines=True,
-                                 stderr=subprocess.STDOUT,
-                                 stdout=subprocess.PIPE)
-
-        returncode = None
-        while returncode is None:
-            time.sleep(poll_interval)
-            progress = progress_file.read().decode("UTF-8")
-            if progress != '':
-                logging.info(progress)
-
-            returncode = popen.poll()
-
-        # Check if we have any output
-        output = popen.stdout.read().rstrip("\n")
-
-        if returncode != 0:
-            raise subprocess.CalledProcessError(returncode=returncode, cmd=cmd, output=output)
-
-        if output != '':
-            logging.info(output)
-
-        return output
