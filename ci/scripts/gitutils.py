@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import subprocess
+import tempfile
 import time
 
 
@@ -26,7 +27,7 @@ def isFileEmpty(f):
     return os.stat(f).st_size == 0
 
 
-def __git(*opts, echo=False, poll_interval=0.1):
+def __git(*opts):
     """
     Runs a git command and returns its output
     When `echo` is `True` git's output is echo'd to Python's logger while it is running.
@@ -34,40 +35,8 @@ def __git(*opts, echo=False, poll_interval=0.1):
     checked for output every `poll_interval` seconds.
     """
     cmd = "git " + " ".join(list(opts))
-    if not echo:
-        ret = subprocess.check_output(cmd, shell=True)
-        return ret.decode("UTF-8").rstrip("\n")
-    else:
-        cmd = "bash -i -c '{}'".format(cmd)
-        popen = subprocess.Popen(cmd,
-                                 shell=True,
-                                 universal_newlines=True,
-                                 stderr=subprocess.STDOUT,
-                                 stdout=subprocess.PIPE)
-
-        outpipe = popen.stdout
-        returncode = None
-        all_out = []
-        while returncode is None:
-            time.sleep(poll_interval)
-            out = outpipe.read()
-            if out != '':
-                logging.info(out)
-                all_out.append(out)
-
-            returncode = popen.poll()
-
-            # Check if we have any additional output written to the pipe before our last poll
-            out = outpipe.read()
-            if out != '':
-                logging.info(out)
-                all_out.append(out)
-
-        output = ''.join(all_out).rstrip("\n")
-        if returncode != 0:
-            raise subprocess.CalledProcessError(returncode=returncode, cmd=cmd, output=output)
-
-        return output
+    ret = subprocess.check_output(cmd, shell=True)
+    return ret.decode("UTF-8").rstrip("\n")
 
 
 def __gitdiff(*opts):
@@ -332,5 +301,41 @@ def listFilesToCheck(filesDirs, filter=None):
     return allFiles
 
 
-def lfsPull(include_paths):
-    return __git('lfs', 'pull', '-I', '"{}"'.format(','.join(include_paths)), echo=True)
+def lfsPull(include_paths, poll_interval=0.1):
+    """
+    Performs a git lfs pull.
+    This can take upwards of a minute to complete we will make use of the
+    GIT_LFS_PROGRESS hook to send progress to a file which we can then tail
+    while the command is executing.
+    """
+    cmd = 'git lfs pull -I "{}"'.format(','.join(include_paths))
+
+    with tempfile.NamedTemporaryFile() as progress_file:
+        env = os.environ.copy()
+        env['GIT_LFS_PROGRESS'] = progress_file.name
+        popen = subprocess.Popen(cmd,
+                                 env=env,
+                                 shell=True,
+                                 universal_newlines=True,
+                                 stderr=subprocess.STDOUT,
+                                 stdout=subprocess.PIPE)
+
+        returncode = None
+        while returncode is None:
+            time.sleep(poll_interval)
+            progress = progress_file.read().decode("UTF-8")
+            if progress != '':
+                logging.info(progress)
+
+            returncode = popen.poll()
+
+        # Check if we have any output
+        output = popen.stdout.read().rstrip("\n")
+
+        if returncode != 0:
+            raise subprocess.CalledProcessError(returncode=returncode, cmd=cmd, output=output)
+
+        if output != '':
+            logging.info(output)
+
+        return output
