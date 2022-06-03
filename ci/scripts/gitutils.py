@@ -305,6 +305,7 @@ def get_merge_target():
     currentBranch = branch()
     return determine_merge_commit(currentBranch)
 
+
 def parse_args():
     argparser = argparse.ArgumentParser("Executes a gitutil action")
     argparser.add_argument("action",
@@ -312,6 +313,7 @@ def parse_args():
                            help="Action to execute")
     args = argparser.parse_args()
     return args
+
 
 def main():
     args = parse_args()
