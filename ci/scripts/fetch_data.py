@@ -40,7 +40,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     include_paths = [LFS_DATASETS[p] for p in args.data_set]
 
     print(gitutils.lfsPull(include_paths))
