@@ -301,7 +301,7 @@ def listFilesToCheck(filesDirs, filter=None):
     return allFiles
 
 
-def lfsPull(include_paths, poll_interval=0.1):
+def lfsPull(include_paths, poll_interval=1):
     """
     Performs a git lfs pull.
     This can take upwards of a minute to complete we will make use of the
