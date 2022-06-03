@@ -67,9 +67,9 @@ def lfsPull(stdscr, include_paths, poll_interval=0.1):
         returncode = None
         while returncode is None:
             time.sleep(poll_interval)
-            progress = progress_file.read().decode("UTF-8")
-            if progress != '':
-                line = progress.splitlines()[-1]
+            progress_lines = progress_file.readlines()
+            if len(progress_lines):
+                line = progress_lines[-1].decode("UTF8")
                 last_print_len = print_line(stdscr, max_x, last_print_len, line)
 
             returncode = popen.poll()
