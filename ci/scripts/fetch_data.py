@@ -82,6 +82,8 @@ def lfsPull(stdscr, include_paths, poll_interval=0.1):
         logging.info('')
         if output != '':
             logging.info(output)
+        else:
+            logging.info("Done.")
 
         return output
 
