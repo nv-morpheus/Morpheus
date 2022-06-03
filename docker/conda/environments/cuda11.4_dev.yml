@@ -50,7 +50,7 @@ dependencies:
     - isort
     - mlflow>=1.23
     - myst-parser==0.17
-    - neo 22.04.*
+    - neo 22.04.00a*
     - ninja=1.10
     - nodejs=17.4.0
     - pandas=1.3
