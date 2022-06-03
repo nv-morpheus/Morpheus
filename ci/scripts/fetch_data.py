@@ -22,8 +22,6 @@ import tempfile
 import time
 from curses import wrapper
 
-import gitutils  # noqa: E402
-
 LFS_DATASETS = {
     'all': '**',
     'examples': 'examples/**',
@@ -42,6 +40,7 @@ def print_line(stdscr, max_x, last_print_len, line):
     stdscr.addstr(0, 0, line, print_len)
     stdscr.refresh()
     return print_len
+
 
 def lfsPull(stdscr, include_paths, poll_interval=0.1):
     """
