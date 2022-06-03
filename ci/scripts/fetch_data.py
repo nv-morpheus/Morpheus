@@ -33,7 +33,17 @@ LFS_DATASETS = {
 }
 
 
-def lfsPull(stdscr, include_paths, poll_interval=1):
+def print_line(stdscr, max_x, last_print_len, line):
+    print_len = min(len(line), max_x)
+    if print_len < last_print_len:
+        stdscr.move(0, 0)
+        stdscr.clrtoeol()
+
+    stdscr.addstr(0, 0, line, print_len)
+    stdscr.refresh()
+    return print_len
+
+def lfsPull(stdscr, include_paths, poll_interval=0.1):
     """
     Performs a git lfs pull.
     This can take upwards of a minute to complete we will make use of the
@@ -41,7 +51,6 @@ def lfsPull(stdscr, include_paths, poll_interval=1):
     while the command is executing.
     """
     cmd = 'git lfs pull -I "{}"'.format(','.join(include_paths))
-
     with tempfile.NamedTemporaryFile() as progress_file:
         env = os.environ.copy()
         env['GIT_LFS_PROGRESS'] = progress_file.name
@@ -52,12 +61,16 @@ def lfsPull(stdscr, include_paths, poll_interval=1):
                                  stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 
+        (_, max_x) = stdscr.getmaxyx()
+        last_print_len = 0
+
         returncode = None
         while returncode is None:
             time.sleep(poll_interval)
             progress = progress_file.read().decode("UTF-8")
             if progress != '':
-                stdscr.addstr(progress)
+                line = progress.splitlines()[-1]
+                last_print_len = print_line(stdscr, max_x, last_print_len, line)
 
             returncode = popen.poll()
 
