@@ -1,3 +1,4 @@
+#! /bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2019-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,6 +15,7 @@
 # limitations under the License.
 #
 
+import argparse
 import datetime
 import logging
 import os
@@ -77,7 +79,7 @@ def repo_version_major_minor():
     match = re.match(r"^v?(?P<major>[0-9]+)(?:\.(?P<minor>[0-9]+))?", full_repo_version)
 
     if (match is None):
-        logging.debug("   [DEBUG] Could not determine repo major minor version. "
+        logging.debug("Could not determine repo major minor version. "
                       f"Full repo version: {full_repo_version}.")
         return None
 
@@ -117,7 +119,7 @@ def determine_merge_commit(current_branch="HEAD"):
         # Try to determine the target branch from the most recent tag
         head_branch = __git("describe", "--all", "--tags", "--match='branch-*'", "--abbrev=0")
     except subprocess.CalledProcessError:
-        logging.debug("   [DEBUG] Could not determine target branch from most recent "
+        logging.debug("Could not determine target branch from most recent "
                       "tag. Falling back to 'branch-{major}.{minor}.")
         head_branch = None
 
@@ -134,21 +136,21 @@ def determine_merge_commit(current_branch="HEAD"):
 
             head_branch = "branch-{}".format(version)
         except Exception:
-            logging.debug("   [DEBUG] Could not determine branch version falling back to main")
+            logging.debug("Could not determine branch version falling back to main")
             head_branch = "main"
 
     try:
         # Now get the remote tracking branch
         remote_branch = __git("rev-parse", "--abbrev-ref", "--symbolic-full-name", head_branch + "@{upstream}")
     except subprocess.CalledProcessError:
-        logging.debug("   [DEBUG] Could not remote tracking reference for "
+        logging.debug("Could not remote tracking reference for "
                       f"branch {head_branch}.")
         remote_branch = None
 
     if (remote_branch is None):
         return None
 
-    logging.debug(f"   [DEBUG] Determined TARGET_BRANCH as: '{remote_branch}'. "
+    logging.debug(f"Determined TARGET_BRANCH as: '{remote_branch}'. "
                   "Finding common ancestor.")
 
     common_commit = __git("merge-base", remote_branch, current_branch)
@@ -231,14 +233,14 @@ def modifiedFiles(pathFilter=None):
     targetBranch = os.environ.get("TARGET_BRANCH")
     commitHash = os.environ.get("COMMIT_HASH")
     currentBranch = branch()
-    logging.debug(f"   [DEBUG] TARGET_BRANCH={targetBranch}, COMMIT_HASH={commitHash}, "
+    logging.debug(f"TARGET_BRANCH={targetBranch}, COMMIT_HASH={commitHash}, "
                   f"currentBranch={currentBranch}")
 
     if targetBranch and commitHash and (currentBranch == "current-pr-branch"):
-        logging.debug("   [DEBUG] Assuming a CI environment.")
+        logging.debug("Assuming a CI environment.")
         allFiles = changedFilesBetween(targetBranch, currentBranch, commitHash)
     else:
-        logging.debug("   [DEBUG] Did not detect CI environment. "
+        logging.debug("Did not detect CI environment. "
                       "Determining TARGET_BRANCH locally.")
 
         common_commit = determine_merge_commit(currentBranch)
@@ -258,7 +260,7 @@ def modifiedFiles(pathFilter=None):
             files.append(f)
 
     filesToCheckString = "\n\t".join(files) if files else "<None>"
-    logging.debug(f"   [DEBUG] Found files to check:\n\t{filesToCheckString}\n")
+    logging.debug(f"Found files to check:\n\t{filesToCheckString}\n")
     return files
 
 
@@ -297,3 +299,27 @@ def listFilesToCheck(filesDirs, filter=None):
                 if filter is None or filter(f_):
                     allFiles.append(f_)
     return allFiles
+
+
+def get_merge_target():
+    currentBranch = branch()
+    return determine_merge_commit(currentBranch)
+
+def parse_args():
+    argparser = argparse.ArgumentParser("Executes a gitutil action")
+    argparser.add_argument("action",
+                           nargs=1,
+                           choices=['get_merge_target'],
+                           help="Action to execute")
+    args = argparser.parse_args()
+    return args
+
+def main():
+    args = parse_args()
+    logging.basicConfig(level=logging.ERROR)
+    if args.action == 'get_merge_target':
+        print(get_merge_target())
+
+
+if __name__ == '__main__':
+    main()
