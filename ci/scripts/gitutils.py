@@ -38,6 +38,7 @@ def __git(*opts, echo=False, poll_interval=0.1):
         ret = subprocess.check_output(cmd, shell=True)
         return ret.decode("UTF-8").rstrip("\n")
     else:
+        cmd = "bash -i -c '{}'".format(cmd)
         popen = subprocess.Popen(cmd,
                                  shell=True,
                                  universal_newlines=True,
