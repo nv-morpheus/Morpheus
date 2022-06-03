@@ -662,6 +662,19 @@ def from_kafka(ctx: click.Context, **kwargs):
               default=1,
               type=click.IntRange(min=1),
               help=("Repeats the input dataset multiple times. Useful to extend small datasets for debugging."))
+@click.option('--sort_glob',
+              type=bool,
+              default=False,
+              help=("If true the list of files matching `input_glob` will be processed in sorted order."))
+@click.option('--recursive',
+              type=bool,
+              default=True,
+              help=("If true, events will be emitted for the files in subdirectories matching `input_glob`."))
+@click.option('--queue_max_size',
+              type=int,
+              default=128,
+              help=("Maximum queue size to hold the file paths to be processed that match `input_glob`."))
+@click.option('--batch_timeout', type=float, default=5.0, help=("Timeout to retrieve batch messages from the queue."))
 @prepare_command()
 def from_cloudtrail(ctx: click.Context, **kwargs):
 
