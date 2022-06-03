@@ -82,10 +82,10 @@ nohup mlflow server --backend-store-uri sqlite:////tmp/mlflow-db.sqlite --defaul
 
 The Morpheus reference models can be found in the [Morpheus](https://github.com/NVIDIA/Morpheus) repo.
 
-```
-git clone https://github.com/NVIDIA/Morpheus.git
-cd morpheus/models
-git lfs pull
+```bash
+git clone https://github.com/NVIDIA/Morpheus.git morpheus
+cd morpheus
+ci/scripts/fetch_data.py models
 ```
 
 ## Publish reference models to MLflow

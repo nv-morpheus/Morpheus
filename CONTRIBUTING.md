@@ -65,9 +65,31 @@ cd $MORPHEUS_ROOT
 ```
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
+By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `ci/scripts/fetch_data.py` script. Usage of the script is as follows:
+```
+ci/scripts/fetch_data.py <dataset> [<dataset>...]
+```
+
+At time of writing the defined datasets are:
+* all - Metaset includes all others
+* examples - Data needed by scripts in the `examples` subdir
+* models - Morpheus models (largest dataset)
+* tests - Data used by unittests
+* validation - Subset of the models dataset needed by some unittests
+
+To download just the examples and models:
+```bash
+ci/scripts/fetch_data.py examples models
+```
+
+To download the data needed for unittests:
+```bash
+ci/scripts/fetch_data.py tests validation
+```
+
 If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command.
 ```bash
-git lfs pull
+ci/scripts/fetch_data.py all
 ```
 
 ### Build in Docker Container
@@ -94,7 +116,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
    ```shell
    DOCKER_TARGET=development_pydbg ./docker/build_container_dev.sh
    ```
-   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's 
+   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
    source path.
    1. Once created, you will be able to introspect python objects from within GDB. For example, if we were to break
    within a generator setup call and examine it's PyFrame_Object `f`, it might look like this:
