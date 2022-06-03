@@ -89,7 +89,7 @@ def main(stdscr):
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     include_paths = [LFS_DATASETS[p] for p in args.data_set]
 
-    gitutils.lfsPull(stdscr, include_paths)
+    lfsPull(stdscr, include_paths)
 
 
 if __name__ == "__main__":
