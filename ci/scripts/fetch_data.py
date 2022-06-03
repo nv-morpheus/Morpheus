@@ -15,12 +15,13 @@
 # limitations under the License.
 
 import argparse
+import curses
 import logging
 import os
 import subprocess
+import sys
 import tempfile
 import time
-from curses import wrapper
 
 LFS_DATASETS = {
     'all': '**',
@@ -33,12 +34,16 @@ LFS_DATASETS = {
 
 def print_line(stdscr, max_x, last_print_len, line):
     print_len = min(len(line), max_x)
-    if print_len < last_print_len:
-        stdscr.move(0, 0)
-        stdscr.clrtoeol()
+    if stdscr is not None:
+        if print_len < last_print_len:
+            stdscr.move(0, 0)
+            stdscr.clrtoeol()
 
-    stdscr.addstr(0, 0, line, print_len)
-    stdscr.refresh()
+        stdscr.addstr(0, 0, line, print_len)
+        stdscr.refresh()
+    else:
+        logging.info(line)
+
     return print_len
 
 
@@ -60,7 +65,11 @@ def lfsPull(stdscr, include_paths, poll_interval=0.1):
                                  stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
 
-        (_, max_x) = stdscr.getmaxyx()
+        if stdscr is not None:
+            (_, max_x) = stdscr.getmaxyx()
+        else:
+            max_x = sys.maxsize
+
         last_print_len = 0
 
         returncode = None
@@ -92,19 +101,22 @@ def parse_args():
     argparser = argparse.ArgumentParser("Fetches data not included in the repository by default")
     argparser.add_argument("data_set",
                            nargs='*',
-                           choices=LFS_DATASETS.keys(),
+                           choices=list(LFS_DATASETS.keys()),
                            help="Data set to fetch")
     args = argparser.parse_args()
     return args
 
 
-def main(stdscr):
+def main():
     args = parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     include_paths = [LFS_DATASETS[p] for p in args.data_set]
 
-    lfsPull(stdscr, include_paths)
+    if os.environ.get('TERM') is not None:
+        curses.wrapper(lfsPull, include_paths)
+    else:
+        lfsPull(None, include_paths)
 
 
 if __name__ == "__main__":
-    wrapper(main)
+    main()
