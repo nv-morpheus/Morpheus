@@ -80,6 +80,9 @@ mamba install -q -y -c local -c nvidia -c rapidsai -c conda-forge libcudf cudf
 gpuci_logger "Installing other dependencies"
 mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
+gpuci_logger "Final Conda Environment"
+conda list
+
 gpuci_logger "Check cmake & ninja"
 cmake --version
 ninja --version
