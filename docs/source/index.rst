@@ -41,7 +41,7 @@ Features
  * Real-Time Telemetry
     * Morpheus can receive rich, real-time network telemetry from every NVIDIA® BlueField® DPU-accelerated server in the
       data center without impacting performance. Integrating the framework into a third-party cybersecurity offering
-      brings the world’s best AI computing to communication networks.
+      brings the world's best AI computing to communication networks.
  * DPU-Connected
     * The NVIDIA BlueField Data Processing Unit (DPU) can be used as a telemetry agent for receiving critical data
       center communications into Morpheus. As an optional addition to Morpheus, BlueField DPU also extends static
@@ -77,7 +77,7 @@ Launch an interactive container to start using Morpheus:
 
 .. code-block:: console
 
-   $ ./docker/run_container_release.sh
+   $ docker run --rm -ti --net=host --gpus=all nvcr.io/nvidia/morpheus/morpheus:22.06-runtime bash
    (morpheus) root@958a683a8a26:/workspace# morpheus --help
    Usage: morpheus [OPTIONS] COMMAND [ARGS]...Options:
      --debug / --no-debug            [default: False]
@@ -120,7 +120,7 @@ To get started, first clone the Morpheus repo:
 .. code-block:: bash
 
    # Make sure to recurse the submodules
-   git clone https://github.com/NVIDIA/Morpheus.git
+   git clone https://github.com/NVIDIA/Morpheus.git morpheus
    # Change directory to the repo root
    cd morpheus
 
@@ -171,7 +171,7 @@ To get started, first clone the Morpheus repo:
 .. code-block:: bash
 
    # Make sure to recurse the submodules
-   git clone https://github.com/NVIDIA/Morpheus.git
+   git clone https://github.com/NVIDIA/Morpheus.git morpheus
    # Change directory to the repo root
    cd morpheus
 
@@ -183,9 +183,9 @@ Next, create a Conda environment and install the necessary dependencies.
 
 .. code-block:: bash
 
-   conda create -n morpheus -c conda-forge python=${PYTHON_VER}
+   conda install -c conda-forge mamba
+   conda create -n morpheus python=${PYTHON_VER}
    conda activate morpheus
-   conda install -c conda-forge python=${PYTHON_VER}
 
    # Build and install the cuDF conda package
    ./docker/build_conda_packages.sh libcudf cudf
