@@ -164,7 +164,6 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     conda clean -afy
 
 # Only copy specific files/folders over that are necessary for runtime
-COPY "./data" "./data"
 COPY "./docker" "./docker"
 COPY "./docs" "./docs"
 COPY "./examples" "./examples"
