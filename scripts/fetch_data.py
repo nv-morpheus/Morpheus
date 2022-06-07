@@ -71,9 +71,48 @@ def lfsPull(include_paths, poll_interval=0.1):
     return output
 
 
+def lfsCheck(list_all=False):
+    output = subprocess.check_output('git lfs ls-files', shell=True, universal_newlines=True)
+    output_lines = output.splitlines()
+
+    # Output lines are in the format of:
+    # <oid> [-|*] <file name>
+    # where '-' indicates a file pointer and '*' indicates a downloaded file
+    # https://github.com/git-lfs/git-lfs/blob/main/docs/man/git-lfs-ls-files.1.ronn
+
+    all_downloaded = True
+    for file_status in output_lines:
+        parts = file_status.split()
+        downloaded = parts[1] == '*'
+        if all_downloaded and not downloaded:
+            all_downloaded = False
+
+        if list_all:
+            # the join on 2: is needed to handle file names that contain a blank space
+            logging.info('%s - %s', ' '.join(parts[2:]), downloaded)
+
+    if not list_all:
+        logging.info(all_downloaded)
+
 def parse_args():
     argparser = argparse.ArgumentParser("Fetches data not included in the repository by default")
-    argparser.add_argument("data_set", nargs='*', choices=list(LFS_DATASETS.keys()), help="Data set to fetch")
+    subparsers = argparser.add_subparsers(title='Subcommands',
+                                          description='valid subcommands',
+                                          required=True,
+                                          dest='subcommand')
+
+    fetch_parser = subparsers.add_parser('fetch', help='Fetch datasets')
+    fetch_parser.add_argument("data_set", nargs='*', choices=list(LFS_DATASETS.keys()), help="Data set to fetch")
+
+    check_parser = subparsers.add_parser('check',
+                                         help='Check download status of large files. '
+                                         'Displays a True/False whether all files are downloaded.')
+    check_parser.add_argument("-l", "--list",
+                              action="store_true",
+                              default=False,
+                              dest='list_all',
+                              help="List all missing files")
+
     args = argparser.parse_args()
     return args
 
@@ -81,10 +120,12 @@ def parse_args():
 def main():
     args = parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    include_paths = [LFS_DATASETS[p] for p in args.data_set]
 
-    lfsPull(include_paths)
-
+    if args.subcommand == 'fetch':
+        include_paths = [LFS_DATASETS[p] for p in args.data_set]
+        lfsPull(include_paths)
+    else:
+        lfsCheck(list_all=args.list_all)
 
 if __name__ == "__main__":
     main()
