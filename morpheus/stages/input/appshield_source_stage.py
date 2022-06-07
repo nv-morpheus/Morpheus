@@ -110,6 +110,9 @@ class AppShieldSourceStage(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
+    def supports_cpp_node(self):
+        return False
+
     @staticmethod
     def fill_interested_cols(plugin_df: pd.DataFrame, cols_include: typing.List[str]):
         """
@@ -199,10 +202,7 @@ class AppShieldSourceStage(SingleOutputSource):
             with open(filepath, encoding=encoding) as file:
                 plugin_df = AppShieldSourceStage.read_file_to_df(file, cols_exclude)
         except JSONDecodeError as decode_error:
-            logger.error('Unable to load %s to dataframe with %s encoding : %s',
-                         filepath,
-                         encoding,
-                         decode_error)
+            logger.error('Unable to load %s to dataframe with %s encoding : %s', filepath, encoding, decode_error)
 
             encoding = encoding.lower()
             # To avoid retrying with utf-8, check if the given encoding is utf.

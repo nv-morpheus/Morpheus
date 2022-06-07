@@ -82,8 +82,7 @@ class AddScoresStage(SinglePortStage):
         """
         return (MultiResponseProbsMessage, )
 
-    @classmethod
-    def supports_cpp_node(cls):
+    def supports_cpp_node(self):
         # Enable support by default
         return True
 
@@ -104,7 +103,7 @@ class AddScoresStage(SinglePortStage):
     def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
-        if CppConfig.get_should_use_cpp():
+        if self._build_cpp_node():
             stream = neos.AddScoresStage(seg, self.unique_name, len(self._class_labels), self._idx2label)
         else:
             stream = seg.make_node(self.unique_name, self._add_labels)

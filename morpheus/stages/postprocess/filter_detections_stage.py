@@ -64,8 +64,7 @@ class FilterDetectionsStage(SinglePortStage):
         """
         return (MultiResponseProbsMessage, )
 
-    @classmethod
-    def supports_cpp_node(cls):
+    def supports_cpp_node(self):
         # Enable support by default
         return True
 
@@ -121,7 +120,7 @@ class FilterDetectionsStage(SinglePortStage):
 
             input.pipe(ops.map(self.filter), ops.flatten()).subscribe(output)
 
-        if CppConfig.get_should_use_cpp():
+        if self._build_cpp_node():
             stream = neos.FilterDetectionsStage(seg, self.unique_name, self._threshold)
         else:
             stream = seg.make_node_full(self.unique_name, flatten_fn)

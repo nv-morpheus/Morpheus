@@ -94,9 +94,12 @@ class FileSourceStage(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
+    def supports_cpp_node(self):
+        return True
+
     def _build_source(self, seg: neo.Segment) -> StreamPair:
 
-        if CppConfig.get_should_use_cpp():
+        if self._build_cpp_node():
             out_stream = neos.FileSourceStage(seg, self.unique_name, self._filename, self._repeat_count)
         else:
             out_stream = seg.make_source(self.unique_name, self._generate_frames())
