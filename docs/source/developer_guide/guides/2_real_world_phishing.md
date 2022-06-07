@@ -176,6 +176,10 @@ Let's ask Triton for some information about the `phishing-bert-onnx` model which
 
 ```shell
 curl "localhost:8000/v2/models/phishing-bert-onnx/config"
+```
+
+Output:
+```
 {"name":"phishing-bert-onnx","versions":["1"],"platform":"onnxruntime_onnx","inputs":[{"name":"input_ids","datatype":"INT64","shape":[-1,128]},{"name":"attention_mask","datatype":"INT64","shape":[-1,128]}],"outputs":[{"name":"output","datatype":"FP32","shape":[-1,2]}]}
 ```
 
@@ -185,6 +189,8 @@ From this information, we can see that the expected shape of the model inputs is
 Let's set up the paths for our input and output files. For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository. In a production deployment, it may be more prudent to replace our usage of environment variables with command-line flags or a dedicated configuration management library.
 
 ```python
+import os
+
 import morpheus
 
 root_dir = os.environ['MORPHEUS_ROOT']
@@ -203,14 +209,14 @@ To start, we will need to instantiate and set a few members of the `Config` clas
 config = Config()
 config.mode = PipelineModes.NLP
 
-config.num_threads = psutil.cpu_count()
+config.num_threads = os.cpu_count()
 config.feature_length = 128
 
 with open(labels_file) as fh:
     config.class_labels = [x.strip() for x in fh]
 ```
 
-First we set our pipeline mode to NLP. Next, we use the third-party [psutils](https://psutil.readthedocs.io/en/stable/) library to set the `num_threads` property to match the number of cores in our system.
+First we set our pipeline mode to NLP. Next, we set the `num_threads` property to match the number of cores in our system.
 
 The `feature_length` property needs to match the length of the model inputs, which we got from Triton in the previous section using the model's `/config` endpoint.
 
@@ -284,8 +290,6 @@ To explicitly set the output format we could specify the `file_type` argument to
 import logging
 import os
 
-import psutil
-
 import morpheus
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -300,7 +304,7 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logging import configure_logging
 
-from recipient_feature_stage import RecipientFeaturesStage
+from recipient_features_stage import RecipientFeaturesStage
 
 def run_pipeline():
     # Enable the default logger
@@ -321,7 +325,7 @@ def run_pipeline():
     config.mode = PipelineModes.NLP
 
     # Set the thread count to match our cpu count
-    config.num_threads = psutil.cpu_count()
+    config.num_threads = os.cpu_count()
     config.feature_length = 128
 
     with open(labels_file) as fh:
