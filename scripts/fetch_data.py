@@ -15,12 +15,9 @@
 # limitations under the License.
 
 import argparse
-import curses
 import logging
 import os
 import subprocess
-import sys
-import tempfile
 import time
 
 LFS_DATASETS = {
@@ -32,22 +29,7 @@ LFS_DATASETS = {
 }
 
 
-def print_line(stdscr, max_x, last_print_len, line):
-    print_len = min(len(line), max_x)
-    if stdscr is not None:
-        if print_len < last_print_len:
-            stdscr.move(0, 0)
-            stdscr.clrtoeol()
-
-        stdscr.addstr(0, 0, line, print_len)
-        stdscr.refresh()
-    else:
-        logging.info(line)
-
-    return print_len
-
-
-def lfsPull(stdscr, include_paths, poll_interval=0.1):
+def lfsPull(include_paths, poll_interval=0.1):
     """
     Performs a git lfs pull.
     This can take upwards of a minute to complete we will make use of the
@@ -55,46 +37,38 @@ def lfsPull(stdscr, include_paths, poll_interval=0.1):
     while the command is executing.
     """
     cmd = 'git lfs pull -I "{}"'.format(','.join(include_paths))
-    with tempfile.NamedTemporaryFile() as progress_file:
-        env = os.environ.copy()
-        env['GIT_LFS_PROGRESS'] = progress_file.name
-        popen = subprocess.Popen(cmd,
-                                 env=env,
-                                 shell=True,
-                                 universal_newlines=True,
-                                 stderr=subprocess.STDOUT,
-                                 stdout=subprocess.PIPE)
+    env = os.environ.copy()
+    env['GIT_LFS_FORCE_PROGRESS'] = '1'
+    popen = subprocess.Popen(cmd,
+                                env=env,
+                                shell=True,
+                                universal_newlines=True,
+                                stderr=subprocess.STDOUT,
+                                stdout=subprocess.PIPE)
 
-        if stdscr is not None:
-            (_, max_x) = stdscr.getmaxyx()
-        else:
-            max_x = sys.maxsize
+    outpipe = popen.stdout
+    returncode = None
+    all_out = []
+    while returncode is None:
+        time.sleep(poll_interval)
+        out = outpipe.readline()
+        if out.rstrip() != '':
+            logging.info(out.rstrip())
+            all_out.append(out)
 
-        last_print_len = 0
+        returncode = popen.poll()
 
-        returncode = None
-        while returncode is None:
-            time.sleep(poll_interval)
-            progress_lines = progress_file.readlines()
-            if len(progress_lines):
-                line = progress_lines[-1].decode("UTF8")
-                last_print_len = print_line(stdscr, max_x, last_print_len, line)
+    # Check if we have any additional output written to the pipe before our last poll
+    out = outpipe.read()
+    if out != '':
+        all_out.append(out)
 
-            returncode = popen.poll()
+    output = ''.join(all_out).rstrip("\n")
+    if returncode != 0:
+        logging.error(output)
+        raise subprocess.CalledProcessError(returncode=returncode, cmd=cmd, output=output)
 
-        # Check if we have any output
-        output = popen.stdout.read().rstrip("\n")
-
-        if returncode != 0:
-            raise subprocess.CalledProcessError(returncode=returncode, cmd=cmd, output=output)
-
-        logging.info('')
-        if output != '':
-            logging.info(output)
-        else:
-            logging.info("Done.")
-
-        return output
+    return output
 
 
 def parse_args():
@@ -112,10 +86,7 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     include_paths = [LFS_DATASETS[p] for p in args.data_set]
 
-    if os.environ.get('TERM') is not None:
-        curses.wrapper(lfsPull, include_paths)
-    else:
-        lfsPull(None, include_paths)
+    lfsPull(include_paths)
 
 
 if __name__ == "__main__":
