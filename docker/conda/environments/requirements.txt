@@ -16,3 +16,4 @@ torch==1.10.2+cu113
 tqdm
 tritonclient[all]
 typing-utils
+watchdog==2.1.8

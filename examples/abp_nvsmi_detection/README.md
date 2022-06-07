@@ -46,7 +46,7 @@ $ nvidia-smi dmon
 
 Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and you can see the SM% and Mem% increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurriences without needing additional information from the host machine.
 
-In this example we will be using the `morpheus/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
+In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
 
 ## Pipeline Architecture
 
@@ -102,7 +102,7 @@ morpheus --log_level=DEBUG \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-fil \
    `# 1st Stage: Read from file` \
-   from-file --filename=$MORPHEUS_ROOT/morpheus/data/nvsmi.jsonlines \
+   from-file --filename=$MORPHEUS_ROOT/examples/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
@@ -178,7 +178,7 @@ CPP Enabled: True
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/morpheus/data/nvsmi.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/examples/data/nvsmi.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
