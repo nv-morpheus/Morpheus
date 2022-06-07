@@ -32,12 +32,12 @@ LFS_DATASETS = {
 def lfsPull(include_paths, poll_interval=0.1):
     """
     Performs a git lfs pull.
-    This can take upwards of a minute to complete we will make use of the
-    GIT_LFS_PROGRESS hook to send progress to a file which we can then tail
-    while the command is executing.
     """
     cmd = 'git lfs pull -I "{}"'.format(','.join(include_paths))
     env = os.environ.copy()
+
+    # Instruct git lfs to not supress progress output. Fetching the models can
+    # take over a minute to complete, so we want our users to receive feedback.
     env['GIT_LFS_FORCE_PROGRESS'] = '1'
     popen = subprocess.Popen(cmd,
                                 env=env,
