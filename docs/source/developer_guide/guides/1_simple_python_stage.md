@@ -162,7 +162,7 @@ The output should look like this:
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=./examples/data/email.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=examples/data/email_with_addresses.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <pass-thru-1; PassThruStage(args=(), kwargs={})>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
@@ -194,7 +194,7 @@ def run_pipeline():
     configure_logging(log_level=logging.DEBUG)
 
     root_dir = os.environ['MORPHEUS_ROOT']
-    input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
+    input_file = os.path.join(root_dir, 'examples/data/email_with_addresses.jsonlines')
 
     config = Config()
 
