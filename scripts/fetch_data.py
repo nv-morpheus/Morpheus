@@ -40,11 +40,11 @@ def lfsPull(include_paths, poll_interval=0.1):
     # take over a minute to complete, so we want our users to receive feedback.
     env['GIT_LFS_FORCE_PROGRESS'] = '1'
     popen = subprocess.Popen(cmd,
-                                env=env,
-                                shell=True,
-                                universal_newlines=True,
-                                stderr=subprocess.STDOUT,
-                                stdout=subprocess.PIPE)
+                             env=env,
+                             shell=True,
+                             universal_newlines=True,
+                             stderr=subprocess.STDOUT,
+                             stdout=subprocess.PIPE)
 
     outpipe = popen.stdout
     returncode = None
@@ -73,10 +73,7 @@ def lfsPull(include_paths, poll_interval=0.1):
 
 def parse_args():
     argparser = argparse.ArgumentParser("Fetches data not included in the repository by default")
-    argparser.add_argument("data_set",
-                           nargs='*',
-                           choices=list(LFS_DATASETS.keys()),
-                           help="Data set to fetch")
+    argparser.add_argument("data_set", nargs='*', choices=list(LFS_DATASETS.keys()), help="Data set to fetch")
     args = argparser.parse_args()
     return args
 
