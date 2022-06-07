@@ -85,7 +85,7 @@ The Morpheus reference models can be found in the [Morpheus](https://github.com/
 ```bash
 git clone https://github.com/NVIDIA/Morpheus.git morpheus
 cd morpheus
-scripts/fetch_data.py models
+scripts/fetch_data.py fetch models
 ```
 
 ## Publish reference models to MLflow

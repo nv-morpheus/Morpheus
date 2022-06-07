@@ -66,8 +66,8 @@ cd $MORPHEUS_ROOT
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
 By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Usage of the script is as follows:
-```
-scripts/fetch_data.py <dataset> [<dataset>...]
+```bash
+scripts/fetch_data.py fetch <dataset> [<dataset>...]
 ```
 
 At time of writing the defined datasets are:
@@ -79,17 +79,17 @@ At time of writing the defined datasets are:
 
 To download just the examples and models:
 ```bash
-scripts/fetch_data.py examples models
+scripts/fetch_data.py fetch examples models
 ```
 
 To download the data needed for unittests:
 ```bash
-scripts/fetch_data.py tests validation
+scripts/fetch_data.py fetch tests validation
 ```
 
 If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command.
 ```bash
-scripts/fetch_data.py all
+scripts/fetch_data.py fetch all
 ```
 
 ### Build in Docker Container
