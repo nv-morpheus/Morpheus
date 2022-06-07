@@ -74,6 +74,7 @@ installed. Morpheus comes with a tool to assist with this:
 
    $ morpheus tools autocomplete install
    bash completion installed in ~/.bash_completion
+   $ source ~/.bash_completion
 
 After autocomplete has been installed, ``[TAB]`` can be used to show all commands, options and arguments when building
 pipelines via the CLI:
