@@ -94,6 +94,7 @@ def lfsCheck(list_all=False):
     if not list_all:
         logging.info(all_downloaded)
 
+
 def parse_args():
     argparser = argparse.ArgumentParser("Fetches data not included in the repository by default")
     subparsers = argparser.add_subparsers(title='Subcommands',
@@ -126,6 +127,7 @@ def main():
         lfsPull(include_paths)
     else:
         lfsCheck(list_all=args.list_all)
+
 
 if __name__ == "__main__":
     main()
