@@ -29,7 +29,7 @@ from utils import TEST_DIRS
 
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_pipe(tmp_path, config, output_type):
-    input_file = os.path.join(TEST_DIRS.expeced_data_dir, "filter_probs.csv")
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
     pipe = LinearPipeline(config)
@@ -60,7 +60,7 @@ def test_to_file_no_path(tmp_path, config):
     """
     Test to ensure issue #48 is fixed
     """
-    input_file = os.path.join(TEST_DIRS.expeced_data_dir, "filter_probs.csv")
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = "test.csv"
 
     assert os.path.realpath(os.curdir) == tmp_path.as_posix()
