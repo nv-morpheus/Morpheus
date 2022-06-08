@@ -19,7 +19,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai-driver:22.04-cuda11.5-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai-driver:22.04-cuda11.5-devel-centos7-py3.8'
                             label 'cpu'
                         }
                     }
@@ -43,7 +43,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8'
                             label 'driver-495'
                             args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
@@ -76,7 +76,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8'
                             label 'driver-495'
                             args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
@@ -107,7 +107,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8'
                             label 'driver-495'
                             args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
