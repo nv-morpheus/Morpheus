@@ -51,10 +51,10 @@ class PreprocessingRWStage(PreprocessBaseStage):
         self._sliding_window = sliding_window
         self._features_len = len(self._feature_columns)
 
-        #Stateful member to hold unprocessed snapshots.
+        # Stateful member to hold unprocessed snapshots.
         self._snapshot_dict: typing.Dict[str, typing.List[SnapshotData]] = {}
 
-        #Padding data to map inference response with input messages.
+        # Padding data to map inference response with input messages.
         self._padding_data = [0 for i in range(self._features_len * sliding_window)]
 
     @property
@@ -117,11 +117,11 @@ class PreprocessingRWStage(PreprocessBaseStage):
 
     def _pre_process_batch(self, x: MultiMessage) -> MultiInferenceFILMessage:
         """
-        This function is invoked for every source_pid_process. 
-        It looks for any pending snapshots related to the source and pid process in the memory. 
-        If there are any unprocessed snapshots in the memory, they are merged with existing snapshots, 
-        and a series of snapshot features generatd based on the specified sliding window, 
-        followed by the creation of an inference memory message. 
+        This function is invoked for every source_pid_process.
+        It looks for any pending snapshots related to the source and pid process in the memory.
+        If there are any unprocessed snapshots in the memory, they are merged with existing snapshots,
+        and a series of snapshot features generatd based on the specified sliding window,
+        followed by the creation of an inference memory message.
         Current run's unprocessed snapshots will be rolled over to the next.
         """
 
@@ -149,8 +149,8 @@ class PreprocessingRWStage(PreprocessBaseStage):
         curr_and_prev_snapshots_size = len(snapshot_df)
 
         # Make a dummy set of data and a dummy sequence.
-        # When the number of snapshots received for the pid process is less than the sliding window supplied, this is used.
-        # For each input message, this is used to construct inference output.
+        # When the number of snapshots received for the pid process is less than the sliding window supplied,
+        # this is used. For each input message, this is used to construct inference output.
         data = [self._padding_data] * curr_snapshots_size
         sequence = ["dummy"] * curr_snapshots_size
 

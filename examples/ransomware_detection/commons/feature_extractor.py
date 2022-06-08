@@ -44,7 +44,8 @@ class FeatureExtractor():
 
     def _count_double_extension(self, file_paths: typing.List[str]):
         """
-        This function counts the amount of double extensions to a common type files and return the largest double extension.
+        This function counts the amount of double extensions to a common type files and
+        return the largest double extension.
         """
 
         count = 0
@@ -87,9 +88,9 @@ class FeatureExtractor():
 
     def _extract_threadlist(self, x: pd.DataFrame):
         """
-        # Count amount of unique states and wait reasons and thread with state and waitreason: 
-        # '2'-'Running' 
-        # '9'-'WrPageIn' 
+        # Count amount of unique states and wait reasons and thread with state and waitreason:
+        # '2'-'Running'
+        # '9'-'WrPageIn'
         # '13'-'WrUserRequest'
         # '31'-'WrDispatchInt'
         """
@@ -175,11 +176,12 @@ class FeatureExtractor():
 
     def _extract_vadinfo(self, x: pd.DataFrame):
         """
-        This function extracts vadinfo features about commit charged, vad/vads, private memory and memory protection type.
+        This function extracts vadinfo features about commit charged, vad/vads and
+        private memory and memory protection type.
         """
 
-        # CommitCharge - is the total amount of virtual memory of all processes that must be backed by either physical memory
-        # or the page file
+        # CommitCharge - is the total amount of virtual memory of all processes that
+        # must be backed by either physical memory or the page file
         # vad - virtual address descriptor
         # vads - virtual address descriptor short
         # private memory - this field refers to committed regions that cannot be shared with other processes.
