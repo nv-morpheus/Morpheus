@@ -18,7 +18,7 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="gpuci/miniforge-cuda"
-ARG CUDA_VER=11.4
+ARG CUDA_VER=11.5
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 
@@ -29,7 +29,7 @@ FROM ${FROM_IMAGE}:${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
 # Required arguments
 ARG IMAGE_TYPE=base
 ARG RAPIDS_CHANNEL=rapidsai-nightly
-ARG RAPIDS_VER=21.10
+ARG RAPIDS_VER=22.04
 ARG PYTHON_VER=3.8
 ARG CONDA_CHANNEL=rapidsai
 
@@ -63,32 +63,12 @@ RUN conda config --set ssl_verify false &&\
     /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
     # conda clean -afy
 
-# ============ Stage: conda_bld_deps ============
-# Now build the conda dependency packages
-FROM base as conda_bld_deps
-
-ARG CONDA_CHANNEL_ALIAS
-
-# COPY the files necessary to build the cudf package. Dont copy more otherwise the cache will get invalided often
-COPY ci/conda/recipes/cudf/ ./ci/conda/recipes/cudf/
-COPY ci/conda/recipes/libcudf/ ./ci/conda/recipes/libcudf/
-COPY ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
-
-RUN --mount=type=ssh \
-    --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
-    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
-    source activate base &&\
-    # Run with --no-test for now until we can build with builtkit and default nvidia runtime
-    # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
-    MORPHEUS_ROOT=/workspace CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
-
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
 FROM base as conda_env
 
 # Create a base environment
-RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
-    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Create the environment and install as little dependencies as possible
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n morpheus -c conda-forge python=${PYTHON_VER} &&\
     # Clean and activate
@@ -115,12 +95,11 @@ FROM conda_env as conda_env_dev
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
-COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 COPY docker/conda/environments/cuda${CUDA_VER}_dev.yml ./docker/conda/environments/
+COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 
 # Update the morpheus environment
-RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
-    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"} &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_dev.yml &&\
@@ -131,15 +110,14 @@ RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/op
 
 # ============ Stage: conda_bld_morpheus ============
 # Now build the morpheus conda package
-FROM conda_bld_deps as conda_bld_morpheus
+FROM base as conda_bld_morpheus
 
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the source
 COPY . ./
 
-RUN --mount=type=ssh \
-    --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
+RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
     # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors

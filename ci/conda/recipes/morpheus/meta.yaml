@@ -16,9 +16,9 @@
 {% set version = environ.get('GIT_VERSION', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
 {% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
 {% set py_version=environ.get('CONDA_PY', '3.8') %}
-{% set cuda_version='.'.join(environ.get('CUDA', '11.4').split('.')[:2]) %}
+{% set cuda_version='.'.join(environ.get('CUDA', '11.5').split('.')[:2]) %}
 {% set cuda_major=cuda_version.split('.')[0] %}
-{% set rapids_version = "21.10" %}
+{% set rapids_version = "22.04" %}
 
 package:
   name: morpheus-split
@@ -40,7 +40,7 @@ outputs:
         - ccache
         - cmake=3.22
         - cudatoolkit {{ cuda_version }}.*
-        - cudf {{ rapids_version }} *morpheus
+        - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - librdkafka=1.6.1
         - neo {{ minor_version }}.*
@@ -86,7 +86,7 @@ outputs:
         - ninja
       host:
         - cudatoolkit {{ cuda_version }}.*
-        - cudf {{ rapids_version }} *morpheus
+        - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - librdkafka=1.6.1
         - neo {{ minor_version }}
