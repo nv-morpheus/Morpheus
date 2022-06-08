@@ -113,6 +113,9 @@ class CloudTrailSourceStage(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
+    def supports_cpp_node(self):
+        return False
+
     def get_match_pattern(self, glob_split):
         """Return a file match pattern"""
         dir_to_watch = os.path.dirname(glob_split[0])
