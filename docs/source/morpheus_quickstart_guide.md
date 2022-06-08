@@ -187,24 +187,24 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 ```
 
 ### Install Morpheus SDK Client
-Run the following commands to pull and install the Morpheus CLI on your instance:
+Run the following command to pull the Morpheus SDK Client chart on to your instance:
 
 ```bash
 $ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
+**Note**: For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
+
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
-               --set sdk.args="<YOUR_WORKFLOW_RUN_COMMAND>" \
+               --set sdk.args="<REPLACE_RUN_PIPELINE_COMMAND_HERE>" \
                --namespace $NAMESPACE \
                <YOUR_RELEASE_NAME> \
                morpheus-sdk-client
 ```
 
-**Note**: The install command references the run pipeline command argument, provided in the [example workflows](#example-workflows) below.
-
 #### Morpheus SDK Client in Sleep Mode
-Using the default `sdk.args` from the charts, Morpheus SDK Client would be put into sleep mode.
+Install the Morpheus SDK client pod in sleep mode to copy its sample datasets and models from the container to a shared location that other pods can access. If no `sdk.args` is supplied, the default value `/bin/sleep infinity` from the chart is used in the following command.
 
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -559,7 +559,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       pipeline-nlp \
         --model_seq_length=128 \
         --labels_file=./morpheus/data/labels_phishing.txt \
-        from-file --filename=./morpheus/data/email.jsonlines \
+        from-file --filename=./examples/data/email.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
         preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
@@ -635,7 +635,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --model_max_batch_size=32 \
       pipeline-nlp \
         --model_seq_length=256 \
-        from-file --filename=./morpheus/data/pcap_dump.jsonlines \
+        from-file --filename=./examples/data/pcap_dump.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
         preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
@@ -685,7 +685,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/morpheus/data/pcap_dump.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/examples/data/pcap_dump.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
@@ -708,7 +708,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         --model_max_batch_size=64 \
         --use_cpp=True \
         pipeline-fil \
-          from-file --filename=./morpheus/data/nvsmi.jsonlines \
+          from-file --filename=./examples/data/nvsmi.jsonlines \
           monitor --description 'FromFile Rate' --smoothing=0.001 \
           deserialize \
           preprocess \
@@ -754,7 +754,7 @@ Make sure you create input and output Kafka topics before you start the pipeline
 $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
-       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/morpheus/data/nvsmi.jsonlines>
+       <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/examples/data/nvsmi.jsonlines>
 ```
 
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.

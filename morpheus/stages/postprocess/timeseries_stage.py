@@ -436,6 +436,9 @@ class TimeSeriesStage(SinglePortStage):
         """
         return (MultiResponseMessage, )
 
+    def supports_cpp_node(self):
+        return False
+
     def _call_timeseries_user(self, x: MultiResponseAEMessage):
 
         if (x.user_id not in self._timeseries_per_user):

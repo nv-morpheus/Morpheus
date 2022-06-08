@@ -27,7 +27,6 @@ except ImportError:
     raise
 
 
-
 def gen_engine(c: ConfigOnnxToTRT):
     """
     This class converts an Onnx model to a TRT model.

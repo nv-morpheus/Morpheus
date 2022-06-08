@@ -48,8 +48,8 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
     def _post_build_single(self, seg: neo.Segment, out_pair: StreamPair) -> StreamPair:
 
-        # Check if we are debug and should log timestamps
-        if (self._config.debug and self._should_log_timestamps):
+        # Check if we are debug and should log timestamps. Disable for C++ nodes
+        if (self._config.debug and self._should_log_timestamps and not self._build_cpp_node()):
             # Cache the name property. Removes dependency on self in callback
             cached_name = self.name
 
@@ -60,6 +60,9 @@ class MultiMessageStage(_pipeline.SinglePortStage):
                 curr_time = _get_time_ms()
 
                 x.set_meta("_ts_" + cached_name, curr_time)
+
+                # Must return the original object
+                return x
 
             # Only have one port
             post_ts = seg.make_node(self.unique_name + "-ts", post_timestamps)
