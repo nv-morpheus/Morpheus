@@ -29,6 +29,19 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
 class PreprocessingRWStage(PreprocessBaseStage):
+    """
+    This class extends PreprocessBaseStage and process the features that aree derived from Appshield data.
+    It also arranges the snapshots of Appshield data in a sequential order using provided sliding window.
+
+    Parameters
+    ----------
+    c : morpheus.config.Config
+        Pipeline configuration instance
+    feature_columns : typing.List[str]
+        List of features needed to be extracted.
+    sliding_window: int, default = 3
+        Window size to arrange the sanpshots in seequential order.
+    """
 
     def __init__(self, c: Config, feature_columns: typing.List[str], sliding_window: int = 3):
 
@@ -37,9 +50,11 @@ class PreprocessingRWStage(PreprocessBaseStage):
         self._feature_columns = feature_columns
         self._sliding_window = sliding_window
         self._features_len = len(self._feature_columns)
-        # Stateful member to hold unprocessed snapshots.
+
+        #Stateful member to hold unprocessed snapshots.
         self._snapshot_dict: typing.Dict[str, typing.List[SnapshotData]] = {}
-        # Padding data to map inference response with input messages.
+
+        #Padding data to map inference response with input messages.
         self._padding_data = [0 for i in range(self._features_len * sliding_window)]
 
     @property

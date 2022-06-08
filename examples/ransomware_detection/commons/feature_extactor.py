@@ -15,33 +15,25 @@
 import typing
 import pandas as pd
 from commons.data_models import FeatureConfig, ProtectionData
+from commons.feature_constants import FeatureConstants as fc
 
 
 class FeatureExtractor():
+    """
+    This is helper class to extract reequired features for ransomware detection pipeline.
 
-    FILE_EXTN_EXP = '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL'
+    Parameters
+    ----------
+    c : commons.data_models.FeatureConfig
+        Feature configuration instance
+    """
 
-    FULL_MEMORY_ADDRESS = 2147483647
+    def __init__(self) -> None:
+        self._config = None
+        self._features = None
 
-    PROTECTIONS = {
-        'PAGE_EXECUTE_READWRITE ': 'page_execute_readwrite',
-        'PAGE_NOACCESS ': 'page_noaccess',
-        'PAGE_EXECUTE_WRITECOPY ': 'page_execute_writecopy',
-        'PAGE_READONLY ': 'page_readonly',
-        'PAGE_READWRITE ': 'page_readwrite'
-    }
-
-    WAIT_REASON_LIST = ['9', '31', '13']
-
-    HANDLES_TYPES = [('Directory', 'directory'), ('TpWorkerFactory', 'tpworkerfactory'),
-                     ('WaitCompletionPacket', 'waitcompletionpacket'), ('Section', 'section'), ('File', 'file'),
-                     ('Mutant', 'mutant'), ('Event', 'event'), ('Semaphore', 'semaphore'), ('Key', 'key'),
-                     ('IoCompletion', 'iocompletion'), ('ALPC Port', 'alpc port'), ('Thread', 'thread')]
-
-    HANDLES_TYPES_2 = [('IoCompletionReserve', 'iocompletionreserve'), ('Desktop', 'desktop'),
-                       ('EtwRegistration', 'etwregistration'), ('WindowStation', 'windowstation')]
-
-    def _filter_by_pid_process(plugin_dict, pid_process):
+    def _filter_by_pid_process(self, plugin_dict: typing.Dict[str, pd.DataFrame],
+                               pid_process: str) -> typing.Dict[str, pd.DataFrame]:
         """
         Filter plugins data by pid_process.
         """
@@ -55,8 +47,7 @@ class FeatureExtractor():
 
         return filtered_plugin_dict
 
-    def _count_double_extension(file_paths: typing.List[str], config: FeatureConfig,
-                                features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _count_double_extension(self, file_paths: typing.List[str]):
         """
         Count the amount of double extensions to a common type files and return the largest double extension.
         """
@@ -74,38 +65,32 @@ class FeatureExtractor():
 
                 for word_dot in split_dot:
 
-                    if word_dot in config.file_extns:
-
+                    if word_dot in self._config.file_extns:
                         count += 1
-
                         index_word_dot = file_split_dot.index(word_dot)
                         ext_word_dot = ".".join(file_split_dot[index_word_dot + 1:])
-
                         if len(ext_word_dot) > max_ext_word_dot:
                             max_ext_word_dot = len(ext_word_dot)
 
                         break
 
-        features['count_double_extension_count_handles'] = count
-        features['double_extension_len_handles'] = max_ext_word_dot
+        self._features['count_double_extension_count_handles'] = count
+        self._features['double_extension_len_handles'] = max_ext_word_dot
 
-        return features
-
-    def _extract_env(plugin_df: pd.DataFrame, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_envars(self, x: pd.DataFrame):
         """
         Return if a process has 'PATHEXT' environment variable in extended version.
         """
 
-        plugin_df = plugin_df[plugin_df.Variable.str.contains('PATHEXT', regex=False)]
-        plugin_df = plugin_df[plugin_df.Value.str.contains(FeatureExtractor.FILE_EXTN_EXP, regex=False)]
+        x = x[x.Variable.str.contains('PATHEXT', regex=False)]
+        x = x[x.Value.str.contains(fc.FILE_EXTN_EXP, regex=False)]
 
-        if not plugin_df.empty:
-            features['envirs_pathext'] = 1
-        features['envars_df_count'] = len(plugin_df)
+        if not x.empty:
+            self._features['envirs_pathext'] = 1
 
-        return features
+        self._features['envars_df_count'] = len(x)
 
-    def _extract_threadlist(plugin_df: pd.DataFrame, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_threadlist(self, x: pd.DataFrame):
         """
         # Count amount of unique states and wait reasons and thread with state and waitreason: 
         # '2'-'Running' 
@@ -114,22 +99,20 @@ class FeatureExtractor():
         # '31'-'WrDispatchInt'
         """
 
-        plugin_state2 = plugin_df[plugin_df.State == '2']
-        plugin_state_unique = plugin_df.State.unique()
-        plugin_waitreason_unique = plugin_df.WaitReason.unique()
+        x_state2 = x[x.State == '2']
+        x_state_unique = x.State.unique()
+        x_waitreason_unique = x.WaitReason.unique()
 
-        features['threadlist_df_count'] = len(plugin_df)
-        features['threadlist_df_state_2'] = len(plugin_state2)
-        features['threadlist_df_state_unique'] = len(plugin_state_unique)
-        features['threadlist_df_wait_reason_unique'] = len(plugin_waitreason_unique)
+        self._features['threadlist_df_count'] = len(x)
+        self._features['threadlist_df_state_2'] = len(x_state2)
+        self._features['threadlist_df_state_unique'] = len(x_state_unique)
+        self._features['threadlist_df_wait_reason_unique'] = len(x_waitreason_unique)
 
-        for wait_reason in FeatureExtractor.WAIT_REASON_LIST:
-            wait_reason_df = plugin_df[plugin_df.WaitReason == wait_reason]
-            features['threadlist_df_wait_reason_' + wait_reason] = len(wait_reason_df)
+        for wait_reason in fc.WAIT_REASON_LIST:
+            wait_reason_df = x[x.WaitReason == wait_reason]
+            self._features['threadlist_df_wait_reason_' + wait_reason] = len(wait_reason_df)
 
-        return features
-
-    def _extract_vad_cc(cc: pd.Series, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_vad_cc(self, cc: pd.Series):
         """
         Extract 'vad' specific commit charge features.
         """
@@ -138,13 +121,11 @@ class FeatureExtractor():
 
         # Calculate mean, max, sum of commit charged of vad
         if cc_size:
-            features['get_commit_charge_mean_vad'] = cc.mean()
-            features['get_commit_charge_max_vad'] = cc.max()
-            features['get_commit_charge_sum_vad'] = cc.sum()
+            self._features['get_commit_charge_mean_vad'] = cc.mean()
+            self._features['get_commit_charge_max_vad'] = cc.max()
+            self._features['get_commit_charge_sum_vad'] = cc.sum()
 
-        return features
-
-    def _extract_cc(cc: pd.Series, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_cc(self, cc: pd.Series):
         """
         Extract commit charge features.
         """
@@ -153,14 +134,12 @@ class FeatureExtractor():
 
         # Calculate mean, max, sum, len of the commit charged
         if cc_size:
-            features['get_commit_charge_mean'] = cc.mean()
-            features['get_commit_charge_max'] = cc.max()
-            features['get_commit_charge_sum'] = cc.sum()
-            features['get_commit_charge_len'] = cc_size
+            self._features['get_commit_charge_mean'] = cc.mean()
+            self._features['get_commit_charge_max'] = cc.max()
+            self._features['get_commit_charge_sum'] = cc.sum()
+            self._features['get_commit_charge_len'] = cc_size
 
-        return features
-
-    def _extract_vads_cc(cc: pd.Series, vads_cc: pd.Series, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_vads_cc(self, cc: pd.Series, vads_cc: pd.Series):
         """
         Extract 'vads' commit charge features.
         """
@@ -169,29 +148,25 @@ class FeatureExtractor():
 
         # Calculate min of commit charged of vads
         if cc_size:
-            features['get_commit_charge_min_vads'] = cc.min()
+            self._features['get_commit_charge_min_vads'] = cc.min()
 
         # Calculate the amount of entire memory commit charged of vads
-        cc = vads_cc[vads_cc == FeatureExtractor.FULL_MEMORY_ADDRESS]
-        features['count_entire_commit_charge_vads'] = len(cc)
+        cc = vads_cc[vads_cc == fc.FULL_MEMORY_ADDRESS]
+        self._features['count_entire_commit_charge_vads'] = len(cc)
 
-        return features
-
-    def _extract_cc_vad_page_noaccess(cc: pd.Series, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_cc_vad_page_noaccess(self, cc: pd.Series):
         """
         Extact 'vad' commit charge features specific to 'page_noaccess' protection.
         """
 
-        cc = cc[cc < FeatureExtractor.FULL_MEMORY_ADDRESS]
+        cc = cc[cc < fc.FULL_MEMORY_ADDRESS]
 
         # Calculate min and mean of commit charged of vad memory with PAGE_NOACCESS protection
         if not cc.empty:
-            features['get_commit_charge_min_vad_page_noaccess'] = cc.min()
-            features['get_commit_charge_mean_vad_page_noaccess'] = cc.mean()
+            self._features['get_commit_charge_min_vad_page_noaccess'] = cc.min()
+            self._features['get_commit_charge_mean_vad_page_noaccess'] = cc.mean()
 
-        return features
-
-    def _extract_unique_file_extns(x: pd.DataFrame, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_unique_file_extns(self, x: pd.DataFrame):
         """
         Extract unique file extenstion featurs.
         """
@@ -201,11 +176,9 @@ class FeatureExtractor():
         # Count the amount of unique file extensions
         if not vadinfo_files.empty:
             unique_file_extns = vadinfo_files.str.lower().str.extract('(\.[^.]*)$')[0].dropna().unique()
-            features['get_count_unique_extensions'] = len(unique_file_extns)
+            self._features['get_count_unique_extensions'] = len(unique_file_extns)
 
-        return features
-
-    def _extract_vadinfo(x: pd.DataFrame, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_vadinfo(self, x: pd.DataFrame):
         """
         Calculate vadinfo features about commit charged, vad/vads, private memory and memory protection type.
         """
@@ -217,8 +190,8 @@ class FeatureExtractor():
         # private memory - this field refers to committed regions that cannot be shared with other processes.
 
         # Calculate the commit charges of vad and vads
-        vad_cc = x[x.Tag == 'Vad '].CommitCharge
-        vads_cc = x[x.Tag == 'VadS'].CommitCharge
+        vad_cc = x[x.Tag == fc.VAD].CommitCharge
+        vads_cc = x[x.Tag == fc.VADS].CommitCharge
 
         vadinfo_size = len(vad_cc)
         vadsinfo_size = len(vads_cc)
@@ -229,49 +202,52 @@ class FeatureExtractor():
         vad_private_memory_len = len(private_memory_one_df)
 
         # Count vad, vads and private memory amount
-        features['vad_count'] = vadinfo_size
-        features['vads_count'] = vadsinfo_size
-        features['count_private_memory'] = len(private_memory_one_df)
+        self._features['vad_count'] = vadinfo_size
+        self._features['vads_count'] = vadsinfo_size
+        self._features['count_private_memory'] = len(private_memory_one_df)
 
         # Calculate the ratio of vad and private memory in reduce time delay bias
         if vad_size:
-            features['ratio_private_memory'] = (vad_private_memory_len / vad_size)
-            features['vad_ratio'] = (vadinfo_size / vad_size)
+            self._features['ratio_private_memory'] = (vad_private_memory_len / vad_size)
+            self._features['vad_ratio'] = (vadinfo_size / vad_size)
 
-        cc = x[x.CommitCharge < FeatureExtractor.FULL_MEMORY_ADDRESS].CommitCharge
-        features = FeatureExtractor._extract_cc(cc, features)
+        cc = x[x.CommitCharge < fc.FULL_MEMORY_ADDRESS].CommitCharge
+        self._extract_cc(cc)
 
         # calculating the amount of commit charged of vad
-        cc = vad_cc[vad_cc < FeatureExtractor.FULL_MEMORY_ADDRESS]
-        features = FeatureExtractor._extract_vad_cc(cc, features)
+        cc = vad_cc[vad_cc < fc.FULL_MEMORY_ADDRESS]
+        self._extract_vad_cc(cc)
 
         # Calculate the amount of commit charged of vads
-        cc = vads_cc[vads_cc < FeatureExtractor.FULL_MEMORY_ADDRESS]
-        features = FeatureExtractor._extract_vads_cc(cc, vads_cc, features)
+        cc = vads_cc[vads_cc < fc.FULL_MEMORY_ADDRESS]
+        self._extract_vads_cc(cc, vads_cc)
 
         # calculating commit charged of memory with PAGE_NOACCESS protection
-        cc = x[(x.Protection == 'PAGE_NOACCESS ') & (x.Tag == 'Vad ')].CommitCharge
-        features = FeatureExtractor._extract_cc_vad_page_noaccess(cc, features)
+        cc = x[(x.Protection == fc.PAGE_NOACCESS) & (x.Tag == fc.VAD)].CommitCharge
+        self._extract_cc_vad_page_noaccess(cc)
 
-        features = FeatureExtractor._extract_protections(x, features, vad_size, vadsinfo_size, vadinfo_size)
+        self._extract_protections(x, vad_size, vadsinfo_size, vadinfo_size)
 
-        features = FeatureExtractor._extract_unique_file_extns(x, features)
+        self._extract_unique_file_extns(x)
 
-        return features
-
-    def _get_protection_data(x, protection, vadinfo_df_size, vadsinfo_size, vadinfo_size):
+    def _get_protection_data(self,
+                             x: pd.DataFrame,
+                             protection: str,
+                             vadinfo_df_size: int,
+                             vadsinfo_size: int,
+                             vadinfo_size: int):
         """
         Create protection data instance.
         """
 
         protection_df = x[x.Protection == protection]
         cc = protection_df.CommitCharge
-        cc = cc[cc < FeatureExtractor.FULL_MEMORY_ADDRESS]
-        vads_protection_size = len(protection_df[protection_df.Tag == 'VadS'])
-        vad_protection_size = len(protection_df[protection_df.Tag == 'Vad '])
+        cc = cc[cc < fc.FULL_MEMORY_ADDRESS]
+        vads_protection_size = len(protection_df[protection_df.Tag == fc.VADS])
+        vad_protection_size = len(protection_df[protection_df.Tag == fc.VAD])
         commit_charge_size = len(cc)
         protection_df_size = len(protection_df)
-        protection_id = FeatureExtractor.PROTECTIONS[protection]
+        protection_id = fc.PROTECTIONS[protection]
 
         p_data = ProtectionData(cc,
                                 vads_protection_size,
@@ -285,7 +261,7 @@ class FeatureExtractor():
 
         return p_data
 
-    def _page_execute_readwrite(x: ProtectionData, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _page_execute_readwrite(self, x: ProtectionData):
         """
         This function extracts 'page_execute_readwrite' protection reelated features.
         """
@@ -293,25 +269,23 @@ class FeatureExtractor():
         cc = x.commit_charges
 
         if x.commit_charge_size:
-            features['get_commit_charge_mean_page_execute_readwrite'] = cc.mean()
-            features['get_commit_charge_min_page_execute_readwrite'] = cc.min()
-            features['get_commit_charge_max_page_execute_readwrite'] = cc.max()
-            features['get_commit_charge_sum_page_execute_readwrite'] = cc.sum()
-            features['get_commit_charge_std_page_execute_readwrite'] = cc.std(ddof=0)
+            self._features['get_commit_charge_mean_page_execute_readwrite'] = cc.mean()
+            self._features['get_commit_charge_min_page_execute_readwrite'] = cc.min()
+            self._features['get_commit_charge_max_page_execute_readwrite'] = cc.max()
+            self._features['get_commit_charge_sum_page_execute_readwrite'] = cc.sum()
+            self._features['get_commit_charge_std_page_execute_readwrite'] = cc.std(ddof=0)
 
         # Calculate amount and ratio of memory pages with 'PAGE_EXECUTE_READWRITE protection
         if x.protection_df_size:
-            features['page_execute_readwrite_count'] = x.protection_df_size
-            features['page_execute_readwrite_ratio'] = (x.protection_df_size / x.vadinfo_df_size)
+            self._features['page_execute_readwrite_count'] = x.protection_df_size
+            self._features['page_execute_readwrite_ratio'] = (x.protection_df_size / x.vadinfo_df_size)
 
         if x.vads_protection_size:
             # Calculate amount and ratio of vads memory pages with 'PAGE_EXECUTE_READWRITE' protection
-            features['page_execute_readwrite_vads_count'] = x.vads_protection_size
-            features['page_execute_readwrite_vads_ratio'] = (x.vads_protection_size / x.vadsinfo_size)
+            self._features['page_execute_readwrite_vads_count'] = x.vads_protection_size
+            self._features['page_execute_readwrite_vads_ratio'] = (x.vads_protection_size / x.vadsinfo_size)
 
-        return features
-
-    def _page_noaccess(x: ProtectionData, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _page_noaccess(self, x: ProtectionData):
         """
         This function extracts 'page_noaccess' protection reelated features.
         """
@@ -319,29 +293,27 @@ class FeatureExtractor():
         cc = x.commit_charges
 
         if x.commit_charge_size:
-            features['get_commit_charge_mean_page_no_access'] = cc.mean()
-            features['get_commit_charge_min_page_no_access'] = cc.min()
-            features['get_commit_charge_max_page_no_access'] = cc.max()
-            features['get_commit_charge_sum_page_no_access'] = cc.sum()
+            self._features['get_commit_charge_mean_page_no_access'] = cc.mean()
+            self._features['get_commit_charge_min_page_no_access'] = cc.min()
+            self._features['get_commit_charge_max_page_no_access'] = cc.max()
+            self._features['get_commit_charge_sum_page_no_access'] = cc.sum()
 
         # Calculate amount and ratio of memory pages with 'PAGE_NOACCESS' protection
         if x.protection_df_size:
-            features['page_no_access_count'] = x.protection_df_size
-            features['page_no_access_ratio'] = (x.protection_df_size / x.vadinfo_df_size)
+            self._features['page_no_access_count'] = x.protection_df_size
+            self._features['page_no_access_ratio'] = (x.protection_df_size / x.vadinfo_df_size)
 
         # Calculate amount and ratio of vad and vads memory pages with 'PAGE_NOACCESS' protection
-        features['page_no_access_vads_count'] = x.vads_protection_size
-        features['page_no_access_vad_count'] = x.vad_protection_size
+        self._features['page_no_access_vads_count'] = x.vads_protection_size
+        self._features['page_no_access_vad_count'] = x.vad_protection_size
 
         if x.vads_protection_size:
-            features['page_no_access_vads_ratio'] = (x.vads_protection_size / x.vadsinfo_size)
+            self._features['page_no_access_vads_ratio'] = (x.vads_protection_size / x.vadsinfo_size)
 
         if x.vad_protection_size:
-            features['page_no_access_vad_ratio'] = (x.vad_protection_size / x.vadinfo_size)
+            self._features['page_no_access_vad_ratio'] = (x.vad_protection_size / x.vadinfo_size)
 
-        return features
-
-    def _page_execute_writecopy(x: ProtectionData, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _page_execute_writecopy(self, x: ProtectionData):
         """
         This function extracts 'page_execute_writecopy' protection reelated features.
         """
@@ -350,17 +322,15 @@ class FeatureExtractor():
 
         # Calculate min and sum of commit charged with memory pages with 'PAGE_EXECUTE_WRITECOPY' protection
         if x.commit_charge_size:
-            features['get_commit_charge_min_page_execute_writecopy'] = cc.min()
-            features['get_commit_charge_sum_page_execute_writecopy'] = cc.sum()
+            self._features['get_commit_charge_min_page_execute_writecopy'] = cc.min()
+            self._features['get_commit_charge_sum_page_execute_writecopy'] = cc.sum()
 
         # Calculate amount and ratio of vad memory pages with 'PAGE_EXECUTE_WRITECOPY' protection
-        features['page_execute_writecopy_vad_count'] = x.vad_protection_size
+        self._features['page_execute_writecopy_vad_count'] = x.vad_protection_size
         if x.vad_protection_size:
-            features['page_execute_writecopy_vad_ratio'] = (x.vad_protection_size / x.vadinfo_size)
+            self._features['page_execute_writecopy_vad_ratio'] = (x.vad_protection_size / x.vadinfo_size)
 
-        return features
-
-    def _page_readonly(x: ProtectionData, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _page_readonly(self, x: ProtectionData):
         """
         This function extracts 'page_readonly' protection reelated features.
         """
@@ -369,114 +339,102 @@ class FeatureExtractor():
 
         # Calculate mean of commit charged with memory pages with 'PAGE_READONLY' protection
         if x.commit_charge_size:
-            features['get_commit_charge_mean_page_readonly'] = cc.mean()
+            self._features['get_commit_charge_mean_page_readonly'] = cc.mean()
 
         # Calculate amount and ratio of memory pages with 'PAGE_READONLY' protection
         if x.protection_df_size:
-            features['page_readonly_count'] = x.protection_df_size
-            features['page_readonly_ratio'] = (x.protection_df_size / x.vadinfo_df_size)
+            self._features['page_readonly_count'] = x.protection_df_size
+            self._features['page_readonly_ratio'] = (x.protection_df_size / x.vadinfo_df_size)
 
         # Calculate amount and ratio of vad and vads memory pages with 'PAGE_READONLY' protection
-        features['page_readonly_vads_count'] = x.vads_protection_size
-        features['page_readonly_vad_count'] = x.vad_protection_size
+        self._features['page_readonly_vads_count'] = x.vads_protection_size
+        self._features['page_readonly_vad_count'] = x.vad_protection_size
 
         if x.vads_protection_size:
-            features['page_readonly_vads_ratio'] = (x.vads_protection_size / x.vadsinfo_size)
+            self._features['page_readonly_vads_ratio'] = (x.vads_protection_size / x.vadsinfo_size)
 
         if x.vad_protection_size:
-            features['page_readonly_vad_ratio'] = (x.vad_protection_size / x.vadinfo_size)
+            self._features['page_readonly_vad_ratio'] = (x.vad_protection_size / x.vadinfo_size)
 
-        return features
-
-    def _page_readwrite(x: ProtectionData, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _page_readwrite(self, x: ProtectionData):
         """
         This function extracts 'page_readwrite' protection reelated features.
         """
 
         # Calculate ratio of memory pages with 'PAGE_READWRITE' protection
         if x.protection_df_size:
-            features['page_readwrite_ratio'] = (x.protection_df_size / x.vadinfo_df_size)
+            self._features['page_readwrite_ratio'] = (x.protection_df_size / x.vadinfo_df_size)
 
         # Calculate amount and ratio of vad and vads memory pages with 'PAGE_READWRITE' protection
-        features['page_readwrite_vads_count'] = x.vads_protection_size
-        features['page_readwrite_vad_count'] = x.vad_protection_size
+        self._features['page_readwrite_vads_count'] = x.vads_protection_size
+        self._features['page_readwrite_vad_count'] = x.vad_protection_size
 
         if x.vads_protection_size:
-            features['page_readwrite_vads_ratio'] = (x.vads_protection_size / x.vadsinfo_size)
+            self._features['page_readwrite_vads_ratio'] = (x.vads_protection_size / x.vadsinfo_size)
 
         if x.vad_protection_size:
-            features['page_readwrite_vad_ratio'] = (x.vad_protection_size / x.vadinfo_size)
+            self._features['page_readwrite_vad_ratio'] = (x.vad_protection_size / x.vadinfo_size)
 
-        return features
-
-    def _extract_protections(x: pd.DataFrame,
-                             features: typing.Dict[str, int],
-                             vadinfo_df_size: int,
-                             vadsinfo_size: int,
-                             vadinfo_size: int):
+    def _extract_protections(self, x: pd.DataFrame, vadinfo_df_size: int, vadsinfo_size: int, vadinfo_size: int):
         """
         This function extracts protection features related to vadinfo plugin.
         """
         page_execute_writecopy_count = 0
 
-        for protection in FeatureExtractor.PROTECTIONS.keys():
+        for protection in fc.PROTECTIONS.keys():
 
-            p_data = FeatureExtractor._get_protection_data(x, protection, vadinfo_df_size, vadsinfo_size, vadinfo_size)
+            p_data = self._get_protection_data(x, protection, vadinfo_df_size, vadsinfo_size, vadinfo_size)
 
             # Calculate features related to memory pages with 'PAGE_EXECUTE_READWRITE' access
-            if protection == 'PAGE_EXECUTE_READWRITE ':
+            if protection == fc.PAGE_EXECUTE_READWRITE:
                 # Calculate mean, min, max, sum and std of commit charged with memory pages with 'PAGE_EXECUTE_READWRITE
                 # protection
-                features = FeatureExtractor._page_execute_readwrite(p_data, features)
+                self._page_execute_readwrite(p_data)
 
             # Calculate features related to memory pages with 'PAGE_NOACCESS' access
-            elif protection == 'PAGE_NOACCESS ':
+            elif protection == fc.PAGE_NOACCESS:
                 # Calculate mean, min, max and sum of commit charged with memory pages with 'PAGE_NOACCESS'
                 # protection
-                features = FeatureExtractor._page_noaccess(p_data, features)
+                self._page_noaccess(p_data)
 
             # Calculate features related to memory pages with 'PAGE_EXECUTE_WRITECOPY' access
-            elif protection == 'PAGE_EXECUTE_WRITECOPY ':
-                features = FeatureExtractor._page_execute_writecopy(p_data, features)
+            elif protection == fc.PAGE_EXECUTE_WRITECOPY:
+                self._page_execute_writecopy(p_data)
                 page_execute_writecopy_count = p_data.protection_df_size
 
             # Calculate features related to memory pages with 'PAGE_READONLY' access
-            elif protection == 'PAGE_READONLY ':
-                features = FeatureExtractor._page_readonly(p_data, features)
+            elif protection == fc.PAGE_READONLY:
+                self._page_readonly(p_data)
 
             # Calculate features related to memory pages with 'PAGE_READWRITE' access
-            elif protection == 'PAGE_READWRITE ':
-                features = FeatureExtractor._page_readwrite(p_data, features)
+            elif protection == fc.PAGE_READWRITE:
+                self._page_readwrite(p_data)
 
             else:
                 continue
 
         # Count the amount of unique file paths in vadinfo
-        features['vadinfo_df_path_unique'] = len(x.File.unique())
-        features['vads_page_execute_writecopy_ratio'] = vadsinfo_size / (page_execute_writecopy_count + 1)
+        self._features['vadinfo_df_path_unique'] = len(x.File.unique())
+        self._features['vads_page_execute_writecopy_ratio'] = vadsinfo_size / (page_execute_writecopy_count + 1)
 
-        return features
-
-    def _extract_handle_types(x: pd.DataFrame, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_handle_types(self, x: pd.DataFrame):
         """
         This function extracts file handle type features from handles plugin.
         """
 
         # Count the handles by their type
-        for i, j in FeatureExtractor.HANDLES_TYPES:
+        for i, j in fc.HANDLES_TYPES:
             col_name = 'handles_df_' + j + '_count'
             handle_type_df = x[x.Type == i]
-            features[col_name] = len(handle_type_df)
+            self._features[col_name] = len(handle_type_df)
 
         # Calculate the handles ratio by their type
-        for i, j in FeatureExtractor.HANDLES_TYPES + FeatureExtractor.HANDLES_TYPES_2:
+        for i, j in (fc.HANDLES_TYPES + fc.HANDLES_TYPES_2):
             col_name = 'handles_df_' + j + '_ratio'
             handle_type_df = x[x.Type == i]
-            features[col_name] = len(handle_type_df) / (features['handles_df_count'] + 1)
+            self._features[col_name] = len(handle_type_df) / (self._features['handles_df_count'] + 1)
 
-        return features
-
-    def _extract_file_handle_dirs(file_paths: pd.Series, features: typing.Dict[str, int]) -> typing.Dict[str, int]:
+    def _extract_file_handle_dirs(self, file_paths: pd.Series):
         """
         This function extracts file handle directory features from handles plugin.
         """
@@ -495,18 +453,15 @@ class FeatureExtractor():
                 users = filepath_split_df[filepath_split_df[3].str.contains('users')]
 
                 # Count handles files of personal users directories
-                features['file_users_exists'] = len(users)
+                self._features['file_users_exists'] = len(users)
 
                 # Count handles files of Windows directories
-                features['file_windows_count'] = len(windows)
+                self._features['file_windows_count'] = len(windows)
 
             # Count amount of unique directories
-            features['count_directories_handles_uniques'] = directories_uniques_count
+            self._features['count_directories_handles_uniques'] = directories_uniques_count
 
-        return features
-
-    def _extract_handles(x: pd.DataFrame, config: FeatureConfig, features: typing.Dict[str,
-                                                                                       int]) -> typing.Dict[str, int]:
+    def _extract_handles(self, x: pd.DataFrame):
         """
         Eextract features related to handles such as amount and ratio of each handle type.
         """
@@ -517,42 +472,40 @@ class FeatureExtractor():
         file_paths = file_paths[(~file_paths.isna()) & (file_paths != '')]
 
         # Count handles files with double extensions
-        features = FeatureExtractor._count_double_extension(list(file_paths), config, features)
+        self._count_double_extension(file_paths=list(file_paths))
 
         # Count handles files with common extension
         file_extensions = file_paths.str.extract('\.([^.]*)$')[0].dropna()
 
-        file_extns = file_extensions[file_extensions.isin(config.file_extns)]
-        features['check_doc_file_handle_count'] = len(file_extns)
+        file_extns = file_extensions[file_extensions.isin(self._config.file_extns)]
+        self._features['check_doc_file_handle_count'] = len(file_extns)
 
-        features = FeatureExtractor._extract_file_handle_dirs(file_paths, features)
+        self._extract_file_handle_dirs(file_paths)
 
         # Count unique file handles extensions
-        features['count_extension_handles_uniques'] = len(file_extensions.unique())
+        self._features['count_extension_handles_uniques'] = len(file_extensions.unique())
 
         # Count number of handles
-        features['handles_df_count'] = len(x)
+        self._features['handles_df_count'] = len(x)
         name_unique_count = len(x.Name.unique())
 
         # Count handles with unique name
-        features['handles_df_name_unique'] = name_unique_count
+        self._features['handles_df_name_unique'] = name_unique_count
 
         # Calculate the ratio of handles with unique name
-        features['handles_df_name_unique_ratio'] = name_unique_count / (features['handles_df_count'] + 1)
+        self._features['handles_df_name_unique_ratio'] = name_unique_count / (self._features['handles_df_count'] + 1)
 
         type_unique_count = len(x.Type.unique())
 
         # Count the amount of unique handles type
-        features['handles_df_type_unique'] = type_unique_count
+        self._features['handles_df_type_unique'] = type_unique_count
 
         # Calculate the ratio of handles with unique type
-        features['handles_df_type_unique_ratio'] = type_unique_count / (features['handles_df_count'] + 1)
+        self._features['handles_df_type_unique_ratio'] = type_unique_count / (self._features['handles_df_count'] + 1)
 
-        features = FeatureExtractor._extract_handle_types(x, features)
+        self._extract_handle_types(x)
 
-        return features
-
-    def _extract_ldrmodules(x: pd.DataFrame, features: typing.Dict[str, str]) -> typing.Dict[str, str]:
+    def _extract_ldrmodules(self, x: pd.DataFrame):
         """
         Extract size of the ldrmodules process and it's path.
         """
@@ -561,15 +514,12 @@ class FeatureExtractor():
             process = x.Process.iloc[0].lower()
             x = x[x.Name.str.contains(process)]
             if not x.empty:
-                features['ldrmodules_df_size_int'] = int(x.Size.iloc[0], 16)
-                features['ldrmodules_df_path'] = x.Path.iloc[0]
+                self._features['ldrmodules_df_size_int'] = int(x.Size.iloc[0], 16)
+                self._features['ldrmodules_df_path'] = x.Path.iloc[0]
             else:
-                features['ldrmodules_df_path'] = ""
+                self._features['ldrmodules_df_path'] = ""
 
-        return features
-
-    @staticmethod
-    def extract_features(x: pd.DataFrame, config: FeatureConfig) -> pd.DataFrame:
+    def extract_features(self, x: pd.DataFrame, config: FeatureConfig) -> pd.DataFrame:
         """
         Extracts ransomware features.
 
@@ -588,18 +538,21 @@ class FeatureExtractor():
 
         features_per_pid_process = []
 
+        self._config = config
+
         # Get unique PID_Process for a given snapshot
         pid_processes = list(x["PID_Process"].unique())
 
         # Filter snapshot data by plugin
-        plugin_dict = {plugin: x[x.plugin == plugin] for plugin in config.interested_plugins}
+        plugin_dict = {plugin: x[x.plugin == plugin] for plugin in self._config.interested_plugins}
 
         # Filter plugin per pid_process and create features
         for pid_process in pid_processes:
 
-            features = config.features_with_zeros.copy()
+            # Setting default values to features all keys.
+            self._features = self._config.features_with_zeros.copy()
 
-            fltr_plugin_dict = FeatureExtractor._filter_by_pid_process(plugin_dict, pid_process)
+            fltr_plugin_dict = self._filter_by_pid_process(plugin_dict, pid_process)
 
             try:
                 ldrmodules_df = fltr_plugin_dict['ldrmodules']
@@ -607,6 +560,7 @@ class FeatureExtractor():
                 envars_df = fltr_plugin_dict['envars']
                 vadinfo_df = fltr_plugin_dict['vadinfo']
                 handles_df = fltr_plugin_dict['handles']
+
             except KeyError as e:
                 raise KeyError('Missing required plugins: %s' % (e))
 
@@ -614,10 +568,10 @@ class FeatureExtractor():
             # Typically this will show the number of CPUs installed and the hardware architecture,
             # the process's current directory, temporary directory, session name, computer name, user name,
             # and various other interesting artifacts.
-            features = FeatureExtractor._extract_env(envars_df, features)
+            self._extract_envars(envars_df)
 
             # Threadlist plugin features displays the threads that are used by a process.
-            features = FeatureExtractor._extract_threadlist(threadlist_df, features)
+            self._extract_threadlist(threadlist_df)
 
             # VadInfo plugin features displays extended information about a process's VAD nodes.
             # In particular, it shows:
@@ -627,22 +581,22 @@ class FeatureExtractor():
             # - The VAD flags, control flags, etc
             # - The name of the memory mapped file (if one exists)
             # - The memory protection constant (permissions)
-            features = FeatureExtractor._extract_vadinfo(vadinfo_df, features)
+            self._extract_vadinfo(vadinfo_df)
 
             # Handles plugin features displays the open handles in a process, use the handles command.
             # This applies to files, registry keys, mutexes, named pipes, events, window stations, desktops, threads,
             # and all other types of securable executive objects.
-            features = FeatureExtractor._extract_handles(handles_df, config, features)
+            self._extract_handles(handles_df)
 
             # LdrModules plugin features displays a process's loaded DLLs. LdrModules detects a dll-hiding or injection
             # kind of activities in a process memory.
-            features = FeatureExtractor._extract_ldrmodules(ldrmodules_df, features)
+            self._extract_ldrmodules(ldrmodules_df)
 
             # Add pid_process
-            features['pid_process'] = pid_process
+            self._features['pid_process'] = pid_process
 
             # Add pid_process features to a list
-            features_per_pid_process.append(features)
+            features_per_pid_process.append(self._features)
 
         # Convert list of pid_process features to a dataframe
         features_df = pd.DataFrame.from_dict(features_per_pid_process)

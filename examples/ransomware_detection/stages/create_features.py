@@ -29,6 +29,24 @@ from morpheus.pipeline.stream_pair import StreamPair
 
 
 class CreateFeaturesRWStage(MultiMessageStage):
+    """
+    This class extends MultiMessageStage to deal with scenario-specific to create features using Appshiled plugins data.
+
+    Parameters
+    ----------
+    c : morpheus.config.Config
+        Pipeline configuration instance
+    interested_plugins : typing.List[str]
+        Only intrested plugins files will be read from Appshield snapshots
+    feature_columns : typing.List[str]
+        List of features needed to be extracted.
+    file_extns : typing.List[str]
+        File extensions.
+    n_workers: int, default = 2
+        Number of dask workers.
+    threads_per_worker: int, default = 2
+        Number of threads for each dask worker.
+    """
 
     def __init__(
         self,
@@ -44,6 +62,8 @@ class CreateFeaturesRWStage(MultiMessageStage):
         self._feature_config = FeatureConfig(file_extns,
                                              interested_plugins,
                                              features_with_zeros=dict.fromkeys(feature_columns, 0))
+        # FeatureExtractor instance to extract features from the snapshots.
+        self._fe = FeatureExtractor()
 
         super().__init__(c)
 
@@ -65,7 +85,6 @@ class CreateFeaturesRWStage(MultiMessageStage):
             def on_next(x: AppShieldMessageMeta):
 
                 multi_messages = []
-
                 snapshot_fea_dfs = []
 
                 df = x.df
@@ -85,13 +104,14 @@ class CreateFeaturesRWStage(MultiMessageStage):
                 else:
                     all_dfs = [df]
 
+                extract_func = self._fe.extract_features
+                combine_func = FeatureExtractor.combine_features
+
                 # Schedule dask task `extract_features` per snapshot.
-                snapshot_fea_dfs = self._client.map(FeatureExtractor.extract_features,
-                                                    all_dfs,
-                                                    config=self._feature_config)
+                snapshot_fea_dfs = self._client.map(extract_func, all_dfs, config=self._feature_config)
 
                 # Combined `extract_features` results.
-                features_df = self._client.submit(FeatureExtractor.combine_features, snapshot_fea_dfs)
+                features_df = self._client.submit(combine_func, snapshot_fea_dfs)
 
                 # Gather features from all the snapshots.
                 features_df = features_df.result()
