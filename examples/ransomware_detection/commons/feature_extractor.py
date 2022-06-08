@@ -171,7 +171,7 @@ class FeatureExtractor():
 
         # Count the amount of unique file extensions
         if not vadinfo_files.empty:
-            unique_file_extns = vadinfo_files.str.lower().str.extract('(\.[^.]*)$')[0].dropna().unique()
+            unique_file_extns = vadinfo_files.str.lower().str.extract('(\\.[^.]*)$')[0].dropna().unique()
             self._features['get_count_unique_extensions'] = len(unique_file_extns)
 
     def _extract_vadinfo(self, x: pd.DataFrame):
@@ -472,7 +472,7 @@ class FeatureExtractor():
         self._count_double_extension(file_paths=list(file_paths))
 
         # Count handles files with common extension
-        file_extensions = file_paths.str.extract('\.([^.]*)$')[0].dropna()
+        file_extensions = file_paths.str.extract('\\.([^.]*)$')[0].dropna()
 
         file_extns = file_extensions[file_extensions.isin(self._config.file_extns)]
         self._features['check_doc_file_handle_count'] = len(file_extns)
