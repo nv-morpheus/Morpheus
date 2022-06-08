@@ -21,7 +21,6 @@ from neo.core import operators as ops
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair

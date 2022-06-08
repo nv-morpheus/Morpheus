@@ -22,7 +22,6 @@ from neo.core import operators as ops
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage

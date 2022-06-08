@@ -22,7 +22,6 @@ from neo.core import operators as ops
 import morpheus._lib.stages as neos
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource

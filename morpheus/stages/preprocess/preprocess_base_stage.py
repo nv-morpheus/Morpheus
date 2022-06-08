@@ -20,7 +20,6 @@ import neo
 import typing_utils
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
