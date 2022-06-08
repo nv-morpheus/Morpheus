@@ -35,10 +35,7 @@ python3 --version
 gcc --version
 g++ --version
 
-gpuci_logger "Check conda environment"
-conda info
-conda config --show-sources
-conda list --show-channel-urls
+show_conda_info
 
 gpuci_logger "Checking S3 cuDF cache"
 CUDF_CONDA_BLD_DIR=/opt/conda/conda-bld
@@ -49,11 +46,10 @@ CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.bz"
 
 gpuci_logger "Checking ${DISPLAY_URL}${CUDF_CONDA_CACHE_PATH}"
 set +e
-aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
-CUDF_CACHE_CHECK=$?
+fetch_s3 "${CUDF_CONDA_CACHE_PATH}" "${CUDF_CONDA_TAR}"
 set -e
 
-if [[ "${CUDF_CACHE_CHECK}" != "0" ]]; then
+if [[ "${FETCH_STATUS}" != "0" ]]; then
       gpuci_logger "Cache miss, Building cuDF"
       mkdir -p ${CUDF_CONDA_BLD_DIR}
       # The --no-build-id bit is needed for sccache
@@ -96,11 +92,9 @@ cmake -B build -G Ninja \
       -DMORPHEUS_BUILD_EXAMPLES=ON \
       -DMORPHEUS_BUILD_TESTS=ON \
       -DMORPHEUS_USE_CONDA=ON \
-      -DMORPHEUS_PYTHON_INPLACE_BUILD=ON \
-      -DMORPHEUS_USE_CCACHE=OFF \
-      -DCMAKE_C_COMPILER_LAUNCHER=sccache \
-      -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
-      -DCMAKE_CUDA_COMPILER_LAUNCHER=sccache \
+      -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF \
+      -DMORPHEUS_USE_CCACHE=ON \
+      -DCCACHE_PROGRAM_PATH=$(which sccache) \
       .
 
 gpuci_logger "Building Morpheus"
@@ -110,16 +104,14 @@ gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
 
 gpuci_logger "Installing Morpheus"
-pip install -e ${MORPHEUS_ROOT}
+cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
+pip install ${MORPHEUS_ROOT}/build/wheel
 
 gpuci_logger "Archiving results"
-mamba pack --quiet --force --ignore-editable-packages --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
-tar cfj ${WORKSPACE_TMP}/workspace.tar.bz --exclude=".git" --exclude="models" --exclude=".cache" ./
-ls -lh ${WORKSPACE_TMP}/
+mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/workspace.tar.bz" "${ARTIFACT_URL}/workspace.tar.bz"
 
 gpuci_logger "Success"
 exit 0
