@@ -26,7 +26,7 @@ This example requires Triton. Launch Trtion using the following command:
 cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 
 # Run Triton in explicit mode
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/model:/models/triton-model-repo nvcr.io/nvidia/tritonserver:21.12-py3 \
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:22.02-py3 \
    tritonserver --model-repository=/models/triton-model-repo \
                 --exit-on-error=false \
                 --model-control-mode=explicit \
