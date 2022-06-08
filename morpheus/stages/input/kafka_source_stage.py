@@ -332,13 +332,13 @@ class KafkaSourceStage(SingleOutputSource):
 
         if (self._build_cpp_node()):
             source = _stages.KafkaSourceStage(seg,
-                                           self.unique_name,
-                                           self._max_batch_size,
-                                           self._topic,
-                                           int(self._poll_interval * 1000),
-                                           self._consumer_params,
-                                           self._disable_commit,
-                                           self._disable_pre_filtering)
+                                              self.unique_name,
+                                              self._max_batch_size,
+                                              self._topic,
+                                              int(self._poll_interval * 1000),
+                                              self._consumer_params,
+                                              self._disable_commit,
+                                              self._disable_pre_filtering)
             source.launch_options.pe_count = self._max_concurrent
         else:
             source = seg.make_source(self.unique_name, self._source_generator)

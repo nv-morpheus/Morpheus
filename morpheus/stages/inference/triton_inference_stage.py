@@ -892,7 +892,7 @@ class TritonInferenceStage(InferenceStage):
     def _get_cpp_inference_node(self, seg: srf.Builder):
 
         return _stages.InferenceClientStage(seg,
-                                         name=self.unique_name,
-                                         needs_logits=self._get_worker_class().needs_logits(),
-                                         inout_mapping=self._get_worker_class().default_inout_mapping(),
-                                         **self._kwargs)
+                                            name=self.unique_name,
+                                            needs_logits=self._get_worker_class().needs_logits(),
+                                            inout_mapping=self._get_worker_class().default_inout_mapping(),
+                                            **self._kwargs)

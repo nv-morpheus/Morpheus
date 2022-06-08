@@ -119,10 +119,10 @@ class SerializeStage(SinglePortStage):
     def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
             stream = _stages.SerializeStage(seg,
-                                         self.unique_name,
-                                         self._include_columns or [],
-                                         self._exclude_columns,
-                                         self._fixed_columns)
+                                            self.unique_name,
+                                            self._include_columns or [],
+                                            self._exclude_columns,
+                                            self._fixed_columns)
         else:
             include_columns = None
 

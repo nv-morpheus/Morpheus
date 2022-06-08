@@ -20,7 +20,6 @@ from functools import reduce
 import cupy as cp
 import srf
 from srf.core import operators as ops
-from srf.core.subscriber import Observable
 
 from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage

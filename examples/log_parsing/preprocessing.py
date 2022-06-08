@@ -165,10 +165,10 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
 
     def _get_preprocess_node(self, seg: srf.Builder):
         return _stages.PreprocessNLPStage(seg,
-                                       self.unique_name,
-                                       self._vocab_hash_file,
-                                       self._seq_length,
-                                       self._truncation,
-                                       self._do_lower_case,
-                                       self._add_special_tokens,
-                                       self._stride)
+                                          self.unique_name,
+                                          self._vocab_hash_file,
+                                          self._seq_length,
+                                          self._truncation,
+                                          self._do_lower_case,
+                                          self._add_special_tokens,
+                                          self._stride)

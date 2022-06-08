@@ -115,10 +115,10 @@ enum class TensorStorageType
 };
 
 template <typename T>
-using HostContainer = std::vector<T, srf::memory::host_allocator<T>>;
+using HostContainer = std::vector<T, srf::memory::host_allocator<T>>;  // NOLINT(readability-identifier-naming)
 
 template <typename T>
-using DeviceContainer = rmm::device_uvector<T>;
+using DeviceContainer = rmm::device_uvector<T>;  // NOLINT(readability-identifier-naming)
 
 struct MemoryDescriptor
 {};

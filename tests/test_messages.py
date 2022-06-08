@@ -89,7 +89,10 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     if (should_be_cpp):
         pytest.raises(TypeError, messages.ResponseMemory, 1)
 
-    check_message(messages.ResponseMemoryProbs, _messages.ResponseMemoryProbs, should_be_cpp, no_cpp_class, (1, cp_array))
+    check_message(messages.ResponseMemoryProbs,
+                  _messages.ResponseMemoryProbs,
+                  should_be_cpp,
+                  no_cpp_class, (1, cp_array))
 
     # No C++ impl
     check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, (1, cp_array))

@@ -109,10 +109,10 @@ class AddClassificationsStage(SinglePortStage):
         # Convert the messages to rows of strings
         if CppConfig.get_should_use_cpp():
             stream = _stages.AddClassificationsStage(seg,
-                                                  self.unique_name,
-                                                  self._threshold,
-                                                  len(self._class_labels),
-                                                  self._idx2label)
+                                                     self.unique_name,
+                                                     self._threshold,
+                                                     len(self._class_labels),
+                                                     self._idx2label)
         else:
             stream = seg.make_node(self.unique_name, self._add_labels)
 
