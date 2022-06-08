@@ -18,6 +18,7 @@ import argparse
 import logging
 import os
 import subprocess
+import sys
 import time
 
 LFS_DATASETS = {
@@ -79,20 +80,27 @@ def lfsCheck(list_all=False):
     # <oid> [-|*] <file name>
     # where '-' indicates a file pointer and '*' indicates a downloaded file
     # https://github.com/git-lfs/git-lfs/blob/main/docs/man/git-lfs-ls-files.1.ronn
-
-    all_downloaded = True
+    missing_files = []
     for file_status in output_lines:
         parts = file_status.split()
         downloaded = parts[1] == '*'
-        if all_downloaded and not downloaded:
-            all_downloaded = False
+        filename = ' '.join(parts[2:])
+
+        if not downloaded:
+            missing_files.append(filename)
 
         if list_all:
             # the join on 2: is needed to handle file names that contain a blank space
-            logging.info('%s - %s', ' '.join(parts[2:]), downloaded)
+            logging.info('%s - %s', filename, downloaded)
 
     if not list_all:
-        logging.info(all_downloaded)
+        if len(missing_files):
+            logging.error("Missing the following LFS files:\n%s", "\n".join(missing_files))
+        else:
+            logging.info("All LFS files downloaded")
+
+    if len(missing_files):
+        sys.exit(1)
 
 
 def parse_args():
@@ -107,7 +115,7 @@ def parse_args():
 
     check_parser = subparsers.add_parser('check',
                                          help='Check download status of large files. '
-                                         'Displays a True/False whether all files are downloaded.')
+                                         'Exits with a status of 0 if all large files have been downloaded, 1 otherwise.')
     check_parser.add_argument("-l", "--list",
                               action="store_true",
                               default=False,
