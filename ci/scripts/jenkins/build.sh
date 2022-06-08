@@ -19,6 +19,7 @@ set -e
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
 gpuci_logger "Creating conda env"
+rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
@@ -79,6 +80,7 @@ mamba install -q -y -c local -c nvidia -c rapidsai -c conda-forge libcudf cudf
 
 gpuci_logger "Installing other dependencies"
 mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+conda deactivate && conda activate morpheus
 
 gpuci_logger "Check cmake & ninja"
 cmake --version
