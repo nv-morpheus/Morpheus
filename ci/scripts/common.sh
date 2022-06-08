@@ -29,7 +29,7 @@ export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-main}}
 export COMMIT_SHA=${GIT_COMMIT:-${COMMIT_SHA:-HEAD}}
 
 export CPP_FILE_REGEX='^(\.\/)?(src|include|tests|benchmarks|python)\/.*\.(cc|cpp|h|hpp)$'
-export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build).*\.(py|pyx|pxd)$'
+export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build).*\.py$'
 
 # Use these options to skip any of the checks
 export SKIP_COPYRIGHT=${SKIP_COPYRIGHT:-""}
