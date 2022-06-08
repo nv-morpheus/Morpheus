@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,18 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cudf import DataFrame, Series
+from cudf import DataFrame
+from cudf import Series
 
+from libcpp.memory cimport make_shared
+from libcpp.memory cimport make_unique
+from libcpp.memory cimport shared_ptr
+from libcpp.memory cimport unique_ptr
 from libcpp.string cimport string
-from libcpp.vector cimport vector
 from libcpp.utility cimport move
-from libcpp.memory cimport make_shared, make_unique, shared_ptr, unique_ptr
+from libcpp.vector cimport vector
 
 from cudf._lib.column cimport Column
 from cudf._lib.cpp.column.column_view cimport column_view
+from cudf._lib.cpp.io.types cimport table_metadata
+from cudf._lib.cpp.io.types cimport table_with_metadata
 from cudf._lib.cpp.table.table_view cimport table_view
-from cudf._lib.cpp.io.types cimport table_with_metadata, table_metadata
-from cudf._lib.utils cimport data_from_table_view, data_from_unique_ptr, table_view_from_table, get_column_names
+from cudf._lib.utils cimport data_from_table_view
+from cudf._lib.utils cimport data_from_unique_ptr
+from cudf._lib.utils cimport get_column_names
+from cudf._lib.utils cimport table_view_from_table
+
 
 cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 

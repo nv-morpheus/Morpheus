@@ -75,9 +75,6 @@ else
       cd -
 fi
 
-gpuci_logger "Installing cuDF"
-mamba install -q -y -c local -c nvidia -c rapidsai -c conda-forge libcudf cudf
-
 gpuci_logger "Installing other dependencies"
 mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 conda deactivate && conda activate morpheus
