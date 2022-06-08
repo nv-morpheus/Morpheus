@@ -120,6 +120,9 @@ class MLFlowDriftStage(SinglePortStage):
         """
         return (MultiResponseProbsMessage, )
 
+    def supports_cpp_node(self):
+        return False
+
     def _calc_drift(self, x: MultiResponseProbsMessage):
 
         # All probs in a batch will be calculated
