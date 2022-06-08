@@ -40,42 +40,7 @@ conda info
 conda config --show-sources
 conda list --show-channel-urls
 
-gpuci_logger "Checking S3 cuDF cache"
-CUDF_CONDA_BLD_DIR=/opt/conda/conda-bld
-CUDF_CONDA_COMMIT=$(git log -n 1 --pretty=format:%H -- ci/conda)
-CUDF_CONDA_CACHE_PATH="/cudf/${CUDA_VER}/${PYTHON_VER}/${RAPIDS_VER}/${CUDF_CONDA_COMMIT}/${NVARCH}/cudf_conda.tar.bz"
-CUDF_CONDA_CACHE_URL="${S3_URL}${CUDF_CONDA_CACHE_PATH}"
-CUDF_CONDA_TAR="${WORKSPACE_TMP}/cudf_conda.tar.bz"
-
-gpuci_logger "Checking ${DISPLAY_URL}${CUDF_CONDA_CACHE_PATH}"
-set +e
-aws s3 cp --no-progress ${CUDF_CONDA_CACHE_URL} ${CUDF_CONDA_TAR}
-CUDF_CACHE_CHECK=$?
-set -e
-
-if [[ "${CUDF_CACHE_CHECK}" != "0" ]]; then
-      gpuci_logger "Cache miss, Building cuDF"
-      mkdir -p ${CUDF_CONDA_BLD_DIR}
-      # The --no-build-id bit is needed for sccache
-      CONDA_ARGS="--no-build-id --output-folder ${CUDF_CONDA_BLD_DIR} --skip-existing --no-test" ${MORPHEUS_ROOT}/ci/conda/recipes/run_conda_build.sh libcudf cudf
-
-      gpuci_logger "sccache usage for cudf build:"
-      sccache --show-stats
-      sccache --zero-stats 2>&1 > /dev/null
-
-      gpuci_logger "Archiving cuDF build"
-      cd $(dirname ${CUDF_CONDA_BLD_DIR})
-      tar cfj ${CUDF_CONDA_TAR} $(basename ${CUDF_CONDA_BLD_DIR})
-      cd -
-      aws s3 cp --no-progress ${CUDF_CONDA_TAR} ${CUDF_CONDA_CACHE_URL}
-else
-      gpuci_logger "Cache hit, using cached cuDF"
-      cd $(dirname ${CUDF_CONDA_BLD_DIR})
-      tar xf ${CUDF_CONDA_TAR}
-      cd -
-fi
-
-gpuci_logger "Installing other dependencies"
+gpuci_logger "Installing dependencies"
 mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 conda deactivate && conda activate morpheus
 

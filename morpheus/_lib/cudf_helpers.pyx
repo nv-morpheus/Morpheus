@@ -42,7 +42,10 @@ cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 
     cdef cppclass TableInfo:
         TableInfo()
-        TableInfo(shared_ptr[const IDataTable] parent, table_view view, vector[string] index_names, vector[string] column_names)
+        TableInfo(shared_ptr[const IDataTable] parent,
+                  table_view view,
+                  vector[string] index_names,
+                  vector[string] column_names)
 
         table_view get_view() const
         vector[string] get_index_names()
