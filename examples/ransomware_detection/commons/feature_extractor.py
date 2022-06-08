@@ -21,11 +21,6 @@ from commons.feature_constants import FeatureConstants as fc
 class FeatureExtractor():
     """
     This is helper class to extract reequired features for ransomware detection pipeline.
-
-    Parameters
-    ----------
-    c : commons.data_models.FeatureConfig
-        Feature configuration instance
     """
 
     def __init__(self) -> None:
@@ -35,7 +30,7 @@ class FeatureExtractor():
     def _filter_by_pid_process(self, plugin_dict: typing.Dict[str, pd.DataFrame],
                                pid_process: str) -> typing.Dict[str, pd.DataFrame]:
         """
-        Filter plugins data by pid_process.
+        This function filter plugins data by pid_process.
         """
 
         filtered_plugin_dict = {}
@@ -49,7 +44,7 @@ class FeatureExtractor():
 
     def _count_double_extension(self, file_paths: typing.List[str]):
         """
-        Count the amount of double extensions to a common type files and return the largest double extension.
+        This function counts the amount of double extensions to a common type files and return the largest double extension.
         """
 
         count = 0
@@ -79,7 +74,7 @@ class FeatureExtractor():
 
     def _extract_envars(self, x: pd.DataFrame):
         """
-        Return if a process has 'PATHEXT' environment variable in extended version.
+        This function extracts environment features.
         """
 
         x = x[x.Variable.str.contains('PATHEXT', regex=False)]
@@ -114,7 +109,7 @@ class FeatureExtractor():
 
     def _extract_vad_cc(self, cc: pd.Series):
         """
-        Extract 'vad' specific commit charge features.
+        This function extracts 'vad' specific commit charge features.
         """
 
         cc_size = len(cc)
@@ -127,7 +122,7 @@ class FeatureExtractor():
 
     def _extract_cc(self, cc: pd.Series):
         """
-        Extract commit charge features.
+        This function extracts commit charge features.
         """
 
         cc_size = len(cc)
@@ -141,7 +136,7 @@ class FeatureExtractor():
 
     def _extract_vads_cc(self, cc: pd.Series, vads_cc: pd.Series):
         """
-        Extract 'vads' commit charge features.
+        This function extracts 'vads' commit charge features.
         """
 
         cc_size = len(cc)
@@ -156,7 +151,7 @@ class FeatureExtractor():
 
     def _extract_cc_vad_page_noaccess(self, cc: pd.Series):
         """
-        Extact 'vad' commit charge features specific to 'page_noaccess' protection.
+        This function extracts 'vad' commit charge features specific to 'page_noaccess' protection.
         """
 
         cc = cc[cc < fc.FULL_MEMORY_ADDRESS]
@@ -168,7 +163,7 @@ class FeatureExtractor():
 
     def _extract_unique_file_extns(self, x: pd.DataFrame):
         """
-        Extract unique file extenstion featurs.
+        This function extracts unique file extenstion featurs.
         """
 
         vadinfo_files = x[x.File != 'N/A'].File
@@ -180,7 +175,7 @@ class FeatureExtractor():
 
     def _extract_vadinfo(self, x: pd.DataFrame):
         """
-        Calculate vadinfo features about commit charged, vad/vads, private memory and memory protection type.
+        This function extracts vadinfo features about commit charged, vad/vads, private memory and memory protection type.
         """
 
         # CommitCharge - is the total amount of virtual memory of all processes that must be backed by either physical memory
@@ -237,7 +232,7 @@ class FeatureExtractor():
                              vadsinfo_size: int,
                              vadinfo_size: int):
         """
-        Create protection data instance.
+        This function creates protection data instance.
         """
 
         protection_df = x[x.Protection == protection]
@@ -463,7 +458,7 @@ class FeatureExtractor():
 
     def _extract_handles(self, x: pd.DataFrame):
         """
-        Eextract features related to handles such as amount and ratio of each handle type.
+        This function extracts features related to handles such as amount and ratio of each handle type.
         """
 
         # Amount of files path in handles files
@@ -507,7 +502,7 @@ class FeatureExtractor():
 
     def _extract_ldrmodules(self, x: pd.DataFrame):
         """
-        Extract size of the ldrmodules process and it's path.
+        This function extracts size of the ldrmodules process and it's path.
         """
 
         if not x.empty:
@@ -521,7 +516,7 @@ class FeatureExtractor():
 
     def extract_features(self, x: pd.DataFrame, config: FeatureConfig) -> pd.DataFrame:
         """
-        Extracts ransomware features.
+        This function extracts all different ransomware features.
 
         Parameters
         ----------
@@ -612,7 +607,7 @@ class FeatureExtractor():
     @staticmethod
     def combine_features(x: typing.List[pd.DataFrame]) -> pd.DataFrame:
         """
-        Combine features of multiple snapshots to a single dataframe
+        This function combines features of multiple snapshots to a single dataframe
 
         Parameters
         ----------
