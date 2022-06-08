@@ -14,39 +14,39 @@
 # limitations under the License.
 #=============================================================================
 
-function(find_and_configure_neo version)
+function(find_and_configure_srf version)
 
-  list(APPEND CMAKE_MESSAGE_CONTEXT "neo")
+  list(APPEND CMAKE_MESSAGE_CONTEXT "srf")
 
-  # Check if the developer has specified a specific remote or local version of Neo
-  if (DEFINED CACHE{NEO_GIT_REPOSITORY} OR DEFINED CACHE{CPM_neo_SOURCE})
-    rapids_cpm_find(neo ${version}
+  # Check if the developer has specified a specific remote or local version of SRF
+  if (DEFINED CACHE{SRF_GIT_REPOSITORY} OR DEFINED CACHE{CPM_srf_SOURCE})
+    rapids_cpm_find(srf ${version}
       GLOBAL_TARGETS
-        neo::neo neo::pyneo
+        srf::srf srf::pysrf
       BUILD_EXPORT_SET
         ${PROJECT_NAME}-exports
       INSTALL_EXPORT_SET
         ${PROJECT_NAME}-exports
       CPM_ARGS
-        GIT_REPOSITORY  ${NEO_GIT_REPOSITORY}
+        GIT_REPOSITORY  ${SRF_GIT_REPOSITORY}
         GIT_TAG         branch-${version}
         GIT_SHALLOW     TRUE
-        OPTIONS         "NEO_BUILD_EXAMPLES OFF"
-                        "NEO_BUILD_TESTS OFF"
-                        "NEO_BUILD_BENCHMARKS OFF"
-                        "NEO_BUILD_PYTHON ON"
-                        "NEO_ENABLE_XTENSOR ON"
-                        "NEO_ENABLE_MATX ON"
-                        "NEO_USE_CONDA ${MORPHEUS_USE_CONDA}"
-                        "NEO_USE_CCACHE ${MORPHEUS_USE_CCACHE}"
-                        "NEO_USE_CLANG_TIDY ${MORPHEUS_USE_CLANG_TIDY}"
-                        "NEO_PYTHON_INPLACE_BUILD ${MORPHEUS_PYTHON_INPLACE_BUILD}"
+        OPTIONS         "SRF_BUILD_EXAMPLES OFF"
+                        "SRF_BUILD_TESTS OFF"
+                        "SRF_BUILD_BENCHMARKS OFF"
+                        "SRF_BUILD_PYTHON ON"
+                        "SRF_ENABLE_XTENSOR ON"
+                        "SRF_ENABLE_MATX ON"
+                        "SRF_USE_CONDA ${MORPHEUS_USE_CONDA}"
+                        "SRF_USE_CCACHE ${MORPHEUS_USE_CCACHE}"
+                        "SRF_USE_CLANG_TIDY ${MORPHEUS_USE_CLANG_TIDY}"
+                        "SRF_PYTHON_INPLACE_BUILD ${MORPHEUS_PYTHON_INPLACE_BUILD}"
                         "RMM_VERSION ${RAPIDS_VERSION}"
     )
   else()
-    rapids_find_package(neo REQUIRED
+    rapids_find_package(srf REQUIRED
       GLOBAL_TARGETS
-        neo::neo neo::pyneo
+        srf::srf srf::pysrf
       BUILD_EXPORT_SET
         ${PROJECT_NAME}-exports
       INSTALL_EXPORT_SET
@@ -56,7 +56,7 @@ function(find_and_configure_neo version)
     )
   endif()
 
-  if(neo_ADDED)
+  if(srf_ADDED)
 
     # Now ensure its installed
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -73,17 +73,17 @@ function(find_and_configure_neo version)
     endif()
 
     add_custom_command(
-      OUTPUT ${neo_BINARY_DIR}/python/neo.egg-info/PKG-INFO
-      COMMAND ${Python3_EXECUTABLE} -m pip install ${_pip_args} ${neo_BINARY_DIR}/python
-      DEPENDS neo_python_rebuild
-      COMMENT "Installing neo python package"
+      OUTPUT ${srf_BINARY_DIR}/python/srf.egg-info/PKG-INFO
+      COMMAND ${Python3_EXECUTABLE} -m pip install ${_pip_args} ${srf_BINARY_DIR}/python
+      DEPENDS srf_python_rebuild
+      COMMENT "Installing srf python package"
     )
 
     add_custom_target(
-      install_neo_python ALL
-      DEPENDS ${neo_BINARY_DIR}/python/neo.egg-info/PKG-INFO
+      install_srf_python ALL
+      DEPENDS ${srf_BINARY_DIR}/python/srf.egg-info/PKG-INFO
     )
   endif()
 endfunction()
 
-find_and_configure_neo(${NEO_VERSION})
+find_and_configure_srf(${SRF_VERSION})

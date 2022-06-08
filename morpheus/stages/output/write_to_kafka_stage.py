@@ -17,8 +17,8 @@ import time
 import typing
 
 import confluent_kafka as ck
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.io import serializers
@@ -69,12 +69,12 @@ class WriteToKafkaStage(SinglePortStage):
         """
         return (MessageMeta, )
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         stream = input_stream[0]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             producer = ck.Producer(self._kafka_conf)
 

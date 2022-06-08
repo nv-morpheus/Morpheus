@@ -16,7 +16,7 @@ import logging
 import time
 import weakref
 
-import neo
+import srf
 import pandas as pd
 from cudf_kafka._lib.kafka import KafkaDatasource
 
@@ -107,7 +107,7 @@ class KafkaSourceStage(SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _source_generator(self, s: neo.Subscriber):
+    def _source_generator(self, s: srf.Subscriber):
         # Each invocation of this function makes a new thread so recreate the producers
 
         # Set some initial values
@@ -328,7 +328,7 @@ class KafkaSourceStage(SingleOutputSource):
                 kafka_datasource.unsubscribe()
                 kafka_datasource.close(batch_timeout)
 
-    def _build_source(self, seg: neo.Builder) -> StreamPair:
+    def _build_source(self, seg: srf.Builder) -> StreamPair:
 
         if (self._build_cpp_node()):
             source = neos.KafkaSourceStage(seg,

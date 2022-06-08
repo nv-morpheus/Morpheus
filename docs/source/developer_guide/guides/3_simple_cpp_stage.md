@@ -60,7 +60,7 @@ template <typename SinkT, typename SourceT = SinkT>  // by default, emit type ==
 class PythonNode : ...
 ```
 
-Both the `PythonSource` and `PythonNode` classes are defined in the `pyneo/node.hpp` header.
+Both the `PythonSource` and `PythonNode` classes are defined in the `pysrf/node.hpp` header.
 
 Note: `SourceT` and `SinkT` types are typically `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`.
 
@@ -74,12 +74,12 @@ As in our Python guide, we will start with a simple pass through stage which can
 
 While our Python implementation accepts messages of any type (in the form of Python objects), on the C++ side we don't have that flexibility since our node is subject to C++ static typing rules. In practice, this isn't a limitation as we usually know which specific message types we need to work with.
 
-To start with, we have our Morpheus and Neo-specific includes:
+To start with, we have our Morpheus and SRF-specific includes:
 
 ```cpp
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <neo/core/segment.hpp>         //for Segment
-#include <pyneo/node.hpp>               // for PythonNode
+#include <srf/core/segment.hpp>         //for Segment
+#include <pysrf/node.hpp>               // for PythonNode
 ```
 
 We'll want to define our stage in its own namespace. In this case, we will name it `morpheus_example`, giving us a namespace and class definition that look like this:
@@ -91,15 +91,15 @@ namespace morpheus_example {
 
 using namespace morpheus;
 
-class PassThruStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+class PassThruStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
     using base_t::operator_fn_t;
     using base_t::reader_type_t;
     using base_t::writer_type_t;
 
-PassThruStage(const neo::Segment &seg, const std::string &name);
+PassThruStage(const srf::Segment &seg, const std::string &name);
 
 operator_fn_t build_operator();
 };
@@ -113,16 +113,16 @@ For simplicity, we defined `base_t` as an alias for our base class type because 
 std::function<Observable<R>(const Observable<T>& source)>
 ```
 
-This means that a Neo operator function accepts an `Observable` of type `T` and returns an observable of type `R`. In our case, both `T` and `R` are `std::shared_ptr<MultiMessage>`.
+This means that a SRF operator function accepts an `Observable` of type `T` and returns an observable of type `R`. In our case, both `T` and `R` are `std::shared_ptr<MultiMessage>`.
 
-All Morpheus C++ stages receive an instance of a Neo Segment and a name. Typically this is the Python class' `unique_name` property. Note that C++ segments don't receive an instance of the Morpheus config. Therefore, if there are any attributes in the config needed by the C++ class, it is the responsibility of the Python class to extract them and pass them in as parameters to the C++ class.
+All Morpheus C++ stages receive an instance of a SRF Segment and a name. Typically this is the Python class' `unique_name` property. Note that C++ segments don't receive an instance of the Morpheus config. Therefore, if there are any attributes in the config needed by the C++ class, it is the responsibility of the Python class to extract them and pass them in as parameters to the C++ class.
 
-We will also define an interface proxy object to keep the class definition separated from the Python interface. This isn't strictly required, but it is a convention used internally by Morpheus. Our proxy object will define a static method named `init` which is responsible for constructing a `PassThruStage` instance and returning it wrapped in a `shared_ptr`. There are many common Python types that pybind11 [automatically converts](https://pybind11.readthedocs.io/en/latest/advanced/cast/overview.html#conversion-table) to their associated C++ types. The Neo `Segment` is a C++ object with Python bindings. The proxy interface object is used to help insulate Python bindings from internal implementation details.
+We will also define an interface proxy object to keep the class definition separated from the Python interface. This isn't strictly required, but it is a convention used internally by Morpheus. Our proxy object will define a static method named `init` which is responsible for constructing a `PassThruStage` instance and returning it wrapped in a `shared_ptr`. There are many common Python types that pybind11 [automatically converts](https://pybind11.readthedocs.io/en/latest/advanced/cast/overview.html#conversion-table) to their associated C++ types. The SRF `Segment` is a C++ object with Python bindings. The proxy interface object is used to help insulate Python bindings from internal implementation details.
 
 ```cpp
 struct PassThruStageInterfaceProxy
 {
-    static std::shared_ptr<PassThruStage> init(neo::Segment &seg, const std::string &name);
+    static std::shared_ptr<PassThruStage> init(srf::Segment &seg, const std::string &name);
 };
 ```
 
@@ -134,8 +134,8 @@ Putting it all together, our header file looks like this:
 #pragma once
 
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <neo/core/segment.hpp>         //for Segment
-#include <pyneo/node.hpp>               // for PythonNode
+#include <srf/core/segment.hpp>         //for Segment
+#include <pysrf/node.hpp>               // for PythonNode
 
 #include <memory>
 #include <string>
@@ -147,22 +147,22 @@ namespace morpheus_example {
 
 using namespace morpheus;
 
-class PassThruStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+class PassThruStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
     using base_t::operator_fn_t;
     using base_t::reader_type_t;
     using base_t::writer_type_t;
 
-    PassThruStage(const neo::Segment &seg, const std::string &name);
+    PassThruStage(const srf::Segment &seg, const std::string &name);
 
     operator_fn_t build_operator();
 };
 
 struct PassThruStageInterfaceProxy
 {
-    static std::shared_ptr<PassThruStage> init(neo::Segment &seg, const std::string &name);
+    static std::shared_ptr<PassThruStage> init(srf::Segment &seg, const std::string &name);
 };
 
 #pragma GCC visibility pop
@@ -181,11 +181,11 @@ Our includes section looks like:
 #include <exception>
 ```
 
-The constructor for our class is responsible for passing the output of `build_operator` to our base class, as well as calling the constructor for `neo::SegmentObject`:
+The constructor for our class is responsible for passing the output of `build_operator` to our base class, as well as calling the constructor for `srf::SegmentObject`:
 
 ```cpp
-PassThruStage::PassThruStage(const neo::Segment& seg, const std::string& name) :
-  neo::SegmentObject(seg, name),
+PassThruStage::PassThruStage(const srf::Segment& seg, const std::string& name) :
+  srf::SegmentObject(seg, name),
   PythonNode(seg, name, build_operator())
 {}
 ```
@@ -195,9 +195,9 @@ The `build_operator` method defines an observer who is subscribed to our input `
 ```cpp
 PassThruStage::operator_fn_t PassThruStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t>& input, neo::Subscriber<writer_type_t>& output) {
+    return [this](srf::Observable<reader_type_t>& input, srf::Subscriber<writer_type_t>& output) {
         return input.subscribe(
-            neo::make_observer<reader_type_t>(
+            srf::make_observer<reader_type_t>(
                 [this, &output](reader_type_t&& x) { output.on_next(std::move(x)); },
                 [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
                 [&]() { output.on_completed(); }));
@@ -227,11 +227,11 @@ We scoped the acquisition of the GIL such that it is held only for the parts of 
 
 The three things that all proxy interfaces need to do are:
 1. Construct the stage wrapped in a `shared_ptr`
-1. Register the stage with the Neo segment
+1. Register the stage with the SRF segment
 1. Return a `shared_ptr` to the stage
 
 ```cpp
-std::shared_ptr<PassThruStage> PassThruStageInterfaceProxy::init(neo::Segment& seg, const std::string& name)
+std::shared_ptr<PassThruStage> PassThruStageInterfaceProxy::init(srf::Segment& seg, const std::string& name)
 {
     auto stage = std::make_shared<PassThruStage>(seg, name);
     seg.register_node<PassThruStage>(stage);
@@ -247,7 +247,7 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_example, m)
 {
-    py::class_<PassThruStage, neo::SegmentObject, std::shared_ptr<PassThruStage>>(
+    py::class_<PassThruStage, srf::SegmentObject, std::shared_ptr<PassThruStage>>(
         m, "PassThruStage", py::multiple_inheritance())
         .def(py::init<>(&PassThruStageInterfaceProxy::init), py::arg("segment"), py::arg("name"));
 }
@@ -264,22 +264,22 @@ PYBIND11_MODULE(morpheus_example, m)
 
 namespace morpheus_example {
 
-PassThruStage::PassThruStage(const neo::Segment& seg, const std::string& name) :
-  neo::SegmentObject(seg, name),
+PassThruStage::PassThruStage(const srf::Segment& seg, const std::string& name) :
+  srf::SegmentObject(seg, name),
   PythonNode(seg, name, build_operator())
 {}
 
 PassThruStage::operator_fn_t PassThruStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t>& input, neo::Subscriber<writer_type_t>& output) {
+    return [this](srf::Observable<reader_type_t>& input, srf::Subscriber<writer_type_t>& output) {
         return input.subscribe(
-            neo::make_observer<reader_type_t>([this, &output](reader_type_t&& x) { output.on_next(std::move(x)); },
+            srf::make_observer<reader_type_t>([this, &output](reader_type_t&& x) { output.on_next(std::move(x)); },
                                               [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
                                               [&]() { output.on_completed(); }));
     };
 }
 
-std::shared_ptr<PassThruStage> PassThruStageInterfaceProxy::init(neo::Segment& seg, const std::string& name)
+std::shared_ptr<PassThruStage> PassThruStageInterfaceProxy::init(srf::Segment& seg, const std::string& name)
 {
     auto stage = std::make_shared<PassThruStage>(seg, name);
     seg.register_node<PassThruStage>(stage);
@@ -291,7 +291,7 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_example, m)
 {
-    py::class_<PassThruStage, neo::SegmentObject, std::shared_ptr<PassThruStage>>(
+    py::class_<PassThruStage, srf::SegmentObject, std::shared_ptr<PassThruStage>>(
         m, "PassThruStage", py::multiple_inheritance())
         .def(py::init<>(&PassThruStageInterfaceProxy::init), py::arg("segment"), py::arg("name"));
 }
@@ -316,7 +316,7 @@ As mentioned in the previous section, we will need to override the `supports_cpp
 def supports_cpp_node(cls):
    return True
 
-def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
    if CppConfig.get_should_use_cpp():
       print("building cpp")
       node = morpheus_example_cpp.PassThruStage(seg, self.unique_name)

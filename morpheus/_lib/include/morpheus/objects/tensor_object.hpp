@@ -19,11 +19,11 @@
 
 #include <morpheus/utilities/type_util_detail.hpp>
 
-#include <neo/cuda/common.hpp>
-#include <neo/memory/blob.hpp>
-#include <neo/memory/default_resources.hpp>
-#include <neo/memory/memory_kind.hpp>  // for memory_kind_type
-#include <neo/utils/string_utils.hpp>
+#include <srf/cuda/common.hpp>
+#include <srf/memory/blob.hpp>
+#include <srf/memory/default_resources.hpp>
+#include <srf/memory/memory_kind.hpp>  // for memory_kind_type
+#include <srf/utils/string_utils.hpp>
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
@@ -115,7 +115,7 @@ enum class TensorStorageType
 };
 
 template <typename T>
-using HostContainer = std::vector<T, neo::memory::host_allocator<T>>;
+using HostContainer = std::vector<T, srf::memory::host_allocator<T>>;
 
 template <typename T>
 using DeviceContainer = rmm::device_uvector<T>;
@@ -357,13 +357,13 @@ template <typename T, RankType R>
 
 #endif
 
-class TensorView : public neo::memory::blob
+class TensorView : public srf::memory::blob
 {
   public:
     TensorView() = delete;
 
-    TensorView(neo::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape);
-    TensorView(neo::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape, std::vector<TensorIndex> stride);
+    TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape);
+    TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape, std::vector<TensorIndex> stride);
 
     const DataType& dtype() const;
 
@@ -487,7 +487,7 @@ struct TensorObject final
 
         out_data.resize(this->bytes());
 
-        NEO_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
+        SRF_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
 
         return out_data;
     }
@@ -514,7 +514,7 @@ struct TensorObject final
 
         T output;
 
-        NEO_CHECK_CUDA(
+        SRF_CHECK_CUDA(
             cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
@@ -542,7 +542,7 @@ struct TensorObject final
 
         T output;
 
-        NEO_CHECK_CUDA(
+        SRF_CHECK_CUDA(
             cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
@@ -588,7 +588,7 @@ struct TensorObject final
         DCHECK(this->bytes() == other.bytes()) << "Left and right bytes should be the same if all other test passed";
 
         // Perform the copy operation
-        NEO_CHECK_CUDA(cudaMemcpy(this->data(), other.data(), this->bytes(), cudaMemcpyDeviceToDevice));
+        SRF_CHECK_CUDA(cudaMemcpy(this->data(), other.data(), this->bytes(), cudaMemcpyDeviceToDevice));
 
         return *this;
     }
@@ -726,10 +726,10 @@ struct TensorObject final
 //     {
 //         auto copied_memory = m_md->get_allocator()->allocate_descriptor(m_md->size()).make_shared();
 
-//         if (copied_memory->type() == neo::memory::memory_kind_type::device ||
-//             copied_memory->type() == neo::memory::memory_kind_type::managed)
+//         if (copied_memory->type() == srf::memory::memory_kind_type::device ||
+//             copied_memory->type() == srf::memory::memory_kind_type::managed)
 //         {
-//             NEO_CHECK_CUDA(cudaMemcpy(copied_memory->data(), m_md->data(), m_md->size(), cudaMemcpyDeviceToDevice));
+//             SRF_CHECK_CUDA(cudaMemcpy(copied_memory->data(), m_md->data(), m_md->size(), cudaMemcpyDeviceToDevice));
 //         }
 //         else
 //         {

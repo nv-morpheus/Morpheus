@@ -20,8 +20,8 @@
 #include <morpheus/messages/multi_inference.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <librdkafka/rdkafkacpp.h>
 #include <cudf/types.hpp>
@@ -129,8 +129,8 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
 }
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
-std::shared_ptr<neo::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
-    neo::segment::Builder &parent,
+std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
+    srf::segment::Builder &parent,
     const std::string &name,
     std::string vocab_hash_file,
     uint32_t sequence_length,

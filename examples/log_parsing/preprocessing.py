@@ -16,7 +16,7 @@ import string
 import typing
 from functools import partial
 
-import neo
+import srf
 
 import cudf
 
@@ -163,7 +163,7 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
                        truncation=self._truncation,
                        add_special_tokens=self._add_special_tokens)
 
-    def _get_preprocess_node(self, seg: neo.Builder):
+    def _get_preprocess_node(self, seg: srf.Builder):
         return neos.PreprocessNLPStage(seg,
                                        self.unique_name,
                                        self._vocab_hash_file,

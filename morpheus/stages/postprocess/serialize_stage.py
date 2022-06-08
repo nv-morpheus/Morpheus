@@ -17,7 +17,7 @@ import re
 import typing
 from functools import partial
 
-import neo
+import srf
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
@@ -116,7 +116,7 @@ class SerializeStage(SinglePortStage):
 
         return MessageMeta(df=df)
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
             stream = neos.SerializeStage(seg,
                                          self.unique_name,

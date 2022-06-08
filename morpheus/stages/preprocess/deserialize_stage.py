@@ -17,8 +17,8 @@ import logging
 import typing
 from functools import partial
 
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
@@ -88,12 +88,12 @@ class DeserializeStage(MultiMessageStage):
 
         return output
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiMessage
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             input.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
                        ops.flatten()).subscribe(output)

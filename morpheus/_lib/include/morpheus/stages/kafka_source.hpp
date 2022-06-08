@@ -19,10 +19,10 @@
 
 #include <morpheus/messages/meta.hpp>
 
-#include <neo/core/fiber_meta_data.hpp>
-#include <neo/core/task_queue.hpp>
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/core/fiber_meta_data.hpp>
+#include <srf/core/task_queue.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <librdkafka/rdkafkacpp.h>
 #include <cudf/io/types.hpp>
@@ -42,10 +42,10 @@ namespace morpheus {
 
 struct KafkaSourceStage__Rebalancer;
 
-class KafkaSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>
+class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
@@ -87,7 +87,7 @@ class KafkaSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<Message
     /**
      * TODO(Documentation)
      */
-    // neo::SharedFuture<bool> launch_tasks(std::vector<std::function<bool()>> &&tasks);
+    // srf::SharedFuture<bool> launch_tasks(std::vector<std::function<bool()>> &&tasks);
 
     /**
      * TODO(Documentation)
@@ -114,7 +114,7 @@ class KafkaSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<Message
     bool m_disable_commit{false};
     bool m_disable_pre_filtering{false};
     bool m_requires_commit{false};  // Whether or not manual committing is required
-    // std::vector<std::shared_ptr<neo::TaskQueue<neo::FiberMetaData>>> m_task_queues;
+    // std::vector<std::shared_ptr<srf::TaskQueue<srf::FiberMetaData>>> m_task_queues;
 
     void *m_rebalancer;
 };
@@ -128,7 +128,7 @@ struct KafkaSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a KafkaSourceStage, and return the result.
      */
-    static std::shared_ptr<neo::segment::Object<KafkaSourceStage>> init(neo::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<KafkaSourceStage>> init(srf::segment::Builder &parent,
                                                                         const std::string &name,
                                                                         size_t max_batch_size,
                                                                         std::string topic,

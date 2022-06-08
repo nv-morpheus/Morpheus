@@ -23,7 +23,7 @@
 #include <morpheus/utilities/stage_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
 
 #include <glog/logging.h>
 #include <http_client.h>
@@ -199,7 +199,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         auto output_buffer =
                             std::make_shared<rmm::device_buffer>(output_ptr_size, rmm::cuda_stream_per_thread);
 
-                        NEO_CHECK_CUDA(
+                        SRF_CHECK_CUDA(
                             cudaMemcpy(output_buffer->data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
 
                         // If we need to do logits, do that here
@@ -393,8 +393,8 @@ bool InferenceClientStage::is_default_grpc_port(std::string &server_url)
 }
 
 // ************ InferenceClientStageInterfaceProxy********* //
-std::shared_ptr<neo::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
-    neo::segment::Builder &parent,
+std::shared_ptr<srf::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
+    srf::segment::Builder &parent,
     const std::string &name,
     std::string model_name,
     std::string server_url,

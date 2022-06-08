@@ -17,28 +17,34 @@
 
 #include <morpheus/objects/file_types.hpp>
 
-#include <neo/utils/string_utils.hpp>
+#include <srf/utils/string_utils.hpp>
 
 #include <filesystem>
 #include <stdexcept>
 
-
 namespace morpheus {
-    FileTypes FileTypesInterfaceProxy::determine_file_type(const std::string &filename) {
-        return morpheus::determine_file_type(filename);
-    }
+FileTypes FileTypesInterfaceProxy::determine_file_type(const std::string &filename)
+{
+    return morpheus::determine_file_type(filename);
 }
+}  // namespace morpheus
 
-morpheus::FileTypes morpheus::determine_file_type(const std::string &filename) {
+morpheus::FileTypes morpheus::determine_file_type(const std::string &filename)
+{
     auto filename_path = std::filesystem::path(filename);
 
-    if (filename_path.extension() == ".json" || filename_path.extension() == ".jsonlines") {
+    if (filename_path.extension() == ".json" || filename_path.extension() == ".jsonlines")
+    {
         return FileTypes::JSON;
-    } else if (filename_path.extension() == ".csv") {
+    }
+    else if (filename_path.extension() == ".csv")
+    {
         return FileTypes::CSV;
-    } else {
+    }
+    else
+    {
         throw std::runtime_error(CONCAT_STR("Unsupported extension '"
-                                                    << filename_path.extension()
-                                                    << "' with 'auto' type. 'auto' only works with: csv, json"));
+                                            << filename_path.extension()
+                                            << "' with 'auto' type. 'auto' only works with: csv, json"));
     }
 }

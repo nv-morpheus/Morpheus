@@ -26,7 +26,7 @@ add_executable(test_libmorpheus
 target_link_libraries(test_libmorpheus
   PRIVATE
     cuda_utils
-    neo::pyneo
+    srf::pysrf
     GTest::gtest
     matx::matx
     pybind11::embed

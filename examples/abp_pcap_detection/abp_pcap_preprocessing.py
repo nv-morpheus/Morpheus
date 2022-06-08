@@ -16,7 +16,7 @@ import typing
 from functools import partial
 
 import cupy as cp
-import neo
+import srf
 import numpy as np
 
 import cudf
@@ -187,5 +187,5 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
             fea_cols=self.features,
         )
 
-    def _get_preprocess_node(self, seg: neo.Builder):
+    def _get_preprocess_node(self, seg: srf.Builder):
         return neos.AbpPcapPreprocessingStage(seg, self.unique_name)

@@ -97,8 +97,8 @@ WriteToFileStage::subscribe_fn_t WriteToFileStage::build_operator()
 }
 
 // ************ WriteToFileStageInterfaceProxy ************* //
-std::shared_ptr<neo::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
-    neo::segment::Builder &parent,
+std::shared_ptr<srf::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
+    srf::segment::Builder &parent,
     const std::string &name,
     const std::string &filename,
     const std::string &mode,

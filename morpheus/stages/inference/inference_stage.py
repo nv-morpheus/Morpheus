@@ -18,9 +18,9 @@ from functools import partial
 from functools import reduce
 
 import cupy as cp
-import neo
-from neo.core import operators as ops
-from neo.core.subscriber import Observable
+import srf
+from srf.core import operators as ops
+from srf.core.subscriber import Observable
 
 from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
@@ -197,15 +197,15 @@ class InferenceStage(MultiMessageStage):
         """
         pass
 
-    def _get_cpp_inference_node(self, seg: neo.Builder) -> neo.SegmentObject:
+    def _get_cpp_inference_node(self, seg: srf.Builder) -> srf.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiResponseProbsMessage
 
-        def py_inference_fn(input: neo.Observable, output: neo.Subscriber):
+        def py_inference_fn(input: srf.Observable, output: srf.Subscriber):
 
             worker = self._get_inference_worker(self._inf_queue)
 
@@ -227,9 +227,9 @@ class InferenceStage(MultiMessageStage):
                 for batch in batches:
                     outstanding_requests += 1
 
-                    fut = neo.Future()
+                    fut = srf.Future()
 
-                    def set_output_fut(resp: ResponseMemoryProbs, b, f: neo.Future):
+                    def set_output_fut(resp: ResponseMemoryProbs, b, f: srf.Future):
                         nonlocal outstanding_requests
                         m = self._convert_one_response(memory, b, resp)
 

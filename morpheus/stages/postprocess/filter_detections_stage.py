@@ -16,8 +16,8 @@ import logging
 import typing
 
 import cupy as cp
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
@@ -114,10 +114,10 @@ class FilterDetectionsStage(SinglePortStage):
 
         return output_list
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert list back to single MultiResponseProbsMessage
-        def flatten_fn(input: neo.Observable, output: neo.Subscriber):
+        def flatten_fn(input: srf.Observable, output: srf.Subscriber):
 
             input.pipe(ops.map(self.filter), ops.flatten()).subscribe(output)
 

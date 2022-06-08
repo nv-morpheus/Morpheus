@@ -22,8 +22,8 @@
 #include <morpheus/objects/file_types.hpp>
 #include <morpheus/utilities/string_util.hpp>
 
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <fstream>
 #include <memory>
@@ -36,10 +36,10 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class WriteToFileStage : public neo::pyneo::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
+class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = neo::pyneo::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -77,7 +77,7 @@ struct WriteToFileStageInterfaceProxy
     /**
      * @brief Create and initialize a WriteToFileStage, and return the result.
      */
-    static std::shared_ptr<neo::segment::Object<WriteToFileStage>> init(neo::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<WriteToFileStage>> init(srf::segment::Builder &parent,
                                                                         const std::string &name,
                                                                         const std::string &filename,
                                                                         const std::string &mode = "w",

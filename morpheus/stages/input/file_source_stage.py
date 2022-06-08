@@ -15,9 +15,9 @@
 import logging
 import typing
 
-import neo
+import srf
 import typing_utils
-from neo.core import operators as ops
+from srf.core import operators as ops
 
 import morpheus._lib.stages as neos
 from morpheus._lib.file_types import FileTypes
@@ -94,7 +94,7 @@ class FileSourceStage(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
-    def _build_source(self, seg: neo.Builder) -> StreamPair:
+    def _build_source(self, seg: srf.Builder) -> StreamPair:
 
         if CppConfig.get_should_use_cpp():
             out_stream = neos.FileSourceStage(seg, self.unique_name, self._filename, self._repeat_count)
@@ -105,7 +105,7 @@ class FileSourceStage(SingleOutputSource):
 
         return out_stream, out_type
 
-    def _post_build_single(self, seg: neo.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, seg: srf.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
@@ -113,7 +113,7 @@ class FileSourceStage(SingleOutputSource):
         # Convert our list of dataframes into the desired type. Flatten if necessary
         if (typing_utils.issubtype(out_type, typing.List)):
 
-            def node_fn(input: neo.Observable, output: neo.Subscriber):
+            def node_fn(input: srf.Observable, output: srf.Subscriber):
 
                 input.pipe(ops.flatten()).subscribe(output)
 

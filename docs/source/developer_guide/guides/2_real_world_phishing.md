@@ -78,7 +78,7 @@ Our `_build_single` method remains unchanged; even though we are modifying the i
 ```python
 import typing
 
-import neo
+import srf
 
 from morpheus.pipeline.messages import MessageMeta
 from morpheus.pipeline.pipeline import SinglePortStage
@@ -112,7 +112,7 @@ class RecipientFeaturesStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_node(self.unique_name, self.on_data)
         seg.make_edge(input_stream[0], node)
 
@@ -406,15 +406,15 @@ In this example, we will create a source that reads messages from a [RabbitMQ](h
 The `_build_source` method is similar to the `_build_single` method; it receives an instance of the pipeline segment and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have parent stages and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
 
 ```python
-def _build_source(self, seg: neo.Builder) -> StreamPair:
+def _build_source(self, seg: srf.Builder) -> StreamPair:
     node = seg.make_source(self.unique_name, self.source_generator)
     return node, MessageMeta
 ```
 
-The `source_generator` method is where most of the RabbitMQ-specific code exists. Source node methods receive an instance of `neo.Subscriber` as their first argument. When we have a message that we wish to emit into the pipeline, we call the `neo.Subscriber.on_next` method.
+The `source_generator` method is where most of the RabbitMQ-specific code exists. Source node methods receive an instance of `srf.Subscriber` as their first argument. When we have a message that we wish to emit into the pipeline, we call the `srf.Subscriber.on_next` method.
 
 ```python
-def source_generator(self, subscriber: neo.Subscriber):
+def source_generator(self, subscriber: srf.Subscriber):
     try:
         while subscriber.is_subscribed():
             (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
@@ -447,7 +447,7 @@ import time
 from datetime import timedelta
 from io import StringIO
 
-import neo
+import srf
 import pika
 
 import cudf
@@ -511,11 +511,11 @@ class RabbitMQSourceStage(SingleOutputSource):
     def name(self) -> str:
         return "from-rabbitmq"
 
-    def _build_source(self, seg: neo.Builder) -> StreamPair:
+    def _build_source(self, seg: srf.Builder) -> StreamPair:
         node = seg.make_source(self.unique_name, self.source_generator)
         return node, MessageMeta
 
-    def source_generator(self, subscriber: neo.Subscriber):
+    def source_generator(self, subscriber: srf.Subscriber):
         try:
             while subscriber.is_subscribed():
                 (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
@@ -550,7 +550,7 @@ class WriteToRabbitMQStage(SinglePortStage):
 
 In our `_build_single` we will be making use of the `make_sink` method rather than `make_node` or `make_source`
 ```python
-def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
     node = seg.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
     seg.make_edge(input_stream[0], node)
     return input_stream
@@ -591,7 +591,7 @@ import logging
 import typing
 from io import StringIO
 
-import neo
+import srf
 import pika
 
 import cudf
@@ -645,7 +645,7 @@ class WriteToRabbitMQStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MessageMeta, )
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
         seg.make_edge(input_stream[0], node)
         return input_stream

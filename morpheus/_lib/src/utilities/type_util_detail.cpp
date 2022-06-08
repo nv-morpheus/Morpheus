@@ -17,7 +17,7 @@
 
 #include <morpheus/utilities/type_util_detail.hpp>
 
-#include <neo/utils/string_utils.hpp>
+#include <srf/utils/string_utils.hpp>
 
 #include <glog/logging.h>
 

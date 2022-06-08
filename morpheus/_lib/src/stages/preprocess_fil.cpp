@@ -22,8 +22,8 @@
 #include <morpheus/utilities/type_util.hpp>
 #include <morpheus/utilities/type_util_detail.hpp>
 
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <http_client.h>
 #include <librdkafka/rdkafkacpp.h>
@@ -112,14 +112,14 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                         auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
 
                         // Do the copy here before it goes out of scope
-                        NEO_CHECK_CUDA(cudaMemcpy(curr_ptr,
+                        SRF_CHECK_CUDA(cudaMemcpy(curr_ptr,
                                                   float_data.data->data(),
                                                   df_just_features.num_rows() * sizeof(float),
                                                   cudaMemcpyDeviceToDevice));
                     }
                     else
                     {
-                        NEO_CHECK_CUDA(cudaMemcpy(curr_ptr,
+                        SRF_CHECK_CUDA(cudaMemcpy(curr_ptr,
                                                   curr_col.data<float>(),
                                                   df_just_features.num_rows() * sizeof(float),
                                                   cudaMemcpyDeviceToDevice));
@@ -160,8 +160,8 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
 }
 
 // ************ PreprocessFILStageInterfaceProxy *********** //
-std::shared_ptr<neo::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
-    neo::segment::Builder &parent, const std::string &name, const std::vector<std::string> &features)
+std::shared_ptr<srf::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
+    srf::segment::Builder &parent, const std::string &name, const std::vector<std::string> &features)
 {
     auto stage = parent.construct_object<PreprocessFILStage>(name, features);
 

@@ -21,9 +21,9 @@ from collections import deque
 from math import ceil
 
 import cupy as cp
-import neo
+import srf
 import pandas as pd
-from neo.core import operators as ops
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MultiResponseAEMessage
@@ -449,12 +449,12 @@ class TimeSeriesStage(SinglePortStage):
 
         return self._timeseries_per_user[x.user_id]._calc_timeseries(x, False)
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = input_stream[1]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             def on_next(x: MultiResponseAEMessage):
 

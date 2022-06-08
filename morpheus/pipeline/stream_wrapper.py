@@ -20,7 +20,7 @@ import typing
 from abc import ABC
 from abc import abstractmethod
 
-import neo
+import srf
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
@@ -66,7 +66,7 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
 
 class StreamWrapper(ABC, collections.abc.Hashable):
     """
-    This abstract class serves as the morpheus.pipeline's base class. This class wraps a `neo.SegmentObject`
+    This abstract class serves as the morpheus.pipeline's base class. This class wraps a `srf.SegmentObject`
     object and aids in hooking stages up together.
 
     Parameters
@@ -300,13 +300,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
             return True
 
-    def build(self, seg: neo.Builder, do_propagate=True):
+    def build(self, seg: srf.Builder, do_propagate=True):
         """Build this stage.
 
         Parameters
         ----------
-        seg : `neo.Builder`
-            Neo segment for this stage.
+        seg : `srf.Builder`
+            SRF segment for this stage.
         do_propagate : bool, optional
             Whether to propagate to build output stages, by default True.
 
@@ -347,33 +347,33 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         return in_pairs
 
     @abstractmethod
-    def _build(self, seg: neo.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, seg: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         """
-        This function is responsible for constructing this stage's internal `neo.SegmentObject` object. The input
+        This function is responsible for constructing this stage's internal `srf.SegmentObject` object. The input
         of this function contains the returned value from the upstream stage.
 
-        The input values are the `neo.Builder` for this stage and a `StreamPair` tuple which contain the input
-        `neo.SegmentObject` object and the message data type.
+        The input values are the `srf.Builder` for this stage and a `StreamPair` tuple which contain the input
+        `srf.SegmentObject` object and the message data type.
 
         :meta public:
 
         Parameters
         ----------
-        seg : `neo.Builder`
-            `neo.Builder` object for the pipeline. This should be used to construct/attach the internal
-            `neo.SegmentObject`.
+        seg : `srf.Builder`
+            `srf.Builder` object for the pipeline. This should be used to construct/attach the internal
+            `srf.SegmentObject`.
         in_ports_streams : `morpheus.pipeline.pipeline.StreamPair`
-            List of tuples containing the input `neo.SegmentObject` object and the message data type.
+            List of tuples containing the input `srf.SegmentObject` object and the message data type.
 
         Returns
         -------
         `typing.List[morpheus.pipeline.pipeline.StreamPair]`
-            List of tuples containing the output `neo.SegmentObject` object from this stage and the message data type.
+            List of tuples containing the output `srf.SegmentObject` object from this stage and the message data type.
 
         """
         pass
 
-    def _post_build(self, seg: neo.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, seg: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
         return out_ports_pair
 
     def start(self):

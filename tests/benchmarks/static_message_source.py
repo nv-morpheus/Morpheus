@@ -15,8 +15,8 @@
 
 import typing
 
-import neo
-import neo.core.operators as ops
+import srf
+import srf.core.operators as ops
 import typing_utils
 
 import cudf
@@ -43,11 +43,11 @@ class StaticMessageSource(SingleOutputSource):
     def input_count(self) -> int:
         return len(self._df)
 
-    def _build_source(self, seg: neo.Builder) -> StreamPair:
+    def _build_source(self, seg: srf.Builder) -> StreamPair:
         out_stream = seg.make_source(self.unique_name, self._generate_frames())
         return out_stream, MessageMeta
 
-    def _post_build_single(self, seg: neo.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, seg: srf.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
@@ -55,7 +55,7 @@ class StaticMessageSource(SingleOutputSource):
         # Convert our list of dataframes into the desired type. Flatten if necessary
         if (typing_utils.issubtype(out_type, typing.List)):
 
-            def node_fn(input: neo.Observable, output: neo.Subscriber):
+            def node_fn(input: srf.Observable, output: srf.Subscriber):
 
                 input.pipe(ops.flatten()).subscribe(output)
 

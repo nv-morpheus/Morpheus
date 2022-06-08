@@ -15,8 +15,8 @@
 import logging
 import typing
 
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -56,10 +56,10 @@ class TriggerStage(SinglePortStage):
         """
         return (typing.Any, )
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then push them
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             input.pipe(ops.to_list(), ops.flatten()).subscribe(output)
 

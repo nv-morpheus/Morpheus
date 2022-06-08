@@ -24,7 +24,7 @@ from functools import lru_cache
 from functools import partial
 
 import cupy as cp
-import neo
+import srf
 import numpy as np
 import tritonclient.grpc as tritonclient
 from tritonclient.utils import InferenceServerException
@@ -889,7 +889,7 @@ class TritonInferenceStage(InferenceStage):
 
         return worker_cls(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
-    def _get_cpp_inference_node(self, seg: neo.Builder):
+    def _get_cpp_inference_node(self, seg: srf.Builder):
 
         return neos.InferenceClientStage(seg,
                                          name=self.unique_name,

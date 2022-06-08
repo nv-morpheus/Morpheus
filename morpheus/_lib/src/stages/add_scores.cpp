@@ -53,7 +53,7 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
 
                 auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
 
-                NEO_CHECK_CUDA(
+                SRF_CHECK_CUDA(
                     cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
                 // Depending on the input the stride is given in bytes or elements,
@@ -97,8 +97,8 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
 }
 
 // ************ AddScoresStageInterfaceProxy ************* //
-std::shared_ptr<neo::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
-    neo::segment::Builder& parent,
+std::shared_ptr<srf::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
+    srf::segment::Builder& parent,
     const std::string& name,
     std::size_t num_class_labels,
     std::map<std::size_t, std::string> idx2label)

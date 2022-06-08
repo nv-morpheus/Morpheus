@@ -57,7 +57,7 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
                 auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
 
-                NEO_CHECK_CUDA(
+                SRF_CHECK_CUDA(
                     cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
                 // Depending on the input the stride is given in bytes or elements,
@@ -110,8 +110,8 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
 }
 
 // ************ AddClassificationStageInterfaceProxy ************* //
-std::shared_ptr<neo::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
-    neo::segment::Builder& parent,
+std::shared_ptr<srf::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
+    srf::segment::Builder& parent,
     const std::string& name,
     float threshold,
     std::size_t num_class_labels,

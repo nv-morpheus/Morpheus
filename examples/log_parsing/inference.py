@@ -17,10 +17,10 @@ import typing
 from functools import partial
 
 import cupy as cp
-import neo
+import srf
 import numpy as np
 import tritonclient.grpc as tritonclient
-from neo.core import operators as ops
+from srf.core import operators as ops
 from scipy.special import softmax
 
 from messages import MultiPostprocLogParsingMessage
@@ -191,12 +191,12 @@ class LogParsingInferenceStage(InferenceStage):
         # Get the value from the worker class
         return False
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiResponseLogParsingMessage
 
-        def py_inference_fn(input: neo.Observable, output: neo.Subscriber):
+        def py_inference_fn(input: srf.Observable, output: srf.Subscriber):
 
             worker = self._get_inference_worker(self._inf_queue)
 
@@ -218,9 +218,9 @@ class LogParsingInferenceStage(InferenceStage):
                 for batch in batches:
                     outstanding_requests += 1
 
-                    fut = neo.Future()
+                    fut = srf.Future()
 
-                    def set_output_fut(resp: ResponseMemoryLogParsing, b, f: neo.Future):
+                    def set_output_fut(resp: ResponseMemoryLogParsing, b, f: srf.Future):
                         nonlocal outstanding_requests
                         m = self._convert_one_response(memory, b, resp)
 

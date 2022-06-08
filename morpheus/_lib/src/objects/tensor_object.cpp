@@ -19,8 +19,8 @@
 
 #include <morpheus/utilities/tensor_util.hpp>
 
-#include <neo/memory/blob.hpp>       // for blob
-#include <neo/utils/type_utils.hpp>  // for DataType
+#include <srf/memory/blob.hpp>       // for blob
+#include <srf/utils/type_utils.hpp>  // for DataType
 
 #include <vector>
 
@@ -38,8 +38,8 @@ static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::ve
     }
 }
 
-TensorView::TensorView(neo::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape) :
-  neo::memory::blob(std::move(bv)),
+TensorView::TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape) :
+  srf::memory::blob(std::move(bv)),
   m_dtype(std::move(dtype)),
   m_shape(std::move(shape))
 {
@@ -49,11 +49,11 @@ TensorView::TensorView(neo::memory::blob bv, DataType dtype, std::vector<TensorI
     // hold a tensor of shape/stride.
 }
 
-TensorView::TensorView(neo::memory::blob bv,
+TensorView::TensorView(srf::memory::blob bv,
                        DataType dtype,
                        std::vector<TensorIndex> shape,
                        std::vector<TensorIndex> stride) :
-  neo::memory::blob(std::move(bv)),
+  srf::memory::blob(std::move(bv)),
   m_dtype(std::move(dtype)),
   m_shape(std::move(shape)),
   m_stride(std::move(stride))
@@ -86,7 +86,7 @@ const std::vector<TensorIndex>& TensorView::stride() const
     return m_stride;
 }
 
-// GenericTensor::GenericTensor(std::shared_ptr<neo::MemoryDescriptor> md,
+// GenericTensor::GenericTensor(std::shared_ptr<srf::MemoryDescriptor> md,
 //                              size_t offset,
 //                              DataType dtype,
 //                              const std::vector<TensorIndex>& shape,

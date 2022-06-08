@@ -15,6 +15,6 @@
 
 import typing
 
-import neo
+import srf
 
-StreamPair = typing.Tuple[neo.SegmentObject, typing.Type]
+StreamPair = typing.Tuple[srf.SegmentObject, typing.Type]

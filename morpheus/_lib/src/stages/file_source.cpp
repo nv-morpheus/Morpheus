@@ -17,7 +17,7 @@
 
 #include <morpheus/stages/file_source.hpp>
 
-#include <neo/segment/builder.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
@@ -159,8 +159,8 @@ cudf::io::table_with_metadata FileSourceStage::load_table()
 }
 
 // ************ FileSourceStageInterfaceProxy ************ //
-std::shared_ptr<neo::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
-    neo::segment::Builder &parent, const std::string &name, std::string filename, int repeat)
+std::shared_ptr<srf::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    srf::segment::Builder &parent, const std::string &name, std::string filename, int repeat)
 {
     auto stage = parent.construct_object<FileSourceStage>(name, filename, repeat);
 

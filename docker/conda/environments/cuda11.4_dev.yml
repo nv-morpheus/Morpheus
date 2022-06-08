@@ -18,7 +18,7 @@ channels:
     - local
     - rapidsai
     - nvidia
-    - nvidia/label/dev # For pre-releases of Neo. Should still default to full releases if available
+    - nvidia/label/dev # For pre-releases of SRF. Should still default to full releases if available
     - conda-forge
 dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
@@ -50,7 +50,7 @@ dependencies:
     - isort
     - mlflow>=1.23
     - myst-parser==0.17
-    - neo 22.04.*
+    - srf 22.04.*
     - ninja=1.10
     - nodejs=17.4.0
     - pandas=1.3

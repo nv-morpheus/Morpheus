@@ -21,9 +21,9 @@
 #include <morpheus/utilities/stage_util.hpp>
 #include <morpheus/utilities/string_util.hpp>
 
-#include <neo/runnable/context.hpp>
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/runnable/context.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <glog/logging.h>
 #include <http_client.h>
@@ -45,7 +45,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <utility>
-#include "neo/runnable/forward.hpp"
+#include "srf/runnable/forward.hpp"
 
 #define CHECK_KAFKA(command, expected, msg)                                                                    \
     {                                                                                                          \
@@ -134,14 +134,14 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
   private:
     bool m_is_rebalanced{false};
 
-    // std::function<neo::SharedFuture<bool>(std::vector<std::function<bool()>> &&)> m_task_launcher_fn;
+    // std::function<srf::SharedFuture<bool>(std::vector<std::function<bool()>> &&)> m_task_launcher_fn;
     std::function<int32_t()> m_batch_timeout_fn;
     std::function<std::size_t()> m_max_batch_size_fn;
     std::function<std::string(std::string)> m_display_str_fn;
     std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> m_process_fn;
 
     boost::fibers::recursive_mutex m_mutex;
-    neo::SharedFuture<bool> m_partition_future;
+    srf::SharedFuture<bool> m_partition_future;
 };
 
 KafkaSourceStage__Rebalancer::KafkaSourceStage__Rebalancer(
@@ -326,7 +326,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
             [this]() { return this->batch_timeout_ms(); },
             [this]() { return this->max_batch_size(); },
             [this](const std::string str_to_display) {
-                auto &ctx = neo::runnable::Context::get_runtime_context();
+                auto &ctx = srf::runnable::Context::get_runtime_context();
                 return CONCAT_STR(ctx.info() << " " << str_to_display);
             },
             [sub, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
@@ -358,7 +358,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 return m_requires_commit;
             });
 
-        auto &context = neo::runnable::Context::get_runtime_context();
+        auto &context = srf::runnable::Context::get_runtime_context();
 
         // Build consumer
         // m_rebalancer  = &rebalancer;
@@ -416,7 +416,7 @@ int32_t KafkaSourceStage::batch_timeout_ms()
 
 // void KafkaSourceStage::start()
 // {
-//     auto& context = neo::runnable::Context::get_runtime_context();
+//     auto& context = srf::runnable::Context::get_runtime_context();
 
 //     // Save off the queues before setting our concurrency back to 1
 //     for (size_t i = 0; i < this->concurrency(); ++i)
@@ -427,7 +427,7 @@ int32_t KafkaSourceStage::batch_timeout_ms()
 //     this->concurrency(1);
 
 //     // Call the default start
-//     neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>::start();
+//     srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>::start();
 // }
 
 std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map<std::string, std::string> &config_in)
@@ -473,9 +473,9 @@ std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map
     return std::move(kafka_conf);
 }
 
-// neo::SharedFuture<bool> KafkaSourceStage::launch_tasks(std::vector<std::function<bool()>> &&tasks)
+// srf::SharedFuture<bool> KafkaSourceStage::launch_tasks(std::vector<std::function<bool()>> &&tasks)
 // {
-//     std::vector<neo::SharedFuture<bool>> partition_futures;
+//     std::vector<srf::SharedFuture<bool>> partition_futures;
 
 //     // Loop over tasks enqueuing onto saved fiber queues
 //     for (size_t i = 0; i < tasks.size(); ++i)
@@ -560,7 +560,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(KafkaS
 
     std::map<std::string, std::vector<int32_t>> topic_parts;
 
-    auto &ctx = neo::runnable::Context::get_runtime_context();
+    auto &ctx = srf::runnable::Context::get_runtime_context();
     VLOG(10) << ctx.info() << CONCAT_STR(" Subscribed to " << md->topics()->size() << " topics:");
 
     for (auto const &topic : *(md->topics()))
@@ -593,7 +593,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(KafkaS
         auto positions =
             foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition> &x) { return x->offset(); });
 
-        auto &ctx = neo::runnable::Context::get_runtime_context();
+        auto &ctx = srf::runnable::Context::get_runtime_context();
         VLOG(10) << ctx.info()
                  << CONCAT_STR("   Topic: '"
                                << topic->topic()
@@ -676,8 +676,8 @@ std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
 }
 
 // ************ KafkaStageInterfaceProxy ************ //
-std::shared_ptr<neo::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
-    neo::segment::Builder &parent,
+std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
+    srf::segment::Builder &parent,
     const std::string &name,
     size_t max_batch_size,
     std::string topic,

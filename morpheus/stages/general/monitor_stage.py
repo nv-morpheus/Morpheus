@@ -16,8 +16,8 @@ import logging
 import typing
 from functools import reduce
 
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 from tqdm import TMonitor
 from tqdm import TqdmSynchronisationWarning
 from tqdm import tqdm
@@ -211,7 +211,7 @@ class MonitorStage(SinglePortStage):
 
             self._progress.reset()
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         def sink_on_completed():
             # Set the name to complete. This refreshes the display
@@ -226,7 +226,7 @@ class MonitorStage(SinglePortStage):
                 MorpheusTqdm.monitor.exit()
                 MorpheusTqdm.monitor = None
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             input.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(output)
 

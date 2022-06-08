@@ -17,42 +17,45 @@
 
 #pragma once
 
-#include <neo/utils/string_utils.hpp>
+#include <srf/utils/string_utils.hpp>
 
-#include <string>
 #include <sstream>
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** StringUtil****************************************/
+/****** Component public implementations *******************/
+/****** StringUtil****************************************/
+/**
+ * @brief Structure that encapsulates string utilities.
+ */
+struct StringUtil
+{
     /**
-     * @brief Structure that encapsulates string utilities.
+     * TODO(Documentation)
      */
-    struct StringUtil {
-        /**
-         * TODO(Documentation)
-         */
-        template<typename IterT>
-        static std::string join(IterT begin, IterT end, std::string const &separator) {
-            std::ostringstream result;
-            if (begin != end)
-                result << *begin++;
-            while (begin != end)
-                result << separator << *begin++;
-            return result.str();
-        }
+    template <typename IterT>
+    static std::string join(IterT begin, IterT end, std::string const& separator)
+    {
+        std::ostringstream result;
+        if (begin != end)
+            result << *begin++;
+        while (begin != end)
+            result << separator << *begin++;
+        return result.str();
+    }
 
-        /**
-         * TODO(Documentation)
-         */
-        template<typename IterT>
-        static std::string array_to_str(IterT begin, IterT end) {
-            return CONCAT_STR("[" << join(begin, end, ", ") << "]");
-        }
+    /**
+     * TODO(Documentation)
+     */
+    template <typename IterT>
+    static std::string array_to_str(IterT begin, IterT end)
+    {
+        return CONCAT_STR("[" << join(begin, end, ", ") << "]");
+    }
 
-        /**
-         * TODO(Documentation)
-         */
-        static bool str_contains(const std::string& str, const std::string& search_str);
-    };
+    /**
+     * TODO(Documentation)
+     */
+    static bool str_contains(const std::string& str, const std::string& search_str);
+};
 }  // namespace morpheus

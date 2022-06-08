@@ -19,8 +19,8 @@
 
 #include <morpheus/messages/meta.hpp>
 
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <memory>
 #include <string>
@@ -32,10 +32,10 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class FileSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>
+class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
@@ -61,7 +61,7 @@ struct FileSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a FileSourceStage, and return the result.
      */
-    static std::shared_ptr<neo::segment::Object<FileSourceStage>> init(neo::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<FileSourceStage>> init(srf::segment::Builder &parent,
                                                                        const std::string &name,
                                                                        std::string filename,
                                                                        int repeat = 1);

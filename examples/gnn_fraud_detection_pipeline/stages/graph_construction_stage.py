@@ -16,7 +16,7 @@
 import dataclasses
 import typing
 
-import neo
+import srf
 import networkx as nx
 import pandas as pd
 from stellargraph import StellarGraph
@@ -97,7 +97,7 @@ class FraudGraphConstructionStage(SinglePortStage):
                                       mess_offset=message.mess_offset,
                                       mess_count=message.mess_count)
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_node(self.unique_name, self._process_message)
         seg.make_edge(input_stream[0], node)
         return node, FraudGraphMultiMessage

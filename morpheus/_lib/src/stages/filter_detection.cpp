@@ -52,7 +52,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.count() * probs.dtype_size(),
                                                                            rmm::cuda_stream_per_thread);
 
-                    NEO_CHECK_CUDA(
+                    SRF_CHECK_CUDA(
                         cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
                     // Depending on the input the stride is given in bytes or elements,
@@ -78,7 +78,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     std::vector<uint8_t> host_bool_values(num_rows);
 
                     // Copy bools back to host
-                    NEO_CHECK_CUDA(cudaMemcpy(host_bool_values.data(),
+                    SRF_CHECK_CUDA(cudaMemcpy(host_bool_values.data(),
                                               thresh_bool_buffer->data(),
                                               thresh_bool_buffer->size(),
                                               cudaMemcpyDeviceToHost));
@@ -112,8 +112,8 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 }
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
-std::shared_ptr<neo::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
-    neo::segment::Builder &parent, const std::string &name, float threshold)
+std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
+    srf::segment::Builder &parent, const std::string &name, float threshold)
 {
     auto stage = parent.construct_object<FilterDetectionsStage>(name, threshold);
 

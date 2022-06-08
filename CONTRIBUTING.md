@@ -94,7 +94,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
    ```shell
    DOCKER_TARGET=development_pydbg ./docker/build_container_dev.sh
    ```
-   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's 
+   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
    source path.
    1. Once created, you will be able to introspect python objects from within GDB. For example, if we were to break
    within a generator setup call and examine it's PyFrame_Object `f`, it might look like this:
@@ -112,7 +112,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
     (morpheus) user@host:/workspace# conda list | grep python
     python                    3.8.13          py3.8.13_dbg_morpheus    local
    ```
-   1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
+   1. Note: This does not build any Morpheus or SRF code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
 2. Set up `ssh-agent` to allow container to pull from private repos
    ```bash
    eval `ssh-agent -s`

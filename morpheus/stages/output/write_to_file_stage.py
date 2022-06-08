@@ -15,8 +15,8 @@
 import os
 import typing
 
-import neo
-import neo.core.operators as ops
+import srf
+import srf.core.operators as ops
 import pandas as pd
 
 import cudf
@@ -104,7 +104,7 @@ class WriteToFileStage(SinglePortStage):
 
         return output_strs
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
@@ -113,7 +113,7 @@ class WriteToFileStage(SinglePortStage):
             to_file = neos.WriteToFileStage(seg, self.unique_name, self._output_file, "w", self._file_type)
         else:
 
-            def node_fn(input: neo.Observable, output: neo.Subscriber):
+            def node_fn(input: srf.Observable, output: srf.Subscriber):
 
                 # Ensure our directory exists
                 os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)

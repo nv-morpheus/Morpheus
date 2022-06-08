@@ -14,8 +14,8 @@
 
 import typing
 
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -60,11 +60,11 @@ class DropNullStage(SinglePortStage):
         """
         return (MessageMeta, )
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
         # Finally, flatten to a single stream
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             def on_next(x: MessageMeta):
 

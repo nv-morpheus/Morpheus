@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Background
 
-Morpheus makes use of the Neo graph-execution framework. Morpheus pipelines are built on top of Neo pipelines. Pipelines in Neo are made up of segments; however, in many common cases, a Neo pipeline will consist of only a single segment. Our Morpheus stages will interact with the Neo segment to build nodes and add them to the Neo graph. In the common case, a Morpheus stage will add a single node to the graph, but in some cases it will add multiple nodes to the graph.
+Morpheus makes use of the SRF graph-execution framework. Morpheus pipelines are built on top of SRF pipelines. Pipelines in SRF are made up of segments; however, in many common cases, a SRF pipeline will consist of only a single segment. Our Morpheus stages will interact with the SRF segment to build nodes and add them to the SRF graph. In the common case, a Morpheus stage will add a single node to the graph, but in some cases it will add multiple nodes to the graph.
 
 ## The Pass Through Stage
 
@@ -30,7 +30,7 @@ Defining this stage requires us to specify the stage type. Morpheus stages conta
 ```python
 import typing
 
-import neo
+import srf
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
 
@@ -59,14 +59,14 @@ Our `on_data` method accepts the incoming message and returns a message. The ret
         return message
 ```
 
-Finally, the `_build_single` method will be used at build time to wire our stage into the pipeline. `_build_single` receives an instance of the Neo pipeline segment along with a `StreamPair` instance. We will be using the segment instance to build a node from our stage and add it to the pipeline segment. The `StreamPair` argument is a tuple; the first element is our parent node, and the second is our parent node's output type. The return type of this method is also a `StreamPair`. Typically, we will be returning our newly constructed node along with our output type.
+Finally, the `_build_single` method will be used at build time to wire our stage into the pipeline. `_build_single` receives an instance of the SRF pipeline segment along with a `StreamPair` instance. We will be using the segment instance to build a node from our stage and add it to the pipeline segment. The `StreamPair` argument is a tuple; the first element is our parent node, and the second is our parent node's output type. The return type of this method is also a `StreamPair`. Typically, we will be returning our newly constructed node along with our output type.
 ```python
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_node(self.unique_name, self.on_data)
         seg.make_edge(input_stream[0], node)
 ```
 
-In most cases, a Morpheus stage will define and build a single Neo node. In some advanced cases, a stage can construct more than one node. For our purposes, a Morpheus _stage_ defines information about the type of node(s) it builds, while the _node_ is the instance of the stage that is wired into the Neo pipeline. To build the node, we will call the `make_node` method of the segment instance, passing to it our name and our `on_data` method. We used the `unique_name` property, which will take the name property which we already defined and append a unique id to it.
+In most cases, a Morpheus stage will define and build a single SRF node. In some advanced cases, a stage can construct more than one node. For our purposes, a Morpheus _stage_ defines information about the type of node(s) it builds, while the _node_ is the instance of the stage that is wired into the SRF pipeline. To build the node, we will call the `make_node` method of the segment instance, passing to it our name and our `on_data` method. We used the `unique_name` property, which will take the name property which we already defined and append a unique id to it.
 ```python
 node = seg.make_node(self.unique_name, self.on_data)
 ```
@@ -85,7 +85,7 @@ return node, input_stream[1]
 ```python
 import typing
 
-import neo
+import srf
 
 from morpheus.pipeline.pipeline import SinglePortStage
 from morpheus.pipeline.pipeline import StreamPair
@@ -102,7 +102,7 @@ class PassThruStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = seg.make_node(self.unique_name, self.on_data)
         seg.make_edge(input_stream[0], node)
 

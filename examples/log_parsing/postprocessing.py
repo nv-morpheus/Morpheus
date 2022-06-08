@@ -16,7 +16,7 @@ import json
 import typing
 from collections import defaultdict
 
-import neo
+import srf
 import numpy as np
 import pandas as pd
 
@@ -137,7 +137,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         return df
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         stream = seg.make_node(self.unique_name, self._postprocess)

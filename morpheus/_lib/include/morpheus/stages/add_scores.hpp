@@ -19,8 +19,8 @@
 
 #include <morpheus/messages/multi_response_probs.hpp>
 
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <memory>
 #include <string>
@@ -32,12 +32,12 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class AddScoresStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                      std::shared_ptr<MultiResponseProbsMessage>>
 {
   public:
     using base_t =
-        neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -62,7 +62,7 @@ struct AddScoresStageInterfaceProxy
     /**
      * @brief Create and initialize a AddScoresStage, and return the result.
      */
-    static std::shared_ptr<neo::segment::Object<AddScoresStage>> init(neo::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<AddScoresStage>> init(srf::segment::Builder &parent,
                                                                       const std::string &name,
                                                                       std::size_t num_class_labels,
                                                                       std::map<std::size_t, std::string> idx2label);

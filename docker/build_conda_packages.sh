@@ -48,11 +48,11 @@ CONDA_ARGS+=("--skip-existing")
 
 DOCKER_EXTRA_ARGS=()
 
-if hasArg libneo; then
-   # If libneo is specified, you must set NEO_GIT_URL
-   DOCKER_EXTRA_ARGS+=("--env" "NEO_GIT_URL=${NEO_GIT_URL:?"Cannot build libneo. Must set NEO_GIT_URL to git repo location to allow checkout of neo repository"}")
+if hasArg libsrf; then
+   # If libsrf is specified, you must set SRF_GIT_URL
+   DOCKER_EXTRA_ARGS+=("--env" "SRF_GIT_URL=${SRF_GIT_URL:?"Cannot build libsrf. Must set SRF_GIT_URL to git repo location to allow checkout of srf repository"}")
 
-   url=${NEO_GIT_URL}
+   url=${SRF_GIT_URL}
 
    # Remove the http/https/ssh
    url="${url#http://}"

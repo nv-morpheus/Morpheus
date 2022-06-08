@@ -20,8 +20,8 @@
 #include <morpheus/messages/meta.hpp>
 #include <morpheus/messages/multi.hpp>
 
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <memory>
 #include <string>
@@ -33,10 +33,10 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class DeserializeStage : public neo::pyneo::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
+class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t = neo::pyneo::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>;
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -61,7 +61,7 @@ struct DeserializeStageInterfaceProxy
     /**
      * @brief Create and initialize a DeserializationStage, and return the result.
      */
-    static std::shared_ptr<neo::segment::Object<DeserializeStage>> init(neo::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<DeserializeStage>> init(srf::segment::Builder &parent,
                                                                         const std::string &name,
                                                                         size_t batch_size);
 };

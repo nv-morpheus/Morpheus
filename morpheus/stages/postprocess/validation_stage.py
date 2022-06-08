@@ -20,9 +20,9 @@ import re
 import threading
 import typing
 
-import neo
+import srf
 import pandas as pd
-from neo.core import operators as ops
+from srf.core import operators as ops
 
 import cudf
 
@@ -223,13 +223,13 @@ class ValidationStage(MultiMessageStage):
         with open(self._results_file_name, "w") as f:
             json.dump(output, f, indent=2, sort_keys=True)
 
-    def _build_single(self, seg: neo.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         self._val_df: pd.DataFrame = read_file_to_df(self._val_file_name, FileTypes.Auto, df_type="pandas")
         print("Loading on thread: {}".format(threading.current_thread().ident))
 
         # Store all messages until on_complete is called and then build the dataframe and compare
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             def do_compare(delayed_messages):
 

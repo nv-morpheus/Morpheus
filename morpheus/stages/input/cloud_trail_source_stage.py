@@ -19,10 +19,10 @@ import queue
 import typing
 from functools import partial
 
-import neo
+import srf
 import numpy as np
 import pandas as pd
-from neo.core import operators as ops
+from srf.core import operators as ops
 
 from morpheus._lib.common import FiberQueue
 from morpheus._lib.file_types import FileTypes
@@ -411,7 +411,7 @@ class CloudTrailSourceStage(SingleOutputSource):
 
         return user_metas
 
-    def _build_source(self, seg: neo.Builder) -> StreamPair:
+    def _build_source(self, seg: srf.Builder) -> StreamPair:
 
         # The first source just produces filenames
         filename_source = seg.make_source(self.unique_name, self._generate_filenames())
@@ -421,12 +421,12 @@ class CloudTrailSourceStage(SingleOutputSource):
         # Supposed to just return a source here
         return filename_source, out_type
 
-    def _post_build_single(self, seg: neo.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, seg: srf.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             input.pipe(
                 # At this point, we have batches of filenames to process. Make a node for processing batches of

@@ -17,8 +17,8 @@
 
 #include <morpheus/stages/deserialization.hpp>
 
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <cstddef>
 #include <exception>
@@ -56,8 +56,8 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
 }
 
 // ************ DeserializationStageInterfaceProxy ************* //
-std::shared_ptr<neo::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
-    neo::segment::Builder &parent, const std::string &name, size_t batch_size)
+std::shared_ptr<srf::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
+    srf::segment::Builder &parent, const std::string &name, size_t batch_size)
 {
     auto stage = parent.construct_object<DeserializeStage>(name, batch_size);
 

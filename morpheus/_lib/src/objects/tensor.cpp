@@ -58,7 +58,7 @@ std::vector<uint8_t> Tensor::get_host_data() const
 
     out_data.resize(this->bytes_count());
 
-    NEO_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes_count(), cudaMemcpyDeviceToHost));
+    SRF_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes_count(), cudaMemcpyDeviceToHost));
 
     return out_data;
 }

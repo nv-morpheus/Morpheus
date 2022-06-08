@@ -20,8 +20,8 @@
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/messages/multi_inference.hpp>
 
-#include <neo/segment/builder.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <memory>
 #include <string>
@@ -34,10 +34,10 @@ namespace morpheus {
  */
 #pragma GCC visibility push(default)
 class PreprocessFILStage
-  : public neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
+  : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
 {
   public:
-    using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -63,9 +63,9 @@ struct PreprocessFILStageInterfaceProxy
     /**
      * @brief Create and initialize a PreprocessFILStage, and return the result.
      */
-    static std::shared_ptr<neo::segment::Object<PreprocessFILStage>> init(neo::segment::Builder &parent,
-                                                                          const std::string &name,
-                                                    const std::vector<std::string>& features);
+    static std::shared_ptr<srf::segment::Object<PreprocessFILStage>> init(srf::segment::Builder& parent,
+                                                                          const std::string& name,
+                                                                          const std::vector<std::string>& features);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
