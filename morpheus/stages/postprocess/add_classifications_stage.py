@@ -17,7 +17,7 @@ import typing
 
 import srf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.messages import MultiResponseProbsMessage
@@ -108,7 +108,7 @@ class AddClassificationsStage(SinglePortStage):
 
         # Convert the messages to rows of strings
         if CppConfig.get_should_use_cpp():
-            stream = neos.AddClassificationsStage(seg,
+            stream = _stages.AddClassificationsStage(seg,
                                                   self.unique_name,
                                                   self._threshold,
                                                   len(self._class_labels),

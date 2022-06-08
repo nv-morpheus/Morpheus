@@ -20,7 +20,7 @@ from functools import partial
 import srf
 from srf.core import operators as ops
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
@@ -99,7 +99,7 @@ class DeserializeStage(MultiMessageStage):
                        ops.flatten()).subscribe(output)
 
         if CppConfig.get_should_use_cpp():
-            stream = neos.DeserializeStage(seg, self.unique_name, self._batch_size)
+            stream = _stages.DeserializeStage(seg, self.unique_name, self._batch_size)
         else:
             stream = seg.make_node_full(self.unique_name, node_fn)
 

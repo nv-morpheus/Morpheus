@@ -20,7 +20,7 @@ import srf
 import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage
@@ -166,7 +166,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
                        add_special_tokens=self._add_special_tokens)
 
     def _get_preprocess_node(self, seg: srf.Builder):
-        return neos.PreprocessNLPStage(seg,
+        return _stages.PreprocessNLPStage(seg,
                                        self.unique_name,
                                        self._vocab_hash_file,
                                        self._seq_length,

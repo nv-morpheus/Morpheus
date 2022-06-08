@@ -15,13 +15,13 @@
 import os
 import typing
 
+import pandas as pd
 import srf
 import srf.core.operators as ops
-import pandas as pd
 
 import cudf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
@@ -110,7 +110,7 @@ class WriteToFileStage(SinglePortStage):
 
         # Sink to file
         if (self._build_cpp_node()):
-            to_file = neos.WriteToFileStage(seg, self.unique_name, self._output_file, "w", self._file_type)
+            to_file = _stages.WriteToFileStage(seg, self.unique_name, self._output_file, "w", self._file_type)
         else:
 
             def node_fn(input: srf.Observable, output: srf.Subscriber):

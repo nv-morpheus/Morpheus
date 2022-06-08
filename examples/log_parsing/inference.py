@@ -17,11 +17,11 @@ import typing
 from functools import partial
 
 import cupy as cp
-import srf
 import numpy as np
+import srf
 import tritonclient.grpc as tritonclient
-from srf.core import operators as ops
 from scipy.special import softmax
+from srf.core import operators as ops
 
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage

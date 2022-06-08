@@ -21,8 +21,8 @@ from collections import deque
 from math import ceil
 
 import cupy as cp
-import srf
 import pandas as pd
+import srf
 from srf.core import operators as ops
 
 from morpheus.config import Config

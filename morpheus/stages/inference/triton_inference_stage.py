@@ -24,13 +24,13 @@ from functools import lru_cache
 from functools import partial
 
 import cupy as cp
-import srf
 import numpy as np
+import srf
 import tritonclient.grpc as tritonclient
 from tritonclient.utils import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
@@ -891,7 +891,7 @@ class TritonInferenceStage(InferenceStage):
 
     def _get_cpp_inference_node(self, seg: srf.Builder):
 
-        return neos.InferenceClientStage(seg,
+        return _stages.InferenceClientStage(seg,
                                          name=self.unique_name,
                                          needs_logits=self._get_worker_class().needs_logits(),
                                          inout_mapping=self._get_worker_class().default_inout_mapping(),

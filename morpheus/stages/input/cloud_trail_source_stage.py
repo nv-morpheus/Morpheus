@@ -19,9 +19,9 @@ import queue
 import typing
 from functools import partial
 
-import srf
 import numpy as np
 import pandas as pd
+import srf
 from srf.core import operators as ops
 
 from morpheus._lib.common import FiberQueue

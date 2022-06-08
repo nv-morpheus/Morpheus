@@ -18,9 +18,9 @@ import shutil
 import typing
 import warnings
 
-import srf
 import numpy as np
 import pandas as pd
+import srf
 
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage

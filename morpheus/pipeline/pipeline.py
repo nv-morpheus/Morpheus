@@ -19,8 +19,8 @@ import signal
 import time
 import typing
 
-import srf
 import networkx
+import srf
 from tqdm import tqdm
 
 import cudf

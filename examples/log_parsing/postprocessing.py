@@ -16,9 +16,9 @@ import json
 import typing
 from collections import defaultdict
 
-import srf
 import numpy as np
 import pandas as pd
+import srf
 
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage

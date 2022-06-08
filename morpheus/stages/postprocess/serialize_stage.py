@@ -19,7 +19,7 @@ from functools import partial
 
 import srf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -118,7 +118,7 @@ class SerializeStage(SinglePortStage):
 
     def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
-            stream = neos.SerializeStage(seg,
+            stream = _stages.SerializeStage(seg,
                                          self.unique_name,
                                          self._include_columns or [],
                                          self._exclude_columns,

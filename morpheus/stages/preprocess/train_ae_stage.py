@@ -17,9 +17,9 @@ import logging
 import typing
 
 import dill
-import srf
 import numpy as np
 import pandas as pd
+import srf
 import torch
 from dfencoder import AutoEncoder
 from srf.core import operators as ops

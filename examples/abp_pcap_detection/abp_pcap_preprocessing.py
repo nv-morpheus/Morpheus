@@ -16,12 +16,12 @@ import typing
 from functools import partial
 
 import cupy as cp
-import srf
 import numpy as np
+import srf
 
 import cudf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import InferenceMemoryFIL
 from morpheus.messages import MultiInferenceFILMessage
@@ -188,4 +188,4 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         )
 
     def _get_preprocess_node(self, seg: srf.Builder):
-        return neos.AbpPcapPreprocessingStage(seg, self.unique_name)
+        return _stages.AbpPcapPreprocessingStage(seg, self.unique_name)

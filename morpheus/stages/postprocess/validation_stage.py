@@ -20,8 +20,8 @@ import re
 import threading
 import typing
 
-import srf
 import pandas as pd
+import srf
 from srf.core import operators as ops
 
 import cudf

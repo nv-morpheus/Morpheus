@@ -16,9 +16,9 @@
 import dataclasses
 import typing
 
-import srf
 import networkx as nx
 import pandas as pd
+import srf
 from stellargraph import StellarGraph
 
 import cudf

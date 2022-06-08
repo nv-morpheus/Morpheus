@@ -16,13 +16,13 @@ import logging
 import time
 import weakref
 
-import srf
 import pandas as pd
+import srf
 from cudf_kafka._lib.kafka import KafkaDatasource
 
 import cudf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -331,7 +331,7 @@ class KafkaSourceStage(SingleOutputSource):
     def _build_source(self, seg: srf.Builder) -> StreamPair:
 
         if (self._build_cpp_node()):
-            source = neos.KafkaSourceStage(seg,
+            source = _stages.KafkaSourceStage(seg,
                                            self.unique_name,
                                            self._max_batch_size,
                                            self._topic,

@@ -19,7 +19,7 @@ import srf
 import typing_utils
 from srf.core import operators as ops
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
 from morpheus.config import CppConfig
@@ -97,7 +97,7 @@ class FileSourceStage(SingleOutputSource):
     def _build_source(self, seg: srf.Builder) -> StreamPair:
 
         if CppConfig.get_should_use_cpp():
-            out_stream = neos.FileSourceStage(seg, self.unique_name, self._filename, self._repeat_count)
+            out_stream = _stages.FileSourceStage(seg, self.unique_name, self._filename, self._repeat_count)
         else:
             out_stream = seg.make_source(self.unique_name, self._generate_frames())
 
