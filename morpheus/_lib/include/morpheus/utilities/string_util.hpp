@@ -17,12 +17,14 @@
 
 #pragma once
 
-#include <srf/utils/string_utils.hpp>
-
 #include <sstream>
 #include <string>
 
 namespace morpheus {
+
+// Concats multiple strings together using ostringstream. Use with MORPHEUS_CONCAT_STR("Start [" << my_int << "]")
+#define MORPHEUS_CONCAT_STR(strs) ((std::ostringstream&)(std::ostringstream() << strs)).str()
+
 /****** Component public implementations *******************/
 /****** StringUtil****************************************/
 /**
@@ -50,7 +52,7 @@ struct StringUtil
     template <typename IterT>
     static std::string array_to_str(IterT begin, IterT end)
     {
-        return CONCAT_STR("[" << join(begin, end, ", ") << "]");
+        return MORPHEUS_CONCAT_STR("[" << join(begin, end, ", ") << "]");
     }
 
     /**

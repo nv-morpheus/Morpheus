@@ -18,43 +18,29 @@ function(find_and_configure_srf version)
 
   list(APPEND CMAKE_MESSAGE_CONTEXT "srf")
 
-  # Check if the developer has specified a specific remote or local version of SRF
-  if (DEFINED CACHE{SRF_GIT_REPOSITORY} OR DEFINED CACHE{CPM_srf_SOURCE})
-    rapids_cpm_find(srf ${version}
-      GLOBAL_TARGETS
-        srf::srf srf::pysrf
-      BUILD_EXPORT_SET
-        ${PROJECT_NAME}-exports
-      INSTALL_EXPORT_SET
-        ${PROJECT_NAME}-exports
-      CPM_ARGS
-        GIT_REPOSITORY  ${SRF_GIT_REPOSITORY}
-        GIT_TAG         branch-${version}
-        GIT_SHALLOW     TRUE
-        OPTIONS         "SRF_BUILD_EXAMPLES OFF"
-                        "SRF_BUILD_TESTS OFF"
-                        "SRF_BUILD_BENCHMARKS OFF"
-                        "SRF_BUILD_PYTHON ON"
-                        "SRF_ENABLE_XTENSOR ON"
-                        "SRF_ENABLE_MATX ON"
-                        "SRF_USE_CONDA ${MORPHEUS_USE_CONDA}"
-                        "SRF_USE_CCACHE ${MORPHEUS_USE_CCACHE}"
-                        "SRF_USE_CLANG_TIDY ${MORPHEUS_USE_CLANG_TIDY}"
-                        "SRF_PYTHON_INPLACE_BUILD ${MORPHEUS_PYTHON_INPLACE_BUILD}"
-                        "RMM_VERSION ${RAPIDS_VERSION}"
-    )
-  else()
-    rapids_find_package(srf REQUIRED
-      GLOBAL_TARGETS
-        srf::srf srf::pysrf
-      BUILD_EXPORT_SET
-        ${PROJECT_NAME}-exports
-      INSTALL_EXPORT_SET
-        ${PROJECT_NAME}-exports
-      FIND_ARGS
-        ${version}
-    )
-  endif()
+  rapids_cpm_find(srf ${version}
+    GLOBAL_TARGETS
+      srf::srf srf::pysrf
+    BUILD_EXPORT_SET
+      ${PROJECT_NAME}-exports
+    INSTALL_EXPORT_SET
+      ${PROJECT_NAME}-exports
+    CPM_ARGS
+      GIT_REPOSITORY  git@github.com:nv-morpheus/SRF.git
+      GIT_TAG         main
+      GIT_SHALLOW     TRUE
+      OPTIONS         "SRF_BUILD_EXAMPLES OFF"
+                      "SRF_BUILD_TESTS OFF"
+                      "SRF_BUILD_BENCHMARKS OFF"
+                      "SRF_BUILD_PYTHON ON"
+                      "SRF_ENABLE_XTENSOR ON"
+                      "SRF_ENABLE_MATX ON"
+                      "SRF_USE_CONDA ${MORPHEUS_USE_CONDA}"
+                      "SRF_USE_CCACHE ${MORPHEUS_USE_CCACHE}"
+                      "SRF_USE_CLANG_TIDY ${MORPHEUS_USE_CLANG_TIDY}"
+                      "SRF_PYTHON_INPLACE_BUILD ${MORPHEUS_PYTHON_INPLACE_BUILD}"
+                      "RMM_VERSION ${RAPIDS_VERSION}"
+  )
 
   if(srf_ADDED)
 

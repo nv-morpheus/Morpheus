@@ -17,7 +17,7 @@
 
 #include <morpheus/objects/file_types.hpp>
 
-#include <srf/utils/string_utils.hpp>
+#include <morpheus/utilities/string_util.hpp>
 
 #include <filesystem>
 #include <stdexcept>
@@ -43,8 +43,8 @@ morpheus::FileTypes morpheus::determine_file_type(const std::string &filename)
     }
     else
     {
-        throw std::runtime_error(CONCAT_STR("Unsupported extension '"
-                                            << filename_path.extension()
-                                            << "' with 'auto' type. 'auto' only works with: csv, json"));
+        throw std::runtime_error(MORPHEUS_CONCAT_STR("Unsupported extension '"
+                                                     << filename_path.extension()
+                                                     << "' with 'auto' type. 'auto' only works with: csv, json"));
     }
 }

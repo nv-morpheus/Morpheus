@@ -19,11 +19,12 @@
 
 #include <morpheus/utilities/type_util_detail.hpp>
 
+#include <morpheus/utilities/string_util.hpp>
+
 #include <srf/cuda/common.hpp>
 #include <srf/memory/blob.hpp>
 #include <srf/memory/default_resources.hpp>
 #include <srf/memory/memory_kind.hpp>  // for memory_kind_type
-#include <srf/utils/string_utils.hpp>
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
@@ -67,7 +68,7 @@ std::string join(IterT begin, IterT end, std::string const& separator)
 template <typename IterT>
 std::string array_to_str(IterT begin, IterT end)
 {
-    return CONCAT_STR("[" << join(begin, end, ", ") << "]");
+    return MORPHEUS_CONCAT_STR("[" << join(begin, end, ", ") << "]");
 }
 
 template <RankType R>

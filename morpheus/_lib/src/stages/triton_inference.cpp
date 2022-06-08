@@ -48,9 +48,9 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
 {
     if (!status.IsOk())
     {
-        std::string err_msg =
-            CONCAT_STR("Triton Error while executing '" << methodName << "'. Error: " + status.Message() << "\n"
-                                                        << filename << "(" << lineNumber << ")");
+        std::string err_msg = MORPHEUS_CONCAT_STR("Triton Error while executing '"
+                                                  << methodName << "'. Error: " + status.Message() << "\n"
+                                                  << filename << "(" << lineNumber << ")");
         LOG(ERROR) << err_msg;
         throw std::runtime_error(err_msg);
     }
@@ -260,18 +260,18 @@ void InferenceClientStage::connect_with_server()
         }
         else if (status.Message().find("Unsupported protocol") != std::string::npos)
         {
-            throw std::runtime_error(
-                CONCAT_STR("Failed to connect to Triton at '"
-                           << m_server_url
-                           << "'. Received 'Unsupported Protocol' error. Are you using the right port? The C++ "
-                              "InferenceClientStage uses Triton's HTTP protocol instead of gRPC. Ensure you have "
-                              "specified the HTTP port (Default 8000)."));
+            throw std::runtime_error(MORPHEUS_CONCAT_STR(
+                "Failed to connect to Triton at '"
+                << m_server_url
+                << "'. Received 'Unsupported Protocol' error. Are you using the right port? The C++ "
+                   "InferenceClientStage uses Triton's HTTP protocol instead of gRPC. Ensure you have "
+                   "specified the HTTP port (Default 8000)."));
         }
 
         if (!status.IsOk())
-            throw std::runtime_error(CONCAT_STR("Unable to connect to Triton at '"
-                                                << m_server_url
-                                                << "'. Check the URL and port and ensure the server is running."));
+            throw std::runtime_error(
+                MORPHEUS_CONCAT_STR("Unable to connect to Triton at '"
+                                    << m_server_url << "'. Check the URL and port and ensure the server is running."));
     }
 
     // Save this for new clients

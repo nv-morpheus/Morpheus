@@ -108,7 +108,7 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
             case RdKafka::ERR_NO_ERROR:
 
                 // VLOG(10) << this->display_str(
-                //     CONCAT_STR("Got message. Topic: " << msg->topic_name() << ", Part: " <<
+                //     MORPHEUS_CONCAT_STR("Got message. Topic: " << msg->topic_name() << ", Part: " <<
                 //     msg->partition()
                 //                                       << ", Offset: " << msg->offset()));
 
@@ -327,7 +327,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
             [this]() { return this->max_batch_size(); },
             [this](const std::string str_to_display) {
                 auto &ctx = srf::runnable::Context::get_runtime_context();
-                return CONCAT_STR(ctx.info() << " " << str_to_display);
+                return MORPHEUS_CONCAT_STR(ctx.info() << " " << str_to_display);
             },
             [sub, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
                 // If we are unsubscribed, throw an error to break the loops
@@ -561,7 +561,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(KafkaS
     std::map<std::string, std::vector<int32_t>> topic_parts;
 
     auto &ctx = srf::runnable::Context::get_runtime_context();
-    VLOG(10) << ctx.info() << CONCAT_STR(" Subscribed to " << md->topics()->size() << " topics:");
+    VLOG(10) << ctx.info() << MORPHEUS_CONCAT_STR(" Subscribed to " << md->topics()->size() << " topics:");
 
     for (auto const &topic : *(md->topics()))
     {
@@ -595,11 +595,12 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(KafkaS
 
         auto &ctx = srf::runnable::Context::get_runtime_context();
         VLOG(10) << ctx.info()
-                 << CONCAT_STR("   Topic: '"
-                               << topic->topic()
-                               << "', Parts: " << StringUtil::array_to_str(part_ids.begin(), part_ids.end())
-                               << ", Committed: " << StringUtil::array_to_str(committed.begin(), committed.end())
-                               << ", Positions: " << StringUtil::array_to_str(positions.begin(), positions.end()));
+                 << MORPHEUS_CONCAT_STR(
+                        "   Topic: '" << topic->topic()
+                                      << "', Parts: " << StringUtil::array_to_str(part_ids.begin(), part_ids.end())
+                                      << ", Committed: " << StringUtil::array_to_str(committed.begin(), committed.end())
+                                      << ", Positions: "
+                                      << StringUtil::array_to_str(positions.begin(), positions.end()));
     }
 
     return std::move(consumer);
