@@ -28,9 +28,9 @@ CppConfig.set_should_use_cpp(False)
 
 If a stage does not have a C++ implementation, Morpheus will fall back to the Python implementation without any additional configuration and operate in a hybrid execution mode.
 
-In addition to C++ accelerated stage implementations, Morpheus also provides a C++ implementation for message primitives. When C++ execution is enabled, constructing one of the Python message classes defined in the `morpheus.pipeline.messages` module will return a Python object with bindings to the underlying C++ implementation.
+In addition to C++ accelerated stage implementations, Morpheus also provides a C++ implementation for message primitives. When C++ execution is enabled, constructing one of the Python message classes defined in the `morpheus.messages` package will return a Python object with bindings to the underlying C++ implementation.
 
-Since we are defining our pipelines in Python, it becomes the responsibility of the Python implementation to build a C++ accelerated node. This happens in the `_build_source` and `_build_single` methods. Ultimately it is the decision of a Python stage to build a Python node or a C++ node. It is perfectly acceptable to build a Python node when `morpheus.config.CppConfig.get_should_use_cpp()` is configured to `True`. It is not acceptable, however, to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp() == False`. The reason is the C++ implementations of Morpheus' messages can be consumed by Python and C++ stage implementations alike. However when `morpheus.config.CppConfig.get_should_use_cpp() == False`, the Python implementations will be used which cannot be consumed by the C++ implementations of stages.
+Since we are defining our pipelines in Python, it becomes the responsibility of the Python implementation to build a C++ accelerated node. This happens in the `_build_source` and `_build_single` methods. Ultimately it is the decision of a Python stage to build a Python node or a C++ node. It is perfectly acceptable to build a Python node when `morpheus.config.CppConfig.get_should_use_cpp()` is configured to `True`. It is not acceptable, however, to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp() == False`. The reason is the C++ implementations of Morpheus' messages can be consumed by Python and C++ stage implementations alike. However when `morpheus.config.CppConfig.get_should_use_cpp() == False`, the Python implementations of messages will be used which cannot be consumed by the C++ implementations of stages.
 
 Python stages which have a C++ implementation must advertise this functionality by implementing the `supports_cpp_node` [classmethod](https://docs.python.org/3.8/library/functions.html?highlight=classmethod#classmethod):
 
@@ -62,7 +62,7 @@ class PythonNode : ...
 
 Both the `PythonSource` and `PythonNode` classes are defined in the `pyneo/node.hpp` header.
 
-Note: `SourceT` and `SinkT` types are typically `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`.
+Note: `SourceT` and `SinkT` types are typically a `shared_ptr` to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`.
 
 Note: The C++ implementation of a stage must receive and emit the same message types as the Python implementation.
 

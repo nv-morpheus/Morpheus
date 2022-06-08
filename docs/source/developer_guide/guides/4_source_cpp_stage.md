@@ -492,6 +492,11 @@ PYBIND11_MODULE(morpheus_rabbit, m)
 
 ## Python Changes
 
+As in the previous example we need to add an import of the `CppConfig` object.
+```python
+from morpheus.config import CppConfig
+```
+
 Previously, our stage connected to the RabbitMQ server in the constructor. This is no longer advantageous to us when C++ execution is enabled. Instead, we will record our constructor arguments and move the connection code to a new `connect` method. Our new constructor and `connect` methods are updated to:
 
 ```python
@@ -534,7 +539,7 @@ def connect(self):
         exchange=self._exchange, queue=self._queue_name)
 ```
 
-Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig` is configured to `True`.
+Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp()` is configured to `True`.
 
 ```python
 def _build_source(self, seg: neo.Segment) -> StreamPair:
