@@ -13,19 +13,19 @@
 # limitations under the License.
 
 import typing
-from commons.data_models import FeatureConfig
-from commons.feature_extractor import FeatureExtractor
 
 import neo
+from commons.data_models import FeatureConfig
+from commons.feature_extractor import FeatureExtractor
 from neo.core import operators as ops
 
 from dask.distributed import Client
 
 from morpheus.config import Config
-from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
 
 
 class CreateFeaturesRWStage(MultiMessageStage):

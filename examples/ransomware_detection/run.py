@@ -13,24 +13,24 @@
 # limitations under the License.
 
 import logging
+import typing
 
 import click
-import typing
 import yaml
-from stages.create_features import CreateFeaturesRWStage
-from stages.preprocessing import PreprocessingRWStage
 
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
+from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logging import configure_logging
+from stages.create_features import CreateFeaturesRWStage
+from stages.preprocessing import PreprocessingRWStage
 
 
 @click.command()

@@ -16,9 +16,9 @@ import typing
 from functools import partial
 
 import cupy as cp
-from commons.data_models import SnapshotData
 import neo
 import pandas as pd
+from commons.data_models import SnapshotData
 
 from morpheus.config import Config
 from morpheus.messages import InferenceMemoryFIL

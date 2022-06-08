@@ -13,8 +13,10 @@
 # limitations under the License.
 
 import typing
+
 import pandas as pd
-from commons.data_models import FeatureConfig, ProtectionData
+from commons.data_models import FeatureConfig
+from commons.data_models import ProtectionData
 from commons.feature_constants import FeatureConstants as fc
 
 
