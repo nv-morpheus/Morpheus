@@ -65,6 +65,9 @@ class ConvMsg(SinglePortStage):
     def accepted_types(self):
         return (MultiMessage, )
 
+    def supports_cpp_node(self):
+        return False
+
     def _conv_message(self, m):
         if self._expected_data_file is not None:
             df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
