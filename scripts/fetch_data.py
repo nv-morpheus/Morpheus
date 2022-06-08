@@ -114,9 +114,10 @@ def parse_args():
     fetch_parser.add_argument("data_set", nargs='*', choices=list(LFS_DATASETS.keys()), help="Data set to fetch")
 
     check_parser = subparsers.add_parser('check',
-                                         help='Check download status of large files. '
-                                         'Exits with a status of 0 if all large files have been downloaded, 1 otherwise.')
-    check_parser.add_argument("-l", "--list",
+                                         help=('Check download status of large files. Exits with a status of 0 if all '
+                                               'large files have been downloaded, 1 otherwise.'))
+    check_parser.add_argument("-l",
+                              "--list",
                               action="store_true",
                               default=False,
                               dest='list_all',
