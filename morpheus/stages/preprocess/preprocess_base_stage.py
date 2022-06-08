@@ -20,7 +20,6 @@ import neo
 import typing_utils
 
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -71,7 +70,7 @@ class PreprocessBaseStage(MultiMessageStage):
         if (preproc_sig.return_annotation and typing_utils.issubtype(preproc_sig.return_annotation, out_type)):
             out_type = preproc_sig.return_annotation
 
-        if CppConfig.get_should_use_cpp():
+        if self._build_cpp_node():
             stream = self._get_preprocess_node(seg)
         else:
             stream = seg.make_node(self.unique_name, preprocess_fn)

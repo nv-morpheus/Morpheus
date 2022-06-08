@@ -73,6 +73,10 @@ class SerializeStage(SinglePortStage):
         """
         return (MultiMessage, )
 
+    def supports_cpp_node(self):
+        # Enable support by default
+        return True
+
     def convert_to_df(self,
                       x: MultiMessage,
                       include_columns: typing.Pattern,

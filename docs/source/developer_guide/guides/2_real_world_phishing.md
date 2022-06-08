@@ -80,9 +80,9 @@ import typing
 
 import neo
 
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.pipeline import SinglePortStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 
 class RecipientFeaturesStage(SinglePortStage):
@@ -193,7 +193,7 @@ out_dir = os.environ.get('OUT_DIR', '/tmp')
 labels_file = os.path.join(morpheus.DATA_DIR, 'labels_phishing.txt')
 vocab_file = os.path.join(morpheus.DATA_DIR, 'bert-base-uncased-hash.txt')
 
-input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
+input_file = os.path.join(root_dir, 'examples/data/email_with_addresses.jsonlines')
 results_file = os.path.join(out_dir, 'detections.jsonlines')
 ```
 
@@ -290,14 +290,14 @@ import morpheus
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import FilterDetectionsStage
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.inference.inference_triton import TritonInferenceStage
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.preprocessing import DeserializeStage
-from morpheus.pipeline.preprocessing import PreprocessNLPStage
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.logging import configure_logging
 
 from recipient_feature_stage import RecipientFeaturesStage
@@ -313,7 +313,7 @@ def run_pipeline():
     labels_file = os.path.join(morpheus.DATA_DIR, 'labels_phishing.txt')
     vocab_file = os.path.join(morpheus.DATA_DIR, 'bert-base-uncased-hash.txt')
 
-    input_file = os.path.join(root_dir, 'examples/data/email.jsonlines')
+    input_file = os.path.join(root_dir, 'examples/data/email_with_addresses.jsonlines')
     results_file = os.path.join(out_dir, 'detections.jsonlines')
 
     # It's necessary to configure the pipeline for NLP mode
@@ -453,9 +453,9 @@ import pika
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.pipeline import SingleOutputSource
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
@@ -597,9 +597,9 @@ import pika
 import cudf
 
 from morpheus.config import Config
-from morpheus.pipeline.messages import MessageMeta
-from morpheus.pipeline.pipeline import SinglePortStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 

@@ -78,6 +78,9 @@ gpuci_logger "Installing other dependencies"
 mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 conda deactivate && conda activate morpheus
 
+gpuci_logger "Final Conda Environment"
+conda list
+
 gpuci_logger "Check cmake & ninja"
 cmake --version
 ninja --version

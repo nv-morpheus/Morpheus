@@ -28,7 +28,7 @@ gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 git lfs install
-git lfs pull
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
 gpuci_logger "Running tests"
 # Running the tests from the tests dir. Normally this isn't nescesary, however since
