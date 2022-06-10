@@ -18,6 +18,7 @@ name: morpheus
 channels:
     - conda-forge
 dependencies:
+    - bash=5.1.16
     - conda-pack=0.7
     - pkg-config=0.29
     - sccache=0.3
