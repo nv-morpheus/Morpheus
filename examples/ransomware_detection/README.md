@@ -43,7 +43,7 @@ cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 python run.py --server_url=<TRITON_SERVER:PORT> \
               --model_name=ransomw-model-short-rf \
               --conf_file=./config/ransomware_detection.yaml \
-              --input_glob=${MORPHEUS_ROOT}/models/datasets/validation-data/appshield/*/snapshot-*/*.json \
+              --input_glob=${MORPHEUS_ROOT}/examples/data/appshield/*/snapshot-*/*.json \
               --output_file=./ransomware_detection_output.jsonlines
 ```
 

@@ -21,6 +21,7 @@ from neo.core import operators as ops
 
 from dask.distributed import Client
 
+from morpheus._lib.messages import MessageMeta
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -77,14 +78,17 @@ class CreateFeaturesRWStage(MultiMessageStage):
         """
         return (AppShieldMessageMeta, )
 
+    def supports_cpp_node(self):
+        return False
+
     def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+
         stream = input_stream[0]
 
         def node_fn(input: neo.Observable, output: neo.Subscriber):
 
             def on_next(x: AppShieldMessageMeta):
 
-                multi_messages = []
                 snapshot_fea_dfs = []
 
                 df = x.df
@@ -124,15 +128,23 @@ class CreateFeaturesRWStage(MultiMessageStage):
                 # Sort entries by pid_process and snapshot_id
                 features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
 
-                pid_processes = features_df.pid_process.unique()
-
                 # Create AppShieldMessageMeta with extracted features information.
-                x = AppShieldMessageMeta(features_df, x.source)
+                meta = AppShieldMessageMeta(features_df, x.source)
+
+                return meta
+
+            def create_multi_messages(x: MessageMeta) -> typing.List[MultiMessage]:
+
+                multi_messages = []
+
+                df = x.df
+
+                pid_processes = df.pid_process.unique()
 
                 # Create multi messaage per pid_process
                 for pid_process in pid_processes:
 
-                    pid_process_index = features_df[features_df.pid_process == pid_process].index
+                    pid_process_index = df[df.pid_process == pid_process].index
 
                     start = pid_process_index.min()
                     stop = pid_process_index.max() + 1
@@ -147,7 +159,8 @@ class CreateFeaturesRWStage(MultiMessageStage):
                 # Close dask client when pipeline initiates shutdown
                 self._client.close()
 
-            input.pipe(ops.map(on_next), ops.on_completed(on_completed), ops.flatten()).subscribe(output)
+            input.pipe(ops.map(on_next), ops.map(create_multi_messages), ops.on_completed(on_completed),
+                       ops.flatten()).subscribe(output)
 
         node = seg.make_node_full(self.unique_name, node_fn)
         seg.make_edge(stream, node)
