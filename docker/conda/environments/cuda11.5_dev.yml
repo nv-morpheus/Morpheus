@@ -18,6 +18,7 @@ channels:
     - rapidsai
     - nvidia
     - nvidia/label/dev # For pre-releases of Neo. Should still default to full releases if available
+    - nvidia/label/cuda-11.5.2 # For cuda-nvml-dev=11.5, which is not published under nvidia channel yet.
     - conda-forge
 dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
@@ -27,7 +28,7 @@ dependencies:
     - cachetools=5.0.0
     - ccache>=3.7
     - cmake=3.22
-    - cuda-nvml-dev=11.4
+    - cuda-nvml-dev=11.5
     - cudatoolkit=11.5
     - cudf 22.04
     - cudf_kafka 22.04.*
