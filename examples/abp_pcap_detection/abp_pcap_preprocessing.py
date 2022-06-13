@@ -151,7 +151,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         del df, grouped_df
 
         # Convert the dataframe to cupy the same way cuml does
-        data = cp.asarray(merged_df[fea_cols].as_gpu_matrix(order="C"))
+        data = cp.asarray(merged_df[fea_cols].to_cupy())
         count = data.shape[0]
 
         # columns required to be added to input message meta
