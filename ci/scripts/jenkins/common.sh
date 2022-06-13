@@ -32,7 +32,7 @@ ORG_NAME=$(basename "$(dirname "${GIT_URL}")")
 PR_NUM="${GIT_BRANCH##*/}"
 [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
 RESP=$(
-curl \
+curl -s \
     -H "Accept: application/vnd.github.v3+json" \
     "${CURL_HEADERS[@]}" \
     "https://api.github.com/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
