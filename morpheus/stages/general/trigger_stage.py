@@ -56,6 +56,9 @@ class TriggerStage(SinglePortStage):
         """
         return (typing.Any, )
 
+    def supports_cpp_node(self):
+        return False
+
     def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then push them

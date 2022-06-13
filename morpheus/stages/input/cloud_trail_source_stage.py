@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
 import logging
 import os
-import queue
 import typing
 from functools import partial
 
@@ -24,7 +22,6 @@ import pandas as pd
 import srf
 from srf.core import operators as ops
 
-from morpheus._lib.common import FiberQueue
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
@@ -32,7 +29,7 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import UserMessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.producer_consumer_queue import Closed
+from morpheus.utils.directory_watcher import DirectoryWatcher
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +59,12 @@ class CloudTrailSourceStage(SingleOutputSource):
         How many times to repeat the dataset. Useful for extending small datasets in debugging.
     sort_glob : bool, default = False
         If true the list of files matching `input_glob` will be processed in sorted order.
+    recursive: bool, default = True
+        If true, events will be emitted for the files in subdirectories that match `input_glob`.
+    queue_max_size: int, default = 128
+        Maximum queue size to hold the file paths to be processed that match `input_glob`.
+    batch_timeout: float, default = 5.0
+        Timeout to retrieve batch messages from the queue.
     """
 
     def __init__(self,
@@ -71,14 +74,14 @@ class CloudTrailSourceStage(SingleOutputSource):
                  max_files: int = -1,
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
-                 sort_glob: bool = False):
+                 sort_glob: bool = False,
+                 recursive: bool = True,
+                 queue_max_size: int = 128,
+                 batch_timeout: float = 5.0):
 
-        super().__init__(c)
+        SingleOutputSource.__init__(self, c)
 
-        self._input_glob = input_glob
-        self._sort_glob = sort_glob
         self._file_type = file_type
-        self._max_files = max_files
 
         self._feature_columns = c.ae.feature_columns
         self._user_column_name = c.ae.userid_column_name
@@ -92,10 +95,14 @@ class CloudTrailSourceStage(SingleOutputSource):
         # Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode
         # is good for interleaving source stages.
         self._repeat_count = repeat
-        self._watch_directory = watch_directory
 
-        # Will be a watchdog observer if enabled
-        self._watcher = None
+        self._watcher = DirectoryWatcher(input_glob=input_glob,
+                                         watch_directory=watch_directory,
+                                         max_files=max_files,
+                                         sort_glob=sort_glob,
+                                         recursive=recursive,
+                                         queue_max_size=queue_max_size,
+                                         batch_timeout=batch_timeout)
 
     @property
     def name(self) -> str:
@@ -106,19 +113,15 @@ class CloudTrailSourceStage(SingleOutputSource):
         """Return None for no max intput count"""
         return self._input_count
 
-    def stop(self):
+    def supports_cpp_node(self):
+        return False
 
-        if (self._watcher is not None):
-            self._watcher.stop()
+    def get_match_pattern(self, glob_split):
+        """Return a file match pattern"""
+        dir_to_watch = os.path.dirname(glob_split[0])
+        match_pattern = self._input_glob.replace(dir_to_watch + "/", "", 1)
 
-        return super().stop()
-
-    async def join(self):
-
-        if (self._watcher is not None):
-            self._watcher.join()
-
-        return await super().join()
+        return match_pattern
 
     @staticmethod
     def read_file(filename: str, file_type: FileTypes) -> pd.DataFrame:
@@ -155,104 +158,6 @@ class CloudTrailSourceStage(SingleOutputSource):
             df = pd.json_normalize(df['Records'])
 
         return df
-
-    def _get_filename_queue(self) -> FiberQueue:
-        """
-        Returns an async queue with tuples of `([files], is_event)` where `is_event` indicates if this is a file changed
-        event (and we should wait for potentially more changes) or if these files were read on startup and should be
-        processed immediately.
-        """
-        q = FiberQueue(128)
-
-        if (self._watch_directory):
-
-            from watchdog.events import FileSystemEvent
-            from watchdog.events import PatternMatchingEventHandler
-            from watchdog.observers import Observer
-
-            # Create a file watcher
-            self._watcher = Observer()
-            self._watcher.setDaemon(True)
-            self._watcher.setName("DirectoryWatcher")
-
-            glob_split = self._input_glob.split("*", 1)
-
-            if (len(glob_split) == 1):
-                raise RuntimeError(("When watching directories, input_glob must have a wildcard. "
-                                    "Otherwise no files will be matched."))
-
-            dir_to_watch = os.path.dirname(glob_split[0])
-            match_pattern = self._input_glob.replace(dir_to_watch + "/", "", 1)
-            dir_to_watch = os.path.abspath(os.path.dirname(glob_split[0]))
-
-            event_handler = PatternMatchingEventHandler(patterns=[match_pattern])
-
-            def process_dir_change(event: FileSystemEvent):
-
-                # Push files into the queue indicating this is an event
-                q.put(([event.src_path], True))
-
-            event_handler.on_created = process_dir_change
-
-            self._watcher.schedule(event_handler, dir_to_watch, recursive=True)
-
-            self._watcher.start()
-
-        # Load the glob once and return
-        file_list = glob.glob(self._input_glob)
-        if self._sort_glob:
-            file_list = sorted(file_list)
-
-        if (self._max_files > 0):
-            file_list = file_list[:self._max_files]
-
-        logger.info("Found %d CloudTrail files in glob. Loading...", len(file_list))
-
-        # Push all to the queue and close it
-        q.put((file_list, False))
-
-        if (not self._watch_directory):
-            # Close the queue
-            q.close()
-
-        return q
-
-    def _generate_filenames(self):
-
-        # Gets a queue of filenames as they come in. Returns list[str]
-        file_queue: FiberQueue = self._get_filename_queue()
-
-        batch_timeout = 30.0
-
-        files_to_process = []
-
-        while True:
-
-            try:
-                files, is_event = file_queue.get(timeout=batch_timeout)
-
-                if (is_event):
-                    # We may be getting files one at a time from the folder watcher, wait a bit
-                    files_to_process = files_to_process + files
-                    continue
-
-                # We must have gotten a group at startup, process immediately
-                yield files
-
-                # df_queue.task_done()
-
-            except queue.Empty:
-                # We timed out, if we have any items in the queue, push those now
-                if (len(files_to_process) > 0):
-                    yield files_to_process
-                    files_to_process = []
-
-            except Closed:
-                # Just in case there are any files waiting
-                if (len(files_to_process) > 0):
-                    yield files_to_process
-                    files_to_process = []
-                break
 
     @staticmethod
     def cleanup_df(df: pd.DataFrame, feature_columns: typing.List[str]):
@@ -414,7 +319,7 @@ class CloudTrailSourceStage(SingleOutputSource):
     def _build_source(self, seg: srf.Builder) -> StreamPair:
 
         # The first source just produces filenames
-        filename_source = seg.make_source(self.unique_name, self._generate_filenames())
+        filename_source = self._watcher.build_node(self.unique_name, seg)
 
         out_type = typing.List[str]
 

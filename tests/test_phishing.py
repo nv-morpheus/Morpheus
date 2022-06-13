@@ -64,7 +64,7 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
     mock_triton_client.get_model_metadata.return_value = mock_metadata
     mock_triton_client.get_model_config.return_value = mock_model_config
 
-    data = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'triton_phishing_inf_results.csv'), delimiter=',')
+    data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_phishing_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
     mock_infer_result = mock.MagicMock()

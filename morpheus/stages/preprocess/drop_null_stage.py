@@ -60,6 +60,10 @@ class DropNullStage(SinglePortStage):
         """
         return (MessageMeta, )
 
+    def supports_cpp_node(self):
+        # Enable support by default
+        return False
+
     def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 

@@ -62,3 +62,18 @@ class UserMessageMeta(MessageMeta, cpp_class=None):
 
     """
     user_id: str
+
+
+@dataclasses.dataclass
+class AppShieldMessageMeta(MessageMeta, cpp_class=None):
+    """
+    This class extends MessageMeta to also hold source corresponding to batched metadata.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input rows in dataframe.
+    source : str
+        Determines which source generated the snapshot messages.
+    """
+    source: str

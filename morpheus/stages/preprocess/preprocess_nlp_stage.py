@@ -87,6 +87,9 @@ class PreprocessNLPStage(PreprocessBaseStage):
     def name(self) -> str:
         return "preprocess-nlp"
 
+    def supports_cpp_node(self):
+        return True
+
     @staticmethod
     def pre_process_batch(x: MultiMessage,
                           vocab_hash_file: str,

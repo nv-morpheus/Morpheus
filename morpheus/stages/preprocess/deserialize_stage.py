@@ -22,7 +22,6 @@ from srf.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -64,6 +63,10 @@ class DeserializeStage(MultiMessageStage):
         """
         return (MessageMeta)
 
+    def supports_cpp_node(self):
+        # Enable support by default
+        return True
+
     @staticmethod
     def process_dataframe(x: MessageMeta, batch_size: int) -> typing.List[MultiMessage]:
         """
@@ -98,7 +101,7 @@ class DeserializeStage(MultiMessageStage):
             input.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
                        ops.flatten()).subscribe(output)
 
-        if CppConfig.get_should_use_cpp():
+        if self._build_cpp_node():
             stream = _stages.DeserializeStage(seg, self.unique_name, self._batch_size)
         else:
             stream = seg.make_node_full(self.unique_name, node_fn)

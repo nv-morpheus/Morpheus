@@ -21,7 +21,6 @@ from srf.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -64,8 +63,7 @@ class FilterDetectionsStage(SinglePortStage):
         """
         return (MultiResponseProbsMessage, )
 
-    @classmethod
-    def supports_cpp_node(cls):
+    def supports_cpp_node(self):
         # Enable support by default
         return True
 
@@ -121,7 +119,7 @@ class FilterDetectionsStage(SinglePortStage):
 
             input.pipe(ops.map(self.filter), ops.flatten()).subscribe(output)
 
-        if CppConfig.get_should_use_cpp():
+        if self._build_cpp_node():
             stream = _stages.FilterDetectionsStage(seg, self.unique_name, self._threshold)
         else:
             stream = seg.make_node_full(self.unique_name, flatten_fn)

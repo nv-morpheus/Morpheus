@@ -251,6 +251,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         """
         return [x.parent for x in self.get_all_outputs()]
 
+    @abstractmethod
     def supports_cpp_node(self):
         """
         Specifies whether this Stage is even capable of creating C++ nodes. During the build phase, this value will be
@@ -258,7 +259,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         to allow runtime decisions and derived classes to override base implementations.
         """
         # By default, return False unless otherwise specified
-        return False
+        # return False
+        pass
 
     def _build_cpp_node(self):
         """

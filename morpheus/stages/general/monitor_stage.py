@@ -185,6 +185,9 @@ class MonitorStage(SinglePortStage):
         """
         return (typing.Any, )
 
+    def supports_cpp_node(self):
+        return False
+
     def on_start(self):
 
         # Set the monitor interval to 0 to use prevent using tqdms monitor

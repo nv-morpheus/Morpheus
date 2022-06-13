@@ -77,6 +77,9 @@ class GenerateVizFramesStage(SinglePortStage):
         """
         return (MultiResponseProbsMessage, )
 
+    def supports_cpp_node(self):
+        return False
+
     @staticmethod
     def round_to_sec(x):
         """

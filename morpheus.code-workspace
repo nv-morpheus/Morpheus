@@ -304,7 +304,7 @@
 				"justMyCode": false,
 				"args": [
 					"--input_file",
-					"../../data/pcap_dump.jsonlines",
+					"../data/pcap_dump.jsonlines",
 					"--output_file",
 					"./pcap_output.jsonlines",
 					"--server_url",

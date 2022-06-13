@@ -58,6 +58,9 @@ class PreprocessFILStage(PreprocessBaseStage):
     def name(self) -> str:
         return "preprocess-fil"
 
+    def supports_cpp_node(self):
+        return True
+
     @staticmethod
     def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
         """

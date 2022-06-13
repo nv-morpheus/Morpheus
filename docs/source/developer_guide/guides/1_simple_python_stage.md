@@ -31,8 +31,8 @@ Defining this stage requires us to specify the stage type. Morpheus stages conta
 import typing
 
 import srf
-from morpheus.pipeline.pipeline import SinglePortStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 class PassThruStage(SinglePortStage):
 ```
@@ -87,8 +87,8 @@ import typing
 
 import srf
 
-from morpheus.pipeline.pipeline import SinglePortStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 
 class PassThruStage(SinglePortStage):
     @property
@@ -122,8 +122,8 @@ import os
 
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.input.from_file import FileSourceStage
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logging import configure_logging
 
 from pass_thru import PassThruStage
@@ -183,8 +183,8 @@ import os
 
 from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.input.from_file import FileSourceStage
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils.logging import configure_logging
 
 from pass_thru import PassThruStage

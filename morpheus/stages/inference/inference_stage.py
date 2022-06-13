@@ -176,6 +176,10 @@ class InferenceStage(MultiMessageStage):
         """
         return (MultiInferenceMessage, )
 
+    def supports_cpp_node(self):
+        # Default to False unless derived classes override this value
+        return False
+
     @abstractmethod
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
         """

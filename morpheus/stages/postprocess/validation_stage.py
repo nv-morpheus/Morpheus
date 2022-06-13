@@ -119,6 +119,9 @@ class ValidationStage(MultiMessageStage):
         """
         return (MultiMessage, )
 
+    def supports_cpp_node(self):
+        return False
+
     def _filter_df(self, df):
         include_columns = None
 

@@ -532,13 +532,15 @@ def connect(self):
 
     self._channel.queue_bind(
         exchange=self._exchange, queue=self._queue_name)
+
+
 ```
 
-Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig` is configured to `True`.
+Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig` is configured to `True` by using the `self._build_cpp_node()` method.
 
 ```python
 def _build_source(self, seg: srf.Builder) -> StreamPair:
-    if CppConfig.get_should_use_cpp():
+    if self._build_cpp_node():
         node = morpheus_rabbit_cpp.RabbitMQSourceStage(
             seg,
             self.unique_name,

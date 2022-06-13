@@ -68,6 +68,7 @@ dependencies:
     - sphinx_rtd_theme
     - sysroot_linux-64=2.17
     - tqdm
+    - yapf=0.32.0
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Add additional dev dependencies here
