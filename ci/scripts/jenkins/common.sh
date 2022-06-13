@@ -27,7 +27,7 @@ id
 
 # Change target is the branch name we are merging into but due to the weird way jenkins does
 # the checkout it isn't recognized by git without the origin/ prefix
-export CHANGE_TARGET="origin/${CHANGE_TARGET}"
+#export CHANGE_TARGET="origin/${CHANGE_TARGET}"
 
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
