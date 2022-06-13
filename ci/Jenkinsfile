@@ -7,8 +7,8 @@ pipeline {
     }
     environment {
         PYTHON_VER = '3.8'
-        RAPIDS_VER = '21.10'
-        CUDA_VER = '11.4'
+        RAPIDS_VER = '22.04'
+        CUDA_VER = '11.5'
         HOME = "${WORKSPACE}"
         GH_TOKEN = credentials('gputester-github-token')
         BUILD_TYPE = sh(returnStdout: true, script: 'rapids-build-type')
@@ -24,7 +24,7 @@ pipeline {
                     when { environment name: 'BUILD_TYPE', value: 'pull-request' }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai-driver:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai-driver:22.04-cuda11.5-devel-centos7-py3.8'
                             label 'cpu'
                         }
                     }
@@ -48,7 +48,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8'
                             label 'driver-495'
                             args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
@@ -81,7 +81,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8'
                             label 'driver-495'
                             args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
@@ -112,7 +112,7 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:21.10-cuda11.4-devel-ubuntu20.04-py3.8'
+                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8'
                             label 'driver-495'
                             args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
                         }
