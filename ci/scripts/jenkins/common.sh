@@ -38,7 +38,11 @@ curl \
     "https://api.github.com/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
 )
 
-export CHANGE_TARGET "origin/$(echo "${RESP}" | jq -r '.base.ref')"
+BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
+
+# Change target is the branch name we are merging into but due to the weird way jenkins does
+# the checkout it isn't recognized by git without the origin/ prefix
+export CHANGE_TARGET "origin/${BASE_BRANCH}"
 
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
