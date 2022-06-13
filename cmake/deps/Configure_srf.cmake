@@ -27,7 +27,7 @@ function(find_and_configure_srf version)
       ${PROJECT_NAME}-exports
     CPM_ARGS
       GIT_REPOSITORY  git@github.com:nv-morpheus/SRF.git
-      GIT_TAG         main
+      GIT_TAG         branch-${version}
       GIT_SHALLOW     TRUE
       OPTIONS         "SRF_BUILD_EXAMPLES OFF"
                       "SRF_BUILD_TESTS OFF"

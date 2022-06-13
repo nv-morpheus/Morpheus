@@ -15,7 +15,6 @@
 
 name: morpheus
 channels:
-    - local
     - rapidsai
     - nvidia
     - nvidia/label/dev # For pre-releases of SRF. Should still default to full releases if available
@@ -50,7 +49,7 @@ dependencies:
     - isort
     - mlflow>=1.23
     - myst-parser==0.17
-    - srf 22.04.*
+    - srf 22.06.*
     - ninja=1.10
     - nodejs=17.4.0
     - pandas=1.3
