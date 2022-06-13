@@ -8,6 +8,7 @@ pipeline {
         RAPIDS_VER = '21.10'
         CUDA_VER = '11.4'
         HOME = "${WORKSPACE}"
+        GH_TOKEN = credentials('gputester-github-token')
     }
     stages {
         stage('Checks & Builds') {

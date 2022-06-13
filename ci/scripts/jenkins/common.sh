@@ -25,9 +25,20 @@ gpuci_logger "Memory"
 gpuci_logger "User Info"
 id
 
-# Change target is the branch name we are merging into but due to the weird way jenkins does
-# the checkout it isn't recognized by git without the origin/ prefix
-#export CHANGE_TARGET="origin/${CHANGE_TARGET}"
+gpuci_logger "Retrieving base branch from GitHub API:"
+# For PRs, $GIT_BRANCH is like: pull-request/989
+REPO_NAME=$(basename "${GIT_URL}" .git)
+ORG_NAME=$(basename "$(dirname "${GIT_URL}")")
+PR_NUM="${GIT_BRANCH##*/}"
+[[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
+RESP=$(
+curl \
+    -H "Accept: application/vnd.github.v3+json" \
+    "${CURL_HEADERS[@]}" \
+    "https://api.github.com/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
+)
+
+export CHANGE_TARGET "origin/$(echo "${RESP}" | jq -r '.base.ref')"
 
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
