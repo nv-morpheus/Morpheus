@@ -25,16 +25,32 @@ gpuci_logger "Memory"
 gpuci_logger "User Info"
 id
 
+gpuci_logger "Retrieving base branch from GitHub API"
+# For PRs, $GIT_BRANCH is like: pull-request/989
+REPO_NAME=$(basename "${GIT_URL}" .git)
+ORG_NAME=$(basename "$(dirname "${GIT_URL}")")
+PR_NUM="${GIT_BRANCH##*/}"
+[[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
+RESP=$(
+curl -s \
+    -H "Accept: application/vnd.github.v3+json" \
+    "${CURL_HEADERS[@]}" \
+    "https://api.github.com/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
+)
+
+BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
+
 # Change target is the branch name we are merging into but due to the weird way jenkins does
 # the checkout it isn't recognized by git without the origin/ prefix
-export CHANGE_TARGET="origin/${CHANGE_TARGET}"
+export CHANGE_TARGET="origin/${BASE_BRANCH}"
+gpuci_logger "Base branch: ${BASE_BRANCH}"
 
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
 export DISPLAY_URL="https://downloads.rapids.ai/ci/morpheus"
-export ARTIFACT_ENDPOINT="/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}"
+export ARTIFACT_ENDPOINT="/pull-request/${PR_NUM}/${GIT_COMMIT}/${NVARCH}"
 export ARTIFACT_URL="${S3_URL}${ARTIFACT_ENDPOINT}"
-export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}/pull-request/${CHANGE_ID}/${GIT_COMMIT}/${NVARCH}/"
+export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}/pull-request/${PR_NUM}/${GIT_COMMIT}/${NVARCH}/"
 
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
