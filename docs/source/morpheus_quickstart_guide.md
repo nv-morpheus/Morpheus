@@ -454,7 +454,7 @@ $ helm delete -n $NAMESPACE <YOUR_RELEASE_NAME>
 To publish messages to a Kafka topic, we need to copy datasets to locations where they can be accessed from the host.
 
 ```bash
-kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/morpheus/data /common
+kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
 Refer to the Using Morpheus SDK Client to Run Pipelines section of the Appendix for more information regarding the commands.
