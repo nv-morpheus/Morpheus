@@ -58,6 +58,9 @@ class PreprocessFILStage(PreprocessBaseStage):
     def name(self) -> str:
         return "preprocess-fil"
 
+    def supports_cpp_node(self):
+        return True
+
     @staticmethod
     def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
         """
@@ -99,7 +102,7 @@ class PreprocessFILStage(PreprocessBaseStage):
             df = cudf.from_pandas(df)
 
         # Convert the dataframe to cupy the same way cuml does
-        data = cp.asarray(df.as_gpu_matrix(order='C'))
+        data = cp.asarray(df.to_cupy())
 
         count = data.shape[0]
 

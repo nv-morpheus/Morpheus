@@ -127,20 +127,6 @@ if hasArg libneo; then
    popd
 fi
 
-if hasArg libcudf; then
-   echo "Running conda-build for libcudf..."
-   set -x
-   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/libcudf
-   set +x
-fi
-
-if hasArg cudf; then
-   echo "Running conda-build for cudf..."
-   set -x
-   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/cudf
-   set +x
-fi
-
 if hasArg morpheus; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
    # Do this after neo in case they are different
