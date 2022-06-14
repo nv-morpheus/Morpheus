@@ -39,6 +39,9 @@ class StaticMessageSource(SingleOutputSource):
     def name(self) -> str:
         return "static-data"
 
+    def supports_cpp_node(self):
+        return False
+
     @property
     def input_count(self) -> int:
         return len(self._df)

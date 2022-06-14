@@ -19,7 +19,6 @@ import neo
 
 import morpheus._lib.stages as neos
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -85,8 +84,7 @@ class AddClassificationsStage(SinglePortStage):
         """
         return (MultiResponseProbsMessage, )
 
-    @classmethod
-    def supports_cpp_node(cls):
+    def supports_cpp_node(self):
         # Enable support by default
         return True
 
@@ -107,7 +105,7 @@ class AddClassificationsStage(SinglePortStage):
     def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
-        if CppConfig.get_should_use_cpp():
+        if self._build_cpp_node():
             stream = neos.AddClassificationsStage(seg,
                                                   self.unique_name,
                                                   self._threshold,

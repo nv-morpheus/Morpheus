@@ -57,7 +57,7 @@ The dataset that this workflow was designed to process is PCAP, or Packet Captur
 }
 ```
 
-In this example, we will be using a simulated PCAP dataset that is known to contain SI from each of the 10 categories the model was trained for. The dataset is located at `data/pcap_dump.jsonlines`. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed. This will all be handled by Morpheus.
+In this example, we will be using a simulated PCAP dataset that is known to contain SI from each of the 10 categories the model was trained for. The dataset is located at `examples/data/pcap_dump.jsonlines`. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed. This will all be handled by Morpheus.
 
 ## Pipeline Architecture
 
@@ -110,7 +110,7 @@ morpheus --debug --log_level=DEBUG \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
-   from-file --filename=$MORPHEUS_ROOT/morpheus/data/pcap_dump.jsonlines \
+   from-file --filename=$MORPHEUS_ROOT/examples/data/pcap_dump.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
@@ -166,7 +166,7 @@ CPP Enabled: True
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/morpheus/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage

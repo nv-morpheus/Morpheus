@@ -58,6 +58,9 @@ class DelayStage(SinglePortStage):
         """
         return (typing.Any, )
 
+    def supports_cpp_node(self):
+        return False
+
     def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
 
         # This stage is no longer needed and is just a pass thru stage
