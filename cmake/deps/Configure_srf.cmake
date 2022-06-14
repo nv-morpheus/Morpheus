@@ -26,7 +26,7 @@ function(find_and_configure_srf version)
     INSTALL_EXPORT_SET
       ${PROJECT_NAME}-exports
     CPM_ARGS
-      GIT_REPOSITORY  git@github.com:nv-morpheus/SRF.git
+      GIT_REPOSITORY  https://github.com/nv-morpheus/Morpheus.git
       GIT_TAG         branch-${version}
       GIT_SHALLOW     TRUE
       OPTIONS         "SRF_BUILD_EXAMPLES OFF"
