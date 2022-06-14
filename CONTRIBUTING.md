@@ -197,28 +197,13 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
    ```
-1. Create a new Conda environment
+1. Create the morpheus Conda environment
    ```bash
-   mamba create -n morpheus python=${PYTHON_VER}
+   mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
    conda activate morpheus
    ```
 
    This creates a new environment named `morpheus`, and activates that environment.
-1. Set up `ssh-agent` to allow container to pull from private repos
-   ```bash
-   eval `ssh-agent -s`
-   ssh-add
-   ```
-1. Build and install cuDF conda package
-   ```bash
-   ./docker/build_conda_packages.sh libcudf cudf
-   mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
-   ```
-   This will checkout, patch, build and install cuDF with the necessary fixes to allow Morpheus to work smoothly with cuDF DataFrames in C++.
-1. Install remaining Morpheus dependencies
-   ```bash
-   mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
-   ```
 1. Build Morpheus
    ```bash
    ./scripts/compile.sh
