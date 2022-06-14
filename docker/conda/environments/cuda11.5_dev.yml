@@ -42,7 +42,7 @@ dependencies:
     - gcc_linux-64=9.4
     - gflags=2.2
     - git>=2.35.3 # Needed for wildcards on safe.directory
-    - glog=0.5
+    - glog=0.6
     - gmock=1.10
     - grpc-cpp>=1.43
     - gtest=1.10
@@ -55,7 +55,7 @@ dependencies:
     - nodejs=17.4.0
     - pandas=1.3
     - pip
-    - protobuf=3.19
+    - protobuf=3.20
     - pybind11-stubgen
     - pydot
     - pytest
