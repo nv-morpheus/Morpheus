@@ -17,6 +17,7 @@ name: morpheus
 channels:
     - rapidsai
     - nvidia
+    - nvidia/label/cuda-11.5.2
     - rapidsai-nightly
     - conda-forge
 dependencies:
