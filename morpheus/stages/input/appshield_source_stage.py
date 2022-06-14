@@ -20,8 +20,8 @@ import typing
 from functools import partial
 from json.decoder import JSONDecodeError
 
-import srf
 import pandas as pd
+import srf
 from srf.core import operators as ops
 
 from morpheus.config import Config
