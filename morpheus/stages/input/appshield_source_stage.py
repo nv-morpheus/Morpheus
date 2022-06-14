@@ -20,9 +20,9 @@ import typing
 from functools import partial
 from json.decoder import JSONDecodeError
 
-import neo
+import srf
 import pandas as pd
-from neo.core import operators as ops
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.message_meta import AppShieldMessageMeta
@@ -346,7 +346,7 @@ class AppShieldSourceStage(SingleOutputSource):
 
         return metas
 
-    def _build_source(self, seg: neo.Segment) -> StreamPair:
+    def _build_source(self, seg: srf.Builder) -> StreamPair:
 
         # The first source just produces filenames
         filename_source = self._watcher.build_node(self.unique_name, seg)
@@ -356,11 +356,11 @@ class AppShieldSourceStage(SingleOutputSource):
         # Supposed to just return a source here
         return filename_source, out_type
 
-    def _post_build_single(self, seg: neo.Segment, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, seg: srf.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
             input.pipe(
                 # At this point, we have batches of filenames to process. Make a node for processing batches of
                 # filenames into batches of dataframes
