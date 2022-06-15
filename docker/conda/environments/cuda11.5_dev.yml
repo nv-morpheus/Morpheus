@@ -55,6 +55,7 @@ dependencies:
     - nodejs=17.4.0
     - pandas=1.3
     - pip
+    - pkg-config # for srf cmake
     - protobuf=3.20
     - pybind11-stubgen
     - pydot
