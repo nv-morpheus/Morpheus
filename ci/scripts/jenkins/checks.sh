@@ -18,6 +18,8 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
+fetch_base_branch
+
 conda activate rapids
 
 gpuci_logger "Installing CI dependencies"

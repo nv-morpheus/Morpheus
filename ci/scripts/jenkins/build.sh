@@ -68,15 +68,14 @@ sccache --show-stats
 
 gpuci_logger "Installing Morpheus"
 cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
-pip install ${MORPHEUS_ROOT}/build/wheel
 
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
-tar cfj "${WORKSPACE_TMP}/cpp_tests.tar.bz" $(find build/wheel/ -name "*.x")
+tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/wheel
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/cpp_tests.tar.bz" "${ARTIFACT_URL}/cpp_tests.tar.bz"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/wheel.tar.bz" "${ARTIFACT_URL}/wheel.tar.bz"
 
 gpuci_logger "Success"
 exit 0

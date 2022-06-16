@@ -20,6 +20,7 @@ source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
 
 restore_conda_env
+pip install ${MORPHEUS_ROOT}/build/wheel
 
 gpuci_logger "Fetching C++ tests from ${DISPLAY_URL}/cpp_tests.tar.bz"
 fetch_s3 "${ARTIFACT_ENDPOINT}/cpp_tests.tar.bz" "${WORKSPACE_TMP}/cpp_tests.tar.bz"
