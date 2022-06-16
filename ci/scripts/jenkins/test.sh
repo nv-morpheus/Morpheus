@@ -43,7 +43,7 @@ for cpp_test in "${CPP_TESTS[@]}"; do
        gpuci_logger "Running ${test_name}"
        set +e
 
-       ${WORKSPACE_TMP}/$cpp_test --gtest_output="xml:${REPORTS_DIR}/report_${test_name}.xml"
+       ${cpp_test} --gtest_output="xml:${REPORTS_DIR}/report_${test_name}.xml"
        TEST_RESULT=$?
        TEST_RESULTS=$(($TEST_RESULTS+$TEST_RESULT))
 
