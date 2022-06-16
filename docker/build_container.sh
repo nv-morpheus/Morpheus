@@ -23,10 +23,10 @@ DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 # Build args
 FROM_IMAGE=${FROM_IMAGE:-"gpuci/miniforge-cuda"}
-CUDA_VER=${CUDA_VER:-11.4}
+CUDA_VER=${CUDA_VER:-11.5}
 LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
 LINUX_VER=${LINUX_VER:-20.04}
-RAPIDS_VER=${RAPIDS_VER:-21.10}
+RAPIDS_VER=${RAPIDS_VER:-22.04}
 PYTHON_VER=${PYTHON_VER:-3.8}
 TENSORRT_VERSION=${TENSORRT_VERSION:-8.2.1.3}
 
@@ -40,11 +40,6 @@ DOCKER_ARGS="${DOCKER_ARGS} --build-arg RAPIDS_VER=${RAPIDS_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg PYTHON_VER=${PYTHON_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg TENSORRT_VERSION=${TENSORRT_VERSION}"
 DOCKER_ARGS="${DOCKER_ARGS} --network=host"
-
-if [[ "${DOCKER_BUILDKIT}" = "1" ]]; then
-   # If using BUILDKIT, add the necessary args to pull private containers
-   DOCKER_ARGS="${DOCKER_ARGS} --ssh default --load"
-fi
 
 # Last add any extra args (duplicates override earlier ones)
 DOCKER_ARGS="${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS}"
