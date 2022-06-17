@@ -85,6 +85,7 @@ outputs:
         - ccache
         - ninja
       host:
+        - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
         - librdkafka 1.7
