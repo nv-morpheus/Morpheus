@@ -34,6 +34,9 @@ export CONDA_COMMAND=${CONDA_COMMAND:-"mambabuild"}
 # Get the path to the morpheus git folder
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 
+# Export whether or not to build with python stubs
+# export MORPHEUS_BUILD_PYTHON_STUBS=${MORPHEUS_BUILD_PYTHON_STUBS:-"ON"}
+
 # Set the tag for the neo commit to use
 export NEO_GIT_TAG=${NEO_GIT_TAG:-"5b55e37c6320c1a5747311a1e29e7ebb049d12bc"}
 

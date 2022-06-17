@@ -28,39 +28,6 @@ source:
   git_url: ../../../..
 
 outputs:
-  - name: morpheus-deps-build
-    build:
-      number: {{ GIT_DESCRIBE_NUMBER }}
-      string: cuda_{{ cuda_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
-    requirements:
-      run:
-        - {{ compiler("c") }}
-        - {{ compiler("cxx") }}
-        - {{ compiler("cuda") }}
-        - ccache
-        - cmake=3.22
-        - cudatoolkit {{ cuda_version }}.*
-        - cudf {{ rapids_version }}
-        - cython >=0.29,<0.30
-        - librdkafka=1.6.1
-        - neo=22.04.*
-        - ninja
-        - pip
-        - python {{ python }}
-        - rapidjson=1.1
-        - scikit-build>=0.12
-        - versioneer-518
-
-  - name: morpheus-deps-test
-    build:
-      number: {{ GIT_DESCRIBE_NUMBER }}
-      string: cuda_{{ cuda_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
-    requirements:
-      run:
-        - cudatoolkit {{ cuda_version }}.*
-        - pytest
-        - pytest-cov
-        - python {{ python }}
 
   - name: morpheus
     build:
@@ -68,6 +35,7 @@ outputs:
       string: cuda_{{ cuda_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
       script_env:
         - CMAKE_CUDA_ARCHITECTURES=ALL
+        - MORPHEUS_BUILD_PYTHON_STUBS=ON
         - MORPHEUS_CACHE_DIR
         - PARALLEL_LEVEL
       run_exports:
@@ -97,13 +65,12 @@ outputs:
         - scikit-build >=0.12
         - versioneer-518
       run:
-        # - {{ pin_compatible('librdkafka', max_pin='x.x') }}
         - click >=8
         - cudf {{ rapids_version }}
         - cudf_kafka {{ rapids_version }}
-        - cupy # Will determine version from cudf
+        - cupy # Version determined from cudf
         - distributed
-        - grpcio # Will determine version from cudf
+        - grpcio # Version determined from cudf
         - mlflow >=1.23
         - networkx
         - python
@@ -130,8 +97,8 @@ outputs:
         - pytest
 
 about:
-  home: http://rapids.ai/
+  home: https://github.com/nv-morpheus/Morpheus
   license: Apache-2.0
   license_family: Apache
   license_file: LICENSE
-  summary: cuDF GPU DataFrame core library
+  summary: Morpheus Cybersecurity Library
