@@ -81,29 +81,29 @@ outputs:
         - {{ compiler("c") }}
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
-        - cmake=3.22
+        - cmake 3.22
         - ccache
         - ninja
       host:
-        - cudatoolkit {{ cuda_version }}.*
-        - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
-        - librdkafka=1.6.1
-        - neo=22.04.*
+        - libcudf {{ rapids_version }}
+        - librdkafka 1.7
+        - neo 22.04.*
         - pip
         - pybind11-stubgen
         - python {{ python }}
-        - rapidjson=1.1
-        - scikit-build>=0.12
+        - rapidjson 1.1
+        - scikit-build >=0.12
         - versioneer-518
       run:
-        - {{ pin_compatible('librdkafka', max_pin='x.x') }}
-        - click>=8
+        # - {{ pin_compatible('librdkafka', max_pin='x.x') }}
+        - click >=8
+        - cudf {{ rapids_version }}
         - cudf_kafka {{ rapids_version }}
-        - cupy=9.3.0
+        - cupy # Will determine version from cudf
         - distributed
-        - grpcio=1.41
-        - mlflow>=1.23
+        - grpcio # Will determine version from cudf
+        - mlflow >=1.23
         - networkx
         - python
         - tqdm
