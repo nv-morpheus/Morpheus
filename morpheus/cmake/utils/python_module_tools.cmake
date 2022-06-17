@@ -213,7 +213,7 @@ macro(add_python_module MODULE_NAME)
 
     # Add a custom target to ensure the stub generation runs
     add_custom_target(${TARGET_NAME}-stubs ALL
-        DEPENDS ${pybind11_stub_file}
+      DEPENDS ${pybind11_stub_file}
     )
 
     # Save the output as a target property
