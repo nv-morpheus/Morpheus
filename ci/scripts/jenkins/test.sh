@@ -20,7 +20,11 @@ source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
 
 restore_conda_env
+pip install ${MORPHEUS_ROOT}/build/wheel
 
+CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/wheel -name "*.x"))
+
+gpuci_logger "Installing test dependencies"
 npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
@@ -30,23 +34,46 @@ cd ${MORPHEUS_ROOT}
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
-gpuci_logger "Running tests"
+REPORTS_DIR="${WORKSPACE_TMP}/reports"
+mkdir -p ${WORKSPACE_TMP}/reports
+
+TEST_RESULTS=0
+for cpp_test in "${CPP_TESTS[@]}"; do
+       test_name=$(basename ${cpp_test})
+       gpuci_logger "Running ${test_name}"
+       set +e
+
+       ${cpp_test} --gtest_output="xml:${REPORTS_DIR}/report_${test_name}.xml"
+       TEST_RESULT=$?
+       TEST_RESULTS=$(($TEST_RESULTS+$TEST_RESULT))
+
+       set -e
+done
+
+gpuci_logger "Running Python tests"
 # Running the tests from the tests dir. Normally this isn't nescesary, however since
 # we are testing the installed version of morpheus in site-packages and not the one
 # in the repo dir, the pytest coverage module reports incorrect coverage stats.
 cd ${MORPHEUS_ROOT}/tests
+
 set +e
-pytest --run_slow \
-       --junit-xml=${WORKSPACE_TMP}/report_pytest.xml \
+
+python -I -m pytest --run_slow \
+       --junit-xml=${REPORTS_DIR}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \
-       --cov-report=xml:${WORKSPACE_TMP}/report_pytest_coverage.xml
+       --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml
 
 PYTEST_RESULTS=$?
+TEST_RESULTS=$(($TEST_RESULTS+$PYTEST_RESULTS))
+
 set -e
 
-gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp ${WORKSPACE_TMP}/report_pytest.xml "${ARTIFACT_URL}/report_pytest.xml"
-aws s3 cp ${WORKSPACE_TMP}/report_pytest_coverage.xml "${ARTIFACT_URL}/report_pytest_coverage.xml"
+gpuci_logger "Archiving test reports"
+cd $(dirname ${REPORTS_DIR})
+tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
 
-exit ${PYTEST_RESULTS}
+gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+aws s3 cp ${WORKSPACE_TMP}/test_reports.tar.bz "${ARTIFACT_URL}/test_reports.tar.bz"
+
+exit ${TEST_RESULTS}
