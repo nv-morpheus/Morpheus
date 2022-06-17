@@ -250,23 +250,20 @@ class TestCLI:
         """
         Build a pipeline roughly ressembles the hammah validation script
         """
-        args = (GENERAL_ARGS + [
-            'pipeline-ae',
-            '--userid_filter=user321',
-            '--userid_column_name=user_col']
-            + FILE_SRC_ARGS +
-            ['train-ae',
-            '--train_data_glob=train_glob*.csv',
-            '--seed',
-            '47',
-            'preprocess',
-            'inf-pytorch',
-            'add-scores',
-            'timeseries',
-            '--resolution=1m',
-            '--zscore_threshold=8.0',
-            '--hot_start'
-        ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
+        args = (GENERAL_ARGS + ['pipeline-ae', '--userid_filter=user321', '--userid_column_name=user_col'] +
+                FILE_SRC_ARGS + [
+                    'train-ae',
+                    '--train_data_glob=train_glob*.csv',
+                    '--seed',
+                    '47',
+                    'preprocess',
+                    'inf-pytorch',
+                    'add-scores',
+                    'timeseries',
+                    '--resolution=1m',
+                    '--zscore_threshold=8.0',
+                    '--hot_start'
+                ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
         runner = CliRunner()
@@ -334,7 +331,6 @@ class TestCLI:
 
         assert isinstance(to_file, WriteToFileStage)
         assert to_file._output_file == 'out.csv'
-
 
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae_all(self, config, callback_values, tmp_path):
