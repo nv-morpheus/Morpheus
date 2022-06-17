@@ -34,7 +34,9 @@ outputs:
       number: {{ GIT_DESCRIBE_NUMBER }}
       string: cuda_{{ cuda_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
       script_env:
-        - CMAKE_CUDA_ARCHITECTURES=ALL
+        # Note: Setting a default value here will overwrite the value from the
+        # shell! Defaults should be set in the build script
+        - CMAKE_CUDA_ARCHITECTURES
         - MORPHEUS_BUILD_PYTHON_STUBS
         - MORPHEUS_CACHE_DIR
         - PARALLEL_LEVEL
