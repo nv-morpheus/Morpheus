@@ -244,6 +244,98 @@ class TestCLI:
         assert isinstance(to_file, WriteToFileStage)
         assert to_file._output_file == 'out.csv'
 
+    @pytest.mark.usefixtures("chdir_tmpdir")
+    @pytest.mark.replace_callback('pipeline_ae')
+    def test_pipeline_ae_from_file(self, config, callback_values):
+        """
+        Build a pipeline roughly ressembles the hammah validation script
+        """
+        args = (GENERAL_ARGS + [
+            'pipeline-ae',
+            '--userid_filter=user321',
+            '--userid_column_name=user_col']
+            + FILE_SRC_ARGS +
+            ['train-ae',
+            '--train_data_glob=train_glob*.csv',
+            '--seed',
+            '47',
+            'preprocess',
+            'inf-pytorch',
+            'add-scores',
+            'timeseries',
+            '--resolution=1m',
+            '--zscore_threshold=8.0',
+            '--hot_start'
+        ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
+
+        obj = {}
+        runner = CliRunner()
+        result = runner.invoke(cli.cli, args, obj=obj)
+        assert result.exit_code == 47, result.output
+
+        # Ensure our config is populated correctly
+
+        config = obj["config"]
+        assert config.mode == PipelineModes.AE
+        assert not CppConfig.get_should_use_cpp()
+        assert config.class_labels == ["ae_anomaly_score"]
+        assert config.model_max_batch_size == 1024
+        assert config.pipeline_batch_size == 1024
+        assert config.num_threads == 12
+
+        assert isinstance(config.ae, ConfigAutoEncoder)
+        config.ae.userid_column_name = "user_col"
+        config.ae.userid_filter = "user321"
+
+        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae.txt'))
+        assert config.ae.feature_columns == expected_columns
+
+        pipe = callback_values['pipe']
+        assert pipe is not None
+
+        stages = callback_values['stages']
+        # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        [file_source, train_ae, process_ae, auto_enc, add_scores, time_series, monitor, validation, serialize,
+         to_file] = stages
+
+        assert isinstance(file_source, FileSourceStage)
+        assert file_source._filename == os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
+        assert not file_source._iterative
+
+        assert isinstance(train_ae, TrainAEStage)
+        assert train_ae._train_data_glob == "train_glob*.csv"
+        assert train_ae._seed == 47
+
+        assert isinstance(process_ae, PreprocessAEStage)
+        assert isinstance(auto_enc, AutoEncoderInferenceStage)
+        assert isinstance(add_scores, AddScoresStage)
+
+        assert isinstance(time_series, TimeSeriesStage)
+        assert time_series._resolution == '1m'
+        assert time_series._zscore_threshold == 8.0
+        assert time_series._hot_start
+
+        assert isinstance(monitor, MonitorStage)
+        assert monitor._description == 'Unittest'
+        assert monitor._smoothing == 0.001
+        assert monitor._unit == 'inf'
+
+        assert isinstance(validation, ValidationStage)
+        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
+                                                         'hammah-role-g-validation-data.csv')
+        assert validation._results_file_name == 'results.json'
+        assert validation._index_col == '_index_'
+
+        # Click appears to be converting this into a tuple
+        assert list(validation._exclude_columns) == ['event_dt']
+        assert validation._rel_tol == 0.1
+
+        assert isinstance(serialize, SerializeStage)
+
+        assert isinstance(to_file, WriteToFileStage)
+        assert to_file._output_file == 'out.csv'
+
+
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae_all(self, config, callback_values, tmp_path):
         """
