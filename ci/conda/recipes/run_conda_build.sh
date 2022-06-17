@@ -92,7 +92,6 @@ CONDA_ARGS_ARRAY+=("-c" "conda-forge")
 
 if hasArg morpheus; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
-   # Do this after srf in case they are different
    export GIT_VERSION="$(get_version)"
 
    echo "Running conda-build for morpheus..."

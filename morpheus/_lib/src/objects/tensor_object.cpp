@@ -85,26 +85,4 @@ const std::vector<TensorIndex>& TensorView::stride() const
 {
     return m_stride;
 }
-
-// GenericTensor::GenericTensor(std::shared_ptr<srf::MemoryDescriptor> md,
-//                              size_t offset,
-//                              DataType dtype,
-//                              const std::vector<TensorIndex>& shape,
-//                              const std::vector<TensorIndex>& stride) :
-//   m_md(std::move(md)),
-//   m_offset(offset),
-//   m_dtype(std::move(dtype)),
-//   m_shape(std::move(shape)),
-//   m_stride(std::move(stride))
-// {
-//     if (m_stride.empty())
-//     {
-//         TensorUtils::set_contiguous_stride(m_shape, m_stride);
-//     }
-
-//     CHECK_EQ(m_shape.size(), m_stride.size());
-
-//     // throw_on_invalid_storage();
-// }
-
 }  // namespace morpheus

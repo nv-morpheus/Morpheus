@@ -160,9 +160,9 @@ cudf::io::table_with_metadata FileSourceStage::load_table()
 
 // ************ FileSourceStageInterfaceProxy ************ //
 std::shared_ptr<srf::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
-    srf::segment::Builder &parent, const std::string &name, std::string filename, int repeat)
+    srf::segment::Builder &builder, const std::string &name, std::string filename, int repeat)
 {
-    auto stage = parent.construct_object<FileSourceStage>(name, filename, repeat);
+    auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat);
 
     return stage;
 }

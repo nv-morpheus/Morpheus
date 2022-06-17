@@ -130,7 +130,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
 std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
-    srf::segment::Builder &parent,
+    srf::segment::Builder &builder,
     const std::string &name,
     std::string vocab_hash_file,
     uint32_t sequence_length,
@@ -139,7 +139,7 @@ std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInte
     bool add_special_token,
     int stride)
 {
-    auto stage = parent.construct_object<PreprocessNLPStage>(
+    auto stage = builder.construct_object<PreprocessNLPStage>(
         name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride);
 
     return stage;

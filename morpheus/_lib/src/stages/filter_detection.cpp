@@ -113,9 +113,9 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
 std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
-    srf::segment::Builder &parent, const std::string &name, float threshold)
+    srf::segment::Builder &builder, const std::string &name, float threshold)
 {
-    auto stage = parent.construct_object<FilterDetectionsStage>(name, threshold);
+    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold);
 
     return stage;
 }

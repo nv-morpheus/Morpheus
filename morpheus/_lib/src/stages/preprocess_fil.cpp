@@ -161,9 +161,9 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
 
 // ************ PreprocessFILStageInterfaceProxy *********** //
 std::shared_ptr<srf::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
-    srf::segment::Builder &parent, const std::string &name, const std::vector<std::string> &features)
+    srf::segment::Builder &builder, const std::string &name, const std::vector<std::string> &features)
 {
-    auto stage = parent.construct_object<PreprocessFILStage>(name, features);
+    auto stage = builder.construct_object<PreprocessFILStage>(name, features);
 
     return stage;
 }

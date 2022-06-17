@@ -20,7 +20,6 @@
 #include <morpheus/objects/tensor_object.hpp>
 
 #include <srf/cuda/common.hpp> // for SRF_CHECK_CUDA
-//#include <srf/cuda/matx.hpp>
 #include <srf/cuda/sync.hpp> // for enqueue_stream_sync_event
 #include <srf/memory/adaptors.hpp>
 #include <srf/memory/buffer.hpp>

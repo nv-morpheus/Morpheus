@@ -98,12 +98,12 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
 
 // ************ AddScoresStageInterfaceProxy ************* //
 std::shared_ptr<srf::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
-    srf::segment::Builder& parent,
+    srf::segment::Builder& builder,
     const std::string& name,
     std::size_t num_class_labels,
     std::map<std::size_t, std::string> idx2label)
 {
-    auto stage = parent.construct_object<AddScoresStage>(name, num_class_labels, std::move(idx2label));
+    auto stage = builder.construct_object<AddScoresStage>(name, num_class_labels, std::move(idx2label));
 
     return stage;
 }

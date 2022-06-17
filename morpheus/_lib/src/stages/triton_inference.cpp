@@ -394,7 +394,7 @@ bool InferenceClientStage::is_default_grpc_port(std::string &server_url)
 
 // ************ InferenceClientStageInterfaceProxy********* //
 std::shared_ptr<srf::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
-    srf::segment::Builder &parent,
+    srf::segment::Builder &builder,
     const std::string &name,
     std::string model_name,
     std::string server_url,
@@ -403,7 +403,7 @@ std::shared_ptr<srf::segment::Object<InferenceClientStage>> InferenceClientStage
     bool needs_logits,
     std::map<std::string, std::string> inout_mapping)
 {
-    auto stage = parent.construct_object<InferenceClientStage>(
+    auto stage = builder.construct_object<InferenceClientStage>(
         name, model_name, server_url, force_convert_inputs, use_shared_memory, needs_logits, inout_mapping);
 
     return stage;

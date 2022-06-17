@@ -57,9 +57,9 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
 
 // ************ DeserializationStageInterfaceProxy ************* //
 std::shared_ptr<srf::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
-    srf::segment::Builder &parent, const std::string &name, size_t batch_size)
+    srf::segment::Builder &builder, const std::string &name, size_t batch_size)
 {
-    auto stage = parent.construct_object<DeserializeStage>(name, batch_size);
+    auto stage = builder.construct_object<DeserializeStage>(name, batch_size);
 
     return stage;
 }

@@ -61,7 +61,7 @@ struct DeserializeStageInterfaceProxy
     /**
      * @brief Create and initialize a DeserializationStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<DeserializeStage>> init(srf::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<DeserializeStage>> init(srf::segment::Builder &builder,
                                                                         const std::string &name,
                                                                         size_t batch_size);
 };

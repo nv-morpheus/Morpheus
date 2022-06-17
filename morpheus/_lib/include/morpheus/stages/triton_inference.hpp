@@ -94,7 +94,7 @@ struct InferenceClientStageInterfaceProxy
      * @brief Create and initialize a InferenceClientStage, and return the result.
      */
     static std::shared_ptr<srf::segment::Object<InferenceClientStage>> init(
-        srf::segment::Builder &parent,
+        srf::segment::Builder &builder,
         const std::string &name,
         std::string model_name,
         std::string server_url,

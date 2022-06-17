@@ -72,7 +72,7 @@ struct PreprocessNLPStageInterfaceProxy
     /**
      * @brief Create and initialize a ProcessNLPStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> init(srf::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> init(srf::segment::Builder &builder,
                                                                           const std::string &name,
                                                                           std::string vocab_hash_file,
                                                                           uint32_t sequence_length,

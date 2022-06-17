@@ -25,7 +25,6 @@
 #include <rmm/mr/device/per_device_resource.hpp>
 
 #include <ostream>
-#include <rmm/mr/device/per_device_resource.hpp>
 #include <sstream>
 
 namespace morpheus {

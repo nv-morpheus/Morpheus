@@ -98,7 +98,7 @@ WriteToFileStage::subscribe_fn_t WriteToFileStage::build_operator()
 
 // ************ WriteToFileStageInterfaceProxy ************* //
 std::shared_ptr<srf::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
-    srf::segment::Builder &parent,
+    srf::segment::Builder &builder,
     const std::string &name,
     const std::string &filename,
     const std::string &mode,
@@ -138,7 +138,7 @@ std::shared_ptr<srf::segment::Object<WriteToFileStage>> WriteToFileStageInterfac
         throw std::runtime_error(std::string("Unsupported file mode. Must choose either 'w' or 'a'. Mode: ") + mode);
     }
 
-    auto stage = parent.construct_object<WriteToFileStage>(name, filename, fsmode, file_type);
+    auto stage = builder.construct_object<WriteToFileStage>(name, filename, fsmode, file_type);
 
     return stage;
 }

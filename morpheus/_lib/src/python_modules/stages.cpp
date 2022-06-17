@@ -56,7 +56,7 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<AddClassificationsStage>>>(
         m, "AddClassificationsStage", py::multiple_inheritance())
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"),
              py::arg("num_class_labels"),
@@ -66,7 +66,7 @@ PYBIND11_MODULE(stages, m)
                srf::segment::ObjectProperties,
                std::shared_ptr<srf::segment::Object<AddScoresStage>>>(m, "AddScoresStage", py::multiple_inheritance())
         .def(py::init<>(&AddScoresStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("num_class_labels"),
              py::arg("idx2label"));
@@ -76,7 +76,7 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<DeserializeStage>>>(
         m, "DeserializeStage", py::multiple_inheritance())
         .def(py::init<>(&DeserializeStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("batch_size"));
 
@@ -84,7 +84,7 @@ PYBIND11_MODULE(stages, m)
                srf::segment::ObjectProperties,
                std::shared_ptr<srf::segment::Object<FileSourceStage>>>(m, "FileSourceStage", py::multiple_inheritance())
         .def(py::init<>(&FileSourceStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("repeat"));
@@ -94,7 +94,7 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<FilterDetectionsStage>>>(
         m, "FilterDetectionsStage", py::multiple_inheritance())
         .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"));
 
@@ -103,7 +103,7 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<InferenceClientStage>>>(
         m, "InferenceClientStage", py::multiple_inheritance())
         .def(py::init<>(&InferenceClientStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("model_name"),
              py::arg("server_url"),
@@ -117,7 +117,7 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<KafkaSourceStage>>>(
         m, "KafkaSourceStage", py::multiple_inheritance())
         .def(py::init<>(&KafkaSourceStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("max_batch_size"),
              py::arg("topic"),
@@ -131,7 +131,7 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<PreprocessFILStage>>>(
         m, "PreprocessFILStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessFILStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("features"));
 
@@ -140,7 +140,7 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<PreprocessNLPStage>>>(
         m, "PreprocessNLPStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("vocab_hash_file"),
              py::arg("sequence_length"),
@@ -153,7 +153,7 @@ PYBIND11_MODULE(stages, m)
                srf::segment::ObjectProperties,
                std::shared_ptr<srf::segment::Object<SerializeStage>>>(m, "SerializeStage", py::multiple_inheritance())
         .def(py::init<>(&SerializeStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("include"),
              py::arg("exclude"),
@@ -164,7 +164,7 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<WriteToFileStage>>>(
         m, "WriteToFileStage", py::multiple_inheritance())
         .def(py::init<>(&WriteToFileStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("mode")      = "w",

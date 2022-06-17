@@ -128,7 +128,7 @@ struct KafkaSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a KafkaSourceStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<KafkaSourceStage>> init(srf::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<KafkaSourceStage>> init(srf::segment::Builder &builder,
                                                                         const std::string &name,
                                                                         size_t max_batch_size,
                                                                         std::string topic,

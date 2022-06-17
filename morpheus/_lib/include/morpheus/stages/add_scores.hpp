@@ -62,7 +62,7 @@ struct AddScoresStageInterfaceProxy
     /**
      * @brief Create and initialize a AddScoresStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<AddScoresStage>> init(srf::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<AddScoresStage>> init(srf::segment::Builder &builder,
                                                                       const std::string &name,
                                                                       std::size_t num_class_labels,
                                                                       std::map<std::size_t, std::string> idx2label);

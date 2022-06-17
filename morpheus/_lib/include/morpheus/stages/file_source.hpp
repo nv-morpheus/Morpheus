@@ -61,7 +61,7 @@ struct FileSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a FileSourceStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<FileSourceStage>> init(srf::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<FileSourceStage>> init(srf::segment::Builder &builder,
                                                                        const std::string &name,
                                                                        std::string filename,
                                                                        int repeat = 1);

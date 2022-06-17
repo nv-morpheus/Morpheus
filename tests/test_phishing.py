@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
 from unittest import mock
 
@@ -32,7 +31,6 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
-from morpheus.utils.logging import configure_logging
 from utils import TEST_DIRS
 from utils import calc_error_val
 
@@ -116,8 +114,6 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_email_cpp(config, tmp_path):
-    configure_logging(logging.DEBUG)
-
     config.mode = PipelineModes.NLP
     config.class_labels = ["score", "pred"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE

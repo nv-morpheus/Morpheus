@@ -111,13 +111,13 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
 
 // ************ AddClassificationStageInterfaceProxy ************* //
 std::shared_ptr<srf::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
-    srf::segment::Builder& parent,
+    srf::segment::Builder& builder,
     const std::string& name,
     float threshold,
     std::size_t num_class_labels,
     std::map<std::size_t, std::string> idx2label)
 {
-    auto stage = parent.construct_object<AddClassificationsStage>(name, threshold, num_class_labels, idx2label);
+    auto stage = builder.construct_object<AddClassificationsStage>(name, threshold, num_class_labels, idx2label);
 
     return stage;
 }

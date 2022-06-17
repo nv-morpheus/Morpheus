@@ -71,7 +71,7 @@ struct AddClassificationStageInterfaceProxy
      * @brief Create and initialize a AddClassificationStage, and return the result.
      */
     static std::shared_ptr<srf::segment::Object<AddClassificationsStage>> init(
-        srf::segment::Builder &parent,
+        srf::segment::Builder &builder,
         const std::string &name,
         float threshold,
         std::size_t num_class_labels,

@@ -61,7 +61,7 @@ struct FilterDetectionStageInterfaceProxy
     /**
      * @brief Create and initialize a FilterDetectionStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &parent,
+    static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &builder,
                                                                              const std::string &name,
                                                                              float threshold);
 };
