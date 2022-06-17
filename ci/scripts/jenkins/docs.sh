@@ -20,6 +20,7 @@ source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
 
 restore_conda_env
+pip install ${MORPHEUS_ROOT}/build/wheel
 
 cd ${MORPHEUS_ROOT}/docs
 gpuci_logger "Installing Documentation dependencies"
