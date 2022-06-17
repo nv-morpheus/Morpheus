@@ -319,7 +319,7 @@ class CloudTrailSourceStage(SingleOutputSource):
     def _build_source(self, builder: srf.Builder) -> StreamPair:
 
         # The first source just produces filenames
-        filename_source = self._watcher.build_node(self.unique_name, seg)
+        filename_source = self._watcher.build_node(self.unique_name, builder)
 
         out_type = typing.List[str]
 

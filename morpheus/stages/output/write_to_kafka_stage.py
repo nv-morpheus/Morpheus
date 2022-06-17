@@ -88,7 +88,6 @@ class WriteToKafkaStage(SinglePortStage):
 
                 def cb(_, msg):
                     if msg is not None and msg.value() is not None:
-                        # fut.set_result(None)
                         pass
                     else:
                         # fut.set_exception(err or msg.error())

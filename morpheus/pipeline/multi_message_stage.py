@@ -71,4 +71,4 @@ class MultiMessageStage(_pipeline.SinglePortStage):
             # Keep the type unchanged
             out_pair = (post_ts, out_pair[1])
 
-        return super()._post_build_single(seg, out_pair)
+        return super()._post_build_single(builder, out_pair)

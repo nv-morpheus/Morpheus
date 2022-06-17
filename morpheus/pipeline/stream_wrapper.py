@@ -307,7 +307,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         Parameters
         ----------
-        seg : `srf.Builder`
+        builder : `srf.Builder`
             SRF segment for this stage.
         do_propagate : bool, optional
             Whether to propagate to build output stages, by default True.
@@ -361,7 +361,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
         Parameters
         ----------
-        seg : `srf.Builder`
+        builder : `srf.Builder`
             `srf.Builder` object for the pipeline. This should be used to construct/attach the internal
             `srf.SegmentObject`.
         in_ports_streams : `morpheus.pipeline.pipeline.StreamPair`

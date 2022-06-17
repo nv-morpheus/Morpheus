@@ -242,7 +242,7 @@ class InferenceStage(MultiMessageStage):
 
                     fut_list.append(completion_future)
 
-                    worker.process(batch, partial(set_output_fut, b=batch, f=completion_future))
+                    worker.process(batch, partial(set_output_fut, b=batch, batch_future=completion_future))
 
                 for f in fut_list:
                     f.result()
@@ -254,7 +254,7 @@ class InferenceStage(MultiMessageStage):
             assert outstanding_requests == 0, "Not all inference requests were completed"
 
         if (self._build_cpp_node()):
-            node = self._get_cpp_inference_node(seg)
+            node = self._get_cpp_inference_node(builder)
         else:
             node = builder.make_node_full(self.unique_name, py_inference_fn)
 
