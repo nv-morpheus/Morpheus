@@ -229,9 +229,9 @@ class MonitorStage(SinglePortStage):
                 MorpheusTqdm.monitor.exit()
                 MorpheusTqdm.monitor = None
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-            input.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(output)
+            obs.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)
 

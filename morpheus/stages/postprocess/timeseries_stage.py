@@ -457,7 +457,7 @@ class TimeSeriesStage(SinglePortStage):
         stream = input_stream[0]
         out_type = input_stream[1]
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             def on_next(x: MultiResponseAEMessage):
 
@@ -476,10 +476,10 @@ class TimeSeriesStage(SinglePortStage):
 
                 return to_send if len(to_send) > 0 else None
 
-            input.pipe(ops.map(on_next),
+            obs.pipe(ops.map(on_next),
                        ops.filter(lambda x: len(x) > 0),
                        ops.on_completed(on_completed),
-                       ops.flatten()).subscribe(output)
+                       ops.flatten()).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)
 

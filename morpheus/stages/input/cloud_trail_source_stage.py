@@ -331,9 +331,9 @@ class CloudTrailSourceStage(SingleOutputSource):
         out_stream = out_pair[0]
         out_type = out_pair[1]
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-            input.pipe(
+            obs.pipe(
                 # At this point, we have batches of filenames to process. Make a node for processing batches of
                 # filenames into batches of dataframes
                 ops.map(
@@ -348,7 +348,7 @@ class CloudTrailSourceStage(SingleOutputSource):
                 # per user
                 ops.map(self._build_user_metadata),
                 # Finally flatten to single meta
-                ops.flatten()).subscribe(output)
+                ops.flatten()).subscribe(sub)
 
         post_node = builder.make_node_full(self.unique_name + "-post", node_fn)
         builder.make_edge(out_stream, post_node)

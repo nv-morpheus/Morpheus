@@ -68,7 +68,7 @@ class DropNullStage(SinglePortStage):
         stream = input_stream[0]
 
         # Finally, flatten to a single stream
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             def on_next(x: MessageMeta):
 
@@ -76,7 +76,7 @@ class DropNullStage(SinglePortStage):
 
                 return y
 
-            input.pipe(ops.map(on_next), ops.filter(lambda x: not x.df.empty)).subscribe(output)
+            obs.pipe(ops.map(on_next), ops.filter(lambda x: not x.df.empty)).subscribe(sub)
 
         node = builder.make_node_full(self.unique_name, node_fn)
         builder.make_edge(stream, node)

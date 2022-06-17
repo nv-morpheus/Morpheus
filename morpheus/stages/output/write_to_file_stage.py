@@ -113,7 +113,7 @@ class WriteToFileStage(SinglePortStage):
             to_file = _stages.WriteToFileStage(builder, self.unique_name, self._output_file, "w", self._file_type)
         else:
 
-            def node_fn(input: srf.Observable, output: srf.Subscriber):
+            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
                 # Ensure our directory exists
                 os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)
@@ -129,7 +129,7 @@ class WriteToFileStage(SinglePortStage):
 
                         return x
 
-                    input.pipe(ops.map(write_to_file)).subscribe(output)
+                    obs.pipe(ops.map(write_to_file)).subscribe(sub)
 
                 # File should be closed by here
 

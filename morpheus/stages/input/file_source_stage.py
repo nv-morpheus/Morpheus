@@ -115,9 +115,9 @@ class FileSourceStage(SingleOutputSource):
         # Convert our list of dataframes into the desired type. Flatten if necessary
         if (typing_utils.issubtype(out_type, typing.List)):
 
-            def node_fn(input: srf.Observable, output: srf.Subscriber):
+            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-                input.pipe(ops.flatten()).subscribe(output)
+                obs.pipe(ops.flatten()).subscribe(sub)
 
             flattened = builder.make_node_full(self.unique_name + "-post", node_fn)
             builder.make_edge(out_stream, flattened)

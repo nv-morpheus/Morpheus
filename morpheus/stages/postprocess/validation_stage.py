@@ -225,7 +225,7 @@ class ValidationStage(MultiMessageStage):
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then build the dataframe and compare
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             def do_compare(delayed_messages):
 
@@ -233,7 +233,7 @@ class ValidationStage(MultiMessageStage):
 
                 return delayed_messages
 
-            input.pipe(ops.to_list(), ops.map(do_compare), ops.flatten()).subscribe(output)
+            obs.pipe(ops.to_list(), ops.map(do_compare), ops.flatten()).subscribe(sub)
 
         node = builder.make_node_full(self.unique_name, node_fn)
         builder.make_edge(input_stream[0], node)

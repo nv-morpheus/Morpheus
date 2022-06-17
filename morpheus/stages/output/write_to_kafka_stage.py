@@ -77,7 +77,7 @@ class WriteToKafkaStage(SinglePortStage):
         # Convert the messages to rows of strings
         stream = input_stream[0]
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             producer = ck.Producer(self._kafka_conf)
 
@@ -97,7 +97,7 @@ class WriteToKafkaStage(SinglePortStage):
                                      self._kafka_conf["bootstrap.servers"],
                                      msg.value(),
                                      msg.error())
-                        output.on_error(msg.error())
+                        sub.on_error(msg.error())
 
                 records = serializers.df_to_json(x.df, strip_newlines=True)
                 for m in records:
@@ -129,7 +129,7 @@ class WriteToKafkaStage(SinglePortStage):
 
                 producer.flush(-1)
 
-            input.pipe(ops.map(on_next), ops.on_completed(on_completed)).subscribe(output)
+            obs.pipe(ops.map(on_next), ops.on_completed(on_completed)).subscribe(sub)
 
             assert outstanding_requests == 0, "Not all inference requests were completed"
 

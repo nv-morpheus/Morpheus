@@ -96,10 +96,10 @@ class DeserializeStage(MultiMessageStage):
         stream = input_stream[0]
         out_type = MultiMessage
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-            input.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
-                       ops.flatten()).subscribe(output)
+            obs.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
+                       ops.flatten()).subscribe(sub)
 
         if self._build_cpp_node():
             stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)

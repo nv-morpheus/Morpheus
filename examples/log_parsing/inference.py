@@ -196,7 +196,7 @@ class LogParsingInferenceStage(InferenceStage):
         stream = input_stream[0]
         out_type = MultiResponseLogParsingMessage
 
-        def py_inference_fn(input: srf.Observable, output: srf.Subscriber):
+        def py_inference_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             worker = self._get_inference_worker(self._inf_queue)
 
@@ -237,7 +237,7 @@ class LogParsingInferenceStage(InferenceStage):
 
                 return output_message
 
-            input.pipe(ops.map(on_next)).subscribe(output)
+            obs.pipe(ops.map(on_next)).subscribe(sub)
 
             assert outstanding_requests == 0, "Not all inference requests were completed"
 

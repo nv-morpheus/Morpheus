@@ -238,7 +238,7 @@ class TrainAEStage(MultiMessageStage):
         else:
             get_model_fn = self._train_model
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             def on_next(x: UserMessageMeta):
 
@@ -255,7 +255,7 @@ class TrainAEStage(MultiMessageStage):
 
                 return to_send
 
-            input.pipe(ops.map(on_next), ops.flatten()).subscribe(output)
+            obs.pipe(ops.map(on_next), ops.flatten()).subscribe(sub)
 
         node = builder.make_node_full(self.unique_name, node_fn)
         builder.make_edge(stream, node)

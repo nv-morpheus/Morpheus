@@ -115,9 +115,9 @@ class FilterDetectionsStage(SinglePortStage):
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert list back to single MultiResponseProbsMessage
-        def flatten_fn(input: srf.Observable, output: srf.Subscriber):
+        def flatten_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-            input.pipe(ops.map(self.filter), ops.flatten()).subscribe(output)
+            obs.pipe(ops.map(self.filter), ops.flatten()).subscribe(sub)
 
         if self._build_cpp_node():
             stream = _stages.FilterDetectionsStage(builder, self.unique_name, self._threshold)
