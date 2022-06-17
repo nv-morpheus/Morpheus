@@ -87,9 +87,12 @@ def test_refresh(mock_morph_tqdm, config):
     mock_morph_tqdm.refresh.assert_called_once()
 
 
+@mock.patch('morpheus.stages.general.monitor_stage.ops')
 @mock.patch('morpheus.stages.general.monitor_stage.MorpheusTqdm')
-def test_build_single(mock_morph_tqdm, config):
+def test_build_single(mock_morph_tqdm, mock_operators, config):
+    MonitorStage.stage_count = 0
     mock_morph_tqdm.return_value = mock_morph_tqdm
+    mock_morph_tqdm.monitor = mock.MagicMock()
 
     mock_stream = mock.MagicMock()
     mock_segment = mock.MagicMock()
@@ -100,18 +103,23 @@ def test_build_single(mock_morph_tqdm, config):
     m._build_single(mock_segment, mock_input)
     m.on_start()
 
+    assert MonitorStage.stage_count == 1
+
     mock_segment.make_node_full.assert_called_once()
     mock_segment.make_edge.assert_called_once()
 
-    # sink_on_error = mock_segment.make_node_full.call_args.args[2]
-    # sink_on_completed = mock_segment.make_sink.call_args.args[3]
+    node_fn = mock_segment.make_node_full.call_args.args[1]
 
-    # # This is currenlty just a log stmt, just verify that its callable
-    # sink_on_error(RuntimeError("unittest"))
+    mock_observable = mock.MagicMock()
+    mock_subscriber = mock.MagicMock()
 
-    # # Verify we close tqdm propperly on complete
-    # sink_on_completed()
-    # mock_morph_tqdm.stop.assert_called_once()
+    node_fn(mock_observable, mock_subscriber)
+    mock_operators.on_completed.assert_called_once()
+    sink_on_completed = mock_operators.on_completed.call_args.args[0]
+
+    # Verify we close tqdm propperly on complete
+    sink_on_completed()
+    mock_morph_tqdm.stop.assert_called_once()
 
 
 def test_auto_count_fn(config):
