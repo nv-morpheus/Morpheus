@@ -230,19 +230,19 @@ class InferenceStage(MultiMessageStage):
                 for batch in batches:
                     outstanding_requests += 1
 
-                    fut = srf.Future()
+                    completion_future = srf.Future()
 
-                    def set_output_fut(resp: ResponseMemoryProbs, b, f: srf.Future):
+                    def set_output_fut(resp: ResponseMemoryProbs, b, batch_future: srf.Future):
                         nonlocal outstanding_requests
                         m = self._convert_one_response(memory, b, resp)
 
                         outstanding_requests -= 1
 
-                        f.set_result(m)
+                        batch_future.set_result(m)
 
-                    fut_list.append(fut)
+                    fut_list.append(completion_future)
 
-                    worker.process(batch, partial(set_output_fut, b=batch, f=fut))
+                    worker.process(batch, partial(set_output_fut, b=batch, f=completion_future))
 
                 for f in fut_list:
                     f.result()
