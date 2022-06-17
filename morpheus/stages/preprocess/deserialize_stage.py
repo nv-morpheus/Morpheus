@@ -91,7 +91,7 @@ class DeserializeStage(MultiMessageStage):
 
         return output
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiMessage
@@ -102,10 +102,10 @@ class DeserializeStage(MultiMessageStage):
                        ops.flatten()).subscribe(output)
 
         if self._build_cpp_node():
-            stream = _stages.DeserializeStage(seg, self.unique_name, self._batch_size)
+            stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
         else:
-            stream = seg.make_node_full(self.unique_name, node_fn)
+            stream = builder.make_node_full(self.unique_name, node_fn)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, out_type

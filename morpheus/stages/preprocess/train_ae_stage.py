@@ -196,7 +196,7 @@ class TrainAEStage(MultiMessageStage):
 
         return model
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
         get_model_fn = None
@@ -257,8 +257,8 @@ class TrainAEStage(MultiMessageStage):
 
             input.pipe(ops.map(on_next), ops.flatten()).subscribe(output)
 
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(stream, node)
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(stream, node)
         stream = node
 
         return stream, MultiAEMessage

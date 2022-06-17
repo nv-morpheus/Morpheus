@@ -90,10 +90,10 @@ class DirectoryWatcher():
         # Will be a watchdog observer if enabled
         self._watcher = None
 
-    def build_node(self, name: str, seg: srf.Builder):
+    def build_node(self, name: str, builder: srf.Builder):
 
         # The first source just produces filenames
-        return seg.make_source(name, self._generate_via_polling())
+        return builder.make_source(name, self._generate_via_polling())
 
     def _get_filename_queue(self) -> FiberQueue:
         """

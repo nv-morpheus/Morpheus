@@ -302,7 +302,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
             return True
 
-    def build(self, seg: srf.Builder, do_propagate=True):
+    def build(self, builder: srf.Builder, do_propagate=True):
         """Build this stage.
 
         Parameters
@@ -319,10 +319,10 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         # Pre-Build returns the input pairs for each port
         in_ports_pairs = self._pre_build()
 
-        out_ports_pair = self._build(seg, in_ports_pairs)
+        out_ports_pair = self._build(builder, in_ports_pairs)
 
         # Allow stages to do any post build steps (i.e., for sinks, or timing functions)
-        out_ports_pair = self._post_build(seg, out_ports_pair)
+        out_ports_pair = self._post_build(builder, out_ports_pair)
 
         assert len(out_ports_pair) == len(self.output_ports), \
             "Build must return same number of output pairs as output ports"
@@ -341,7 +341,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
             if (not dep.can_build()):
                 continue
 
-            dep.build(seg, do_propagate=do_propagate)
+            dep.build(builder, do_propagate=do_propagate)
 
     def _pre_build(self) -> typing.List[StreamPair]:
         in_pairs: typing.List[StreamPair] = [x.get_input_pair() for x in self.input_ports]
@@ -349,7 +349,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         return in_pairs
 
     @abstractmethod
-    def _build(self, seg: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         """
         This function is responsible for constructing this stage's internal `srf.SegmentObject` object. The input
         of this function contains the returned value from the upstream stage.
@@ -375,7 +375,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         """
         pass
 
-    def _post_build(self, seg: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
         return out_ports_pair
 
     def start(self):

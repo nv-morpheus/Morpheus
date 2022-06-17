@@ -59,7 +59,7 @@ class SourceStage(_pipeline.StreamWrapper):
         return None
 
     @abstractmethod
-    def _build_source(self, seg: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: srf.Builder) -> StreamPair:
         """
         Abstract method all derived Source classes should implement. Returns the same value as `build`.
 
@@ -75,13 +75,13 @@ class SourceStage(_pipeline.StreamWrapper):
         pass
 
     @typing.final
-    def _build(self, seg: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
         # True source object separate from the output stream. If any other operators need to be added after the source,
         # use `_post_build`
         assert len(self.input_ports) == 0, "Sources shouldnt have input ports"
 
-        source_pair = self._build_source(seg)
+        source_pair = self._build_source(builder)
 
         curr_source = source_pair[0]
 
@@ -92,7 +92,7 @@ class SourceStage(_pipeline.StreamWrapper):
 
         return [source_pair]
 
-    def _post_build(self, seg: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         return out_ports_pair
 

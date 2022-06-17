@@ -316,7 +316,7 @@ class CloudTrailSourceStage(SingleOutputSource):
 
         return user_metas
 
-    def _build_source(self, seg: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: srf.Builder) -> StreamPair:
 
         # The first source just produces filenames
         filename_source = self._watcher.build_node(self.unique_name, seg)
@@ -326,7 +326,7 @@ class CloudTrailSourceStage(SingleOutputSource):
         # Supposed to just return a source here
         return filename_source, out_type
 
-    def _post_build_single(self, seg: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
@@ -350,10 +350,10 @@ class CloudTrailSourceStage(SingleOutputSource):
                 # Finally flatten to single meta
                 ops.flatten()).subscribe(output)
 
-        post_node = seg.make_node_full(self.unique_name + "-post", node_fn)
-        seg.make_edge(out_stream, post_node)
+        post_node = builder.make_node_full(self.unique_name + "-post", node_fn)
+        builder.make_edge(out_stream, post_node)
 
         out_stream = post_node
         out_type = UserMessageMeta
 
-        return super()._post_build_single(seg, (out_stream, out_type))
+        return super()._post_build_single(builder, (out_stream, out_type))

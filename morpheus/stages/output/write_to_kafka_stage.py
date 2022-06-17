@@ -72,7 +72,7 @@ class WriteToKafkaStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         stream = input_stream[0]
@@ -134,8 +134,8 @@ class WriteToKafkaStage(SinglePortStage):
             assert outstanding_requests == 0, "Not all inference requests were completed"
 
         # Write to kafka
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(stream, node)
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(stream, node)
         # node.launch_options.pe_count = self._max_concurrent
 
         # Return input unchanged

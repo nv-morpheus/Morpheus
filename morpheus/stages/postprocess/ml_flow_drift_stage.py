@@ -146,13 +146,13 @@ class MLFlowDriftStage(SinglePortStage):
 
         return x
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
         # Convert the messages to rows of strings
-        node = seg.make_node(self.unique_name, self._calc_drift)
-        seg.make_edge(input_stream[0], node)
+        node = builder.make_node(self.unique_name, self._calc_drift)
+        builder.make_edge(input_stream[0], node)
         stream = node
 
         # Return input unchanged

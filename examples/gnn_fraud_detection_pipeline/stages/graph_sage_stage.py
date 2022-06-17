@@ -94,7 +94,7 @@ class GraphSAGEStage(SinglePortStage):
                                      mess_offset=message.mess_offset,
                                      mess_count=message.mess_count)
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        node = seg.make_node(self.unique_name, self._process_message)
-        seg.make_edge(input_stream[0], node)
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+        node = builder.make_node(self.unique_name, self._process_message)
+        builder.make_edge(input_stream[0], node)
         return node, GraphSAGEMultiMessage

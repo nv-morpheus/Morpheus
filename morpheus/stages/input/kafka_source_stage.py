@@ -328,10 +328,10 @@ class KafkaSourceStage(SingleOutputSource):
                 kafka_datasource.unsubscribe()
                 kafka_datasource.close(batch_timeout)
 
-    def _build_source(self, seg: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: srf.Builder) -> StreamPair:
 
         if (self._build_cpp_node()):
-            source = _stages.KafkaSourceStage(seg,
+            source = _stages.KafkaSourceStage(builder,
                                               self.unique_name,
                                               self._max_batch_size,
                                               self._topic,
@@ -341,7 +341,7 @@ class KafkaSourceStage(SingleOutputSource):
                                               self._disable_pre_filtering)
             source.launch_options.pe_count = self._max_concurrent
         else:
-            source = seg.make_source(self.unique_name, self._source_generator)
+            source = builder.make_source(self.unique_name, self._source_generator)
 
         source.launch_options.pe_count = self._max_concurrent
 

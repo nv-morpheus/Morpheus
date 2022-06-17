@@ -54,10 +54,10 @@ class PreprocessBaseStage(MultiMessageStage):
         pass
 
     @abstractmethod
-    def _get_preprocess_node(self, seg: srf.Builder):
+    def _get_preprocess_node(self, builder: srf.Builder):
         pass
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiInferenceMessage
@@ -71,10 +71,10 @@ class PreprocessBaseStage(MultiMessageStage):
             out_type = preproc_sig.return_annotation
 
         if self._build_cpp_node():
-            stream = self._get_preprocess_node(seg)
+            stream = self._get_preprocess_node(builder)
         else:
-            stream = seg.make_node(self.unique_name, preprocess_fn)
+            stream = builder.make_node(self.unique_name, preprocess_fn)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, out_type

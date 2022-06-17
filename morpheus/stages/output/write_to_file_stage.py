@@ -104,13 +104,13 @@ class WriteToFileStage(SinglePortStage):
 
         return output_strs
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
         # Sink to file
         if (self._build_cpp_node()):
-            to_file = _stages.WriteToFileStage(seg, self.unique_name, self._output_file, "w", self._file_type)
+            to_file = _stages.WriteToFileStage(builder, self.unique_name, self._output_file, "w", self._file_type)
         else:
 
             def node_fn(input: srf.Observable, output: srf.Subscriber):
@@ -133,9 +133,9 @@ class WriteToFileStage(SinglePortStage):
 
                 # File should be closed by here
 
-            to_file = seg.make_node_full(self.unique_name, node_fn)
+            to_file = builder.make_node_full(self.unique_name, node_fn)
 
-        seg.make_edge(stream, to_file)
+        builder.make_edge(stream, to_file)
         stream = to_file
 
         # Return input unchanged to allow passthrough

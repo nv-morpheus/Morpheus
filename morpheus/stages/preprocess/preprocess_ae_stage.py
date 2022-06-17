@@ -108,5 +108,5 @@ class PreprocessAEStage(PreprocessBaseStage):
                        fea_len=self._fea_length,
                        feature_columns=self._feature_columns)
 
-    def _get_preprocess_node(self, seg: srf.Builder):
+    def _get_preprocess_node(self, builder: srf.Builder):
         raise NotImplementedError("No C++ node for AE")

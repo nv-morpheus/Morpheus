@@ -102,19 +102,19 @@ class AddClassificationsStage(SinglePortStage):
         # Return passthrough
         return x
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         if self._build_cpp_node():
-            stream = _stages.AddClassificationsStage(seg,
+            stream = _stages.AddClassificationsStage(builder,
                                                      self.unique_name,
                                                      self._threshold,
                                                      len(self._class_labels),
                                                      self._idx2label)
         else:
-            stream = seg.make_node(self.unique_name, self._add_labels)
+            stream = builder.make_node(self.unique_name, self._add_labels)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         # Return input unchanged
         return stream, MultiResponseProbsMessage

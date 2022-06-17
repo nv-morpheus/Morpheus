@@ -187,5 +187,5 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
             fea_cols=self.features,
         )
 
-    def _get_preprocess_node(self, seg: srf.Builder):
-        return _stages.AbpPcapPreprocessingStage(seg, self.unique_name)
+    def _get_preprocess_node(self, builder: srf.Builder):
+        return _stages.AbpPcapPreprocessingStage(builder, self.unique_name)

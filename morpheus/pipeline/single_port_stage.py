@@ -69,10 +69,10 @@ class SinglePortStage(_pipeline.Stage):
         return in_ports_pairs
 
     @abstractmethod
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         pass
 
-    def _build(self, seg: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
         # True source object separate from the output stream. If any other operators need to be added after the source,
         # use `_post_build`
@@ -81,15 +81,15 @@ class SinglePortStage(_pipeline.Stage):
 
         assert len(in_ports_streams) == 1, "Should only have 1 port on input"
 
-        return [self._build_single(seg, in_ports_streams[0])]
+        return [self._build_single(builder, in_ports_streams[0])]
 
-    def _post_build_single(self, seg: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
         return out_pair
 
     @typing.final
-    def _post_build(self, seg: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
-        ret_val = self._post_build_single(seg, out_ports_pair[0])
+        ret_val = self._post_build_single(builder, out_ports_pair[0])
 
         logger.info("Added stage: {}\n  └─ {} -> {}".format(str(self),
                                                             pretty_print_type_name(self.input_ports[0].in_type),

@@ -145,7 +145,7 @@ class Pipeline():
 
         self._srf_pipeline = srf.Pipeline()
 
-        def inner_build(seg: srf.Builder):
+        def inner_build(builder: srf.Builder):
             logger.info("====Building Pipeline====")
 
             # Get the list of stages and source
@@ -155,7 +155,7 @@ class Pipeline():
             for s in source_and_stages:
 
                 if (s.can_build()):
-                    s.build(seg)
+                    s.build(builder)
 
             if (not all([x.is_built for x in source_and_stages])):
                 # raise NotImplementedError("Circular pipelines are not yet supported!")

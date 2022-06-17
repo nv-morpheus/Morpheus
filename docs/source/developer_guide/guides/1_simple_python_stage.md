@@ -61,19 +61,19 @@ Our `on_data` method accepts the incoming message and returns a message. The ret
 
 Finally, the `_build_single` method will be used at build time to wire our stage into the pipeline. `_build_single` receives an instance of the SRF pipeline segment along with a `StreamPair` instance. We will be using the segment instance to build a node from our stage and add it to the pipeline segment. The `StreamPair` argument is a tuple; the first element is our parent node, and the second is our parent node's output type. The return type of this method is also a `StreamPair`. Typically, we will be returning our newly constructed node along with our output type.
 ```python
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        node = seg.make_node(self.unique_name, self.on_data)
-        seg.make_edge(input_stream[0], node)
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+        node = builder.make_node(self.unique_name, self.on_data)
+        builder.make_edge(input_stream[0], node)
 ```
 
 In most cases, a Morpheus stage will define and build a single SRF node. In some advanced cases, a stage can construct more than one node. For our purposes, a Morpheus _stage_ defines information about the type of node(s) it builds, while the _node_ is the instance of the stage that is wired into the SRF pipeline. To build the node, we will call the `make_node` method of the segment instance, passing to it our name and our `on_data` method. We used the `unique_name` property, which will take the name property which we already defined and append a unique id to it.
 ```python
-node = seg.make_node(self.unique_name, self.on_data)
+node = builder.make_node(self.unique_name, self.on_data)
 ```
 
 Next, we will define an edge connecting our new node to our parent node:
 ```python
-seg.make_edge(input_stream[0], node)
+builder.make_edge(input_stream[0], node)
 ```
 
 Finally, we will return a new tuple of our node and output type. Since this is a pass through node that can accept any input type, we will return our parent's type.
@@ -102,9 +102,9 @@ class PassThruStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        node = seg.make_node(self.unique_name, self.on_data)
-        seg.make_edge(input_stream[0], node)
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+        node = builder.make_node(self.unique_name, self.on_data)
+        builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
 ```

@@ -125,5 +125,5 @@ class PreprocessFILStage(PreprocessBaseStage):
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
         return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
-    def _get_preprocess_node(self, seg: srf.Builder):
-        return _stages.PreprocessFILStage(seg, self.unique_name, self.features)
+    def _get_preprocess_node(self, builder: srf.Builder):
+        return _stages.PreprocessFILStage(builder, self.unique_name, self.features)

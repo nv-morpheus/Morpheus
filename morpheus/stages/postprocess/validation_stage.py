@@ -222,7 +222,7 @@ class ValidationStage(MultiMessageStage):
         with open(self._results_file_name, "w") as f:
             json.dump(output, f, indent=2, sort_keys=True)
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then build the dataframe and compare
         def node_fn(input: srf.Observable, output: srf.Subscriber):
@@ -235,7 +235,7 @@ class ValidationStage(MultiMessageStage):
 
             input.pipe(ops.to_list(), ops.map(do_compare), ops.flatten()).subscribe(output)
 
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(input_stream[0], node)
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

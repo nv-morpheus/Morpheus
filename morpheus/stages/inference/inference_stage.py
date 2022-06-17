@@ -200,10 +200,10 @@ class InferenceStage(MultiMessageStage):
         """
         pass
 
-    def _get_cpp_inference_node(self, seg: srf.Builder) -> srf.SegmentObject:
+    def _get_cpp_inference_node(self, builder: srf.Builder) -> srf.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiResponseProbsMessage
@@ -256,11 +256,11 @@ class InferenceStage(MultiMessageStage):
         if (self._build_cpp_node()):
             node = self._get_cpp_inference_node(seg)
         else:
-            node = seg.make_node_full(self.unique_name, py_inference_fn)
+            node = builder.make_node_full(self.unique_name, py_inference_fn)
 
         # Set the concurrency level to be up with the thread count
         node.launch_options.pe_count = self._thread_count
-        seg.make_edge(stream, node)
+        builder.make_edge(stream, node)
 
         stream = node
 

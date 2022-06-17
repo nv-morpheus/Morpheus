@@ -214,7 +214,7 @@ class MonitorStage(SinglePortStage):
 
             self._progress.reset()
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         def sink_on_completed():
             # Set the name to complete. This refreshes the display
@@ -233,9 +233,9 @@ class MonitorStage(SinglePortStage):
 
             input.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(output)
 
-        stream = seg.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node_full(self.unique_name, node_fn)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, input_stream[1]
 

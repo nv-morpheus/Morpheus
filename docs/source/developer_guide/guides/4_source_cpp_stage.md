@@ -539,7 +539,7 @@ def connect(self):
 Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig` is configured to `True` by using the `self._build_cpp_node()` method.
 
 ```python
-def _build_source(self, seg: srf.Builder) -> StreamPair:
+def _build_source(self, builder: srf.Builder) -> StreamPair:
     if self._build_cpp_node():
         node = morpheus_rabbit_cpp.RabbitMQSourceStage(
             seg,
@@ -552,6 +552,6 @@ def _build_source(self, seg: srf.Builder) -> StreamPair:
         )
     else:
         self.connect()
-        node = seg.make_source(self.unique_name, self.source_generator)
+        node = builder.make_source(self.unique_name, self.source_generator)
     return node, MessageMeta
 ```

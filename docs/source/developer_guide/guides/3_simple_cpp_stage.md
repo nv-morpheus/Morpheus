@@ -314,13 +314,13 @@ As mentioned in the previous section, we will need to override the `supports_cpp
 def supports_cpp_node(self):
    return True
 
-def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
    if self._build_cpp_node():
       print("building cpp")
       node = morpheus_example_cpp.PassThruStage(seg, self.unique_name)
    else:
-      node = seg.make_node(self.unique_name, self.on_data)
+      node = builder.make_node(self.unique_name, self.on_data)
 
-   seg.make_edge(input_stream[0], node)
+   builder.make_edge(input_stream[0], node)
    return node, input_stream[1]
 ```

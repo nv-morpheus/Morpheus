@@ -38,7 +38,7 @@ class Stage(_pipeline.StreamWrapper):
     def __init__(self, c: Config):
         super().__init__(c)
 
-    def _post_build(self, seg: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         return out_ports_pair
 

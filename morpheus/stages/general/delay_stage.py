@@ -61,7 +61,7 @@ class DelayStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # This stage is no longer needed and is just a pass thru stage
         deprecated_stage_warning(logger, type(self), self.unique_name)

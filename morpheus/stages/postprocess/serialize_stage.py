@@ -120,9 +120,9 @@ class SerializeStage(SinglePortStage):
 
         return MessageMeta(df=df)
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
-            stream = _stages.SerializeStage(seg,
+            stream = _stages.SerializeStage(builder,
                                             self.unique_name,
                                             self._include_columns or [],
                                             self._exclude_columns,
@@ -135,10 +135,10 @@ class SerializeStage(SinglePortStage):
 
             exclude_columns = [re.compile(x) for x in self._exclude_columns]
 
-            stream = seg.make_node(
+            stream = builder.make_node(
                 self.unique_name,
                 partial(self.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns))
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, MessageMeta

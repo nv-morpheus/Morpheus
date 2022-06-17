@@ -168,8 +168,8 @@ class PreprocessNLPStage(PreprocessBaseStage):
                        truncation=self._truncation,
                        add_special_tokens=self._add_special_tokens)
 
-    def _get_preprocess_node(self, seg: srf.Builder):
-        return _stages.PreprocessNLPStage(seg,
+    def _get_preprocess_node(self, builder: srf.Builder):
+        return _stages.PreprocessNLPStage(builder,
                                           self.unique_name,
                                           self._vocab_hash_file,
                                           self._seq_length,
