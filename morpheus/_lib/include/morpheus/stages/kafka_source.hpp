@@ -40,8 +40,6 @@ namespace morpheus {
  */
 #pragma GCC visibility push(default)
 
-struct KafkaSourceStage__Rebalancer;
-
 class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
@@ -74,11 +72,6 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
      */
     subscriber_fn_t build();
 
-    // /**
-    //  * TODO(Documentation)
-    //  */
-    // void start() override;
-
     /**
      * TODO(Documentation)
      */
@@ -87,12 +80,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     /**
      * TODO(Documentation)
      */
-    // srf::SharedFuture<bool> launch_tasks(std::vector<std::function<bool()>> &&tasks);
-
-    /**
-     * TODO(Documentation)
-     */
-    std::unique_ptr<RdKafka::KafkaConsumer> create_consumer(KafkaSourceStage__Rebalancer &rebalancer);
+    std::unique_ptr<RdKafka::KafkaConsumer> create_consumer(RdKafka::RebalanceCb &rebalancer);
 
     /**
      * TODO(Documentation)
@@ -114,7 +102,6 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     bool m_disable_commit{false};
     bool m_disable_pre_filtering{false};
     bool m_requires_commit{false};  // Whether or not manual committing is required
-    // std::vector<std::shared_ptr<srf::TaskQueue<srf::FiberMetaData>>> m_task_queues;
 
     void *m_rebalancer;
 };

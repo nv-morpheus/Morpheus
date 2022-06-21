@@ -375,7 +375,7 @@ std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map
     return std::move(kafka_conf);
 }
 
-std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(KafkaSourceStage__Rebalancer &rebalancer)
+std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafka::RebalanceCb &rebalancer)
 {
     auto kafka_conf = this->build_kafka_conf(m_config);
     std::string errstr;
