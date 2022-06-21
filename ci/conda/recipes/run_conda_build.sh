@@ -26,13 +26,17 @@ function get_version() {
    echo "$(git describe --tags | grep -o -E '^([^-]*?)')"
 }
 
-export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
-
 # Change this to switch between build/mambabuild/debug
 export CONDA_COMMAND=${CONDA_COMMAND:-"mambabuild"}
 
 # Get the path to the morpheus git folder
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
+
+# Export script_env variables that must be set for conda build
+export CMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES:-"ALL"}
+export MORPHEUS_BUILD_PYTHON_STUBS=${MORPHEUS_BUILD_PYTHON_STUBS:-"ON"}
+export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
+export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
 
 # Set the tag for the neo commit to use
 export NEO_GIT_TAG=${NEO_GIT_TAG:-"5b55e37c6320c1a5747311a1e29e7ebb049d12bc"}
@@ -43,7 +47,7 @@ export USE_SCCACHE=${USE_SCCACHE:-""}
 
 export CUDA="$(conda list | grep cudatoolkit | egrep -o "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+")"
 export PYTHON_VER="$(python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")"
-export CUDA=11.4.1
+export CUDA=11.5
 echo "CUDA        : ${CUDA}"
 echo "PYTHON_VER  : ${PYTHON_VER}"
 echo "NEO_GIT_TAG : ${NEO_GIT_TAG}"
@@ -52,7 +56,6 @@ echo ""
 export CMAKE_GENERATOR="Ninja"
 
 # Export variables for the cache
-export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
 export CCACHE_DIR="${MORPHEUS_CACHE_DIR}/ccache"
 export CCACHE_NOHASHDIR=1
 
@@ -91,6 +94,7 @@ CONDA_ARGS_ARRAY+=("--variants" "{python: 3.8}")
 # And default channels (with optional channel alias)
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapidsai")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.5.2")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
 CONDA_ARGS_ARRAY+=("-c" "conda-forge")
 
