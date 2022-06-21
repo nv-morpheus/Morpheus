@@ -37,4 +37,17 @@ add_test(
   COMMAND $<TARGET_FILE:test_libmorpheus>
 )
 
+set_target_properties(test_libmorpheus
+  PROPERTIES
+    INSTALL_RPATH "$ORIGIN/.."
+)
+
+install(
+    TARGETS
+      test_libmorpheus
+    RUNTIME DESTINATION
+      "${MORPHEUS_LIB_INSTALL_DIR}/tests"
+    COMPONENT Wheel
+)
+
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
