@@ -330,7 +330,7 @@
 				"justMyCode": false
 			},
 			{
-				"name": "Debug Neo from Python (Morpheus-NLP)",
+				"name": "Debug SRF from Python (Morpheus-NLP)",
 				"type": "cppdbg",
 				"request": "launch",
 				"program": "python",
@@ -415,7 +415,7 @@
 				],
 				"symbolLoadInfo": {
 					"loadAll": false,
-					"exceptionList": "libneo*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
+					"exceptionList": "libsrf*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
 				},
 				"miDebuggerPath": "gdb",
 				"sourceFileMap": {
@@ -426,7 +426,7 @@
 				},
 			},
 			{
-				"name": "Debug Neo from Python (Morpheus-FIL)",
+				"name": "Debug SRF from Python (Morpheus-FIL)",
 				"type": "cppdbg",
 				"request": "launch",
 				"program": "python",
@@ -441,7 +441,7 @@
 					// "--use_cpp=False",
 					"pipeline-fil",
 					"from-file",
-					"--filename=models/datasets/validation-data/phishing-email-validation-data.jsonlines",
+					"--filename=models/datasets/validation-data/abp-validation-data.csv",
 					"--repeat=10",
 					"--iterative",
 					// "from-kafka",
@@ -508,7 +508,7 @@
 				],
 				"symbolLoadInfo": {
 					"loadAll": false,
-					"exceptionList": "libneo*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
+					"exceptionList": "libsrf*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
 				},
 				"miDebuggerPath": "gdb",
 				"sourceFileMap": {
@@ -519,7 +519,7 @@
 				},
 			},
 			{
-				"name": "Debug Neo from Python (Morpheus-AE)",
+				"name": "Debug SRF from Python (Morpheus-AE)",
 				"type": "cppdbg",
 				"request": "launch",
 				"program": "python",
@@ -599,7 +599,7 @@
 				],
 				"symbolLoadInfo": {
 					"loadAll": false,
-					"exceptionList": "libneo*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
+					"exceptionList": "libsrf*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
 				},
 				"miDebuggerPath": "gdb",
 				"sourceFileMap": {

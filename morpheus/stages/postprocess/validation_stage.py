@@ -19,9 +19,9 @@ import os
 import re
 import typing
 
-import neo
 import pandas as pd
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 import cudf
 
@@ -168,7 +168,7 @@ class ValidationStage(MultiMessageStage):
             if (self._index_col.startswith("_index_")):
                 results_df.index.name = str(results_df.index.name).replace("_index_", "", 1)
 
-        val_df = self._filter_df(self._val_df)
+        val_df = self._filter_df(read_file_to_df(self._val_file_name, FileTypes.Auto, df_type="pandas"))
 
         # Now start the comparison
         missing_columns = val_df.columns.difference(results_df.columns)
@@ -222,12 +222,10 @@ class ValidationStage(MultiMessageStage):
         with open(self._results_file_name, "w") as f:
             json.dump(output, f, indent=2, sort_keys=True)
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
-
-        self._val_df: pd.DataFrame = read_file_to_df(self._val_file_name, FileTypes.Auto, df_type="pandas")
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then build the dataframe and compare
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             def do_compare(delayed_messages):
 
@@ -235,9 +233,9 @@ class ValidationStage(MultiMessageStage):
 
                 return delayed_messages
 
-            input.pipe(ops.to_list(), ops.map(do_compare), ops.flatten()).subscribe(output)
+            obs.pipe(ops.to_list(), ops.map(do_compare), ops.flatten()).subscribe(sub)
 
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(input_stream[0], node)
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

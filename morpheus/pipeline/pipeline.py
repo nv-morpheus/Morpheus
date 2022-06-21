@@ -19,8 +19,8 @@ import signal
 import time
 import typing
 
-import neo
 import networkx
+import srf
 from tqdm import tqdm
 
 import cudf
@@ -58,11 +58,12 @@ class Pipeline():
         self._sources: typing.Set[SourceStage] = set()
         self._stages: typing.Set[Stage] = set()
 
-        self._exec_options = neo.Options()
+        self._exec_options = srf.Options()
         self._exec_options.topology.user_cpuset = "0-{}".format(c.num_threads - 1)
+        self._exec_options.engine_factories.default_engine_type = srf.core.options.EngineType.Thread
 
         # Set the default channel size
-        neo.Config.default_channel_size = c.edge_buffer_size
+        srf.Config.default_channel_size = c.edge_buffer_size
 
         self.batch_size = c.pipeline_batch_size
 
@@ -71,8 +72,8 @@ class Pipeline():
         self._is_built = False
         self._is_started = False
 
-        self._neo_executor: neo.Executor = None
-        self._neo_pipeline: neo.Pipeline = None
+        self._srf_executor: srf.Executor = None
+        self._srf_pipeline: srf.Pipeline = None
 
     @property
     def is_built(self) -> bool:
@@ -140,11 +141,11 @@ class Pipeline():
 
         logger.info("====Registering Pipeline====")
 
-        self._neo_executor = neo.Executor(self._exec_options)
+        self._srf_executor = srf.Executor(self._exec_options)
 
-        self._neo_pipeline = neo.Pipeline()
+        self._srf_pipeline = srf.Pipeline()
 
-        def inner_build(seg: neo.Segment):
+        def inner_build(builder: srf.Builder):
             logger.info("====Building Pipeline====")
 
             # Get the list of stages and source
@@ -154,7 +155,7 @@ class Pipeline():
             for s in source_and_stages:
 
                 if (s.can_build()):
-                    s.build(seg)
+                    s.build(builder)
 
             if (not all([x.is_built for x in source_and_stages])):
                 # raise NotImplementedError("Circular pipelines are not yet supported!")
@@ -179,9 +180,9 @@ class Pipeline():
             # Finally call _on_start
             self._on_start()
 
-        self._neo_pipeline.make_segment("main", inner_build)
+        self._srf_pipeline.make_segment("main", inner_build)
 
-        self._neo_executor.register_pipeline(self._neo_pipeline)
+        self._srf_executor.register_pipeline(self._srf_pipeline)
 
         self._is_built = True
 
@@ -192,7 +193,7 @@ class Pipeline():
 
         logger.info("====Starting Pipeline====")
 
-        self._neo_executor.start()
+        self._srf_executor.start()
 
         logger.info("====Pipeline Started====")
 
@@ -202,13 +203,13 @@ class Pipeline():
         for s in list(self._sources) + list(self._stages):
             s.stop()
 
-        self._neo_executor.stop()
+        self._srf_executor.stop()
 
         logger.info("====Pipeline Stopped====")
 
     async def join(self):
 
-        await self._neo_executor.join_async()
+        await self._srf_executor.join_async()
 
         # First wait for all sources to stop. This only occurs after all messages have been processed fully
         for s in list(self._sources):

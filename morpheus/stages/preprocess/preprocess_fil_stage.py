@@ -17,13 +17,13 @@ import typing
 from functools import partial
 
 import cupy as cp
-import neo
 import numpy as np
 import pandas as pd
+import srf
 
 import cudf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import InferenceMemoryFIL
 from morpheus.messages import MultiInferenceFILMessage
@@ -125,5 +125,5 @@ class PreprocessFILStage(PreprocessBaseStage):
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
         return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
-    def _get_preprocess_node(self, seg: neo.Segment):
-        return neos.PreprocessFILStage(seg, self.unique_name, self.features)
+    def _get_preprocess_node(self, builder: srf.Builder):
+        return _stages.PreprocessFILStage(builder, self.unique_name, self.features)

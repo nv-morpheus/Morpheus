@@ -15,8 +15,8 @@
 
 import typing
 
-import neo
-import neo.core.operators as ops
+import srf
+import srf.core.operators as ops
 import typing_utils
 
 import cudf
@@ -46,11 +46,11 @@ class StaticMessageSource(SingleOutputSource):
     def input_count(self) -> int:
         return len(self._df)
 
-    def _build_source(self, seg: neo.Segment) -> StreamPair:
-        out_stream = seg.make_source(self.unique_name, self._generate_frames())
+    def _build_source(self, builder: srf.Builder) -> StreamPair:
+        out_stream = builder.make_source(self.unique_name, self._generate_frames())
         return out_stream, MessageMeta
 
-    def _post_build_single(self, seg: neo.Segment, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
@@ -58,16 +58,16 @@ class StaticMessageSource(SingleOutputSource):
         # Convert our list of dataframes into the desired type. Flatten if necessary
         if (typing_utils.issubtype(out_type, typing.List)):
 
-            def node_fn(input: neo.Observable, output: neo.Subscriber):
+            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-                input.pipe(ops.flatten()).subscribe(output)
+                obs.pipe(ops.flatten()).subscribe(sub)
 
-            flattened = seg.make_node_full(self.unique_name + "-post", node_fn)
-            seg.make_edge(out_stream, flattened)
+            flattened = builder.make_node_full(self.unique_name + "-post", node_fn)
+            builder.make_edge(out_stream, flattened)
             out_stream = flattened
             out_type = typing.get_args(out_type)[0]
 
-        return super()._post_build_single(seg, (out_stream, out_type))
+        return super()._post_build_single(builder, (out_stream, out_type))
 
     def _generate_frames(self):
         yield MessageMeta(self._df)

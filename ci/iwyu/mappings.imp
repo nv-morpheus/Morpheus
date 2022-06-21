@@ -1,11 +1,11 @@
 [
 
 ## Include mappings
-# neo protos
-{ "include": [ "\"neo/protos/architect.pb.h\"", private, "<neo/protos/architect.pb.h>", "public" ] },
-{ "include": [ "\"neo/protos/codable.pb.h\"", private, "<neo/protos/codable.pb.h>", "public" ] },
-{ "include": [ "\"neo/protos/remote_descriptor.pb.h\"", private, "<neo/protos/remote_descriptor.pb.h>", "public" ] },
-{ "include": [ "\"neo/protos/tensor_meta_data.pb.h\"", private, "<neo/protos/tensor_meta_data.pb.h>", "public" ] },
+# srf protos
+{ "include": [ "\"srf/protos/architect.pb.h\"", private, "<srf/protos/architect.pb.h>", "public" ] },
+{ "include": [ "\"srf/protos/codable.pb.h\"", private, "<srf/protos/codable.pb.h>", "public" ] },
+{ "include": [ "\"srf/protos/remote_descriptor.pb.h\"", private, "<srf/protos/remote_descriptor.pb.h>", "public" ] },
+{ "include": [ "\"srf/protos/tensor_meta_data.pb.h\"", private, "<srf/protos/tensor_meta_data.pb.h>", "public" ] },
 
 # stdlib
 { "include": [ "<bits/cxxabi_forced.h>", private, "<mutex>", "public" ] },
@@ -87,7 +87,7 @@
 # xtensor
 { "symbol": ["xt::no_ownership", "private", "<xtensor/xadapt.hpp>", "public"] },
 
-# neo
-{ "symbol": ["std::__decay_and_strip<std::shared_ptr<neo::TraceStatistics> &>::__type" , "private", "<neo/benchmarking/trace_statistics.hpp>", "public"] },
+# srf
+{ "symbol": ["std::__decay_and_strip<std::shared_ptr<srf::TraceStatistics> &>::__type" , "private", "<srf/benchmarking/trace_statistics.hpp>", "public"] },
 
 ]

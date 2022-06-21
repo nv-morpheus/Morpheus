@@ -53,7 +53,7 @@ RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
         << "Inconsistent tensor. Tensor values would extend past the end of the device_buffer";
 }
 
-std::shared_ptr<neo::MemoryDescriptor> RMMTensor::get_memory() const
+std::shared_ptr<MemoryDescriptor> RMMTensor::get_memory() const
 {
     return nullptr;
 }

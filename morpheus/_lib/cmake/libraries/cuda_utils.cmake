@@ -30,7 +30,7 @@ target_include_directories(cuda_utils
 
 target_link_libraries(cuda_utils
     PUBLIC
-      neo::pyneo
+      srf::pysrf
       matx::matx
       cudf::cudf
       Python3::NumPy

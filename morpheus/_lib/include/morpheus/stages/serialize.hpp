@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,8 @@
 
 #include <morpheus/messages/multi.hpp>
 
-#include <neo/core/segment.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <fstream>
 #include <memory>
@@ -28,58 +28,58 @@
 #include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** SerializeStage********************************/
-    /**
-     * TODO(Documentation)
-     */
+/****** Component public implementations *******************/
+/****** SerializeStage********************************/
+/**
+ * TODO(Documentation)
+ */
 #pragma GCC visibility push(default)
-    class SerializeStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>> {
-    public:
-        using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>;
-        using base_t::operator_fn_t;
-        using base_t::reader_type_t;
-        using base_t::writer_type_t;
+class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>
+{
+  public:
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-        SerializeStage(const neo::Segment &parent,
-                       const std::string &name,
-                       const std::vector<std::string> &include,
-                       const std::vector<std::string> &exclude,
-                       bool fixed_columns = true);
+    SerializeStage(const std::vector<std::string> &include,
+                   const std::vector<std::string> &exclude,
+                   bool fixed_columns = true);
 
-    private:
-        void make_regex_objs(const std::vector<std::string> &regex_strs, std::vector<std::regex> &regex_objs);
+  private:
+    void make_regex_objs(const std::vector<std::string> &regex_strs, std::vector<std::regex> &regex_objs);
 
-        bool match_column(const std::vector<std::regex> &patterns, const std::string &column) const;
+    bool match_column(const std::vector<std::regex> &patterns, const std::string &column) const;
 
-        bool include_column(const std::string &column) const;
+    bool include_column(const std::string &column) const;
 
-        bool exclude_column(const std::string &column) const;
+    bool exclude_column(const std::string &column) const;
 
-        TableInfo get_meta(reader_type_t &msg);
+    TableInfo get_meta(sink_type_t &msg);
 
-        operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
-        bool m_fixed_columns;
-        std::vector<std::regex> m_include;
-        std::vector<std::regex> m_exclude;
-        std::vector<std::string> m_column_names;
-    };
+    bool m_fixed_columns;
+    std::vector<std::regex> m_include;
+    std::vector<std::regex> m_exclude;
+    std::vector<std::string> m_column_names;
+};
 
-    /****** WriteToFileStageInterfaceProxy******************/
+/****** WriteToFileStageInterfaceProxy******************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct SerializeStageInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * @brief Create and initialize a SerializeStage, and return the result.
      */
-    struct SerializeStageInterfaceProxy {
-        /**
-         * @brief Create and initialize a SerializeStage, and return the result.
-         */
-        static std::shared_ptr<SerializeStage> init(neo::Segment &parent,
-                                                    const std::string &name,
-                                                    const std::vector<std::string> &include,
-                                                    const std::vector<std::string> &exclude,
-                                                    bool fixed_columns = true);
-    };
+    static std::shared_ptr<srf::segment::Object<SerializeStage>> init(srf::segment::Builder &builder,
+                                                                      const std::string &name,
+                                                                      const std::vector<std::string> &include,
+                                                                      const std::vector<std::string> &exclude,
+                                                                      bool fixed_columns = true);
+};
 
 #pragma GCC visibility pop
 }  // namespace morpheus

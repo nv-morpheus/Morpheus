@@ -18,18 +18,12 @@
 #pragma once
 
 #include <morpheus/objects/tensor_object.hpp>
-#include <morpheus/utilities/matx_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
-
-#include <pyneo/node.hpp>
 
 #include <cudf/types.hpp>
 
 #include <rmm/device_buffer.hpp>
 #include <rmm/device_uvector.hpp>
-
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
 
 #include <cstdint>
 #include <memory>
@@ -51,7 +45,7 @@ class RMMTensor : public ITensor
               std::vector<TensorIndex> shape,
               std::vector<TensorIndex> stride = {});
 
-    ~RMMTensor() = default;
+    ~RMMTensor() override = default;
 
     /**
      * TODO(Documentation)
@@ -87,7 +81,7 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<neo::MemoryDescriptor> get_memory() const override;
+    std::shared_ptr<MemoryDescriptor> get_memory() const override;
 
     /**
      * TODO(Documentation)

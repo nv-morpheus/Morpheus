@@ -17,12 +17,12 @@ import logging
 import typing
 
 import dill
-import neo
 import numpy as np
 import pandas as pd
+import srf
 import torch
 from dfencoder import AutoEncoder
-from neo.core import operators as ops
+from srf.core import operators as ops
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
@@ -196,7 +196,7 @@ class TrainAEStage(MultiMessageStage):
 
         return model
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
         get_model_fn = None
@@ -238,7 +238,7 @@ class TrainAEStage(MultiMessageStage):
         else:
             get_model_fn = self._train_model
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             def on_next(x: UserMessageMeta):
 
@@ -255,10 +255,10 @@ class TrainAEStage(MultiMessageStage):
 
                 return to_send
 
-            input.pipe(ops.map(on_next), ops.flatten()).subscribe(output)
+            obs.pipe(ops.map(on_next), ops.flatten()).subscribe(sub)
 
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(stream, node)
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(stream, node)
         stream = node
 
         return stream, MultiAEMessage

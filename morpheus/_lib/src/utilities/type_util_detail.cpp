@@ -17,7 +17,7 @@
 
 #include <morpheus/utilities/type_util_detail.hpp>
 
-#include <neo/utils/string_utils.hpp>
+#include <morpheus/utilities/string_util.hpp>
 
 #include <glog/logging.h>
 
@@ -94,7 +94,7 @@ std::string DataType::name() const
 
 std::string DataType::type_str() const
 {
-    return CONCAT_STR("<" << this->type_char() << this->item_size());
+    return MORPHEUS_CONCAT_STR("<" << this->type_char() << this->item_size());
 }
 
 bool DataType::operator==(const DataType& other) const

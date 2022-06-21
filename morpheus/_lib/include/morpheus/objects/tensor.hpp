@@ -22,7 +22,7 @@
 #include <morpheus/utilities/matx_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
 
 #include <cudf/types.hpp>
 

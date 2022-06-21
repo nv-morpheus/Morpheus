@@ -38,9 +38,6 @@ export MORPHEUS_BUILD_PYTHON_STUBS=${MORPHEUS_BUILD_PYTHON_STUBS:-"ON"}
 export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
 
-# Set the tag for the neo commit to use
-export NEO_GIT_TAG=${NEO_GIT_TAG:-"5b55e37c6320c1a5747311a1e29e7ebb049d12bc"}
-
 # Set CONDA_CHANNEL_ALIAS to mimic the conda config channel_alias property during the build
 CONDA_CHANNEL_ALIAS=${CONDA_CHANNEL_ALIAS:-""}
 export USE_SCCACHE=${USE_SCCACHE:-""}
@@ -50,7 +47,6 @@ export PYTHON_VER="$(python -c "import sys; print('.'.join(map(str, sys.version_
 export CUDA=11.5
 echo "CUDA        : ${CUDA}"
 echo "PYTHON_VER  : ${PYTHON_VER}"
-echo "NEO_GIT_TAG : ${NEO_GIT_TAG}"
 echo ""
 
 export CMAKE_GENERATOR="Ninja"
@@ -98,42 +94,8 @@ CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvid
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
 CONDA_ARGS_ARRAY+=("-c" "conda-forge")
 
-if hasArg libneo; then
-
-   export NEO_ROOT="${MORPHEUS_CACHE_DIR}/src_cache/libneo"
-   export NEO_CACHE_DIR=${MORPHEUS_CACHE_DIR}
-
-   # First need to download the repo into the cache
-   if [[ ! -d "${NEO_ROOT}" ]]; then
-      git clone ${NEO_GIT_URL:?"Cannot build libneo. Must set NEO_GIT_URL to git repo location to allow checkout of neo repository"} ${NEO_ROOT}
-   fi
-
-   pushd ${NEO_ROOT}
-
-   # Ensure we have the latest checkout
-   git fetch
-   git checkout ${NEO_GIT_TAG}
-
-   if [[ "$(git branch --show-current | wc -l)" == "1" ]]; then
-      git pull
-   fi
-
-   # Set GIT_VERSION to set the project version inside of meta.yaml
-   export GIT_VERSION="$(get_version)"
-
-   echo "Running conda-build for libneo..."
-   set -x
-   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/libneo
-   set +x
-
-   unset GIT_DESCRIBE_TAG
-
-   popd
-fi
-
 if hasArg morpheus; then
    # Set GIT_VERSION to set the project version inside of meta.yaml
-   # Do this after neo in case they are different
    export GIT_VERSION="$(get_version)"
 
    echo "Running conda-build for morpheus..."

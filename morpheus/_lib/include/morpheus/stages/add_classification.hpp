@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,69 +17,66 @@
 
 #pragma once
 
-
 #include <morpheus/messages/multi_response_probs.hpp>
 
-#include <neo/core/segment.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
-#include <string>
 #include <memory>
-
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** AddClassificationStage********************************/
+/****** Component public implementations *******************/
+/****** AddClassificationStage********************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+                                                              std::shared_ptr<MultiResponseProbsMessage>>
+{
+  public:
+    using base_t =
+        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
+
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class AddClassificationsStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-            std::shared_ptr<MultiResponseProbsMessage>> {
-    public:
-        using base_t =
-        neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-        using base_t::operator_fn_t;
-        using base_t::reader_type_t;
-        using base_t::writer_type_t;
+    AddClassificationsStage(float threshold,
+                            std::size_t num_class_labels,
+                            std::map<std::size_t, std::string> idx2label);
 
-        /**
-         * TODO(Documentation)
-         */
-        AddClassificationsStage(const neo::Segment &parent,
-                                const std::string &name,
-                                float threshold,
-                                std::size_t num_class_labels,
-                                std::map<std::size_t, std::string> idx2label);
-
-    private:
-        /**
-         * TODO(Documentation)
-         */
-        operator_fn_t build_operator();
-
-        float m_threshold;
-        std::size_t m_num_class_labels;
-        std::map<std::size_t, std::string> m_idx2label;
-    };
-
-    /****** AddClassificationStageInterfaceProxy******************/
+  private:
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * TODO(Documentation)
      */
+    subscribe_fn_t build_operator();
 
-    struct AddClassificationStageInterfaceProxy {
+    float m_threshold;
+    std::size_t m_num_class_labels;
+    std::map<std::size_t, std::string> m_idx2label;
+};
 
-        /**
-         * @brief Create and initialize a AddClassificationStage, and return the result.
-         */
-        static std::shared_ptr<AddClassificationsStage>
-        init(neo::Segment &parent,
-             const std::string &name,
-             float threshold,
-             std::size_t num_class_labels,
-             std::map<std::size_t, std::string> idx2label);
-    };
+/****** AddClassificationStageInterfaceProxy******************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+
+struct AddClassificationStageInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a AddClassificationStage, and return the result.
+     */
+    static std::shared_ptr<srf::segment::Object<AddClassificationsStage>> init(
+        srf::segment::Builder &builder,
+        const std::string &name,
+        float threshold,
+        std::size_t num_class_labels,
+        std::map<std::size_t, std::string> idx2label);
+};
 
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-#include <neo/channel/channel.hpp>
-#include <pyneo/utils.hpp>
-#include <cudf/table/table.hpp>
 #include <cudf/io/types.hpp>
+#include <cudf/table/table.hpp>
+#include <pysrf/utils.hpp>
+#include <srf/channel/channel.hpp>
 
 #include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
@@ -31,15 +31,16 @@
 #pragma once
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** CuDFTableUtil****************************************/
+/****** Component public implementations *******************/
+/****** CuDFTableUtil****************************************/
+/**
+ * @brief Structure that encapsulates cuDF table utilities.
+ */
+struct CuDFTableUtil
+{
     /**
-     * @brief Structure that encapsulates cuDF table utilities.
+     * TODO(Documentation)
      */
-    struct CuDFTableUtil {
-        /**
-         * TODO(Documentation)
-         */
-        static cudf::io::table_with_metadata load_table(const std::string &filename);
-    };
-}
+    static cudf::io::table_with_metadata load_table(const std::string &filename);
+};
+}  // namespace morpheus

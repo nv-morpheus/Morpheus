@@ -23,7 +23,7 @@ CMAKE_ARGS=${CMAKE_ARGS:-""}
 export CCACHE_BASEDIR=$(realpath ${SRC_DIR}/..)
 export USE_SCCACHE=${USE_SCCACHE:-""}
 
-# Check for some neo environment variables. Append to front of args to allow users to overwrite them
+# Check for some srf environment variables. Append to front of args to allow users to overwrite them
 if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
    # Set the cache variable, then set the Staging prefix to allow for host searching
    CMAKE_ARGS="-DMORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR} ${CMAKE_ARGS}"
