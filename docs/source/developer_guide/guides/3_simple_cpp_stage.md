@@ -61,7 +61,7 @@ class PythonNode : ...
 
 Both the `PythonSource` and `PythonNode` classes are defined in the `pysrf/node.hpp` header.
 
-Note: `SourceT` and `SinkT` types are typically a `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`. This allows the reference counting mechanisms used in Python and C++ to share the same count, properly cleaning up the objects when they are no longer referenced.
+Note: `SourceT` and `SinkT` types are typically `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`. This allows the reference counting mechanisms used in Python and C++ to share the same count, properly cleaning up the objects when they are no longer referenced.
 
 Note: The C++ implementation of a stage must receive and emit the same message types as the Python implementation.
 
