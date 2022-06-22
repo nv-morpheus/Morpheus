@@ -169,8 +169,11 @@ Prerequisites
 To get started, first clone the Morpheus repo:
 
 .. code-block:: bash
+   export PYTHON_VER=3.8
+   export RAPIDS_VER=22.04
+   export CUDA_VER=11.5
+   export MORPHEUS_ROOT=$(pwd)/morpheus
 
-   # Make sure to recurse the submodules
    git clone https://github.com/NVIDIA/Morpheus.git morpheus
    # Change directory to the repo root
    cd morpheus
@@ -184,15 +187,8 @@ Next, create a Conda environment and install the necessary dependencies.
 .. code-block:: bash
 
    conda install -c conda-forge mamba
-   conda create -n morpheus python=${PYTHON_VER}
+   mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
    conda activate morpheus
-
-   # Build and install the cuDF conda package
-   ./docker/build_conda_packages.sh libcudf cudf
-   mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
-
-   # Install the remaining Morpheus dependencies
-   mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
 Where ``$PYTHON_VER``, ``$CUDA_VER``, and ``$RAPIDS_VER`` represent the desired Python version, CUDA version and, RAPIDS
 version, respectively. Finally, build Morpheus:
