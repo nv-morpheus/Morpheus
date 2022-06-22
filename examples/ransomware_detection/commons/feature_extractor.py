@@ -22,7 +22,7 @@ from commons.feature_constants import FeatureConstants as fc
 
 class FeatureExtractor():
     """
-    This is helper class to extract reequired features for ransomware detection pipeline.
+    This is a helper class to extract reequired features for ransomware detection pipeline.
     """
 
     def __init__(self) -> None:
@@ -421,18 +421,18 @@ class FeatureExtractor():
         This function extracts file handle type features from handles plugin.
         """
 
-        # Count the handles by their type
-        for i, j in fc.HANDLES_TYPES:
-            col_name = 'handles_df_' + j + '_count'
-            handle_type_df = x[x.Type == i]
-            self._features[col_name] = len(handle_type_df)
-
-        # Calculate the handles ratio by their type
-        for i, j in (fc.HANDLES_TYPES + fc.HANDLES_TYPES_2):
-            col_name = 'handles_df_' + j + '_ratio'
-            handle_type_df = x[x.Type == i]
-            self._features[col_name] = len(handle_type_df) / (self._features['handles_df_count'] + 1)
-
+        # Get count and ratio for the handles by their type. 
+        for t in (fc.HANDLES_TYPES + fc.HANDLES_TYPES_2):
+            
+            df = x[x.Type == t[0]]
+            
+            if t in fc.HANDLES_TYPES:
+              col = 'handles_df_' + t[1] + '_count'
+              self._features[col] = len(df)
+            
+            col = 'handles_df_' + t[1] + '_ratio'
+            self._features[col] = len(df) / (self._features['handles_df_count'] + 1)
+    
     def _extract_file_handle_dirs(self, file_paths: pd.Series):
         """
         This function extracts file handle directory features from handles plugin.
