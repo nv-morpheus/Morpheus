@@ -213,19 +213,7 @@ Prerequisites
  * `CUDA <https://developer.nvidia.com/cuda-toolkit>`__
     * While CUDA can be installed with Conda, it requires installing the matching CUDA SDK outside of the Conda environment.
 
-To get started, first clone the Morpheus repo:
-
-.. code-block:: bash
-   export PYTHON_VER=3.8
-   export RAPIDS_VER=22.04
-   export CUDA_VER=11.5
-   export MORPHEUS_ROOT=$(pwd)/morpheus
-
-   git clone https://github.com/NVIDIA/Morpheus.git morpheus
-   # Change directory to the repo root
-   cd morpheus
-
-Next, create a Conda environment and install the necessary dependencies.
+Create a Conda environment and install the necessary dependencies.
 
 .. code-block:: bash
 
@@ -233,7 +221,7 @@ Next, create a Conda environment and install the necessary dependencies.
    mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
    conda activate morpheus
 
-Finally, build Morpheus:
+Next, build Morpheus:
 
 .. code-block:: bash
 
