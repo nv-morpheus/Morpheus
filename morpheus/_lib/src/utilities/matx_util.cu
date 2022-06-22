@@ -21,7 +21,7 @@
 #include <morpheus/utilities/type_util.hpp>
 #include <morpheus/objects/tensor_object.hpp>
 
-#include <neo/cuda/sync.hpp>
+#include <srf/cuda/sync.hpp>
 
 #include <matx.h>
 
@@ -260,7 +260,7 @@ namespace morpheus {
                                      input.data(),
                                      output->data());
 
-        neo::enqueue_stream_sync_event(output->stream()).get();
+        srf::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
     }
@@ -333,7 +333,7 @@ namespace morpheus {
                               thresh_val,
                               stride);
 
-        neo::enqueue_stream_sync_event(output->stream()).get();
+        srf::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
     }

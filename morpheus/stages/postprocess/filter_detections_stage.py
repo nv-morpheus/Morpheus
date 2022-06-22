@@ -16,12 +16,11 @@ import logging
 import typing
 
 import cupy as cp
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -64,8 +63,7 @@ class FilterDetectionsStage(SinglePortStage):
         """
         return (MultiResponseProbsMessage, )
 
-    @classmethod
-    def supports_cpp_node(cls):
+    def supports_cpp_node(self):
         # Enable support by default
         return True
 
@@ -114,18 +112,18 @@ class FilterDetectionsStage(SinglePortStage):
 
         return output_list
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert list back to single MultiResponseProbsMessage
-        def flatten_fn(input: neo.Observable, output: neo.Subscriber):
+        def flatten_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-            input.pipe(ops.map(self.filter), ops.flatten()).subscribe(output)
+            obs.pipe(ops.map(self.filter), ops.flatten()).subscribe(sub)
 
-        if CppConfig.get_should_use_cpp():
-            stream = neos.FilterDetectionsStage(seg, self.unique_name, self._threshold)
+        if self._build_cpp_node():
+            stream = _stages.FilterDetectionsStage(builder, self.unique_name, self._threshold)
         else:
-            stream = seg.make_node_full(self.unique_name, flatten_fn)
+            stream = builder.make_node_full(self.unique_name, flatten_fn)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, MultiResponseProbsMessage

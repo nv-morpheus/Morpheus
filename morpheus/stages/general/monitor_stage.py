@@ -16,7 +16,8 @@ import logging
 import typing
 from functools import reduce
 
-import neo
+import srf
+from srf.core import operators as ops
 from tqdm import TMonitor
 from tqdm import TqdmSynchronisationWarning
 from tqdm import tqdm
@@ -184,6 +185,9 @@ class MonitorStage(SinglePortStage):
         """
         return (typing.Any, )
 
+    def supports_cpp_node(self):
+        return False
+
     def on_start(self):
 
         # Set the monitor interval to 0 to use prevent using tqdms monitor
@@ -210,10 +214,7 @@ class MonitorStage(SinglePortStage):
 
             self._progress.reset()
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
-
-        def sink_on_error(x):
-            logger.error("Node: '%s' received error: %s", self.unique_name, x)
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         def sink_on_completed():
             # Set the name to complete. This refreshes the display
@@ -228,11 +229,15 @@ class MonitorStage(SinglePortStage):
                 MorpheusTqdm.monitor.exit()
                 MorpheusTqdm.monitor = None
 
-        stream = seg.make_sink(self.unique_name, self._progress_sink, sink_on_error, sink_on_completed)
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-        seg.make_edge(input_stream[0], stream)
+            obs.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(sub)
 
-        return input_stream
+        stream = builder.make_node_full(self.unique_name, node_fn)
+
+        builder.make_edge(input_stream[0], stream)
+
+        return stream, input_stream[1]
 
     def _refresh_progress(self, _):
         self._progress.refresh()
@@ -247,12 +252,14 @@ class MonitorStage(SinglePortStage):
 
         # Skip incase we have empty objects
         if (self._determine_count_fn is None):
-            return
+            return x
 
         # Do our best to determine the count
         n = self._determine_count_fn(x)
 
         self._progress.update(n=n)
+
+        return x
 
     def _auto_count_fn(self, x):
 

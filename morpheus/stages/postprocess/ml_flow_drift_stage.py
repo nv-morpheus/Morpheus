@@ -18,7 +18,7 @@ import typing
 
 import cupy as cp
 import mlflow
-import neo
+import srf
 
 from morpheus.config import Config
 from morpheus.messages import MultiResponseMessage
@@ -120,6 +120,9 @@ class MLFlowDriftStage(SinglePortStage):
         """
         return (MultiResponseProbsMessage, )
 
+    def supports_cpp_node(self):
+        return False
+
     def _calc_drift(self, x: MultiResponseProbsMessage):
 
         # All probs in a batch will be calculated
@@ -143,13 +146,13 @@ class MLFlowDriftStage(SinglePortStage):
 
         return x
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
         # Convert the messages to rows of strings
-        node = seg.make_node(self.unique_name, self._calc_drift)
-        seg.make_edge(input_stream[0], node)
+        node = builder.make_node(self.unique_name, self._calc_drift)
+        builder.make_edge(input_stream[0], node)
         stream = node
 
         # Return input unchanged

@@ -14,8 +14,8 @@
 
 import typing
 
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
@@ -60,11 +60,15 @@ class DropNullStage(SinglePortStage):
         """
         return (MessageMeta, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def supports_cpp_node(self):
+        # Enable support by default
+        return False
+
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
         # Finally, flatten to a single stream
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             def on_next(x: MessageMeta):
 
@@ -72,10 +76,10 @@ class DropNullStage(SinglePortStage):
 
                 return y
 
-            input.pipe(ops.map(on_next), ops.filter(lambda x: not x.df.empty)).subscribe(output)
+            obs.pipe(ops.map(on_next), ops.filter(lambda x: not x.df.empty)).subscribe(sub)
 
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(stream, node)
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(stream, node)
         stream = node
 
         return stream, input_stream[1]

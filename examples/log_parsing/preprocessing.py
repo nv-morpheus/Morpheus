@@ -16,11 +16,11 @@ import string
 import typing
 from functools import partial
 
-import neo
+import srf
 
 import cudf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage
@@ -163,12 +163,12 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
                        truncation=self._truncation,
                        add_special_tokens=self._add_special_tokens)
 
-    def _get_preprocess_node(self, seg: neo.Segment):
-        return neos.PreprocessNLPStage(seg,
-                                       self.unique_name,
-                                       self._vocab_hash_file,
-                                       self._seq_length,
-                                       self._truncation,
-                                       self._do_lower_case,
-                                       self._add_special_tokens,
-                                       self._stride)
+    def _get_preprocess_node(self, builder: srf.Builder):
+        return _stages.PreprocessNLPStage(builder,
+                                          self.unique_name,
+                                          self._vocab_hash_file,
+                                          self._seq_length,
+                                          self._truncation,
+                                          self._do_lower_case,
+                                          self._add_special_tokens,
+                                          self._stride)

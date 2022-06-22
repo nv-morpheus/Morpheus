@@ -18,8 +18,8 @@ from functools import partial
 from functools import reduce
 
 import cupy as cp
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
@@ -176,6 +176,10 @@ class InferenceStage(MultiMessageStage):
         """
         return (MultiInferenceMessage, )
 
+    def supports_cpp_node(self):
+        # Default to False unless derived classes override this value
+        return False
+
     @abstractmethod
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
         """
@@ -196,15 +200,15 @@ class InferenceStage(MultiMessageStage):
         """
         pass
 
-    def _get_cpp_inference_node(self, seg: neo.Segment) -> neo.SegmentObject:
+    def _get_cpp_inference_node(self, builder: srf.Builder) -> srf.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiResponseProbsMessage
 
-        def py_inference_fn(input: neo.Observable, output: neo.Subscriber):
+        def py_inference_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             worker = self._get_inference_worker(self._inf_queue)
 
@@ -226,37 +230,37 @@ class InferenceStage(MultiMessageStage):
                 for batch in batches:
                     outstanding_requests += 1
 
-                    fut = neo.Future()
+                    completion_future = srf.Future()
 
-                    def set_output_fut(resp: ResponseMemoryProbs, b, f: neo.Future):
+                    def set_output_fut(resp: ResponseMemoryProbs, b, batch_future: srf.Future):
                         nonlocal outstanding_requests
                         m = self._convert_one_response(memory, b, resp)
 
                         outstanding_requests -= 1
 
-                        f.set_result(m)
+                        batch_future.set_result(m)
 
-                    fut_list.append(fut)
+                    fut_list.append(completion_future)
 
-                    worker.process(batch, partial(set_output_fut, b=batch, f=fut))
+                    worker.process(batch, partial(set_output_fut, b=batch, batch_future=completion_future))
 
                 for f in fut_list:
                     f.result()
 
                 return output_message
 
-            input.pipe(ops.map(on_next)).subscribe(output)
+            obs.pipe(ops.map(on_next)).subscribe(sub)
 
             assert outstanding_requests == 0, "Not all inference requests were completed"
 
         if (self._build_cpp_node()):
-            node = self._get_cpp_inference_node(seg)
+            node = self._get_cpp_inference_node(builder)
         else:
-            node = seg.make_node_full(self.unique_name, py_inference_fn)
+            node = builder.make_node_full(self.unique_name, py_inference_fn)
 
         # Set the concurrency level to be up with the thread count
-        node.concurrency = self._thread_count
-        seg.make_edge(stream, node)
+        node.launch_options.pe_count = self._thread_count
+        builder.make_edge(stream, node)
 
         stream = node
 

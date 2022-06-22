@@ -20,7 +20,7 @@ import typing
 from abc import ABC
 from abc import abstractmethod
 
-import neo
+import srf
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
@@ -66,7 +66,7 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
 
 class StreamWrapper(ABC, collections.abc.Hashable):
     """
-    This abstract class serves as the morpheus.pipeline's base class. This class wraps a `neo.Node`
+    This abstract class serves as the morpheus.pipeline's base class. This class wraps a `srf.SegmentObject`
     object and aids in hooking stages up together.
 
     Parameters
@@ -251,6 +251,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         """
         return [x.parent for x in self.get_all_outputs()]
 
+    @abstractmethod
     def supports_cpp_node(self):
         """
         Specifies whether this Stage is even capable of creating C++ nodes. During the build phase, this value will be
@@ -258,7 +259,8 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         to allow runtime decisions and derived classes to override base implementations.
         """
         # By default, return False unless otherwise specified
-        return False
+        # return False
+        pass
 
     def _build_cpp_node(self):
         """
@@ -300,13 +302,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
             return True
 
-    def build(self, seg: neo.Segment, do_propagate=True):
+    def build(self, builder: srf.Builder, do_propagate=True):
         """Build this stage.
 
         Parameters
         ----------
-        seg : `neo.Segment`
-            Neo segment for this stage.
+        builder : `srf.Builder`
+            SRF segment for this stage.
         do_propagate : bool, optional
             Whether to propagate to build output stages, by default True.
 
@@ -317,10 +319,10 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         # Pre-Build returns the input pairs for each port
         in_ports_pairs = self._pre_build()
 
-        out_ports_pair = self._build(seg, in_ports_pairs)
+        out_ports_pair = self._build(builder, in_ports_pairs)
 
         # Allow stages to do any post build steps (i.e., for sinks, or timing functions)
-        out_ports_pair = self._post_build(seg, out_ports_pair)
+        out_ports_pair = self._post_build(builder, out_ports_pair)
 
         assert len(out_ports_pair) == len(self.output_ports), \
             "Build must return same number of output pairs as output ports"
@@ -339,7 +341,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
             if (not dep.can_build()):
                 continue
 
-            dep.build(seg, do_propagate=do_propagate)
+            dep.build(builder, do_propagate=do_propagate)
 
     def _pre_build(self) -> typing.List[StreamPair]:
         in_pairs: typing.List[StreamPair] = [x.get_input_pair() for x in self.input_ports]
@@ -347,32 +349,33 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         return in_pairs
 
     @abstractmethod
-    def _build(self, seg: neo.Segment, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         """
-        This function is responsible for constructing this stage's internal `neo.Node` object. The input
+        This function is responsible for constructing this stage's internal `srf.SegmentObject` object. The input
         of this function contains the returned value from the upstream stage.
 
-        The input values are the `neo.Segment` for this stage and a `StreamPair` tuple which contain the input
-        `neo.Node` object and the message data type.
+        The input values are the `srf.Builder` for this stage and a `StreamPair` tuple which contain the input
+        `srf.SegmentObject` object and the message data type.
 
         :meta public:
 
         Parameters
         ----------
-        seg : `neo.Segment`
-            `neo.Segment` object for the pipeline. This should be used to construct/attach the internal `neo.Node`.
+        builder : `srf.Builder`
+            `srf.Builder` object for the pipeline. This should be used to construct/attach the internal
+            `srf.SegmentObject`.
         in_ports_streams : `morpheus.pipeline.pipeline.StreamPair`
-            List of tuples containing the input `neo.Node` object and the message data type.
+            List of tuples containing the input `srf.SegmentObject` object and the message data type.
 
         Returns
         -------
         `typing.List[morpheus.pipeline.pipeline.StreamPair]`
-            List of tuples containing the output `neo.Node` object from this stage and the message data type.
+            List of tuples containing the output `srf.SegmentObject` object from this stage and the message data type.
 
         """
         pass
 
-    def _post_build(self, seg: neo.Segment, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
         return out_ports_pair
 
     def start(self):

@@ -23,8 +23,7 @@
 #include <morpheus/utilities/stage_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
-#include <neo/core/segment_object.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
 
 #include <glog/logging.h>
 #include <http_client.h>
@@ -49,9 +48,9 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
 {
     if (!status.IsOk())
     {
-        std::string err_msg =
-            CONCAT_STR("Triton Error while executing '" << methodName << "'. Error: " + status.Message() << "\n"
-                                                        << filename << "(" << lineNumber << ")");
+        std::string err_msg = MORPHEUS_CONCAT_STR("Triton Error while executing '"
+                                                  << methodName << "'. Error: " + status.Message() << "\n"
+                                                  << filename << "(" << lineNumber << ")");
         LOG(ERROR) << err_msg;
         throw std::runtime_error(err_msg);
     }
@@ -61,16 +60,13 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
 namespace morpheus {
 // Component public implementations
 // ************ InferenceClientStage ************************* //
-InferenceClientStage::InferenceClientStage(const neo::Segment &parent,
-                                           const std::string &name,
-                                           std::string model_name,
+InferenceClientStage::InferenceClientStage(std::string model_name,
                                            std::string server_url,
                                            bool force_convert_inputs,
                                            bool use_shared_memory,
                                            bool needs_logits,
                                            std::map<std::string, std::string> inout_mapping) :
-  neo::SegmentObject(parent, name),
-  PythonNode(parent, name, build_operator()),
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_model_name(std::move(model_name)),
   m_server_url(std::move(server_url)),
   m_force_convert_inputs(force_convert_inputs),
@@ -83,15 +79,15 @@ InferenceClientStage::InferenceClientStage(const neo::Segment &parent,
     this->connect_with_server();  // TODO(Devin)
 }
 
-InferenceClientStage::operator_fn_t InferenceClientStage::build_operator()
+InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t> &input, neo::Subscriber<writer_type_t> &output) {
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         std::unique_ptr<triton::client::InferenceServerHttpClient> client;
 
         CHECK_TRITON(triton::client::InferenceServerHttpClient::Create(&client, m_server_url, false));
 
-        return input.subscribe(neo::make_observer<reader_type_t>(
-            [this, &output, &client](reader_type_t &&x) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output, &client](sink_type_t x) {
                 auto reponse_memory = std::make_shared<ResponseMemory>(x->count);
 
                 // Create the output memory blocks
@@ -127,9 +123,9 @@ InferenceClientStage::operator_fn_t InferenceClientStage::build_operator()
                     size_t start = i;
                     size_t stop  = std::min(i + m_max_batch_size, x->count);
 
-                    reader_type_t mini_batch_input =
+                    sink_type_t mini_batch_input =
                         std::static_pointer_cast<MultiInferenceMessage>(x->get_slice(start, stop));
-                    writer_type_t mini_batch_output =
+                    source_type_t mini_batch_output =
                         std::static_pointer_cast<MultiResponseProbsMessage>(response->get_slice(start, stop));
 
                     // Iterate on the model inputs in case the model takes less than what tensors are available
@@ -203,7 +199,7 @@ InferenceClientStage::operator_fn_t InferenceClientStage::build_operator()
                         auto output_buffer =
                             std::make_shared<rmm::device_buffer>(output_ptr_size, rmm::cuda_stream_per_thread);
 
-                        NEO_CHECK_CUDA(
+                        SRF_CHECK_CUDA(
                             cudaMemcpy(output_buffer->data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
 
                         // If we need to do logits, do that here
@@ -264,18 +260,18 @@ void InferenceClientStage::connect_with_server()
         }
         else if (status.Message().find("Unsupported protocol") != std::string::npos)
         {
-            throw std::runtime_error(
-                CONCAT_STR("Failed to connect to Triton at '"
-                           << m_server_url
-                           << "'. Received 'Unsupported Protocol' error. Are you using the right port? The C++ "
-                              "InferenceClientStage uses Triton's HTTP protocol instead of gRPC. Ensure you have "
-                              "specified the HTTP port (Default 8000)."));
+            throw std::runtime_error(MORPHEUS_CONCAT_STR(
+                "Failed to connect to Triton at '"
+                << m_server_url
+                << "'. Received 'Unsupported Protocol' error. Are you using the right port? The C++ "
+                   "InferenceClientStage uses Triton's HTTP protocol instead of gRPC. Ensure you have "
+                   "specified the HTTP port (Default 8000)."));
         }
 
         if (!status.IsOk())
-            throw std::runtime_error(CONCAT_STR("Unable to connect to Triton at '"
-                                                << m_server_url
-                                                << "'. Check the URL and port and ensure the server is running."));
+            throw std::runtime_error(
+                MORPHEUS_CONCAT_STR("Unable to connect to Triton at '"
+                                    << m_server_url << "'. Check the URL and port and ensure the server is running."));
     }
 
     // Save this for new clients
@@ -397,8 +393,8 @@ bool InferenceClientStage::is_default_grpc_port(std::string &server_url)
 }
 
 // ************ InferenceClientStageInterfaceProxy********* //
-std::shared_ptr<InferenceClientStage> InferenceClientStageInterfaceProxy::init(
-    neo::Segment &parent,
+std::shared_ptr<srf::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
+    srf::segment::Builder &builder,
     const std::string &name,
     std::string model_name,
     std::string server_url,
@@ -407,10 +403,8 @@ std::shared_ptr<InferenceClientStage> InferenceClientStageInterfaceProxy::init(
     bool needs_logits,
     std::map<std::string, std::string> inout_mapping)
 {
-    auto stage = std::make_shared<InferenceClientStage>(
-        parent, name, model_name, server_url, force_convert_inputs, use_shared_memory, needs_logits, inout_mapping);
-
-    parent.register_node<InferenceClientStage>(stage);
+    auto stage = builder.construct_object<InferenceClientStage>(
+        name, model_name, server_url, force_convert_inputs, use_shared_memory, needs_logits, inout_mapping);
 
     return stage;
 }

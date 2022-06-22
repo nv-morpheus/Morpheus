@@ -21,8 +21,9 @@
 #include <morpheus/utilities/stage_util.hpp>
 #include <morpheus/utilities/string_util.hpp>
 
-#include <neo/core/segment.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/runnable/context.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <glog/logging.h>
 #include <http_client.h>
@@ -44,6 +45,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <utility>
+#include "srf/runnable/forward.hpp"
 
 #define CHECK_KAFKA(command, expected, msg)                                                                    \
     {                                                                                                          \
@@ -65,12 +67,10 @@ class KafkaSourceStage__UnsubscribedException : public std::exception
 class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
 {
   public:
-    KafkaSourceStage__Rebalancer(
-        std::function<neo::SharedFuture<bool>(std::vector<std::function<bool()>> &&)> task_launch_fn,
-        std::function<int32_t()> batch_timeout_fn,
-        std::function<std::size_t()> max_batch_size_fn,
-        std::function<std::string(std::string)> display_str_fn,
-        std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> process_fn);
+    KafkaSourceStage__Rebalancer(std::function<int32_t()> batch_timeout_fn,
+                                 std::function<std::size_t()> max_batch_size_fn,
+                                 std::function<std::string(std::string)> display_str_fn,
+                                 std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> process_fn);
 
     void rebalance_cb(RdKafka::KafkaConsumer *consumer,
                       RdKafka::ErrorCode err,
@@ -80,8 +80,7 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
 
     bool is_rebalanced();
 
-  private:
-    std::vector<std::unique_ptr<RdKafka::Message>> partition_progress_step(RdKafka::Queue *queue)
+    std::vector<std::unique_ptr<RdKafka::Message>> partition_progress_step(RdKafka::KafkaConsumer *consumer)
     {
         // auto batch_timeout = std::chrono::milliseconds(m_parent.batch_timeout_ms());
         auto batch_timeout = std::chrono::milliseconds(m_batch_timeout_fn());
@@ -98,7 +97,7 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
 
             DCHECK(remaining_ms >= 0) << "Cant have negative reminaing time";
 
-            std::unique_ptr<RdKafka::Message> msg{queue->consume(std::min(10L, remaining_ms))};
+            std::unique_ptr<RdKafka::Message> msg{consumer->consume(std::min(10L, remaining_ms))};
 
             switch (msg->err())
             {
@@ -107,11 +106,6 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
                 boost::this_fiber::yield();
                 break;
             case RdKafka::ERR_NO_ERROR:
-
-                // VLOG(10) << this->display_str(
-                //     CONCAT_STR("Got message. Topic: " << msg->topic_name() << ", Part: " <<
-                //     msg->partition()
-                //                                       << ", Offset: " << msg->offset()));
 
                 messages.emplace_back(std::move(msg));
                 break;
@@ -132,25 +126,23 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
         return std::move(messages);
     }
 
+  private:
     bool m_is_rebalanced{false};
 
-    std::function<neo::SharedFuture<bool>(std::vector<std::function<bool()>> &&)> m_task_launcher_fn;
     std::function<int32_t()> m_batch_timeout_fn;
     std::function<std::size_t()> m_max_batch_size_fn;
     std::function<std::string(std::string)> m_display_str_fn;
     std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> m_process_fn;
 
     boost::fibers::recursive_mutex m_mutex;
-    neo::SharedFuture<bool> m_partition_future;
+    srf::SharedFuture<bool> m_partition_future;
 };
 
 KafkaSourceStage__Rebalancer::KafkaSourceStage__Rebalancer(
-    std::function<neo::SharedFuture<bool>(std::vector<std::function<bool()>> &&)> task_launch_fn,
     std::function<int32_t()> batch_timeout_fn,
     std::function<std::size_t()> max_batch_size_fn,
     std::function<std::string(std::string)> display_str_fn,
     std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> process_fn) :
-  m_task_launcher_fn(std::move(task_launch_fn)),
   m_batch_timeout_fn(std::move(batch_timeout_fn)),
   m_max_batch_size_fn(std::move(max_batch_size_fn)),
   m_display_str_fn(std::move(display_str_fn)),
@@ -178,71 +170,6 @@ void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer *consumer
         {
             CHECK_KAFKA(consumer->assign(partitions), RdKafka::ERR_NO_ERROR, "Error during assign");
         }
-
-        std::vector<std::function<bool()>> tasks;
-
-        for (auto partition : partitions)
-        {
-            auto queue_ptr = consumer->get_partition_queue(partition);
-
-            // Now forward to one of the running queues
-            // queue->forward(m_parent.m_queues[i % m_parent.m_queues.size()].get());
-            queue_ptr->forward(nullptr);
-
-            auto topic  = partition->topic();
-            auto part   = partition->partition();
-            auto offset = partition->offset();
-
-            auto partition_ptr = RdKafka::TopicPartition::create(topic, part, offset);
-
-            tasks.emplace_back([q = queue_ptr, p = partition_ptr, consumer, this]() {
-                auto partition = std::unique_ptr<RdKafka::TopicPartition>(p);
-                auto queue     = std::unique_ptr<RdKafka::Queue>(q);
-
-                while (m_is_rebalanced)
-                {
-                    // Build the batch
-                    auto messages = this->partition_progress_step(queue.get());
-
-                    try
-                    {
-                        // Process the messages. Returns true if we need to commit
-                        auto should_commit = m_process_fn(messages);
-
-                        if (should_commit)
-                        {
-                            int64_t max_offset = -1000;
-                            for (auto &m : messages)
-                            {
-                                DCHECK(m->partition() == partition->partition())
-                                    << "Inconsistent error. Message partition does not match fiber partition";
-
-                                max_offset = std::max(max_offset, m->offset());
-                            }
-
-                            // Find the last message for this partition
-                            partition->set_offset(max_offset + 1);
-
-                            CHECK_KAFKA(consumer->commitAsync(std::vector<RdKafka::TopicPartition *>{partition.get()}),
-                                        RdKafka::ERR_NO_ERROR,
-                                        "Error during commitAsync");
-                        }
-                    } catch (KafkaSourceStage__UnsubscribedException &)
-                    {
-                        // Return false for unsubscribed error
-                        return false;
-                    }
-                }
-
-                // Return true if we exited normally
-                return true;
-            });
-        }
-
-        // Set this before launching the tasks
-        m_is_rebalanced = true;
-
-        m_partition_future = std::move(m_task_launcher_fn(std::move(tasks)));
     }
     else if (err == RdKafka::ERR__REVOKE_PARTITIONS)
     {
@@ -258,15 +185,6 @@ void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer *consumer
         else
         {
             CHECK_KAFKA(consumer->unassign(), RdKafka::ERR_NO_ERROR, "Error during unassign");
-        }
-
-        // Stop all processing queues
-        m_is_rebalanced = false;
-
-        // Wait until all processing has completed
-        if (m_partition_future.valid())
-        {
-            m_partition_future.wait();
         }
     }
     else
@@ -296,33 +214,41 @@ bool KafkaSourceStage__Rebalancer::is_rebalanced()
     return m_is_rebalanced;
 }
 
+class KafkaRebalancer : public RdKafka::RebalanceCb
+{
+  private:
+    std::unique_ptr<RdKafka::KafkaConsumer> m_consumer;
+};
+
 // Component public implementations
 // ************ KafkaStage ************************* //
-KafkaSourceStage::KafkaSourceStage(const neo::Segment &parent,
-                                   const std::string &name,
-                                   std::size_t max_batch_size,
+KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
                                    std::string topic,
                                    int32_t batch_timeout_ms,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering) :
-  neo::SegmentObject(parent, name),
-  base_t(parent, name),
+  PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topic(std::move(topic)),
   m_batch_timeout_ms(batch_timeout_ms),
   m_config(std::move(config)),
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering)
+{}
+
+KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 {
-    this->set_source_observable(neo::Observable<source_type_t>([this](neo::Subscriber<source_type_t> &sub) {
+    return [this](rxcpp::subscriber<source_type_t> sub) -> void {
         // Build rebalancer
         KafkaSourceStage__Rebalancer rebalancer(
-            [this](std::vector<std::function<bool()>> &&tasks) { return this->launch_tasks(std::move(tasks)); },
             [this]() { return this->batch_timeout_ms(); },
             [this]() { return this->max_batch_size(); },
-            [this](const std::string str_to_display) { return this->display_str(str_to_display); },
-            [&sub, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
+            [this](const std::string str_to_display) {
+                auto &ctx = srf::runnable::Context::get_runtime_context();
+                return MORPHEUS_CONCAT_STR(ctx.info() << " " << str_to_display);
+            },
+            [sub, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
                 // If we are unsubscribed, throw an error to break the loops
                 if (!sub.is_subscribed())
                 {
@@ -351,13 +277,36 @@ KafkaSourceStage::KafkaSourceStage(const neo::Segment &parent,
                 return m_requires_commit;
             });
 
+        auto &context = srf::runnable::Context::get_runtime_context();
+
         // Build consumer
-        m_rebalancer  = &rebalancer;
-        auto consumer = this->create_consumer();
+        auto consumer = this->create_consumer(rebalancer);
+
+        // Wait for all to connect
+        context.barrier();
 
         try
         {
-            rebalancer.rebalance_loop(consumer.get());
+            while (sub.is_subscribed())
+            {
+                std::vector<std::unique_ptr<RdKafka::Message>> message_batch =
+                    rebalancer.partition_progress_step(consumer.get());
+
+                std::shared_ptr<morpheus::MessageMeta> batch;
+
+                try
+                {
+                    batch = std::move(this->process_batch(std::move(message_batch)));
+                } catch (std::exception &ex)
+                {
+                    LOG(ERROR) << "Exception in process_batch. Msg: " << ex.what();
+
+                    break;
+                }
+
+                sub.on_next(std::move(batch));
+            }
+
         } catch (std::exception &ex)
         {
             LOG(ERROR) << "Exception in rebalance_loop. Msg: " << ex.what();
@@ -370,7 +319,7 @@ KafkaSourceStage::KafkaSourceStage(const neo::Segment &parent,
         m_rebalancer = nullptr;
 
         sub.on_completed();
-    }));
+    };
 }
 
 std::size_t KafkaSourceStage::max_batch_size()
@@ -381,20 +330,6 @@ std::size_t KafkaSourceStage::max_batch_size()
 int32_t KafkaSourceStage::batch_timeout_ms()
 {
     return m_batch_timeout_ms;
-}
-
-void KafkaSourceStage::start()
-{
-    // Save off the queues before setting our concurrency back to 1
-    for (size_t i = 0; i < this->concurrency(); ++i)
-    {
-        m_task_queues.push_back(this->resources().fiber_pool().next_task_queue());
-    }
-
-    this->concurrency(1);
-
-    // Call the default start
-    neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>::start();
 }
 
 std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map<std::string, std::string> &config_in)
@@ -440,41 +375,12 @@ std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map
     return std::move(kafka_conf);
 }
 
-neo::SharedFuture<bool> KafkaSourceStage::launch_tasks(std::vector<std::function<bool()>> &&tasks)
+std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafka::RebalanceCb &rebalancer)
 {
-    std::vector<neo::SharedFuture<bool>> partition_futures;
-
-    // Loop over tasks enqueuing onto saved fiber queues
-    for (size_t i = 0; i < tasks.size(); ++i)
-    {
-        partition_futures.emplace_back(
-            this->m_task_queues[i % this->m_task_queues.size()]->enqueue(std::move(tasks[i])));
-    }
-
-    // Launch a new task to await on the futures
-    return this->m_task_queues[tasks.size() % this->m_task_queues.size()]->enqueue([partition_futures]() {
-        bool ret_val = true;
-
-        for (auto &f : partition_futures)
-        {
-            if (!f.get())
-            {
-                // Return false if any return false
-                ret_val = false;
-            }
-        }
-
-        return ret_val;
-    });
-}
-
-std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer()
-{
-    auto rebalancer = static_cast<KafkaSourceStage__Rebalancer *>(m_rebalancer);
     auto kafka_conf = this->build_kafka_conf(m_config);
     std::string errstr;
 
-    if (RdKafka::Conf::ConfResult::CONF_OK != kafka_conf->set("rebalance_cb", rebalancer, errstr))
+    if (RdKafka::Conf::ConfResult::CONF_OK != kafka_conf->set("rebalance_cb", &rebalancer, errstr))
     {
         LOG(FATAL) << "Error occurred while setting Kafka rebalance function. Error: " << errstr;
     }
@@ -528,7 +434,8 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer()
 
     std::map<std::string, std::vector<int32_t>> topic_parts;
 
-    VLOG(10) << this->display_str(CONCAT_STR("Subscribed to " << md->topics()->size() << " topics:"));
+    auto &ctx = srf::runnable::Context::get_runtime_context();
+    VLOG(10) << ctx.info() << MORPHEUS_CONCAT_STR(" Subscribed to " << md->topics()->size() << " topics:");
 
     for (auto const &topic : *(md->topics()))
     {
@@ -560,11 +467,14 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer()
         auto positions =
             foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition> &x) { return x->offset(); });
 
-        VLOG(10) << this->display_str(CONCAT_STR(
-            "   Topic: '" << topic->topic()
-                          << "', Parts: " << StringUtil::array_to_str(part_ids.begin(), part_ids.end())
-                          << ", Committed: " << StringUtil::array_to_str(committed.begin(), committed.end())
-                          << ", Positions: " << StringUtil::array_to_str(positions.begin(), positions.end())));
+        auto &ctx = srf::runnable::Context::get_runtime_context();
+        VLOG(10) << ctx.info()
+                 << MORPHEUS_CONCAT_STR(
+                        "   Topic: '" << topic->topic()
+                                      << "', Parts: " << StringUtil::array_to_str(part_ids.begin(), part_ids.end())
+                                      << ", Committed: " << StringUtil::array_to_str(committed.begin(), committed.end())
+                                      << ", Positions: "
+                                      << StringUtil::array_to_str(positions.begin(), positions.end()));
     }
 
     return std::move(consumer);
@@ -641,19 +551,18 @@ std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
 }
 
 // ************ KafkaStageInterfaceProxy ************ //
-std::shared_ptr<KafkaSourceStage> KafkaSourceStageInterfaceProxy::init(neo::Segment &parent,
-                                                                       const std::string &name,
-                                                                       size_t max_batch_size,
-                                                                       std::string topic,
-                                                                       int32_t batch_timeout_ms,
-                                                                       std::map<std::string, std::string> config,
-                                                                       bool disable_commits,
-                                                                       bool disable_pre_filtering)
+std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
+    srf::segment::Builder &builder,
+    const std::string &name,
+    size_t max_batch_size,
+    std::string topic,
+    int32_t batch_timeout_ms,
+    std::map<std::string, std::string> config,
+    bool disable_commits,
+    bool disable_pre_filtering)
 {
-    auto stage = std::make_shared<KafkaSourceStage>(
-        parent, name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering);
-
-    parent.register_node<KafkaSourceStage>(stage);
+    auto stage = builder.construct_object<KafkaSourceStage>(
+        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering);
 
     return stage;
 }

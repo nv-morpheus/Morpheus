@@ -18,7 +18,7 @@ import typing
 
 import cupy as cp
 
-import morpheus._lib.messages as neom
+import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.message_base import MessageData
 from morpheus.messages.multi_message import MultiMessage
@@ -74,7 +74,7 @@ def set_output(instance: "ResponseMemory", name: str, value):
 
 
 @dataclasses.dataclass
-class ResponseMemory(MessageData, cpp_class=neom.ResponseMemory):
+class ResponseMemory(MessageData, cpp_class=_messages.ResponseMemory):
     """
     Output memory block holding the results of inference.
     """
@@ -90,7 +90,7 @@ class ResponseMemory(MessageData, cpp_class=neom.ResponseMemory):
 
 
 @dataclasses.dataclass
-class ResponseMemoryProbs(ResponseMemory, cpp_class=neom.ResponseMemoryProbs):
+class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProbs):
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_output, set_output)
 
     def __post_init__(self, probs):
@@ -103,7 +103,7 @@ class ResponseMemoryAE(ResponseMemoryProbs, cpp_class=None):
 
 
 @dataclasses.dataclass
-class MultiResponseMessage(MultiMessage, cpp_class=neom.MultiResponseMessage):
+class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessage):
     """
     This class contains several inference responses as well as the cooresponding message metadata.
 
@@ -191,7 +191,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=neom.MultiResponseMessage):
 
 
 @dataclasses.dataclass
-class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=neom.MultiResponseProbsMessage):
+class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiResponseProbsMessage):
     """
     A stronger typed version of `MultiResponseMessage` that is used for inference workloads that return a probability
     array. Helps ensure the proper outputs are set and eases debugging.

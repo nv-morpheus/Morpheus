@@ -16,9 +16,9 @@ import json
 import typing
 from collections import defaultdict
 
-import neo
 import numpy as np
 import pandas as pd
+import srf
 
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
@@ -137,11 +137,11 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         return df
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
-        stream = seg.make_node(self.unique_name, self._postprocess)
+        stream = builder.make_node(self.unique_name, self._postprocess)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, MessageMeta

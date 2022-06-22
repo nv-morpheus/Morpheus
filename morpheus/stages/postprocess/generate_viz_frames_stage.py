@@ -18,9 +18,9 @@ import shutil
 import typing
 import warnings
 
-import neo
 import numpy as np
 import pandas as pd
+import srf
 
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
@@ -76,6 +76,9 @@ class GenerateVizFramesStage(SinglePortStage):
 
         """
         return (MultiResponseProbsMessage, )
+
+    def supports_cpp_node(self):
+        return False
 
     @staticmethod
     def round_to_sec(x):
@@ -155,7 +158,7 @@ class GenerateVizFramesStage(SinglePortStage):
 
         in_df.to_csv(fn, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 

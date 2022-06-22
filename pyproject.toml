@@ -24,3 +24,9 @@ filterwarnings = [
 ]
 
 addopts = "--benchmark-disable"
+
+[tool.yapfignore]
+ignore_patterns = [
+  "**/*.pyx",
+  "**/*.pxd"
+]

@@ -17,12 +17,11 @@ import logging
 import typing
 from functools import partial
 
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -64,6 +63,10 @@ class DeserializeStage(MultiMessageStage):
         """
         return (MessageMeta)
 
+    def supports_cpp_node(self):
+        # Enable support by default
+        return True
+
     @staticmethod
     def process_dataframe(x: MessageMeta, batch_size: int) -> typing.List[MultiMessage]:
         """
@@ -88,21 +91,21 @@ class DeserializeStage(MultiMessageStage):
 
         return output
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiMessage
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-            input.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
-                       ops.flatten()).subscribe(output)
+            obs.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
+                     ops.flatten()).subscribe(sub)
 
-        if CppConfig.get_should_use_cpp():
-            stream = neos.DeserializeStage(seg, self.unique_name, self._batch_size)
+        if self._build_cpp_node():
+            stream = _stages.DeserializeStage(builder, self.unique_name, self._batch_size)
         else:
-            stream = seg.make_node_full(self.unique_name, node_fn)
+            stream = builder.make_node_full(self.unique_name, node_fn)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, out_type

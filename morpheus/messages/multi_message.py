@@ -18,13 +18,13 @@ import typing
 
 import cudf
 
-import morpheus._lib.messages as neom
+import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
 from morpheus.messages.message_meta import MessageMeta
 
 
 @dataclasses.dataclass
-class MultiMessage(MessageData, cpp_class=neom.MultiMessage):
+class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
     """
     This class holds data for multiple messages at a time. To avoid copying data for slicing operations, it
     holds a reference to a batched metadata object and stores the offset and count into that batch.

@@ -17,8 +17,8 @@ import time
 import typing
 
 import confluent_kafka as ck
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.io import serializers
@@ -69,12 +69,15 @@ class WriteToKafkaStage(SinglePortStage):
         """
         return (MessageMeta, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def supports_cpp_node(self):
+        return False
+
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         stream = input_stream[0]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             producer = ck.Producer(self._kafka_conf)
 
@@ -85,7 +88,6 @@ class WriteToKafkaStage(SinglePortStage):
 
                 def cb(_, msg):
                     if msg is not None and msg.value() is not None:
-                        # fut.set_result(None)
                         pass
                     else:
                         # fut.set_exception(err or msg.error())
@@ -94,7 +96,7 @@ class WriteToKafkaStage(SinglePortStage):
                                      self._kafka_conf["bootstrap.servers"],
                                      msg.value(),
                                      msg.error())
-                        output.on_error(msg.error())
+                        sub.on_error(msg.error())
 
                 records = serializers.df_to_json(x.df, strip_newlines=True)
                 for m in records:
@@ -126,14 +128,14 @@ class WriteToKafkaStage(SinglePortStage):
 
                 producer.flush(-1)
 
-            input.pipe(ops.map(on_next), ops.on_completed(on_completed)).subscribe(output)
+            obs.pipe(ops.map(on_next), ops.on_completed(on_completed)).subscribe(sub)
 
             assert outstanding_requests == 0, "Not all inference requests were completed"
 
         # Write to kafka
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(stream, node)
-        # node.concurrency = self._max_concurrent
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(stream, node)
+        # node.launch_options.pe_count = self._max_concurrent
 
         # Return input unchanged
         return input_stream

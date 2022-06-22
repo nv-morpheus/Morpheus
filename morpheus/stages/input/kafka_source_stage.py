@@ -16,13 +16,13 @@ import logging
 import time
 import weakref
 
-import neo
 import pandas as pd
+import srf
 from cudf_kafka._lib.kafka import KafkaDatasource
 
 import cudf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -107,7 +107,7 @@ class KafkaSourceStage(SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _source_generator(self, s: neo.Subscriber):
+    def _source_generator(self, sub: srf.Subscriber):
         # Each invocation of this function makes a new thread so recreate the producers
 
         # Set some initial values
@@ -181,7 +181,7 @@ class KafkaSourceStage(SingleOutputSource):
                 for partition in range(npartitions):
                     tps.append(ck.TopicPartition(self._topic, partition))
 
-                while s.is_subscribed():
+                while sub.is_subscribed():
                     try:
                         committed = consumer.committed(tps, timeout=1)
                     except ck.KafkaException:
@@ -191,7 +191,7 @@ class KafkaSourceStage(SingleOutputSource):
                             positions[tp.partition] = tp.offset
                         break
 
-                while s.is_subscribed():
+                while sub.is_subscribed():
                     out = []
 
                     if self._refresh_partitions:
@@ -251,7 +251,7 @@ class KafkaSourceStage(SingleOutputSource):
                             weakref.finalize(meta, commit, *part[1:])
 
                             # Push the message meta
-                            s.on_next(meta)
+                            sub.on_next(meta)
                     else:
                         time.sleep(self._poll_interval)
             except Exception:
@@ -263,7 +263,7 @@ class KafkaSourceStage(SingleOutputSource):
             # Close the consumer and call on_completed
             if (consumer):
                 consumer.close()
-            s.on_completed()
+            sub.on_completed()
 
     def _kafka_params_to_messagemeta(self, x: tuple):
 
@@ -328,21 +328,21 @@ class KafkaSourceStage(SingleOutputSource):
                 kafka_datasource.unsubscribe()
                 kafka_datasource.close(batch_timeout)
 
-    def _build_source(self, seg: neo.Segment) -> StreamPair:
+    def _build_source(self, builder: srf.Builder) -> StreamPair:
 
         if (self._build_cpp_node()):
-            source = neos.KafkaSourceStage(seg,
-                                           self.unique_name,
-                                           self._max_batch_size,
-                                           self._topic,
-                                           int(self._poll_interval * 1000),
-                                           self._consumer_params,
-                                           self._disable_commit,
-                                           self._disable_pre_filtering)
-            source.concurrency = self._max_concurrent
+            source = _stages.KafkaSourceStage(builder,
+                                              self.unique_name,
+                                              self._max_batch_size,
+                                              self._topic,
+                                              int(self._poll_interval * 1000),
+                                              self._consumer_params,
+                                              self._disable_commit,
+                                              self._disable_pre_filtering)
+            source.launch_options.pe_count = self._max_concurrent
         else:
-            source = seg.make_source(self.unique_name, self._source_generator)
+            source = builder.make_source(self.unique_name, self._source_generator)
 
-        source.concurrency = self._max_concurrent
+        source.launch_options.pe_count = self._max_concurrent
 
         return source, MessageMeta

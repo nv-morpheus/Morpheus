@@ -17,9 +17,9 @@ import re
 import typing
 from functools import partial
 
-import neo
+import srf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -73,6 +73,10 @@ class SerializeStage(SinglePortStage):
         """
         return (MultiMessage, )
 
+    def supports_cpp_node(self):
+        # Enable support by default
+        return True
+
     def convert_to_df(self,
                       x: MultiMessage,
                       include_columns: typing.Pattern,
@@ -116,13 +120,13 @@ class SerializeStage(SinglePortStage):
 
         return MessageMeta(df=df)
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
-            stream = neos.SerializeStage(seg,
-                                         self.unique_name,
-                                         self._include_columns or [],
-                                         self._exclude_columns,
-                                         self._fixed_columns)
+            stream = _stages.SerializeStage(builder,
+                                            self.unique_name,
+                                            self._include_columns or [],
+                                            self._exclude_columns,
+                                            self._fixed_columns)
         else:
             include_columns = None
 
@@ -131,10 +135,10 @@ class SerializeStage(SinglePortStage):
 
             exclude_columns = [re.compile(x) for x in self._exclude_columns]
 
-            stream = seg.make_node(
+            stream = builder.make_node(
                 self.unique_name,
                 partial(self.convert_to_df, include_columns=include_columns, exclude_columns=exclude_columns))
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, MessageMeta
