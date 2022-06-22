@@ -100,6 +100,65 @@ Launch an interactive container to start using Morpheus:
 
 See :doc:`basics/overview` for more information on using the CLI.
 
+Building Localy
+---------------
+To get started, first clone the Morpheus repo:
+
+.. code-block:: bash
+
+   export PYTHON_VER=3.8
+   export RAPIDS_VER=22.04
+   export CUDA_VER=11.5
+   export MORPHEUS_ROOT=$(pwd)/morpheus
+
+   git clone https://github.com/NVIDIA/Morpheus.git morpheus
+   # Change directory to the repo root
+   cd morpheus
+
+Where ``$PYTHON_VER``, ``$CUDA_VER``, and ``$RAPIDS_VER`` represent the desired Python version, CUDA version and, RAPIDS
+version, respectively.
+
+.. note::
+The Morpheus contains several large  model and data files in this repo are stored using `Git Large File Storage (LFS) <https://git-lfs.github.com/>`__. These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
+
+By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Usage of the script is as follows:
+
+.. code-block:: bash
+
+   scripts/fetch_data.py fetch <dataset> [<dataset>...]
+
+
+At time of writing the defined datasets are:
+ * all - Metaset includes all others
+ * examples - Data needed by scripts in the `examples` subdir
+ * models - Morpheus models (largest dataset)
+ * tests - Data used by unittests
+ * validation - Subset of the models dataset needed by some unittests
+
+To download just the examples and models:
+
+.. code-block:: bash
+
+   scripts/fetch_data.py fetch examples models
+
+
+To download the data needed for unittests:
+
+.. code-block:: bash
+
+   scripts/fetch_data.py fetch tests validation
+
+
+If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from `here <https://git-lfs.github.com/>`__, and then run the following command.
+
+.. code-block:: bash
+
+   scripts/fetch_data.py fetch all
+
+From this point, follow the instructions in either the :ref:`building-local-image<Building Local Image>` or :ref:`outside-of-a-container<Outside of a Container>` section.
+
+.. building-local-image:
+
 Building Local Image
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -115,18 +174,6 @@ Prerequisites
  * `Docker <https://docs.docker.com/get-docker/>`__
  * `The NVIDIA container toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`__
 
-To get started, first clone the Morpheus repo:
-
-.. code-block:: bash
-
-   # Make sure to recurse the submodules
-   git clone https://github.com/NVIDIA/Morpheus.git morpheus
-   # Change directory to the repo root
-   cd morpheus
-
-.. note::
-
-   Cloning the repo may take a while to download large data objects and models.
 
 To build the container:
 
@@ -178,10 +225,6 @@ To get started, first clone the Morpheus repo:
    # Change directory to the repo root
    cd morpheus
 
-.. note::
-
-   Cloning the repo may take a while to download large data objects and models.
-
 Next, create a Conda environment and install the necessary dependencies.
 
 .. code-block:: bash
@@ -190,8 +233,7 @@ Next, create a Conda environment and install the necessary dependencies.
    mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
    conda activate morpheus
 
-Where ``$PYTHON_VER``, ``$CUDA_VER``, and ``$RAPIDS_VER`` represent the desired Python version, CUDA version and, RAPIDS
-version, respectively. Finally, build Morpheus:
+Finally, build Morpheus:
 
 .. code-block:: bash
 
@@ -202,6 +244,7 @@ version, respectively. Finally, build Morpheus:
    pip install -e .
 
 See :doc:`basics/overview` for more information on using the CLI.
+
 
 .. toctree::
    :maxdepth: 20
