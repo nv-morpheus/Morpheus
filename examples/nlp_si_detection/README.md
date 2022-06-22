@@ -101,9 +101,9 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
 
-From the `examples/nlp_si_detection` directory run:
+From the Morpheus repo root directory run:
 ```bash
-export MORPHEUS_ROOT=../..
+export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --debug --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
