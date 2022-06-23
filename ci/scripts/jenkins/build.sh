@@ -26,7 +26,6 @@ conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.ana
 mamba env create -q -y -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 conda activate morpheus
 
-
 gpuci_logger "Installing CI dependencies"
 mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
 conda deactivate && conda activate morpheus
