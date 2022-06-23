@@ -27,13 +27,10 @@
 namespace morpheus {
 // Component public implementations
 // ************ AddClassificationStage **************************** //
-AddClassificationsStage::AddClassificationsStage(const neo::Segment& parent,
-                                                 const std::string& name,
-                                                 float threshold,
+AddClassificationsStage::AddClassificationsStage(float threshold,
                                                  std::size_t num_class_labels,
                                                  std::map<std::size_t, std::string> idx2label) :
-  neo::SegmentObject(parent, name),
-  PythonNode(parent, name, build_operator()),
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_threshold(threshold),
   m_num_class_labels(num_class_labels),
   m_idx2label(std::move(idx2label))
@@ -41,11 +38,11 @@ AddClassificationsStage::AddClassificationsStage(const neo::Segment& parent,
     CHECK(m_idx2label.size() <= m_num_class_labels) << "idx2label should represent a subset of the class_labels";
 }
 
-AddClassificationsStage::operator_fn_t AddClassificationsStage::build_operator()
+AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator()
 {
-    return [this](neo::Observable<reader_type_t>& input, neo::Subscriber<writer_type_t>& output) {
-        return input.subscribe(neo::make_observer<reader_type_t>(
-            [this, &output](reader_type_t&& x) {
+    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+            [this, &output](sink_type_t x) {
                 const auto& probs  = x->get_probs();
                 const auto& shape  = probs.get_shape();
                 const auto& stride = probs.get_stride();
@@ -60,7 +57,7 @@ AddClassificationsStage::operator_fn_t AddClassificationsStage::build_operator()
                 // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
                 auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
 
-                NEO_CHECK_CUDA(
+                SRF_CHECK_CUDA(
                     cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
                 // Depending on the input the stride is given in bytes or elements,
@@ -113,16 +110,14 @@ AddClassificationsStage::operator_fn_t AddClassificationsStage::build_operator()
 }
 
 // ************ AddClassificationStageInterfaceProxy ************* //
-std::shared_ptr<AddClassificationsStage> AddClassificationStageInterfaceProxy::init(
-    neo::Segment& parent,
+std::shared_ptr<srf::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
+    srf::segment::Builder& builder,
     const std::string& name,
     float threshold,
     std::size_t num_class_labels,
     std::map<std::size_t, std::string> idx2label)
 {
-    auto stage = std::make_shared<AddClassificationsStage>(parent, name, threshold, num_class_labels, idx2label);
-
-    parent.register_node<AddClassificationsStage>(stage);
+    auto stage = builder.construct_object<AddClassificationsStage>(name, threshold, num_class_labels, idx2label);
 
     return stage;
 }

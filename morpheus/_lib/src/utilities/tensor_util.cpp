@@ -17,7 +17,7 @@
 
 #include <morpheus/utilities/tensor_util.hpp>
 
-#include <neo/utils/sort_indexes.hpp>  // for sort_indexes
+#include <srf/utils/sort_indexes.hpp>  // for sort_indexes
 
 #include <glog/logging.h>  // for DCHECK_EQ
 
@@ -74,7 +74,7 @@ bool TensorUtils::validate_shape_and_stride(const std::vector<TensorIndex>& shap
         return false;
     }
 
-    auto stride_sorted_idx = neo::sort_indexes(stride);
+    auto stride_sorted_idx = srf::sort_indexes(stride);
 
     for (int i = 0; i < stride_sorted_idx.size() - 1; ++i)
     {

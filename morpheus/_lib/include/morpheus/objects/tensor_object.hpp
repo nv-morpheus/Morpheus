@@ -19,23 +19,16 @@
 
 #include <morpheus/utilities/type_util_detail.hpp>
 
-#include <neo/core/memory.hpp>
-#include <neo/cuda/common.hpp>
-#include <neo/memory/blob.hpp>
-#include <neo/memory/default_resources.hpp>
-#include <neo/memory/memory_kind.hpp>  // for memory_kind_type
-#include <neo/utils/string_utils.hpp>
+#include <morpheus/utilities/string_util.hpp>
+
+#include <srf/cuda/common.hpp>
+#include <srf/memory/blob.hpp>
+#include <srf/memory/default_resources.hpp>
+#include <srf/memory/memory_kind.hpp>  // for memory_kind_type
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
-
 #include <glog/logging.h>  // for CHECK
-
 #include <rmm/device_uvector.hpp>
-
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xtensor_forward.hpp>
 
 #include <algorithm>
 #include <array>
@@ -75,7 +68,7 @@ std::string join(IterT begin, IterT end, std::string const& separator)
 template <typename IterT>
 std::string array_to_str(IterT begin, IterT end)
 {
-    return CONCAT_STR("[" << join(begin, end, ", ") << "]");
+    return MORPHEUS_CONCAT_STR("[" << join(begin, end, ", ") << "]");
 }
 
 template <RankType R>
@@ -123,24 +116,21 @@ enum class TensorStorageType
 };
 
 template <typename T>
-using HostContainer = std::vector<T, neo::memory::host_allocator<T>>;
+using HostContainer = std::vector<T, srf::memory::host_allocator<T>>;  // NOLINT(readability-identifier-naming)
 
 template <typename T>
-using DeviceContainer = rmm::device_uvector<T>;
+using DeviceContainer = rmm::device_uvector<T>;  // NOLINT(readability-identifier-naming)
 
-template <typename T>
-using HostArray = xt::xarray_container<HostContainer<T>>;
-
-template <typename T, RankType R>
-using HostTensor = xt::xtensor_container<DeviceContainer<T>, R>;
+struct MemoryDescriptor
+{};
 
 struct ITensorStorage
 {
     virtual ~ITensorStorage()  = default;
     virtual void* data() const = 0;
     // virtual const void* data() const                             = 0;
-    virtual std::size_t bytes() const                                 = 0;
-    virtual std::shared_ptr<neo::MemoryDescriptor> get_memory() const = 0;
+    virtual std::size_t bytes() const                            = 0;
+    virtual std::shared_ptr<MemoryDescriptor> get_memory() const = 0;
     // virtual TensorStorageType storage_type() const               = 0;
 };
 
@@ -185,30 +175,6 @@ struct ITensor : public ITensorStorage, public ITensorOperations
         for (int i = 0; i < this->rank(); ++i)
             v[i] = this->stride(i);
         return v;
-    }
-};
-
-struct IHostTensor : public ITensor
-{
-    ~IHostTensor() override = default;
-
-    // todo: test for column major - this only works with row major
-    auto bytes_view()
-    {
-        using byte_t = std::byte;
-        xt::xarray<byte_t>::shape_type shape(this->rank() + 1);
-        xt::xarray<byte_t>::shape_type stride(this->rank() + 1);
-        for (int i = 0; i < this->rank(); ++i)
-        {
-            shape[i] = this->shape(i);
-        }
-        shape[this->rank()]  = this->dtype().item_size();
-        stride[this->rank()] = 1;
-        for (int i = this->rank() - 1; i < 0; --i)
-        {
-            stride[i] = this->stride(i) * this->dtype().item_size();
-        }
-        return xt::adapt(static_cast<byte_t*>(this->data()), this->bytes(), xt::no_ownership(), shape, stride);
     }
 };
 
@@ -368,13 +334,13 @@ template <typename T, RankType R>
 
 #endif
 
-class TensorView : public neo::memory::blob
+class TensorView : public srf::memory::blob
 {
   public:
     TensorView() = delete;
 
-    TensorView(neo::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape);
-    TensorView(neo::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape, std::vector<TensorIndex> stride);
+    TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape);
+    TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape, std::vector<TensorIndex> stride);
 
     const DataType& dtype() const;
 
@@ -400,7 +366,7 @@ struct TensorObject final
 {
     TensorObject() = default;
 
-    TensorObject(std::shared_ptr<neo::MemoryDescriptor> md, std::shared_ptr<ITensor> tensor) :
+    TensorObject(std::shared_ptr<MemoryDescriptor> md, std::shared_ptr<ITensor> tensor) :
       m_md(std::move(md)),
       m_tensor(std::move(tensor))
     {}
@@ -498,7 +464,7 @@ struct TensorObject final
 
         out_data.resize(this->bytes());
 
-        NEO_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
+        SRF_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
 
         return out_data;
     }
@@ -525,7 +491,7 @@ struct TensorObject final
 
         T output;
 
-        NEO_CHECK_CUDA(
+        SRF_CHECK_CUDA(
             cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
@@ -553,7 +519,7 @@ struct TensorObject final
 
         T output;
 
-        NEO_CHECK_CUDA(
+        SRF_CHECK_CUDA(
             cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
@@ -599,7 +565,7 @@ struct TensorObject final
         DCHECK(this->bytes() == other.bytes()) << "Left and right bytes should be the same if all other test passed";
 
         // Perform the copy operation
-        NEO_CHECK_CUDA(cudaMemcpy(this->data(), other.data(), this->bytes(), cudaMemcpyDeviceToDevice));
+        SRF_CHECK_CUDA(cudaMemcpy(this->data(), other.data(), this->bytes(), cudaMemcpyDeviceToDevice));
 
         return *this;
     }
@@ -609,7 +575,7 @@ struct TensorObject final
         return m_tensor;
     }
 
-    std::shared_ptr<neo::MemoryDescriptor> get_memory() const
+    std::shared_ptr<MemoryDescriptor> get_memory() const
     {
         return m_md;
     }
@@ -634,138 +600,8 @@ struct TensorObject final
     void throw_on_invalid_storage();
 
   private:
-    std::shared_ptr<neo::MemoryDescriptor> m_md;
+    std::shared_ptr<MemoryDescriptor> m_md;
     std::shared_ptr<ITensor> m_tensor;
-};
-
-class GenericTensor : public ITensor
-{
-  public:
-    GenericTensor(std::shared_ptr<neo::MemoryDescriptor> md,
-                  size_t offset,
-                  DataType dtype,
-                  const std::vector<TensorIndex>& shape,
-                  const std::vector<TensorIndex>& stride = {});
-    ~GenericTensor() = default;
-
-    std::shared_ptr<neo::MemoryDescriptor> get_memory() const final
-    {
-        return m_md;
-    }
-
-    void* data() const override
-    {
-        return static_cast<uint8_t*>(m_md->data()) + m_offset;
-    }
-
-    DataType dtype() const override
-    {
-        return m_dtype;
-    }
-
-    RankType rank() const final
-    {
-        return m_shape.size();
-    }
-
-    std::size_t count() const final
-    {
-        return std::accumulate(m_shape.begin(), m_shape.end(), 1, std::multiplies<>());
-    }
-
-    std::size_t bytes() const final
-    {
-        return count() * m_dtype.item_size();
-    }
-
-    std::size_t shape(std::size_t idx) const final
-    {
-        DCHECK_LT(idx, m_shape.size());
-        return m_shape.at(idx);
-    }
-
-    std::size_t stride(std::size_t idx) const final
-    {
-        DCHECK_LT(idx, m_stride.size());
-        return m_stride.at(idx);
-    }
-
-    bool is_compact() const final
-    {
-        TensorIndex ttl = 1;
-        for (int i = rank() - 1; i >= 0; i--)
-        {
-            if (stride(i) != ttl)
-            {
-                return false;
-            }
-
-            ttl *= shape(i);
-        }
-        return true;
-    }
-
-    std::shared_ptr<ITensor> slice(const std::vector<TensorIndex>& min_dims,
-                                   const std::vector<TensorIndex>& max_dims) const override
-    {
-        // Calc new offset
-        size_t offset = std::transform_reduce(
-            m_stride.begin(), m_stride.end(), min_dims.begin(), m_offset, std::plus<>(), std::multiplies<>());
-
-        // Calc new shape
-        std::vector<TensorIndex> shape;
-        std::transform(max_dims.begin(), max_dims.end(), min_dims.begin(), std::back_inserter(shape), std::minus<>());
-
-        // Stride remains the same
-        return std::make_shared<GenericTensor>(m_md, offset, m_dtype, shape, m_stride);
-    }
-
-    std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex>& dims) const override
-    {
-        if (is_compact())
-        {
-            return std::make_shared<GenericTensor>(m_md, m_offset, m_dtype, dims);
-        }
-        else
-        {
-            throw std::runtime_error("Not supported non-compact reshape");
-        }
-    }
-
-    std::shared_ptr<ITensor> deep_copy() const override
-    {
-        auto copied_memory = m_md->get_allocator()->allocate_descriptor(m_md->size()).make_shared();
-
-        if (copied_memory->type() == neo::memory::memory_kind_type::device ||
-            copied_memory->type() == neo::memory::memory_kind_type::managed)
-        {
-            NEO_CHECK_CUDA(cudaMemcpy(copied_memory->data(), m_md->data(), m_md->size(), cudaMemcpyDeviceToDevice));
-        }
-        else
-        {
-            throw std::runtime_error("Not implemented");
-        }
-
-        return std::make_shared<GenericTensor>(copied_memory, m_offset, m_dtype, m_shape, m_stride);
-    }
-
-    std::shared_ptr<ITensor> as_type(DataType dtype) const override
-    {
-        throw std::runtime_error("Not implemented");
-    }
-
-  protected:
-  private:
-    // Memory info
-    std::shared_ptr<neo::MemoryDescriptor> m_md;
-    size_t m_offset;
-
-    // Type info
-    DataType m_dtype;
-
-    // Shape info
-    std::vector<TensorIndex> m_shape;
-    std::vector<TensorIndex> m_stride;
 };
 
 }  // namespace morpheus

@@ -48,26 +48,48 @@ The following instructions are for developers who are getting started with the M
 
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
- - `PYTHON_VER`: The desired Python version. Minimum required is 3.8
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `21.10`
- - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.4`
+ - `PYTHON_VER`: The desired Python version. Minimum required is `3.8`
+ - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.04`
+ - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.5`
 
 
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
 export PYTHON_VER=3.8
-export RAPIDS_VER=21.10
-export CUDA_VER=11.4
+export RAPIDS_VER=22.04
+export CUDA_VER=11.5
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
+By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Usage of the script is as follows:
+```bash
+scripts/fetch_data.py fetch <dataset> [<dataset>...]
+```
+
+At time of writing the defined datasets are:
+* all - Metaset includes all others
+* examples - Data needed by scripts in the `examples` subdir
+* models - Morpheus models (largest dataset)
+* tests - Data used by unittests
+* validation - Subset of the models dataset needed by some unittests
+
+To download just the examples and models:
+```bash
+scripts/fetch_data.py fetch examples models
+```
+
+To download the data needed for unittests:
+```bash
+scripts/fetch_data.py fetch tests validation
+```
+
 If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command.
 ```bash
-git lfs pull
+scripts/fetch_data.py fetch all
 ```
 
 ### Build in Docker Container
@@ -94,7 +116,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
    ```shell
    DOCKER_TARGET=development_pydbg ./docker/build_container_dev.sh
    ```
-   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's 
+   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
    source path.
    1. Once created, you will be able to introspect python objects from within GDB. For example, if we were to break
    within a generator setup call and examine it's PyFrame_Object `f`, it might look like this:
@@ -113,18 +135,13 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
     python                    3.8.13          py3.8.13_dbg_morpheus    local
    ```
    1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
-2. Set up `ssh-agent` to allow container to pull from private repos
-   ```bash
-   eval `ssh-agent -s`
-   ssh-add
-   ```
-3. Run the development container
+2. Run the development container
    ```bash
    ./docker/run_container_dev.sh
    ```
    1. The container tag follows the same rules as `build_container_dev.sh` and will default to the current `YYMMDD`. Specify the desired tag with `DOCKER_IMAGE_TAG`. i.e. `DOCKER_IMAGE_TAG=my_tag ./docker/run_container_dev.sh`
    2. This will automatically mount the current working directory to `/workspace`.
-   3. Some of the validation tests require launching a triton docker container within the morpheus container. To enable this you will need to grant the morpheus contrainer access to your host OS's docker socket file with:
+   3. Some of the validation tests require launching a triton docker container within the morpheus container. To enable this you will need to grant the morpheus container access to your host OS's docker socket file with:
       ```bash
       DOCKER_EXTRA_ARGS="-v /var/run/docker.sock:/var/run/docker.sock" ./docker/run_container_dev.sh
       ```
@@ -133,17 +150,17 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       ./docker/install_docker.sh
       ```
 
-4. Compile Morpheus
+3. Compile Morpheus
    ```bash
    ./scripts/compile.sh
    ```
    This script will run both CMake Configure with default options and CMake build.
-5. Install Morpheus
+4. Install Morpheus
    ```bash
    pip install -e /workspace
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
-6. [Run Morpheus](./README.md#running-morpheus)
+5. [Run Morpheus](./README.md#running-morpheus)
    ```bash
    morpheus run pipeline-nlp ...
    ```
@@ -174,34 +191,19 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 1. Setup env variables and clone the repo:
    ```bash
    export PYTHON_VER=3.8
-   export RAPIDS_VER=21.10
-   export CUDA_VER=11.4
+   export RAPIDS_VER=22.04
+   export CUDA_VER=11.5
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
    ```
-1. Create a new Conda environment
+1. Create the morpheus Conda environment
    ```bash
-   mamba create -n morpheus python=${PYTHON_VER}
+   mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
    conda activate morpheus
    ```
 
    This creates a new environment named `morpheus`, and activates that environment.
-1. Set up `ssh-agent` to allow container to pull from private repos
-   ```bash
-   eval `ssh-agent -s`
-   ssh-add
-   ```
-1. Build and install cuDF conda package
-   ```bash
-   ./docker/build_conda_packages.sh libcudf cudf
-   mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
-   ```
-   This will checkout, patch, build and install cuDF with the necessary fixes to allow Morpheus to work smoothly with cuDF DataFrames in C++.
-1. Install remaining Morpheus dependencies
-   ```bash
-   mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
-   ```
 1. Build Morpheus
    ```bash
    ./scripts/compile.sh

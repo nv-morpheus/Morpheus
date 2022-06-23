@@ -48,38 +48,6 @@ CONDA_ARGS+=("--skip-existing")
 
 DOCKER_EXTRA_ARGS=()
 
-if hasArg libneo; then
-   # If libneo is specified, you must set NEO_GIT_URL
-   DOCKER_EXTRA_ARGS+=("--env" "NEO_GIT_URL=${NEO_GIT_URL:?"Cannot build libneo. Must set NEO_GIT_URL to git repo location to allow checkout of neo repository"}")
-
-   url=${NEO_GIT_URL}
-
-   # Remove the http/https/ssh
-   url="${url#http://}"
-   url="${url#https://}"
-   url="${url#ssh://}"
-
-   # Remove git@
-   url="${url#git@}"
-
-   # Remove username/password
-   url="${url#*:*@}"
-   url="${url#*@}"
-
-   # Remove remaining
-   url=${url%%/*}
-
-   port=${url##*:}
-   url=${url%%:*}
-
-   # Add the command to auto accept this url/port combo
-   if [[ -n "${port}" ]]; then
-      BUILD_SCRIPT="${BUILD_SCRIPT:+${BUILD_SCRIPT}\n}mkdir -p \$HOME/.ssh && ssh-keyscan -t rsa -p ${port} ${url} > ~/.ssh/known_hosts"
-   else
-      BUILD_SCRIPT="${BUILD_SCRIPT:+${BUILD_SCRIPT}\n}mkdir -p \$HOME/.ssh && ssh-keyscan -t rsa ${url} > ~/.ssh/known_hosts"
-   fi
-fi
-
 # Build the script to execute inside of the container (needed to set multiple statements in CONDA_ARGS)
 BUILD_SCRIPT="${BUILD_SCRIPT}
 export CONDA_ARGS=\"${CONDA_ARGS[@]}\"

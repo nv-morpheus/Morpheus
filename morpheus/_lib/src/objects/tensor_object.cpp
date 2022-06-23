@@ -19,9 +19,8 @@
 
 #include <morpheus/utilities/tensor_util.hpp>
 
-#include <neo/core/memory.hpp>       // for MemoryDescriptor
-#include <neo/memory/blob.hpp>       // for blob
-#include <neo/utils/type_utils.hpp>  // for DataType
+#include <srf/memory/blob.hpp>       // for blob
+#include <srf/utils/type_utils.hpp>  // for DataType
 
 #include <vector>
 
@@ -39,8 +38,8 @@ static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::ve
     }
 }
 
-TensorView::TensorView(neo::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape) :
-  neo::memory::blob(std::move(bv)),
+TensorView::TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape) :
+  srf::memory::blob(std::move(bv)),
   m_dtype(std::move(dtype)),
   m_shape(std::move(shape))
 {
@@ -50,11 +49,11 @@ TensorView::TensorView(neo::memory::blob bv, DataType dtype, std::vector<TensorI
     // hold a tensor of shape/stride.
 }
 
-TensorView::TensorView(neo::memory::blob bv,
+TensorView::TensorView(srf::memory::blob bv,
                        DataType dtype,
                        std::vector<TensorIndex> shape,
                        std::vector<TensorIndex> stride) :
-  neo::memory::blob(std::move(bv)),
+  srf::memory::blob(std::move(bv)),
   m_dtype(std::move(dtype)),
   m_shape(std::move(shape)),
   m_stride(std::move(stride))
@@ -72,27 +71,6 @@ TensorView::TensorView(neo::memory::blob bv,
 bool TensorView::is_contiguous() const
 {
     return TensorUtils::has_contiguous_stride(shape(), stride());
-}
-
-GenericTensor::GenericTensor(std::shared_ptr<neo::MemoryDescriptor> md,
-                             size_t offset,
-                             DataType dtype,
-                             const std::vector<TensorIndex>& shape,
-                             const std::vector<TensorIndex>& stride) :
-  m_md(std::move(md)),
-  m_offset(offset),
-  m_dtype(std::move(dtype)),
-  m_shape(std::move(shape)),
-  m_stride(std::move(stride))
-{
-    if (m_stride.empty())
-    {
-        TensorUtils::set_contiguous_stride(m_shape, m_stride);
-    }
-
-    CHECK_EQ(m_shape.size(), m_stride.size());
-
-    // throw_on_invalid_storage();
 }
 
 const DataType& TensorView::dtype() const

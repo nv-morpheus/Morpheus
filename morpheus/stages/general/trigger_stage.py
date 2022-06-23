@@ -15,8 +15,8 @@
 import logging
 import typing
 
-import neo
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -59,14 +59,14 @@ class TriggerStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then push them
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-            input.pipe(ops.to_list(), ops.flatten()).subscribe(output)
+            obs.pipe(ops.to_list(), ops.flatten()).subscribe(sub)
 
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(input_stream[0], node)
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]

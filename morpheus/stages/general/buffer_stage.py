@@ -15,7 +15,7 @@
 import logging
 import typing
 
-import neo
+import srf
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -61,7 +61,7 @@ class BufferStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # This stage is no longer needed and is just a pass thru stage
         deprecated_stage_warning(logger, type(self), self.unique_name)

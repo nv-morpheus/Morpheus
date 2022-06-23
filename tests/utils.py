@@ -17,6 +17,8 @@ import collections
 import json
 import os
 
+import srf
+
 import morpheus
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
@@ -78,9 +80,9 @@ class ConvMsg(SinglePortStage):
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
         return MultiResponseProbsMessage(m.meta, 0, len(probs), memory, 0, len(probs))
 
-    def _build_single(self, seg, input_stream):
-        stream = seg.make_node(self.unique_name, self._conv_message)
-        seg.make_edge(input_stream[0], stream)
+    def _build_single(self, builder: srf.Builder, input_stream):
+        stream = builder.make_node(self.unique_name, self._conv_message)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, MultiResponseProbsMessage
 

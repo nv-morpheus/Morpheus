@@ -21,9 +21,9 @@ from collections import deque
 from math import ceil
 
 import cupy as cp
-import neo
 import pandas as pd
-from neo.core import operators as ops
+import srf
+from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MultiResponseAEMessage
@@ -452,12 +452,12 @@ class TimeSeriesStage(SinglePortStage):
 
         return self._timeseries_per_user[x.user_id]._calc_timeseries(x, False)
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = input_stream[1]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             def on_next(x: MultiResponseAEMessage):
 
@@ -476,13 +476,11 @@ class TimeSeriesStage(SinglePortStage):
 
                 return to_send if len(to_send) > 0 else None
 
-            input.pipe(ops.map(on_next),
-                       ops.filter(lambda x: len(x) > 0),
-                       ops.on_completed(on_completed),
-                       ops.flatten()).subscribe(output)
+            obs.pipe(ops.map(on_next), ops.filter(lambda x: len(x) > 0), ops.on_completed(on_completed),
+                     ops.flatten()).subscribe(sub)
 
-        stream = seg.make_node_full(self.unique_name, node_fn)
+        stream = builder.make_node_full(self.unique_name, node_fn)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         return stream, out_type

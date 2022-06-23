@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +22,8 @@
 #include <morpheus/objects/file_types.hpp>
 #include <morpheus/utilities/string_util.hpp>
 
-#include <neo/core/segment.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <fstream>
 #include <memory>
@@ -36,20 +36,18 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class WriteToFileStage : public neo::pyneo::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
+class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = neo::pyneo::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
     /**
      * TODO(Documentation)
      */
-    WriteToFileStage(const neo::Segment &parent,
-                     const std::string &name,
-                     const std::string &filename,
+    WriteToFileStage(const std::string &filename,
                      std::ios::openmode mode = std::ios::out,
                      FileTypes file_type     = FileTypes::Auto);
 
@@ -59,23 +57,15 @@ class WriteToFileStage : public neo::pyneo::PythonNode<std::shared_ptr<MessageMe
      */
     void close();
 
-    void write_json(reader_type_t &msg)
-    {
-        // Call df_to_json passing our fstream
-        df_to_json(msg->get_info(), m_fstream);
-    }
+    void write_json(sink_type_t &msg);
 
-    void write_csv(reader_type_t &msg)
-    {
-        // Call df_to_csv passing our fstream
-        df_to_csv(msg->get_info(), m_fstream, m_is_first);
-    }
+    void write_csv(sink_type_t &msg);
 
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     bool m_is_first;
     std::ofstream m_fstream;
-    std::function<void(reader_type_t &)> m_write_func;
+    std::function<void(sink_type_t &)> m_write_func;
 };
 
 /****** WriteToFileStageInterfaceProxy******************/
@@ -87,11 +77,11 @@ struct WriteToFileStageInterfaceProxy
     /**
      * @brief Create and initialize a WriteToFileStage, and return the result.
      */
-    static std::shared_ptr<WriteToFileStage> init(neo::Segment &parent,
-                                                  const std::string &name,
-                                                  const std::string &filename,
-                                                  const std::string &mode = "w",
-                                                  FileTypes file_type     = FileTypes::Auto);
+    static std::shared_ptr<srf::segment::Object<WriteToFileStage>> init(srf::segment::Builder &builder,
+                                                                        const std::string &name,
+                                                                        const std::string &filename,
+                                                                        const std::string &mode = "w",
+                                                                        FileTypes file_type     = FileTypes::Auto);
 };
 
 #pragma GCC visibility pop

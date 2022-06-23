@@ -18,14 +18,14 @@ import typing
 
 import cupy as cp
 
-import morpheus._lib.messages as neom
+import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.message_base import MessageData
 from morpheus.messages.multi_message import MultiMessage
 
 
 @dataclasses.dataclass
-class InferenceMemory(MessageData, cpp_class=neom.InferenceMemory):
+class InferenceMemory(MessageData, cpp_class=_messages.InferenceMemory):
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
     hold generic tensor data in cupy arrays.
@@ -90,7 +90,7 @@ def set_input(instance, name: str, value):
 
 
 @dataclasses.dataclass
-class InferenceMemoryNLP(InferenceMemory, cpp_class=neom.InferenceMemoryNLP):
+class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP):
     """
     This is a container class for data that needs to be submitted to the inference server for NLP category
     usecases.
@@ -117,7 +117,7 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=neom.InferenceMemoryNLP):
 
 
 @dataclasses.dataclass
-class InferenceMemoryFIL(InferenceMemory, cpp_class=neom.InferenceMemoryFIL):
+class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL):
     """
     This is a container class for data that needs to be submitted to the inference server for FIL category
     usecases.
@@ -163,7 +163,7 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
 
 
 @dataclasses.dataclass
-class MultiInferenceMessage(MultiMessage, cpp_class=neom.MultiInferenceMessage):
+class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMessage):
     """
     This is a container class that holds the InferenceMemory container and the metadata of the data contained
     within it. Builds on top of the `MultiMessage` class to add additional data for inferencing.
@@ -265,7 +265,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=neom.MultiInferenceMessage):
 
 
 @dataclasses.dataclass
-class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=neom.MultiInferenceNLPMessage):
+class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiInferenceNLPMessage):
     """
     A stronger typed version of `MultiInferenceMessage` that is used for NLP workloads. Helps ensure the
     proper inputs are set and eases debugging.
@@ -316,7 +316,7 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=neom.MultiInfere
 
 
 @dataclasses.dataclass
-class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=neom.MultiInferenceFILMessage):
+class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=_messages.MultiInferenceFILMessage):
     """
     A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
     proper inputs are set and eases debugging.

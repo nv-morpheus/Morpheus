@@ -16,9 +16,9 @@
 {% set version = environ.get('GIT_VERSION', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
 {% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
 {% set py_version=environ.get('CONDA_PY', '3.8') %}
-{% set cuda_version='.'.join(environ.get('CUDA', '11.4').split('.')[:2]) %}
+{% set cuda_version='.'.join(environ.get('CUDA', '11.5').split('.')[:2]) %}
 {% set cuda_major=cuda_version.split('.')[0] %}
-{% set rapids_version = "21.10" %}
+{% set rapids_version = "22.04" %}
 
 package:
   name: morpheus-split
@@ -28,46 +28,16 @@ source:
   git_url: ../../../..
 
 outputs:
-  - name: morpheus-deps-build
-    build:
-      number: {{ GIT_DESCRIBE_NUMBER }}
-      string: cuda_{{ cuda_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
-    requirements:
-      run:
-        - {{ compiler("c") }}
-        - {{ compiler("cxx") }}
-        - {{ compiler("cuda") }}
-        - ccache
-        - cmake=3.22
-        - cudatoolkit {{ cuda_version }}.*
-        - cudf {{ rapids_version }} *morpheus
-        - cython >=0.29,<0.30
-        - librdkafka=1.6.1
-        - neo {{ minor_version }}.*
-        - ninja
-        - pip
-        - python {{ python }}
-        - rapidjson=1.1
-        - scikit-build>=0.12
-        - versioneer-518
-
-  - name: morpheus-deps-test
-    build:
-      number: {{ GIT_DESCRIBE_NUMBER }}
-      string: cuda_{{ cuda_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
-    requirements:
-      run:
-        - cudatoolkit {{ cuda_version }}.*
-        - pytest
-        - pytest-cov
-        - python {{ python }}
 
   - name: morpheus
     build:
       number: {{ GIT_DESCRIBE_NUMBER }}
       string: cuda_{{ cuda_version }}_py{{ py_version }}_{{ GIT_DESCRIBE_HASH }}_{{ GIT_DESCRIBE_NUMBER }}
       script_env:
-        - CMAKE_CUDA_ARCHITECTURES=ALL
+        # Note: Setting a default value here will overwrite the value from the
+        # shell! Defaults should be set in the run_conda_build.sh script
+        - CMAKE_CUDA_ARCHITECTURES
+        - MORPHEUS_BUILD_PYTHON_STUBS
         - MORPHEUS_CACHE_DIR
         - PARALLEL_LEVEL
       run_exports:
@@ -81,28 +51,29 @@ outputs:
         - {{ compiler("c") }}
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
-        - cmake=3.22
+        - cmake 3.22
         - ccache
         - ninja
       host:
-        - cudatoolkit {{ cuda_version }}.*
-        - cudf {{ rapids_version }} *morpheus
+        - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
-        - librdkafka=1.6.1
-        - neo {{ minor_version }}
+        - libcudf {{ rapids_version }}
+        - librdkafka 1.7
+        - srf {{ minor_version }}
         - pip
+        - pybind11-stubgen
         - python {{ python }}
-        - rapidjson=1.1
-        - scikit-build>=0.12
+        - rapidjson 1.1
+        - scikit-build >=0.12
         - versioneer-518
       run:
-        - {{ pin_compatible('librdkafka', max_pin='x.x') }}
-        - click>=8
+        - click >=8
+        - cudf {{ rapids_version }}
         - cudf_kafka {{ rapids_version }}
-        - cupy=9.3.0
+        - cupy # Version determined from cudf
         - distributed
-        - grpcio=1.41
-        - mlflow>=1.23
+        - grpcio # Version determined from cudf
+        - mlflow >=1.23
         - networkx
         - python
         - tqdm
@@ -128,8 +99,8 @@ outputs:
         - pytest
 
 about:
-  home: http://rapids.ai/
+  home: https://github.com/nv-morpheus/Morpheus
   license: Apache-2.0
   license_family: Apache
   license_file: LICENSE
-  summary: cuDF GPU DataFrame core library
+  summary: Morpheus Cybersecurity Library
