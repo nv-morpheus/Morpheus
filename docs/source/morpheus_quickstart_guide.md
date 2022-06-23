@@ -152,7 +152,6 @@ Next, create a namespace and an environment variable for the namespace to organi
 
 ```bash
 $ export NAMESPACE="<YOUR_NAMESPACE>"
-$ export RELEASE_NAME="<YOUR_RELEASE_NAME>"
 $ kubectl create namespace ${NAMESPACE}
 ```
 
@@ -171,7 +170,7 @@ $ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engi
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
              --namespace $NAMESPACE \
-             ${RELEASE_NAME} \
+             <YOUR_RELEASE_NAME> \
              morpheus-ai-engine
 ```
 
@@ -217,7 +216,7 @@ $ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-cli
 $ helm install --set ngc.apiKey="$API_KEY" \
                --set sdk.args="<REPLACE_RUN_PIPELINE_COMMAND_HERE>" \
                --namespace $NAMESPACE \
-               ${RELEASE_NAME} \
+               <YOUR_RELEASE_NAME> \
                morpheus-sdk-client
 ```
 
@@ -261,7 +260,7 @@ $ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
              --namespace $NAMESPACE \
-             ${RELEASE_NAME} \
+             <YOUR_RELEASE_NAME> \
              morpheus-mlflow
 ```
 
@@ -465,7 +464,7 @@ Multiple command options are given for each pipeline, with varying data input/ou
 We recommend only deploying one pipeline at a time. To remove previously deployed pipelines, run the following command:
 
 ```bash
-$ helm delete -n $NAMESPACE ${RELEASE_NAME}
+$ helm delete -n $NAMESPACE <YOUR_RELEASE_NAME>
 ```
 
 To publish messages to a Kafka topic, we need to copy datasets to locations where they can be accessed from the host.
@@ -520,7 +519,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       serialize \
       to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/val_hammah-role-g-pytorch.csv --overwrite" \
     --namespace $NAMESPACE \
-    ${RELEASE_NAME} \
+    <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
 
@@ -548,7 +547,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         serialize \
         to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/val_hammah-user123-pytorch.csv --overwrite" \
     --namespace $NAMESPACE \
-    ${RELEASE_NAME} \
+    <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
 
@@ -587,7 +586,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         serialize \
         to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/phishing-bert-onnx-output.jsonlines --overwrite" \
     --namespace $NAMESPACE \
-    ${RELEASE_NAME} \
+    <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
 
@@ -617,7 +616,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         serialize --exclude '^ts_' \
         to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
-    ${RELEASE_NAME} \
+    <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
 
@@ -663,7 +662,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         serialize --exclude '^ts_' \
         to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/sid-minibert-onnx-output.jsonlines --overwrite" \
     --namespace $NAMESPACE \
-    ${RELEASE_NAME} \
+    <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
 
@@ -692,7 +691,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           serialize --exclude '^ts_' \
           to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
-    ${RELEASE_NAME} \
+    <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
 
@@ -736,7 +735,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           serialize --exclude '^nvidia_smi_log' --exclude '^ts_' \
           to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/abp-nvsmi-xgb-output.jsonlines --overwrite" \
     --namespace $NAMESPACE \
-    ${RELEASE_NAME} \
+    <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
 
@@ -761,7 +760,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           serialize --exclude '^nvidia_smi_log' \ --exclude '^ts_' \
           to-kafka --output_topic <YOUR_OUTPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092" \
     --namespace $NAMESPACE \
-    ${RELEASE_NAME} \
+    <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
 
