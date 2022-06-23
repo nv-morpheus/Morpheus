@@ -104,7 +104,7 @@ pipeline {
                         ]])
                         {
                             sh "${WORKSPACE}/ci/scripts/jenkins/test.sh"
-                            junit "${WORKSPACE_TMP}/reports/*.xml"
+                            junit "${WORKSPACE}/reports/*.xml"
                         }
                     }
                 }

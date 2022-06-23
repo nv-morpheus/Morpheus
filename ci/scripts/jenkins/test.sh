@@ -34,8 +34,8 @@ cd ${MORPHEUS_ROOT}
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
-REPORTS_DIR="${WORKSPACE_TMP}/reports"
-mkdir -p ${WORKSPACE_TMP}/reports
+REPORTS_DIR="${WORKSPACE}/reports"
+mkdir -p ${REPORTS_DIR}
 
 TEST_RESULTS=0
 for cpp_test in "${CPP_TESTS[@]}"; do
