@@ -144,7 +144,6 @@ pipeline {
     }
     post {
         always {
-                junit "${WORKSPACE_TMP}/reports/**/*.xml"
                 cleanWs(
                     deleteDirs: true,
                     externalDelete: 'sudo rm -rf %s'
