@@ -23,7 +23,7 @@ rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
-mamba env create -q -y -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 conda activate morpheus
 
 gpuci_logger "Installing CI dependencies"
