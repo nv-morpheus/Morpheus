@@ -15,11 +15,11 @@
 import logging
 import typing
 
-import neo
+import srf
 import typing_utils
-from neo.core import operators as ops
+from srf.core import operators as ops
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
@@ -96,18 +96,18 @@ class FileSourceStage(SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _build_source(self, seg: neo.Segment) -> StreamPair:
+    def _build_source(self, builder: srf.Builder) -> StreamPair:
 
         if self._build_cpp_node():
-            out_stream = neos.FileSourceStage(seg, self.unique_name, self._filename, self._repeat_count)
+            out_stream = _stages.FileSourceStage(builder, self.unique_name, self._filename, self._repeat_count)
         else:
-            out_stream = seg.make_source(self.unique_name, self._generate_frames())
+            out_stream = builder.make_source(self.unique_name, self._generate_frames())
 
         out_type = MessageMeta
 
         return out_stream, out_type
 
-    def _post_build_single(self, seg: neo.Segment, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
@@ -115,16 +115,16 @@ class FileSourceStage(SingleOutputSource):
         # Convert our list of dataframes into the desired type. Flatten if necessary
         if (typing_utils.issubtype(out_type, typing.List)):
 
-            def node_fn(input: neo.Observable, output: neo.Subscriber):
+            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
-                input.pipe(ops.flatten()).subscribe(output)
+                obs.pipe(ops.flatten()).subscribe(sub)
 
-            flattened = seg.make_node_full(self.unique_name + "-post", node_fn)
-            seg.make_edge(out_stream, flattened)
+            flattened = builder.make_node_full(self.unique_name + "-post", node_fn)
+            builder.make_edge(out_stream, flattened)
             out_stream = flattened
             out_type = typing.get_args(out_type)[0]
 
-        return super()._post_build_single(seg, (out_stream, out_type))
+        return super()._post_build_single(builder, (out_stream, out_type))
 
     def _generate_frames(self):
 

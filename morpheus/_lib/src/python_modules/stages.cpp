@@ -28,7 +28,7 @@
 #include <morpheus/stages/write_to_file.hpp>
 #include <morpheus/utilities/cudf_util.hpp>
 
-#include <neo/core/segment_object.hpp>
+#include <srf/segment/object.hpp>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -47,53 +47,63 @@ PYBIND11_MODULE(stages, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    neo::pyneo::import(m, "cupy");
-    neo::pyneo::import(m, "morpheus._lib.messages");
-    neo::pyneo::import(m, "morpheus._lib.file_types");
+    srf::pysrf::import(m, "cupy");
+    srf::pysrf::import(m, "morpheus._lib.messages");
+    srf::pysrf::import(m, "morpheus._lib.file_types");
 
-    py::class_<AddClassificationsStage, neo::SegmentObject, std::shared_ptr<AddClassificationsStage>>(
+    py::class_<srf::segment::Object<AddClassificationsStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<AddClassificationsStage>>>(
         m, "AddClassificationsStage", py::multiple_inheritance())
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"),
              py::arg("num_class_labels"),
              py::arg("idx2label"));
 
-    py::class_<AddScoresStage, neo::SegmentObject, std::shared_ptr<AddScoresStage>>(
-        m, "AddScoresStage", py::multiple_inheritance())
+    py::class_<srf::segment::Object<AddScoresStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<AddScoresStage>>>(m, "AddScoresStage", py::multiple_inheritance())
         .def(py::init<>(&AddScoresStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("num_class_labels"),
              py::arg("idx2label"));
 
-    py::class_<DeserializeStage, neo::SegmentObject, std::shared_ptr<DeserializeStage>>(
+    py::class_<srf::segment::Object<DeserializeStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<DeserializeStage>>>(
         m, "DeserializeStage", py::multiple_inheritance())
         .def(py::init<>(&DeserializeStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("batch_size"));
 
-    py::class_<FileSourceStage, neo::SegmentObject, std::shared_ptr<FileSourceStage>>(
-        m, "FileSourceStage", py::multiple_inheritance())
+    py::class_<srf::segment::Object<FileSourceStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<FileSourceStage>>>(m, "FileSourceStage", py::multiple_inheritance())
         .def(py::init<>(&FileSourceStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("repeat"));
 
-    py::class_<FilterDetectionsStage, neo::SegmentObject, std::shared_ptr<FilterDetectionsStage>>(
+    py::class_<srf::segment::Object<FilterDetectionsStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<FilterDetectionsStage>>>(
         m, "FilterDetectionsStage", py::multiple_inheritance())
         .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"));
 
-    py::class_<InferenceClientStage, neo::SegmentObject, std::shared_ptr<InferenceClientStage>>(
+    py::class_<srf::segment::Object<InferenceClientStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<InferenceClientStage>>>(
         m, "InferenceClientStage", py::multiple_inheritance())
         .def(py::init<>(&InferenceClientStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("model_name"),
              py::arg("server_url"),
@@ -102,10 +112,12 @@ PYBIND11_MODULE(stages, m)
              py::arg("needs_logits"),
              py::arg("inout_mapping") = py::dict());
 
-    py::class_<KafkaSourceStage, neo::SegmentObject, std::shared_ptr<KafkaSourceStage>>(
+    py::class_<srf::segment::Object<KafkaSourceStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<KafkaSourceStage>>>(
         m, "KafkaSourceStage", py::multiple_inheritance())
         .def(py::init<>(&KafkaSourceStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("max_batch_size"),
              py::arg("topic"),
@@ -114,17 +126,21 @@ PYBIND11_MODULE(stages, m)
              py::arg("disable_commits")       = false,
              py::arg("disable_pre_filtering") = false);
 
-    py::class_<PreprocessFILStage, neo::SegmentObject, std::shared_ptr<PreprocessFILStage>>(
+    py::class_<srf::segment::Object<PreprocessFILStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<PreprocessFILStage>>>(
         m, "PreprocessFILStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessFILStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("features"));
 
-    py::class_<PreprocessNLPStage, neo::SegmentObject, std::shared_ptr<PreprocessNLPStage>>(
+    py::class_<srf::segment::Object<PreprocessNLPStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<PreprocessNLPStage>>>(
         m, "PreprocessNLPStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("vocab_hash_file"),
              py::arg("sequence_length"),
@@ -133,19 +149,22 @@ PYBIND11_MODULE(stages, m)
              py::arg("add_special_token"),
              py::arg("stride"));
 
-    py::class_<SerializeStage, neo::SegmentObject, std::shared_ptr<SerializeStage>>(
-        m, "SerializeStage", py::multiple_inheritance())
+    py::class_<srf::segment::Object<SerializeStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<SerializeStage>>>(m, "SerializeStage", py::multiple_inheritance())
         .def(py::init<>(&SerializeStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("include"),
              py::arg("exclude"),
              py::arg("fixed_columns") = true);
 
-    py::class_<WriteToFileStage, neo::SegmentObject, std::shared_ptr<WriteToFileStage>>(
+    py::class_<srf::segment::Object<WriteToFileStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<WriteToFileStage>>>(
         m, "WriteToFileStage", py::multiple_inheritance())
         .def(py::init<>(&WriteToFileStageInterfaceProxy::init),
-             py::arg("parent"),
+             py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
              py::arg("mode")      = "w",

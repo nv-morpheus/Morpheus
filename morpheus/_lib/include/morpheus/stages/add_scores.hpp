@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,60 +17,56 @@
 
 #pragma once
 
-
 #include <morpheus/messages/multi_response_probs.hpp>
 
-#include <neo/core/segment.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
-#include <string>
 #include <memory>
-
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** AddScoresStage********************************/
+/****** Component public implementations *******************/
+/****** AddScoresStage********************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+                                                     std::shared_ptr<MultiResponseProbsMessage>>
+{
+  public:
+    using base_t =
+        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
+
+    AddScoresStage(std::size_t num_class_labels, std::map<std::size_t, std::string> idx2label);
+
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class AddScoresStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-            std::shared_ptr<MultiResponseProbsMessage>> {
-    public:
-        using base_t =
-        neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-        using base_t::operator_fn_t;
-        using base_t::reader_type_t;
-        using base_t::writer_type_t;
+    subscribe_fn_t build_operator();
 
-        AddScoresStage(const neo::Segment &parent,
-                       const std::string &name,
-                       std::size_t num_class_labels,
-                       std::map<std::size_t, std::string> idx2label);
+    std::size_t m_num_class_labels;
+    std::map<std::size_t, std::string> m_idx2label;
+};
 
-        /**
-         * TODO(Documentation)
-         */
-        operator_fn_t build_operator();
-
-        std::size_t m_num_class_labels;
-        std::map<std::size_t, std::string> m_idx2label;
-    };
-
-    /****** AddScoresStageInterfaceProxy******************/
+/****** AddScoresStageInterfaceProxy******************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct AddScoresStageInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * @brief Create and initialize a AddScoresStage, and return the result.
      */
-    struct AddScoresStageInterfaceProxy {
-
-        /**
-         * @brief Create and initialize a AddScoresStage, and return the result.
-         */
-        static std::shared_ptr<AddScoresStage> init(neo::Segment &parent,
-                                                    const std::string &name,
-                                                    std::size_t num_class_labels,
-                                                    std::map<std::size_t, std::string> idx2label);
-    };
+    static std::shared_ptr<srf::segment::Object<AddScoresStage>> init(srf::segment::Builder &builder,
+                                                                      const std::string &name,
+                                                                      std::size_t num_class_labels,
+                                                                      std::map<std::size_t, std::string> idx2label);
+};
 
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

@@ -19,17 +19,16 @@
 
 #include <morpheus/objects/tensor_object.hpp>
 
-#include <neo/cuda/common.hpp> // for NEO_CHECK_CUDA
-//#include <neo/cuda/matx.hpp>
-#include <neo/cuda/sync.hpp> // for enqueue_stream_sync_event
-#include <neo/memory/adaptors.hpp>
-#include <neo/memory/buffer.hpp>
-#include <neo/memory/literals.hpp>
-#include <neo/memory/old_interface/memory.hpp>
-#include <neo/memory/resources/device/cuda_malloc_resource.hpp>
-#include <neo/memory/resources/host/pinned_memory_resource.hpp>
-#include <neo/memory/resources/logging_resource.hpp>
-#include <neo/ucx/context.hpp>
+#include <srf/cuda/common.hpp> // for SRF_CHECK_CUDA
+#include <srf/cuda/sync.hpp> // for enqueue_stream_sync_event
+#include <srf/memory/adaptors.hpp>
+#include <srf/memory/buffer.hpp>
+#include <srf/memory/literals.hpp>
+#include <srf/memory/old_interface/memory.hpp>
+#include <srf/memory/resources/device/cuda_malloc_resource.hpp>
+#include <srf/memory/resources/host/pinned_memory_resource.hpp>
+#include <srf/memory/resources/logging_resource.hpp>
+#include <srf/ucx/context.hpp>
 
 #include <cuda/memory_resource>
 #include <cuda_runtime.h>
@@ -44,7 +43,7 @@
 #include <chrono>
 #include <ratio>
 
-using namespace neo::memory::literals;
+using namespace srf::memory::literals;
 using namespace morpheus;
 
 using RankType = int;
@@ -55,19 +54,19 @@ class TestCuda : public ::testing::Test
   protected:
     void SetUp() override
     {
-        NEO_CHECK_CUDA(cudaStreamCreate(&stream));
+        SRF_CHECK_CUDA(cudaStreamCreate(&stream));
 
-        auto pinned = std::make_shared<neo::memory::pinned_memory_resource>();
-        auto device = std::make_shared<neo::memory::cuda_malloc_resource>(0);
+        auto pinned = std::make_shared<srf::memory::pinned_memory_resource>();
+        auto device = std::make_shared<srf::memory::cuda_malloc_resource>(0);
 
-        m_host_allocator   = neo::memory::OldHostAllocator(pinned, nullptr).shared();
-        m_device_allocator = neo::memory::OldDeviceAllocator(device, nullptr).shared();
+        m_host_allocator   = srf::memory::OldHostAllocator(pinned, nullptr).shared();
+        m_device_allocator = srf::memory::OldDeviceAllocator(device, nullptr).shared();
     }
 
     void TearDown() override
     {
-        NEO_CHECK_CUDA(cudaStreamSynchronize(stream));
-        NEO_CHECK_CUDA(cudaStreamDestroy(stream));
+        SRF_CHECK_CUDA(cudaStreamSynchronize(stream));
+        SRF_CHECK_CUDA(cudaStreamDestroy(stream));
     }
 
     template <typename T, RankType R>
@@ -97,15 +96,15 @@ class TestCuda : public ::testing::Test
 
     cudaStream_t stream;  // NOLINT
 
-    std::shared_ptr<neo::memory::IAllocator> m_host_allocator;
-    std::shared_ptr<neo::memory::IAllocator> m_device_allocator;
+    std::shared_ptr<srf::memory::IAllocator> m_host_allocator;
+    std::shared_ptr<srf::memory::IAllocator> m_device_allocator;
 };
 
 template <typename T>
 auto await_matx(matx::BaseOp<T>& op, cudaStream_t stream)
 {
     op.run(stream);
-    return neo::enqueue_stream_sync_event(stream);
+    return srf::enqueue_stream_sync_event(stream);
 }
 
 void test_1d(const TensorObject& one_d)

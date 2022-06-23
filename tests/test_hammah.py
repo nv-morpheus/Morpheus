@@ -73,14 +73,13 @@ def test_hammah_roleg(mock_ae, config, tmp_path):
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "hammah-*.csv")
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "hammah-*.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'hammah-role-g-validation-data.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')
 
     pipe = LinearPipeline(config)
     pipe.set_source(CloudTrailSourceStage(config, input_glob=input_glob, sort_glob=True))
-    pipe.add_stage(train_ae_stage.TrainAEStage(config, train_data_glob=train_data_glob, seed=42, sort_glob=True))
+    pipe.add_stage(train_ae_stage.TrainAEStage(config, train_data_glob=input_glob, seed=42, sort_glob=True))
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_stage(AddScoresStage(config))
@@ -147,14 +146,13 @@ def test_hammah_user123(mock_ae, config, tmp_path):
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "hammah-*.csv")
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "hammah-*.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'hammah-user123-validation-data.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')
 
     pipe = LinearPipeline(config)
     pipe.set_source(CloudTrailSourceStage(config, input_glob=input_glob, sort_glob=True))
-    pipe.add_stage(train_ae_stage.TrainAEStage(config, train_data_glob=train_data_glob, seed=42, sort_glob=True))
+    pipe.add_stage(train_ae_stage.TrainAEStage(config, train_data_glob=input_glob, seed=42, sort_glob=True))
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
     pipe.add_stage(AutoEncoderInferenceStage(config))
     pipe.add_stage(AddScoresStage(config))

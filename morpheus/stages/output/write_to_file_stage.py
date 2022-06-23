@@ -15,13 +15,13 @@
 import os
 import typing
 
-import neo
-import neo.core.operators as ops
 import pandas as pd
+import srf
+import srf.core.operators as ops
 
 import cudf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
 from morpheus.config import Config
@@ -104,16 +104,16 @@ class WriteToFileStage(SinglePortStage):
 
         return output_strs
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
         # Sink to file
         if (self._build_cpp_node()):
-            to_file = neos.WriteToFileStage(seg, self.unique_name, self._output_file, "w", self._file_type)
+            to_file = _stages.WriteToFileStage(builder, self.unique_name, self._output_file, "w", self._file_type)
         else:
 
-            def node_fn(input: neo.Observable, output: neo.Subscriber):
+            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
 
                 # Ensure our directory exists
                 os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)
@@ -129,14 +129,14 @@ class WriteToFileStage(SinglePortStage):
 
                         return x
 
-                    input.pipe(ops.map(write_to_file)).subscribe(output)
+                    obs.pipe(ops.map(write_to_file)).subscribe(sub)
 
                 # File should be closed by here
 
-            to_file = seg.make_node_full(self.unique_name, node_fn)
+            to_file = builder.make_node_full(self.unique_name, node_fn)
 
-        seg.make_edge(stream, to_file)
+        builder.make_edge(stream, to_file)
         stream = to_file
 
         # Return input unchanged to allow passthrough
-        return input_stream
+        return stream, input_stream[1]

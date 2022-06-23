@@ -18,10 +18,14 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
+fetch_base_branch
+
 conda activate rapids
 
 gpuci_logger "Installing CI dependencies"
 mamba install -q -y -c conda-forge "yapf=0.32"
+
+show_conda_info
 
 gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh

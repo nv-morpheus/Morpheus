@@ -15,9 +15,9 @@
 import logging
 import typing
 
-import neo
+import srf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -99,15 +99,15 @@ class AddScoresStage(SinglePortStage):
         # Return passthrough
         return x
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         if self._build_cpp_node():
-            stream = neos.AddScoresStage(seg, self.unique_name, len(self._class_labels), self._idx2label)
+            stream = _stages.AddScoresStage(builder, self.unique_name, len(self._class_labels), self._idx2label)
         else:
-            stream = seg.make_node(self.unique_name, self._add_labels)
+            stream = builder.make_node(self.unique_name, self._add_labels)
 
-        seg.make_edge(input_stream[0], stream)
+        builder.make_edge(input_stream[0], stream)
 
         # Return input unchanged
         return stream, input_stream[1]

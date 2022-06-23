@@ -19,59 +19,61 @@ set -e
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
 
-gpuci_logger "Check versions"
-python3 --version
-gcc --version
-g++ --version
+restore_conda_env
+pip install ${MORPHEUS_ROOT}/build/wheel
 
-gpuci_logger "Check conda environment"
-conda info
-conda config --show-sources
-conda list --show-channel-urls
+CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/wheel -name "*.x"))
 
-gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
-aws s3 cp --no-progress "${ARTIFACT_URL}/workspace.tar.bz" "${WORKSPACE_TMP}/workspace.tar.bz"
-
-gpuci_logger "Extracting"
-mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/workspace.tar.bz" --no-same-owner
-
-gpuci_logger "Setting test env"
-conda activate morpheus
-conda-unpack
-conda list --show-channel-urls
-
-npm install --slient -g camouflage-server
+gpuci_logger "Installing test dependencies"
+npm install --silent -g camouflage-server
 mamba install -q -y -c conda-forge "git-lfs=3.1.4"
 
 gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
+
 git lfs install
-git lfs pull
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
-pip install -e ${MORPHEUS_ROOT}
+REPORTS_DIR="${WORKSPACE_TMP}/reports"
+mkdir -p ${WORKSPACE_TMP}/reports
 
-# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-# The build and test nodes have different workspace paths (/jenkins vs. /var/lib/jenkins)
-# Typically these are fixed by conda-unpack but since we did an in-place build we will
-# have to fix this ourselves by setting LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MORPHEUS_ROOT}/morpheus/_lib
+TEST_RESULTS=0
+for cpp_test in "${CPP_TESTS[@]}"; do
+       test_name=$(basename ${cpp_test})
+       gpuci_logger "Running ${test_name}"
+       set +e
 
-gpuci_logger "Running tests"
+       ${cpp_test} --gtest_output="xml:${REPORTS_DIR}/report_${test_name}.xml"
+       TEST_RESULT=$?
+       TEST_RESULTS=$(($TEST_RESULTS+$TEST_RESULT))
+
+       set -e
+done
+
+gpuci_logger "Running Python tests"
+# Running the tests from the tests dir. Normally this isn't nescesary, however since
+# we are testing the installed version of morpheus in site-packages and not the one
+# in the repo dir, the pytest coverage module reports incorrect coverage stats.
+cd ${MORPHEUS_ROOT}/tests
+
 set +e
-pytest --run_slow \
-       --junit-xml=${WORKSPACE_TMP}/report_pytest.xml \
+
+python -I -m pytest --run_slow \
+       --junit-xml=${REPORTS_DIR}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \
-       --cov-report=xml:${WORKSPACE_TMP}/report_pytest_coverage.xml
+       --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml
 
 PYTEST_RESULTS=$?
+TEST_RESULTS=$(($TEST_RESULTS+$PYTEST_RESULTS))
+
 set -e
 
-gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp ${WORKSPACE_TMP}/report_pytest.xml "${ARTIFACT_URL}/report_pytest.xml"
-aws s3 cp ${WORKSPACE_TMP}/report_pytest_coverage.xml "${ARTIFACT_URL}/report_pytest_coverage.xml"
+gpuci_logger "Archiving test reports"
+cd $(dirname ${REPORTS_DIR})
+tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
 
-exit ${PYTEST_RESULTS}
+gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+aws s3 cp ${WORKSPACE_TMP}/test_reports.tar.bz "${ARTIFACT_URL}/test_reports.tar.bz"
+
+exit ${TEST_RESULTS}

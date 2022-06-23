@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,54 +17,54 @@
 
 #pragma once
 
-
 #include <morpheus/messages/multi_response_probs.hpp>
 
-#include <neo/core/segment.hpp>
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
-#include <string>
 #include <memory>
-
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** FilterDetectionStage********************************/
-    /**
-     * TODO(Documentation)
-     */
+/****** Component public implementations *******************/
+/****** FilterDetectionStage********************************/
+/**
+ * TODO(Documentation)
+ */
 #pragma GCC visibility push(default)
-    class FilterDetectionsStage : public neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-            std::shared_ptr<MultiResponseProbsMessage>> {
-    public:
-        using base_t =
-        neo::pyneo::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-        using base_t::operator_fn_t;
-        using base_t::reader_type_t;
-        using base_t::writer_type_t;
+class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+                                                            std::shared_ptr<MultiResponseProbsMessage>>
+{
+  public:
+    using base_t =
+        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-        FilterDetectionsStage(const neo::Segment &parent, const std::string &name, float threshold);
+    FilterDetectionsStage(float threshold);
 
-    private:
-        operator_fn_t build_operator();
+  private:
+    subscribe_fn_t build_operator();
 
-        float m_threshold;
-        std::size_t m_num_class_labels;
-        std::map<std::size_t, std::string> m_idx2label;
-    };
+    float m_threshold;
+    std::size_t m_num_class_labels;
+    std::map<std::size_t, std::string> m_idx2label;
+};
 
-    /****** FilterDetectionStageInterfaceProxy******************/
+/****** FilterDetectionStageInterfaceProxy******************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct FilterDetectionStageInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * @brief Create and initialize a FilterDetectionStage, and return the result.
      */
-    struct FilterDetectionStageInterfaceProxy {
-
-        /**
-         * @brief Create and initialize a FilterDetectionStage, and return the result.
-         */
-        static std::shared_ptr<FilterDetectionsStage>
-        init(neo::Segment &parent, const std::string &name, float threshold);
-    };
+    static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &builder,
+                                                                             const std::string &name,
+                                                                             float threshold);
+};
 
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

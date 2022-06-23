@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,48 +19,52 @@
 
 #include <morpheus/messages/meta.hpp>
 
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
-#include <string>
 #include <memory>
-
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** FileSourceStage*************************************/
+/****** Component public implementations *******************/
+/****** FileSourceStage*************************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
+{
+  public:
+    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
+    using typename base_t::source_type_t;
+    using typename base_t::subscriber_fn_t;
+
+    FileSourceStage(std::string filename, int repeat = 1);
+
+  private:
+    subscriber_fn_t build();
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class FileSourceStage : public neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>> {
-    public:
-        using base_t = neo::pyneo::PythonSource<std::shared_ptr<MessageMeta>>;
-        using base_t::source_type_t;
+    cudf::io::table_with_metadata load_table();
 
-        FileSourceStage(const neo::Segment &parent, const std::string &name, std::string filename, int repeat = 1);
+    std::string m_filename;
+    int m_repeat{1};
+};
 
-    private:
-
-        /**
-         * TODO(Documentation)
-         */
-        cudf::io::table_with_metadata load_table();
-
-        std::string m_filename;
-        int m_repeat{1};
-    };
-
-
-    /****** FileSourceStageInterfaceProxy***********************/
+/****** FileSourceStageInterfaceProxy***********************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct FileSourceStageInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * @brief Create and initialize a FileSourceStage, and return the result.
      */
-    struct FileSourceStageInterfaceProxy {
-        /**
-         * @brief Create and initialize a FileSourceStage, and return the result.
-         */
-        static std::shared_ptr<FileSourceStage>
-        init(neo::Segment &parent, const std::string &name, std::string filename, int repeat = 1);
-    };
+    static std::shared_ptr<srf::segment::Object<FileSourceStage>> init(srf::segment::Builder &builder,
+                                                                       const std::string &name,
+                                                                       std::string filename,
+                                                                       int repeat = 1);
+};
 #pragma GCC visibility pop
-} // Morpheus
+}  // namespace morpheus

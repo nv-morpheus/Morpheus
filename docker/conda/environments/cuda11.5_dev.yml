@@ -15,10 +15,10 @@
 
 name: morpheus
 channels:
-    - local
     - rapidsai
     - nvidia
-    - nvidia/label/dev # For pre-releases of Neo. Should still default to full releases if available
+    - nvidia/label/dev # For pre-releases of SRF. Should still default to full releases if available
+    - nvidia/label/cuda-11.5.2 # For cuda-nvml-dev=11.5, which is not published under nvidia channel yet.
     - conda-forge
 dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
@@ -28,11 +28,11 @@ dependencies:
     - cachetools=5.0.0
     - ccache>=3.7
     - cmake=3.22
-    - cuda-nvml-dev=11.4
-    - cudatoolkit=11.4
-    - cudf 21.10.* *morpheus
-    - cudf_kafka 21.10.*
-    - cupy=9.3.0
+    - cuda-nvml-dev=11.5
+    - cudatoolkit=11.5
+    - cudf 22.04
+    - cudf_kafka 22.04.*
+    - cupy=9.5.0
     - cython=0.29.24
     - docker-compose=1.29.2
     - docker-py=5.0.3
@@ -42,7 +42,7 @@ dependencies:
     - gcc_linux-64=9.4
     - gflags=2.2
     - git>=2.35.3 # Needed for wildcards on safe.directory
-    - glog=0.5
+    - glog=0.6
     - gmock=1.10
     - grpc-cpp>=1.43
     - gtest=1.10
@@ -50,12 +50,13 @@ dependencies:
     - isort
     - mlflow>=1.23
     - myst-parser==0.17
-    - neo 22.04.*
+    - srf 22.06.*
     - ninja=1.10
     - nodejs=17.4.0
     - pandas=1.3
     - pip
-    - protobuf=3.19
+    - pkg-config # for srf cmake
+    - protobuf=3.20
     - pybind11-stubgen
     - pydot
     - pytest
@@ -69,6 +70,7 @@ dependencies:
     - sphinx_rtd_theme
     - sysroot_linux-64=2.17
     - tqdm
+    - yapf=0.32.0
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Add additional dev dependencies here

@@ -76,7 +76,7 @@ def test_build_single(config):
 
     mock_segment.make_node_full.assert_called_once()
     mock_segment.make_edge.assert_called_once()
-    assert mock_node.concurrency == 17
+    assert mock_node.launch_options.pe_count == 17
 
 
 @pytest.mark.use_python
@@ -106,7 +106,7 @@ def test_py_inf_fn(config):
 
 
 @pytest.mark.use_python
-@mock.patch('neo.Future')
+@mock.patch('srf.Future')
 @mock.patch('morpheus.stages.inference.inference_stage.ops')
 def test_py_inf_fn_on_next(mock_ops, mock_future, config):
     mock_future.return_value = mock_future
@@ -171,7 +171,7 @@ def test_build_single_cpp(config):
 
     mock_segment.make_node_full.assert_not_called()
     mock_segment.make_edge.assert_called_once()
-    assert mock_node.concurrency == 17
+    assert mock_node.launch_options.pe_count == 17
 
 
 @pytest.mark.use_cpp

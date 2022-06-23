@@ -105,7 +105,7 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
         if (row_stride == 1)
         {
             // column major just use cudaMemcpy
-            NEO_CHECK_CUDA(cudaMemcpy(const_cast<uint8_t *>(cv.data<uint8_t>()),
+            SRF_CHECK_CUDA(cudaMemcpy(const_cast<uint8_t *>(cv.data<uint8_t>()),
                                       tensors[i].data(),
                                       tensors[i].bytes(),
                                       cudaMemcpyDeviceToDevice));
@@ -113,7 +113,7 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
         else
         {
             const auto item_size = tensors[i].dtype().item_size();
-            NEO_CHECK_CUDA(cudaMemcpy2D(const_cast<uint8_t *>(cv.data<uint8_t>()),
+            SRF_CHECK_CUDA(cudaMemcpy2D(const_cast<uint8_t *>(cv.data<uint8_t>()),
                                         item_size,
                                         tensors[i].data(),
                                         row_stride * item_size,

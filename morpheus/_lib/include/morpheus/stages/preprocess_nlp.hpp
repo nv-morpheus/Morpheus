@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,68 +20,66 @@
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/messages/multi_inference.hpp>
 
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
-#include <string>
 #include <memory>
-
-
+#include <string>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** PreprocessNLPStage**********************************/
+/****** Component public implementations *******************/
+/****** PreprocessNLPStage**********************************/
+/**
+ * TODO(Documentation)
+ */
+#pragma GCC visibility push(default)
+class PreprocessNLPStage
+  : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
+{
+  public:
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
+
+    PreprocessNLPStage(std::string vocab_hash_file,
+                       uint32_t sequence_length,
+                       bool truncation,
+                       bool do_lower_case,
+                       bool add_special_token,
+                       int stride = -1);
+
+  private:
     /**
      * TODO(Documentation)
      */
-#pragma GCC visibility push(default)
-    class PreprocessNLPStage
-            : public neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>> {
-    public:
-        using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
-        using base_t::operator_fn_t;
-        using base_t::reader_type_t;
-        using base_t::writer_type_t;
+    subscribe_fn_t build_operator();
 
-        PreprocessNLPStage(const neo::Segment &parent,
-                           const std::string &name,
-                           std::string vocab_hash_file,
-                           uint32_t sequence_length,
-                           bool truncation,
-                           bool do_lower_case,
-                           bool add_special_token,
-                           int stride = -1);
+    std::string m_vocab_hash_file;
+    uint32_t m_sequence_length;
+    bool m_truncation;
+    bool m_do_lower_case;
+    bool m_add_special_token;
+    int m_stride{-1};
+};
 
-    private:
-        /**
-         * TODO(Documentation)
-         */
-        operator_fn_t build_operator();
-
-        std::string m_vocab_hash_file;
-        uint32_t m_sequence_length;
-        bool m_truncation;
-        bool m_do_lower_case;
-        bool m_add_special_token;
-        int m_stride{-1};
-    };
-
-
-    /****** PreprocessNLPStageInferenceProxy********************/
+/****** PreprocessNLPStageInferenceProxy********************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct PreprocessNLPStageInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * @brief Create and initialize a ProcessNLPStage, and return the result.
      */
-    struct PreprocessNLPStageInterfaceProxy {
-        /**
-         * @brief Create and initialize a ProcessNLPStage, and return the result.
-         */
-        static std::shared_ptr<PreprocessNLPStage> init(neo::Segment &parent,
-                                                        const std::string &name,
-                                                        std::string vocab_hash_file,
-                                                        uint32_t sequence_length,
-                                                        bool truncation,
-                                                        bool do_lower_case,
-                                                        bool add_special_token,
-                                                        int stride = -1);
-    };
+    static std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> init(srf::segment::Builder &builder,
+                                                                          const std::string &name,
+                                                                          std::string vocab_hash_file,
+                                                                          uint32_t sequence_length,
+                                                                          bool truncation,
+                                                                          bool do_lower_case,
+                                                                          bool add_special_token,
+                                                                          int stride = -1);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus

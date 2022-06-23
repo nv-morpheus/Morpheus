@@ -17,24 +17,10 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
+/usr/bin/nvidia-smi
 
-gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${ARTIFACT_URL}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
-aws s3 cp --no-progress "${ARTIFACT_URL}/workspace.tar.bz" "${WORKSPACE_TMP}/workspace.tar.bz"
-
-gpuci_logger "Extracting"
-mkdir -p /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
-tar xf "${WORKSPACE_TMP}/workspace.tar.bz" --no-same-owner
-
-gpuci_logger "Setting test env"
-conda activate morpheus
-conda-unpack
-
-# Work-around for issue where libmorpheus_utils.so is not found by libmorpheus.so
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MORPHEUS_ROOT}/morpheus/_lib
-
-pip install -e ${MORPHEUS_ROOT}
+restore_conda_env
+pip install ${MORPHEUS_ROOT}/build/wheel
 
 cd ${MORPHEUS_ROOT}/docs
 gpuci_logger "Installing Documentation dependencies"

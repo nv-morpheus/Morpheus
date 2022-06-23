@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,5 +51,5 @@ pybind11::object morpheus::proxy_table_from_table_with_metadata(cudf::io::table_
 morpheus::TableInfo morpheus::proxy_table_info_from_table(pybind11::object table,
                                                           std::shared_ptr<const morpheus::IDataTable> idata_table)
 {
-    return make_table_info_from_table((struct PyTable *)table.ptr(), idata_table);
+    return make_table_info_from_table(table.ptr(), idata_table);
 }
