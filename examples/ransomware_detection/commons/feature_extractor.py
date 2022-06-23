@@ -421,19 +421,19 @@ class FeatureExtractor():
         This function extracts file handle type features from handles plugin.
         """
 
-        # Get count and ratio for the handles by their type. 
+        # Get count and ratio for the handles by their type.
         for t in (fc.HANDLES_TYPES + fc.HANDLES_TYPES_2):
-            
+
             df = x[x.Type == t[0]]
             df_len = len(df)
 
             if t in fc.HANDLES_TYPES:
-              col = 'handles_df_' + t[1] + '_count'
-              self._features[col] = df_len
-            
+                col = 'handles_df_' + t[1] + '_count'
+                self._features[col] = df_len
+
             col = 'handles_df_' + t[1] + '_ratio'
             self._features[col] = df_len / (self._features['handles_df_count'] + 1)
-    
+
     def _extract_file_handle_dirs(self, file_paths: pd.Series):
         """
         This function extracts file handle directory features from handles plugin.
