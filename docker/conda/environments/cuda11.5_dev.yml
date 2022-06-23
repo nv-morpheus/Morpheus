@@ -30,8 +30,8 @@ dependencies:
     - cmake=3.22
     - cuda-nvml-dev=11.5
     - cudatoolkit=11.5
-    - cudf 22.04
-    - cudf_kafka 22.04.*
+    - cudf 22.06
+    - cudf_kafka 22.06.*
     - cupy=9.5.0
     - cython=0.29.24
     - docker-compose=1.29.2
