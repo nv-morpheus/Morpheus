@@ -75,5 +75,3 @@ tar cfj ${WORKSPACE_TMP}/test_reports.tar.bz $(basename ${REPORTS_DIR})
 
 gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp ${WORKSPACE_TMP}/test_reports.tar.bz "${ARTIFACT_URL}/test_reports.tar.bz"
-
-exit ${TEST_RESULTS}
