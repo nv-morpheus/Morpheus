@@ -26,7 +26,6 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 from .graph_sage_stage import GraphSAGEMultiMessage
-import cupy as cp
 
 class ClassificationStage(SinglePortStage):
 
@@ -48,8 +47,6 @@ class ClassificationStage(SinglePortStage):
         ind_emb_columns = message.get_meta(message.inductive_embedding_column_names)
 
         message.set_meta("node_id", message.node_identifiers)
-      #  import IPython; IPython.embed(); exit(1)
-        #ind_emb_columns = cp.random.randn(265, 178)
         #prediction = self._xgb_model.predict_proba(ind_emb_columns).iloc[:, 1]
         prediction = self._xgb_model.predict_proba(ind_emb_columns)[:, 1]
 
