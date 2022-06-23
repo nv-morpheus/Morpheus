@@ -101,3 +101,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         node = builder.make_node(self.unique_name, self._process_message)
         builder.make_edge(input_stream[0], node)
         return node, FraudGraphMultiMessage
+
+    def supports_cpp_node(self):
+        # Get the value from the worker class
+        return False
