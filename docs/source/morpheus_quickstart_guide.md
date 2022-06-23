@@ -210,16 +210,6 @@ Run the following command to pull the Morpheus SDK Client chart on to your insta
 $ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
-**Note**: For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
-
-```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
-               --set sdk.args="<REPLACE_RUN_PIPELINE_COMMAND_HERE>" \
-               --namespace $NAMESPACE \
-               <YOUR_RELEASE_NAME> \
-               morpheus-sdk-client
-```
-
 #### Morpheus SDK Client in Sleep Mode
 Install the Morpheus SDK client pod in sleep mode to copy its sample datasets and models from the container to a shared location that other pods can access. If no `sdk.args` is supplied, the default value `/bin/sleep infinity` from the chart is used in the following command.
 
@@ -483,6 +473,17 @@ Refer to the Using Morpheus SDK Client to Run Pipelines section of the Appendix 
 -   Replace **<YOUR_INPUT_KAFKA_TOPIC>** with your input Kafka topic name.
 -   Replace **<YOUR_OUTPUT_KAFKA_TOPIC>** with your output Kafka topic name.
 -   Replace **<YOUR_RELEASE_NAME>** with the name you want.
+
+
+For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
+
+```bash
+$ helm install --set ngc.apiKey="$API_KEY" \
+               --set sdk.args="<REPLACE_RUN_PIPELINE_COMMAND_HERE>" \
+               --namespace $NAMESPACE \
+               <YOUR_RELEASE_NAME> \
+               morpheus-sdk-client
+```
 
 
 ### Run AutoEncoder Digital Fingerprinting Pipeline
