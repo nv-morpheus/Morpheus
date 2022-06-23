@@ -114,14 +114,14 @@ pipeline {
                     }
                     agent {
                         docker {
-                            image 'gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8'
-                            label 'driver-495'
-                            args '--runtime "nvidia" -e "NVIDIA_VISIBLE_DEVICES=$EXECUTOR_NUMBER"'
+                            image 'gpuci/rapidsai-driver:22.04-cuda11.5-devel-centos7-py3.8'
+                            label 'cpu'
                         }
                     }
                     environment {
                         HOME = "${WORKSPACE}"
                         MORPHEUS_NO_CPP = '1'
+                        PARALLEL_LEVEL = '4'
                     }
                     steps {
                         cleanWs(

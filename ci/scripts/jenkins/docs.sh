@@ -17,7 +17,6 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
-/usr/bin/nvidia-smi
 
 restore_conda_env
 pip install ${MORPHEUS_ROOT}/build/wheel
@@ -27,7 +26,7 @@ gpuci_logger "Installing Documentation dependencies"
 pip install -r requirement.txt
 
 gpuci_logger "Building docs"
-make html
+make -j ${PARALLEL_LEVEL} html
 
 gpuci_logger "Tarring the docs"
 tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/html
