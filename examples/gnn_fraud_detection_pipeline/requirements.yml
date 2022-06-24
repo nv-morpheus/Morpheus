@@ -19,6 +19,6 @@ channels:
     - stellargraph
     - conda-forge
 dependencies:
-    - cuml=22.06
+    - cuml
     - stellargraph
     - tensorflow
