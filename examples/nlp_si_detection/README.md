@@ -135,8 +135,7 @@ If successful, you should see the following output:
 
 ```bash
 Configuring Pipeline via CLI
-Loaded labels file. Current labels: [['address', 'bank_acct', 'credit_card', 'email', 'govt_id', 'name', 'password', 'phone_num', 'secret_keys',
- 'user']]
+Loaded labels file. Current labels: [['address', 'bank_acct', 'credit_card', 'email', 'govt_id', 'name', 'password', 'phone_num', 'secret_keys', 'user']]
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
 {
