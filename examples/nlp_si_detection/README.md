@@ -104,9 +104,9 @@ The following command line is the entire command to build and launch the pipelin
 ```bash
 export MORPHEUS_ROOT=../..
 # Launch Morpheus printing debug messages
-morpheus --debug --log_level=DEBUG \
-   `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
-   run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+morpheus --log_level=DEBUG \
+   `# Run a pipeline with 10 threads and a model batch size of 32 (Must match Triton config)` \
+   run --num_threads=10 --pipeline_batch_size=1024 --model_max_batch_size=32 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
@@ -125,7 +125,9 @@ morpheus --debug --log_level=DEBUG \
    filter \
    `# 8th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
-   `# 9th Stage: Write out the JSON lines to the detections.jsonlines file` \
+   `# 9th Stage: A second Monitor stage to monitor the back-half of the pipeline` \
+   monitor --description "Serialize Rate" --smoothing=0.001 \
+   `# 10th Stage: Write out the JSON lines to the detections.jsonlines file` \
    to-file --filename=detections.jsonlines --overwrite
 ```
 
@@ -133,7 +135,8 @@ If successful, you should see the following output:
 
 ```bash
 Configuring Pipeline via CLI
-Loaded labels file. Current labels: [['address', 'bank_acct', 'credit_card', 'email', 'govt_id', 'name', 'password', 'phone_num', 'secret_keys', 'user']]
+Loaded labels file. Current labels: [['address', 'bank_acct', 'credit_card', 'email', 'govt_id', 'name', 'password', 'phone_num', 'secret_keys',
+ 'user']]
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
 {
@@ -150,7 +153,7 @@ Config:
     "secret_keys",
     "user"
   ],
-  "debug": true,
+  "debug": false,
   "edge_buffer_size": 128,
   "feature_length": 256,
   "fil": null,
@@ -158,21 +161,22 @@ Config:
   "log_level": 10,
   "mode": "NLP",
   "model_max_batch_size": 32,
-  "num_threads": 8,
+  "num_threads": 10,
   "pipeline_batch_size": 1024
 }
 CPP Enabled: True
 ====Registering Pipeline====
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
+====Pipeline Started====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/morpheus/examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/home/dagardner/work/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
+Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/home/dagardner/work/morpheus/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
-Added stage: <inference-3; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8001, force_convert_inputs=True, use_shared_memory=False)>
+Added stage: <inference-3; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8000, force_convert_inputs=True, use_shared_memory=False)>
   └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
@@ -182,12 +186,14 @@ Added stage: <filter-6; FilterDetectionsStage(threshold=0.5)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
 Added stage: <serialize-7; SerializeStage(include=[], exclude=['^_ts_'], fixed_columns=True)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
-Added stage: <to-file-8; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
+Added stage: <monitor-8; MonitorStage(description=Serialize Rate, smoothing=0.001, unit=messages, delayed_start=False, determine_count_fn=None)>
+  └─ morpheus.MessageMeta -> morpheus.MessageMeta
+Added stage: <to-file-9; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
-Starting! Time: 1651079123.1867409
-====Pipeline Started====
-Inference Rate[Complete]: 93085inf [00:06, 153.30inf/s]
+Starting! Time: 1656091806.4383576
+Inference Rate[Complete]: 93085inf [00:07, 12790.68inf/s]
+Serialize Rate: 851messages [00:25, 34.10messages/s]
 ```
 
 The output file `detections.jsonlines` will contain PCAP messages that contain some SI (any class with a predection greater that 0.5).
