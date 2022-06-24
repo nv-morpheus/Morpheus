@@ -29,7 +29,7 @@ FROM ${FROM_IMAGE}:${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
 # Required arguments
 ARG IMAGE_TYPE=base
 ARG RAPIDS_CHANNEL=rapidsai-nightly
-ARG RAPIDS_VER=22.04
+ARG RAPIDS_VER=22.06
 ARG PYTHON_VER=3.8
 ARG CONDA_CHANNEL=rapidsai
 
@@ -47,7 +47,7 @@ RUN apt-get update &&\
     apt-get upgrade -y &&\
     curl -sL https://deb.nodesource.com/setup_12.x | bash - &&\
     apt-get install --no-install-recommends -y \
-        build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs \
+        build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs git-lfs \
     && rm -rf /var/lib/apt/lists/*
 
 # Enables "source activate conda"

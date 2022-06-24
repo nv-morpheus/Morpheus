@@ -49,7 +49,7 @@ The following instructions are for developers who are getting started with the M
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
  - `PYTHON_VER`: The desired Python version. Minimum required is `3.8`
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.04`
+ - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.06`
  - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.5`
 
 
@@ -57,7 +57,7 @@ All of the following instructions assume several variables have been set:
 
 ```bash
 export PYTHON_VER=3.8
-export RAPIDS_VER=22.04
+export RAPIDS_VER=22.06
 export CUDA_VER=11.5
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
@@ -191,7 +191,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 1. Setup env variables and clone the repo:
    ```bash
    export PYTHON_VER=3.8
-   export RAPIDS_VER=22.04
+   export RAPIDS_VER=22.06
    export CUDA_VER=11.5
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
