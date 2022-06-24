@@ -44,7 +44,6 @@ pipeline {
                         timeout(time: 4, unit: 'HOURS')
                     }
                     environment {
-                        PARALLEL_LEVEL = '16'
                         USE_SCCACHE = '1'
                         HOME = "${WORKSPACE}"
                     }
@@ -89,6 +88,7 @@ pipeline {
                     }
                     environment {
                         HOME = "${WORKSPACE}"
+                        PARALLEL_LEVEL = '10'
                     }
                     steps {
                         cleanWs(
@@ -120,7 +120,6 @@ pipeline {
                     environment {
                         HOME = "${WORKSPACE}"
                         MORPHEUS_NO_CPP = '1'
-                        PARALLEL_LEVEL = '4'
                     }
                     steps {
                         cleanWs(
