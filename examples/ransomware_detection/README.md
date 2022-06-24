@@ -43,7 +43,7 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/model
 ```
 
 ## Requirements
-Prior to running the ransoware detection pipeline, additional requirements must be installed in to your conda environment.
+Prior to running the ransomware detection pipeline, additional requirements must be installed in to your conda environment.
 
 ```bash
 conda install dask==2022.5.2 distributed==2022.5.2
