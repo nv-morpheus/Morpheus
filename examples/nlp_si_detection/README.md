@@ -116,7 +116,7 @@ morpheus --debug --log_level=DEBUG \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess --vocab_hash_file=$MORPHEUS_ROOT/morpheus/data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
-   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8001 --force_convert_inputs=True \
+   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True \
    `# 5th Stage: Monitor stage prints throughput information to the console` \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
    `# 6th Stage: Add results from inference to the messages` \
