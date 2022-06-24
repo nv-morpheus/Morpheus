@@ -15,13 +15,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Ransomware Detection Example
+# Example Ransomware Detection Morpheus Pipeline for AppShield Data
 
-## Setup
+Example Morpheus pipeline using Docker containers for Triton Inference server and Morpheus SDK/Client.
 
-This example requires Triton. Launch Trtion using the following command:
+## Setup Triton Inference Server
 
-#### Triton Server Deployment
+##### Pull Triton Inference Server Docker Image
+Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver) suitable for your environment.
+
+Example:
+
+```
+docker pull nvcr.io/nvidia/tritonserver:22.02-py3
+```
+
+##### Start Triton Inference Server container
 ```bash
 cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 
@@ -33,11 +42,17 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/model
                 --load-model ransomw-model-short-rf
 ```
 
-## Run the Example
+## Requirements
+Prior to running the ransoware detection pipeline, additional requirements must be installed in to your conda environment.
+
+```bash
+conda install dask==2022.5.2 distributed==2022.5.2
+```
+
+## Run Pipeline
 Launch the example using the following
 
 ```bash
-# Switch to the Example directory
 cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 
 python run.py --server_url=<TRITON_SERVER:PORT> \

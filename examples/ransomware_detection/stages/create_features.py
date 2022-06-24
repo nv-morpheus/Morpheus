@@ -14,10 +14,10 @@
 
 import typing
 
-import neo
+import srf
 from commons.data_models import FeatureConfig
 from commons.feature_extractor import FeatureExtractor
-from neo.core import operators as ops
+from srf.core import operators as ops
 
 from dask.distributed import Client
 
@@ -31,7 +31,7 @@ from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
 
 class CreateFeaturesRWStage(MultiMessageStage):
     """
-    This class extends MultiMessageStage to deal with scenario-specific to create features using Appshiled plugins data.
+    This class extends MultiMessageStage to deal with scenario specific features from Appshiled plugins data.
 
     Parameters
     ----------
@@ -81,11 +81,11 @@ class CreateFeaturesRWStage(MultiMessageStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
             def on_next(x: AppShieldMessageMeta):
 
@@ -162,8 +162,8 @@ class CreateFeaturesRWStage(MultiMessageStage):
             input.pipe(ops.map(on_next), ops.map(create_multi_messages), ops.on_completed(on_completed),
                        ops.flatten()).subscribe(output)
 
-        node = seg.make_node_full(self.unique_name, node_fn)
-        seg.make_edge(stream, node)
+        node = builder.make_node_full(self.unique_name, node_fn)
+        builder.make_edge(stream, node)
         stream = node
 
         return stream, MultiMessage

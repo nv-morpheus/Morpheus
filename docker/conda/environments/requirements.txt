@@ -6,8 +6,6 @@
 click>=8
 configargparse
 datacompy
-dask==2022.5.2
-distributed==2022.5.2
 docker
 git+https://github.com/efajardo-nv/dfencoder.git@nv-updates#egg=dfencoder
 grpcio-channelz

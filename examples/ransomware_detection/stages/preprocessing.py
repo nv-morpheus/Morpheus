@@ -13,11 +13,10 @@
 # limitations under the License.
 
 import typing
-from functools import partial
 
 import cupy as cp
-import neo
 import pandas as pd
+import srf
 from commons.data_models import SnapshotData
 
 from morpheus.config import Config
@@ -189,10 +188,8 @@ class PreprocessingRWStage(PreprocessBaseStage):
         return infer_message
 
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
-
         pre_process_batch_fn = self._pre_process_batch
+        return pre_process_batch_fn
 
-        return partial(pre_process_batch_fn)
-
-    def _get_preprocess_node(self, seg: neo.Segment):
+    def _get_preprocess_node(self, builder: srf.Builder):
         raise NotImplementedError("No C++ node supported")

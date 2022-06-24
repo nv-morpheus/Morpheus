@@ -157,7 +157,7 @@ def run_pipeline(debug,
     file_extns = rwd_conf['file_extensions']
 
     # Set source stage
-    # This stage reads raw data from the required plugins and merge all the plugins data into a single datfarme
+    # This stage reads raw data from the required plugins and merge all the plugins data into a single dataframe
     # for a given source.
     pipeline.set_source(
         AppShieldSourceStage(
