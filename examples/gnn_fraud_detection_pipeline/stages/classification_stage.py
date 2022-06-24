@@ -16,9 +16,7 @@
 import typing
 
 import srf
-
-#import cuml
-from xgboost import XGBClassifier
+import cuml
 
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
@@ -29,12 +27,10 @@ from .graph_sage_stage import GraphSAGEMultiMessage
 
 class ClassificationStage(SinglePortStage):
 
+
     def __init__(self, c: Config, model_xgb_file: str):
         super().__init__(c)
-
-        #self._xgb_model = cuml.ForestInference.load(model_xgb_file, output_class=True)
-        self._xgb_model = XGBClassifier()
-        self._xgb_model.load_model(model_xgb_file)
+        self._xgb_model = cuml.ForestInference.load(model_xgb_file, output_class=True)
 
     @property
     def name(self) -> str:
@@ -47,8 +43,7 @@ class ClassificationStage(SinglePortStage):
         ind_emb_columns = message.get_meta(message.inductive_embedding_column_names)
 
         message.set_meta("node_id", message.node_identifiers)
-        #prediction = self._xgb_model.predict_proba(ind_emb_columns).iloc[:, 1]
-        prediction = self._xgb_model.predict_proba(ind_emb_columns)[:, 1]
+        prediction = self._xgb_model.predict_proba(ind_emb_columns).iloc[:, 1]
 
         message.set_meta("prediction", prediction)
 
@@ -62,4 +57,3 @@ class ClassificationStage(SinglePortStage):
     def supports_cpp_node(self):
         # Get the value from the worker class
         return False
-
