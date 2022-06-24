@@ -148,3 +148,20 @@ An anomalous score of transactions indicates a probability score of being a frau
 - https://stellargraph.readthedocs.io/en/stable/hinsage.html?highlight=hinsage
 - https://github.com/rapidsai/clx/blob/branch-0.20/examples/forest_inference/xgboost_training.ipynb
 - Rafaël Van Belle, Charles Van Damme, Hendrik Tytgat, Jochen De Weerdt,Inductive Graph Representation Learning for fraud detection (https://www.sciencedirect.com/science/article/abs/pii/S0957417421017449)
+
+## Ransomware Detection via AppShield
+### Model Overview
+This model shows an application of DOCA AppShield to use data from volatile memory to classify processes as ransomware or bengin. This model uses a sliding window over time and feeds derived data into a random forest classifiers of various lengths depending on the amount of data collected. 
+### Model Architecture
+The model uses input from Volatility plugins in DOCA AppShield to aggregate and derive features over snapshots in time. The features are used as input into three random forest binary classifiers.
+### Training
+Training data consists of 87968 labeled AppShield processes from 32 snapshots collected from 256 unique benign and ransomware activities.   
+### How To Use This Model
+Combined with host data from DOCA AppShield, this model can be used to detect ransomware. A training notebook is also included so that users can update the model as more labeled data is collected.
+#### Input
+Snapshots collected from DOCA AppShield
+#### Output
+For each process_id and snapshot there is a probablity score between 1 and 0, where 1 is ransomware and 0 is benign.
+### References
+- Cohen, A,. & Nissim, N. (2018). Trusted detection of ransomware in a private cloud using machine learning methods leveraging meta-features from volatile memory. In Expert Systems With Applications. (https://www.sciencedirect.com/science/article/abs/pii/S0957417418301283)
+- https://developer.nvidia.com/networking/doca
