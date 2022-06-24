@@ -107,7 +107,7 @@ To get started, first clone the Morpheus repo:
 .. code-block:: bash
 
    export PYTHON_VER=3.8
-   export RAPIDS_VER=22.04
+   export RAPIDS_VER=22.06
    export CUDA_VER=11.5
    export MORPHEUS_ROOT=$(pwd)/morpheus
 
