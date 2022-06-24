@@ -30,6 +30,8 @@
 #include <morpheus/objects/tensor.hpp>
 #include <morpheus/utilities/cudf_util.hpp>
 
+#include <srf/node/edge_connector.hpp>
+
 #include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
@@ -67,6 +69,22 @@ PYBIND11_MODULE(messages, m)
 
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
+
+    // EdgeConnectors for derived classes of MultiMessage to MultiMessage
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
