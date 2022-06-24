@@ -62,7 +62,21 @@ rapids_cmake_build_type(Release)
 include(cmake/configure_toolchain.cmake)
 
 # Project definition
-project(morpheus LANGUAGES C CXX CUDA)
+project(morpheus LANGUAGES C CXX)
+
+# Delay enabling CUDA until after we have determined our CXX compiler
+if(NOT DEFINED CMAKE_CUDA_HOST_COMPILER)
+  message(STATUS "Setting CUDA host compiler to match CXX compiler: ${CMAKE_CXX_COMPILER}")
+
+  # Only set the host compiler if we arent using clang. Using clang > 8ish is
+  # incompatible with CUDA 11.4/11.5/11.6. See Issue #102
+  if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
+  endif()
+endif()
+
+# Now enable CUDA
+enable_language(CUDA)
 
 # Ccache configuration
 include(setup_cache)
