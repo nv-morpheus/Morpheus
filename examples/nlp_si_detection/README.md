@@ -105,8 +105,8 @@ The following command line is the entire command to build and launch the pipelin
 export MORPHEUS_ROOT=../..
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
-   `# Run a pipeline with 10 threads and a model batch size of 32 (Must match Triton config)` \
-   run --num_threads=10 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+   `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
+   run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
@@ -121,13 +121,9 @@ morpheus --log_level=DEBUG \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
    `# 6th Stage: Add results from inference to the messages` \
    add-class \
-   `# 7th Stage: Filtering removes any messages that did not detect SI` \
-   filter \
-   `# 8th Stage: Convert from objects back into strings` \
+   `# 7th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
-   `# 9th Stage: A second Monitor stage to monitor the back-half of the pipeline` \
-   monitor --description "Serialize Rate" --smoothing=0.001 \
-   `# 10th Stage: Write out the JSON lines to the detections.jsonlines file` \
+   `# 8th Stage: Write out the JSON lines to the detections.jsonlines file` \
    to-file --filename=detections.jsonlines --overwrite
 ```
 
@@ -160,7 +156,7 @@ Config:
   "log_level": 10,
   "mode": "NLP",
   "model_max_batch_size": 32,
-  "num_threads": 10,
+  "num_threads": 8,
   "pipeline_batch_size": 1024
 }
 CPP Enabled: True
@@ -181,18 +177,53 @@ Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.00
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
 Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <filter-6; FilterDetectionsStage(threshold=0.5)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <serialize-7; SerializeStage(include=[], exclude=['^_ts_'], fixed_columns=True)>
+Added stage: <serialize-6; SerializeStage(include=[], exclude=['^_ts_'], fixed_columns=True)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
-Added stage: <monitor-8; MonitorStage(description=Serialize Rate, smoothing=0.001, unit=messages, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MessageMeta -> morpheus.MessageMeta
-Added stage: <to-file-9; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
+Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
-Starting! Time: 1656091806.4383576
-Inference Rate[Complete]: 93085inf [00:07, 12790.68inf/s]
-Serialize Rate: 851messages [00:25, 34.10messages/s]
+Starting! Time: 1656106589.013337
+Inference Rate[Complete]: 93085inf [00:56, 1637.89inf/s]
+====Pipeline Complete====
 ```
 
-The output file `detections.jsonlines` will contain PCAP messages that contain some SI (any class with a predection greater that 0.5).
+The output file `detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
+* address
+* bank_acct
+* credit_card
+* email
+* govt_id
+* name
+* password
+* phone_num
+* secret_keys
+* user
+
+The value for these fields will either be a `1` indicating a decection and a `0` indicating no detection. An example row with a detection looks like:
+```json
+{
+  "timestamp": 1616381019580,
+  "host_ip": "10.188.40.56",
+  "data_len": "129",
+  "data": "\"{\\\"X-Postmark-Server-Token\\\": \\\"76904958 O7FWqd9p TzIBfSYk\\\"}\"",
+  "src_mac": "04:3f:72:bf:af:74",
+  "dest_mac": "b4:a9:fc:3c:46:f8",
+  "protocol": "6",
+  "src_ip": "10.20.16.248",
+  "dest_ip": "10.244.0.60",
+  "src_port": "51374",
+  "dest_port": "80",
+  "flags": "24",
+  "is_pii": false,
+  "address": 0,
+  "bank_acct": 0,
+  "credit_card": 0,
+  "email": 0,
+  "govt_id": 0,
+  "name": 0,
+  "password": 0,
+  "phone_num": 0,
+  "secret_keys": 1,
+  "user": 0
+}
+```
