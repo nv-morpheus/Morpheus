@@ -116,9 +116,6 @@ def pretty_print_type_name(t: typing.Type) -> str:
     Determines a good label to use for a type. Keeps the strings shorter.
     """
 
-    if t is None:
-        return ""
-
     if (t.__module__ == "typing"):
         return str(t).replace("typing.", "")
 
