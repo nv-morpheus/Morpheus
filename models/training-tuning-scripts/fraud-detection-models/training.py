@@ -18,8 +18,8 @@ python training.py --training-data ../../datasets/training-data/fraud-detection-
      --validation-data ../../datasets/validation-data/fraud-detection-validation-data.csv \
          --epoch 10 --output-xgb model/xgb.pt --output-hinsage model/hinsage.pt
 """
-
 import argparse
+
 import networkx as nx
 import numpy as np
 import pandas as pd
