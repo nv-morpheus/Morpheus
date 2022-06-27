@@ -20,7 +20,6 @@ python training.py --training-data ../../datasets/training-data/fraud-detection-
 """
 
 import argparse
-
 import networkx as nx
 import numpy as np
 import pandas as pd
