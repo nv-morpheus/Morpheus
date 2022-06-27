@@ -59,6 +59,9 @@ class GraphSAGEStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (FraudGraphMultiMessage, )
 
+    def supports_cpp_node():
+        return False
+
     def _inductive_step_hinsage(
         self,
         graph,

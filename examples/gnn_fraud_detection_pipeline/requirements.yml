@@ -14,7 +14,11 @@
 # limitations under the License.
 
 channels:
+    - rapidsai
+    - nvidia
     - stellargraph
+    - conda-forge
 dependencies:
+    - cuml
     - stellargraph
     - tensorflow
