@@ -146,6 +146,7 @@ COPY "./docker" "./docker"
 COPY "./docs" "./docs"
 COPY "./examples" "./examples"
 COPY "./models" "./models"
+COPY "./morpheus/data" "./morpheus/data"
 COPY "./scripts" "./scripts"
 COPY ["*.md", "LICENSE", "./"]
 
