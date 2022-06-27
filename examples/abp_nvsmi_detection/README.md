@@ -103,7 +103,7 @@ morpheus --log_level=DEBUG \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-fil \
    `# 1st Stage: Read from file` \
-   from-file --filename=$MORPHEUS_ROOT/examples/data/nvsmi.jsonlines \
+   from-file --filename=examples/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
@@ -178,14 +178,15 @@ CPP Enabled: True
 ====Registering Pipeline====
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
+====Pipeline Started====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/examples/data/nvsmi.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=examples/data/nvsmi.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
 Added stage: <preprocess-fil-2; PreprocessFILStage()>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceFILMessage
-Added stage: <inference-3; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8001, force_convert_inputs=False, use_shared_memory=False)>
+Added stage: <inference-3; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8000, force_convert_inputs=False, use_shared_memory=False)>
   └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseProbsMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
@@ -196,9 +197,8 @@ Added stage: <serialize-6; SerializeStage(include=['mining'], exclude=['^ID$', '
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
-Starting! Time: 1650991285.1247575
-====Pipeline Started====
-Inference Rate[Complete]: 1242inf [00:00, 6823.28inf/s]
+Starting! Time: 1656353254.9919598
+Inference Rate[Complete]: 1242inf [00:00, 1863.04inf/s]
 ====Pipeline Complete====
 ```
 
