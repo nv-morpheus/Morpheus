@@ -93,9 +93,9 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way (you can copy/paste the entire command with comments).
 
-From the `examples/abp_nvsmi_detection` directory run:
+From the  Morpheus repo root directory run:
 ```bash
-export MORPHEUS_ROOT=../..
+export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must be equal or less than Triton config)` \
@@ -109,7 +109,7 @@ morpheus --log_level=DEBUG \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
-   inf-triton --model_name=abp-nvsmi-xgb --server_url=localhost:8001 \
+   inf-triton --model_name=abp-nvsmi-xgb --server_url=localhost:8000 \
    `# 5th Stage: Monitor stage prints throughput information to the console` \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
    `# 6th Stage: Add results from inference to the messages` \
