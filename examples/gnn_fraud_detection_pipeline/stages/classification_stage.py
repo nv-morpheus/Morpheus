@@ -41,6 +41,9 @@ class ClassificationStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (GraphSAGEMultiMessage, )
 
+    def supports_cpp_node():
+        return False
+
     def _process_message(self, message: GraphSAGEMultiMessage):
         ind_emb_columns = message.get_meta(message.inductive_embedding_column_names)
 
