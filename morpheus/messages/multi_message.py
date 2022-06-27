@@ -16,7 +16,7 @@
 import dataclasses
 import typing
 
-import cudf
+import cupy
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
@@ -37,11 +37,20 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         Offset into the metadata batch.
     mess_count : int
         Messages count.
+    mask : cupy.array
+        Optional boolean array.
+        If `None` this will be computed from the values specified by `mess_offset` and `mess_count`
+        If not-None then `mess_offset` and `mess_count` will be ignored
 
     """
     meta: MessageMeta = dataclasses.field(repr=False)
     mess_offset: int
     mess_count: int
+    mask: cupy.array = dataclasses.field(repr=False, init=False)
+
+    def __post_init__(self):
+        self.mask = cupy.zeros(self.meta.count, dtype=cupy.bool_)
+        self.mask[self.mess_offset:self.mess_offset + self.mess_count] = True
 
     @property
     def id_col(self):
@@ -101,16 +110,10 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        idx = self.meta.df.index[self.mess_offset:self.mess_offset + self.mess_count]
-
-        if (isinstance(idx, cudf.RangeIndex)):
-            idx = slice(idx.start, idx.stop - 1, idx.step)
-
         if (columns is None):
-            return self.meta.df.loc[idx, :]
+            return self.meta.df.loc[self.mask, :]
         else:
-            # If its a str or list, this is the same
-            return self.meta.df.loc[idx, columns]
+            return self.meta.df.loc[self.mask, columns]
 
     def get_meta_list(self, col_name: str = None):
         """
@@ -146,12 +149,12 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         """
         if (columns is None):
             # Set all columns
-            self.meta.df.loc[self.meta.df.index[self.mess_offset:self.mess_offset + self.mess_count], :] = value
+            self.meta.df.loc[self.mask, :] = value
         else:
             # If its a single column or list of columns, this is the same
-            self.meta.df.loc[self.meta.df.index[self.mess_offset:self.mess_offset + self.mess_count], columns] = value
+            self.meta.df.loc[self.mask, columns] = value
 
-    def get_slice(self, start, stop):
+    def get_slice(self, start, stop, mask: cupy.array = None):
         """
         Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
         and `mess_count`.
@@ -162,11 +165,15 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             Start offset address.
         stop : int
             Stop offset address.
+        mask : cupy.array
+            Optional boolean array of masked values
 
         Returns
         -------
-        `MultiInferenceMessage`
-            A new `MultiInferenceMessage` with sliced offset and count.
+        `MultiMessage`
+            A new `MultiMessage` with sliced offset and count.
 
         """
-        return MultiMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
+        sliced = MultiMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
+        sliced.mask = self.mask
+        return sliced
