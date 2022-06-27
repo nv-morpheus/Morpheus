@@ -39,37 +39,11 @@ function(find_and_configure_srf version)
                       "SRF_USE_CCACHE ${MORPHEUS_USE_CCACHE}"
                       "SRF_USE_CLANG_TIDY ${MORPHEUS_USE_CLANG_TIDY}"
                       "SRF_PYTHON_INPLACE_BUILD ${MORPHEUS_PYTHON_INPLACE_BUILD}"
+                      "SRF_PYTHON_PERFORM_INSTALL ON"
+                      "SRF_PYTHON_BUILD_STUBS ${MORPHEUS_BUILD_PYTHON_STUBS}"
                       "RMM_VERSION ${RAPIDS_VERSION}"
   )
 
-  if(srf_ADDED)
-
-    # Now ensure its installed
-    find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
-    # detect virtualenv and set Pip args accordingly
-    if(DEFINED ENV{VIRTUAL_ENV} OR DEFINED ENV{CONDA_PREFIX})
-      set(_pip_args)
-    else()
-      set(_pip_args "--user")
-    endif()
-
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-      list(APPEND _pip_args "-e")
-    endif()
-
-    add_custom_command(
-      OUTPUT ${srf_BINARY_DIR}/python/srf.egg-info/PKG-INFO
-      COMMAND ${Python3_EXECUTABLE} -m pip install ${_pip_args} ${srf_BINARY_DIR}/python
-      DEPENDS srf_python_rebuild
-      COMMENT "Installing srf python package"
-    )
-
-    add_custom_target(
-      install_srf_python ALL
-      DEPENDS ${srf_BINARY_DIR}/python/srf.egg-info/PKG-INFO
-    )
-  endif()
 endfunction()
 
 find_and_configure_srf(${SRF_VERSION})
