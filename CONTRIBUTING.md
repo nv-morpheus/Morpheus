@@ -148,6 +148,9 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       Then once the container is started you will need to install some extra packages to enable launching docker containers:
       ```bash
       ./docker/install_docker.sh
+
+      # Install utils for checking output
+      apt install -y jq bc
       ```
 
 3. Compile Morpheus
@@ -233,6 +236,30 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    morpheus run pipeline-nlp ...
    ```
    At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
+
+### Pipeline Validation
+
+To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Humans-as-Machines-Machines-as-Humans (HAMMAH), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
+
+To run all of the validation workflow scripts, use the following commands:
+
+```bash
+# Run validation scripts
+./scripts/validation/val-run-all.sh
+```
+
+At the end of each workflow, a section will print the different inference workloads that were run and the validation error percentage for each. For example:
+
+```bash
+===ERRORS===
+PyTorch     :3/314 (0.96 %)
+Triton(ONNX):Skipped
+Triton(TRT) :Skipped
+TensorRT    :Skipped
+Complete!
+```
+
+This indicates that only 3 out of 314 rows did not match the validation dataset. If you see errors similar to `:/ ( %)` or very high percentages, then the workflow did not complete sucessfully.
 
 ### Troubleshooting the Build
 

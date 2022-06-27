@@ -7,7 +7,7 @@ NVIDIA Morpheus is an open AI application framework that provides cybersecurity 
 ## Documentation
 Full documentation (including a quick start guide, a developer/user guide, and API documentation) is available online at [https://docs.nvidia.com/morpheus/](https://docs.nvidia.com/morpheus/).
 
-## Getting Started with Morpheus 
+## Getting Started with Morpheus
 The instructions below provide guidelines on how to get started with the pre-built Docker container, build the Morpheus Docker container yourself, or build Morpheus from source.
 
 ### Prerequisites
@@ -41,40 +41,7 @@ cd $MORPHEUS_ROOT
 git lfs pull
 ```
 
-#### Using the Pre-built `runtime` Docker Image
-
-Pre-built Morpheus Docker images can be downloaded from NGC. See [here](docs/source/morpheus_quickstart_guide.md#set-up-ngc-api-key-and-install-ngc-registry-cli) for details on accessing NGC. The `runtime` image includes Morpheus pre-built and its dependencies:
-
-```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus:<version>-runtime
-```
-where `<version>` refers to the build of Morpheus you want. For example, if you want release 22.04, use the command:
-
-```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus:22.04-runtime
-```
-
-You can then run the pre-built `runtime` container using the provided script:
-
-```bash
-DOCKER_IMAGE_TAG=<version>-runtime ./docker/run_container_release.sh
-```
-Again replacing `<version>` with the appropriate release number. For v22.04, it becomes:
-
-```bash
-DOCKER_IMAGE_TAG=22.04-runtime ./docker/run_container_release.sh
-```
-
-#### Manually Build the `runtime` Docker Image
-
-The Morpheus `runtime` image can also be built manually. This allows you to use a Morpheus build from the development branch or another branch/tag.
-To manually build the `runtime` image, run the following from the repo's root:
-
-#### Build Locally (Outside a Container)
-
-To build Morpheus outside a container, all the necessary dependencies will need to be installed locally or in a virtual environment. Due to the increased complexity of installing outside of a container, this section has been moved to [`CONTRIBUTING.md`](CONTRIBUTING.md). Please see the "Build in a Conda Environment" section for more information.
-
-Note: Once `morpheus` CLI is installed, shell command completion can be installed with:
+#### Build Locally
 
 ```bash
 ./docker/build_container_release.sh
@@ -112,22 +79,22 @@ Depending on your configuration, it may be necessary to start additional service
 Launching a full production Kafka cluster is outside the scope of this project. However, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. See [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in-depth information:
 
 1. Install `docker-compose` if not already installed:
-   
+
    ```bash
    conda install -c conda-forge docker-compose
    ```
 2. Clone the `kafka-docker` repo from the Morpheus repo root:
-   
+
    ```bash
    git clone https://github.com/wurstmeister/kafka-docker.git
    ```
 3. Change directory to `kafka-docker`:
-   
+
    ```bash
    cd kafka-docker
    ```
 4. Export the IP address of your Docker `bridge` network:
-   
+
    ```bash
    export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
    ```
@@ -138,7 +105,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
       KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
    ```
    Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
-   
+
    ```bash
    $ echo $KAFKA_ADVERTISED_HOST_NAME
    "172.17.0.1"
@@ -170,7 +137,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
          ```
          In order for this to work, your input file must be accessible from `$PWD`.
    2. You can view the messages with:
-  
+
          ```bash
          ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
          $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=$MY_TOPIC --bootstrap-server `broker-list.sh`
@@ -391,34 +358,6 @@ Commands:
 
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
-
-
-## Pipeline Validation
-
-To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Humans-as-Machines-Machines-as-Humans (HAMMAH), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
-
-To run all of the validation workflow scripts, use the following commands:
-
-```bash
-# Install utils for checking output
-apt update && apt install -y jq bc
-
-# Run validation scripts
-./scripts/validation/val-run-all.sh
-```
-
-At the end of each workflow, a section will print the different inference workloads that were run and the validation error percentage for each. For example:
-
-```bash
-===ERRORS===
-PyTorch     :3/314 (0.96 %)
-Triton(ONNX):Skipped
-Triton(TRT) :Skipped
-TensorRT    :Skipped
-Complete!
-```
-
-This indicates that only 3 out of 314 rows did not match the validation dataset. If you see errors similar to `:/ ( %)` or very high percentages, then the workflow did not complete sucessfully.
 
 ## Contributing
 Please see our [guide for contributing to Morpheus](./CONTRIBUTING.md).
