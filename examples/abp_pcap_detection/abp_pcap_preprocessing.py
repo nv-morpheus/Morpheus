@@ -59,6 +59,9 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
     def name(self) -> str:
         return "preprocess-anomaly"
 
+    def supports_cpp_node(self):
+        return False
+
     @staticmethod
     def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
         flags_bin_series = cudf.Series(x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b")))
