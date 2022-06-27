@@ -292,6 +292,7 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
+        # The pipeline build is performed asynchronously, block until the build is completed
         while not self._build_complete:
             time.sleep(0.1)
 
