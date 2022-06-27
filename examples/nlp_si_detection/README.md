@@ -101,8 +101,9 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
 
+From the Morpheus repo root directory run:
 ```bash
-export MORPHEUS_ROOT=../..
+export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
@@ -110,11 +111,11 @@ morpheus --log_level=DEBUG \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
-   from-file --filename=$MORPHEUS_ROOT/examples/data/pcap_dump.jsonlines \
+   from-file --filename=examples/data/pcap_dump.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
-   preprocess --vocab_hash_file=$MORPHEUS_ROOT/morpheus/data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
+   preprocess --vocab_hash_file=morpheus/data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
    inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True \
    `# 5th Stage: Monitor stage prints throughput information to the console` \
@@ -165,11 +166,11 @@ CPP Enabled: True
 ====Starting Pipeline====
 ====Pipeline Started====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/morpheus/examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/home/dagardner/work/morpheus/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
+Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8000, force_convert_inputs=True, use_shared_memory=False)>
   └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
@@ -182,9 +183,10 @@ Added stage: <serialize-6; SerializeStage(include=[], exclude=['^_ts_'], fixed_c
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
-Starting! Time: 1656106589.013337
-Inference Rate[Complete]: 93085inf [00:56, 1637.89inf/s]
+Starting! Time: 1656352480.541071
+Inference Rate[Complete]: 93085inf [00:07, 12673.63inf/s]
 ====Pipeline Complete====
+
 ```
 
 The output file `detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
