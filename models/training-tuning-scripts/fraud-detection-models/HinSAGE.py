@@ -28,7 +28,6 @@ class HinSAGE_Representation_Learner:
     
     """
     
-   
     def __init__(self, embedding_size, num_samples, embedding_for_node_type):
 
         self.embedding_size = embedding_size
@@ -113,7 +112,6 @@ class HinSAGE_Representation_Learner:
             batch size for the neural network in which HinSAGE is implemented.
 
         """
-        
         # The mapper feeds data from sampled subgraph to HinSAGE model
         generator = HinSAGENodeGenerator(S, batch_size, self.num_samples, head_node_type=self.embedding_for_node_type)
         test_gen_not_shuffled = generator.flow(inductive_node_identifiers, shuffle=False )
@@ -121,58 +119,4 @@ class HinSAGE_Representation_Learner:
         inductive_emb = trained_model.predict(test_gen_not_shuffled, verbose=1)
         inductive_emb = pd.DataFrame(inductive_emb, index=inductive_node_identifiers)
     
-        return inductive_emb            
-
-class Evaluation:
-    
-    def __init__(self, probabilities, labels, name):
-        
-        self.probabilities = probabilities
-        self.labels = labels
-        self.name = name
-          
-    def pr_curve(self):
-
-        """
-        This function plots the precision recall curve for the used classification model and a majority classifier.
-        
-        """
-        probs = self.probabilities[:, 1]
-        precision, recall, _ = precision_recall_curve(self.labels, probs)
-        pyplot.plot(recall, precision, label=self.name)
-        # axis labels
-        pyplot.xlabel('Recall')
-        pyplot.ylabel('Precision')
-        # show the legend
-        pyplot.legend()
-        
-        print('Average precision-recall score for ', self.name, ' configuration XGBoost: {0:0.10f}'.format(average_precision_score(self.labels, probs)))
-
-    def roc_curve(self, model_name='XGBoost'):
-
-        """
-        This function plots the precision recall curve for the used classification model and a majority classifier.
-        
-        """
-        probs = self.probabilities[:, 1]
-        fpr, tpr, _ = roc_curve(self.labels, probs)
-        auc = round(roc_auc_score(self.labels, probs),3)
-        pyplot.plot(fpr, tpr, label=self.name + str(auc))
-        # axis labels
-        pyplot.xlabel('FPR')
-        pyplot.ylabel('TPR')
-        # show the legend
-        pyplot.legend()
-        
-        print('ROC score for ', self.name, ' configuration : {0:0.10f}'.format(auc))
-        return auc
-    
-    def f1_ap_rec(self):
-        
-        probs = self.probabilities[:, 1] >= 0.5
-        prec,rec,f1,num = precision_recall_fscore_support(self.labels, probs, average=None)
-       
-        print("Precision:%.3f \nRecall:%.3f \nF1 Score:%.3f"%(prec[1],rec[1],f1[1]))
-        micro_f1 = f1_score(self.labels, probs, average='micro')
-        print("Micro-Average F1 Score:",micro_f1)
-        #return micro_f1
+        return inductive_emb
