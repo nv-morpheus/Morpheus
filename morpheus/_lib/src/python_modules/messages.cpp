@@ -75,13 +75,22 @@ PYBIND11_MODULE(messages, m)
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+                             std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
 
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
