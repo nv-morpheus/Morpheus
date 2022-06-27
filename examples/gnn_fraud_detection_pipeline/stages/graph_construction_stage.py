@@ -48,6 +48,9 @@ class FraudGraphConstructionStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiMessage, )
 
+    def supports_cpp_node():
+        return False
+
     @staticmethod
     def _graph_construction(nodes, edges, node_features) -> StellarGraph:
         g_nx = nx.Graph()
