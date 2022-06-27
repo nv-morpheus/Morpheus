@@ -58,7 +58,7 @@ The best way to get started with Morpheus will vary depending on the goal of the
 Using NGC Container
 ^^^^^^^^^^^^^^^^^^^
 
-Accessing Morpheus by pulling the pre-built NGC container is best suited for users who do not need any customization and
+Accessing Morpheus by pulling the pre-built `NGC container <https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_>`_ is best suited for users who do not need any customization and
 are only interested in running Morpheus via the CLI. The pre-built container does not require checking out the source
 code and is best suited for users who are new to Morpheus and don't require any customization.
 
@@ -97,139 +97,6 @@ Launch an interactive container to start using Morpheus:
    Commands:
      run    Run one of the available pipelines
      tools  Run a utility tool
-
-See :doc:`basics/overview` for more information on using the CLI.
-
-Building Localy
----------------
-To get started, first clone the Morpheus repo:
-
-.. code-block:: bash
-
-   export PYTHON_VER=3.8
-   export RAPIDS_VER=22.06
-   export CUDA_VER=11.5
-   export MORPHEUS_ROOT=$(pwd)/morpheus
-
-   git clone https://github.com/NVIDIA/Morpheus.git morpheus
-   # Change directory to the repo root
-   cd morpheus
-
-Where ``$PYTHON_VER``, ``$CUDA_VER``, and ``$RAPIDS_VER`` represent the desired Python version, CUDA version and, RAPIDS
-version, respectively.
-
-.. note::
-The Morpheus contains several large  model and data files in this repo are stored using `Git Large File Storage (LFS) <https://git-lfs.github.com/>`__. These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
-
-By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Usage of the script is as follows:
-
-.. code-block:: bash
-
-   scripts/fetch_data.py fetch <dataset> [<dataset>...]
-
-
-At time of writing the defined datasets are:
- * all - Metaset includes all others
- * examples - Data needed by scripts in the `examples` subdir
- * models - Morpheus models (largest dataset)
- * tests - Data used by unittests
- * validation - Subset of the models dataset needed by some unittests
-
-To download just the examples and models:
-
-.. code-block:: bash
-
-   scripts/fetch_data.py fetch examples models
-
-
-To download the data needed for unittests:
-
-.. code-block:: bash
-
-   scripts/fetch_data.py fetch tests validation
-
-
-If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from `here <https://git-lfs.github.com/>`__, and then run the following command.
-
-.. code-block:: bash
-
-   scripts/fetch_data.py fetch all
-
-From this point, follow the instructions in either the :ref:`building-local-image<Building Local Image>` or :ref:`outside-of-a-container<Outside of a Container>` section.
-
-.. building-local-image:
-
-Building Local Image
-^^^^^^^^^^^^^^^^^^^^
-
-Building the image locally is best suited for users who prefer working within a
-Docker container, want to avoid installing many dependencies or have a moderate
-amount of customization. This method requires pulling the source code and
-manually building the container and does not require the user to setup a Conda
-environment and install dependencies. Users can use either the CLI or Python
-interface.
-
-Prerequisites
-"""""""""""""
- * `Docker <https://docs.docker.com/get-docker/>`__
- * `The NVIDIA container toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`__
-
-
-To build the container:
-
-.. code-block:: bash
-
-   ./docker/build_container_dev.sh
-
-To run the development container:
-
-.. code-block:: bash
-
-   ./docker/run_container_dev.sh
-
-From this point, follow the previous getting started section for running the CLI.
-
-.. _outside-of-a-container:
-
-Outside of a Container
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. warning::
-
-   This is not the preferred way to use Morpheus. Morpheus requires a large
-   amount of dependencies and this method should only be used by advanced and
-   experienced users only.
-
-Running Morpheus outside of a container requires the most setup, but offers the
-most flexibility and customization. Users of this method will need the source
-code and will be required to install several dependencies in a Conda virtual
-environment.
-
-Prerequisites
-"""""""""""""
- * `Conda <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`__
- * `Mamba <https://github.com/mamba-org/mamba>`__
-    * Once ``conda`` is installed, ``mamba`` can be instaled with ``conda install -n base -c conda-forge mamba`` (Make sure to only install into the base environment)
- * `CUDA <https://developer.nvidia.com/cuda-toolkit>`__
-    * While CUDA can be installed with Conda, it requires installing the matching CUDA SDK outside of the Conda environment.
-
-Create a Conda environment and install the necessary dependencies.
-
-.. code-block:: bash
-
-   conda install -c conda-forge mamba
-   mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
-   conda activate morpheus
-
-Next, build Morpheus:
-
-.. code-block:: bash
-
-   ./scripts/compile.sh
-
-   pip install .
-   # Or for a debug/editable installation
-   pip install -e .
 
 See :doc:`basics/overview` for more information on using the CLI.
 
