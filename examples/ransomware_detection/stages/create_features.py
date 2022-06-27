@@ -64,7 +64,7 @@ class CreateFeaturesRWStage(MultiMessageStage):
                                              interested_plugins,
                                              features_with_zeros=dict.fromkeys(feature_columns, 0))
         # FeatureExtractor instance to extract features from the snapshots.
-        self._fe = FeatureExtractor()
+        self._fe = FeatureExtractor(self._feature_config)
 
         super().__init__(c)
 

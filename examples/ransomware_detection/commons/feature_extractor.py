@@ -25,8 +25,8 @@ class FeatureExtractor():
     This is a helper class to extract reequired features for ransomware detection pipeline.
     """
 
-    def __init__(self) -> None:
-        self._config = None
+    def __init__(self, config: FeatureConfig) -> None:
+        self._config = config
         self._features = None
 
     def _filter_by_pid_process(self, plugin_dict: typing.Dict[str, pd.DataFrame],
@@ -519,7 +519,7 @@ class FeatureExtractor():
             else:
                 self._features['ldrmodules_df_path'] = ""
 
-    def extract_features(self, x: pd.DataFrame, config: FeatureConfig) -> pd.DataFrame:
+    def extract_features(self, x: pd.DataFrame) -> pd.DataFrame:
         """
         This function extracts all different ransomware features.
 
@@ -527,8 +527,6 @@ class FeatureExtractor():
         ----------
         x : `pandas.DataFrame`
             Dataframe with appshield snapshot data.
-        config : FeatureConfig
-            Holds ransomeware features creation configuration.
 
         Returns
         -------
@@ -537,8 +535,6 @@ class FeatureExtractor():
         """
 
         features_per_pid_process = []
-
-        self._config = config
 
         # Get unique PID_Process for a given snapshot
         pid_processes = list(x["PID_Process"].unique())
