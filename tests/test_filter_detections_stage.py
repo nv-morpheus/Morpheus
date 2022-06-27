@@ -84,14 +84,12 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
     output_list = fds.filter(mock_message)
-    assert len(output_list) == 2
+
+    # Assert that masking is in place, and we should only have a single message
+    assert len(output_list) == 1
     assert output_list[0].offset == 2
     assert output_list[0].mess_offset == 10
-    assert output_list[0].mess_count == 1
-
-    assert output_list[1].offset == 4
-    assert output_list[1].mess_offset == 12
-    assert output_list[1].mess_count == 1
+    assert output_list[0].mess_count == 2
 
 
 @pytest.mark.use_python
