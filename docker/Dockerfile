@@ -42,7 +42,7 @@ ARG TENSORRT_VERSION=8.2.1.3
 # Capture argument used for FROM
 ARG CUDA_VER
 
-# Install dependencies to build vcpkg dependencies
+# Install dependencies to build
 RUN apt-get update &&\
     apt-get upgrade -y &&\
     curl -sL https://deb.nodesource.com/setup_12.x | bash - &&\
@@ -60,7 +60,8 @@ WORKDIR /workspace
 RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     conda config --env --add channels conda-forge &&\
-    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
+    # Install mamba, boa and git here. Conda build breaks with other git installs
+    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" python=${PYTHON_VER}
     # conda clean -afy
 
 # ============ Stage: conda_env ============
@@ -120,7 +121,8 @@ COPY . ./
 RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
-    # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
+    # Need to get around recent versions of git locking paths until they are deemed safe
+    git config --global --add safe.directory "*" &&\
     MORPHEUS_ROOT=/workspace MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # ============ Stage: runtime ============
