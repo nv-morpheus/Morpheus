@@ -59,6 +59,9 @@ class GraphSAGEStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (FraudGraphMultiMessage, )
 
+    def supports_cpp_node():
+        return False
+
     def _inductive_step_hinsage(
         self,
         graph,
@@ -98,7 +101,3 @@ class GraphSAGEStage(SinglePortStage):
         node = builder.make_node(self.unique_name, self._process_message)
         builder.make_edge(input_stream[0], node)
         return node, GraphSAGEMultiMessage
-
-    def supports_cpp_node(self):
-        # Get the value from the worker class
-        return False
