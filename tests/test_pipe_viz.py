@@ -17,6 +17,8 @@
 import imghdr
 import os
 
+import pytest
+
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -43,6 +45,10 @@ def test_add_classifications_stage_pipe(config, tmp_path):
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+
+    pytest.raises(RuntimeError, pipe.visualize, viz_file, rankdir="LR")
+    pipe.run()
+
     pipe.visualize(viz_file, rankdir="LR")
 
     # Verify that the output file exists and is a valid png file

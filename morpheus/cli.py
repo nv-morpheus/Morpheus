@@ -547,15 +547,14 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
     click.secho("Starting pipeline via CLI... Ctrl+C to Quit", fg="red")
 
     pipeline = get_pipeline_from_ctx(ctx)
+    # Run the pipeline
+    pipeline.run()
 
     if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
         pipeline.build()
 
         pipeline.visualize(kwargs["viz_file"], rankdir="LR")
         click.secho("Pipeline visualization saved to {}".format(kwargs["viz_file"]), fg="yellow")
-
-    # Run the pipeline
-    pipeline.run()
 
 
 @click.command(short_help="Load messages from a file", **command_kwargs)

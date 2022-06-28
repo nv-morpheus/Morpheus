@@ -70,7 +70,7 @@ class Pipeline():
         self._graph = networkx.DiGraph()
 
         self._is_built = False
-        self._build_complete = False
+        self._is_build_complete = False
         self._is_started = False
 
         self._srf_executor: srf.Executor = None
@@ -177,7 +177,7 @@ class Pipeline():
                     p.link()
 
             logger.info("====Building Pipeline Complete!====")
-            self._build_complete = True
+            self._is_build_complete = True
 
             # Finally call _on_start
             self._on_start()
@@ -285,16 +285,8 @@ class Pipeline():
             else:
                 return len(n.output_ports) > 0
 
-        if (not self.is_built):
-            try:
-                self.build()
-            except Exception:
-                logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
-                return
-
-        # The pipeline build is performed asynchronously, block until the build is completed
-        while not self._build_complete:
-            time.sleep(0.1)
+        if not self._is_build_complete:
+            raise RuntimeError("visualize requires the pipeline to have already started")
 
         # Now build up the nodes
         for n, attrs in typing.cast(typing.Mapping[StreamWrapper, dict], self._graph.nodes).items():
