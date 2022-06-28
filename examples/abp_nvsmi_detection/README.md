@@ -46,7 +46,7 @@ $ nvidia-smi dmon
 
 Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and you can see the SM% and Mem% increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurriences without needing additional information from the host machine.
 
-In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
+In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
 
 ## Pipeline Architecture
 
@@ -93,8 +93,9 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way (you can copy/paste the entire command with comments).
 
+From the  Morpheus repo root directory run:
 ```bash
-export MORPHEUS_ROOT=../..
+export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must be equal or less than Triton config)` \
@@ -102,13 +103,13 @@ morpheus --log_level=DEBUG \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-fil \
    `# 1st Stage: Read from file` \
-   from-file --filename=$MORPHEUS_ROOT/examples/data/nvsmi.jsonlines \
+   from-file --filename=examples/data/nvsmi.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
    preprocess \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
-   inf-triton --model_name=abp-nvsmi-xgb --server_url=localhost:8001 \
+   inf-triton --model_name=abp-nvsmi-xgb --server_url=localhost:8000 \
    `# 5th Stage: Monitor stage prints throughput information to the console` \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
    `# 6th Stage: Add results from inference to the messages` \
@@ -177,14 +178,15 @@ CPP Enabled: True
 ====Registering Pipeline====
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
+====Pipeline Started====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=/home/dagardner/work/examples/data/nvsmi.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=examples/data/nvsmi.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
 Added stage: <preprocess-fil-2; PreprocessFILStage()>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceFILMessage
-Added stage: <inference-3; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8001, force_convert_inputs=False, use_shared_memory=False)>
+Added stage: <inference-3; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8000, force_convert_inputs=False, use_shared_memory=False)>
   └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseProbsMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
@@ -195,9 +197,8 @@ Added stage: <serialize-6; SerializeStage(include=['mining'], exclude=['^ID$', '
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====
-Starting! Time: 1650991285.1247575
-====Pipeline Started====
-Inference Rate[Complete]: 1242inf [00:00, 6823.28inf/s]
+Starting! Time: 1656353254.9919598
+Inference Rate[Complete]: 1242inf [00:00, 1863.04inf/s]
 ====Pipeline Complete====
 ```
 

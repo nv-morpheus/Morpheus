@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Morpheus Quickstart Guide
 
 ## Table of Contents
@@ -13,8 +30,8 @@
     - [Install Morpheus AI Engine](#install-morpheus-ai-engine)
     - [Install Morpheus SDK Client](#install-morpheus-sdk-client)
       - [Morpheus SDK Client in Sleep Mode](#morpheus-sdk-client-in-sleep-mode)
-    - [Models for MLFlow Plugin Deployment](#models-for-mlflow-plugin-deployment)
-    - [Install Morpheus MLFlow Triton Plugin](#install-morpheus-mlflow-triton-plugin)
+    - [Models for MLflow Plugin Deployment](#models-for-mlflow-plugin-deployment)
+    - [Install Morpheus MLflow Triton Plugin](#install-morpheus-mlflow-triton-plugin)
     - [Model Deployment](#model-deployment)
     - [Verify Model Deployment](#verify-model-deployment)
     - [Create Kafka Topics](#create-kafka-topics)
@@ -71,8 +88,8 @@ This quick start guide provides the necessary instructions to set up the minimum
 - Set up of the NVIDIA Cloud Native Core Stack
 - Set up Morpheus AI Engine
 - Set up Morpheus SDK Client
-- Models for MLFlow Triton Plugin Deployments
-- Set up Morpheus MLFlow Triton Plugin
+- Models for MLflow Triton Plugin Deployments
+- Set up Morpheus MLflow Triton Plugin
 - Deploy models to Triton inference server
 - Create Kafka topics
 - Run example workloads
@@ -85,7 +102,7 @@ Morpheus makes it easy to build and scale cybersecurity applications that harnes
 
 NVIDIA Morpheus enables organizations to attack the issue of cybersecurity head on. Rather than continuously chasing the cybersecurity problem, Morpheus provides the ability to propel you ahead of the breach and address the cybersecurity issue. With the world in a "discover and respond" state, where companies are finding breaches much too late, in a way that is way behind the curve, NVIDIA’s Morpheus cybersecurity AI framework enables any organization to warp to the present and begin to defend itself in real time.
 
-The Morpheus Developer Kit allows developers to quickly and easily set up example pipelines to run inference on different sample models provided from NVIDIA and experiment with the features and capabilities available within the Morpheus framework to address their cybersecurity and information security use cases.
+The Morpheus Developer Kit allows developers to quickly and easily set up example pipelines to run inference on different sample models provided by NVIDIA and experiment with the features and capabilities available within the Morpheus framework to address their cybersecurity and information security use cases.
 
 ### Features
 
@@ -107,7 +124,7 @@ The Morpheus Developer Kit allows developers to quickly and easily set up exampl
 
 - **AI Cybersecurity Capabilities**
 
-    Deploy your own models using common deep learning frameworks. Or get a jump-start in building applications to identify leaked sensitive information, detect malware or fraud, do network mapping, flag user behavior changes, or and identify errors via logs by using one of NVIDIA’s pre-trained and tested models.
+    Deploy your own models using common deep learning frameworks. Or get a jump-start in building applications to identify leaked sensitive information, detect malware or fraud, do network mapping, flag user behavior changes, and identify errors via logs by using one of NVIDIA’s pre-trained and tested models.
 
 ## Setup
 
@@ -115,7 +132,7 @@ The Morpheus Developer Kit allows developers to quickly and easily set up exampl
 1.  Refer to [Appendix A](#appendix-a) for Cloud (AWS) or On-Prem (Ubuntu)
 2.  Registration in the NGC Public Catalog
 
-Continue with the setup steps below once the host system is installed and configured and satisfies all prerequisites.
+Continue with the setup steps below once the host system is installed, configured, and satisfies all prerequisites.
 
 ### Set up NGC API Key and Install NGC Registry CLI
 
@@ -134,8 +151,8 @@ Next, install and configure the NGC Registry CLI on your system using the linked
 Next, create a namespace and an environment variable for the namespace to organize the Kubernetes cluster deployed via the Cloud Native Core Stack and logically separate Morpheus related deployments from other projects using the following command:
 
 ```bash
-$ kubectl create namespace <YOUR_NAMESPACE>
 $ export NAMESPACE="<YOUR_NAMESPACE>"
+$ kubectl create namespace ${NAMESPACE}
 ```
 
 ### Install Morpheus AI Engine
@@ -157,7 +174,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
              morpheus-ai-engine
 ```
 
-After the installation, You can verify that the Kubernetes pods are running successfully using the following command:
+After the installation, you can verify that the Kubernetes pods are running successfully using the following command:
 
 ```bash
 $ kubectl -n $NAMESPACE get all
@@ -193,16 +210,6 @@ Run the following command to pull the Morpheus SDK Client chart on to your insta
 $ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
-**Note**: For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
-
-```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
-               --set sdk.args="<REPLACE_RUN_PIPELINE_COMMAND_HERE>" \
-               --namespace $NAMESPACE \
-               <YOUR_RELEASE_NAME> \
-               morpheus-sdk-client
-```
-
 #### Morpheus SDK Client in Sleep Mode
 Install the Morpheus SDK client pod in sleep mode to copy its sample datasets and models from the container to a shared location that other pods can access. If no `sdk.args` is supplied, the default value `/bin/sleep infinity` from the chart is used in the following command.
 
@@ -225,18 +232,17 @@ Output:
 pod/sdk-cli-helper           1/1     Running   0               41s
 ```
 
-### Models for MLFlow Plugin Deployment
+### Models for MLflow Plugin Deployment
 
-Connect to the **sdk-cli-helper** and copy models to `/common`, which is mapped to `/opt/morpheus/common` on the host and where MLFlow will have access to model files.
+Connect to the **sdk-cli-helper** container and copy the models to `/common`, which is mapped to `/opt/morpheus/common` on the host and where MLflow will have access to model files.
 
 ```bash
 $ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 ```
 
-### Install Morpheus MLFlow Triton Plugin
+### Install Morpheus MLflow Triton Plugin
 
-The Morpheus MLFlow Triton Plugin is used to deploy, update, and remove models from the Morpheus AI Engine. MLFlow server UI can be accessed using NodePort 30500
-Follow the below steps to install Morpheus MlFLow Triton Plugin:
+The Morpheus MLflow Triton Plugin is used to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort 30500. Follow the below steps to install the Morpheus MLflow Triton Plugin:
 
 ```bash
 $ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
@@ -254,7 +260,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Error: Service "mlflow" is invalid: spec.ports[0].nodePort: Invalid value: 30500: provided port is already allocated
 ```
 
-After the installation, you can verify that the MLFlow pod is running successfully using the following command:
+After the installation, you can verify that the MLflow pod is running successfully using the following command:
 
 ```bash
 $ kubectl -n $NAMESPACE get all | grep  pod/mlflow
@@ -266,7 +272,7 @@ pod/mlflow-6d98        1/1     Running   0          39s
 ```
 
 ### Model Deployment
-Attach to the MLFLow pod to publish models to MLFlow server and then deploy it onto Morpheus AI Engine:
+Attach to the MLfLow pod to publish models to the MLflow server and then deploy it onto Morpheus AI Engine:
 
 ```bash
 $ kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
@@ -278,8 +284,8 @@ $ kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
 
 `Important`: When (mlflow) is present, commands are directly within the container.
 
-Let's have a look at how to use the MLFlow Triton plugin before we start deploying models.
-Publish models to MLFlow server:
+First let's have a look at the syntax of the commands we will be using to communicate with the MLflow Triton plugin before we start deploying models.
+Publish models to MLflow server looks like:
 
 ```bash
 (mlflow) root@mlflow-6d98:/mlflow# python publish_model_to_mlflow.py \
@@ -314,7 +320,7 @@ Delete deployed models from Morpheus AI Engine:
      --name <REF_MODEL_NAME>/<VERSION_NUMBER>
 ```
 
-Now that we've figured out how to deploy models let's move on to the next step. Now it's time to deploy the relevant models, which have already been copied to `/opt/morpheus/common/models` which are bound to `/common/models` within the MLFlow pod.
+Now that we've figured out how to deploy models let's move on to the next step. Now it's time to deploy the relevant models, which have already been copied to `/opt/morpheus/common/models` which are bound to `/common/models` within the MLflow pod.
 
 ```bash
 (mlflow) root@mlflow-6d98:/mlflow# ls -lrt /common/models
@@ -467,6 +473,17 @@ Refer to the Using Morpheus SDK Client to Run Pipelines section of the Appendix 
 -   Replace **<YOUR_INPUT_KAFKA_TOPIC>** with your input Kafka topic name.
 -   Replace **<YOUR_OUTPUT_KAFKA_TOPIC>** with your output Kafka topic name.
 -   Replace **<YOUR_RELEASE_NAME>** with the name you want.
+
+
+For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
+
+```bash
+$ helm install --set ngc.apiKey="$API_KEY" \
+               --set sdk.args="<REPLACE_RUN_PIPELINE_COMMAND_HERE>" \
+               --namespace $NAMESPACE \
+               <YOUR_RELEASE_NAME> \
+               morpheus-sdk-client
+```
 
 
 ### Run AutoEncoder Digital Fingerprinting Pipeline
@@ -652,7 +669,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 
 When the pipeline runs successfully, an output file *sid-minibert-onnx-output.jsonlines* will appear in the output directory.
 
-Pipeline example to read messages from an input Kafka topic, run inference using a   *sid-minibert-onnx* model, and write the results of the inference to an output Kafka topic:
+Pipeline example to read messages from an input Kafka topic, run inference using a *sid-minibert-onnx* model, and write the results of the inference to an output Kafka topic:
 
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -1104,7 +1121,7 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 #### Common Problems
 
 - Models Unloaded After Reboot
-  - When the pod is restarted, K8s will not automatically load the models. Since models are deployed to *ai-engine* in explicit mode using MLFlow, we'd have to manually deploy them again using the [Model Deployment](#model-deployment) process.
+  - When the pod is restarted, K8s will not automatically load the models. Since models are deployed to *ai-engine* in explicit mode using MLflow, we'd have to manually deploy them again using the [Model Deployment](#model-deployment) process.
 - AI Engine CPU Only Mode
   - After a server restart, the ai-engine pod on k8s can start up before the gpu operator infrastructure is available, making it "think" there is no driver installed (i.e., CPU -only mode).
 - Improve Pipeline Message Processing Rate
