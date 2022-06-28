@@ -237,6 +237,91 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    ```
    At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
 
+### Quick Launch Kafka Cluster
+
+Launching a full production Kafka cluster is outside the scope of this project. However, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. See [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in-depth information:
+
+1. Install `docker-compose` if not already installed:
+
+   ```bash
+   conda install -c conda-forge docker-compose
+   ```
+2. Clone the `kafka-docker` repo from the Morpheus repo root:
+
+   ```bash
+   git clone https://github.com/wurstmeister/kafka-docker.git
+   ```
+3. Change directory to `kafka-docker`:
+
+   ```bash
+   cd kafka-docker
+   ```
+4. Export the IP address of your Docker `bridge` network:
+
+   ```bash
+   export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
+   ```
+5. Update the `kafka-docker/docker-compose.yml` so the environment variable `KAFKA_ADVERTISED_HOST_NAME` matches the previous step. For example, the line should look like:
+
+   ```yml
+   environment:
+      KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
+   ```
+   Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
+
+   ```bash
+   $ echo $KAFKA_ADVERTISED_HOST_NAME
+   "172.17.0.1"
+   ```
+6. Launch kafka with 3 instances:
+
+   ```bash
+   docker-compose up -d --scale kafka=3
+   ```
+   In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
+7. Create the topic:
+
+   ```bash
+   ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+   $KAFKA_HOME/bin/kafka-topics.sh --create --topic=$MY_INPUT_TOPIC_NAME --bootstrap-server `broker-list.sh`
+   ```
+   Replace `<INPUT_TOPIC_NAME>` with the input name of your choice. If you are using `to-kafka`, ensure your output topic is also created.
+
+8. Generate input messages
+   1.  In order for Morpheus to read from Kafka, messages need to be published to the cluster. For debugging/testing purposes, the following container can be used:
+
+         ```bash
+         # Download from https://netq-shared.s3-us-west-2.amazonaws.com/kafka-producer.tar.gz
+         wget https://netq-shared.s3-us-west-2.amazonaws.com/kafka-producer.tar.gz
+         # Load container
+         docker load --input kafka-producer.tar.gz
+         # Run the producer container
+         docker run --rm -it -e KAFKA_BROKER_SERVERS=$(broker-list.sh) -e INPUT_FILE_NAME=$MY_INPUT_FILE -e TOPIC_NAME=$MY_INPUT_TOPIC_NAME --mount src="$PWD,target=/app/data/,type=bind" kafka-producer:1
+         ```
+         In order for this to work, your input file must be accessible from `$PWD`.
+   2. You can view the messages with:
+
+         ```bash
+         ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+         $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=$MY_TOPIC --bootstrap-server `broker-list.sh`
+         ```
+
+### Launching Triton Server
+
+Many of the validation tests and example workflows require a Triton server to function. To launch Triton server, use the following command:
+
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models \
+  nvcr.io/nvidia/tritonserver:21.12-py3 \
+    tritonserver --model-repository=/models/triton-model-repo \
+                 --exit-on-error=false \
+                 --model-control-mode=explicit \
+                 --load-model abp-nvsmi-xgb \
+                 --load-model sid-minibert-onnx \
+                 --load-model phishing-bert-onnx
+```
+This will launch Triton using port 8001 for the GRPC server. This needs to match the Morpheus configuration.
+
 ### Pipeline Validation
 
 To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Humans-as-Machines-Machines-as-Humans (HAMMAH), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
