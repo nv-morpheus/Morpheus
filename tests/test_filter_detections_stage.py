@@ -39,24 +39,30 @@ def test_constructor(config):
 def test_filter(config):
     fds = FilterDetectionsStage(config, threshold=0.5)
 
-    mock_message = mock.MagicMock()
-    mock_message.mess_offset = 8
-    mock_message.probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
-    mock_message.mess_count = len(mock_message.probs)
-    mock_message.mask = cp.ones(len(mock_message.probs), cp.bool_)
+    def make_mock_message(probs_, offset=8):
+        count = len(probs_)
+        mm = mock.MagicMock()
+        mm.mess_offset = offset
+        mm.probs = probs_
+        mm.mess_count = count
+        mm.meta.count = count
+        mm.mask = cp.ones(count, cp.bool_)
+        return mm
 
-    # All values are below the threshold
+    probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
+    mock_message = make_mock_message(probs)
+
+    # All values are at or below the threshold
     assert fds.filter(mock_message) == []
 
     # Only one row has a value above the threshold
-    mock_message.probs = cp.array([
+    probs = cp.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.5, 0.8],
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message.mess_count = len(mock_message.probs)
-    mock_message.mask = cp.ones(len(mock_message.probs), cp.bool_)
+    mock_message = make_mock_message(probs)
 
     output_list = fds.filter(mock_message)
     assert len(output_list) == 1
@@ -65,7 +71,7 @@ def test_filter(config):
     assert output_list[0].mess_count == 1
 
     # Two adjacent rows have a value above the threashold
-    mock_message.probs = cp.array([
+    probs = cp.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.2, 0.3],
         [0.1, 0.5, 0.8],
@@ -73,8 +79,7 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message.mess_count = len(mock_message.probs)
-    mock_message.mask = cp.ones(len(mock_message.probs), cp.bool_)
+    mock_message = make_mock_message(probs)
 
     output_list = fds.filter(mock_message)
     assert len(output_list) == 1
@@ -83,7 +88,7 @@ def test_filter(config):
     assert output_list[0].mess_count == 2
 
     # Two non-adjacent rows have a value above the threashold
-    mock_message.probs = cp.array([
+    probs = cp.array([
         [0.2, 0.4, 0.3],
         [0.1, 0.2, 0.3],
         [0.1, 0.5, 0.8],
@@ -92,8 +97,7 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message.mess_count = len(mock_message.probs)
-    mock_message.mask = cp.ones(len(mock_message.probs), cp.bool_)
+    mock_message = make_mock_message(probs)
 
     output_list = fds.filter(mock_message)
 
