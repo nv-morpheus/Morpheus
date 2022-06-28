@@ -1,0 +1,173 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+--- 
+file_extensions: 
+  - doc
+  - docx
+  - html
+  - htm
+  - odt
+  - pdf
+  - xls
+  - xlsx
+  - ods
+  - ppt
+  - pptx
+  - txt
+  - csv
+  - jpg
+  - jpeg
+  - png
+  - zip
+  - gif
+  - bmp
+  - dmp
+  - 7z
+  - rar
+  - msg
+model_features: 
+  - envirs_pathext
+  - count_double_extension_count_handles
+  - page_readonly_vads_count
+  - double_extension_len_handles
+  - get_commit_charge_max_vad
+  - count_entire_commit_charge_vads
+  - get_commit_charge_min_vad_page_noaccess
+  - check_doc_file_handle_count
+  - envars_df_count
+  - page_noaccess_vad_count
+  - get_commit_charge_min_vads
+  - get_commit_charge_mean_vad_page_noaccess
+  - page_noaccess_vad_ratio
+  - handles_df_directory_count
+  - threadlist_df_wait_reason_9
+  - page_noaccess_count
+  - get_commit_charge_mean_page_noaccess
+  - ldrmodules_df_size_int
+  - get_commit_charge_max_page_execute_readwrite
+  - ratio_private_memory
+  - get_commit_charge_max_page_noaccess
+  - page_readwrite_ratio
+  - get_commit_charge_mean_page_execute_readwrite
+  - handles_df_section_ratio
+  - vad_ratio
+  - page_noaccess_ratio
+  - page_execute_writecopy_vad_ratio
+  - handles_df_section_count
+  - handles_df_tpworkerfactory_count
+  - page_readonly_count
+  - handles_df_waitcompletionpacket_count
+  - get_commit_charge_mean_page_readonly
+  - page_readonly_vad_ratio
+  - handles_df_event_ratio
+  - handles_df_semaphore_ratio
+  - get_commit_charge_sum_page_execute_readwrite
+  - threadlist_df_state_2
+  - handles_df_iocompletionreserve_count
+  - handles_df_directory_ratio
+  - handles_df_iocompletionreserve_ratio
+  - get_commit_charge_mean_vad
+  - get_commit_charge_sum_page_execute_writecopy
+  - page_execute_readwrite_ratio
+  - get_commit_charge_min_page_execute_readwrite
+  - threadlist_df_wait_reason_31
+  - get_commit_charge_sum_page_noaccess
+  - page_readwrite_vads_ratio
+  - handles_df_mutant_ratio
+  - get_commit_charge_sum_vad
+  - get_commit_charge_max
+  - handles_df_type_unique
+  - handles_df_iocompletion_ratio
+  - handles_df_waitcompletionpacket_ratio
+  - handles_df_tpworkerfactory_ratio
+  - vadinfo_df_path_unique
+  - vad_count
+  - page_readonly_ratio
+  - count_private_memory
+  - page_execute_readwrite_vads_ratio
+  - vads_page_execute_writecopy_ratio
+  - handles_df_file_ratio
+  - handles_df_etwregistration_ratio
+  - handles_df_key_ratio
+  - get_commit_charge_min_page_noaccess
+  - page_readonly_vads_ratio
+  - handles_df_thread_ratio
+  - handles_df_file_count
+  - handles_df_thread_count
+  - threadlist_df_count
+  - get_commit_charge_len
+  - get_commit_charge_min_page_execute_writecopy
+  - "handles_df_alpc port_ratio"
+  - file_users_exists
+  - file_windows_count
+  - handles_df_key_count
+  - threadlist_df_wait_reason_13
+  - threadlist_df_wait_reason_unique
+  - handles_df_semaphore_count
+  - handles_df_name_unique_ratio
+  - threadlist_df_state_unique
+  - get_count_unique_extensions
+  - handles_df_name_unique
+  - page_noaccess_vads_ratio
+  - handles_df_event_count
+  - page_readwrite_vad_ratio
+  - "handles_df_alpc port_count"
+  - get_commit_charge_std_page_execute_readwrite
+  - count_directories_handles_uniques
+  - count_extension_handles_uniques
+  - page_readwrite_vad_count
+  - get_commit_charge_sum
+  - get_commit_charge_mean
+  - handles_df_desktop_ratio
+  - handles_df_count
+  - handles_df_mutant_count
+  - handles_df_windowstation_ratio
+  - page_execute_readwrite_vads_count
+  - handles_df_type_unique_ratio
+  - page_execute_readwrite_count
+  - ldrmodules_df_path
+raw_columns: 
+  - Base
+  - Block
+  - CommitCharge
+  - "End VPN"
+  - File
+  - GrantedAccess
+  - HandleValue
+  - InInit
+  - InLoad
+  - InMem
+  - Name
+  - Offset
+  - PID
+  - Parent
+  - Path
+  - PrivateMemory
+  - Process
+  - Protection
+  - SHA256
+  - Size
+  - "Start VPN"
+  - State
+  - TID
+  - Tag
+  - Type
+  - Value
+  - Variable
+  - WaitReason
+  - plugin
+  - snapshot_id
+  - timestamp
