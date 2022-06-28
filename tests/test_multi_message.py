@@ -70,3 +70,22 @@ def test_start_stop(config):
         expected_mask.append(i >= 2 and i < 6)
 
     assert mm.mask.tolist() == expected_mask
+
+
+@pytest.mark.use_python
+def test_set_meta(config):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+    mask = cupy.zeros(len(df), dtype=cupy.bool_)
+    mask[2:6] = True
+    mask[12:15] = True
+
+    meta = MessageMeta(df)
+    mm = MultiMessage(meta, 0, len(df))
+    mm.mask = mask
+    assert len(mm.get_meta()) == 7
+
+    values = list(range(7))
+    mm.set_meta(['v2'], values)
+
+    assert mm.get_meta_list('v2') == values
