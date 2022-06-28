@@ -42,6 +42,8 @@ def test_filter(config):
     mock_message = mock.MagicMock()
     mock_message.mess_offset = 8
     mock_message.probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
+    mock_message.mess_count = len(mock_message.probs)
+    mock_message.mask = cp.ones(len(mock_message.probs), cp.bool_)
 
     # All values are below the threshold
     assert fds.filter(mock_message) == []
@@ -52,6 +54,9 @@ def test_filter(config):
         [0.1, 0.5, 0.8],
         [0.2, 0.4, 0.3],
     ])
+
+    mock_message.mess_count = len(mock_message.probs)
+    mock_message.mask = cp.ones(len(mock_message.probs), cp.bool_)
 
     output_list = fds.filter(mock_message)
     assert len(output_list) == 1
@@ -68,6 +73,9 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
+    mock_message.mess_count = len(mock_message.probs)
+    mock_message.mask = cp.ones(len(mock_message.probs), cp.bool_)
+
     output_list = fds.filter(mock_message)
     assert len(output_list) == 1
     assert output_list[0].offset == 2
@@ -83,6 +91,10 @@ def test_filter(config):
         [0.1, 0.9, 0.2],
         [0.2, 0.4, 0.3],
     ])
+
+    mock_message.mess_count = len(mock_message.probs)
+    mock_message.mask = cp.ones(len(mock_message.probs), cp.bool_)
+
     output_list = fds.filter(mock_message)
 
     # Assert that masking is in place, and we should only have a single message
