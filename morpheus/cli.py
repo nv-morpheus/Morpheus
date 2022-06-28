@@ -380,7 +380,7 @@ def validate_rolls(ctx, param, value):
                     "overflowing token-ids. Default value is 256"))
 @click.option('--labels_file',
               default="data/labels_nlp.txt",
-              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True),
+              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
                     "A label file is a simple text file where each line corresponds to a label"))
 @click.option('--viz_file',
@@ -436,13 +436,13 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
               help="Number of features trained in the model")
 @click.option('--labels_file',
               default=None,
-              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True),
+              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
                     "A label file is a simple text file where each line corresponds to a label. "
                     "If unspecified, only a single output label is created for FIL"))
 @click.option('--columns_file',
               default="data/columns_fil.txt",
-              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True),
+              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read column features."))
 @click.option('--viz_file',
               default=None,
@@ -505,11 +505,11 @@ def pipeline_fil(ctx: click.Context, **kwargs):
              **command_kwargs)
 @click.option('--columns_file',
               default="data/columns_ae.txt",
-              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True),
+              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=(""))
 @click.option('--labels_file',
               default=None,
-              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True),
+              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
                     "A label file is a simple text file where each line corresponds to a label. "
                     "If unspecified, only a single output label is created for FIL"))
@@ -896,7 +896,7 @@ def train_ae(ctx: click.Context, **kwargs):
 @click.command(name="preprocess", short_help="Convert messages to tokens", **command_kwargs)
 @click.option('--vocab_hash_file',
               default="data/bert-base-cased-hash.txt",
-              type=MorpheusRelativePath(exists=True, dir_okay=False),
+              type=MorpheusRelativePath(exists=True, dir_okay=False, resolve_path=True),
               help=("Path to hash file containing vocabulary of words with token-ids. "
                     "This can be created from the raw vocabulary using the cudf.utils.hash_vocab_utils.hash_vocab "
                     "function."))
