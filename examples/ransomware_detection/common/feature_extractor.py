@@ -15,14 +15,14 @@
 import typing
 
 import pandas as pd
-from commons.data_models import FeatureConfig
-from commons.data_models import ProtectionData
-from commons.feature_constants import FeatureConstants as fc
+from common.data_models import FeatureConfig
+from common.data_models import ProtectionData
+from common.feature_constants import FeatureConstants as fc
 
 
 class FeatureExtractor():
     """
-    This is a helper class to extract reequired features for ransomware detection pipeline.
+    This is a helper class to extract required features for ransomware detection pipeline.
     """
 
     def __init__(self, config: FeatureConfig) -> None:

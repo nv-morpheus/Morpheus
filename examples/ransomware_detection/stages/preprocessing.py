@@ -17,7 +17,7 @@ import typing
 import cupy as cp
 import pandas as pd
 import srf
-from commons.data_models import SnapshotData
+from common.data_models import SnapshotData
 
 from morpheus.config import Config
 from morpheus.messages import InferenceMemoryFIL
@@ -125,8 +125,6 @@ class PreprocessingRWStage(PreprocessBaseStage):
         """
 
         snapshot_df = x.get_meta()
-
-        # print(snapshot_df[['snapshot_id','source_pid_process']])
 
         curr_snapshots_size = len(snapshot_df)
 

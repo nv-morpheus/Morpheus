@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import os
 import typing
 
 import click
@@ -38,7 +39,7 @@ from stages.preprocessing import PreprocessingRWStage
 @click.option('--use_cpp', default=False)
 @click.option(
     "--num_threads",
-    default=2,
+    default=os.cpu_count(),
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )

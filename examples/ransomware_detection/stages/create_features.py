@@ -15,8 +15,8 @@
 import typing
 
 import srf
-from commons.data_models import FeatureConfig
-from commons.feature_extractor import FeatureExtractor
+from common.data_models import FeatureConfig
+from common.feature_extractor import FeatureExtractor
 from srf.core import operators as ops
 
 from dask.distributed import Client
