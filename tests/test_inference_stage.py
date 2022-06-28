@@ -36,10 +36,14 @@ class InferenceStage(inference_stage.InferenceStage):
 def _mk_message(count=1, mess_count=1, offset=0, mess_offset=0):
     m = mock.MagicMock()
     m.count = count
+    m.meta.count = count
     m.offset = offset
     m.mess_offset = mess_offset
     m.mess_count = mess_count
     m.probs = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
+    mask = cp.zeros(count, dtype=cp.bool_)
+    mask[mess_offset:mess_offset + mess_count] = True
+    m.mask = mask
     m.get_input.return_value = cp.array([[0, 1, 2], [0, 1, 2]])
     return m
 
@@ -135,9 +139,7 @@ def test_py_inf_fn_on_next(mock_ops, mock_future, config):
 
     mock_message = _mk_message()
 
-    mock_slice = mock.MagicMock()
-    mock_slice.mess_count = 1
-    mock_slice.count = 1
+    mock_slice = _mk_message()
     mock_message.get_slice.return_value = mock_slice
 
     output_message = on_next(mock_message)
@@ -291,7 +293,9 @@ def test_convert_response_errors():
     # saved_count != total_mess_count
     # Unlike the other asserts that can be triggered due to bad input data
     # This one can only be triggers by a bug inside the method
-    mm2 = _mk_message(count=mock.MagicMock(), mess_count=mock.MagicMock())
+    mm2 = _mk_message()
+    mm2.count = mock.MagicMock()
+    mm2.mess_count = mock.MagicMock()
     mm2.count.side_effect = [2, 1]
     mm2.mess_count.side_effect = [2, 1, 1]
 
