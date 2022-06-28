@@ -93,24 +93,17 @@ class FilterDetectionsStage(SinglePortStage):
 
         true_pairs = cp.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
+        # Build a mask
+        mask = cp.zeros(x.meta.count, cp.bool_)
+
         for pair in true_pairs:
             pair = tuple(pair.tolist())
-            mess_offset = x.mess_offset + pair[0]
-            mess_count = pair[1] - pair[0]
+            mask[pair[0]:pair[1]] = True
 
-            # Filter empty message groups
-            if (mess_count == 0):
-                continue
+        x.mask = mask
 
-            output_list.append(
-                MultiResponseProbsMessage(x.meta,
-                                          mess_offset=mess_offset,
-                                          mess_count=mess_count,
-                                          memory=x.memory,
-                                          offset=pair[0],
-                                          count=mess_count))
-
-        return output_list
+        # TODO don't need list
+        return [x]
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
