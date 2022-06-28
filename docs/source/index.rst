@@ -41,7 +41,7 @@ Features
  * Real-Time Telemetry
     * Morpheus can receive rich, real-time network telemetry from every NVIDIA® BlueField® DPU-accelerated server in the
       data center without impacting performance. Integrating the framework into a third-party cybersecurity offering
-      brings the world’s best AI computing to communication networks.
+      brings the world's best AI computing to communication networks.
  * DPU-Connected
     * The NVIDIA BlueField Data Processing Unit (DPU) can be used as a telemetry agent for receiving critical data
       center communications into Morpheus. As an optional addition to Morpheus, BlueField DPU also extends static
@@ -58,7 +58,7 @@ The best way to get started with Morpheus will vary depending on the goal of the
 Using NGC Container
 ^^^^^^^^^^^^^^^^^^^
 
-Accessing Morpheus by pulling the pre-built NGC container is best suited for users who do not need any customization and
+Accessing Morpheus by pulling the pre-built `NGC container <https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_>`_ is best suited for users who do not need any customization and
 are only interested in running Morpheus via the CLI. The pre-built container does not require checking out the source
 code and is best suited for users who are new to Morpheus and don't require any customization.
 
@@ -77,7 +77,7 @@ Launch an interactive container to start using Morpheus:
 
 .. code-block:: console
 
-   $ ./docker/run_container_release.sh
+   $ docker run --rm -ti --net=host --gpus=all nvcr.io/nvidia/morpheus/morpheus:22.06-runtime bash
    (morpheus) root@958a683a8a26:/workspace# morpheus --help
    Usage: morpheus [OPTIONS] COMMAND [ARGS]...Options:
      --debug / --no-debug            [default: False]
@@ -100,112 +100,6 @@ Launch an interactive container to start using Morpheus:
 
 See :doc:`basics/overview` for more information on using the CLI.
 
-Building Local Image
-^^^^^^^^^^^^^^^^^^^^
-
-Building the image locally is best suited for users who prefer working within a
-Docker container, want to avoid installing many dependencies or have a moderate
-amount of customization. This method requires pulling the source code and
-manually building the container and does not require the user to setup a Conda
-environment and install dependencies. Users can use either the CLI or Python
-interface.
-
-Prerequisites
-"""""""""""""
- * `Docker <https://docs.docker.com/get-docker/>`__
- * `The NVIDIA container toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`__
-
-To get started, first clone the Morpheus repo:
-
-.. code-block:: bash
-
-   # Make sure to recurse the submodules
-   git clone https://github.com/NVIDIA/Morpheus.git
-   # Change directory to the repo root
-   cd morpheus
-
-.. note::
-
-   Cloning the repo may take a while to download large data objects and models.
-
-To build the container:
-
-.. code-block:: bash
-
-   ./docker/build_container_dev.sh
-
-To run the development container:
-
-.. code-block:: bash
-
-   ./docker/run_container_dev.sh
-
-From this point, follow the previous getting started section for running the CLI.
-
-.. _outside-of-a-container:
-
-Outside of a Container
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. warning::
-
-   This is not the preferred way to use Morpheus. Morpheus requires a large
-   amount of dependencies and this method should only be used by advanced and
-   experienced users only.
-
-Running Morpheus outside of a container requires the most setup, but offers the
-most flexibility and customization. Users of this method will need the source
-code and will be required to install several dependencies in a Conda virtual
-environment.
-
-Prerequisites
-"""""""""""""
- * `Conda <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`__
- * `Mamba <https://github.com/mamba-org/mamba>`__
-    * Once ``conda`` is installed, ``mamba`` can be instaled with ``conda install -n base -c conda-forge mamba`` (Make sure to only install into the base environment)
- * `CUDA <https://developer.nvidia.com/cuda-toolkit>`__
-    * While CUDA can be installed with Conda, it requires installing the matching CUDA SDK outside of the Conda environment.
-
-To get started, first clone the Morpheus repo:
-
-.. code-block:: bash
-
-   # Make sure to recurse the submodules
-   git clone https://github.com/NVIDIA/Morpheus.git
-   # Change directory to the repo root
-   cd morpheus
-
-.. note::
-
-   Cloning the repo may take a while to download large data objects and models.
-
-Next, create a Conda environment and install the necessary dependencies.
-
-.. code-block:: bash
-
-   conda create -n morpheus -c conda-forge python=${PYTHON_VER}
-   conda activate morpheus
-   conda install -c conda-forge python=${PYTHON_VER}
-
-   # Build and install the cuDF conda package
-   ./docker/build_conda_packages.sh libcudf cudf
-   mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
-
-   # Install the remaining Morpheus dependencies
-   mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
-
-Where ``$PYTHON_VER``, ``$CUDA_VER``, and ``$RAPIDS_VER`` represent the desired Python version, CUDA version and, RAPIDS
-version, respectively. Finally, build Morpheus:
-
-.. code-block:: bash
-
-   ./scripts/compile.sh
-
-   pip install .
-   # Or for a debug/editable installation
-   pip install -e .
-
-See :doc:`basics/overview` for more information on using the CLI.
 
 .. toctree::
    :maxdepth: 20

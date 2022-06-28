@@ -31,7 +31,7 @@ rm -rf ${MORPHEUS_ROOT}/build
 ```
 **Debugging Python Code**
 
-To debug issues in python code, several launch Visual Studio Code launch configurations have been included in the repo. These launch configurations can be found in `${MORPHEUS_ROOT}/morpheus.code-workspace`. To launch the debugging environment, ensure that Visual Studio Code has opened the morpheus workspace file (File->Open Workspace from File...). Once the workspace has been loaded, the launch configurations should be available in the debugging tab.
+To debug issues in python code, several Visual Studio Code launch configurations have been included in the repo. These launch configurations can be found in `${MORPHEUS_ROOT}/morpheus.code-workspace`. To launch the debugging environment, ensure that Visual Studio Code has opened the morpheus workspace file (File->Open Workspace from File...). Once the workspace has been loaded, the launch configurations should be available in the debugging tab.
 
 **Debugging C++ Code**
 

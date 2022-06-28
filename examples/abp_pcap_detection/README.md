@@ -83,7 +83,7 @@ Options:
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided at `<MORPHEUS_ROOT>/examples/data`, run the following:
+To launch the configured Morpheus pipeline with the sample data that is provided at `<MORPHEUS_ROOT>/examples/data`, from the `examples/abp_pcap_detection` directory run the following:
 
 ```bash
 python run.py \
