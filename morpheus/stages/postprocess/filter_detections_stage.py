@@ -67,7 +67,7 @@ class FilterDetectionsStage(SinglePortStage):
         # Enable support by default
         return True
 
-    def filter(self, x: MultiResponseProbsMessage) -> typing.List[MultiResponseProbsMessage]:
+    def filter(self, x: MultiResponseProbsMessage) -> MultiResponseProbsMessage:
         """
         This function uses a threshold value to filter the messages.
 
@@ -78,13 +78,10 @@ class FilterDetectionsStage(SinglePortStage):
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.messages.MultiResponseProbsMessage`]
+        `morpheus.pipeline.messages.MultiResponseProbsMessage`
             List of filtered messages.
 
         """
-        # Unfortunately we have to convert this to a list in case there are non-contiguous groups
-        output_list = []
-
         # Get per row detections
         detections = (x.probs > self._threshold).any(axis=1)
 
@@ -102,20 +99,13 @@ class FilterDetectionsStage(SinglePortStage):
 
         x.mask = mask
 
-        # TODO don't need list
-        return [x]
+        return x
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-
-        # Convert list back to single MultiResponseProbsMessage
-        def flatten_fn(obs: srf.Observable, sub: srf.Subscriber):
-
-            obs.pipe(ops.map(self.filter), ops.flatten()).subscribe(sub)
-
         if self._build_cpp_node():
             stream = _stages.FilterDetectionsStage(builder, self.unique_name, self._threshold)
         else:
-            stream = builder.make_node_full(self.unique_name, flatten_fn)
+            stream = builder.make_node(self.unique_name, self.filter)
 
         builder.make_edge(input_stream[0], stream)
 
