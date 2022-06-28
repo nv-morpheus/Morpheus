@@ -131,8 +131,8 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        return self.get_meta(col_name).to_list()
-
+        return self.get_meta(col_name).to_arrow().to_pylist()
+    
     def set_meta(self, columns: typing.Union[None, str, typing.List[str]], value):
         """
         Set column values to `morpheus.pipelines.messages.MessageMeta.df`.
