@@ -20,6 +20,7 @@ import os
 import pytest
 
 from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
@@ -29,14 +30,18 @@ from utils import TEST_DIRS
 from utils import ConvMsg
 
 
-def test_add_classifications_stage_pipe(config, tmp_path):
+@pytest.fixture(scope="function")
+def viz_pipeline(config, tmp_path):
+    """
+    Creates a quick pipeline.
+    """
+
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
 
     # Silly data with all false values
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
-    viz_file = os.path.join(tmp_path, 'pipeline.png')
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
@@ -46,10 +51,27 @@ def test_add_classifications_stage_pipe(config, tmp_path):
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
-    pytest.raises(RuntimeError, pipe.visualize, viz_file, rankdir="LR")
-    pipe.run()
+    return pipe
 
-    pipe.visualize(viz_file, rankdir="LR")
+
+def test_call_before_run(viz_pipeline: Pipeline, tmp_path):
+
+    # Test is necessary to ensure run() is called first. See issue #230
+    viz_file = os.path.join(tmp_path, 'pipeline.png')
+
+    with pytest.raises(RuntimeError):
+
+        viz_pipeline.visualize(viz_file, rankdir="LR")
+
+
+def test_png(viz_pipeline: Pipeline, tmp_path):
+
+    viz_file = os.path.join(tmp_path, 'pipeline.png')
+
+    # Call pipeline run first
+    viz_pipeline.run()
+
+    viz_pipeline.visualize(viz_file, rankdir="LR")
 
     # Verify that the output file exists and is a valid png file
     assert os.path.exists(viz_file)

@@ -547,9 +547,11 @@ def post_pipeline(ctx: click.Context, *args, **kwargs):
     click.secho("Starting pipeline via CLI... Ctrl+C to Quit", fg="red")
 
     pipeline = get_pipeline_from_ctx(ctx)
-    # Run the pipeline
+
+    # Run the pipeline before generating visualization to ensure the pipeline has been started
     pipeline.run()
 
+    # TODO(MDD): Move visualization before `pipeline.run()` once Issue #230 is fixed.
     if ("viz_file" in kwargs and kwargs["viz_file"] is not None):
         pipeline.visualize(kwargs["viz_file"], rankdir="LR")
         click.secho("Pipeline visualization saved to {}".format(kwargs["viz_file"]), fg="yellow")

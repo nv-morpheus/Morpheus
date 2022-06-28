@@ -286,7 +286,10 @@ class Pipeline():
                 return len(n.output_ports) > 0
 
         if not self._is_build_complete:
-            raise RuntimeError("visualize requires the pipeline to have already started")
+            raise RuntimeError("Pipeline.visualize() requires that the Pipeline has been started before generating "
+                               "the visualization. Please call Pipeline.start(), Pipeline.build_and_start() or "
+                               "Pipeline.run() before calling Pipeline.visualize(). This is a known issue and will "
+                               "be fixed in a future release.")
 
         # Now build up the nodes
         for n, attrs in typing.cast(typing.Mapping[StreamWrapper, dict], self._graph.nodes).items():
