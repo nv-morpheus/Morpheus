@@ -19,6 +19,8 @@ import os
 import cupy as cp
 import pytest
 
+import cudf
+
 import morpheus._lib.messages as _messages
 import morpheus.config
 from morpheus import messages
@@ -40,14 +42,15 @@ def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp
 
 
 def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
-
     check_message(messages.MessageMeta, _messages.MessageMeta, should_be_cpp, no_cpp_class, (None, ))
 
     # UserMessageMeta doesn't contain a C++ impl, so we should
     # always received the python impl
     check_message(messages.UserMessageMeta, None, should_be_cpp, no_cpp_class, (None, None))
 
-    check_message(messages.MultiMessage, _messages.MultiMessage, should_be_cpp, no_cpp_class, (None, 0, 1))
+    df = cudf.DataFrame()
+    meta = messages.MessageMeta(df)
+    check_message(messages.MultiMessage, _messages.MultiMessage, should_be_cpp, no_cpp_class, (meta, 0, 1))
 
     assert messages.InferenceMemory._cpp_class is None if no_cpp_class else _messages.InferenceMemory
     # C++ impl for InferenceMemory doesn't have a constructor
@@ -72,17 +75,17 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     check_message(messages.MultiInferenceMessage,
                   _messages.MultiInferenceMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (meta, 0, 1, None, 0, 1))
 
     check_message(messages.MultiInferenceNLPMessage,
                   _messages.MultiInferenceNLPMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (meta, 0, 1, None, 0, 1))
 
     check_message(messages.MultiInferenceFILMessage,
                   _messages.MultiInferenceFILMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (meta, 0, 1, None, 0, 1))
 
     assert messages.ResponseMemory._cpp_class is None if no_cpp_class else _messages.ResponseMemory
     # C++ impl doesn't have a constructor
@@ -100,15 +103,15 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     check_message(messages.MultiResponseMessage,
                   _messages.MultiResponseMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (meta, 0, 1, None, 0, 1))
 
     check_message(messages.MultiResponseProbsMessage,
                   _messages.MultiResponseProbsMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (meta, 0, 1, None, 0, 1))
 
     # No C++ impl
-    check_message(messages.MultiResponseAEMessage, None, should_be_cpp, no_cpp_class, (None, 0, 1, None, 0, 1, ''))
+    check_message(messages.MultiResponseAEMessage, None, should_be_cpp, no_cpp_class, (meta, 0, 1, None, 0, 1, ''))
 
 
 def test_constructor_cpp(config):
