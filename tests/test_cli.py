@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import shutil
 
 import click
 import mlflow
@@ -22,7 +23,9 @@ import pytest
 from click.testing import CliRunner
 from mlflow.tracking import fluent
 
+import morpheus
 from morpheus import cli
+from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
@@ -790,3 +793,151 @@ class TestCLI:
         [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
 
         assert process_nlp._vocab_hash_file == vocab_file_name
+
+    @pytest.mark.usefixtures("chdir_tmpdir")
+    @pytest.mark.replace_callback('pipeline_nlp')
+    def test_pipeline_nlp_relative_path_precedence(self, config, callback_values, tmp_path):
+        """
+        Ensure that relative paths are choosen over the morpheus data directory paths
+        """
+
+        morpheus_root = os.path.dirname(morpheus.__file__)
+
+        vocab_file = "data/bert-base-cased-hash.txt"
+        labels_file = "data/labels_nlp.txt"
+
+        vocab_file_local = os.path.join(tmp_path, vocab_file)
+        labels_file_local = os.path.join(tmp_path, labels_file)
+
+        shutil.copytree(os.path.join(morpheus_root, "data"), os.path.join(tmp_path, "data"), dirs_exist_ok=True)
+
+        # Use different labels
+        test_labels = ["label1", "label2", "label3"]
+
+        # Overwrite the copied labels
+        with open(labels_file_local, mode="w") as f:
+            f.writelines("\n".join(test_labels))
+
+        args = (GENERAL_ARGS + ['pipeline-nlp', f"--labels_file={labels_file}"] + FILE_SRC_ARGS +
+                ['deserialize', 'preprocess', f"--vocab_hash_file={vocab_file}"] + INF_TRITON_ARGS + MONITOR_ARGS +
+                ['add-class'] + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
+
+        obj = {}
+        runner = CliRunner()
+        result = runner.invoke(cli.cli, args, obj=obj)
+        assert result.exit_code == 47, result.output
+
+        # Ensure our config is populated correctly
+        config = obj["config"]
+        assert config.class_labels == test_labels
+
+        stages = callback_values['stages']
+        # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        [file_source, deserialize, process_nlp, triton_inf, monitor, add_class, validation, serialize, to_file] = stages
+
+        assert process_nlp._vocab_hash_file == vocab_file_local
+
+    @pytest.mark.usefixtures("chdir_tmpdir")
+    @pytest.mark.replace_callback('pipeline_fil')
+    def test_pipeline_fil_relative_path_precedence(self, config: Config, callback_values, tmp_path):
+        """
+        Ensure that relative paths are choosen over the morpheus data directory paths
+        """
+
+        labels_file = "data/labels_fil.txt"
+        columns_file = "data/columns_fil.txt"
+
+        labels_file_local = os.path.join(tmp_path, labels_file)
+        columns_file_local = os.path.join(tmp_path, columns_file)
+
+        os.makedirs(os.path.join(tmp_path, "data"), exist_ok=True)
+
+        # Use different labels
+        test_labels = ["label1"]
+
+        # Overwrite the copied labels
+        with open(labels_file_local, mode="w") as f:
+            f.writelines("\n".join(test_labels))
+
+        # Use different labels
+        test_columns = [f"column{i}" for i in range(29)]
+
+        # Overwrite the copied labels
+        with open(columns_file_local, mode="w") as f:
+            f.writelines("\n".join(test_columns))
+
+        args = (GENERAL_ARGS + ['pipeline-fil', f"--labels_file={labels_file}", f"--columns_file={columns_file}"] +
+                FILE_SRC_ARGS + ['deserialize', 'preprocess'] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] +
+                VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
+
+        obj = {}
+        runner = CliRunner()
+        result = runner.invoke(cli.cli, args, obj=obj)
+        assert result.exit_code == 47, result.output
+
+        # Ensure our config is populated correctly
+        config = obj["config"]
+        assert config.class_labels == test_labels
+
+        assert config.fil.feature_columns == test_columns
+
+    @pytest.mark.usefixtures("chdir_tmpdir")
+    @pytest.mark.replace_callback('pipeline_ae')
+    def test_pipeline_ae_relative_path_precedence(self, config: Config, callback_values, tmp_path):
+        """
+        Ensure that relative paths are choosen over the morpheus data directory paths
+        """
+
+        labels_file = "data/labels_ae.txt"
+        columns_file = "data/columns_ae.txt"
+
+        labels_file_local = os.path.join(tmp_path, labels_file)
+        columns_file_local = os.path.join(tmp_path, columns_file)
+
+        os.makedirs(os.path.join(tmp_path, "data"), exist_ok=True)
+
+        # Use different labels
+        test_labels = ["label1"]
+
+        # Overwrite the copied labels
+        with open(labels_file_local, mode="w") as f:
+            f.writelines("\n".join(test_labels))
+
+        # Use different labels
+        test_columns = [f"column{i}" for i in range(33)]
+
+        # Overwrite the copied labels
+        with open(columns_file_local, mode="w") as f:
+            f.writelines("\n".join(test_columns))
+
+        args = (GENERAL_ARGS + [
+            'pipeline-ae',
+            '--userid_filter=user321',
+            '--userid_column_name=user_col',
+            f"--labels_file={labels_file}",
+            f"--columns_file={columns_file}",
+            'from-cloudtrail',
+            '--input_glob=input_glob*.csv',
+            'train-ae',
+            '--train_data_glob=train_glob*.csv',
+            '--seed',
+            '47',
+            'preprocess',
+            'inf-pytorch',
+            'add-scores',
+            'timeseries',
+            '--resolution=1m',
+            '--zscore_threshold=8.0',
+            '--hot_start'
+        ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
+
+        obj = {}
+        runner = CliRunner()
+        result = runner.invoke(cli.cli, args, obj=obj)
+        assert result.exit_code == 47, result.output
+
+        # Ensure our config is populated correctly
+        config = obj["config"]
+        assert config.class_labels == test_labels
+
+        assert config.ae.feature_columns == test_columns
