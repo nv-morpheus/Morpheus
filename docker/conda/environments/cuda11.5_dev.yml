@@ -62,7 +62,6 @@ dependencies:
     - pytest-benchmark
     - pytest-cov
     - python-graphviz
-    - python-graphviz=0.20
     - python=3.8
     - rapidjson=1.1.0
     - scikit-build=0.13

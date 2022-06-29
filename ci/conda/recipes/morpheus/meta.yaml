@@ -86,15 +86,19 @@ outputs:
         - pytest-cov
         - pytest-benchmark
       source_files:
-        - pyproject.toml
-        - tests/*
+        # - .git/*
         - docker/conda/environments/*
+        - pyproject.toml
+        - scripts/fetch_data.py
+        - tests/*
       imports:
         - morpheus
         - morpheus._lib
       commands:
         # Install dependencies that are pip-only
         - mamba env update --prefix ${CONDA_PREFIX} --file docker/conda/environments/cuda{{ cuda_version }}_runtime.yml
+        # Ensure the test data is downloaded
+        - ./scripts/fetch_data.py fetch tests
         # Run pytest
         - pytest
 
