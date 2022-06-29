@@ -519,7 +519,7 @@ class FeatureExtractor():
             else:
                 self._features['ldrmodules_df_path'] = ""
 
-    def extract_features(self, x: pd.DataFrame) -> pd.DataFrame:
+    def extract_features(self, x: pd.DataFrame, feas_all_zeros: typing.Dict[str, int]) -> pd.DataFrame:
         """
         This function extracts all different ransomware features.
 
@@ -527,7 +527,8 @@ class FeatureExtractor():
         ----------
         x : `pandas.DataFrame`
             Dataframe with appshield snapshot data.
-
+        feas_all_zeros : typing.Dict[str, int]
+            Features with default value (0)
         Returns
         -------
         pandas.DataFrame
@@ -545,8 +546,8 @@ class FeatureExtractor():
         # Filter plugin per pid_process and create features
         for pid_process in pid_processes:
 
-            # Setting default values to features all keys.
-            self._features = self._config.features_with_zeros.copy()
+            # Setting default value '0' to all features.
+            self._features = feas_all_zeros.copy()
 
             fltr_plugin_dict = self._filter_by_pid_process(plugin_dict, pid_process)
 

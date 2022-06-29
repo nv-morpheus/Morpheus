@@ -59,10 +59,9 @@ class CreateFeaturesRWStage(MultiMessageStage):
         threads_per_worker: int = 2,
     ):
         self._client = Client(threads_per_worker=threads_per_worker, n_workers=n_workers)
+        self._feature_config = FeatureConfig(file_extns, interested_plugins)
+        self._feas_all_zeros = dict.fromkeys(feature_columns, 0)
 
-        self._feature_config = FeatureConfig(file_extns,
-                                             interested_plugins,
-                                             features_with_zeros=dict.fromkeys(feature_columns, 0))
         # FeatureExtractor instance to extract features from the snapshots.
         self._fe = FeatureExtractor(self._feature_config)
 
@@ -112,7 +111,7 @@ class CreateFeaturesRWStage(MultiMessageStage):
                 combine_func = FeatureExtractor.combine_features
 
                 # Schedule dask task `extract_features` per snapshot.
-                snapshot_fea_dfs = self._client.map(extract_func, all_dfs, config=self._feature_config)
+                snapshot_fea_dfs = self._client.map(extract_func, all_dfs, feas_all_zeros=self._feas_all_zeros)
 
                 # Combined `extract_features` results.
                 features_df = self._client.submit(combine_func, snapshot_fea_dfs)
