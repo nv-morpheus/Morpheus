@@ -243,6 +243,36 @@ namespace morpheus {
         }
     };
 
+    // ************ MatxUtil__MatxCreate1dMask **************//
+    struct MatxUtil__MatxCreate1dMask { // NOLINT
+        size_t count;
+        size_t start;
+        size_t end;
+        rmm::cuda_stream_view stream;
+
+        void operator()(void *output_data) {
+            matx::tensorShape_t<1> output_shape({static_cast<matx::index_t>(count)});
+            matx::tensor_t<bool, 1> output_tensor(static_cast<bool *>(output_data), output_shape);
+
+            const auto start_idx = static_cast<matx::index_t>(start);
+            const auto end_idx = static_cast<matx::index_t>(end);
+            if (start > 0) {
+                auto slice = output_tensor.Slice({0,}, {start_idx,});
+                (slice = matx::zeros<bool>(slice.Shape())).run(stream.value());
+            }
+
+            {
+                auto slice = output_tensor.Slice({start_idx,}, {end_idx,});
+                (slice = matx::ones<bool>(slice.Shape())).run(stream.value());
+            }
+
+            if (end < count-1) {
+                auto slice = output_tensor.Slice({end_idx,}, {matx::matxEnd,});
+                (slice = matx::zeros<bool>(slice.Shape())).run(stream.value());
+            }
+        }
+    };
+
     // Component public implementations
     // ************ MatxUtil************************* //
     std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo &input, TypeId output_type) {
@@ -333,6 +363,15 @@ namespace morpheus {
                               thresh_val,
                               stride);
 
+        srf::enqueue_stream_sync_event(output->stream()).get();
+
+        return output;
+    }
+
+    std::shared_ptr<rmm::device_buffer> MatxUtil::create_1d_mask(size_t count, size_t start, size_t end) {
+        auto output = std::make_shared<rmm::device_buffer>(sizeof(bool) * count, rmm::cuda_stream_per_thread);
+
+        MatxUtil__MatxCreate1dMask{count, start,end, output->stream()}(output->data());
         srf::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
