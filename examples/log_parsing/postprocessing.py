@@ -50,6 +50,9 @@ class LogParsingPostProcessingStage(SinglePortStage):
     def name(self) -> str:
         return "logparsing-postproc"
 
+    def supports_cpp_node(self):
+        return False
+
     def accepted_types(self) -> typing.Tuple:
         return (MultiResponseLogParsingMessage, )
 
