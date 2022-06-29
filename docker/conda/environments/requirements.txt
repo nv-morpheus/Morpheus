@@ -11,7 +11,6 @@ git+https://github.com/efajardo-nv/dfencoder.git@nv-updates#egg=dfencoder
 grpcio-channelz
 networkx
 nvidia-pyindex
-nvidia-tensorrt==8.2.5.1
 pybind11-stubgen==0.10.5
 torch==1.10.2+cu113
 tqdm
