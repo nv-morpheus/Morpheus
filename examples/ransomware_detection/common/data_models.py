@@ -26,7 +26,6 @@ class FeatureConfig:
 
     file_extns: typing.List[str]
     interested_plugins: typing.List[str]
-    features_with_zeros: typing.Dict[str, int]
 
 
 @dataclasses.dataclass
