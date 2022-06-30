@@ -55,7 +55,7 @@ outputs:
         - ccache
         - ninja
       host:
-        - cuda-python <=11.7.0
+        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
@@ -69,7 +69,7 @@ outputs:
         - versioneer-518
       run:
         - click >=8
-        - cuda-python <=11.7.0
+        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
         - cudf {{ rapids_version }}
         - cudf_kafka {{ rapids_version }}
         - cupy # Version determined from cudf
