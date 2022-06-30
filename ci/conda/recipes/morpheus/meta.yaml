@@ -55,19 +55,21 @@ outputs:
         - ccache
         - ninja
       host:
+        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
         - librdkafka 1.7
-        - srf {{ minor_version }}
         - pip
         - pybind11-stubgen
         - python {{ python }}
         - rapidjson 1.1
         - scikit-build >=0.12
+        - srf {{ minor_version }}
         - versioneer-518
       run:
         - click >=8
+        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
         - cudf {{ rapids_version }}
         - cudf_kafka {{ rapids_version }}
         - cupy # Version determined from cudf
