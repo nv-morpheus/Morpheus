@@ -157,8 +157,7 @@ html_logo = '_static/main_nv_logo_square.png'
 html_theme_options = {
     'logo_only': True,
     'display_version': True,
-    'style_nav_header_background': '#000000',
-    # Toc options
+    'style_nav_header_background': '#000000',  # Toc options
     'collapse_navigation': False,
     'navigation_depth': 6,
 }
