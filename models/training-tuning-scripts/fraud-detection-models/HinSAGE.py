@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 from stellargraph.layer import HinSAGE
 from stellargraph.mapper import HinSAGENodeGenerator
 from tensorflow.keras import Model
 from tensorflow.keras import layers
 from tensorflow.keras import optimizers
 from tensorflow.keras.losses import binary_crossentropy
-import pandas as pd
 
 
 class HinSAGE_Representation_Learner:
