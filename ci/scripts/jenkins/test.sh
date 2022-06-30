@@ -43,7 +43,8 @@ git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
 # List missing files
-${MORPHEUS_ROOT}/scripts/fetch_data.py check
+gpuci_logger "Listing missing files"
+git lfs ls-files
 
 REPORTS_DIR="${WORKSPACE_TMP}/reports"
 mkdir -p ${WORKSPACE_TMP}/reports
