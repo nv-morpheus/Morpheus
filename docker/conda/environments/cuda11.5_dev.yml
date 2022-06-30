@@ -29,6 +29,7 @@ dependencies:
     - ccache>=3.7
     - cmake=3.22
     - cuda-nvml-dev=11.5
+    - cuda-python=11.7.0
     - cudatoolkit=11.5
     - cudf 22.06
     - cudf_kafka 22.06.*
