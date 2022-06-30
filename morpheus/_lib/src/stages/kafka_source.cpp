@@ -52,7 +52,7 @@
         RdKafka::ErrorCode __code = command;                                                                   \
         if (__code != expected)                                                                                \
         {                                                                                                      \
-            LOG(ERROR) << msg << ". Received unexpected ErrorCode. Expected: " << #expected << "(" << expected \
+            LOG(FATAL) << msg << ". Received unexpected ErrorCode. Expected: " << #expected << "(" << expected \
                        << "), Received: " << __code << ", Msg: " << RdKafka::err2str(__code);                  \
         }                                                                                                      \
     };
@@ -292,19 +292,22 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 std::vector<std::unique_ptr<RdKafka::Message>> message_batch =
                     rebalancer.partition_progress_step(consumer.get());
 
-                std::shared_ptr<morpheus::MessageMeta> batch;
-
-                try
+                if (message_batch.size())
                 {
-                    batch = std::move(this->process_batch(std::move(message_batch)));
-                } catch (std::exception &ex)
-                {
-                    LOG(ERROR) << "Exception in process_batch. Msg: " << ex.what();
+                    std::shared_ptr<morpheus::MessageMeta> batch;
 
-                    break;
+                    try
+                    {
+                        batch = std::move(this->process_batch(std::move(message_batch)));
+                    } catch (std::exception &ex)
+                    {
+                        LOG(ERROR) << "Exception in process_batch. Msg: " << ex.what();
+
+                        break;
+                    }
+
+                    sub.on_next(std::move(batch));
                 }
-
-                sub.on_next(std::move(batch));
             }
 
         } catch (std::exception &ex)
