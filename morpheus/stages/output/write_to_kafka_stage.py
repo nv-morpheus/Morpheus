@@ -83,7 +83,7 @@ class WriteToKafkaStage(SinglePortStage):
 
             outstanding_requests = 0
 
-            def on_next(x: typing.List[str]):
+            def on_next(x: MessageMeta):
                 nonlocal outstanding_requests
 
                 def cb(_, msg):
@@ -138,4 +138,4 @@ class WriteToKafkaStage(SinglePortStage):
         # node.launch_options.pe_count = self._max_concurrent
 
         # Return input unchanged
-        return input_stream
+        return node, input_stream[1]

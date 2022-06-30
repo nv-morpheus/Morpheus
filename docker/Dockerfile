@@ -61,7 +61,9 @@ RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     conda config --env --add channels conda-forge &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" python=${PYTHON_VER}
+    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" &&\
+    source activate base &&\
+    git lfs install
     # conda clean -afy
 
 # ============ Stage: conda_env ============
