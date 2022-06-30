@@ -1,2 +1,2 @@
 [lfs]
-	fetchinclude = ""
+	fetchexclude = *
