@@ -30,18 +30,19 @@ namespace nvtext {
 /**
  * @brief The vocabulary data for use with the subword_tokenize function.
  */
-struct hashed_vocabulary {
-  uint16_t first_token_id{};
-  uint16_t separator_token_id{};
-  uint16_t unknown_token_id{};
-  uint32_t outer_hash_a{};
-  uint32_t outer_hash_b{};
-  uint16_t num_bins{};
-  std::unique_ptr<cudf::column> table;             // uint64
-  std::unique_ptr<cudf::column> bin_coefficients;  // uint64
-  std::unique_ptr<cudf::column> bin_offsets;       // uint16
-  std::unique_ptr<cudf::column> cp_metadata;       // uint32
-  std::unique_ptr<cudf::column> aux_cp_table;      // uint64
+struct hashed_vocabulary
+{
+    uint16_t first_token_id{};
+    uint16_t separator_token_id{};
+    uint16_t unknown_token_id{};
+    uint32_t outer_hash_a{};
+    uint32_t outer_hash_b{};
+    uint16_t num_bins{};
+    std::unique_ptr<cudf::column> table;             // uint64
+    std::unique_ptr<cudf::column> bin_coefficients;  // uint64
+    std::unique_ptr<cudf::column> bin_offsets;       // uint16
+    std::unique_ptr<cudf::column> cp_metadata;       // uint32
+    std::unique_ptr<cudf::column> aux_cp_table;      // uint64
 };
 
 /**
@@ -59,41 +60,42 @@ struct hashed_vocabulary {
  * @return vocabulary hash-table elements
  */
 std::unique_ptr<hashed_vocabulary> load_vocabulary_file(
-  std::string const& filename_hashed_vocabulary,
-  rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+    std::string const& filename_hashed_vocabulary,
+    rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
 /**
  * @brief Result object for the subword_tokenize functions.
  */
-struct tokenizer_result {
-  /**
-   * @brief The number of rows for the output token-ids.
-   */
-  uint32_t nrows_tensor{};
-  /**
-   * @brief The number of token-ids in each row.
-   */
-  uint32_t sequence_length{};
-  /**
-   * @brief A vector of token-ids for each row.
-   *
-   * The data is a flat matrix (nrows_tensor x sequence_length) of token-ids.
-   * This column is of type UINT32 with no null entries.
-   */
-  std::unique_ptr<cudf::column> tensor_token_ids;
-  /**
-   * @brief This mask identifies which tensor-token-ids are valid.
-   *
-   * This column is of type UINT32 with no null entries.
-   */
-  std::unique_ptr<cudf::column> tensor_attention_mask;
-  /**
-   * @brief The metadata for each tensor row.
-   *
-   * There are three elements per tensor row [row-id, start_pos, stop_pos])
-   * This column is of type UINT32 with no null entries.
-   */
-  std::unique_ptr<cudf::column> tensor_metadata;
+struct tokenizer_result
+{
+    /**
+     * @brief The number of rows for the output token-ids.
+     */
+    uint32_t nrows_tensor{};
+    /**
+     * @brief The number of token-ids in each row.
+     */
+    uint32_t sequence_length{};
+    /**
+     * @brief A vector of token-ids for each row.
+     *
+     * The data is a flat matrix (nrows_tensor x sequence_length) of token-ids.
+     * This column is of type UINT32 with no null entries.
+     */
+    std::unique_ptr<cudf::column> tensor_token_ids;
+    /**
+     * @brief This mask identifies which tensor-token-ids are valid.
+     *
+     * This column is of type UINT32 with no null entries.
+     */
+    std::unique_ptr<cudf::column> tensor_attention_mask;
+    /**
+     * @brief The metadata for each tensor row.
+     *
+     * There are three elements per tensor row [row-id, start_pos, stop_pos])
+     * This column is of type UINT32 with no null entries.
+     */
+    std::unique_ptr<cudf::column> tensor_metadata;
 };
 
 /**
@@ -147,15 +149,14 @@ struct tokenizer_result {
  * @param mr Memory resource to allocate any returned objects.
  * @return token-ids, attention-mask, and metadata
  */
-tokenizer_result subword_tokenize(
-  cudf::strings_column_view const& strings,
-  hashed_vocabulary const& vocabulary_table,
-  uint32_t max_sequence_length,
-  uint32_t stride,
-  bool do_lower_case,
-  bool do_truncate,
-  uint32_t max_rows_tensor,
-  rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+tokenizer_result subword_tokenize(cudf::strings_column_view const& strings,
+                                  hashed_vocabulary const& vocabulary_table,
+                                  uint32_t max_sequence_length,
+                                  uint32_t stride,
+                                  bool do_lower_case,
+                                  bool do_truncate,
+                                  uint32_t max_rows_tensor,
+                                  rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
 /** @} */  // end of group
 }  // namespace nvtext

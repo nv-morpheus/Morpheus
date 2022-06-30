@@ -308,9 +308,7 @@ def get_merge_target():
 
 def parse_args():
     argparser = argparse.ArgumentParser("Executes a gitutil action")
-    argparser.add_argument("action",
-                           choices=['get_merge_target'],
-                           help="Action to execute")
+    argparser.add_argument("action", choices=['get_merge_target'], help="Action to execute")
     args = argparser.parse_args()
     return args
 
