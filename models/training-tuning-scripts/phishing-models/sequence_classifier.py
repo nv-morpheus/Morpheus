@@ -15,9 +15,8 @@
 
 import logging
 import os
-
-import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
+from abc import ABC
+from abc import abstractmethod
 
 import cupy
 import torch
@@ -26,14 +25,17 @@ from dataset import Dataset
 from torch.utils.dlpack import to_dlpack
 from tqdm import trange
 from transformers import AdamW
-from abc import ABC, abstractmethod
+
+import cudf
+from cudf.core.subword_tokenizer import SubwordTokenizer
 
 log = logging.getLogger(__name__)
 
 
 class SequenceClassifier(ABC):
     """
-    Sequence Classifier using BERT. This class provides methods for training/loading BERT models, evaluation and prediction.
+    Sequence Classifier using BERT. This class provides methods for training/loading BERT models, evaluation and
+    prediction.
     """
 
     def __init__(self):
@@ -64,7 +66,9 @@ class SequenceClassifier(ABC):
         :type labels: cudf.Series
         :param learning_rate: learning rate
         :type learning_rate: float
-        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it will be truncated to max_seq_len.
+        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter
+            than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it
+            will be truncated to max_seq_len.
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
@@ -74,7 +78,9 @@ class SequenceClassifier(ABC):
         Examples
         --------
         >>> from cuml.preprocessing.model_selection import train_test_split
-        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df, 'label', train_size=0.8)
+        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df,
+                                                                                    'label',
+                                                                                    train_size=0.8)
         >>> sc.train_model(emails_train, labels_train)
         """
         train_gdf = cudf.DataFrame()
@@ -89,14 +95,15 @@ class SequenceClassifier(ABC):
         self._tokenizer = SubwordTokenizer(self._hashpath, do_lower_case=True)
 
         for _ in trange(epochs, desc="Epoch"):
-            tr_loss = 0   # Tracking variables
+            tr_loss = 0  # Tracking variables
             nb_tr_examples, nb_tr_steps = 0, 0
             for df in train_dataloader.get_chunks():
                 b_input_ids, b_input_mask = self._bert_uncased_tokenize(df["text"], max_seq_len)
 
                 b_labels = torch.tensor(df["label"].to_array())
                 self._optimizer.zero_grad()  # Clear out the gradients
-                loss = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)[0]  # forwardpass
+                # forwardpass
+                loss = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)[0]
 
                 loss.sum().backward()
                 self._optimizer.step()  # update parameters
@@ -114,7 +121,9 @@ class SequenceClassifier(ABC):
         :type test_data: cudf.Series
         :param labels: labels for each element in test_data
         :type labels: cudf.Series
-        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it will be truncated to max_seq_len.
+        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter
+            than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it
+            will be truncated to max_seq_len.
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
@@ -122,7 +131,9 @@ class SequenceClassifier(ABC):
         Examples
         --------
         >>> from cuml.preprocessing.model_selection import train_test_split
-        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df, 'label', train_size=0.8)
+        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df,
+                                                                                    'label',
+                                                                                    train_size=0.8)
         >>> sc.evaluate_model(emails_test, labels_test)
         """
         self._model.eval()
@@ -139,9 +150,7 @@ class SequenceClassifier(ABC):
             b_input_ids, b_input_mask = self._bert_uncased_tokenize(df["text"], max_seq_len)
             b_labels = torch.tensor(df["label"].to_array())
             with torch.no_grad():
-                logits = self._model(
-                    b_input_ids, token_type_ids=None, attention_mask=b_input_mask
-                )[0]
+                logits = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)[0]
 
             logits = logits.type(torch.DoubleTensor).to(self._device)
             logits = cupy.fromDlpack(to_dlpack(logits))
@@ -166,7 +175,9 @@ class SequenceClassifier(ABC):
         Examples
         --------
         >>> from cuml.preprocessing.model_selection import train_test_split
-        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df, 'label', train_size=0.8)
+        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df,
+                                                                                    'label',
+                                                                                    train_size=0.8)
         >>> sc.train_model(emails_train, labels_train)
         >>> sc.save_model()
         """
@@ -187,9 +198,7 @@ class SequenceClassifier(ABC):
         >>> sc.save_checkpoint(PATH)
         """
 
-        checkpoint = {
-            "state_dict": self._model.module.state_dict()
-        }
+        checkpoint = {"state_dict": self._model.module.state_dict()}
         torch.save(checkpoint, file_path)
 
     def load_checkpoint(self, file_path):
@@ -209,9 +218,7 @@ class SequenceClassifier(ABC):
         self._model.module.load_state_dict(model_dict["state_dict"])
 
     def _get_hash_table_path(self):
-        hash_table_path = "%s/resources/bert-base-uncased-hash.txt" % os.path.dirname(
-            os.path.realpath(__file__)
-        )
+        hash_table_path = "%s/resources/bert-base-uncased-hash.txt" % os.path.dirname(os.path.realpath(__file__))
         return hash_table_path
 
     def _config_optimizer(self, learning_rate):
@@ -219,15 +226,11 @@ class SequenceClassifier(ABC):
         no_decay = ["bias", "gamma", "beta"]
         optimizer_grouped_parameters = [
             {
-                "params": [
-                    p for n, p in param_optimizer if not any(nd in n for nd in no_decay)
-                ],
+                "params": [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
                 "weight_decay_rate": 0.01,
             },
             {
-                "params": [
-                    p for n, p in param_optimizer if any(nd in n for nd in no_decay)
-                ],
+                "params": [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
                 "weight_decay_rate": 0.0,
             },
         ]

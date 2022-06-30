@@ -12,41 +12,67 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Example Usage:
 python hammah-20211017-script.py \
        --trainingdata "../datasets/training-data/hammah-user123-training-data.csv"\
-       --valdata "../datasets/validation-data/hammah-user123-validation-data.csv" 
+       --valdata "../datasets/validation-data/hammah-user123-validation-data.csv"
 """
 
+import argparse
 
-import pandas as pd
-import os
+import dill
 import numpy as np
-import glob
+import pandas as pd
 import torch
 from dfencoder import AutoEncoder
-import matplotlib.pyplot as plt
-import argparse
-import dill
 
 
 def main():
     X_train = pd.read_csv(args.trainingdata)
     X_val = pd.read_csv(args.valdata)
 
-
-    features=['eventSource', 'eventName', 'sourceIPAddress', 'userAgent','userIdentitytype', 'requestParametersroleArn', 'requestParametersroleSessionName','requestParametersdurationSeconds', 'responseElementsassumedRoleUserassumedRoleId','responseElementsassumedRoleUserarn', 'apiVersion', 'userIdentityprincipalId','userIdentityarn', 'userIdentityaccountId', 'userIdentityaccessKeyId','userIdentitysessionContextsessionIssuerprincipalId', 'userIdentitysessionContextsessionIssueruserName','tlsDetailsclientProvidedHostHeader', 'requestParametersownersSetitems','requestParametersmaxResults', 'requestParametersinstancesSetitems','errorCode', 'errorMessage', 'requestParametersmaxItems','responseElementsrequestId', 'responseElementsinstancesSetitems','requestParametersgroupSetitems', 'requestParametersinstanceType','requestParametersmonitoringenabled', 'requestParametersdisableApiTermination','requestParametersebsOptimized', 'responseElementsreservationId', 'requestParametersgroupName'] #NO userIdentitysessionContextsessionIssuerarn,userIdentityuserName
+    features = [
+        'eventSource',
+        'eventName',
+        'sourceIPAddress',
+        'userAgent',
+        'userIdentitytype',
+        'requestParametersroleArn',
+        'requestParametersroleSessionName',
+        'requestParametersdurationSeconds',
+        'responseElementsassumedRoleUserassumedRoleId',
+        'responseElementsassumedRoleUserarn',
+        'apiVersion',
+        'userIdentityprincipalId',
+        'userIdentityarn',
+        'userIdentityaccountId',
+        'userIdentityaccessKeyId',
+        'userIdentitysessionContextsessionIssuerprincipalId',
+        'userIdentitysessionContextsessionIssueruserName',
+        'tlsDetailsclientProvidedHostHeader',
+        'requestParametersownersSetitems',
+        'requestParametersmaxResults',
+        'requestParametersinstancesSetitems',
+        'errorCode',
+        'errorMessage',
+        'requestParametersmaxItems',
+        'responseElementsrequestId',
+        'responseElementsinstancesSetitems',
+        'requestParametersgroupSetitems',
+        'requestParametersinstanceType',
+        'requestParametersmonitoringenabled',
+        'requestParametersdisableApiTermination',
+        'requestParametersebsOptimized',
+        'responseElementsreservationId',
+        'requestParametersgroupName'
+    ]  # NO userIdentitysessionContextsessionIssuerarn,userIdentityuserName
     for i in list(X_train):
         if i not in features:
             X_train = X_train.drop(i, axis=1)
     for i in list(X_val):
         if i not in features:
             X_val = X_val.drop(i, axis=1)
-
-
-
 
     X_train = X_train.dropna(axis=1, how='all')
     X_val = X_val.dropna(axis=1, how='all')
@@ -79,18 +105,16 @@ def main():
 
     model.fit(X_train, epochs=25, val=X_val)
 
-    torch.save(model.state_dict(), args.trainingdata[:-4]+".pkl")
-    with open(args.trainingdata[:-4]+'dill'+'.pkl', 'wb') as f:
+    torch.save(model.state_dict(), args.trainingdata[:-4] + ".pkl")
+    with open(args.trainingdata[:-4] + 'dill' + '.pkl', 'wb') as f:
         serialized_model = dill.dumps(model)
         f.write(serialized_model)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--trainingdata", required=True,
-                        help="CloudTrail CSV")
-    parser.add_argument("--valdata", required=True,
-                        help="CloudTrail CSV")
+    parser.add_argument("--trainingdata", required=True, help="CloudTrail CSV")
+    parser.add_argument("--valdata", required=True, help="CloudTrail CSV")
     args = parser.parse_args()
 
     main()

@@ -15,22 +15,24 @@
 
 import logging
 
-import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
 import torch
 import torch.nn as nn
-from torch.utils.dlpack import to_dlpack
-from sequence_classifier import SequenceClassifier
 from dataloader import DataLoader
 from dataset import Dataset
+from sequence_classifier import SequenceClassifier
+from torch.utils.dlpack import to_dlpack
 from transformers import AutoModelForSequenceClassification
+
+import cudf
+from cudf.core.subword_tokenizer import SubwordTokenizer
 
 log = logging.getLogger(__name__)
 
 
 class BinarySequenceClassifier(SequenceClassifier):
     """
-    Sequence Classifier using BERT. This class provides methods for training/loading BERT models, evaluation and prediction.
+    Sequence Classifier using BERT. This class provides methods for training/loading BERT models, evaluation and
+    prediction.
     """
 
     def init_model(self, model_or_path):
@@ -66,7 +68,9 @@ class BinarySequenceClassifier(SequenceClassifier):
 
         :param input_data: input text data for prediction
         :type input_data: cudf.Series
-        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it will be truncated to max_seq_len.
+        :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter
+            than max_seq_len, output will be padded with 0s. If the tokenized sentence is longer than max_seq_len it
+            will be truncated to max_seq_len.
         :type max_seq_len: int
         :param batch_size: batch size
         :type batch_size: int
@@ -78,7 +82,9 @@ class BinarySequenceClassifier(SequenceClassifier):
         Examples
         --------
         >>> from cuml.preprocessing.model_selection import train_test_split
-        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df, 'label', train_size=0.8)
+        >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df,
+                                                                                    'label',
+                                                                                    train_size=0.8)
         >>> sc.train_model(emails_train, labels_train)
         >>> predictions = sc.predict(emails_test, threshold=0.8)
         """
@@ -96,9 +102,7 @@ class BinarySequenceClassifier(SequenceClassifier):
         for df in predict_dataloader.get_chunks():
             b_input_ids, b_input_mask = self._bert_uncased_tokenize(df["text"], max_seq_len)
             with torch.no_grad():
-                logits = self._model(
-                    b_input_ids, token_type_ids=None, attention_mask=b_input_mask
-                )[0]
+                logits = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)[0]
                 b_probs = torch.sigmoid(logits[:, 1])
                 b_preds = b_probs.ge(threshold)
 
