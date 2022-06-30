@@ -29,6 +29,7 @@ dependencies:
     - ccache>=3.7
     - cmake=3.22
     - cuda-nvml-dev=11.5
+    - cuda-python<=11.7.0 # 11.7.1 Breaks the cuda bindings
     - cudatoolkit=11.5
     - cudf 22.06
     - cudf_kafka 22.06.*
@@ -50,7 +51,6 @@ dependencies:
     - isort
     - mlflow>=1.23
     - myst-parser==0.17
-    - srf 22.06.*
     - ninja=1.10
     - nodejs=17.4.0
     - pandas=1.3
@@ -68,6 +68,7 @@ dependencies:
     - scikit-build=0.13
     - sphinx
     - sphinx_rtd_theme
+    - srf 22.06.*
     - sysroot_linux-64=2.17
     - tqdm
     - yapf=0.32.0
