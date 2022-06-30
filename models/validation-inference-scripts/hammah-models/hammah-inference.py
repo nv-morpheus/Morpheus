@@ -1,27 +1,18 @@
 """
 Example Usage:
-python hammah-inference.py --validationdata hammah-user123-validation-data.csv --model hammah-user123-20211017-dill.pkl --output abp-validation-output.csv
+python hammah-inference.py \
+    --validationdata hammah-user123-validation-data.csv \
+    --model hammah-user123-20211017-dill.pkl \
+    --output abp-validation-output.csv
 """
 
 import argparse
 import datetime
-import glob
-import json
-import os
 
 import clx.analytics.periodicity_detection as pdd
 import cupy as cp
 import dill
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import torch
-from clx.analytics.stats import rzscore
-from dfencoder import AutoEncoder
-#from pandas import json_normalize
-from pandas.io.json import json_normalize
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import f1_score
 
 import cudf
 
@@ -77,16 +68,15 @@ def infer(validationdata, model, output):
     X_val['ae_anomaly_score'] = scores
 
     X_val.sort_values('ae_anomaly_score', ascending=False).head(10)
-    #since inference is done, add the original columns back so the output will be the same as the input format
-    #X_val['ts_anomaly']=X_val_original['ts_anomaly']
+    # since inference is done, add the original columns back so the output will be the same as the input format
+    # X_val['ts_anomaly']=X_val_original['ts_anomaly']
     df = cudf.read_csv("hammah-user123-validation-data.csv")
     df = df.sort_values(by=['eventTime'])
     timearr = df.eventTime.to_array()
     START = stript(timearr[0])
-    END = stript(timearr[-1])
     timeobj = list(map(stript, timearr))
     hs = list(map(date2min, timeobj))
-    n, bins = cp.histogram(cp.array(hs), bins=cp.arange(0, max(hs)))
+    n, _ = cp.histogram(cp.array(hs), bins=cp.arange(0, max(hs)))
     signal = cudf.Series(n)
     a = cp.fromDlpack(signal.to_dlpack())
     periodogram = pdd.to_periodogram(signal)
@@ -106,7 +96,6 @@ def infer(validationdata, model, output):
     df['ts_anomaly'] = False
     for i in strlist:
         df['ts_anomaly'] = df['eventTime'].str.contains(i)
-    X_val_original = X_val
     X_val.insert(0, 'eventID', X_val.index)
     X_val.insert(0, '', X_val.index)
     X_val['ts_anomaly'] = df['ts_anomaly'].to_pandas()
