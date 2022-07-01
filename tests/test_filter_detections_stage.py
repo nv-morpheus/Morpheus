@@ -53,7 +53,8 @@ def test_filter(config):
     mock_message = make_mock_message(probs)
 
     # All values are at or below the threshold
-    assert fds.filter(mock_message) == []
+    output_message = fds.filter(mock_message)
+    assert output_message.mask.tolist() == [False, False]
 
     # Only one row has a value above the threshold
     probs = cp.array([
@@ -64,11 +65,8 @@ def test_filter(config):
 
     mock_message = make_mock_message(probs)
 
-    output_list = fds.filter(mock_message)
-    assert len(output_list) == 1
-    assert output_list[0].offset == 1
-    assert output_list[0].mess_offset == 9
-    assert output_list[0].mess_count == 1
+    output_message = fds.filter(mock_message)
+    assert output_message.mask.tolist() == [False, True, False]
 
     # Two adjacent rows have a value above the threashold
     probs = cp.array([
@@ -81,11 +79,8 @@ def test_filter(config):
 
     mock_message = make_mock_message(probs)
 
-    output_list = fds.filter(mock_message)
-    assert len(output_list) == 1
-    assert output_list[0].offset == 2
-    assert output_list[0].mess_offset == 10
-    assert output_list[0].mess_count == 2
+    output_message = fds.filter(mock_message)
+    assert output_message.mask.tolist() == [False, False, True, True, False]
 
     # Two non-adjacent rows have a value above the threashold
     probs = cp.array([
@@ -99,24 +94,19 @@ def test_filter(config):
 
     mock_message = make_mock_message(probs)
 
-    output_list = fds.filter(mock_message)
-
-    # Assert that masking is in place, and we should only have a single message
-    assert len(output_list) == 1
-    assert output_list[0].offset == 2
-    assert output_list[0].mess_offset == 10
-    assert output_list[0].mess_count == 2
+    output_message = fds.filter(mock_message)
+    assert output_message.mask.tolist() == [False, False, True, False, True, False]
 
 
 @pytest.mark.use_python
 def test_build_single(config):
     mock_stream = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node.return_value = mock_stream
+    mock_builder = mock.MagicMock()
+    mock_builder.make_node.return_value = mock_stream
     mock_input = mock.MagicMock()
 
     fds = FilterDetectionsStage(config)
-    fds._build_single(mock_segment, mock_input)
+    fds._build_single(mock_builder, mock_input)
 
-    mock_segment.make_node_full.assert_called_once()
-    mock_segment.make_edge.assert_called_once()
+    mock_builder.make_node.assert_called_once()
+    mock_builder.make_edge.assert_called_once()
