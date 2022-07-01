@@ -258,7 +258,8 @@ class KafkaSourceStage(SingleOutputSource):
                                                      self._consumer_conf["bootstrap.servers"],
                                                      offset)
 
-                            weakref.finalize(meta, commit, *part[1:])
+                            if (not self._disable_commit):
+                                weakref.finalize(meta, commit, *part[1:])
 
                             # Push the message meta
                             yield meta
@@ -301,13 +302,11 @@ class KafkaSourceStage(SingleOutputSource):
             raise ValueError("ERROR: You must specifiy the topic "
                              "that you want to consume from")
 
-        kafka_confs = {str.encode(key): str.encode(value) for key, value in kafka_configs.items()}
-
         kafka_datasource = None
 
         try:
             kafka_datasource = KafkaDatasource(
-                kafka_confs,
+                kafka_configs,
                 topic.encode(),
                 partition,
                 start,
@@ -326,7 +325,7 @@ class KafkaSourceStage(SingleOutputSource):
 
             result = cudf_readers[message_format](kafka_datasource, engine="cudf", lines=lines)
 
-            return cudf.DataFrame(data=result._data, index=result._index)
+            return cudf.DataFrame._from_data(data=result._data, index=result._index)
         except Exception:
             logger.exception("Error occurred converting KafkaDatasource to Dataframe.")
         finally:
