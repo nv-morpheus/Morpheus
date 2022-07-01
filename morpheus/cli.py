@@ -355,17 +355,6 @@ def run(ctx: click.Context, **kwargs):
     pass
 
 
-def validate_rolls(ctx, param, value):
-    if isinstance(value, tuple):
-        return value
-
-    try:
-        rolls, _, dice = value.partition("d")
-        return int(dice), int(rolls)
-    except ValueError:
-        raise click.BadParameter("format must be 'NdM'")
-
-
 @click.group(chain=True,
              short_help="Run the inference pipeline with a NLP model",
              no_args_is_help=True,
@@ -671,6 +660,11 @@ def from_file(ctx: click.Context, **kwargs):
               is_flag=True,
               help=("Enabling this option will skip pre-filtering of json messages. "
                     "This is only useful when inputs are known to be valid json."))
+@click.option("--auto_offset_reset",
+              type=click.Choice(["earliest", "latest", "none"], case_sensitive=False),
+              default="latest",
+              help=("Sets the value for the configuration option 'auto.offset.reset'. "
+                    "See the kafka documentation for more information on the effects of each value."))
 @prepare_command()
 def from_kafka(ctx: click.Context, **kwargs):
 

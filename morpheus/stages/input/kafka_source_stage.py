@@ -50,6 +50,12 @@ class KafkaSourceStage(SingleOutputSource):
     disable_commit: bool, default = False
         Enabling this option will skip committing messages as they are pulled off the server. This is only useful for
         debugging, allowing the user to process the same messages multiple times.
+    disable_pre_filtering : bool, default = False
+        Enabling this option will skip pre-filtering of json messages. This is only useful when inputs are known to be
+        valid json.
+    auto_offset_reset : str, default = "latest"
+        Sets the value for the configuration option 'auto.offset.reset'. See the kafka documentation for more
+        information on the effects of each value."
     """
 
     def __init__(self,
@@ -59,11 +65,15 @@ class KafkaSourceStage(SingleOutputSource):
                  group_id: str = "custreamz",
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
-                 disable_pre_filtering: bool = False):
+                 disable_pre_filtering: bool = False,
+                 auto_offset_reset: str = "latest"):
         super().__init__(c)
 
         self._consumer_conf = {
-            'bootstrap.servers': bootstrap_servers, 'group.id': group_id, 'session.timeout.ms': "60000"
+            'bootstrap.servers': bootstrap_servers,
+            'group.id': group_id,
+            'session.timeout.ms': "60000",
+            "auto.offset.reset": auto_offset_reset
         }
 
         self._input_topic = input_topic
@@ -88,7 +98,7 @@ class KafkaSourceStage(SingleOutputSource):
         # Override the auto-commit config to enforce custom streamz checkpointing
         self._consumer_params['enable.auto.commit'] = 'false'
         if 'auto.offset.reset' not in self._consumer_params.keys():
-            self._consumer_params['auto.offset.reset'] = 'latest'
+            self._consumer_params['auto.offset.reset'] = 'earliest'
         self._topic = topic
         self._npartitions = npartitions
         self._refresh_partitions = refresh_partitions
@@ -105,7 +115,7 @@ class KafkaSourceStage(SingleOutputSource):
         return "from-kafka"
 
     def supports_cpp_node(self):
-        return False
+        return True
 
     def _source_generator(self):
         # Each invocation of this function makes a new thread so recreate the producers
