@@ -105,9 +105,9 @@ class KafkaSourceStage(SingleOutputSource):
         return "from-kafka"
 
     def supports_cpp_node(self):
-        return True
+        return False
 
-    def _source_generator(self, sub: srf.Subscriber):
+    def _source_generator(self):
         # Each invocation of this function makes a new thread so recreate the producers
 
         # Set some initial values
@@ -181,7 +181,7 @@ class KafkaSourceStage(SingleOutputSource):
                 for partition in range(npartitions):
                     tps.append(ck.TopicPartition(self._topic, partition))
 
-                while sub.is_subscribed():
+                while True:
                     try:
                         committed = consumer.committed(tps, timeout=1)
                     except ck.KafkaException:
@@ -191,7 +191,7 @@ class KafkaSourceStage(SingleOutputSource):
                             positions[tp.partition] = tp.offset
                         break
 
-                while sub.is_subscribed():
+                while True:
                     out = []
 
                     if self._refresh_partitions:
@@ -251,7 +251,7 @@ class KafkaSourceStage(SingleOutputSource):
                             weakref.finalize(meta, commit, *part[1:])
 
                             # Push the message meta
-                            sub.on_next(meta)
+                            yield meta
                     else:
                         time.sleep(self._poll_interval)
             except Exception:
@@ -263,7 +263,6 @@ class KafkaSourceStage(SingleOutputSource):
             # Close the consumer and call on_completed
             if (consumer):
                 consumer.close()
-            sub.on_completed()
 
     def _kafka_params_to_messagemeta(self, x: tuple):
 

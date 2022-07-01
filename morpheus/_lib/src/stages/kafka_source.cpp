@@ -126,6 +126,11 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
         return std::move(messages);
     }
 
+    bool process_messages(std::vector<std::unique_ptr<RdKafka::Message>> &messages)
+    {
+        return m_process_fn(messages);
+    }
+
   private:
     bool m_is_rebalanced{false};
 
@@ -292,19 +297,18 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 std::vector<std::unique_ptr<RdKafka::Message>> message_batch =
                     rebalancer.partition_progress_step(consumer.get());
 
-                std::shared_ptr<morpheus::MessageMeta> batch;
+                // Process the messages. Returns true if we need to commit
+                auto should_commit = rebalancer.process_messages(message_batch);
 
-                try
+                if (should_commit)
                 {
-                    batch = std::move(this->process_batch(std::move(message_batch)));
-                } catch (std::exception &ex)
-                {
-                    LOG(ERROR) << "Exception in process_batch. Msg: " << ex.what();
-
-                    break;
+                    std::vector<RdKafka::TopicPartition *> partitions;
+                    int64_t max_offset = -1000;
+                    for (auto &m : message_batch)
+                    {
+                        CHECK_KAFKA(consumer->commitAsync(m.get()), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
+                    }
                 }
-
-                sub.on_next(std::move(batch));
             }
 
         } catch (std::exception &ex)
