@@ -63,12 +63,5 @@ struct MatxUtil
                                                          const std::vector<TensorIndex> &stride,
                                                          double thresh_val,
                                                          bool by_row);
-
-
-    /**
-     * @brief Creates a boolean array of length `count`, values will be `true` for those that fall between `start` and `end` inclusive
-     * @return
-     */
-    static std::shared_ptr<rmm::device_buffer> create_1d_mask(size_t count, size_t start, size_t end);
 };
 }  // namespace morpheus
