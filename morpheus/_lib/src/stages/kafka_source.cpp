@@ -314,12 +314,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 
                 if (should_commit)
                 {
-                    std::vector<RdKafka::TopicPartition *> partitions;
-                    int64_t max_offset = -1000;
-                    for (auto &m : message_batch)
-                    {
-                        CHECK_KAFKA(consumer->commitAsync(m.get()), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
-                    }
+                    CHECK_KAFKA(consumer->commitAsync(), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
                 }
             }
 
