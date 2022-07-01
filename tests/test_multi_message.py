@@ -86,7 +86,7 @@ def test_set_meta(config):
     assert len(mm.get_meta()) == 7
 
     values = list(range(7))
-    mm.set_meta(['v2'], values)
+    mm.set_meta('v2', values)
 
     assert mm.get_meta_list('v2') == values
 
