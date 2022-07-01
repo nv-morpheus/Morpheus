@@ -19,7 +19,6 @@
 
 #include <morpheus/messages/meta.hpp>
 #include <morpheus/objects/table_info.hpp>
-#include <morpheus/utilities/matx_util.hpp>
 
 #include <cudf/types.hpp>
 
@@ -34,10 +33,9 @@ namespace morpheus {
 MultiMessage::MultiMessage(std::shared_ptr<morpheus::MessageMeta> m, size_t o, size_t c) :
   meta(std::move(m)),
   mess_offset(o),
-  mess_count(c)
-{
-    mask = MatxUtil::create_1d_mask(meta->count(), mess_offset, mess_offset + mess_count);
-}
+  mess_count(c),
+  mask{static_cast<cudf::size_type>(mess_offset), static_cast<cudf::size_type>(mess_offset + mess_count)}
+{}
 
 TableInfo MultiMessage::get_meta()
 {
