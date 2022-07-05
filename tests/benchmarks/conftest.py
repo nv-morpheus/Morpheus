@@ -14,14 +14,8 @@
 # limitations under the License.
 
 import glob
-import importlib
-import logging
 import os
-import subprocess
-import time
 
-import pytest
-import requests
 from test_bench_e2e_pipelines import TEST_SOURCES
 
 
@@ -41,11 +35,11 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
 
         repeat = TEST_SOURCES[bench["name"]]["repeat"]
 
-        bench['stats']['min-throughput-lines'] =  (line_count*repeat) / bench['stats']['max']
-        bench['stats']['max-throughput-lines'] =  (line_count*repeat) / bench['stats']['min']
-        bench['stats']['mean-throughput-lines'] =  (line_count*repeat) / bench['stats']['mean']
-        bench['stats']['median-throughput-lines'] =  (line_count*repeat) / bench['stats']['median']
-        bench['stats']['min-throughput-bytes'] =  (byte_count*repeat) / bench['stats']['max']
-        bench['stats']['max-throughput-bytes'] =  (byte_count*repeat) / bench['stats']['min']
-        bench['stats']['mean-throughput-bytes'] =  (byte_count*repeat) / bench['stats']['mean']
-        bench['stats']['median-throughput-bytes'] =  (byte_count*repeat) / bench['stats']['median']
+        bench['stats']['min-throughput-lines'] = (line_count * repeat) / bench['stats']['max']
+        bench['stats']['max-throughput-lines'] = (line_count * repeat) / bench['stats']['min']
+        bench['stats']['mean-throughput-lines'] = (line_count * repeat) / bench['stats']['mean']
+        bench['stats']['median-throughput-lines'] = (line_count * repeat) / bench['stats']['median']
+        bench['stats']['min-throughput-bytes'] = (byte_count * repeat) / bench['stats']['max']
+        bench['stats']['max-throughput-bytes'] = (byte_count * repeat) / bench['stats']['min']
+        bench['stats']['mean-throughput-bytes'] = (byte_count * repeat) / bench['stats']['mean']
+        bench['stats']['median-throughput-bytes'] = (byte_count * repeat) / bench['stats']['median']

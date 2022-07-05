@@ -42,41 +42,36 @@ from utils import TEST_DIRS
 
 TEST_SOURCES = {
     "test_sid_nlp_e2e": {
-        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv'),
-        "repeat": 10
+        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv'), "repeat": 10
     },
-     "test_abp_fil_e2e": {
-        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines'),
-        "repeat": 100
+    "test_abp_fil_e2e": {
+        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines'), "repeat": 100
     },
-     "test_phishing_nlp_e2e": {
+    "test_phishing_nlp_e2e": {
         "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'phishing-email-validation-data.jsonlines'),
         "repeat": 1
     },
-     "test_cloudtrail_ae_e2e": {
-        "glob_path": os.path.join(TEST_DIRS.validation_data_dir, 'hammah-*.csv'),
-        "repeat": 1
+    "test_cloudtrail_ae_e2e": {
+        "glob_path": os.path.join(TEST_DIRS.validation_data_dir, 'hammah-*.csv'), "repeat": 1
     }
 }
 
-def nlp_pipeline(config: Config,
-                     input_file,
-                     repeat,
-                     vocab_hash_file,
-                     output_file,
-                     model_name):
+
+def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_file, model_name):
 
     configure_logging(log_level=logging.INFO)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
     pipeline.add_stage(DeserializeStage(config))
-    pipeline.add_stage(PreprocessNLPStage(config,
-                                          vocab_hash_file=vocab_hash_file,
-                                          truncation=True,
-                                          do_lower_case=True,
-                                          add_special_tokens=False))
-    pipeline.add_stage(TritonInferenceStage(config, model_name=model_name, server_url="localhost:8001", force_convert_inputs=True))
+    pipeline.add_stage(
+        PreprocessNLPStage(config,
+                           vocab_hash_file=vocab_hash_file,
+                           truncation=True,
+                           do_lower_case=True,
+                           add_special_tokens=False))
+    pipeline.add_stage(
+        TritonInferenceStage(config, model_name=model_name, server_url="localhost:8001", force_convert_inputs=True))
     pipeline.add_stage(AddClassificationsStage(config, threshold=0.5, prefix=""))
     pipeline.add_stage(MonitorStage(config))
     pipeline.add_stage(SerializeStage(config))
@@ -85,11 +80,8 @@ def nlp_pipeline(config: Config,
     pipeline.build()
     pipeline.run()
 
-def fil_pipeline(config: Config,
-                     input_file,
-                     repeat,
-                     output_file,
-                     model_name):
+
+def fil_pipeline(config: Config, input_file, repeat, output_file, model_name):
 
     configure_logging(log_level=logging.INFO)
 
@@ -97,7 +89,8 @@ def fil_pipeline(config: Config,
     pipeline.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(PreprocessFILStage(config))
-    pipeline.add_stage(TritonInferenceStage(config, model_name=model_name, server_url="localhost:8001", force_convert_inputs=True))
+    pipeline.add_stage(
+        TritonInferenceStage(config, model_name=model_name, server_url="localhost:8001", force_convert_inputs=True))
     pipeline.add_stage(AddClassificationsStage(config, threshold=0.5, prefix=""))
     pipeline.add_stage(MonitorStage(config))
     pipeline.add_stage(SerializeStage(config))
@@ -106,37 +99,31 @@ def fil_pipeline(config: Config,
     pipeline.build()
     pipeline.run()
 
-def ae_pipeline(config: Config,
-                     input_glob,
-                     repeat,
-                     train_data_glob,
-                     output_file):
+
+def ae_pipeline(config: Config, input_glob, repeat, train_data_glob, output_file):
 
     configure_logging(log_level=logging.INFO)
     pipeline = LinearPipeline(config)
-    pipeline.set_source(CloudTrailSourceStage(config,
-                                              input_glob=input_glob,
-                                              max_files=200,
-                                              repeat=repeat))
-    pipeline.add_stage(TrainAEStage(config,
-                                    train_data_glob=train_data_glob,
-                                    seed=42))
+    pipeline.set_source(CloudTrailSourceStage(config, input_glob=input_glob, max_files=200, repeat=repeat))
+    pipeline.add_stage(TrainAEStage(config, train_data_glob=train_data_glob, seed=42))
     pipeline.add_stage(PreprocessAEStage(config))
     pipeline.add_stage(AutoEncoderInferenceStage(config))
     pipeline.add_stage(AddScoresStage(config))
-    pipeline.add_stage(TimeSeriesStage(config,
-                                       resolution="1m",
-                                       min_window=" 12 h",
-                                       hot_start=True,
-                                       cold_end=False,
-                                       filter_percent=90.0,
-                                       zscore_threshold=8.0))
+    pipeline.add_stage(
+        TimeSeriesStage(config,
+                        resolution="1m",
+                        min_window=" 12 h",
+                        hot_start=True,
+                        cold_end=False,
+                        filter_percent=90.0,
+                        zscore_threshold=8.0))
     pipeline.add_stage(MonitorStage(config))
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
 
     pipeline.build()
     pipeline.run()
+
 
 def test_sid_nlp_e2e(benchmark, tmp_path):
 
@@ -168,6 +155,7 @@ def test_sid_nlp_e2e(benchmark, tmp_path):
     model_name = "sid-minibert-onnx"
 
     benchmark(nlp_pipeline, config, input_filepath, repeat, vocab_filepath, output_filepath, model_name)
+
 
 def test_abp_fil_e2e(benchmark, tmp_path):
 
