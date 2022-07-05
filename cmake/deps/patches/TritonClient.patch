@@ -14,19 +14,19 @@
 # limitations under the License.
 
 diff --git a/src/c++/library/CMakeLists.txt b/src/c++/library/CMakeLists.txt
-index 4df5a71..967c0ea 100644
+index e0eed14..1551fab 100644
 --- a/src/c++/library/CMakeLists.txt
 +++ b/src/c++/library/CMakeLists.txt
-@@ -147,7 +147,7 @@ if(TRITON_ENABLE_CC_GRPC OR TRITON_ENABLE_PERF_ANALYZER)
+@@ -142,7 +142,7 @@ if(TRITON_ENABLE_CC_GRPC OR TRITON_ENABLE_PERF_ANALYZER)
         grpcclient
         PROPERTIES
           LINK_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libgrpcclient.ldscript
 -         LINK_FLAGS "-Wl,--version-script=libgrpcclient.ldscript"
 +         LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libgrpcclient.ldscript"
       )
-   endif() # NOT WIN32
+   endif() # NOT WIN32 AND NOT TRITON_KEEP_TYPEINFO
  
-@@ -312,7 +312,7 @@ if(TRITON_ENABLE_CC_HTTP OR TRITON_ENABLE_PERF_ANALYZER)
+@@ -310,7 +310,7 @@ if(TRITON_ENABLE_CC_HTTP OR TRITON_ENABLE_PERF_ANALYZER)
         httpclient
         PROPERTIES
           LINK_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libhttpclient.ldscript

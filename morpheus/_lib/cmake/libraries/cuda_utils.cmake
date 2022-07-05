@@ -16,7 +16,10 @@ add_library(cuda_utils
     SHARED
       ${MORPHEUS_LIB_ROOT}/src/objects/dev_mem_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/table_info.cpp
+      ${MORPHEUS_LIB_ROOT}/src/objects/tensor_object.cpp
       ${MORPHEUS_LIB_ROOT}/src/utilities/matx_util.cu
+      ${MORPHEUS_LIB_ROOT}/src/utilities/tensor_util.cpp
+      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util_detail.cpp
       ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cu
 )
 
@@ -27,7 +30,7 @@ target_include_directories(cuda_utils
 
 target_link_libraries(cuda_utils
     PUBLIC
-      neo::pyneo
+      srf::pysrf
       matx::matx
       cudf::cudf
       Python3::NumPy

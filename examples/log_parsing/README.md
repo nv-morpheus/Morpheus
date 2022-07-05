@@ -36,9 +36,20 @@ cd ${MORPHEUS_ROOT}/models
 docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:22.02-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model log-parsing-onnx
 ```
 
+##### Verify Model Deployment
+Once Triton server finishes starting up, it will display the status of all loaded models. Successful deployment of the model will show the following:
+
+```
++------------------+---------+--------+
+| Model            | Version | Status |
++------------------+---------+--------+
+| log-parsing-onnx | 1       | READY  |
++------------------+---------+--------+
+```
+
 ### Run Log Parsing Pipeline
 
-Run the following in your Morpheus container to start the log parsing pipeline:
+Run the following from the root of the Morpheus repo to start the log parsing pipeline:
 
 ```
 python ./examples/log_parsing/run.py \
@@ -56,7 +67,7 @@ python ./examples/log_parsing/run.py \
 Use `--help` to display information about the command line options:
 
 ```
-python ./examples/log-parsing/run.py --help
+python ./examples/log_parsing/run.py --help
 
 Options:
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use

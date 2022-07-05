@@ -1,33 +1,37 @@
-# Morpheus SDK
+![NVIDIA Morpheus](./img/morpheus-banner.png "Morpheus banner image")
+
+# NVIDIA Morpheus
 
 NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI framework and pre-trained AI capabilities that allow them to instantaneously inspect all IP traffic across their data center fabric. The Morpheus developer framework allows teams to build their own optimized pipelines that address cybersecurity and information security use cases. Bringing a new level of security to data centers, Morpheus provides development capabilities around dynamic protection, real-time telemetry, adaptive policies, and cyber defenses for detecting and remediating cybersecurity threats.
 
-There are two basic ways to get started with Morpheus - using the production  deployment containers on NGC or using GitHub to run the pre-built container or build from source.
+## Documentation
+Full documentation (including a quick start guide, a developer/user guide, and API documentation) is available online at [https://docs.nvidia.com/morpheus/](https://docs.nvidia.com/morpheus/).
 
-## Getting Started with Containers on NGC
+## Getting Started with Morpheus
+There are three ways to get started with Morpheus:
+- Using pre-built Docker containers
+- Building the Morpheus Docker container
+- Building Morpheus from source
 
-Morpheus pre-built containers are hosted on NGC (NVIDIA GPU Cloud) and make it easy to get started running Morpheus. Use the link below to access the Morpheus collection.
+The pre-built Docker containers are the easiest way to get started with the latest release of Morpheus. Instructions on how to download and run these containers, including the necessary data and models, can be found on NGC [here](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
 
-[https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus)
+More advanced users, or those who are interested in using the latest pre-release features, will need to build the Morpheus container or build from source. Step-by-step instructions for these users can be found in the following section.
 
-Complete instructions on how to get up-and-running with the NGC containers are available in the Morpheus Quick Start Guide.
+### Prerequisites
+The following sections must be followed prior to building the Morpheus container or building Morpheus from source.
 
-## Getting Started with Installation via GitHub
-If you prefer to run Morpheus from GitLab, the instructions below provide guidelines on how to get started with the pre-built container or build from source.
-
-#### Prerequisites
-
+#### Requirements
 - Pascal architecture or better
 - NVIDIA driver `450.80.02` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [Git LFS](https://git-lfs.github.com/)
 
-#### Ensure Git LFS is Installed
+#### Git LFS
 
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
-If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command.
+If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
 ```bash
 git lfs install
 ```
@@ -46,144 +50,45 @@ cd $MORPHEUS_ROOT
 git lfs pull
 ```
 
-#### Pre-built `runtime` Docker image
+### Build Morpheus Container
 
-Pre-built Morpheus Docker images can be downloaded from NGC. See [here](docs/source/morpheus_quickstart_guide.md#set-up-ngc-api-key-and-install-ngc-registry-cli) for details on accessing NGC. The `runtime` image includes pre-installed Morpheus and dependencies:
+To assist in building the Morpheus container, several scripts have been provided in the `./docker` directory. To build the "release" container, run the following:
 
-```bash
-docker pull nvcr.io/nvidia/morpheus/morpheus:22.04-runtime
-```
-
-Run the pre-built `runtime` container:
-
-```bash
-DOCKER_IMAGE_TAG=22.04-runtime ./docker/run_container_release.sh
-```
-
-#### Manually build `runtime` Docker image
-
-The Morpheus `runtime` image can also be manually built. This allows you to use a Morpheus build from the development branch or other branch/tag.
-To manually build the `runtime` image, run the following from the repo root:
-
-#### Building locally (outside a container)
-
-To build Morpheus outside a container, all the necessary dependencies will need to be installed locally or in a virtual environment. Due to the increased complexity of installing outside of a container, this section has been moved to the [`CONTRIBUTING.md`](CONTRIBUTING.md). Please see the "Build in a Conda Environment" section for more information.
-
-Note: Once `morpheus` CLI is installed, shell command completion can be installed with:
 ```bash
 ./docker/build_container_release.sh
 ```
-This will create an image named `nvcr.io/nvidia/morpheus/morpheus:latest`.
 
-Run the manually built `runtime` container:
+This will create an image named `nvcr.io/nvidia/morpheus/morpheus:${MORPHEUS_VERSION}-runtime` where `$MORPHEUS_VERSION` is replaced by the output of `git describe --tags --abbrev=0`.
+
+To run the built "release" container, use the following:
 
 ```bash
 ./docker/run_container_release.sh
 ```
 
-#### Build from source
+You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.06.00a` use the following:
 
-Build instructions for developers and contributors can be found in [CONTRIBUTING.md](./CONTRIBUTING.md).
+```bash
+DOCKER_IMAGE_TAG="v22.06.00a-runtime" ./docker/run_container_release.sh
+```
+
+### Build from Source
+
+It's possible to build from source outside of a container. However, due to the large number of dependencies, this can be complex and is only necessary for developers. Instructions for developers and contributors can be found in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Running Morpheus
 
-Depending on your configuration, it may be necessary to start additional services that Morpheus will interact with, before launching the pipeline. See the following list of stages that require additional services:
+To run Morpheus, users will need to choose from the Morpheus Command Line Interface (CLI) or Python interface. Which interface to use depends on the user's needs, amount of customization, and operating environment. More information on each interface can be found below.
 
- - `from-kafka`/`to-kafka`
-   - Requires a running Kafka cluster
-   - See the Quick Launch Kafka section.
- - `inf-triton`
-   - Requires a running Triton server
-   - See the launching Triton section.
+### Morpheus Python Interface
 
-### Quick Launch Kafka Cluster
+The Morpheus python interface allows users to configure their pipelines using a python script file. This is ideal for users who are working in a Jupyter notebook, users who need complex initialization logic or users who have customized stages. Documentation on using the Morpheus python interface can be found at [`docs/source/developer_guide/guides.rst`](./docs/source/developer_guide/guides.rst).
 
-Launching a full production Kafka cluster is outside the scope of this project. However, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. See [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in depth information:
+For full example pipelines using the python interface, see the `./examples` directory.
 
-1. Install `docker-compose` if not already installed:
-   ```bash
-   conda install -c conda-forge docker-compose
-   ```
-2. Clone the `kafka-docker` repo from the Morpheus repo root:
-   ```bash
-   git clone https://github.com/wurstmeister/kafka-docker.git
-   ```
-3. Change directory to `kafka-docker`
-   ```bash
-   cd kafka-docker
-   ```
-4. Export the IP address of your Docker `bridge` network
-   ```bash
-   export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
-   ```
-5. Update the `kafka-docker/docker-compose.yml` so the environment variable `KAFKA_ADVERTISED_HOST_NAME` matches the previous step. For example, the line should look like:
-   ```yml
-   environment:
-      KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
-   ```
-   Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
-   ```bash
-   $ echo $KAFKA_ADVERTISED_HOST_NAME
-   "172.17.0.1"
-   ```
-6. Launch kafka with 3 instances
-   ```bash
-   docker-compose up -d --scale kafka=3
-   ```
-   In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory each.
-7. Create the topic
-   ```bash
-   ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
-   $KAFKA_HOME/bin/kafka-topics.sh --create --topic=$MY_INPUT_TOPIC_NAME --bootstrap-server `broker-list.sh`
-   ```
-   Replace `<INPUT_TOPIC_NAME>` with the input name of your choice. If you are using `to-kafka` ensure your output topic is also created.
+### Morpheus Command Line Interface (CLI)
 
-8. Generate input messages
-   1.  In order for Morpheus to read from Kafka, messages need to be published to the cluster. For debugging/testing purposes, the following container can be used:
-
-         ```bash
-         # Download from https://netq-shared.s3-us-west-2.amazonaws.com/kafka-producer.tar.gz
-         wget https://netq-shared.s3-us-west-2.amazonaws.com/kafka-producer.tar.gz
-         # Load container
-         docker load --input kafka-producer.tar.gz
-         # Run the producer container
-         docker run --rm -it -e KAFKA_BROKER_SERVERS=$(broker-list.sh) -e INPUT_FILE_NAME=$MY_INPUT_FILE -e TOPIC_NAME=$MY_INPUT_TOPIC_NAME --mount src="$PWD,target=/app/data/,type=bind" kafka-producer:1
-         ```
-         In order for this to work, your input file must be accessible from `$PWD`.
-   2. You can view the messages with:
-         ```bash
-         ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
-         $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=$MY_TOPIC --bootstrap-server `broker-list.sh`
-         ```
-
-### Launching Triton Server
-
-To launch Triton server, use the following command:
-```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:21.12-py3 \
-    tritonserver --model-repository=/models/triton-model-repo \
-                 --exit-on-error=false \
-                 --model-control-mode=explicit \
-                 --load-model abp-nvsmi-xgb \
-                 --load-model sid-minibert-onnx \
-                 --load-model phishing-bert-onnx
-```
-This will launch Triton using the port 8001 for the GRPC server. This needs to match the Morpheus configuration.
-
-## Configuration
-
-The Morpheus pipeline can be configured in two ways:
-1. Manual configuration in Python script.
-2. Configuration via the provided CLI (i.e. `morpheus`)
-
-### Starting the Pipeline (via Manual Python Config)
-
-See the `./examples` directory for examples on how to configure a pipeline via Python.
-
-### Starting the Pipeline (via CLI)
-
-The provided CLI (`morpheus`) is capable of running the included tools as well as any linear pipeline. Instructions for using the CLI can be queried with:
+The CLI allows users to completely configure a Morpheus pipeline directly from a terminal. This is ideal for users who do not need customized stages and for users configuring a pipeline in Kubernetes. The Morpheus CLI can be invoked using the `morpheus` command and is capable of running linear pipelines as well as additional tools. Instructions for using the CLI can be queried directly in the terminal using `morpheus --help`:
 
 ```bash
 $ morpheus
@@ -205,6 +110,7 @@ Commands:
   run    Run one of the available pipelines
   tools  Run a utility tool
 ```
+
 Each command in the CLI has its own help information. Use `morpheus [command] [...sub-command] --help` to get instructions for each command and sub command. For example:
 
 ```bash
@@ -232,9 +138,11 @@ Options:
                                   False]
 ```
 
+Several examples on using the Morpheus CLI can be found at [`docs/source/basics/examples.rst`](./docs/source/basics/examples.rst).
+
 #### CLI Stage Configuration
 
-When configuring a pipeline via the CLI, you start with the command `morpheus run pipeline` and then list the stages in order from start to finish. The order that the commands are placed in will be the order that data flows from start to end. The output of each stage will be linked to the input of the next. For example, to build a simple pipeline that reads from kafka, deserializes messages, serializes them, and then writes to a file, use the following:
+When configuring a pipeline via the CLI, you start with the command `morpheus run pipeline` and then list the stages in order from start to finish. The order that the commands are placed in will be the order that data flows from start to end. The output of each stage will be linked to the input of the next. For example, to build a simple pipeline that reads from Kafka, deserializes messages, serializes them, and then writes to a file, use the following:
 
 ```bash
 $ morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json
@@ -272,7 +180,7 @@ Traceback (most recent call last):
 RuntimeError: The to-file stage cannot handle input of <class 'morpheus.pipeline.messages.MultiMessage'>. Accepted input types: (typing.List[str],)
 ```
 
-This indicates that the `to-file` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file, it only knows how to write strings. To ensure you have a valid pipeline, look at the `Accepted input types: (typing.List[str],)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.pipeline.messages.MultiMessage`, to `typing.List[str]`, which is exactly what the `serialize` stage does.
+This indicates that the `to-file` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write strings. To ensure you have a valid pipeline, look at the `Accepted input types: (typing.List[str],)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.pipeline.messages.MultiMessage`, to `typing.List[str]`, which is exactly what the `serialize` stage does.
 
 ## Pipeline Stages
 
@@ -339,7 +247,7 @@ Commands:
   validate      Validates pipeline output against an expected output
 ```
 
-And for AE pipeline:
+And for the AE pipeline:
 
 ```bash
 $ morpheus run pipeline-fil --help
@@ -369,32 +277,7 @@ Commands:
   validate         Validates pipeline output against an expected output
 
 ```
-Note: The available commands for different types of pipelines are not the same. And the same stage in different pipelines may have different options. Please check the CLI help for the most up to date information during development.
+Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
 
-
-## Pipeline Validation
-
-To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavioral Profilirun_container_release.shng (ABP), Humans-as-Machines-Machines-as-Humans (HAMMAH), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
-
-To run all of the validation workflow scripts, use the following commands:
-
-```bash
-# Install utils for checking output
-apt update && apt install -y jq bc
-
-# Run validation scripts
-./scripts/validation/val-run-all.sh
-```
-
-At the end of each workflow, a section will print the different inference workloads that were run and the validation error percentage for each. For example:
-
-```bash
-===ERRORS===
-PyTorch     :3/314 (0.96 %)
-Triton(ONNX):Skipped
-Triton(TRT) :Skipped
-TensorRT    :Skipped
-Complete!
-```
-
-This indicates that only 3 out of 314 rows did not match the validation dataset. If you see errors similar to `:/ ( %)` or very high percentages, then the workflow did not complete sucessfully.
+## Contributing
+Please see our [guide for contributing to Morpheus](./CONTRIBUTING.md).

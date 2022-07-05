@@ -18,7 +18,7 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="gpuci/miniforge-cuda"
-ARG CUDA_VER=11.4
+ARG CUDA_VER=11.5
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 
@@ -29,7 +29,7 @@ FROM ${FROM_IMAGE}:${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
 # Required arguments
 ARG IMAGE_TYPE=base
 ARG RAPIDS_CHANNEL=rapidsai-nightly
-ARG RAPIDS_VER=21.10
+ARG RAPIDS_VER=22.06
 ARG PYTHON_VER=3.8
 ARG CONDA_CHANNEL=rapidsai
 
@@ -42,12 +42,12 @@ ARG TENSORRT_VERSION=8.2.1.3
 # Capture argument used for FROM
 ARG CUDA_VER
 
-# Install dependencies to build vcpkg dependencies
+# Install dependencies to build
 RUN apt-get update &&\
     apt-get upgrade -y &&\
     curl -sL https://deb.nodesource.com/setup_12.x | bash - &&\
     apt-get install --no-install-recommends -y \
-        build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs \
+        build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs git-lfs \
     && rm -rf /var/lib/apt/lists/*
 
 # Enables "source activate conda"
@@ -60,35 +60,18 @@ WORKDIR /workspace
 RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     conda config --env --add channels conda-forge &&\
-    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" python=${PYTHON_VER}
-    # conda clean -afy
-
-# ============ Stage: conda_bld_deps ============
-# Now build the conda dependency packages
-FROM base as conda_bld_deps
-
-ARG CONDA_CHANNEL_ALIAS
-
-# COPY the files necessary to build the cudf package. Dont copy more otherwise the cache will get invalided often
-COPY ci/conda/recipes/cudf/ ./ci/conda/recipes/cudf/
-COPY ci/conda/recipes/libcudf/ ./ci/conda/recipes/libcudf/
-COPY ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
-
-RUN --mount=type=ssh \
-    --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
-    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    # Install mamba, boa and git here. Conda build breaks with other git installs
+    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" &&\
     source activate base &&\
-    # Run with --no-test for now until we can build with builtkit and default nvidia runtime
-    # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh libcudf cudf
+    git lfs install
+    # conda clean -afy
 
 # ============ Stage: conda_env ============
 # Create the conda environment and install all dependencies
 FROM base as conda_env
 
 # Create a base environment
-RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
-    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Create the environment and install as little dependencies as possible
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n morpheus -c conda-forge python=${PYTHON_VER} &&\
     # Clean and activate
@@ -115,12 +98,11 @@ FROM conda_env as conda_env_dev
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
-COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 COPY docker/conda/environments/cuda${CUDA_VER}_dev.yml ./docker/conda/environments/
+COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 
 # Update the morpheus environment
-RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
-    --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"} &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_dev.yml &&\
@@ -131,19 +113,19 @@ RUN --mount=type=bind,from=conda_bld_deps,source=/opt/conda/conda-bld,target=/op
 
 # ============ Stage: conda_bld_morpheus ============
 # Now build the morpheus conda package
-FROM conda_bld_deps as conda_bld_morpheus
+FROM base as conda_bld_morpheus
 
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the source
 COPY . ./
 
-RUN --mount=type=ssh \
-    --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
+RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
-    # Temp add CONDA_CHANNEL_ALIAS to get around conda-build 404 errors
-    MORPHEUS_ROOT=/workspace CONDA_BLD_DIR=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    # Need to get around recent versions of git locking paths until they are deemed safe
+    git config --global --add safe.directory "*" &&\
+    MORPHEUS_ROOT=/workspace MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # ============ Stage: runtime ============
 # Setup container for runtime environment
@@ -164,7 +146,6 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     conda clean -afy
 
 # Only copy specific files/folders over that are necessary for runtime
-COPY "./data" "./data"
 COPY "./docker" "./docker"
 COPY "./docs" "./docs"
 COPY "./examples" "./examples"
@@ -178,7 +159,6 @@ CMD [ "morpheus" ]
 # ============ Stage: development ============
 # Install and configure development only packages
 FROM conda_env_dev as development
-
 # Copy the source
 # COPY . ./
 
@@ -189,3 +169,26 @@ RUN npm install -g camouflage-server
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
 # development
 RUN git config --global --add safe.directory "*"
+
+# ============ Stage: python_debug_bld ===========
+# Configure and build cpython with debugging symbols
+FROM development as development_pydbg
+
+COPY ci/conda/recipes/python-dbg/ ./ci/conda/recipes/python-dbg
+COPY ci/conda/recipes/run_conda_build.sh ./ci/conda/recipes/run_conda_build.sh
+COPY ci/conda/recipes/python_dbg_install.sh ./ci/conda/recipes/python_dbg_install.sh
+
+# Temporary until #68 goes in
+ARG MORPHEUS_USER="root"
+
+# Build and install debug cpython
+RUN source activate morpheus \
+    && MORPHEUS_ROOT=/workspace \
+       CONDA_BLD_PATH=/opt/conda/conda-bld \
+       CONDA_ARGS="--no-test" \
+       ./ci/conda/recipes/run_conda_build.sh pydebug \
+    && ./ci/conda/recipes/python_dbg_install.sh \
+       -s $( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
+       -c $( ls /opt/conda/conda-bld/linux-64/python-${PYTHON_VER}*.tar.bz2 ) \
+       -i ./ci/conda/recipes/python-dbg/source \
+       -g $(eval echo "~${MORPHEUS_USER}")/.gdbinit

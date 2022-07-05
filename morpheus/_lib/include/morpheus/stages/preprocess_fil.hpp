@@ -20,7 +20,8 @@
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/messages/multi_inference.hpp>
 
-#include <pyneo/node.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <memory>
 #include <string>
@@ -33,21 +34,21 @@ namespace morpheus {
  */
 #pragma GCC visibility push(default)
 class PreprocessFILStage
-  : public neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
+  : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
 {
   public:
-    using base_t = neo::pyneo::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
-    using base_t::operator_fn_t;
-    using base_t::reader_type_t;
-    using base_t::writer_type_t;
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>;
+    using typename base_t::sink_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscribe_fn_t;
 
-    PreprocessFILStage(const neo::Segment& parent, const std::string& name, const std::vector<std::string>& features);
+    PreprocessFILStage(const std::vector<std::string>& features);
 
   private:
     /**
      * TODO(Documentation)
      */
-    operator_fn_t build_operator();
+    subscribe_fn_t build_operator();
 
     std::vector<std::string> m_fea_cols;
     std::string m_vocab_file;
@@ -62,9 +63,9 @@ struct PreprocessFILStageInterfaceProxy
     /**
      * @brief Create and initialize a PreprocessFILStage, and return the result.
      */
-    static std::shared_ptr<PreprocessFILStage> init(neo::Segment& parent,
-                                                    const std::string& name,
-                                                    const std::vector<std::string>& features);
+    static std::shared_ptr<srf::segment::Object<PreprocessFILStage>> init(srf::segment::Builder& builder,
+                                                                          const std::string& name,
+                                                                          const std::vector<std::string>& features);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

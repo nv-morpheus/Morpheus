@@ -24,15 +24,15 @@ from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import AddClassificationsStage
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.inference.inference_triton import TritonInferenceStage
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.output.validation import ValidationStage
-from morpheus.pipeline.preprocessing import DeserializeStage
-from morpheus.pipeline.preprocessing import PreprocessFILStage
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.postprocess.validation_stage import ValidationStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from utils import TEST_DIRS
 from utils import calc_error_val
 
@@ -62,7 +62,7 @@ def test_abp_no_cpp(mock_triton_client, config: Config, tmp_path):
     mock_triton_client.get_model_metadata.return_value = mock_metadata
     mock_triton_client.get_model_config.return_value = mock_model_config
 
-    data = np.loadtxt(os.path.join(TEST_DIRS.expeced_data_dir, 'triton_abp_inf_results.csv'), delimiter=',')
+    data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'triton_abp_inf_results.csv'), delimiter=',')
     inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
 
     mock_infer_result = mock.MagicMock()

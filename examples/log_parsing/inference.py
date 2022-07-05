@@ -17,30 +17,30 @@ import typing
 from functools import partial
 
 import cupy as cp
-import neo
 import numpy as np
+import srf
 import tritonclient.grpc as tritonclient
+from scipy.special import softmax
+from srf.core import operators as ops
+
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
 from messages import PostprocMemoryLogParsing
 from messages import ResponseMemoryLogParsing
-from neo.core import operators as ops
-from scipy.special import softmax
-
 from morpheus.config import Config
-from morpheus.pipeline.inference.inference_stage import InferenceStage
-from morpheus.pipeline.inference.inference_stage import InferenceWorker
-from morpheus.pipeline.inference.inference_triton import InputWrapper
-from morpheus.pipeline.inference.inference_triton import TritonInferenceWorker
-from morpheus.pipeline.messages import InferenceMemory
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages import InferenceMemory
+from morpheus.messages import MultiInferenceMessage
+from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
+from morpheus.stages.inference.triton_inference_stage import InputWrapper
+from morpheus.stages.inference.triton_inference_stage import _TritonInferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)
 
 
-class TritonInferenceLogParsing(TritonInferenceWorker):
+class TritonInferenceLogParsing(_TritonInferenceWorker):
     """
     This class extends TritonInference to deal with scenario-specific NLP models inference requests like building
     response.
@@ -191,12 +191,12 @@ class LogParsingInferenceStage(InferenceStage):
         # Get the value from the worker class
         return False
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiResponseLogParsingMessage
 
-        def py_inference_fn(input: neo.Observable, output: neo.Subscriber):
+        def py_inference_fn(obs: srf.Observable, sub: srf.Subscriber):
 
             worker = self._get_inference_worker(self._inf_queue)
 
@@ -218,9 +218,9 @@ class LogParsingInferenceStage(InferenceStage):
                 for batch in batches:
                     outstanding_requests += 1
 
-                    fut = neo.Future()
+                    fut = srf.Future()
 
-                    def set_output_fut(resp: ResponseMemoryLogParsing, b, f: neo.Future):
+                    def set_output_fut(resp: ResponseMemoryLogParsing, b, f: srf.Future):
                         nonlocal outstanding_requests
                         m = self._convert_one_response(memory, b, resp)
 
@@ -237,18 +237,18 @@ class LogParsingInferenceStage(InferenceStage):
 
                 return output_message
 
-            input.pipe(ops.map(on_next)).subscribe(output)
+            obs.pipe(ops.map(on_next)).subscribe(sub)
 
             assert outstanding_requests == 0, "Not all inference requests were completed"
 
         if (self._build_cpp_node()):
-            node = self._get_cpp_inference_node(seg)
+            node = self._get_cpp_inference_node(builder)
         else:
-            node = seg.make_node_full(self.unique_name, py_inference_fn)
+            node = builder.make_node_full(self.unique_name, py_inference_fn)
 
         # Set the concurrency level to be up with the thread count
-        node.concurrency = self._thread_count
-        seg.make_edge(stream, node)
+        node.launch_options.pe_count = self._thread_count
+        builder.make_edge(stream, node)
 
         stream = node
 

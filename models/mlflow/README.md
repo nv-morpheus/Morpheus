@@ -5,7 +5,7 @@ are included for publishing TensorRT, ONNX and FIL models to your MLFlow Model R
 
 ## Requirements
 
-* MLflow (tested on 1.21.0)
+* MLflow (tested on 1.24.0)
 * Python (tested on 3.8)
 
 ## Install Triton Docker Image
@@ -51,7 +51,7 @@ docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v /opt/triton_mode
 Build MLFlow image from Dockerfile:
 
 ```
-docker build -t mlflow-morpheus:latest -f docker/Dockerfile .
+docker build -t mlflow-triton-plugin:latest -f docker/Dockerfile .
 ```
 
 Create MLFlow container with volume mount to Triton model repository:
@@ -82,10 +82,10 @@ nohup mlflow server --backend-store-uri sqlite:////tmp/mlflow-db.sqlite --defaul
 
 The Morpheus reference models can be found in the [Morpheus](https://github.com/NVIDIA/Morpheus) repo.
 
-```
-git clone https://github.com/NVIDIA/Morpheus.git
-cd morpheus/models
-git lfs pull
+```bash
+git clone https://github.com/NVIDIA/Morpheus.git morpheus
+cd morpheus
+scripts/fetch_data.py fetch models
 ```
 
 ## Publish reference models to MLflow

@@ -21,7 +21,7 @@ limitations under the License.
 Prior to running the gnn fruad detection pipeline, additional requirements must be installed in to your conda environment. A supplemental requirements file has been provided in this example directory.
 
 ```bash
-conda install --freeze-installed -c stellargraph stellargraph tensorflow
+conda install -c rapidsai -c nvidia -c stellargraph -c conda-forge cuml stellargraph tensorflow
 ```
 
 ## Running
@@ -57,7 +57,7 @@ To launch the configured Morpheus pipeline with the sample data that is provided
 
 ```bash
 
-python run.py 
+python run.py
 ====Building Pipeline====
 Added source: <from-file-0; FileSourceStage(filename=validation.csv, iterative=None, file_type=auto, repeat=1, filter_null=False, cudf_kwargs=None)>
   └─> morpheus.MessageMeta

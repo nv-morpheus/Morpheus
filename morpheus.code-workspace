@@ -84,7 +84,7 @@
 					// "from-kafka",
 					"deserialize",
 					"preprocess",
-					"--vocab_hash_file=./data/bert-base-uncased-hash.txt",
+					"--vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt",
 					"--truncation=True",
 					"--do_lower_case=True",
 					"--add_special_tokens=False",
@@ -247,7 +247,7 @@
 					"--model_max_batch_size=32",
 					// "--use_cpp=False",
 					"pipeline-nlp",
-					"--labels_file=data/labels_phishing.txt",
+					"--labels_file=morpheus/data/labels_phishing.txt",
 					"--model_seq_length=128",
 					"from-file",
 					"--filename=models/datasets/validation-data/phishing-email-validation-data.jsonlines",
@@ -256,7 +256,7 @@
 					// "from-kafka",
 					"deserialize",
 					"preprocess",
-					"--vocab_hash_file=./data/bert-base-uncased-hash.txt",
+					"--vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt",
 					"--truncation=True",
 					// "--stride=",
 					"--do_lower_case=True",
@@ -304,7 +304,7 @@
 				"justMyCode": false,
 				"args": [
 					"--input_file",
-					"../../data/pcap_dump.jsonlines",
+					"../data/pcap_dump.jsonlines",
 					"--output_file",
 					"./pcap_output.jsonlines",
 					"--server_url",
@@ -330,7 +330,7 @@
 				"justMyCode": false
 			},
 			{
-				"name": "Debug Neo from Python (Morpheus-NLP)",
+				"name": "Debug SRF from Python (Morpheus-NLP)",
 				"type": "cppdbg",
 				"request": "launch",
 				"program": "python",
@@ -353,7 +353,7 @@
 					// "from-kafka",
 					"deserialize",
 					"preprocess",
-					"--vocab_hash_file=./data/bert-base-uncased-hash.txt",
+					"--vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt",
 					"--truncation=True",
 					"--do_lower_case=True",
 					"--add_special_tokens=False",
@@ -415,7 +415,7 @@
 				],
 				"symbolLoadInfo": {
 					"loadAll": false,
-					"exceptionList": "libneo*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
+					"exceptionList": "libsrf*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
 				},
 				"miDebuggerPath": "gdb",
 				"sourceFileMap": {
@@ -426,7 +426,7 @@
 				},
 			},
 			{
-				"name": "Debug Neo from Python (Morpheus-FIL)",
+				"name": "Debug SRF from Python (Morpheus-FIL)",
 				"type": "cppdbg",
 				"request": "launch",
 				"program": "python",
@@ -441,7 +441,7 @@
 					// "--use_cpp=False",
 					"pipeline-fil",
 					"from-file",
-					"--filename=models/datasets/validation-data/phishing-email-validation-data.jsonlines",
+					"--filename=models/datasets/validation-data/abp-validation-data.csv",
 					"--repeat=10",
 					"--iterative",
 					// "from-kafka",
@@ -508,7 +508,7 @@
 				],
 				"symbolLoadInfo": {
 					"loadAll": false,
-					"exceptionList": "libneo*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
+					"exceptionList": "libsrf*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
 				},
 				"miDebuggerPath": "gdb",
 				"sourceFileMap": {
@@ -519,7 +519,7 @@
 				},
 			},
 			{
-				"name": "Debug Neo from Python (Morpheus-AE)",
+				"name": "Debug SRF from Python (Morpheus-AE)",
 				"type": "cppdbg",
 				"request": "launch",
 				"program": "python",
@@ -599,7 +599,7 @@
 				],
 				"symbolLoadInfo": {
 					"loadAll": false,
-					"exceptionList": "libneo*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
+					"exceptionList": "libsrf*.so;cudf_helpers.*;executor.*;morpheus.*;node.*;options.*;pipeline.*;segment.*;subscriber.*;stages.*;messages.*;common*.so"
 				},
 				"miDebuggerPath": "gdb",
 				"sourceFileMap": {

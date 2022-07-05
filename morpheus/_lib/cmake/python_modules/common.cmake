@@ -22,7 +22,7 @@ morpheus_add_pybind11_module(
       "${MORPHEUS_LIB_ROOT}/include"
     LINK_TARGETS
       morpheus
-      neo::pyneo
+      srf::pysrf
     OUTPUT_TARGET
       common_target
     INSTALL_DEST

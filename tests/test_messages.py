@@ -19,8 +19,9 @@ import os
 import cupy as cp
 import pytest
 
-import morpheus._lib.messages as neom
-from morpheus.pipeline import messages
+import morpheus._lib.messages as _messages
+import morpheus.config
+from morpheus import messages
 
 
 def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp_class: bool, args: tuple):
@@ -40,15 +41,15 @@ def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp
 
 def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 
-    check_message(messages.MessageMeta, neom.MessageMeta, should_be_cpp, no_cpp_class, (None, ))
+    check_message(messages.MessageMeta, _messages.MessageMeta, should_be_cpp, no_cpp_class, (None, ))
 
     # UserMessageMeta doesn't contain a C++ impl, so we should
     # always received the python impl
     check_message(messages.UserMessageMeta, None, should_be_cpp, no_cpp_class, (None, None))
 
-    check_message(messages.MultiMessage, neom.MultiMessage, should_be_cpp, no_cpp_class, (None, 0, 1))
+    check_message(messages.MultiMessage, _messages.MultiMessage, should_be_cpp, no_cpp_class, (None, 0, 1))
 
-    assert messages.InferenceMemory._cpp_class is None if no_cpp_class else neom.InferenceMemory
+    assert messages.InferenceMemory._cpp_class is None if no_cpp_class else _messages.InferenceMemory
     # C++ impl for InferenceMemory doesn't have a constructor
     if (should_be_cpp):
         pytest.raises(TypeError, messages.InferenceMemory, 1)
@@ -56,12 +57,12 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     cp_array = cp.zeros((1, 2))
 
     check_message(messages.InferenceMemoryNLP,
-                  neom.InferenceMemoryNLP,
+                  _messages.InferenceMemoryNLP,
                   should_be_cpp,
                   no_cpp_class, (1, cp_array, cp_array, cp_array))
 
     check_message(messages.InferenceMemoryFIL,
-                  neom.InferenceMemoryFIL,
+                  _messages.InferenceMemoryFIL,
                   should_be_cpp,
                   no_cpp_class, (1, cp_array, cp_array))
 
@@ -69,37 +70,40 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     check_message(messages.InferenceMemoryAE, None, should_be_cpp, no_cpp_class, (1, cp_array, cp_array))
 
     check_message(messages.MultiInferenceMessage,
-                  neom.MultiInferenceMessage,
+                  _messages.MultiInferenceMessage,
                   should_be_cpp,
                   no_cpp_class, (None, 0, 1, None, 0, 1))
 
     check_message(messages.MultiInferenceNLPMessage,
-                  neom.MultiInferenceNLPMessage,
+                  _messages.MultiInferenceNLPMessage,
                   should_be_cpp,
                   no_cpp_class, (None, 0, 1, None, 0, 1))
 
     check_message(messages.MultiInferenceFILMessage,
-                  neom.MultiInferenceFILMessage,
+                  _messages.MultiInferenceFILMessage,
                   should_be_cpp,
                   no_cpp_class, (None, 0, 1, None, 0, 1))
 
-    assert messages.ResponseMemory._cpp_class is None if no_cpp_class else neom.ResponseMemory
+    assert messages.ResponseMemory._cpp_class is None if no_cpp_class else _messages.ResponseMemory
     # C++ impl doesn't have a constructor
     if (should_be_cpp):
         pytest.raises(TypeError, messages.ResponseMemory, 1)
 
-    check_message(messages.ResponseMemoryProbs, neom.ResponseMemoryProbs, should_be_cpp, no_cpp_class, (1, cp_array))
+    check_message(messages.ResponseMemoryProbs,
+                  _messages.ResponseMemoryProbs,
+                  should_be_cpp,
+                  no_cpp_class, (1, cp_array))
 
     # No C++ impl
     check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, (1, cp_array))
 
     check_message(messages.MultiResponseMessage,
-                  neom.MultiResponseMessage,
+                  _messages.MultiResponseMessage,
                   should_be_cpp,
                   no_cpp_class, (None, 0, 1, None, 0, 1))
 
     check_message(messages.MultiResponseProbsMessage,
-                  neom.MultiResponseProbsMessage,
+                  _messages.MultiResponseProbsMessage,
                   should_be_cpp,
                   no_cpp_class, (None, 0, 1, None, 0, 1))
 
@@ -108,15 +112,17 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 
 
 def test_constructor_cpp(config):
-    from morpheus.config import CppConfig
-    check_all_messages(CppConfig.get_should_use_cpp(), False)
+    check_all_messages(morpheus.config.CppConfig.get_should_use_cpp(), False)
 
 
-@pytest.mark.reload_modules(messages)
+@pytest.mark.reload_modules(morpheus.config)
 @pytest.mark.usefixtures("reload_modules", "restore_environ")
-@pytest.mark.use_cpp
 def test_constructor_env(config):
+    # Set the NO_CPP flag which should disable C++ regardless
     os.environ['MORPHEUS_NO_CPP'] = '1'
-    importlib.reload(messages)
 
-    check_all_messages(False, True)
+    # Reload the CppConfig class just in case
+    importlib.reload(morpheus.config)
+
+    # Check all messages. Should be False regardless due to the environment variable
+    check_all_messages(False, False)

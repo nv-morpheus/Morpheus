@@ -16,18 +16,17 @@ import string
 import typing
 from functools import partial
 
-import neo
+import srf
 
 import cudf
-from cudf.core.subword_tokenizer import SubwordTokenizer
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
-from morpheus.pipeline.messages import InferenceMemoryNLP
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import MultiInferenceNLPMessage
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.preprocessing import PreprocessBaseStage
+from morpheus.messages import InferenceMemoryNLP
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiInferenceNLPMessage
+from morpheus.messages import MultiMessage
+from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
 
@@ -80,11 +79,12 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
         self._do_lower_case = do_lower_case
         self._add_special_tokens = add_special_tokens
 
-        self._tokenizer: SubwordTokenizer = None
-
     @property
     def name(self) -> str:
         return "preprocess-logparsing"
+
+    def supports_cpp_node(self):
+        return False
 
     @staticmethod
     def pre_process_batch(x: MultiMessage,
@@ -166,12 +166,12 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
                        truncation=self._truncation,
                        add_special_tokens=self._add_special_tokens)
 
-    def _get_preprocess_node(self, seg: neo.Segment):
-        return neos.PreprocessNLPStage(seg,
-                                       self.unique_name,
-                                       self._vocab_hash_file,
-                                       self._seq_length,
-                                       self._truncation,
-                                       self._do_lower_case,
-                                       self._add_special_tokens,
-                                       self._stride)
+    def _get_preprocess_node(self, builder: srf.Builder):
+        return _stages.PreprocessNLPStage(builder,
+                                          self.unique_name,
+                                          self._vocab_hash_file,
+                                          self._seq_length,
+                                          self._truncation,
+                                          self._do_lower_case,
+                                          self._add_special_tokens,
+                                          self._stride)

@@ -20,11 +20,11 @@ import numpy as np
 import pandas as pd
 
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.general_stages import AddClassificationsStage
-from morpheus.pipeline.input.from_file import FileSourceStage
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.pipeline.preprocessing import DeserializeStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
 
@@ -34,7 +34,7 @@ def test_add_classifications_stage_pipe(config, tmp_path):
     config.num_threads = 1
 
     # Silly data with all false values
-    input_file = os.path.join(TEST_DIRS.expeced_data_dir, "filter_probs.csv")
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
 
     threshold = 0.75

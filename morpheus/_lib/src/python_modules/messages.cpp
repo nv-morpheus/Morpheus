@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 #include <morpheus/messages/memory/inference_memory.hpp>
 #include <morpheus/messages/memory/inference_memory_fil.hpp>
 #include <morpheus/messages/memory/inference_memory_nlp.hpp>
@@ -30,6 +29,8 @@
 #include <morpheus/messages/multi_response_probs.hpp>
 #include <morpheus/objects/tensor.hpp>
 #include <morpheus/utilities/cudf_util.hpp>
+
+#include <srf/node/edge_connector.hpp>
 
 #include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
@@ -60,29 +61,45 @@ PYBIND11_MODULE(messages, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    neo::pyneo::import(m, "cupy");
-    neo::pyneo::import(m, "morpheus._lib.common");
+    srf::pysrf::import(m, "cupy");
+    srf::pysrf::import(m, "morpheus._lib.common");
 
     // Required for SegmentObject
-    neo::pyneo::import(m, "neo.core.node");
+    srf::pysrf::import(m, "srf.core.node");
 
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
 
-    neo::node::EdgeConnector<std::vector<std::string>, py::object>::register_converter();
-    neo::node::EdgeConnector<py::object, std::vector<std::string>>::register_converter();
+    // EdgeConnectors for derived classes of MultiMessage to MultiMessage
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    neo::node::EdgeConnector<std::shared_ptr<MessageMeta>, py::object>::register_converter();
-    neo::node::EdgeConnector<py::object, std::shared_ptr<MessageMeta>>::register_converter();
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+                             std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+                             std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
+
+    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
-
-    neo::node::EdgeConnector<std::shared_ptr<MultiMessage>, py::object>::register_converter();
-    neo::node::EdgeConnector<py::object, std::shared_ptr<MultiMessage>>::register_converter();
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(m, "MultiMessage")
         .def(py::init<>(&MultiMessageInterfaceProxy::init),
@@ -136,9 +153,6 @@ PYBIND11_MODULE(messages, m)
                       &InferenceMemoryFILInterfaceProxy::set_input__0)
         .def_property(
             "seq_ids", &InferenceMemoryFILInterfaceProxy::get_seq_ids, &InferenceMemoryFILInterfaceProxy::set_seq_ids);
-
-    neo::node::EdgeConnector<std::shared_ptr<MultiInferenceMessage>, py::object>::register_converter();
-    neo::node::EdgeConnector<py::object, std::shared_ptr<MultiInferenceMessage>>::register_converter();
 
     py::class_<MultiInferenceMessage, MultiMessage, std::shared_ptr<MultiInferenceMessage>>(m, "MultiInferenceMessage")
         .def(py::init<>(&MultiInferenceMessageInterfaceProxy::init),
@@ -195,9 +209,6 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("count", &ResponseMemoryProbsInterfaceProxy::count)
         .def_property(
             "probs", &ResponseMemoryProbsInterfaceProxy::get_probs, &ResponseMemoryProbsInterfaceProxy::set_probs);
-
-    neo::node::EdgeConnector<std::shared_ptr<MultiResponseMessage>, py::object>::register_converter();
-    neo::node::EdgeConnector<py::object, std::shared_ptr<MultiResponseMessage>>::register_converter();
 
     py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(m, "MultiResponseMessage")
         .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),

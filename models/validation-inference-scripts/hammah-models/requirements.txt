@@ -1,5 +1,4 @@
 clx==0.0.1
-cudf==0+untagged.1.g788bddd
 cupy==9.1.0
 dfencoder==0.0.35
 dill==0.3.4

@@ -1,2 +1,4 @@
 include versioneer.py
 include morpheus/_version.py
+recursive-include morpheus/data *
+recursive-include morpheus *.so py.typed *.pyi

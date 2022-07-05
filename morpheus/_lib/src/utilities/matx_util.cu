@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,9 @@
 
 #include <morpheus/objects/dev_mem_info.hpp>
 #include <morpheus/utilities/type_util.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 
-#include <neo/cuda/sync.hpp>
-#include <neo/core/tensor.hpp>
+#include <srf/cuda/sync.hpp>
 
 #include <matx.h>
 
@@ -177,7 +177,7 @@ namespace morpheus {
          */
         template<typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()> * = nullptr>
         void
-        operator()(void *input_data, void *output_data, double threshold, const std::vector<neo::TensorIndex> &stride) {
+        operator()(void *input_data, void *output_data, double threshold, const std::vector<TensorIndex> &stride) {
             throw std::invalid_argument("Unsupported conversion");
         }
 
@@ -186,7 +186,7 @@ namespace morpheus {
          */
         template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
         void
-        operator()(void *input_data, void *output_data, double threshold, const std::vector<neo::TensorIndex> &stride) {
+        operator()(void *input_data, void *output_data, double threshold, const std::vector<TensorIndex> &stride) {
             if (by_row) {
                 this->threshold_by_row<InputT>(input_data, output_data, threshold, stride);
             } else {
@@ -200,7 +200,7 @@ namespace morpheus {
          */
         template<typename InputT>
         void threshold_by_row(void *input_data, void *output_data, double threshold,
-                              const std::vector<neo::TensorIndex> &stride) {
+                              const std::vector<TensorIndex> &stride) {
             matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
 
             // Output is always 1 column
@@ -229,7 +229,7 @@ namespace morpheus {
          */
         template<typename InputT>
         void
-        threshold(void *input_data, void *output_data, double threshold, const std::vector<neo::TensorIndex> &stride) {
+        threshold(void *input_data, void *output_data, double threshold, const std::vector<TensorIndex> &stride) {
             matx::tensorShape_t<2> shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
 
             matx::index_t matx_stride[2] = {static_cast<matx::index_t>(stride[0]),
@@ -245,7 +245,7 @@ namespace morpheus {
 
     // Component public implementations
     // ************ MatxUtil************************* //
-    std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo &input, neo::TypeId output_type) {
+    std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo &input, TypeId output_type) {
         auto input_dtype = DType(input.type_id);
         auto output_dtype = DType(output_type);
 
@@ -260,13 +260,13 @@ namespace morpheus {
                                      input.data(),
                                      output->data());
 
-        neo::enqueue_stream_sync_event(output->stream()).get();
+        srf::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
     }
 
     std::shared_ptr<rmm::device_buffer>
-    MatxUtil::create_seg_ids(size_t row_count, size_t fea_len, neo::TypeId output_type) {
+    MatxUtil::create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type) {
         auto output_dtype = DType(output_type);
 
         // Now create the output
@@ -313,7 +313,7 @@ namespace morpheus {
 
     std::shared_ptr<rmm::device_buffer>
     MatxUtil::threshold(const DevMemInfo &input, size_t rows, size_t cols,
-                        const std::vector<neo::TensorIndex> &stride,
+                        const std::vector<TensorIndex> &stride,
                         double thresh_val, bool by_row) {
         auto input_dtype = DType(input.type_id);
 
@@ -333,7 +333,7 @@ namespace morpheus {
                               thresh_val,
                               stride);
 
-        neo::enqueue_stream_sync_event(output->stream()).get();
+        srf::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
     }

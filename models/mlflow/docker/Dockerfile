@@ -1,4 +1,19 @@
-ARG FROM_IMAGE=gpuci/miniconda-cuda
+# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+ARG FROM_IMAGE=gpuci/miniforge-cuda
 ARG CUDA_VER=11.4
 ARG LINUX_VER=ubuntu20.04
 ARG TRITON_VER=r22.02
@@ -10,7 +25,7 @@ COPY . ./
 
 # need to do an upgrade in case gpuci is stale for whatever reason
 RUN apt-get update && apt upgrade -y && apt-get install -y procps vim
-RUN /opt/conda/bin/conda env create -f docker/conda/environment.yml
+RUN /opt/conda/bin/conda env create -f docker/conda/mlflow-env.yml
 RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]

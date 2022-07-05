@@ -57,7 +57,7 @@ The dataset that this workflow was designed to process is PCAP, or Packet Captur
 }
 ```
 
-In this example, we will be using a simulated PCAP dataset that is known to contain SI from each of the 10 categories the model was trained for. The dataset is located at `data/pcap_dump.jsonlines`. The dataset is in the `.jsonlines` format which means each new line represents an new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed. This will all be handled by Morpheus.
+In this example, we will be using a simulated PCAP dataset that is known to contain SI from each of the 10 categories the model was trained for. The dataset is located at `examples/data/pcap_dump.jsonlines`. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed. This will all be handled by Morpheus.
 
 ## Pipeline Architecture
 
@@ -70,21 +70,17 @@ Below is a visualization of the pipeline showing all of the stages and data type
 
 ## Setup
 
-This example utilizes the Triton Inference Server to perform inference. The neural network model is provided in a separate submodule repo. Make sure the Morpheus Models repo is checked out with:
-
-```bash
-git submodule update --init --recursive
-```
+This example utilizes the Triton Inference Server to perform inference. The neural network model is provided in the `models/sid-models` directory of the Morpheus repo.
 
 ### Launching Triton
 
 From the Morpheus repo root directory, run the following to launch Triton and load the `sid-minibert` model:
 
 ```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:21.03-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.02-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
 
-Where `21.03` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (see [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
+Where `22.02-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (see [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
 
 This will launch Triton and only load the `sid-minibert-onnx` model. This model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
 
@@ -105,35 +101,30 @@ With the Morpheus CLI, an entire pipeline can be configured and run without writ
 
 The following command line is the entire command to build and launch the pipeline. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
 
+From the Morpheus repo root directory run:
 ```bash
-export MORPHEUS_ROOT=../..
+export MORPHEUS_ROOT=$(pwd)
 # Launch Morpheus printing debug messages
-morpheus --debug --log_level=DEBUG \
+morpheus --log_level=DEBUG \
    `# Run a pipeline with 8 threads and a model batch size of 32 (Must match Triton config)` \
    run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
-   pipeline-nlp --model_seq_length=256 --viz_file ./pipeline.png \
+   pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
-   from-file --filename=$MORPHEUS_ROOT/data/pcap_dump.jsonlines \
-   `# 2nd Stage: Buffer upstream stage data (improves performance)` \
-   buffer \
-   `# 3rd Stage: Deserialize from JSON strings to objects` \
+   from-file --filename=examples/data/pcap_dump.jsonlines \
+   `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
-   `# 4th Stage: Preprocessing converts the input data into BERT tokens` \
-   preprocess --vocab_hash_file=$MORPHEUS_ROOT/data/bert-base-uncased-hash.txt --do_lower_case=True \
-   `# 5th Stage: Another buffer before inference for performance` \
-   buffer \
-   `# 6th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
-   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8001 --force_convert_inputs=True \
-   `# 7th Stage: Monitor stage prints throughput information to the console` \
+   `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
+   preprocess --vocab_hash_file=morpheus/data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
+   `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
+   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True \
+   `# 5th Stage: Monitor stage prints throughput information to the console` \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
-   `# 8th Stage: Add results from inference to the messages` \
+   `# 6th Stage: Add results from inference to the messages` \
    add-class \
-   `# 9th Stage: Filtering removes any messages that did not detect SI` \
-   filter \
-   `# 10th Stage: Convert from objects back into strings` \
+   `# 7th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
-   `# 11th Stage: Write out the JSON lines to the detections.jsonlines file` \
+   `# 8th Stage: Write out the JSON lines to the detections.jsonlines file` \
    to-file --filename=detections.jsonlines --overwrite
 ```
 
@@ -141,11 +132,27 @@ If successful, you should see the following output:
 
 ```bash
 Configuring Pipeline via CLI
+Loaded labels file. Current labels: [['address', 'bank_acct', 'credit_card', 'email', 'govt_id', 'name', 'password', 'phone_num', 'secret_keys', 'user']]
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
 {
-  "debug": true,
+  "ae": null,
+  "class_labels": [
+    "address",
+    "bank_acct",
+    "credit_card",
+    "email",
+    "govt_id",
+    "name",
+    "password",
+    "phone_num",
+    "secret_keys",
+    "user"
+  ],
+  "debug": false,
+  "edge_buffer_size": 128,
   "feature_length": 256,
+  "fil": null,
   "log_config_file": null,
   "log_level": 10,
   "mode": "NLP",
@@ -153,39 +160,72 @@ Config:
   "num_threads": 8,
   "pipeline_batch_size": 1024
 }
-====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=../../data/pcap_dump.jsonlines, iterative=None)>
-  └─> cudf.DataFrame
-Added stage: <buffer-1; BufferStage(count=1000)>
-  └─ cudf.DataFrame -> cudf.DataFrame
-Adding timestamp info for stage: 'deserialize'
-Added stage: <deserialize-2; DeserializeStage()>
-  └─ cudf.DataFrame -> morpheus.MultiMessage
-Adding timestamp info for stage: 'preprocess-nlp'
-Added stage: <preprocess-nlp-3; PreprocessNLPStage(vocab_hash_file=../../data/bert-base-uncased-hash.txt, truncation=False, do_lower_case=True, add_special_tokens=False, stride=-1)>
-  └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
-Added stage: <buffer-4; BufferStage(count=1000)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiInferenceNLPMessage
-Adding timestamp info for stage: 'inference'
-Added stage: <inference-5; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8001, force_convert_inputs=True)>
-  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <monitor-6; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, determine_count_fn=None)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <add-class-7; AddClassificationsStage(threshold=0.5, labels_file=None, labels=['address', 'bank_acct', 'credit_card', 'email', 'govt_id', 'name', 'password', 'phone_num', 'secret_keys', 'user'], prefix=si_)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <filter-8; FilterDetectionsStage(threshold=0.5)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <serialize-9; SerializeStage(include=[], exclude=['^_ts_'], as_cudf_df=False)>
-  └─ morpheus.MultiResponseProbsMessage -> List[str]
-Added stage: <to-file-10; WriteToFileStage(filename=detections.jsonlines, overwrite=True)>
-  └─ List[str] -> List[str]
-====Building Pipeline Complete!====
-Pipeline visualization saved to ./pipeline.png
+CPP Enabled: True
+====Registering Pipeline====
+====Registering Pipeline Complete!====
 ====Starting Pipeline====
 ====Pipeline Started====
-Inference Rate: 93085inf [01:50, 885.45inf/s]
+====Building Pipeline====
+Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+  └─> morpheus.MessageMeta
+Added stage: <deserialize-1; DeserializeStage()>
+  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
+  └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
+Added stage: <inference-3; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8000, force_convert_inputs=True, use_shared_memory=False)>
+  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <serialize-6; SerializeStage(include=[], exclude=['^_ts_'], fixed_columns=True)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
+Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
+  └─ morpheus.MessageMeta -> morpheus.MessageMeta
+====Building Pipeline Complete!====
+Starting! Time: 1656352480.541071
+Inference Rate[Complete]: 93085inf [00:07, 12673.63inf/s]
+====Pipeline Complete====
+
 ```
 
-**Note:** The pipeline will not shut down when complete. Once the number of inferences has stopped changing, press Ctrl+C to exit.
+The output file `detections.jsonlines` will contain the original PCAP messages with the following additional fields added:
+* address
+* bank_acct
+* credit_card
+* email
+* govt_id
+* name
+* password
+* phone_num
+* secret_keys
+* user
 
-The output file `detections.jsonlines` will contain PCAP messages that contain some SI (any class with a predection greater that 0.5).
+The value for these fields will either be a `1` indicating a decection and a `0` indicating no detection. An example row with a detection looks like:
+```json
+{
+  "timestamp": 1616381019580,
+  "host_ip": "10.188.40.56",
+  "data_len": "129",
+  "data": "\"{\\\"X-Postmark-Server-Token\\\": \\\"76904958 O7FWqd9p TzIBfSYk\\\"}\"",
+  "src_mac": "04:3f:72:bf:af:74",
+  "dest_mac": "b4:a9:fc:3c:46:f8",
+  "protocol": "6",
+  "src_ip": "10.20.16.248",
+  "dest_ip": "10.244.0.60",
+  "src_port": "51374",
+  "dest_port": "80",
+  "flags": "24",
+  "is_pii": false,
+  "address": 0,
+  "bank_acct": 0,
+  "credit_card": 0,
+  "email": 0,
+  "govt_id": 0,
+  "name": 0,
+  "password": 0,
+  "phone_num": 0,
+  "secret_keys": 1,
+  "user": 0
+}
+```

@@ -18,7 +18,7 @@ from unittest import mock
 
 import pytest
 
-from morpheus.pipeline.inference import inference_stage
+from morpheus.stages.inference import inference_stage
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 from utils import IW
 

@@ -23,7 +23,7 @@ cuda_compiler:
   - nvcc
 
 cuda_compiler_version:
-  - 11.4
+  - 11.5
 
 python:
   - 3.8
@@ -33,4 +33,4 @@ boost:
   - 1.74
 
 rapids_version:
-  - 21.10
+  - 22.06

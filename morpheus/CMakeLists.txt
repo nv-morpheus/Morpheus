@@ -17,8 +17,11 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus")
 
 option(MORPHEUS_PYTHON_INPLACE_BUILD
         "Whether or not to copy built python modules back to the source tree for debug purposes." OFF)
+option(MORPHEUS_BUILD_PYTHON_STUBS
+        "Whether or not to generate stubs for python files." ON)
 
 set(Python3_FIND_VIRTUALENV "FIRST")
+set(Python3_FIND_STRATEGY "LOCATION")
 find_package(Python3 REQUIRED COMPONENTS Development Interpreter NumPy)
 
 # Check if SKlearn is installed

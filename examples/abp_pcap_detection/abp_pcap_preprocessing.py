@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.
+# Copyright (c) 2021-2022, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,21 +16,22 @@ import typing
 from functools import partial
 
 import cupy as cp
-import neo
 import numpy as np
+import srf
 
 import cudf
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
 from morpheus.config import Config
-from morpheus.pipeline.messages import InferenceMemoryFIL
-from morpheus.pipeline.messages import MultiInferenceFILMessage
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.preprocessing import PreprocessBaseStage
+from morpheus.messages import InferenceMemoryFIL
+from morpheus.messages import MultiInferenceFILMessage
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiMessage
+from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
 class AbpPcapPreprocessingStage(PreprocessBaseStage):
+
     def __init__(self, c: Config):
         super().__init__(c)
 
@@ -57,6 +58,9 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
     @property
     def name(self) -> str:
         return "preprocess-anomaly"
+
+    def supports_cpp_node(self):
+        return False
 
     @staticmethod
     def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
@@ -150,7 +154,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         del df, grouped_df
 
         # Convert the dataframe to cupy the same way cuml does
-        data = cp.asarray(merged_df[fea_cols].as_gpu_matrix(order="C"))
+        data = cp.asarray(merged_df[fea_cols].to_cupy())
         count = data.shape[0]
 
         # columns required to be added to input message meta
@@ -186,5 +190,5 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
             fea_cols=self.features,
         )
 
-    def _get_preprocess_node(self, seg: neo.Segment):
-        return neos.AbpPcapPreprocessingStage(seg, self.unique_name)
+    def _get_preprocess_node(self, builder: srf.Builder):
+        return _stages.AbpPcapPreprocessingStage(builder, self.unique_name)

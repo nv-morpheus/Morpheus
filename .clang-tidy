@@ -8,7 +8,7 @@
 Checks: -*,readability-identifier-naming,modernize-*,-modernize-use-trailing-return-type,-modernize-use-nodiscard,google-readability-todo
 
 #WarningsAsErrors: '*'
-HeaderFilterRegex: '.*\/include\/trtlab\/neo\/.*'
+HeaderFilterRegex: '.*\/include\/morpheus\/.*'
 AnalyzeTemporaryDtors: false
 FormatStyle:     file
 CheckOptions:

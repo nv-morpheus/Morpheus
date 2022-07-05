@@ -28,7 +28,7 @@ More information can be found at: [Contributor Code of Conduct](CODE_OF_CONDUCT.
 1. Find an issue to work on. The best way is to look for issues with the [good first issue](https://github.com/NVIDIA/Morpheus/issues) label.
 2. Comment on the issue stating that you are going to work on it.
 3. Code! Make sure to update unit tests! Ensure the [license headers are set properly](#Licensing).
-4. When done, [create your merge request](https://github.com/NVIDIA/Morpheus/compare).
+4. When done, [create your pull request](https://github.com/NVIDIA/Morpheus/compare).
 5. Wait for other developers to review your code and update code as needed.
 6. Once reviewed and approved, a Morpheus developer will merge your pull request.
 
@@ -48,26 +48,48 @@ The following instructions are for developers who are getting started with the M
 
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
- - `PYTHON_VER`: The desired Python version. Minimum required is 3.8
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `21.10`
- - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.4`
+ - `PYTHON_VER`: The desired Python version. Minimum required is `3.8`
+ - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.06`
+ - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.5`
 
 
 ### Clone the repository and pull large file data from Git LFS
 
 ```bash
 export PYTHON_VER=3.8
-export RAPIDS_VER=21.10
-export CUDA_VER=11.4
+export RAPIDS_VER=22.06
+export CUDA_VER=11.5
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
+By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Usage of the script is as follows:
+```bash
+scripts/fetch_data.py fetch <dataset> [<dataset>...]
+```
+
+At time of writing the defined datasets are:
+* all - Metaset includes all others
+* examples - Data needed by scripts in the `examples` subdir
+* models - Morpheus models (largest dataset)
+* tests - Data used by unittests
+* validation - Subset of the models dataset needed by some unittests
+
+To download just the examples and models:
+```bash
+scripts/fetch_data.py fetch examples models
+```
+
+To download the data needed for unittests:
+```bash
+scripts/fetch_data.py fetch tests validation
+```
+
 If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command.
 ```bash
-git lfs pull
+scripts/fetch_data.py fetch all
 ```
 
 ### Build in Docker Container
@@ -90,38 +112,58 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       DOCKER_IMAGE_TAG=my_tag ./docker/build_container_dev.sh
       ```
       Would build the container `morpheus:my_tag`.
-   1. Note: This does not build any Morpheus or Neo code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
-2. Set up `ssh-agent` to allow container to pull from private repos
-   ```bash
-   eval `ssh-agent -s`
-   ssh-add
+   1. To build the container with a debugging version of cpython installed, update the docker target as follows:
+   ```shell
+   DOCKER_TARGET=development_pydbg ./docker/build_container_dev.sh
    ```
-3. Run the development container
+   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
+   source path.
+   1. Once created, you will be able to introspect python objects from within GDB. For example, if we were to break
+   within a generator setup call and examine it's PyFrame_Object `f`, it might look like this:
+   ```shell
+    #4  0x000056498ce685f4 in gen_send_ex (gen=0x7f3ecc07ad40, arg=<optimized out>, exc=<optimized out>, closing=<optimized out>) at Objects/genobject.c:222
+    (gdb) pyo f
+    object address  : 0x7f3eb3888750
+    object refcount : 1
+    object type     : 0x56498cf99c00
+    object type name: frame
+    object repr     : <frame at 0x7f3eb3888750, file '/workspace/morpheus/pipeline/pipeline.py', line 902, code join
+   ```
+   1. Note: Now when running the container, conda should list your python version as `pyxxx_dbg_morpheus`.
+   ```shell
+    (morpheus) user@host:/workspace# conda list | grep python
+    python                    3.8.13          py3.8.13_dbg_morpheus    local
+   ```
+   1. Note: This does not build any Morpheus or SRF code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
+2. Run the development container
    ```bash
    ./docker/run_container_dev.sh
    ```
    1. The container tag follows the same rules as `build_container_dev.sh` and will default to the current `YYMMDD`. Specify the desired tag with `DOCKER_IMAGE_TAG`. i.e. `DOCKER_IMAGE_TAG=my_tag ./docker/run_container_dev.sh`
    2. This will automatically mount the current working directory to `/workspace`.
-   3. Some of the validation tests require launching a triton docker container within the morpheus container. To enable this you will need to grant the morpheus contrainer access to your host OS's docker socket file with:
+   3. Some of the validation tests require launching a triton docker container within the morpheus container. To enable this you will need to grant the morpheus container access to your host OS's docker socket file with:
       ```bash
       DOCKER_EXTRA_ARGS="-v /var/run/docker.sock:/var/run/docker.sock" ./docker/run_container_dev.sh
       ```
       Then once the container is started you will need to install some extra packages to enable launching docker containers:
       ```bash
       ./docker/install_docker.sh
+
+      # Install utils for checking output
+      apt install -y jq bc
       ```
 
-4. Compile Morpheus
+3. Compile Morpheus
    ```bash
    ./scripts/compile.sh
    ```
    This script will run both CMake Configure with default options and CMake build.
-5. Install Morpheus
+4. Install Morpheus
    ```bash
    pip install -e /workspace
    ```
    Once Morpheus has been built, it can be installed into the current virtual environment.
-6. [Run Morpheus](./README.md#running-morpheus)
+5. [Run Morpheus](./README.md#running-morpheus)
    ```bash
    morpheus run pipeline-nlp ...
    ```
@@ -152,34 +194,19 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 1. Setup env variables and clone the repo:
    ```bash
    export PYTHON_VER=3.8
-   export RAPIDS_VER=21.10
-   export CUDA_VER=11.4
+   export RAPIDS_VER=22.06
+   export CUDA_VER=11.5
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
    ```
-1. Create a new Conda environment
+1. Create the morpheus Conda environment
    ```bash
-   mamba create -n morpheus python=${PYTHON_VER}
+   mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
    conda activate morpheus
    ```
 
    This creates a new environment named `morpheus`, and activates that environment.
-1. Set up `ssh-agent` to allow container to pull from private repos
-   ```bash
-   eval `ssh-agent -s`
-   ssh-add
-   ```
-1. Build and install cuDF conda package
-   ```bash
-   ./docker/build_conda_packages.sh libcudf cudf
-   mamba install -c file:///${MORPHEUS_ROOT}/.conda-bld -c nvidia -c rapidsai -c conda-forge libcudf cudf
-   ```
-   This will checkout, patch, build and install cuDF with the necessary fixes to allow Morpheus to work smoothly with cuDF DataFrames in C++.
-1. Install remaining Morpheus dependencies
-   ```bash
-   mamba env update -n morpheus -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml
-   ```
 1. Build Morpheus
    ```bash
    ./scripts/compile.sh
@@ -209,6 +236,138 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    morpheus run pipeline-nlp ...
    ```
    At this point, Morpheus can be fully used. Any changes to Python code will not require a rebuild. Changes to C++ code will require calling `./scripts/compile.sh`. Installing Morpheus is only required once per virtual environment.
+
+### Quick Launch Kafka Cluster
+
+Launching a full production Kafka cluster is outside the scope of this project. However, if a quick cluster is needed for testing or development, one can be quickly launched via Docker Compose. The following commands outline that process. See [this](https://medium.com/big-data-engineering/hello-kafka-world-the-complete-guide-to-kafka-with-docker-and-python-f788e2588cfc) guide for more in-depth information:
+
+1. Install `docker-compose` if not already installed:
+
+   ```bash
+   conda install -c conda-forge docker-compose
+   ```
+2. Clone the `kafka-docker` repo from the Morpheus repo root:
+
+   ```bash
+   git clone https://github.com/wurstmeister/kafka-docker.git
+   ```
+3. Change directory to `kafka-docker`:
+
+   ```bash
+   cd kafka-docker
+   ```
+4. Export the IP address of your Docker `bridge` network:
+
+   ```bash
+   export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
+   ```
+5. Update the `kafka-docker/docker-compose.yml` so the environment variable `KAFKA_ADVERTISED_HOST_NAME` matches the previous step. For example, the line should look like:
+
+   ```yml
+   environment:
+      KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
+   ```
+   Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
+
+   ```bash
+   $ echo $KAFKA_ADVERTISED_HOST_NAME
+   "172.17.0.1"
+   ```
+6. Launch kafka with 3 instances:
+
+   ```bash
+   docker-compose up -d --scale kafka=3
+   ```
+   In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
+7. Launch the Kafka shell
+   1. To configure the cluster, you will need to launch into a container that has the Kafka shell.
+   2. You can do this with `./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME`.
+   3. However, this makes it difficult to load data into the cluster. Instead, you can manually launch the Kafka shell by running:
+      ```bash
+      # Change to the morpheus root to make it easier for mounting volumes
+      cd ${MORPHEUS_HOME}
+
+      # Run the Kafka shell docker container
+      docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v $PWD:/workspace wurstmeister/kafka /bin/bash
+      ```
+      Note the `-v $PWD:/workspace`. This will make anything in your current directory available in `/workspace`.
+   4. Once the Kafka shell has been launched, you can begin configuring the cluster. All of the following commands require the argument `--bootstrap-server`. To simplify things, set the `BOOTSTRAP_SERVER` and `MY_TOPIC` variables:
+      ```bash
+      export BOOTSTRAP_SERVER=$(broker-list.sh)
+      export MY_TOPIC="your_topic_here"
+      ```
+8. Create the topic
+
+   ```bash
+   # Create the topic
+   kafka-topics.sh --bootstrap-server ${BOOTSTRAP_SERVER} --create --topic ${MY_TOPIC}
+
+   # Change the number of partitions
+   kafka-topics.sh --bootstrap-server ${BOOTSTRAP_SERVER} --alter --topic ${MY_TOPIC} --partitions 3
+
+   # See the topic info
+   kafka-topics.sh --bootstrap-server ${BOOTSTRAP_SERVER} --describe --topic=${MY_TOPIC}
+   ```
+   **Note:** If you are using `to-kafka`, ensure your output topic is also created.
+
+9. Generate input messages
+   1. In order for Morpheus to read from Kafka, messages need to be published to the cluster. You can use the `kafka-console-producer.sh` script to load data:
+
+      ```bash
+      kafka-console-producer.sh --bootstrap-server ${BOOTSTRAP_SERVER} --topic ${MY_TOPIC} < ${FILE_TO_LOAD}
+      ```
+
+      **Note:** In order for this to work, your input file must be accessible from the current directory the Kafka shell was launched from.
+
+   2. You can view the messages with:
+
+      ```bash
+      kafka-console-consumer.sh --bootstrap-server ${BOOTSTRAP_SERVER} --topic ${MY_TOPIC}
+      ```
+
+      **Note:** This will consume messages.
+
+### Launching Triton Server
+
+Many of the validation tests and example workflows require a Triton server to function. To launch Triton server, use the following command:
+
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models \
+  nvcr.io/nvidia/tritonserver:21.12-py3 \
+    tritonserver --model-repository=/models/triton-model-repo \
+                 --exit-on-error=false \
+                 --model-control-mode=explicit \
+                 --load-model abp-nvsmi-xgb \
+                 --load-model sid-minibert-onnx \
+                 --load-model phishing-bert-onnx
+```
+This will launch Triton using port 8001 for the GRPC server. This needs to match the Morpheus configuration.
+
+### Pipeline Validation
+
+To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Humans-as-Machines-Machines-as-Humans (HAMMAH), Phishing Detection (Phishing), and Sensitive Information Detection (SID).
+
+To run all of the validation workflow scripts, use the following commands:
+
+```bash
+# Run validation scripts
+./scripts/validation/val-run-all.sh
+```
+
+At the end of each workflow, a section will print the different inference workloads that were run and the validation error percentage for each. For example:
+
+```bash
+===ERRORS===
+PyTorch     :3/314 (0.96 %)
+Triton(ONNX):Skipped
+Triton(TRT) :Skipped
+TensorRT    :Skipped
+Complete!
+```
+
+This indicates that only 3 out of 314 rows did not match the validation dataset. If you see errors similar to `:/ ( %)` or very high percentages, then the workflow did not complete sucessfully.
 
 ### Troubleshooting the Build
 

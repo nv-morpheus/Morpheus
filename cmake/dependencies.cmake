@@ -102,10 +102,10 @@ include(deps/Configure_pybind11)
 set(RDKAFKA_VERSION 1.6.2)
 include(deps/Configure_rdkafka)
 
-# NEO (Should come after all third party but before NVIDIA repos)
+# SRF (Should come after all third party but before NVIDIA repos)
 # =====
-set(NEO_VERSION 22.04 CACHE STRING "Which version of Neo to use")
-include(deps/Configure_neo)
+set(SRF_VERSION 22.06 CACHE STRING "Which version of SRF to use")
+include(deps/Configure_srf)
 
 # CuDF
 # =====
