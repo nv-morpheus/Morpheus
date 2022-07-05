@@ -84,6 +84,9 @@ class KafkaSourceStage(SingleOutputSource):
         self._disable_pre_filtering = disable_pre_filtering
         self._client = None
 
+        # Flag to indicate whether or not we should stop
+        self._stop_requested = False
+
         # What gets passed to streamz kafka
         topic = self._input_topic
         consumer_params = self._consumer_conf
@@ -116,6 +119,13 @@ class KafkaSourceStage(SingleOutputSource):
 
     def supports_cpp_node(self):
         return True
+
+    def stop(self):
+
+        # Indicate we need to stop
+        self._stop_requested = True
+
+        return super().stop()
 
     def _source_generator(self):
         # Each invocation of this function makes a new thread so recreate the producers
@@ -191,7 +201,7 @@ class KafkaSourceStage(SingleOutputSource):
                 for partition in range(npartitions):
                     tps.append(ck.TopicPartition(self._topic, partition))
 
-                while True:
+                while not self._stop_requested:
                     try:
                         committed = consumer.committed(tps, timeout=1)
                     except ck.KafkaException:
@@ -201,7 +211,7 @@ class KafkaSourceStage(SingleOutputSource):
                             positions[tp.partition] = tp.offset
                         break
 
-                while True:
+                while not self._stop_requested:
                     out = []
 
                     if self._refresh_partitions:
@@ -347,10 +357,11 @@ class KafkaSourceStage(SingleOutputSource):
                                               self._consumer_params,
                                               self._disable_commit,
                                               self._disable_pre_filtering)
+
+            # Only use multiple progress engines with C++. The python implementation will duplicate messages with
+            # multiple threads
             source.launch_options.pe_count = self._max_concurrent
         else:
             source = builder.make_source(self.unique_name, self._source_generator)
-
-        source.launch_options.pe_count = self._max_concurrent
 
         return source, MessageMeta

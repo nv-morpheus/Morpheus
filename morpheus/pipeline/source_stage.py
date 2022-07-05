@@ -99,8 +99,5 @@ class SourceStage(_pipeline.StreamWrapper):
     def _start(self):
         self._source_stream.start()
 
-    def stop(self):
-        self._source_stream.stop()
-
     async def join(self):
         pass
