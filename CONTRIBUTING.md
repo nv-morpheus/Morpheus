@@ -279,32 +279,55 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    docker-compose up -d --scale kafka=3
    ```
    In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
-7. Create the topic:
+7. Launch the Kafka shell
+   1. To configure the cluster, you will need to launch into a container that has the Kafka shell.
+   2. You can do this with `./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME`.
+   3. However, this makes it difficult to load data into the cluster. Instead, you can manually launch the Kafka shell by running:
+      ```bash
+      # Change to the morpheus root to make it easier for mounting volumes
+      cd ${MORPHEUS_HOME}
+
+      # Run the Kafka shell docker container
+      docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v $PWD:/workspace wurstmeister/kafka /bin/bash
+      ```
+      Note the `-v $PWD:/workspace`. This will make anything in your current directory available in `/workspace`.
+   4. Once the Kafka shell has been launched, you can begin configuring the cluster. All of the following commands require the argument `--bootstrap-server`. To simplify things, set the `BOOTSTRAP_SERVER` and `MY_TOPIC` variables:
+      ```bash
+      export BOOTSTRAP_SERVER=$(broker-list.sh)
+      export MY_TOPIC="your_topic_here"
+      ```
+8. Create the topic
 
    ```bash
-   ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
-   $KAFKA_HOME/bin/kafka-topics.sh --create --topic=$MY_INPUT_TOPIC_NAME --bootstrap-server `broker-list.sh`
+   # Create the topic
+   kafka-topics.sh --bootstrap-server ${BOOTSTRAP_SERVER} --create --topic ${MY_TOPIC}
+
+   # Change the number of partitions
+   kafka-topics.sh --bootstrap-server ${BOOTSTRAP_SERVER} --alter --topic ${MY_TOPIC} --partitions 3
+
+   # See the topic info
+   kafka-topics.sh --bootstrap-server ${BOOTSTRAP_SERVER} --describe --topic=${MY_TOPIC}
    ```
-   Replace `<INPUT_TOPIC_NAME>` with the input name of your choice. If you are using `to-kafka`, ensure your output topic is also created.
+   **Note:** If you are using `to-kafka`, ensure your output topic is also created.
 
-8. Generate input messages
-   1.  In order for Morpheus to read from Kafka, messages need to be published to the cluster. For debugging/testing purposes, the following container can be used:
+9. Generate input messages
+   1. In order for Morpheus to read from Kafka, messages need to be published to the cluster. You can use the `kafka-console-producer.sh` script to load data:
 
-         ```bash
-         # Download from https://netq-shared.s3-us-west-2.amazonaws.com/kafka-producer.tar.gz
-         wget https://netq-shared.s3-us-west-2.amazonaws.com/kafka-producer.tar.gz
-         # Load container
-         docker load --input kafka-producer.tar.gz
-         # Run the producer container
-         docker run --rm -it -e KAFKA_BROKER_SERVERS=$(broker-list.sh) -e INPUT_FILE_NAME=$MY_INPUT_FILE -e TOPIC_NAME=$MY_INPUT_TOPIC_NAME --mount src="$PWD,target=/app/data/,type=bind" kafka-producer:1
-         ```
-         In order for this to work, your input file must be accessible from `$PWD`.
+      ```bash
+      kafka-console-producer.sh --bootstrap-server ${BOOTSTRAP_SERVER} --topic ${MY_TOPIC} < ${FILE_TO_LOAD}
+      ```
+
+      **Note:** In order for this to work, your input file must be accessible from the current directory the Kafka shell was launched from.
+
    2. You can view the messages with:
 
-         ```bash
-         ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
-         $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=$MY_TOPIC --bootstrap-server `broker-list.sh`
-         ```
+      ```bash
+      kafka-console-consumer.sh --bootstrap-server ${BOOTSTRAP_SERVER} --topic ${MY_TOPIC}
+      ```
+
+      **Note:** This will consume messages.
 
 ### Launching Triton Server
 

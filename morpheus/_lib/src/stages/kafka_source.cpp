@@ -44,8 +44,8 @@
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
-#include "srf/runnable/forward.hpp"
 
 #define CHECK_KAFKA(command, expected, msg)                                                                    \
     {                                                                                                          \
@@ -121,9 +121,14 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
 
             // Update now
             now = std::chrono::high_resolution_clock::now();
-        } while (msg_count < m_max_batch_size_fn() && now < batch_end && m_is_rebalanced);
+        } while (msg_count < m_max_batch_size_fn() && now < batch_end);
 
         return std::move(messages);
+    }
+
+    bool process_messages(std::vector<std::unique_ptr<RdKafka::Message>> &messages)
+    {
+        return m_process_fn(messages);
     }
 
   private:
@@ -155,9 +160,18 @@ void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer *consumer
 {
     std::unique_lock<boost::fibers::recursive_mutex> lock(m_mutex);
 
+    std::vector<RdKafka::TopicPartition *> current_assignment;
+    CHECK_KAFKA(consumer->assignment(current_assignment), RdKafka::ERR_NO_ERROR, "Error retrieving current assignment");
+
+    auto old_partition_ids = foreach_map(current_assignment, [](const auto &x) { return x->partition(); });
+    auto new_partition_ids = foreach_map(partitions, [](const auto &x) { return x->partition(); });
+
     if (err == RdKafka::ERR__ASSIGN_PARTITIONS)
     {
-        VLOG(10) << m_display_str_fn("Rebalance: Assign Partitions");
+        VLOG(10) << m_display_str_fn(MORPHEUS_CONCAT_STR(
+            "Rebalance: Assign Partitions. Current Partitions: << "
+            << StringUtil::array_to_str(old_partition_ids.begin(), old_partition_ids.end())
+            << ". Assigning: " << StringUtil::array_to_str(new_partition_ids.begin(), new_partition_ids.end())));
 
         // application may load offets from arbitrary external storage here and update \p partitions
         if (consumer->rebalance_protocol() == "COOPERATIVE")
@@ -173,7 +187,10 @@ void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer *consumer
     }
     else if (err == RdKafka::ERR__REVOKE_PARTITIONS)
     {
-        VLOG(10) << m_display_str_fn("Rebalance: Revoke Partitions");
+        VLOG(10) << m_display_str_fn(MORPHEUS_CONCAT_STR(
+            "Rebalance: Revoke Partitions. Current Partitions: << "
+            << StringUtil::array_to_str(old_partition_ids.begin(), old_partition_ids.end())
+            << ". Revoking: " << StringUtil::array_to_str(new_partition_ids.begin(), new_partition_ids.end())));
 
         // Application may commit offsets manually here if auto.commit.enable=false
         if (consumer->rebalance_protocol() == "COOPERATIVE")
@@ -292,19 +309,13 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 std::vector<std::unique_ptr<RdKafka::Message>> message_batch =
                     rebalancer.partition_progress_step(consumer.get());
 
-                std::shared_ptr<morpheus::MessageMeta> batch;
+                // Process the messages. Returns true if we need to commit
+                auto should_commit = rebalancer.process_messages(message_batch);
 
-                try
+                if (should_commit)
                 {
-                    batch = std::move(this->process_batch(std::move(message_batch)));
-                } catch (std::exception &ex)
-                {
-                    LOG(ERROR) << "Exception in process_batch. Msg: " << ex.what();
-
-                    break;
+                    CHECK_KAFKA(consumer->commitAsync(), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
                 }
-
-                sub.on_next(std::move(batch));
             }
 
         } catch (std::exception &ex)
@@ -418,20 +429,6 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
         throw std::runtime_error("Failed to list_topics in Kafka broker after 5 attempts");
     }
 
-    if (md == nullptr)
-    {
-        CHECK_KAFKA(consumer->metadata(spec_topic == nullptr, spec_topic.get(), &md, 1000),
-                    RdKafka::ERR_NO_ERROR,
-                    "Failed to list_topics in Kafka broker");
-    }
-
-    if (md == nullptr)
-    {
-        CHECK_KAFKA(consumer->metadata(spec_topic == nullptr, spec_topic.get(), &md, 1000),
-                    RdKafka::ERR_NO_ERROR,
-                    "Failed to list_topics in Kafka broker");
-    }
-
     std::map<std::string, std::vector<int32_t>> topic_parts;
 
     auto &ctx = srf::runnable::Context::get_runtime_context();
@@ -467,14 +464,29 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
         auto positions =
             foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition> &x) { return x->offset(); });
 
+        auto watermarks = foreach_map(toppar_list, [&consumer](const std::unique_ptr<RdKafka::TopicPartition> &x) {
+            int64_t low;
+            int64_t high;
+            CHECK_KAFKA(consumer->query_watermark_offsets(x->topic(), x->partition(), &low, &high, 1000),
+                        RdKafka::ERR_NO_ERROR,
+                        "Failed retrieve Kafka watermark offsets");
+
+            return std::make_tuple(low, high);
+        });
+
+        auto watermark_strs = foreach_map(watermarks, [](const auto &x) {
+            return MORPHEUS_CONCAT_STR("(" << std::get<0>(x) << ", " << std::get<1>(x) << ")");
+        });
+
         auto &ctx = srf::runnable::Context::get_runtime_context();
         VLOG(10) << ctx.info()
                  << MORPHEUS_CONCAT_STR(
                         "   Topic: '" << topic->topic()
                                       << "', Parts: " << StringUtil::array_to_str(part_ids.begin(), part_ids.end())
                                       << ", Committed: " << StringUtil::array_to_str(committed.begin(), committed.end())
-                                      << ", Positions: "
-                                      << StringUtil::array_to_str(positions.begin(), positions.end()));
+                                      << ", Positions: " << StringUtil::array_to_str(positions.begin(), positions.end())
+                                      << ", Watermarks: "
+                                      << StringUtil::array_to_str(watermark_strs.begin(), watermark_strs.end()));
     }
 
     return std::move(consumer);
