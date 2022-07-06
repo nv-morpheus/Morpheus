@@ -42,17 +42,40 @@ from utils import TEST_DIRS
 
 TEST_SOURCES = {
     "test_sid_nlp_e2e": {
-        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv'), "repeat": 10
+        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv'),
+        "repeat": 10,
+        "num_threads": 8,
+        "pipeline_batch_size": 1024,
+        "model_max_batch_size": 64,
+        "feature_length": 256,
+        "edge_buffer_size": 4
     },
     "test_abp_fil_e2e": {
-        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines'), "repeat": 100
+        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines'),
+        "repeat": 100,
+        "num_threads": 8,
+        "pipeline_batch_size": 1024,
+        "model_max_batch_size": 1024,
+        "feature_length": 29,
+        "edge_buffer_size": 4
     },
     "test_phishing_nlp_e2e": {
         "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'phishing-email-validation-data.jsonlines'),
-        "repeat": 1
+        "repeat": 1,
+        "num_threads": 8,
+        "pipeline_batch_size": 1024,
+        "model_max_batch_size": 64,
+        "feature_length": 128,
+        "edge_buffer_size": 4
     },
     "test_cloudtrail_ae_e2e": {
-        "glob_path": os.path.join(TEST_DIRS.validation_data_dir, 'hammah-*.csv'), "repeat": 1
+        "glob_path": os.path.join(TEST_DIRS.validation_data_dir, 'hammah-*.csv'),
+        "repeat": 1,
+        "num_threads": 1,
+        "pipeline_batch_size": 1024,
+        "model_max_batch_size": 1024,
+        "feature_length": 32,
+        "edge_buffer_size": 4
     }
 }
 
@@ -129,11 +152,11 @@ def test_sid_nlp_e2e(benchmark, tmp_path):
 
     config = Config()
     config.mode = PipelineModes.NLP
-    config.num_threads = 8
-    config.pipeline_batch_size = 1024
-    config.model_max_batch_size = 64
-    config.feature_length = 256
-    config.edge_buffer_size = 4
+    config.num_threads = TEST_SOURCES["test_sid_nlp_e2e"]["num_threads"]
+    config.pipeline_batch_size = TEST_SOURCES["test_sid_nlp_e2e"]["pipeline_batch_size"]
+    config.model_max_batch_size = TEST_SOURCES["test_sid_nlp_e2e"]["model_max_batch_size"]
+    config.feature_length = TEST_SOURCES["test_sid_nlp_e2e"]["feature_length"]
+    config.edge_buffer_size = TEST_SOURCES["test_sid_nlp_e2e"]["edge_buffer_size"]
     config.class_labels = [
         "address",
         "bank_acct",
@@ -161,11 +184,11 @@ def test_abp_fil_e2e(benchmark, tmp_path):
 
     config = Config()
     config.mode = PipelineModes.FIL
-    config.num_threads = 8
-    config.pipeline_batch_size = 1024
-    config.model_max_batch_size = 1024
-    config.feature_length = 29
-    config.edge_buffer_size = 4
+    config.num_threads = TEST_SOURCES["test_abp_fil_e2e"]["num_threads"]
+    config.pipeline_batch_size = TEST_SOURCES["test_abp_fil_e2e"]["pipeline_batch_size"]
+    config.model_max_batch_size = TEST_SOURCES["test_abp_fil_e2e"]["model_max_batch_size"]
+    config.feature_length = TEST_SOURCES["test_abp_fil_e2e"]["feature_length"]
+    config.edge_buffer_size = TEST_SOURCES["test_abp_fil_e2e"]["edge_buffer_size"]
     config.class_labels = ["mining"]
     config.fil = ConfigFIL()
     fil_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')
@@ -185,11 +208,11 @@ def test_phishing_nlp_e2e(benchmark, tmp_path):
 
     config = Config()
     config.mode = PipelineModes.NLP
-    config.num_threads = 8
-    config.pipeline_batch_size = 1024
-    config.model_max_batch_size = 64
-    config.feature_length = 128
-    config.edge_buffer_size = 4
+    config.num_threads = TEST_SOURCES["test_phishing_nlp_e2e"]["num_threads"]
+    config.pipeline_batch_size = TEST_SOURCES["test_phishing_nlp_e2e"]["pipeline_batch_size"]
+    config.model_max_batch_size = TEST_SOURCES["test_phishing_nlp_e2e"]["model_max_batch_size"]
+    config.feature_length = TEST_SOURCES["test_phishing_nlp_e2e"]["feature_length"]
+    config.edge_buffer_size = TEST_SOURCES["test_phishing_nlp_e2e"]["edge_buffer_size"]
     config.class_labels = ["score", "pred"]
     CppConfig.set_should_use_cpp(True)
 
@@ -206,11 +229,11 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
 
     config = Config()
     config.mode = PipelineModes.AE
-    config.num_threads = 1
-    config.pipeline_batch_size = 1024
-    config.model_max_batch_size = 1024
-    config.feature_length = 32
-    config.edge_buffer_size = 4
+    config.num_threads = TEST_SOURCES["test_cloudtrail_ae_e2e"]["num_threads"]
+    config.pipeline_batch_size = TEST_SOURCES["test_cloudtrail_ae_e2e"]["pipeline_batch_size"]
+    config.model_max_batch_size = TEST_SOURCES["test_cloudtrail_ae_e2e"]["model_max_batch_size"]
+    config.feature_length = TEST_SOURCES["test_cloudtrail_ae_e2e"]["feature_length"]
+    config.edge_buffer_size = TEST_SOURCES["test_cloudtrail_ae_e2e"]["edge_buffer_size"]
     config.class_labels = ["ae_anomaly_score"]
 
     config.ae = ConfigAutoEncoder()

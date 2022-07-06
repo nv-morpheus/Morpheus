@@ -16,10 +16,25 @@
 import glob
 import os
 
+import GPUtil
 from test_bench_e2e_pipelines import TEST_SOURCES
 
 
 def pytest_benchmark_update_json(config, benchmarks, output_json):
+
+    gpus = GPUtil.getGPUs()
+
+    for i, gpu in enumerate(gpus):
+        # output_json["machine_info"]["gpu_" + str(i)] = gpu.name
+        output_json["machine_info"]["gpu_" + str(i)] = {}
+        output_json["machine_info"]["gpu_" + str(i)]["id"] = gpu.id
+        output_json["machine_info"]["gpu_" + str(i)]["name"] = gpu.name
+        output_json["machine_info"]["gpu_" + str(i)]["load"] = f"{gpu.load*100}%"
+        output_json["machine_info"]["gpu_" + str(i)]["free_memory"] = f"{gpu.memoryFree}MB"
+        output_json["machine_info"]["gpu_" + str(i)]["used_memory"] = f"{gpu.memoryUsed}MB"
+        output_json["machine_info"]["gpu_" + str(i)]["temperature"] = f"{gpu.temperature} C"
+        output_json["machine_info"]["gpu_" + str(i)]["uuid"] = gpu.uuid
+
     line_count = 0
     byte_count = 0
     for bench in output_json['benchmarks']:
@@ -35,10 +50,19 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
 
         repeat = TEST_SOURCES[bench["name"]]["repeat"]
 
+        bench["morpheus_config"] = {}
+        bench["morpheus_config"]["num_threads"] = TEST_SOURCES[bench["name"]]["num_threads"]
+        bench["morpheus_config"]["pipeline_batch_size"] = TEST_SOURCES[bench["name"]]["pipeline_batch_size"]
+        bench["morpheus_config"]["model_max_batch_size"] = TEST_SOURCES[bench["name"]]["model_max_batch_size"]
+        bench["morpheus_config"]["feature_length"] = TEST_SOURCES[bench["name"]]["feature_length"]
+        bench["morpheus_config"]["edge_buffer_size"] = TEST_SOURCES[bench["name"]]["edge_buffer_size"]
+
+        bench['stats']["input-lines"] = line_count * repeat
         bench['stats']['min-throughput-lines'] = (line_count * repeat) / bench['stats']['max']
         bench['stats']['max-throughput-lines'] = (line_count * repeat) / bench['stats']['min']
         bench['stats']['mean-throughput-lines'] = (line_count * repeat) / bench['stats']['mean']
         bench['stats']['median-throughput-lines'] = (line_count * repeat) / bench['stats']['median']
+        bench['stats']["input-bytes"] = byte_count * repeat
         bench['stats']['min-throughput-bytes'] = (byte_count * repeat) / bench['stats']['max']
         bench['stats']['max-throughput-bytes'] = (byte_count * repeat) / bench['stats']['min']
         bench['stats']['mean-throughput-bytes'] = (byte_count * repeat) / bench['stats']['mean']
