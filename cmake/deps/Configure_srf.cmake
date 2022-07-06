@@ -38,7 +38,7 @@ function(find_and_configure_srf version)
                       "SRF_USE_CONDA ${MORPHEUS_USE_CONDA}"
                       "SRF_USE_CCACHE ${MORPHEUS_USE_CCACHE}"
                       "SRF_USE_CLANG_TIDY ${MORPHEUS_USE_CLANG_TIDY}"
-                      "SRF_PYTHON_INPLACE_BUILD ${MORPHEUS_PYTHON_INPLACE_BUILD}"
+                      "SRF_PYTHON_INPLACE_BUILD OFF"
                       "SRF_PYTHON_PERFORM_INSTALL ON"
                       "SRF_PYTHON_BUILD_STUBS ${MORPHEUS_BUILD_PYTHON_STUBS}"
                       "RMM_VERSION ${RAPIDS_VERSION}"
