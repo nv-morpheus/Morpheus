@@ -57,13 +57,13 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
         bench["morpheus_config"]["feature_length"] = E2E_TEST_CONFIGS[bench["name"]]["feature_length"]
         bench["morpheus_config"]["edge_buffer_size"] = E2E_TEST_CONFIGS[bench["name"]]["edge_buffer_size"]
 
-        bench['stats']["input-lines"] = line_count * repeat
-        bench['stats']['min-throughput-lines'] = (line_count * repeat) / bench['stats']['max']
-        bench['stats']['max-throughput-lines'] = (line_count * repeat) / bench['stats']['min']
-        bench['stats']['mean-throughput-lines'] = (line_count * repeat) / bench['stats']['mean']
-        bench['stats']['median-throughput-lines'] = (line_count * repeat) / bench['stats']['median']
-        bench['stats']["input-bytes"] = byte_count * repeat
-        bench['stats']['min-throughput-bytes'] = (byte_count * repeat) / bench['stats']['max']
-        bench['stats']['max-throughput-bytes'] = (byte_count * repeat) / bench['stats']['min']
-        bench['stats']['mean-throughput-bytes'] = (byte_count * repeat) / bench['stats']['mean']
-        bench['stats']['median-throughput-bytes'] = (byte_count * repeat) / bench['stats']['median']
+        bench['stats']["input_lines"] = line_count * repeat
+        bench['stats']['min_throughput_lines'] = (line_count * repeat) / bench['stats']['max']
+        bench['stats']['max_throughput_lines'] = (line_count * repeat) / bench['stats']['min']
+        bench['stats']['mean_throughput_lines'] = (line_count * repeat) / bench['stats']['mean']
+        bench['stats']['median_throughput_lines'] = (line_count * repeat) / bench['stats']['median']
+        bench['stats']["input_bytes"] = byte_count * repeat
+        bench['stats']['min_throughput_bytes'] = (byte_count * repeat) / bench['stats']['max']
+        bench['stats']['max_throughput_bytes'] = (byte_count * repeat) / bench['stats']['min']
+        bench['stats']['mean_throughput_bytes'] = (byte_count * repeat) / bench['stats']['mean']
+        bench['stats']['median_throughput_bytes'] = (byte_count * repeat) / bench['stats']['median']
