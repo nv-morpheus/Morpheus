@@ -82,4 +82,4 @@ test_cloudtrail_ae_e2e     6,929.7436 (8.30)     7,157.0487 (8.02)     6,995.196
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
-More benchmark data including throughput (messages/sec, bytes/sec) will be saved to `./tests/benchmarks/.benchmarks`.
+A comprehensive report for each test run will be saved to a JSON file in  `./tests/benchmarks/.benchmarks`. This will include throughput (lines/sec, bytes/sec), GPU info and Morpheus configs for each test workflow.
