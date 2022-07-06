@@ -17,7 +17,7 @@ import glob
 import os
 
 import GPUtil
-from test_bench_e2e_pipelines import TEST_SOURCES
+from test_bench_e2e_pipelines import E2E_TEST_CONFIGS
 
 
 def pytest_benchmark_update_json(config, benchmarks, output_json):
@@ -38,24 +38,24 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
     line_count = 0
     byte_count = 0
     for bench in output_json['benchmarks']:
-        if "file_path" in TEST_SOURCES[bench["name"]]:
-            source_file = TEST_SOURCES[bench["name"]]["file_path"]
+        if "file_path" in E2E_TEST_CONFIGS[bench["name"]]:
+            source_file = E2E_TEST_CONFIGS[bench["name"]]["file_path"]
             line_count = len(open(source_file).readlines())
             byte_count = os.path.getsize(source_file)
 
-        elif "glob_path" in TEST_SOURCES[bench["name"]]:
-            for fn in glob.glob(TEST_SOURCES[bench["name"]]["glob_path"]):
+        elif "glob_path" in E2E_TEST_CONFIGS[bench["name"]]:
+            for fn in glob.glob(E2E_TEST_CONFIGS[bench["name"]]["glob_path"]):
                 line_count += len(open(fn).readlines())
                 byte_count += os.path.getsize(fn)
 
-        repeat = TEST_SOURCES[bench["name"]]["repeat"]
+        repeat = E2E_TEST_CONFIGS[bench["name"]]["repeat"]
 
         bench["morpheus_config"] = {}
-        bench["morpheus_config"]["num_threads"] = TEST_SOURCES[bench["name"]]["num_threads"]
-        bench["morpheus_config"]["pipeline_batch_size"] = TEST_SOURCES[bench["name"]]["pipeline_batch_size"]
-        bench["morpheus_config"]["model_max_batch_size"] = TEST_SOURCES[bench["name"]]["model_max_batch_size"]
-        bench["morpheus_config"]["feature_length"] = TEST_SOURCES[bench["name"]]["feature_length"]
-        bench["morpheus_config"]["edge_buffer_size"] = TEST_SOURCES[bench["name"]]["edge_buffer_size"]
+        bench["morpheus_config"]["num_threads"] = E2E_TEST_CONFIGS[bench["name"]]["num_threads"]
+        bench["morpheus_config"]["pipeline_batch_size"] = E2E_TEST_CONFIGS[bench["name"]]["pipeline_batch_size"]
+        bench["morpheus_config"]["model_max_batch_size"] = E2E_TEST_CONFIGS[bench["name"]]["model_max_batch_size"]
+        bench["morpheus_config"]["feature_length"] = E2E_TEST_CONFIGS[bench["name"]]["feature_length"]
+        bench["morpheus_config"]["edge_buffer_size"] = E2E_TEST_CONFIGS[bench["name"]]["edge_buffer_size"]
 
         bench['stats']["input-lines"] = line_count * repeat
         bench['stats']['min-throughput-lines'] = (line_count * repeat) / bench['stats']['max']

@@ -40,7 +40,7 @@ from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.logging import configure_logging
 from utils import TEST_DIRS
 
-TEST_SOURCES = {
+E2E_TEST_CONFIGS = {
     "test_sid_nlp_e2e": {
         "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv'),
         "repeat": 10,
@@ -152,11 +152,11 @@ def test_sid_nlp_e2e(benchmark, tmp_path):
 
     config = Config()
     config.mode = PipelineModes.NLP
-    config.num_threads = TEST_SOURCES["test_sid_nlp_e2e"]["num_threads"]
-    config.pipeline_batch_size = TEST_SOURCES["test_sid_nlp_e2e"]["pipeline_batch_size"]
-    config.model_max_batch_size = TEST_SOURCES["test_sid_nlp_e2e"]["model_max_batch_size"]
-    config.feature_length = TEST_SOURCES["test_sid_nlp_e2e"]["feature_length"]
-    config.edge_buffer_size = TEST_SOURCES["test_sid_nlp_e2e"]["edge_buffer_size"]
+    config.num_threads = E2E_TEST_CONFIGS["test_sid_nlp_e2e"]["num_threads"]
+    config.pipeline_batch_size = E2E_TEST_CONFIGS["test_sid_nlp_e2e"]["pipeline_batch_size"]
+    config.model_max_batch_size = E2E_TEST_CONFIGS["test_sid_nlp_e2e"]["model_max_batch_size"]
+    config.feature_length = E2E_TEST_CONFIGS["test_sid_nlp_e2e"]["feature_length"]
+    config.edge_buffer_size = E2E_TEST_CONFIGS["test_sid_nlp_e2e"]["edge_buffer_size"]
     config.class_labels = [
         "address",
         "bank_acct",
@@ -171,8 +171,8 @@ def test_sid_nlp_e2e(benchmark, tmp_path):
     ]
     CppConfig.set_should_use_cpp(True)
 
-    input_filepath = TEST_SOURCES["test_sid_nlp_e2e"]["file_path"]
-    repeat = TEST_SOURCES["test_sid_nlp_e2e"]["repeat"]
+    input_filepath = E2E_TEST_CONFIGS["test_sid_nlp_e2e"]["file_path"]
+    repeat = E2E_TEST_CONFIGS["test_sid_nlp_e2e"]["repeat"]
     vocab_filepath = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
     output_filepath = os.path.join(tmp_path, "sid_nlp_e2e_output.csv")
     model_name = "sid-minibert-onnx"
@@ -184,11 +184,11 @@ def test_abp_fil_e2e(benchmark, tmp_path):
 
     config = Config()
     config.mode = PipelineModes.FIL
-    config.num_threads = TEST_SOURCES["test_abp_fil_e2e"]["num_threads"]
-    config.pipeline_batch_size = TEST_SOURCES["test_abp_fil_e2e"]["pipeline_batch_size"]
-    config.model_max_batch_size = TEST_SOURCES["test_abp_fil_e2e"]["model_max_batch_size"]
-    config.feature_length = TEST_SOURCES["test_abp_fil_e2e"]["feature_length"]
-    config.edge_buffer_size = TEST_SOURCES["test_abp_fil_e2e"]["edge_buffer_size"]
+    config.num_threads = E2E_TEST_CONFIGS["test_abp_fil_e2e"]["num_threads"]
+    config.pipeline_batch_size = E2E_TEST_CONFIGS["test_abp_fil_e2e"]["pipeline_batch_size"]
+    config.model_max_batch_size = E2E_TEST_CONFIGS["test_abp_fil_e2e"]["model_max_batch_size"]
+    config.feature_length = E2E_TEST_CONFIGS["test_abp_fil_e2e"]["feature_length"]
+    config.edge_buffer_size = E2E_TEST_CONFIGS["test_abp_fil_e2e"]["edge_buffer_size"]
     config.class_labels = ["mining"]
     config.fil = ConfigFIL()
     fil_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_fil.txt')
@@ -196,8 +196,8 @@ def test_abp_fil_e2e(benchmark, tmp_path):
         config.fil.feature_columns = [x.strip() for x in lf.readlines()]
     CppConfig.set_should_use_cpp(True)
 
-    input_filepath = TEST_SOURCES["test_abp_fil_e2e"]["file_path"]
-    repeat = TEST_SOURCES["test_abp_fil_e2e"]["repeat"]
+    input_filepath = E2E_TEST_CONFIGS["test_abp_fil_e2e"]["file_path"]
+    repeat = E2E_TEST_CONFIGS["test_abp_fil_e2e"]["repeat"]
     output_filepath = os.path.join(tmp_path, "abp_fil_e2e_output.csv")
     model_name = "abp-nvsmi-xgb"
 
@@ -208,16 +208,16 @@ def test_phishing_nlp_e2e(benchmark, tmp_path):
 
     config = Config()
     config.mode = PipelineModes.NLP
-    config.num_threads = TEST_SOURCES["test_phishing_nlp_e2e"]["num_threads"]
-    config.pipeline_batch_size = TEST_SOURCES["test_phishing_nlp_e2e"]["pipeline_batch_size"]
-    config.model_max_batch_size = TEST_SOURCES["test_phishing_nlp_e2e"]["model_max_batch_size"]
-    config.feature_length = TEST_SOURCES["test_phishing_nlp_e2e"]["feature_length"]
-    config.edge_buffer_size = TEST_SOURCES["test_phishing_nlp_e2e"]["edge_buffer_size"]
+    config.num_threads = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["num_threads"]
+    config.pipeline_batch_size = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["pipeline_batch_size"]
+    config.model_max_batch_size = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["model_max_batch_size"]
+    config.feature_length = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["feature_length"]
+    config.edge_buffer_size = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["edge_buffer_size"]
     config.class_labels = ["score", "pred"]
     CppConfig.set_should_use_cpp(True)
 
-    input_filepath = TEST_SOURCES["test_phishing_nlp_e2e"]["file_path"]
-    repeat = TEST_SOURCES["test_phishing_nlp_e2e"]["repeat"]
+    input_filepath = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["file_path"]
+    repeat = E2E_TEST_CONFIGS["test_phishing_nlp_e2e"]["repeat"]
     vocab_filepath = os.path.join(TEST_DIRS.data_dir, 'bert-base-uncased-hash.txt')
     output_filepath = os.path.join(tmp_path, "phishing_nlp_e2e_output.csv")
     model_name = "phishing-bert-onnx"
@@ -229,11 +229,11 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
 
     config = Config()
     config.mode = PipelineModes.AE
-    config.num_threads = TEST_SOURCES["test_cloudtrail_ae_e2e"]["num_threads"]
-    config.pipeline_batch_size = TEST_SOURCES["test_cloudtrail_ae_e2e"]["pipeline_batch_size"]
-    config.model_max_batch_size = TEST_SOURCES["test_cloudtrail_ae_e2e"]["model_max_batch_size"]
-    config.feature_length = TEST_SOURCES["test_cloudtrail_ae_e2e"]["feature_length"]
-    config.edge_buffer_size = TEST_SOURCES["test_cloudtrail_ae_e2e"]["edge_buffer_size"]
+    config.num_threads = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["num_threads"]
+    config.pipeline_batch_size = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["pipeline_batch_size"]
+    config.model_max_batch_size = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["model_max_batch_size"]
+    config.feature_length = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["feature_length"]
+    config.edge_buffer_size = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["edge_buffer_size"]
     config.class_labels = ["ae_anomaly_score"]
 
     config.ae = ConfigAutoEncoder()
@@ -244,9 +244,9 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
         config.ae.feature_columns = [x.strip() for x in lf.readlines()]
     CppConfig.set_should_use_cpp(False)
 
-    input_glob = TEST_SOURCES["test_cloudtrail_ae_e2e"]["glob_path"]
+    input_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["glob_path"]
     print(input_glob)
-    repeat = TEST_SOURCES["test_cloudtrail_ae_e2e"]["repeat"]
+    repeat = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["repeat"]
     train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "hammah-*.csv")
     print(train_data_glob)
     output_filepath = os.path.join(tmp_path, "cloudtrail_ae_e2e_output.csv")
