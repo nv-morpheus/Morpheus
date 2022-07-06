@@ -61,7 +61,7 @@ E2E_TEST_CONFIGS = {
     },
     "test_phishing_nlp_e2e": {
         "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'phishing-email-validation-data.jsonlines'),
-        "repeat": 1,
+        "repeat": 10,
         "num_threads": 8,
         "pipeline_batch_size": 1024,
         "model_max_batch_size": 64,
