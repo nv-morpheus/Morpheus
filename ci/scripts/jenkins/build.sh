@@ -23,28 +23,20 @@ rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
-mamba install -q -y -n base -c conda-forge "boa >=0.10"
-mamba create -q -y -n morpheus python=${PYTHON_VER}
+mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 conda activate morpheus
 
 gpuci_logger "Installing CI dependencies"
 mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
+conda deactivate && conda activate morpheus
+
+gpuci_logger "Final Conda Environment"
+show_conda_info
 
 gpuci_logger "Check versions"
 python3 --version
 gcc --version
 g++ --version
-
-show_conda_info
-
-gpuci_logger "Installing dependencies"
-mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
-conda deactivate && conda activate morpheus
-
-gpuci_logger "Final Conda Environment"
-conda list
-
-gpuci_logger "Check cmake & ninja"
 cmake --version
 ninja --version
 

@@ -19,20 +19,32 @@ set -e
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 /usr/bin/nvidia-smi
 
+# Restore the environment and then ensure we have the CI dependencies
 restore_conda_env
+
+gpuci_logger "Installing CI dependencies"
+mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
+
+# Install the built Morpheus python package
 pip install ${MORPHEUS_ROOT}/build/wheel
 
 CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/wheel -name "*.x"))
 
 gpuci_logger "Installing test dependencies"
 npm install --silent -g camouflage-server
-mamba install -q -y -c conda-forge "git-lfs=3.1.4"
+
+# Before running any .git commands, set this as a safe directory
+git config --global --add safe.directory ${MORPHEUS_ROOT}
 
 gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
+
+# List missing files
+gpuci_logger "Listing missing files"
+git lfs ls-files
 
 REPORTS_DIR="${WORKSPACE_TMP}/reports"
 mkdir -p ${WORKSPACE_TMP}/reports

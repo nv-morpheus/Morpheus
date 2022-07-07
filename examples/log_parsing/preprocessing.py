@@ -83,6 +83,9 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
     def name(self) -> str:
         return "preprocess-logparsing"
 
+    def supports_cpp_node(self):
+        return False
+
     @staticmethod
     def pre_process_batch(x: MultiMessage,
                           vocab_hash_file: str,

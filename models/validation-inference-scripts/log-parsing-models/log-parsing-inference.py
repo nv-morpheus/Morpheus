@@ -1,31 +1,46 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """
 Using a BERT model to parse raw logs into jsons.
 
 Example Usage:
-python log-parsing-inference.py
-    --inputdata ../../datasets/validation-data/log-parsing-validation-data-input.csv
-    --modelfile ../../models/log-parsing-models/log-parsing-20220418.bin
-    --configfile ../../models/log-parsing-models/log-parsing-config-20220418.bin
-    --vocabfile ../../training-tuning-scripts/log-parsing-models/resources/bert-base-cased-vocab.txt
-    --hashfile ../../training-tuning-scripts/log-parsing-models/resources/bert-base-cased-hash.txt
+python log-parsing-inference.py \
+    --inputdata ../../datasets/validation-data/log-parsing-validation-data-input.csv \
+    --modelfile ../../models/log-parsing-models/log-parsing-20220418.bin \
+    --configfile ../../models/log-parsing-models/log-parsing-config-20220418.bin \
+    --vocabfile ../../training-tuning-scripts/log-parsing-models/resources/bert-base-cased-vocab.txt \
+    --hashfile ../../training-tuning-scripts/log-parsing-models/resources/bert-base-cased-hash.txt \
     --outputfile parsed-output.jsonlines
 """
 
-
-import json
-import cudf
-import os
-from collections import defaultdict
 import argparse
+import json
+import os
+import string
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
-import string
 import torch
 import torch.nn as nn
 from torch.nn import functional as f
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
+from torch.utils.data import TensorDataset
 from transformers import BertForTokenClassification
 
+import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
 
@@ -100,15 +115,13 @@ class Cybert:
         max_rows_tensor = int((byte_count / 120).ceil().sum())
 
         tokenizer = SubwordTokenizer(self._hashpath, do_lower_case=False)
-        tokenizer_output = tokenizer(
-            raw_data_col,
-            max_length=256,
-            stride=64,
-            truncation=False,
-            max_num_rows=max_rows_tensor,
-            add_special_tokens=False,
-            return_tensors='pt'
-        )
+        tokenizer_output = tokenizer(raw_data_col,
+                                     max_length=256,
+                                     stride=64,
+                                     truncation=False,
+                                     max_num_rows=max_rows_tensor,
+                                     add_special_tokens=False,
+                                     return_tensors='pt')
         input_ids = tokenizer_output['input_ids'].type(torch.long)
         att_mask = tokenizer_output['attention_mask'].type(torch.long)
         meta_data = tokenizer_output['metadata']
@@ -167,27 +180,17 @@ class Cybert:
 
     def __postprocess(self, infer_pdf):
         # cut overlapping edges
-        infer_pdf["confidences"] = infer_pdf.apply(
-            lambda row: row["confidences"][row["start"]:row["stop"]], axis=1
-        )
+        infer_pdf["confidences"] = infer_pdf.apply(lambda row: row["confidences"][row["start"]:row["stop"]], axis=1)
 
-        infer_pdf["labels"] = infer_pdf.apply(
-            lambda row: row["labels"][row["start"]:row["stop"]], axis=1
-        )
+        infer_pdf["labels"] = infer_pdf.apply(lambda row: row["labels"][row["start"]:row["stop"]], axis=1)
 
-        infer_pdf["token_ids"] = infer_pdf.apply(
-            lambda row: row["token_ids"][row["start"]:row["stop"]], axis=1
-        )
+        infer_pdf["token_ids"] = infer_pdf.apply(lambda row: row["token_ids"][row["start"]:row["stop"]], axis=1)
 
         # aggregated logs
-        infer_pdf = infer_pdf.groupby("doc").agg(
-            {"token_ids": "sum", "confidences": "sum", "labels": "sum"}
-        )
+        infer_pdf = infer_pdf.groupby("doc").agg({"token_ids": "sum", "confidences": "sum", "labels": "sum"})
 
         # parse_by_label
-        parsed_dfs = infer_pdf.apply(
-            lambda row: self.__get_label_dicts(row), axis=1, result_type="expand"
-        )
+        parsed_dfs = infer_pdf.apply(lambda row: self.__get_label_dicts(row), axis=1, result_type="expand")
         ext_parsed = pd.DataFrame(parsed_dfs[0].tolist())
         ext_confidence = pd.DataFrame(parsed_dfs[1].tolist())
         parsed_df = pd.DataFrame()
@@ -212,18 +215,14 @@ class Cybert:
     def __get_label_dicts(self, row):
         token_dict = defaultdict(str)
         confidence_dict = defaultdict(list)
-        for label, confidence, token_id in zip(
-            row["labels"], row["confidences"], row["token_ids"]
-        ):
+        for label, confidence, token_id in zip(row["labels"], row["confidences"], row["token_ids"]):
             text_token = self._vocab_lookup[token_id]
             if text_token[:2] != "##" and text_token[0] != '.':
                 # if not a subword use the current label, else use previous
                 new_label = label
                 new_confidence = confidence
             if self._label_map[new_label] in token_dict:
-                token_dict[self._label_map[new_label]] = (
-                    token_dict[self._label_map[new_label]] + " " + text_token
-                )
+                token_dict[self._label_map[new_label]] = (token_dict[self._label_map[new_label]] + " " + text_token)
             else:
                 token_dict[self._label_map[new_label]] = text_token
             confidence_dict[self._label_map[label]].append(new_confidence)
@@ -255,6 +254,7 @@ class Cybert:
         df.replace(r"\s+\?+\s", "?", regex=True, inplace=True)
         df.replace(r"\s+;+\s", "; ", regex=True, inplace=True)
         return df
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

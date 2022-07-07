@@ -83,10 +83,10 @@ extensions = [
     'sphinx.ext.linkcode',
 ]
 
-## Include Python objects as they appear in source files
-## Default: alphabetically ('alphabetical')
+# Include Python objects as they appear in source files
+# Default: alphabetically ('alphabetical')
 # autodoc_member_order = 'groupwise'
-## Default flags used by autodoc directives
+# Default flags used by autodoc directives
 # autodoc_default_options = {
 #     'members': True,
 #     'show-inheritance': True,
@@ -145,7 +145,7 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
+# html_theme = 'alabaster'
 html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -157,8 +157,7 @@ html_logo = '_static/main_nv_logo_square.png'
 html_theme_options = {
     'logo_only': True,
     'display_version': True,
-    'style_nav_header_background': '#000000',
-    # Toc options
+    'style_nav_header_background': '#000000',  # Toc options
     'collapse_navigation': False,
     'navigation_depth': 6,
 }
