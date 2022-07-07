@@ -149,10 +149,10 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         """
         if (columns is None):
             # Set all columns
-            self.meta.df.loc[self.meta.df.index[self.mask], :] = value
+            self.meta.df.loc[self.mask, :] = value
         else:
             # If its a single column or list of columns, this is the same
-            self.meta.df.loc[self.meta.df.index[self.mask], columns] = value
+            self.meta.df.loc[self.mask, columns] = value
 
     def get_slice(self, start, stop):
         """

@@ -89,7 +89,3 @@ def test_set_meta(config):
     mm.set_meta('v2', values)
 
     assert mm.get_meta_list('v2') == values
-
-    rev_values = list(reversed(values))
-    mm.set_meta('new_col', rev_values)
-    assert mm.get_meta_list('new_col') == rev_values
