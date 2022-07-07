@@ -154,7 +154,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             # If its a single column or list of columns, this is the same
             self.meta.df.loc[self.mask, columns] = value
 
-    def get_slice(self, start, stop):
+    def get_slice(self, start, stop, mask: cupy.array = None):
         """
         Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
         and `mess_count`.
@@ -165,6 +165,8 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             Start offset address.
         stop : int
             Stop offset address.
+        mask : cupy.array
+            Optional boolean array of masked values
 
         Returns
         -------
@@ -172,4 +174,6 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             A new `MultiMessage` with sliced offset and count.
 
         """
-        return MultiMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
+        sliced = MultiMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
+        sliced.mask = self.mask
+        return sliced
