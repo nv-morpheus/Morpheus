@@ -54,7 +54,7 @@ class MultiMessage
     std::shared_ptr<MessageMeta> meta;
     size_t mess_offset{0};
     size_t mess_count{0};
-    std::vector<cudf::size_type> mask{};
+    std::shared_ptr<rmm::device_buffer> mask;
 
     /**
      * TODO(Documentation)
