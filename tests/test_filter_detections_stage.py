@@ -14,12 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from unittest import mock
 
 import cupy as cp
 import pytest
 
+from morpheus._lib.file_types import FileTypes
+from morpheus.io.deserializers import read_file_to_df
+from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
+from utils import TEST_DIRS
 
 
 def test_constructor(config):
@@ -37,24 +44,22 @@ def test_constructor(config):
 
 @pytest.mark.use_python
 def test_filter(config):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+
     fds = FilterDetectionsStage(config, threshold=0.5)
 
-    def make_mock_message(probs_, offset=8):
-        count = len(probs_)
-        mm = mock.MagicMock()
-        mm.mess_offset = offset
-        mm.probs = probs_
-        mm.mess_count = count
-        mm.meta.count = count
-        mm.mask = cp.ones(count, cp.bool_)
-        return mm
+    def make_message(df, probs):
+        df_ = df[0:len(probs)]
+        mem = ResponseMemoryProbs(count=len(df_), probs=probs)
+        return MultiResponseProbsMessage(MessageMeta(df_), 0, len(df_), mem, 0, len(df_))
 
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
-    mock_message = make_mock_message(probs)
+    mock_message = make_message(df, probs)
 
     # All values are at or below the threshold
     output_message = fds.filter(mock_message)
-    assert output_message.mask.tolist() == [False, False]
+    assert len(output_message.get_meta()) == 0
 
     # Only one row has a value above the threshold
     probs = cp.array([
@@ -63,10 +68,10 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message = make_mock_message(probs)
+    mock_message = make_message(df, probs)
 
     output_message = fds.filter(mock_message)
-    assert output_message.mask.tolist() == [False, True, False]
+    assert output_message.get_meta().to_cupy().tolist() == df.loc[1:1, :].to_cupy().tolist()
 
     # Two adjacent rows have a value above the threashold
     probs = cp.array([
@@ -77,10 +82,10 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message = make_mock_message(probs)
+    mock_message = make_message(df, probs)
 
     output_message = fds.filter(mock_message)
-    assert output_message.mask.tolist() == [False, False, True, True, False]
+    assert output_message.get_meta().to_cupy().tolist() == df.loc[2:3, :].to_cupy().tolist()
 
     # Two non-adjacent rows have a value above the threashold
     probs = cp.array([
@@ -92,10 +97,14 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message = make_mock_message(probs)
+    mock_message = make_message(df, probs)
 
     output_message = fds.filter(mock_message)
-    assert output_message.mask.tolist() == [False, False, True, False, True, False]
+    mask = [False, False, True, False, True, False]
+    mask = cp.zeros(len(df), dtype=cp.bool_)
+    mask[2] = True
+    mask[4] = True
+    assert output_message.get_meta().to_cupy().tolist() == df.loc[mask, :].to_cupy().tolist()
 
 
 @pytest.mark.use_python
