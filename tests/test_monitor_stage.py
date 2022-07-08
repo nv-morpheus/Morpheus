@@ -21,8 +21,7 @@ import pytest
 
 import cudf
 
-from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages import MultiMessage
 from morpheus.stages.general.monitor_stage import MonitorStage
 
 
@@ -136,10 +135,8 @@ def test_auto_count_fn(config):
     # Just verify that we get a valid function for each supported type
     assert inspect.isfunction(m._auto_count_fn(['s']))
     assert inspect.isfunction(m._auto_count_fn('s'))
-
-    df = cudf.DataFrame()
-    assert inspect.isfunction(m._auto_count_fn(df))
-    assert inspect.isfunction(m._auto_count_fn(MultiMessage(MessageMeta(df), 0, 0)))
+    assert inspect.isfunction(m._auto_count_fn(cudf.DataFrame()))
+    assert inspect.isfunction(m._auto_count_fn(MultiMessage(None, 0, 0)))
 
     # Other iterables return the len function
     assert m._auto_count_fn({}) is len
@@ -158,6 +155,6 @@ def test_progress_sink(mock_morph_tqdm, config):
     assert m._determine_count_fn is None
     mock_morph_tqdm.update.assert_not_called()
 
-    m._progress_sink(MultiMessage(MessageMeta(cudf.DataFrame()), 0, 12))
+    m._progress_sink(MultiMessage(None, 0, 12))
     assert inspect.isfunction(m._determine_count_fn)
     mock_morph_tqdm.update.assert_called_once_with(n=12)

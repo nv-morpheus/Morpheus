@@ -16,7 +16,6 @@
 
 from unittest import mock
 
-import cupy as cp
 import pytest
 
 from morpheus.stages.inference import inference_stage
@@ -39,14 +38,11 @@ def test_build_output_message(config):
     pq = ProducerConsumerQueue()
     iw = IW(pq)
 
-    # These numbers don't actually make sense, but for the purposes of this test they just need to be passed-through
     mock_message = mock.MagicMock()
     mock_message.count = 2
     mock_message.mess_offset = 11
     mock_message.mess_count = 10
     mock_message.offset = 12
-    mock_message.meta.count = 10
-    mock_message.mask = cp.ones(10, cp.bool_)
 
     response = iw.build_output_message(mock_message)
     assert response.count == 2
