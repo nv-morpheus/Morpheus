@@ -38,15 +38,30 @@
 
 namespace morpheus {
 
+std::vector<TensorIndex> get_element_stride(const std::vector<std::size_t> &stride)
+{
+    // Depending on the input the stride is given in bytes or elements,
+    // divide the stride elements by the smallest item to ensure tensor_stride is defined in
+    // terms of elements
+    std::vector<TensorIndex> tensor_stride(stride.size());
+    auto min_stride = std::min_element(stride.cbegin(), stride.cend());
+
+    std::transform(stride.cbegin(),
+                   stride.cend(),
+                   tensor_stride.begin(),
+                   std::bind(std::divides<>(), std::placeholders::_1, *min_stride));
+    return tensor_stride;
+}
+
 std::shared_ptr<MultiResponseProbsMessage> combine_slices(
     std::size_t num_selected_rows, std::vector<std::shared_ptr<MultiResponseProbsMessage>> &&message_slices)
 {
     // TODO: Move this to a method on the message class called "copy_ranges" and don't be lazy and make multible message
     // slices
-    // need call get_output!
     CHECK(num_selected_rows > 0);
     std::vector<cudf::table_view> sliced_views;
     std::map<std::string, TensorObject> outputs;
+    std::map<std::string, uint8_t *> output_offsets;
     std::vector<std::string> column_names = message_slices.front()->get_meta().get_column_names();
 
     // peak at the first slice to determine what our outputs look like
@@ -57,6 +72,8 @@ std::shared_ptr<MultiResponseProbsMessage> combine_slices(
         const auto num_columns   = input_tensor.shape(1);
         auto output_buffer       = std::make_shared<rmm::device_buffer>(
             num_selected_rows * num_columns * input_tensor.dtype_size(), rmm::cuda_stream_per_thread);
+
+        output_offsets.insert(std::pair{p.first, static_cast<uint8_t *>(output_buffer->data())});
 
         outputs.insert(std::pair{
             p.first,
@@ -74,31 +91,33 @@ std::shared_ptr<MultiResponseProbsMessage> combine_slices(
         for (const auto &p : msg->memory->outputs)
         {
             // using get_output as it applies the offsets to the output
-            const auto &input_tensor             = msg->get_output(p.first);
-            const auto &shape                    = input_tensor.get_shape();
-            const std::size_t num_tensor_rows    = shape[0];
-            const std::size_t num_tensor_columns = shape[1];
-            const auto row_stride                = input_tensor.stride(0);
-            const auto item_size                 = input_tensor.dtype().item_size();
-            CHECK_EQ(num_tensor_rows, msg->count);
+            const auto &input_tensor            = msg->get_output(p.first);
+            const auto &shape                   = input_tensor.get_shape();
+            const std::size_t num_input_rows    = shape[0];
+            const std::size_t num_input_columns = shape[1];
+            const auto stride                   = get_element_stride(input_tensor.get_stride());
+            const auto row_stride               = stride[0];
+            const auto item_size                = input_tensor.dtype().item_size();
+            CHECK_EQ(num_input_rows, msg->count);
 
-            uint8_t *output_offset = static_cast<uint8_t *>(outputs[p.first].data()) + (slice_start_row * item_size);
-            if (row_stride == 1 || num_tensor_rows == 1)
+            if (row_stride == 1 || num_input_rows == 1)
             {
                 // column major just use cudaMemcpy
-                SRF_CHECK_CUDA(
-                    cudaMemcpy(output_offset, input_tensor.data(), input_tensor.bytes(), cudaMemcpyDeviceToDevice));
+                SRF_CHECK_CUDA(cudaMemcpy(
+                    output_offsets[p.first], input_tensor.data(), input_tensor.bytes(), cudaMemcpyDeviceToDevice));
             }
             else
             {
-                SRF_CHECK_CUDA(cudaMemcpy2D(output_offset,
+                SRF_CHECK_CUDA(cudaMemcpy2D(output_offsets[p.first],
                                             item_size,
                                             input_tensor.data(),
                                             row_stride * item_size,
                                             item_size,
-                                            num_tensor_rows,
+                                            num_input_rows,
                                             cudaMemcpyDeviceToDevice));
             }
+
+            output_offsets[p.first] += input_tensor.bytes();
         }
     }
 
@@ -106,7 +125,8 @@ std::shared_ptr<MultiResponseProbsMessage> combine_slices(
     cudf::io::table_metadata metadata{};
     column_names.insert(column_names.begin(), std::string());  // cudf id col
     metadata.column_names               = std::move(column_names);
-    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views), std::move(metadata)};
+    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views, rmm::mr::get_current_device_resource()),
+                                           std::move(metadata)};
 
     auto msg_meta = MessageMeta::create_from_cpp(std::move(table), 1);
     auto mem      = std::make_shared<ResponseMemoryProbs>(num_selected_rows, std::move(outputs));
@@ -145,16 +165,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     SRF_CHECK_CUDA(
                         cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
-                    // Depending on the input the stride is given in bytes or elements,
-                    // divide the stride elements by the smallest item to ensure tensor_stride is defined in
-                    // terms of elements
-                    std::vector<TensorIndex> tensor_stride(stride.size());
-                    auto min_stride = std::min_element(stride.cbegin(), stride.cend());
-
-                    std::transform(stride.cbegin(),
-                                   stride.cend(),
-                                   tensor_stride.begin(),
-                                   std::bind(std::divides<>(), std::placeholders::_1, *min_stride));
+                    auto tensor_stride = get_element_stride(stride);
 
                     // Now call the threshold function
                     auto thresh_bool_buffer =
@@ -164,7 +175,6 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                                             tensor_stride,
                                             m_threshold,
                                             true);
-
                     std::vector<uint8_t> host_bool_values(num_rows);
 
                     // Copy bools back to host
