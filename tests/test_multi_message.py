@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""
 import os
 
 import cupy
@@ -26,7 +26,7 @@ from morpheus.messages.multi_message import MultiMessage
 from utils import TEST_DIRS
 
 # TODO: These should work with the CPP impls as well
-"""
+
 @pytest.mark.use_python
 def test_masking(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
