@@ -23,6 +23,7 @@
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
 
+#include <glog/logging.h>
 #include <pybind11/pytypes.h>
 
 #include <cstddef>
@@ -35,6 +36,12 @@ namespace morpheus {
 ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : ResponseMemory(count)
 {
     this->outputs["probs"] = std::move(probs);
+}
+
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, std::map<std::string, TensorObject>&& outputs) : ResponseMemory(count)
+{
+    CHECK(outputs.find("probs") != outputs.end()) << "ResponseMemoryProbs requeires an output named \"probs\"";
+    this->outputs.merge(std::move(outputs));
 }
 
 const TensorObject &ResponseMemoryProbs::get_probs() const

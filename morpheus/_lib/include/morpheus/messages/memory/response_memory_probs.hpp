@@ -40,6 +40,7 @@ class ResponseMemoryProbs : public ResponseMemory
 {
   public:
     ResponseMemoryProbs(size_t count, TensorObject probs);
+    ResponseMemoryProbs(size_t count, std::map<std::string, TensorObject>&& outputs);
 
     /**
      * TODO(Documentation)

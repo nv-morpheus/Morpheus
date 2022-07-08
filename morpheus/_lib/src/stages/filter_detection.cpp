@@ -47,6 +47,7 @@ std::shared_ptr<MultiResponseProbsMessage> combine_slices(
     CHECK(num_selected_rows > 0);
     std::vector<cudf::table_view> sliced_views;
     std::map<std::string, TensorObject> outputs;
+    std::vector<std::string> column_names = message_slices.front()->get_meta().get_column_names();
 
     // peak at the first slice to determine what our outputs look like
     for (const auto &p : message_slices.front()->memory->outputs)
@@ -103,13 +104,12 @@ std::shared_ptr<MultiResponseProbsMessage> combine_slices(
 
     // concatenate returns a copy
     cudf::io::table_metadata metadata{};
-    metadata.column_names               = message_slices.front()->get_meta().get_column_names();
+    column_names.insert(column_names.begin(), std::string());  // cudf id col
+    metadata.column_names               = std::move(column_names);
     cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views), std::move(metadata)};
 
-    auto msg_meta = MessageMeta::create_from_cpp(std::move(table));
-    auto mem      = std::make_shared<ResponseMemoryProbs>(num_selected_rows, std::move(outputs.find("probs")->second));
-    outputs.erase("probs");
-    mem->outputs.merge(std::move(outputs));
+    auto msg_meta = MessageMeta::create_from_cpp(std::move(table), 1);
+    auto mem      = std::make_shared<ResponseMemoryProbs>(num_selected_rows, std::move(outputs));
 
     return std::make_shared<MultiResponseProbsMessage>(
         std::move(msg_meta), 0, num_selected_rows, std::move(mem), 0, num_selected_rows);
