@@ -17,7 +17,6 @@ import typing
 
 import cupy as cp
 import srf
-from srf.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.config import Config
