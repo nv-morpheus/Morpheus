@@ -100,7 +100,7 @@ std::shared_ptr<MultiResponseProbsMessage> combine_slices(
             const auto item_size                = input_tensor.dtype().item_size();
             CHECK_EQ(num_input_rows, msg->count);
 
-            if (row_stride == 1 || num_input_rows == 1)
+            if (row_stride == 1)
             {
                 // column major just use cudaMemcpy
                 SRF_CHECK_CUDA(cudaMemcpy(
