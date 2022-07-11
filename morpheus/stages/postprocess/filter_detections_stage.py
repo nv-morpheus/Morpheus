@@ -90,25 +90,7 @@ class FilterDetectionsStage(SinglePortStage):
         detections = cp.concatenate([cp.array([False]), detections, cp.array([False])])
 
         true_pairs = cp.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
-
-        # Build a mask
-        df = x.get_meta()
-        mask = cp.zeros(len(df), cp.bool_)
-
-        for pair in true_pairs:
-            pair = tuple(pair.tolist())
-            mask[pair[0]:pair[1]] = True
-
-        # TODO: Move this to a method of MultiResponseProbsMessage
-        sliced_rows = df.loc[mask, :]
-
-        outputs = x.outputs
-        sliced_outputs = {key: value[mask] for (key, value) in outputs.items()}
-        mem = ResponseMemoryProbs(count=len(sliced_rows), probs=sliced_outputs.pop('probs'))
-        for (key, value) in sliced_outputs.items():
-            mem.outputs[key] = value
-
-        return MultiResponseProbsMessage(MessageMeta(sliced_rows), 0, len(sliced_rows), mem, 0, len(sliced_rows))
+        return x.copy_ranges(true_pairs)
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         if self._build_cpp_node():
