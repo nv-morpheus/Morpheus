@@ -18,6 +18,7 @@
 #include <morpheus/messages/memory/response_memory_probs.hpp>
 #include <morpheus/stages/filter_detection.hpp>
 #include <morpheus/utilities/matx_util.hpp>
+#include <morpheus/utilities/tensor_util.hpp>
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
@@ -37,21 +38,6 @@
 #include <utility>
 
 namespace morpheus {
-
-std::vector<TensorIndex> get_element_stride(const std::vector<std::size_t> &stride)
-{
-    // Depending on the input the stride is given in bytes or elements,
-    // divide the stride elements by the smallest item to ensure tensor_stride is defined in
-    // terms of elements
-    std::vector<TensorIndex> tensor_stride(stride.size());
-    auto min_stride = std::min_element(stride.cbegin(), stride.cend());
-
-    std::transform(stride.cbegin(),
-                   stride.cend(),
-                   tensor_stride.begin(),
-                   std::bind(std::divides<>(), std::placeholders::_1, *min_stride));
-    return tensor_stride;
-}
 
 std::shared_ptr<MultiResponseProbsMessage> combine_slices(
     std::size_t num_selected_rows, std::vector<std::shared_ptr<MultiResponseProbsMessage>> &&message_slices)
@@ -95,7 +81,7 @@ std::shared_ptr<MultiResponseProbsMessage> combine_slices(
             const auto &shape                   = input_tensor.get_shape();
             const std::size_t num_input_rows    = shape[0];
             const std::size_t num_input_columns = shape[1];
-            const auto stride                   = get_element_stride(input_tensor.get_stride());
+            const auto stride                   = TensorUtils::get_element_stride(input_tensor.get_stride());
             const auto row_stride               = stride[0];
             const auto item_size                = input_tensor.dtype().item_size();
             CHECK_EQ(num_input_rows, msg->count);
@@ -165,7 +151,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     SRF_CHECK_CUDA(
                         cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
-                    auto tensor_stride = get_element_stride(stride);
+                    auto tensor_stride = TensorUtils::get_element_stride(stride);
 
                     // Now call the threshold function
                     auto thresh_bool_buffer =

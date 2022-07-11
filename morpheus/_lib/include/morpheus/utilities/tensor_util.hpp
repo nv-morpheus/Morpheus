@@ -77,6 +77,15 @@ struct TensorUtils
      */
     static bool validate_shape_and_stride(const std::vector<TensorIndex>& shape,
                                           const std::vector<TensorIndex>& stride);
+
+    /**
+     * @brief Returns a stride expressed in terms of elements given a stride expressed either in terms of bytes or
+     * elements.
+     *
+     * @param stride
+     * @return shape_type
+     */
+    static shape_type get_element_stride(const std::vector<std::size_t>& stride);
 };
 
 }  // namespace morpheus

@@ -37,6 +37,15 @@ TEST_F(TestTensor, UtilsShapeString)
     EXPECT_TRUE(shape_str == std::string("(100, 10, 1)"));
 }
 
+TEST_F(TestTensor, GetElementStride)
+{
+    using shape_type = morpheus::TensorUtils::shape_type;
+    EXPECT_EQ(morpheus::TensorUtils::get_element_stride({10, 1}), shape_type({10, 1}));
+    EXPECT_EQ(morpheus::TensorUtils::get_element_stride({1, 13}), shape_type({1, 13}));
+    EXPECT_EQ(morpheus::TensorUtils::get_element_stride({8, 104}), shape_type({1, 13}));
+    EXPECT_EQ(morpheus::TensorUtils::get_element_stride({8, 16, 112}), shape_type({1, 2, 14}));
+}
+
 /*
 TEST_F(TestTensor, UtilsValidateShapeAndStride)
 {
