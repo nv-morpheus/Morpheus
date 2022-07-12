@@ -93,8 +93,8 @@ class MultiMessage
      * This allows for copying several non-contiguous rows from the underlying dataframe into a new dataframe, however
      * this comes at a much higher cost compared to the `get_slice` method.
      */
-    std::shared_ptr<MultiMessage> copy_ranges(
-        const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const;
+    std::shared_ptr<MultiMessage> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                              size_t num_selected_rows) const;
 
   protected:
     // This internal function is used to allow virtual overriding while `get_slice` allows for hiding of base class.
@@ -115,9 +115,9 @@ class MultiMessage
     // assert(std::dynamic_ptr_cast<DerivedMultiMessage>(other_base) == other_derived);
     virtual std::shared_ptr<MultiMessage> internal_get_slice(size_t start, size_t stop) const;
 
-    virtual std::shared_ptr<MultiMessage> internal_copy_ranges(
-        const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const;
-    
+    virtual std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                               size_t num_selected_rows) const;
+
     virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const;
 };
 

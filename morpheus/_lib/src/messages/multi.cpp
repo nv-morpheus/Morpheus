@@ -20,10 +20,10 @@
 #include <morpheus/messages/meta.hpp>
 #include <morpheus/objects/table_info.hpp>
 
-#include <cudf/types.hpp>
-#include <cudf/io/types.hpp>
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
+#include <cudf/io/types.hpp>
+#include <cudf/types.hpp>
 
 #include <memory>
 #include <string>
@@ -78,14 +78,14 @@ std::shared_ptr<MultiMessage> MultiMessage::internal_get_slice(size_t start, siz
     return std::make_shared<MultiMessage>(this->meta, mess_start, mess_stop - mess_start);
 }
 
-std::shared_ptr<MultiMessage> MultiMessage::copy_ranges(
-    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+std::shared_ptr<MultiMessage> MultiMessage::copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                        size_t num_selected_rows) const
 {
     return std::static_pointer_cast<MultiMessage>(this->internal_copy_ranges(ranges, num_selected_rows));
 }
 
-std::shared_ptr<MultiMessage> MultiMessage::internal_copy_ranges(
-    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+std::shared_ptr<MultiMessage> MultiMessage::internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                                 size_t num_selected_rows) const
 {
     auto msg_meta = copy_meta_ranges(ranges);
     return std::make_shared<MultiMessage>(msg_meta, 0, num_selected_rows);
@@ -93,26 +93,26 @@ std::shared_ptr<MultiMessage> MultiMessage::internal_copy_ranges(
 
 std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const
 {
-    // copy ranges into a sequntial list of values 
+    // copy ranges into a sequntial list of values
     // https://github.com/rapidsai/cudf/issues/11223
     std::vector<cudf::size_type> cudf_ranges;
-    for (const auto& p: ranges)
+    for (const auto &p : ranges)
     {
         cudf_ranges.push_back(static_cast<cudf::size_type>(p.first));
         cudf_ranges.push_back(static_cast<cudf::size_type>(p.second));
     }
 
-    auto table_info = this->meta->get_info();
+    auto table_info                       = this->meta->get_info();
     std::vector<std::string> column_names = table_info.get_column_names();
     column_names.insert(column_names.begin(), std::string());  // cudf id col
     cudf::io::table_metadata metadata{std::move(column_names)};
 
-    auto table_view = table_info.get_view();
-    auto sliced_views = cudf::slice(table_view, cudf_ranges);
+    auto table_view                     = table_info.get_view();
+    auto sliced_views                   = cudf::slice(table_view, cudf_ranges);
     cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views, rmm::mr::get_current_device_resource()),
                                            std::move(metadata)};
 
-    return MessageMeta::create_from_cpp(std::move(table), 1);                      
+    return MessageMeta::create_from_cpp(std::move(table), 1);
 }
 
 void MultiMessage::set_meta(const std::string &col_name, TensorObject tensor)

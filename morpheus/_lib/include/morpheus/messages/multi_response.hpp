@@ -87,8 +87,8 @@ class MultiResponseMessage : public MultiMessage
     std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
                                                        size_t num_selected_rows) const override;
 
-    virtual std::shared_ptr<ResponseMemory> copy_output_ranges(
-        const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const;
+    virtual std::shared_ptr<ResponseMemory> copy_output_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                               size_t num_selected_rows) const;
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/
