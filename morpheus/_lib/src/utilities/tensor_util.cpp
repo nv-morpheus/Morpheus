@@ -19,10 +19,8 @@
 
 #include <srf/utils/sort_indexes.hpp>  // for sort_indexes
 
-#include <bits/c++config.h>
 #include <glog/logging.h>  // for DCHECK_EQ
 
-#include <algorithm>  // for copy, min_element & transform
 #include <experimental/iterator>
 #include <functional>   // for multiplies
 #include <iterator>     // for begin, end
@@ -86,19 +84,6 @@ bool TensorUtils::validate_shape_and_stride(const std::vector<TensorIndex>& shap
     }
 
     return true;
-}
-
-TensorUtils::shape_type TensorUtils::get_element_stride(const std::vector<std::size_t>& stride)
-{
-    shape_type tensor_stride(stride.size());
-    auto min_stride     = std::min_element(stride.cbegin(), stride.cend());
-    auto min_stride_val = *min_stride;
-
-    std::transform(stride.cbegin(), stride.cend(), tensor_stride.begin(), [min_stride_val](const std::size_t s) {
-        return s / min_stride_val;
-    });
-
-    return tensor_stride;
 }
 
 }  // namespace morpheus

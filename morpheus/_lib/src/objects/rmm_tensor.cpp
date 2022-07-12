@@ -19,6 +19,7 @@
 
 #include <morpheus/objects/tensor_object.hpp>
 #include <morpheus/utilities/matx_util.hpp>
+#include <morpheus/utilities/tensor_util.hpp>
 #include <morpheus/utilities/type_util.hpp>
 
 #include <pybind11/pybind11.h>
@@ -170,5 +171,51 @@ std::shared_ptr<ITensor> RMMTensor::as_type(DataType dtype) const
 size_t RMMTensor::offset_bytes() const
 {
     return m_offset * m_dtype.item_size();
+}
+
+std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>> &selected_rows,
+                                              TensorIndex num_rows) const
+{
+    const auto tensor_type        = dtype();
+    const auto item_size          = tensor_type.item_size();
+    const auto num_columns = static_cast<TensorIndex>(shape(1));
+    const auto stride             = TensorUtils::get_element_stride<TensorIndex>(m_stride);
+    const auto row_stride         = stride[0];
+
+    auto output_buffer =
+        std::make_shared<rmm::device_buffer>(num_rows * num_columns * item_size, rmm::cuda_stream_per_thread);
+
+    auto output_offset = static_cast<uint8_t *>(output_buffer->data());
+
+    for (const auto &rows : selected_rows)
+    {
+        const auto &sliced_input_tensor  = slice({rows.first, 0}, {rows.second, num_columns});
+        const std::size_t num_input_rows = rows.second - rows.first;
+        DCHECK_EQ(num_input_rows, sliced_input_tensor->shape(0));
+
+        const auto slice_size = sliced_input_tensor->bytes();
+
+        if (row_stride == 1)
+        {
+            // column major just use cudaMemcpy
+            SRF_CHECK_CUDA(
+                cudaMemcpy(output_offset, sliced_input_tensor->data(), slice_size, cudaMemcpyDeviceToDevice));
+        }
+        else
+        {
+            SRF_CHECK_CUDA(cudaMemcpy2D(output_offset,
+                                        item_size,
+                                        sliced_input_tensor->data(),
+                                        row_stride * item_size,
+                                        item_size,
+                                        num_input_rows,
+                                        cudaMemcpyDeviceToDevice));
+        }
+
+        output_offset += slice_size;
+    }
+
+    std::vector<TensorIndex> output_shape{num_rows, num_columns};
+    return std::make_shared<RMMTensor>(output_buffer, 0, tensor_type, output_shape);
 }
 }  // namespace morpheus

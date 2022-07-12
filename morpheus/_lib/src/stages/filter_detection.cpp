@@ -70,7 +70,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     SRF_CHECK_CUDA(
                         cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
-                    auto tensor_stride = TensorUtils::get_element_stride(stride);
+                    auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(stride);
 
                     // Now call the threshold function
                     auto thresh_bool_buffer =

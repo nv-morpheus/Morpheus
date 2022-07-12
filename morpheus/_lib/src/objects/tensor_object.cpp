@@ -85,4 +85,5 @@ const std::vector<TensorIndex>& TensorView::stride() const
 {
     return m_stride;
 }
+
 }  // namespace morpheus

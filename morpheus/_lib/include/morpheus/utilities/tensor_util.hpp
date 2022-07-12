@@ -19,6 +19,7 @@
 
 #include <morpheus/objects/tensor_object.hpp>
 
+#include <algorithm>  // for copy, min_element & transform
 #include <iosfwd>  // for ostream
 #include <string>  // for string
 #include <vector>  // for vector
@@ -85,7 +86,19 @@ struct TensorUtils
      * @param stride
      * @return shape_type
      */
-    static shape_type get_element_stride(const std::vector<std::size_t>& stride);
+    template<typename IndexT, typename SrcIndexT=IndexT>
+    static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride) 
+    {
+        std::vector<IndexT> tensor_stride(stride.size());
+        auto min_stride     = std::min_element(stride.cbegin(), stride.cend());
+        auto min_stride_val = *min_stride;
+
+        std::transform(stride.cbegin(), stride.cend(), tensor_stride.begin(), [min_stride_val](const SrcIndexT s) {
+            return s / min_stride_val;
+        });
+
+        return tensor_stride;
+    }
 };
 
 }  // namespace morpheus

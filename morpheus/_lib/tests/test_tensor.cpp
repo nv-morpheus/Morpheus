@@ -19,9 +19,12 @@
 
 #include <morpheus/utilities/tensor_util.hpp>  // for TensorUtils, TensorUtils::shape_type
 
+#include <bits/c++config.h>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
 
 #include <string>  // for allocator, operator==, basic_string, string
+
+using namespace morpheus;
 
 class TestTensor : public ::testing::Test
 {
@@ -32,18 +35,43 @@ class TestTensor : public ::testing::Test
 
 TEST_F(TestTensor, UtilsShapeString)
 {
-    morpheus::TensorUtils::shape_type shape = {100, 10, 1};
-    auto shape_str                          = morpheus::TensorUtils::shape_to_string(shape);
+    TensorUtils::shape_type shape = {100, 10, 1};
+    auto shape_str                = TensorUtils::shape_to_string(shape);
     EXPECT_TRUE(shape_str == std::string("(100, 10, 1)"));
 }
 
 TEST_F(TestTensor, GetElementStride)
 {
-    using shape_type = morpheus::TensorUtils::shape_type;
-    EXPECT_EQ(morpheus::TensorUtils::get_element_stride({10, 1}), shape_type({10, 1}));
-    EXPECT_EQ(morpheus::TensorUtils::get_element_stride({1, 13}), shape_type({1, 13}));
-    EXPECT_EQ(morpheus::TensorUtils::get_element_stride({8, 104}), shape_type({1, 13}));
-    EXPECT_EQ(morpheus::TensorUtils::get_element_stride({8, 16, 112}), shape_type({1, 2, 14}));
+    using shape_type = TensorUtils::shape_type;
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({10, 1}), shape_type({10, 1}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({1, 13}), shape_type({1, 13}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 104}), shape_type({1, 13}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 16, 112}), shape_type({1, 2, 14}));
+
+    EXPECT_EQ(TensorUtils::get_element_stride<std::size_t>({10, 1}), std::vector<std::size_t>({10, 1}));
+    EXPECT_EQ(TensorUtils::get_element_stride<std::size_t>({1, 13}), std::vector<std::size_t>({1, 13}));
+    EXPECT_EQ(TensorUtils::get_element_stride<std::size_t>({8, 104}), std::vector<std::size_t>({1, 13}));
+    EXPECT_EQ(TensorUtils::get_element_stride<std::size_t>({8, 16, 112}), std::vector<std::size_t>({1, 2, 14}));
+
+    {
+        auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({10, 1});
+        EXPECT_EQ(results, shape_type({10, 1}));
+    }
+
+    {
+        auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({1, 13});
+        EXPECT_EQ(results, shape_type({1, 13}));
+    }
+
+    {
+        auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({8, 104});
+        EXPECT_EQ(results, shape_type({1, 13}));
+    }
+
+    {
+        auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({8, 16, 112});
+        EXPECT_EQ(results, shape_type({1, 2, 14}));
+    }
 }
 
 /*
