@@ -187,6 +187,10 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         
         return df.loc[mask, :]
         
-    def copy_ranges(self, ranges):
+    def copy_ranges(self, ranges, num_selected_rows=None):
         sliced_rows = self.copy_meta_ranges(ranges)
-        return MultiMessage(meta=MessageMeta(sliced_rows), mess_offset=0, mess_count=len(sliced_rows))
+
+        if num_selected_rows is None:
+            num_selected_rows = len(sliced_rows)
+        
+        return MultiMessage(meta=MessageMeta(sliced_rows), mess_offset=0, mess_count=num_selected_rows)

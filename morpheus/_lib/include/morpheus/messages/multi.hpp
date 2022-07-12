@@ -35,6 +35,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -79,9 +80,21 @@ class MultiMessage
     void set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors);
 
     /**
-     * TODO(Documentation)
+     * Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on the given
+     * `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying `meta`
+     * and the actual slicing of the dataframe is applied later when `get_meta` is called.
      */
     std::shared_ptr<MultiMessage> get_slice(size_t start, size_t stop) const;
+
+    /**
+     * Creates a copy of the current message along with a copy of the underlying `meta` selecting the rows of `meta`
+     * defined by pairs of start, stop rows expressed in the `ranges` argument.
+     *
+     * This allows for copying several non-contiguous rows from the underlying dataframe into a new dataframe, however
+     * this comes at a much higher cost compared to the `get_slice` method.
+     */
+    std::shared_ptr<MultiMessage> copy_ranges(
+        const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const;
 
   protected:
     // This internal function is used to allow virtual overriding while `get_slice` allows for hiding of base class.
@@ -100,11 +113,12 @@ class MultiMessage
     //
     // These will be logically equivalent
     // assert(std::dynamic_ptr_cast<DerivedMultiMessage>(other_base) == other_derived);
-
-    /**
-     * TODO(Documentation)
-     */
     virtual std::shared_ptr<MultiMessage> internal_get_slice(size_t start, size_t stop) const;
+
+    virtual std::shared_ptr<MultiMessage> internal_copy_ranges(
+        const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const;
+    
+    virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const;
 };
 
 /****** MultiMessageInterfaceProxy**************************/

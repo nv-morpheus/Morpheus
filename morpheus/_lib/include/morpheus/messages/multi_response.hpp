@@ -75,11 +75,20 @@ class MultiResponseMessage : public MultiMessage
      */
     std::shared_ptr<MultiResponseMessage> get_slice(std::size_t start, std::size_t stop) const;
 
+    std::shared_ptr<MultiResponseMessage> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                      size_t num_selected_rows) const;
+
   protected:
     /**
      * TODO(Documentation)
      */
     std::shared_ptr<MultiMessage> internal_get_slice(std::size_t start, std::size_t stop) const override;
+
+    std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                       size_t num_selected_rows) const override;
+
+    virtual std::shared_ptr<ResponseMemory> copy_output_ranges(
+        const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const;
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/

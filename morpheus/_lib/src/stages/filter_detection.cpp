@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <cudf/types.hpp>
 #include <morpheus/messages/memory/response_memory_probs.hpp>
 #include <morpheus/stages/filter_detection.hpp>
 #include <morpheus/utilities/matx_util.hpp>
@@ -171,11 +172,11 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
                     // We aren't sending these, but making use of the fact that the message classes
                     // already know how to slice the data frame and all of the outputs for us.
-                    std::vector<std::shared_ptr<MultiResponseProbsMessage>> message_slices;
+                    std::vector<std::pair<cudf::size_type, cudf::size_type>> message_slices;
                     std::size_t num_selected_rows = 0;
 
                     // We are slicing by rows, using num_rows as our marker for undefined
-                    std::size_t slice_start = num_rows;
+                    cudf::size_type slice_start = num_rows;
                     for (std::size_t row = 0; row < num_rows; ++row)
                     {
                         bool above_threshold = host_bool_values[row];
@@ -186,7 +187,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                         }
                         else if (!above_threshold && slice_start != num_rows)
                         {
-                            message_slices.emplace_back(std::move(x->get_slice(slice_start, row)));
+                            message_slices.emplace_back(std::pair{slice_start, row});
                             num_selected_rows += (row - slice_start);
                             slice_start = num_rows;
                         }
@@ -195,13 +196,13 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     if (slice_start != num_rows)
                     {
                         // Last row was above the threshold
-                        message_slices.emplace_back(std::move(x->get_slice(slice_start, num_rows)));
+                        message_slices.emplace_back(std::pair{slice_start, num_rows});
                         num_selected_rows += (num_rows - slice_start);
                     }
 
                     if (num_selected_rows > 0)
                     {
-                        output.on_next(std::move(combine_slices(num_selected_rows, std::move(message_slices))));
+                        // output.on_next(std::move(combine_slices(num_selected_rows, std::move(message_slices))));
                     }
                 },
                 [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },

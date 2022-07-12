@@ -30,6 +30,10 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemory****************************************/
 ResponseMemory::ResponseMemory(size_t count) : count(count) {}
+ResponseMemory::ResponseMemory(size_t count, std::map<std::string, TensorObject> &&outputs) :
+  count(count),
+  outputs(std::move(outputs))
+{}
 
 bool ResponseMemory::has_output(const std::string &name) const
 {
