@@ -28,6 +28,7 @@
 #include <cudf/types.hpp>
 
 #include <memory>
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -63,6 +64,14 @@ class MultiResponseProbsMessage : public MultiResponseMessage
     {
         // This can only cast down
         return std::static_pointer_cast<MultiResponseProbsMessage>(this->internal_get_slice(start, stop));
+    }
+
+    std::shared_ptr<MultiResponseProbsMessage> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                           size_t num_selected_rows) const
+    {
+        // This can only cast down
+        return std::static_pointer_cast<MultiResponseProbsMessage>(
+            this->internal_copy_ranges(ranges, num_selected_rows));
     }
 };
 

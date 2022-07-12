@@ -40,88 +40,6 @@
 
 namespace morpheus {
 
-std::shared_ptr<MultiResponseProbsMessage> combine_slices(
-    std::size_t num_selected_rows, std::vector<std::shared_ptr<MultiResponseProbsMessage>> &&message_slices)
-{
-    // TODO: Move this to a method on the message class called "copy_ranges" and don't be lazy and make multible message
-    // slices
-    CHECK(num_selected_rows > 0);
-    std::vector<cudf::table_view> sliced_views;
-    std::map<std::string, TensorObject> outputs;
-    std::map<std::string, uint8_t *> output_offsets;
-    std::vector<std::string> column_names = message_slices.front()->get_meta().get_column_names();
-
-    // peak at the first slice to determine what our outputs look like
-    for (const auto &p : message_slices.front()->memory->outputs)
-    {
-        // using get_output as it applies the offsets to the output
-        const auto &input_tensor = message_slices.front()->get_output(p.first);
-        const auto num_columns   = input_tensor.shape(1);
-        auto output_buffer       = std::make_shared<rmm::device_buffer>(
-            num_selected_rows * num_columns * input_tensor.dtype_size(), rmm::cuda_stream_per_thread);
-
-        output_offsets.insert(std::pair{p.first, static_cast<uint8_t *>(output_buffer->data())});
-
-        outputs.insert(std::pair{
-            p.first,
-            Tensor::create(
-                output_buffer, input_tensor.dtype(), {static_cast<TensorIndex>(num_selected_rows), num_columns}, {})});
-    }
-
-    // populate the outut buffers by
-    for (const auto &msg : message_slices)
-    {
-        sliced_views.emplace_back(msg->get_meta().get_view());
-        const auto slice_start_row = msg->offset;
-        const auto slice_end_row   = msg->offset + msg->count;
-
-        for (const auto &p : msg->memory->outputs)
-        {
-            // using get_output as it applies the offsets to the output
-            const auto &input_tensor            = msg->get_output(p.first);
-            const auto &shape                   = input_tensor.get_shape();
-            const std::size_t num_input_rows    = shape[0];
-            const std::size_t num_input_columns = shape[1];
-            const auto stride                   = TensorUtils::get_element_stride(input_tensor.get_stride());
-            const auto row_stride               = stride[0];
-            const auto item_size                = input_tensor.dtype().item_size();
-            CHECK_EQ(num_input_rows, msg->count);
-
-            if (row_stride == 1)
-            {
-                // column major just use cudaMemcpy
-                SRF_CHECK_CUDA(cudaMemcpy(
-                    output_offsets[p.first], input_tensor.data(), input_tensor.bytes(), cudaMemcpyDeviceToDevice));
-            }
-            else
-            {
-                SRF_CHECK_CUDA(cudaMemcpy2D(output_offsets[p.first],
-                                            item_size,
-                                            input_tensor.data(),
-                                            row_stride * item_size,
-                                            item_size,
-                                            num_input_rows,
-                                            cudaMemcpyDeviceToDevice));
-            }
-
-            output_offsets[p.first] += input_tensor.bytes();
-        }
-    }
-
-    // concatenate returns a copy
-    cudf::io::table_metadata metadata{};
-    column_names.insert(column_names.begin(), std::string());  // cudf id col
-    metadata.column_names               = std::move(column_names);
-    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views, rmm::mr::get_current_device_resource()),
-                                           std::move(metadata)};
-
-    auto msg_meta = MessageMeta::create_from_cpp(std::move(table), 1);
-    auto mem      = std::make_shared<ResponseMemoryProbs>(num_selected_rows, std::move(outputs));
-
-    return std::make_shared<MultiResponseProbsMessage>(
-        std::move(msg_meta), 0, num_selected_rows, std::move(mem), 0, num_selected_rows);
-}
-
 // Component public implementations
 // ************ FilterDetectionStage **************************** //
 FilterDetectionsStage::FilterDetectionsStage(float threshold) :
@@ -170,13 +88,11 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                                               thresh_bool_buffer->size(),
                                               cudaMemcpyDeviceToHost));
 
-                    // We aren't sending these, but making use of the fact that the message classes
-                    // already know how to slice the data frame and all of the outputs for us.
-                    std::vector<std::pair<cudf::size_type, cudf::size_type>> message_slices;
+                    std::vector<std::pair<std::size_t, std::size_t>> selected_ranges;
                     std::size_t num_selected_rows = 0;
 
                     // We are slicing by rows, using num_rows as our marker for undefined
-                    cudf::size_type slice_start = num_rows;
+                    std::size_t slice_start = num_rows;
                     for (std::size_t row = 0; row < num_rows; ++row)
                     {
                         bool above_threshold = host_bool_values[row];
@@ -187,7 +103,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                         }
                         else if (!above_threshold && slice_start != num_rows)
                         {
-                            message_slices.emplace_back(std::pair{slice_start, row});
+                            selected_ranges.emplace_back(std::pair{slice_start, row});
                             num_selected_rows += (row - slice_start);
                             slice_start = num_rows;
                         }
@@ -196,13 +112,13 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     if (slice_start != num_rows)
                     {
                         // Last row was above the threshold
-                        message_slices.emplace_back(std::pair{slice_start, num_rows});
+                        selected_ranges.emplace_back(std::pair{slice_start, num_rows});
                         num_selected_rows += (num_rows - slice_start);
                     }
 
                     if (num_selected_rows > 0)
                     {
-                        // output.on_next(std::move(combine_slices(num_selected_rows, std::move(message_slices))));
+                        output.on_next(x->copy_ranges(selected_ranges, num_selected_rows));
                     }
                 },
                 [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
