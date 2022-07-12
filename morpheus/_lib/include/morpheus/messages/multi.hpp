@@ -179,6 +179,10 @@ struct MultiMessageInterfaceProxy
      * TODO(Documentation)
      */
     static std::shared_ptr<MultiMessage> get_slice(MultiMessage &self, std::size_t start, std::size_t stop);
+
+    static std::shared_ptr<MultiMessage> copy_ranges(MultiMessage &self,
+                                                     const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                     pybind11::object num_selected_rows);
 };
 
 #pragma GCC visibility pop

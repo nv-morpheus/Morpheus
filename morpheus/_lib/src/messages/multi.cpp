@@ -269,4 +269,22 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage
     // Returns shared_ptr
     return self.get_slice(start, stop);
 }
+
+std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(
+    MultiMessage &self, const std::vector<std::pair<size_t, size_t>> &ranges, pybind11::object num_selected_rows)
+{
+    std::size_t num_rows = 0;
+    if (num_selected_rows.is_none())
+    {
+        for (const auto &range : ranges)
+        {
+            num_rows += range.second - range.first;
+        }
+    }
+    else
+    {
+        num_rows = num_selected_rows.cast<std::size_t>();
+    }
+    return self.copy_ranges(ranges, num_rows);
+}
 }  // namespace morpheus
