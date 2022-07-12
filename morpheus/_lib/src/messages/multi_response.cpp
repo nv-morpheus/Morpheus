@@ -147,8 +147,8 @@ std::shared_ptr<ResponseMemory> MultiResponseMessage::copy_output_ranges(
             const auto &sliced_input_tensor =
                 input_tensor.slice({static_cast<cudf::size_type>(this->offset + range.first), 0},
                                    {static_cast<cudf::size_type>(this->offset + range.second), -1});
-            const std::size_t num_input_rows = sliced_input_tensor.get_shape()[0];
-            CHECK_EQ(num_input_rows, range.second - range.first);
+            const std::size_t num_input_rows = range.second - range.first;
+            DCHECK_EQ(num_input_rows, sliced_input_tensor.get_shape()[0]);
 
             if (row_stride == 1)
             {
