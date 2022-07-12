@@ -66,11 +66,20 @@ class MultiInferenceMessage : public MultiMessage
      */
     std::shared_ptr<MultiInferenceMessage> get_slice(std::size_t start, std::size_t stop) const;
 
+    std::shared_ptr<MultiInferenceMessage> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                       size_t num_selected_rows) const;
+
   protected:
     /**
      * TODO(Documentation)
      */
     std::shared_ptr<MultiMessage> internal_get_slice(std::size_t start, std::size_t stop) const override;
+
+    std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                       size_t num_selected_rows) const override;
+
+    std::shared_ptr<InferenceMemory> copy_input_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                       size_t num_selected_rows) const;
 };
 
 /****** MultiInferenceMessageInterfaceProxy****************/

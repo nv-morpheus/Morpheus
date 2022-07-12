@@ -97,6 +97,42 @@ std::shared_ptr<MultiMessage> MultiInferenceMessage::internal_get_slice(std::siz
         this->meta, mess_start, mess_stop - mess_start, this->memory, start, stop - start);
 }
 
+std::shared_ptr<MultiInferenceMessage> MultiInferenceMessage::copy_ranges(
+    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+{
+    return std::static_pointer_cast<MultiInferenceMessage>(this->internal_copy_ranges(ranges, num_selected_rows));
+}
+
+std::shared_ptr<MultiMessage> MultiInferenceMessage::internal_copy_ranges(
+    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+{
+    auto msg_meta = copy_meta_ranges(ranges);
+    auto mem      = copy_input_ranges(ranges, num_selected_rows);
+    return std::make_shared<MultiInferenceMessage>(msg_meta, 0, num_selected_rows, mem, 0, num_selected_rows);
+}
+
+std::shared_ptr<InferenceMemory> MultiInferenceMessage::copy_input_ranges(
+    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+{
+    const auto offset = static_cast<TensorIndex>(this->offset);
+    std::vector<std::pair<TensorIndex, TensorIndex>> offset_ranges(ranges.size());
+    std::transform(
+        ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const std::pair<size_t, size_t> range) {
+            return std::pair{offset + range.first, offset + range.second};
+        });
+
+    std::map<std::string, TensorObject> tensors;
+    for (const auto &mem_input : memory->inputs)
+    {
+        const std::string &name    = mem_input.first;
+        const TensorObject &tensor = mem_input.second;
+
+        tensors.insert(std::pair{name, tensor.copy_rows(offset_ranges, num_selected_rows)});
+    }
+
+    return std::make_shared<InferenceMemory>(num_selected_rows, std::move(tensors));
+}
+
 /****** <MultiInferenceMessage>InterfaceProxy *************************/
 std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::init(
     std::shared_ptr<MessageMeta> meta,

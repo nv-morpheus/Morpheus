@@ -33,6 +33,7 @@ class InferenceMemory
 {
   public:
     InferenceMemory(size_t count);
+    InferenceMemory(size_t count, std::map<std::string, TensorObject>&& inputs);
 
     std::size_t count{0};
     std::map<std::string, TensorObject> inputs;

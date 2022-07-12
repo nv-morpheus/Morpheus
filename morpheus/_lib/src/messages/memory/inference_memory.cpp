@@ -23,16 +23,22 @@
 #include <vector>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** InferenceMemory****************************************/
-    InferenceMemory::InferenceMemory(size_t count) : count(count) {}
+/****** Component public implementations *******************/
+/****** InferenceMemory****************************************/
+InferenceMemory::InferenceMemory(size_t count) : count(count) {}
+InferenceMemory::InferenceMemory(size_t count, std::map<std::string, TensorObject>&& inputs) :
+  count(count),
+  inputs(std::move(inputs))
+{}
 
-    bool InferenceMemory::has_input(const std::string &name) const  {
-        return this->inputs.find(name) != this->inputs.end();
-    }
-
-    /****** InferenceMemoryInterfaceProxy *************************/
-    std::size_t InferenceMemoryInterfaceProxy::get_count(InferenceMemory& self) {
-        return self.count;
-    }
+bool InferenceMemory::has_input(const std::string& name) const
+{
+    return this->inputs.find(name) != this->inputs.end();
 }
+
+/****** InferenceMemoryInterfaceProxy *************************/
+std::size_t InferenceMemoryInterfaceProxy::get_count(InferenceMemory& self)
+{
+    return self.count;
+}
+}  // namespace morpheus
