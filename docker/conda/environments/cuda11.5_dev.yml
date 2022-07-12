@@ -45,6 +45,7 @@ dependencies:
     - git>=2.35.3 # Needed for wildcards on safe.directory
     - glog=0.6
     - gmock=1.10
+    - gputil
     - grpc-cpp>=1.43
     - gtest=1.10
     - gxx_linux-64=9.4
