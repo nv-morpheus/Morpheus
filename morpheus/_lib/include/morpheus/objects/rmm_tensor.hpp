@@ -79,8 +79,16 @@ class RMMTensor : public ITensor
     std::shared_ptr<ITensor> slice(const std::vector<TensorIndex> &min_dims,
                                    const std::vector<TensorIndex> &max_dims) const override;
 
-    std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
-                                               TensorIndex num_rows) const  override;
+    /**
+     * @brief Creates a depp copy of the specified rows specified as vector<pair<start, stop>> not inclusive
+     * of the stop row.
+     *
+     * @param selected_rows
+     * @param num_rows
+     * @return std::shared_ptr<ITensor>
+     */
+    std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>> &selected_rows,
+                                       TensorIndex num_rows) const override;
 
     /**
      * TODO(Documentation)

@@ -599,6 +599,14 @@ struct TensorObject final
         return TensorObject(m_tensor->as_type(dtype));
     }
 
+    /**
+     * @brief Creates a depp copy of the specified rows specified as vector<pair<start, stop>> not inclusive
+     * of the stop row.
+     *
+     * @param selected_rows
+     * @param num_rows
+     * @return TensorObject
+     */
     TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
                            TensorIndex num_rows) const
     {

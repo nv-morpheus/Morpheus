@@ -176,11 +176,11 @@ size_t RMMTensor::offset_bytes() const
 std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>> &selected_rows,
                                               TensorIndex num_rows) const
 {
-    const auto tensor_type        = dtype();
-    const auto item_size          = tensor_type.item_size();
+    const auto tensor_type = dtype();
+    const auto item_size   = tensor_type.item_size();
     const auto num_columns = static_cast<TensorIndex>(shape(1));
-    const auto stride             = TensorUtils::get_element_stride<TensorIndex>(m_stride);
-    const auto row_stride         = stride[0];
+    const auto stride      = TensorUtils::get_element_stride<TensorIndex>(m_stride);
+    const auto row_stride  = stride[0];
 
     auto output_buffer =
         std::make_shared<rmm::device_buffer>(num_rows * num_columns * item_size, rmm::cuda_stream_per_thread);
