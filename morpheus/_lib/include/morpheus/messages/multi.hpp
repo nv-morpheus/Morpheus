@@ -80,18 +80,26 @@ class MultiMessage
     void set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors);
 
     /**
-     * Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on the given
-     * `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying `meta`
+     * @brief Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on the
+     * given `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying `meta`
      * and the actual slicing of the dataframe is applied later when `get_meta` is called.
+     *
+     * @param start
+     * @param stop
+     * @return std::shared_ptr<MultiMessage>
      */
     std::shared_ptr<MultiMessage> get_slice(size_t start, size_t stop) const;
 
     /**
-     * Creates a copy of the current message along with a copy of the underlying `meta` selecting the rows of `meta`
-     * defined by pairs of start, stop rows expressed in the `ranges` argument.
+     * @brief Creates a deep copy of the current message along with a copy of the underlying `meta` selecting the rows
+     * of `meta` defined by pairs of start, stop rows expressed in the `ranges` argument.
      *
      * This allows for copying several non-contiguous rows from the underlying dataframe into a new dataframe, however
      * this comes at a much higher cost compared to the `get_slice` method.
+     *
+     * @param ranges
+     * @param num_selected_rows
+     * @return std::shared_ptr<MultiMessage>
      */
     std::shared_ptr<MultiMessage> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
                                               size_t num_selected_rows) const;
@@ -115,9 +123,23 @@ class MultiMessage
     // assert(std::dynamic_ptr_cast<DerivedMultiMessage>(other_base) == other_derived);
     virtual std::shared_ptr<MultiMessage> internal_get_slice(size_t start, size_t stop) const;
 
+    /**
+     * @brief Similar to `internal_get_slice` allows sublasses to define their own `copy_ranges` returning the actual
+     * derived class instead of requiring users to have to cast returned pointers.
+     *
+     * @param ranges
+     * @param num_selected_rows
+     * @return std::shared_ptr<MultiMessage>
+     */
     virtual std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
                                                                size_t num_selected_rows) const;
 
+    /**
+     * @brief Creates a deep copy of `meta` with the specified ranges.
+     *
+     * @param ranges
+     * @return std::shared_ptr<MessageMeta>
+     */
     virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const;
 };
 

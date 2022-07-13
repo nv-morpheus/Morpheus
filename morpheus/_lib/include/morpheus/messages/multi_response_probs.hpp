@@ -58,7 +58,13 @@ class MultiResponseProbsMessage : public MultiResponseMessage
     void set_probs(const TensorObject &probs);
 
     /**
-     * TODO(Documentation)
+     * @brief Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on the
+     * given `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying `meta`
+     * or `memory` objects. The actual slicing of each is applied later when `get_meta` and `get_output` is called.
+     *
+     * @param start
+     * @param stop
+     * @return std::shared_ptr<MultiResponseProbsMessage>
      */
     std::shared_ptr<MultiResponseProbsMessage> get_slice(size_t start, size_t stop) const
     {
@@ -66,6 +72,17 @@ class MultiResponseProbsMessage : public MultiResponseMessage
         return std::static_pointer_cast<MultiResponseProbsMessage>(this->internal_get_slice(start, stop));
     }
 
+    /**
+     * @brief Creates a deep copy of the current message along with a copy of the underlying `meta` and `memory`
+     * selecting the rows of both. Defined by pairs of start, stop rows expressed in the `ranges` argument.
+     *
+     * This allows for copying several non-contiguous rows from the underlying dataframe and tensors into a new objects,
+     * however this comes at a much higher cost compared to the `get_slice` method.
+     *
+     * @param ranges
+     * @param num_selected_rows
+     * @return std::shared_ptr<MultiResponseProbsMessage>
+     */
     std::shared_ptr<MultiResponseProbsMessage> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
                                                            size_t num_selected_rows) const
     {
