@@ -125,7 +125,8 @@ PYBIND11_MODULE(messages, m)
              &MultiMessageInterfaceProxy::copy_ranges,
              py::arg("ranges"),
              py::arg("num_selected_rows") = py::none(),
-             py::return_value_policy::move);
+             py::return_value_policy::move)
+        .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
     py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
         .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count);

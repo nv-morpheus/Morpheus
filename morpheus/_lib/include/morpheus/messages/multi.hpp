@@ -170,6 +170,8 @@ struct MultiMessageInterfaceProxy
      */
     static pybind11::object get_meta_by_col(MultiMessage &self, pybind11::object columns);
 
+    static pybind11::object get_meta_list(MultiMessage &self, pybind11::object col_name);
+
     /**
      * TODO(Documentation)
      */

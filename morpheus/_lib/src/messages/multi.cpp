@@ -249,6 +249,26 @@ pybind11::object MultiMessageInterfaceProxy::get_meta_by_col(MultiMessage &self,
     return df_slice;
 }
 
+pybind11::object MultiMessageInterfaceProxy::get_meta_list(MultiMessage &self, pybind11::object col_name)
+{
+    std::vector<std::string> column_names;
+    if (!col_name.is_none())
+    {
+        column_names.emplace_back(col_name.cast<std::string>());
+    }
+
+    auto info = self.get_meta(column_names);
+    auto meta = info.as_py_object();
+    if (!col_name.is_none())
+    {  // needed to slice off the id column
+        meta = meta[col_name];
+    }
+
+    auto arrow_tbl           = meta.attr("to_arrow")();
+    pybind11::object py_list = arrow_tbl.attr("to_pylist")();
+    return py_list;
+}
+
 void MultiMessageInterfaceProxy::set_meta(MultiMessage &self, pybind11::object columns, pybind11::object value)
 {
     // Mimic this python code
