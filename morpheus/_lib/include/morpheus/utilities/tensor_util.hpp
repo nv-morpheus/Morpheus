@@ -86,8 +86,8 @@ struct TensorUtils
      * @param stride
      * @return shape_type
      */
-    template<typename IndexT, typename SrcIndexT=IndexT>
-    static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride) 
+    template <typename IndexT, typename SrcIndexT = IndexT>
+    static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride)
     {
         std::vector<IndexT> tensor_stride(stride.size());
         auto min_stride     = std::min_element(stride.cbegin(), stride.cend());

@@ -35,7 +35,7 @@ class ResponseMemory
 {
   public:
     ResponseMemory(size_t count);
-    ResponseMemory(size_t count, std::map<std::string, TensorObject>&& outputs);
+    ResponseMemory(size_t count, std::map<std::string, TensorObject> &&outputs);
 
     size_t count{0};
     std::map<std::string, TensorObject> outputs;

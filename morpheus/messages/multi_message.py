@@ -16,8 +16,9 @@
 import dataclasses
 import typing
 
-import cudf
 import cupy as cp
+
+import cudf
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
@@ -129,7 +130,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
         return self.get_meta(col_name).to_arrow().to_pylist()
-    
+
     def set_meta(self, columns: typing.Union[None, str, typing.List[str]], value):
         """
         Set column values to `morpheus.pipelines.messages.MessageMeta.df`.
@@ -176,7 +177,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         for range in ranges:
             mask[range[0]:range[1]] = True
-        
+
         return mask
 
     def copy_meta_ranges(self, ranges, mask=None):
@@ -184,13 +185,13 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         if mask is None:
             mask = self._ranges_to_mask(len(df), ranges=ranges)
-        
+
         return df.loc[mask, :]
-        
+
     def copy_ranges(self, ranges, num_selected_rows=None):
         sliced_rows = self.copy_meta_ranges(ranges)
 
         if num_selected_rows is None:
             num_selected_rows = len(sliced_rows)
-        
+
         return MultiMessage(meta=MessageMeta(sliced_rows), mess_offset=0, mess_count=num_selected_rows)

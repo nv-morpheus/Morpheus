@@ -21,8 +21,8 @@ import cupy as cp
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.message_base import MessageData
-from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages.multi_message import MultiMessage
 
 
 def get_output(instance: "ResponseMemory", name: str):
@@ -179,7 +179,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
         mem = ResponseMemory(count=sliced_count)
         mem.outputs = sliced_outputs
-        
+
         return MultiResponseMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)
 
 

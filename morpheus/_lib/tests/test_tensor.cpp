@@ -41,7 +41,7 @@ TEST_F(TestTensor, UtilsShapeString)
 
 TEST_F(TestTensor, GetElementStride)
 {
-    using shape_type = TensorUtils::shape_type;
+    using shape_type_t = TensorUtils::shape_type;
     EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({10, 1}), shape_type({10, 1}));
     EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({1, 13}), shape_type({1, 13}));
     EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 104}), shape_type({1, 13}));
