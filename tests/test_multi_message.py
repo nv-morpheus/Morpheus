@@ -16,9 +16,6 @@
 
 import os
 
-import cupy
-import pytest
-
 from morpheus._lib.file_types import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
