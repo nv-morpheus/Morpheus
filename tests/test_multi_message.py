@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
+
 import os
 
 import cupy
@@ -25,14 +25,10 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 from utils import TEST_DIRS
 
-# TODO: These should work with the CPP impls as well
 
-@pytest.mark.use_python
 def test_masking(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
-    mask = cupy.zeros(len(df), dtype=cupy.bool_)
-    mask[2:6] = True
 
     meta = MessageMeta(df)
     assert meta.count == len(df)
@@ -41,49 +37,37 @@ def test_masking(config):
     assert mm.meta.count == len(df)
     assert len(mm.get_meta()) == len(df)
 
-    assert len(mm.mask) == len(df)
-    mm.mask = mask
-    assert mm.meta.count == len(df)
-    assert len(mm.get_meta()) == 4
+    mm2 = mm.copy_ranges([(2, 6)])
+    assert len(mm2.meta.df) == 4
+    assert mm2.meta.count == 4
+    assert len(mm2.get_meta()) == 4
+    assert mm2.meta is not meta
+    assert mm2.meta.df is not df
 
-    # Add 3 more rows to our mask
-    mm.mask[12:15] = True
-
-@pytest.mark.use_python
-def test_start_stop(config):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
-    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
-
-    meta = MessageMeta(df)
-    assert meta.count == len(df)
-
-    mm = MultiMessage(meta, 2, 4)
-    assert mm.meta.count == len(df)
-    assert mm.meta.count == len(df)
-    assert len(mm.get_meta()) == 4
-
-    expected_mask = []
-    for i in range(len(df)):
-        expected_mask.append(i >= 2 and i < 6)
-
-    assert mm.mask.tolist() == expected_mask
+    # slice two different ranges of rows
+    mm3 = mm.copy_ranges([(2, 6), (12, 15)])
+    assert len(mm3.meta.df) == 7
+    assert mm3.meta.count == 7
+    assert len(mm3.get_meta()) == 7
+    assert mm3.meta is not meta
+    assert mm3.meta is not mm2.meta
+    assert mm3.meta.df is not df
+    assert mm3.meta.df is not mm2.meta.df
 
 
-@pytest.mark.use_python
 def test_set_meta(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
-    mask = cupy.zeros(len(df), dtype=cupy.bool_)
-    mask[2:6] = True
-    mask[12:15] = True
 
     meta = MessageMeta(df)
     mm = MultiMessage(meta, 0, len(df))
-    mm.mask = mask
-    assert len(mm.get_meta()) == 7
+
+    mm2 = mm.copy_ranges([(2, 6), (12, 15)])
+    assert len(mm2.get_meta()) == 7
 
     values = list(range(7))
-    mm.set_meta('v2', values)
+    mm2.set_meta('v2', values)
 
-    assert mm.get_meta_list('v2') == values
-"""
+    assert mm2.get_meta_list('v2') == values
+
+    assert mm2.get_meta_list(None) == mm2.get_meta().to_arrow().to_pylist()
