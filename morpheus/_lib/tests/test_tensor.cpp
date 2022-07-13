@@ -19,7 +19,6 @@
 
 #include <morpheus/utilities/tensor_util.hpp>  // for TensorUtils, TensorUtils::shape_type
 
-#include <bits/c++config.h>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
 
 #include <string>  // for allocator, operator==, basic_string, string

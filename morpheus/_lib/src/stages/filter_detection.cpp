@@ -15,28 +15,18 @@
  * limitations under the License.
  */
 
-#include <cudf/types.hpp>
-#include <morpheus/messages/memory/response_memory_probs.hpp>
 #include <morpheus/stages/filter_detection.hpp>
+
 #include <morpheus/utilities/matx_util.hpp>
-#include <morpheus/utilities/tensor_util.hpp>
-#include "morpheus/messages/meta.hpp"
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"
+#include <morpheus/utilities/tensor_util.hpp>  // for TensorUtils::get_element_stride
 
-#include <cudf/concatenate.hpp>
-#include <cudf/copying.hpp>
-#include <cudf/table/table_view.hpp>
-
-#include <glog/logging.h>
+#include <glog/logging.h>  // for CHECK
 
 #include <cstddef>
 #include <exception>
-#include <map>
 #include <memory>
-#include <mutex>
-#include <ostream>
-#include <utility>
+#include <ostream>  // needed for glog
+#include <utility>  // for pair
 
 namespace morpheus {
 
@@ -70,6 +60,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     SRF_CHECK_CUDA(
                         cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
+                    // Depending on the input the stride is given in bytes or elements, convert to elements
                     auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(stride);
 
                     // Now call the threshold function
