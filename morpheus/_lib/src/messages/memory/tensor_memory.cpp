@@ -15,49 +15,38 @@
  * limitations under the License.
  */
 
-#pragma once
-
 #include <morpheus/messages/memory/tensor_memory.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/utilities/cupy_util.hpp>
+
+#include <cudf/io/types.hpp>
 
 #include <pybind11/pytypes.h>
-#include <cudf/io/types.hpp>
 
 #include <string>
 #include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** ResponseMemory****************************************/
-/**
- * TODO(Documentation)
- */
-class ResponseMemory : public TensorMemory
+/****** TensorMemory****************************************/
+TensorMemory::TensorMemory(size_t count) : count(count) {}
+TensorMemory::TensorMemory(size_t count, tensor_map_t &&tensors) : count(count), tensors(std::move(tensors)) {}
+
+bool TensorMemory::has_tensor(const std::string &name) const
 {
-  public:
-    ResponseMemory(size_t count);
-    ResponseMemory(size_t count, tensor_map_t &&tensors);
+    return this->tensors.find(name) != this->tensors.end();
+}
 
-    /**
-     * @brief Checks if a tensor named `name` exists in `tensors`
-     *
-     * @param name
-     * @return true
-     * @return false
-     */
-    bool has_output(const std::string &name) const;
-};
-
-/****** ResponseMemoryInterfaceProxy *************************/
-#pragma GCC visibility push(default)
-/**
- * @brief Interface proxy, used to insulate python bindings.
- */
-struct ResponseMemoryInterfaceProxy
+TensorMemory::tensor_map_t TensorMemory::copy_tensor_ranges(
+    const std::vector<std::pair<TensorIndex, TensorIndex>> &ranges, size_t num_selected_rows) const
 {
-    static pybind11::object get_output(ResponseMemory &self, const std::string &name);
+    tensor_map_t tensors;
+    for (const auto &p : this->tensors)
+    {
+        tensors.insert(std::pair{p.first, p.second.copy_rows(ranges, num_selected_rows)});
+    }
 
-    static TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
-};
-#pragma GCC visibility pop
+    return tensors;
+}
+
 }  // namespace morpheus

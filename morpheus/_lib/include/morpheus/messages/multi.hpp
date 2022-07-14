@@ -141,6 +141,15 @@ class MultiMessage
      * @return std::shared_ptr<MessageMeta>
      */
     virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const;
+
+    /**
+     * @brief Applies the message offset to the elements in `ranges` casting the results to `TensorIndex`
+     *
+     * @param ranges
+     * @return std::vector<std::pair<TensorIndex, TensorIndex>>
+     */
+    std::vector<std::pair<TensorIndex, TensorIndex>> apply_offset_to_ranges(
+        std::size_t offset, const std::vector<std::pair<size_t, size_t>> &ranges) const;
 };
 
 /****** MultiMessageInterfaceProxy**************************/

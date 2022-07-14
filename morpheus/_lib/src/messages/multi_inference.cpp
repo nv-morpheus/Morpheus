@@ -52,12 +52,12 @@ const TensorObject MultiInferenceMessage::get_input(const std::string &name) con
     // check if we are getting the entire input
     if (this->offset == 0 && this->count == this->memory->count)
     {
-        return this->memory->inputs[name];
+        return this->memory->tensors[name];
     }
 
     // TODO(MDD): This really needs to return the slice of the tensor
-    return this->memory->inputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
-                                            {static_cast<cudf::size_type>(this->offset + this->count), -1});
+    return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
+                                             {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
 const void MultiInferenceMessage::set_input(const std::string &name, const TensorObject &value)
@@ -114,22 +114,8 @@ std::shared_ptr<MultiMessage> MultiInferenceMessage::internal_copy_ranges(
 std::shared_ptr<InferenceMemory> MultiInferenceMessage::copy_input_ranges(
     const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
 {
-    const auto offset = static_cast<TensorIndex>(this->offset);
-    std::vector<std::pair<TensorIndex, TensorIndex>> offset_ranges(ranges.size());
-    std::transform(
-        ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const std::pair<size_t, size_t> range) {
-            return std::pair{offset + range.first, offset + range.second};
-        });
-
-    std::map<std::string, TensorObject> tensors;
-    for (const auto &mem_input : memory->inputs)
-    {
-        const std::string &name    = mem_input.first;
-        const TensorObject &tensor = mem_input.second;
-
-        tensors.insert(std::pair{name, tensor.copy_rows(offset_ranges, num_selected_rows)});
-    }
-
+    auto offset_ranges = apply_offset_to_ranges(offset, ranges);
+    auto tensors       = memory->copy_tensor_ranges(offset_ranges, num_selected_rows);
     return std::make_shared<InferenceMemory>(num_selected_rows, std::move(tensors));
 }
 

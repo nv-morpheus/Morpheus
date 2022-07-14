@@ -20,6 +20,7 @@
 #include <morpheus/messages/memory/inference_memory_nlp.hpp>
 #include <morpheus/messages/memory/response_memory.hpp>
 #include <morpheus/messages/memory/response_memory_probs.hpp>
+#include <morpheus/messages/memory/tensor_memory.hpp>
 #include <morpheus/messages/meta.hpp>
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/messages/multi_inference.hpp>
@@ -202,6 +203,9 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("memory", &MultiInferenceFILMessageInterfaceProxy::memory)
         .def_property_readonly("offset", &MultiInferenceFILMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
+
+    py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
+        .def_readonly("count", &TensorMemory::count);
 
     py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def_readonly("count", &ResponseMemory::count)

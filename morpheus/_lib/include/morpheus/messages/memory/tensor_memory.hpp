@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include <morpheus/messages/memory/tensor_memory.hpp>
 #include <morpheus/objects/tensor.hpp>
 
 #include <pybind11/pytypes.h>
@@ -28,36 +27,24 @@
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** ResponseMemory****************************************/
+/****** TensorMemory****************************************/
 /**
  * TODO(Documentation)
  */
-class ResponseMemory : public TensorMemory
+class TensorMemory
 {
   public:
-    ResponseMemory(size_t count);
-    ResponseMemory(size_t count, tensor_map_t &&tensors);
+    using tensor_map_t = std::map<std::string, TensorObject>;
 
-    /**
-     * @brief Checks if a tensor named `name` exists in `tensors`
-     *
-     * @param name
-     * @return true
-     * @return false
-     */
-    bool has_output(const std::string &name) const;
+    TensorMemory(size_t count);
+    TensorMemory(size_t count, tensor_map_t &&tensors);
+
+    size_t count{0};
+    tensor_map_t tensors;
+
+    bool has_tensor(const std::string &name) const;
+    tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>> &ranges,
+                                    size_t num_selected_rows) const;
 };
 
-/****** ResponseMemoryInterfaceProxy *************************/
-#pragma GCC visibility push(default)
-/**
- * @brief Interface proxy, used to insulate python bindings.
- */
-struct ResponseMemoryInterfaceProxy
-{
-    static pybind11::object get_output(ResponseMemory &self, const std::string &name);
-
-    static TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
-};
-#pragma GCC visibility pop
 }  // namespace morpheus

@@ -164,6 +164,18 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
     }
 }
 
+std::vector<std::pair<TensorIndex, TensorIndex>> MultiMessage::apply_offset_to_ranges(
+    std::size_t offset, const std::vector<std::pair<size_t, size_t>> &ranges) const
+{
+    std::vector<std::pair<TensorIndex, TensorIndex>> offset_ranges(ranges.size());
+    std::transform(
+        ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const std::pair<size_t, size_t> range) {
+            return std::pair{offset + range.first, offset + range.second};
+        });
+
+    return offset_ranges;
+}
+
 /****** MultiMessageInterfaceProxy *************************/
 std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
                                                                cudf::size_type mess_offset,

@@ -20,9 +20,9 @@ import cupy as cp
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
-from morpheus.messages.message_base import MessageData
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages.tensor_memory import TensorMemory
 
 
 def get_output(instance: "ResponseMemory", name: str):
@@ -33,14 +33,14 @@ def get_output(instance: "ResponseMemory", name: str):
     Parameters
     ----------
     instance : `ResponseMemory`
-        Message container holding outputs.
+        Message container holding tensors.
     name : str
-        Key used to do lookup in outputs dict of message container.
+        Key used to do lookup in tensors dict of message container.
 
     Returns
     -------
     cupy.ndarray
-        Outputs corresponding to name.
+        Tensors corresponding to name.
 
     Raises
     ------
@@ -49,10 +49,10 @@ def get_output(instance: "ResponseMemory", name: str):
 
     """
 
-    if (name not in instance.outputs):
+    if (name not in instance.tensors):
         raise AttributeError
 
-    return instance.outputs[name]
+    return instance.tensors[name]
 
 
 def set_output(instance: "ResponseMemory", name: str, value):
@@ -63,31 +63,25 @@ def set_output(instance: "ResponseMemory", name: str, value):
     Parameters
     ----------
     instance : `ResponseMemory`
-        Message container holding outputs.
+        Message container holding tensors.
     name : str
-        Key used to do lookup in outputs dict of message container.
+        Key used to do lookup in tensors dict of message container.
     value : cupy.ndarray
         Value to set for input.
     """
 
     # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-    instance.outputs[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+    instance.tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
 
 
 @dataclasses.dataclass
-class ResponseMemory(MessageData, cpp_class=_messages.ResponseMemory):
+class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
     """
     Output memory block holding the results of inference.
     """
-    count: int
-
-    outputs: typing.Dict[str, cp.ndarray] = dataclasses.field(default_factory=dict, init=False)
 
     def get_output(self, name: str):
-        if (name not in self.outputs):
-            raise KeyError
-
-        return self.outputs[name]
+        return self.tensors[name]
 
 
 @dataclasses.dataclass
@@ -110,22 +104,22 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
     Parameters
     ----------
-    memory : `ResponseMemory`
+    memory : `TensorMemory`
         This is a response container instance for triton inference requests.
     offset : int
-        Offset of each response message into the `ResponseMemory` block.
+        Offset of each response message into the `TensorMemory` block.
     count : int
         Inference results size of all responses.
 
     """
-    memory: ResponseMemory = dataclasses.field(repr=False)
+    memory: TensorMemory = dataclasses.field(repr=False)
     offset: int
     count: int
 
     @property
     def outputs(self):
         """
-        Get outputs stored in the ResponseMemory container.
+        Get outputs stored in the TensorMemory container.
 
         Returns
         -------
@@ -134,11 +128,11 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
         """
 
-        return {key: self.get_output(key) for key in self.memory.outputs.keys()}
+        return {key: self.get_output(key) for key in self.memory.tensors.keys()}
 
     def __getattr__(self, name: str) -> typing.Any:
 
-        output_val = self.memory.outputs.get(name, None)
+        output_val = self.memory.tensors.get(name, None)
 
         if (output_val is not None):
             return output_val[self.offset:self.offset + self.count, :]
@@ -147,7 +141,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
     def get_output(self, name: str):
         """
-        Get output stored in the ResponseMemory container.
+        Get output stored in the TensorMemory container.
 
         Parameters
         ----------
@@ -161,7 +155,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
         """
 
-        return self.memory.outputs[name][self.offset:self.offset + self.count, :]
+        return self.memory.tensors[name][self.offset:self.offset + self.count, :]
 
     def copy_output_ranges(self, ranges, mask=None):
         if mask is None:
@@ -177,7 +171,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
         sliced_count = len(sliced_rows)
         sliced_outputs = self.copy_output_ranges(ranges, mask=mask)
 
-        mem = ResponseMemory(count=sliced_count)
+        mem = TensorMemory(count=sliced_count)
         mem.outputs = sliced_outputs
 
         return MultiResponseMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)

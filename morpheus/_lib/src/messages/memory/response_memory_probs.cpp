@@ -35,27 +35,25 @@ namespace morpheus {
 /****** ResponseMemoryProbs****************************************/
 ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : ResponseMemory(count)
 {
-    this->outputs["probs"] = std::move(probs);
+    this->tensors["probs"] = std::move(probs);
 }
 
-ResponseMemoryProbs::ResponseMemoryProbs(size_t count, std::map<std::string, TensorObject> &&outputs) :
-  ResponseMemory(count)
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, tensor_map_t &&tensors) :
+  ResponseMemory(count, std::move(tensors))
 {
-    CHECK(outputs.find("probs") != outputs.end()) << "ResponseMemoryProbs requeires an output named \"probs\"";
-    this->outputs.merge(std::move(outputs));
+    CHECK(has_tensor("probs")) << "ResponseMemoryProbs requeires an output named \"probs\"";
 }
 
-ResponseMemoryProbs::ResponseMemoryProbs(ResponseMemory &&other) : ResponseMemory{other.count}
+ResponseMemoryProbs::ResponseMemoryProbs(ResponseMemory &&other) : ResponseMemory{other.count, std::move(other.tensors)}
 {
-    CHECK(other.has_output("probs")) << "ResponseMemoryProbs requeires an output named \"probs\"";
-    outputs     = std::move(other.outputs);
+    CHECK(has_tensor("probs")) << "ResponseMemoryProbs requeires an output named \"probs\"";
     other.count = 0;
 }
 
 const TensorObject &ResponseMemoryProbs::get_probs() const
 {
-    auto found = this->outputs.find("probs");
-    if (found == this->outputs.end())
+    auto found = this->tensors.find("probs");
+    if (found == this->tensors.end())
     {
         throw std::runtime_error("Tensor: 'probs' not found in memory");
     }
@@ -65,7 +63,7 @@ const TensorObject &ResponseMemoryProbs::get_probs() const
 
 void ResponseMemoryProbs::set_probs(TensorObject probs)
 {
-    this->outputs["probs"] = std::move(probs);
+    this->tensors["probs"] = std::move(probs);
 }
 
 /****** ResponseMemoryProbsInterfaceProxy *************************/

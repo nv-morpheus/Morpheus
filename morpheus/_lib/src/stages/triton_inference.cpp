@@ -104,7 +104,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     auto output_buffer = std::make_shared<rmm::device_buffer>(
                         elem_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
 
-                    reponse_memory->outputs[model_output.mapped_name] = Tensor::create(
+                    reponse_memory->tensors[model_output.mapped_name] = Tensor::create(
                         std::move(output_buffer),
                         model_output.datatype,
                         std::vector<TensorIndex>{static_cast<int>(total_shape[0]), static_cast<int>(total_shape[1])},

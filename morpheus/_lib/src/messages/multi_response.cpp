@@ -56,11 +56,11 @@ TensorObject MultiResponseMessage::get_output(const std::string &name)
     // check if we are getting the entire input
     if (this->offset == 0 && this->count == this->memory->count)
     {
-        return this->memory->outputs[name];
+        return this->memory->tensors[name];
     }
 
     // TODO(MDD): This really needs to return the slice of the tensor
-    return this->memory->outputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
+    return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
                                              {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
@@ -71,11 +71,11 @@ const TensorObject MultiResponseMessage::get_output(const std::string &name) con
     // check if we are getting the entire input
     if (this->offset == 0 && this->count == this->memory->count)
     {
-        return this->memory->outputs[name];
+        return this->memory->tensors[name];
     }
 
     // TODO(MDD): This really needs to return the slice of the tensor
-    return this->memory->outputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
+    return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
                                              {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
@@ -122,24 +122,9 @@ std::shared_ptr<MultiMessage> MultiResponseMessage::internal_copy_ranges(
 std::shared_ptr<ResponseMemory> MultiResponseMessage::copy_output_ranges(
     const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
 {
-    const auto offset = static_cast<TensorIndex>(this->offset);
-    std::vector<std::pair<TensorIndex, TensorIndex>> offset_ranges(ranges.size());
-    std::transform(
-        ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const std::pair<size_t, size_t> range) {
-            return std::pair{offset + range.first, offset + range.second};
-        });
-
-    std::map<std::string, TensorObject> output_tensors;
-    for (const auto &mem_output : memory->outputs)
-    {
-        // A little confusing here, but the response outputs are the inputs for this method
-        const std::string &output_name   = mem_output.first;
-        const TensorObject &input_tensor = mem_output.second;
-
-        output_tensors.insert(std::pair{output_name, input_tensor.copy_rows(offset_ranges, num_selected_rows)});
-    }
-
-    return std::make_shared<ResponseMemory>(num_selected_rows, std::move(output_tensors));
+    auto offset_ranges = apply_offset_to_ranges(offset, ranges);
+    auto tensors       = memory->copy_tensor_ranges(offset_ranges, num_selected_rows);
+    return std::make_shared<ResponseMemory>(num_selected_rows, std::move(tensors));
 }
 
 /****** MultiResponseMessageInterfaceProxy *************************/
