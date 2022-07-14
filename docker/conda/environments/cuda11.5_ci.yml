@@ -23,7 +23,8 @@ dependencies:
     - conda-pack=0.7
     - git-lfs=3.2
     - git>=2.35.3 # Needed for wildcards on safe.directory
+    - pip
     - pkg-config=0.29
     - sccache=0.3
     - pip:
-        yapf=0.32
+        yapf==0.32
