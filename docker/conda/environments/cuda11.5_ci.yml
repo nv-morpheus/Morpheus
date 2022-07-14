@@ -27,4 +27,4 @@ dependencies:
     - pkg-config=0.29
     - sccache=0.3
     - pip:
-        yapf==0.32
+      - yapf==0.32
