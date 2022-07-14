@@ -23,7 +23,7 @@ fetch_base_branch
 conda activate rapids
 
 gpuci_logger "Installing CI dependencies"
-mamba install -q -y -c conda-forge "yapf=0.32"
+mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
 
 show_conda_info
 
