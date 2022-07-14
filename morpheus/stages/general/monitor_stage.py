@@ -206,7 +206,7 @@ class MonitorStage(SinglePortStage):
             self._progress = MorpheusTqdm(desc=self._description,
                                           smoothing=self._smoothing,
                                           dynamic_ncols=True,
-                                          unit=" {}".format(self._unit),
+                                          unit=(self._unit if self._unit.startswith(" ") else " {}".format(self._unit)),
                                           mininterval=0.25,
                                           maxinterval=1.0,
                                           miniters=1,
