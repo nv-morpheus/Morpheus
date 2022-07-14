@@ -66,20 +66,42 @@ ForEachMacros:
   - foreach
   - Q_FOREACH
   - BOOST_FOREACH
-IncludeBlocks: Preserve
+IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex:           '^<ext/.*\.h>'
-    Priority:        2
-  - Regex:           '^<.*\.h>'
-    Priority:        1
-  - Regex:           '^<.*'
-    Priority:        2
-  - Regex:           '.*'
+  # The order of the groups is
+  # 0 - Main include file for .cpp
+  # 1 - source relative files `#include "./some_header.hpp"` (Grouped with 2)
+  # 2 - source relative files starting with internal/public `#include "internal/some_header.hpp"`
+  # 3 - Python SRF public API files `#include "pysrf/srf_header.hpp"`
+  # 4 - SRF public API files `#include "srf/srf_header.hpp"`
+  # 5 - NVRPC public API files `#include "nvrpc/some_header.hpp"`
+  # 6 - External installed libraries `#include <external_lib/some_header.hpp>`
+  # 7 - System includes `#include <string>`
+  # First match any Python SRF public API headers with quotes
+  - Regex:           '^"pysrf\/.*\.(h|hpp)"'
     Priority:        3
+  # Next match any SRF public API headers with quotes
+  - Regex:           '^"srf\/.*\.(h|hpp)"'
+    Priority:        4
+  # Next match public NVRPC headers with quotes
+  - Regex:           '^<nvrpc\/.*\.(h|hpp)>'
+    Priority:        5
+  # Next find any headers in internal or public
+  - Regex:           '^"(internal|public)\/.*\.(h|hpp)"'
+    Priority:        2
+  # Any other quoted includes need to be with internal/public but on top (Thats why this group is last)
+  - Regex:           '^".*\.(h|hpp)"'
+    Priority:        1
+  # Last is system includes which dont have a '/' like <string> or <mutex>
+  - Regex:           '<([a-z_])+>'
+    Priority:        7
+  # Finally, put all 3rd party includes before the system includes
+  - Regex:           '^<.*'
+    Priority:        6
 IncludeIsMainRegex: '([-_](test|unittest))?$'
 IndentCaseBlocks: false
 IndentCaseLabels: false
-IndentPPDirectives: None
+IndentPPDirectives: BeforeHash
 IndentWidth:     4
 IndentWrappedFunctionNames: false
 JavaScriptQuotes: Leave
@@ -148,7 +170,7 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: Cpp11
+Standard: c++17
 StatementMacros:
   - Q_UNUSED
   - QT_REQUIRE_VERSION
