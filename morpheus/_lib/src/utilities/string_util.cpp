@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/string_util.hpp>
+#include "morpheus/utilities/string_util.hpp"
 
 namespace morpheus {
-    bool StringUtil::str_contains(const std::string &str, const std::string &search_str)
-    {
-        return str.find(search_str) != std::string::npos;
-    }
+bool StringUtil::str_contains(const std::string &str, const std::string &search_str)
+{
+    return str.find(search_str) != std::string::npos;
 }
-
+}  // namespace morpheus

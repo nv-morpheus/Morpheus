@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/table_util.hpp>
+#include "morpheus/utilities/table_util.hpp"
 
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
-
 #include <glog/logging.h>
 
 #include <filesystem>
@@ -28,19 +27,25 @@
 namespace fs = std::filesystem;
 namespace py = pybind11;
 
-cudf::io::table_with_metadata morpheus::CuDFTableUtil::load_table(const std::string &filename) {
+cudf::io::table_with_metadata morpheus::CuDFTableUtil::load_table(const std::string &filename)
+{
     auto file_path = fs::path(filename);
 
-    if (file_path.extension() == ".json" || file_path.extension() == ".jsonlines") {
+    if (file_path.extension() == ".json" || file_path.extension() == ".jsonlines")
+    {
         // First, load the file into json
         auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{filename}).lines(true);
 
         return cudf::io::read_json(options.build());
-    } else if (file_path.extension() == ".csv") {
+    }
+    else if (file_path.extension() == ".csv")
+    {
         auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{filename});
 
         return cudf::io::read_csv(options.build());
-    } else {
+    }
+    else
+    {
         LOG(FATAL) << "Unknown extension for file: " << filename;
         throw std::runtime_error("Unknown extension");
     }

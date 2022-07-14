@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/fiber_queue.hpp>
-#include <morpheus/objects/wrapped_tensor.hpp>
-#include <morpheus/utilities/cudf_util.hpp>
+#include "morpheus/objects/fiber_queue.hpp"
+#include "morpheus/objects/wrapped_tensor.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <pybind11/pybind11.h>
 

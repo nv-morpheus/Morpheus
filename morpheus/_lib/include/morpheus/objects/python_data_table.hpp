@@ -17,36 +17,37 @@
 
 #pragma once
 
-#include <morpheus/objects/table_info.hpp>
+#include "morpheus/objects/table_info.hpp"
 
 #include <pybind11/pybind11.h>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** PyDataTable****************************************/
+/****** Component public implementations *******************/
+/****** PyDataTable****************************************/
+/**
+ * TODO(Documentation)
+ */
+struct PyDataTable : public IDataTable
+{
+    PyDataTable(pybind11::object &&py_table);
+    ~PyDataTable();
+
     /**
      * TODO(Documentation)
      */
-    struct PyDataTable : public IDataTable {
-        PyDataTable(pybind11::object &&py_table);
-        ~PyDataTable();
+    cudf::size_type count() const override;
 
-        /**
-         * TODO(Documentation)
-         */
-        cudf::size_type count() const override;
+    /**
+     * TODO(Documentation)
+     */
+    TableInfo get_info() const override;
 
-        /**
-         * TODO(Documentation)
-         */
-        TableInfo get_info() const override;
+    /**
+     * TODO(Documentation)
+     */
+    const pybind11::object &get_py_object() const override;
 
-        /**
-         * TODO(Documentation)
-         */
-        const pybind11::object &get_py_object() const override;
-
-    private:
-        pybind11::object m_py_table;
-    };
-}
+  private:
+    pybind11::object m_py_table;
+};
+}  // namespace morpheus
