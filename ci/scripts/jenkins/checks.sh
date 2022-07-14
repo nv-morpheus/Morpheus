@@ -30,5 +30,8 @@ show_conda_info
 gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
+gpuci_logger "Runing C++ style checks"
+${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
+
 gpuci_logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
