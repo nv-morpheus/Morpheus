@@ -138,10 +138,10 @@ COPY docker/conda/environments/cuda${CUDA_VER}_runtime.yml ./docker/conda/enviro
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate morpheus &&\
-    # Install runtime dependencies that are pip-only
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_runtime.yml &&\
     # Install morpheus
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
+    # Install runtime dependencies that are pip-only
+    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_runtime.yml &&\
     # Clean and activate
     conda clean -afy
 
