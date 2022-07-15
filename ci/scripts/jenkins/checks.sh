@@ -37,17 +37,13 @@ gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 gpuci_logger "Configuring cmake for Morpheus"
-cmake -B build -G Ninja \
-      -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
-      -DMORPHEUS_BUILD_BENCHMARKS=ON \
-      -DMORPHEUS_BUILD_EXAMPLES=ON \
-      -DMORPHEUS_BUILD_TESTS=ON \
-      -DMORPHEUS_USE_CONDA=ON \
-      -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF \
-      .
+cmake -B build -G Ninja cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 gpuci_logger "Building targets that generate source code"
 cmake --build build --target style_checks --parallel ${PARALLEL_LEVEL}
+
+gpuci_logger "sccache usage for source build:"
+sccache --show-stats
 
 gpuci_logger "Runing C++ style checks"
 SKIP_IWYU=1 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
