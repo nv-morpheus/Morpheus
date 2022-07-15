@@ -1,3 +1,10 @@
+# Morpheus 22.06.001 (15 Jul 2022)
+
+## 🐛 Bug Fixes
+
+- Fix pandas version in runtime container ([#270](https://github.com/nv-morpheus/Morpheus/pull/270)) [@efajardo-nv](https://github.com/efajardo-nv)
+
+
 # Morpheus 22.06.00 (5 Jul 2022)
 
 ## 🚨 Breaking Changes
