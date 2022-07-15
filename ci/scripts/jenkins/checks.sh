@@ -46,6 +46,9 @@ cmake -B build -G Ninja \
       -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF \
       .
 
+gpuci_logger "Building targets that generate source code"
+cmake --build build --target style_checks --parallel ${PARALLEL_LEVEL}
+
 gpuci_logger "Runing C++ style checks"
 SKIP_IWYU=1 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
 
