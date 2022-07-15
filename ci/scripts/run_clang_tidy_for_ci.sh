@@ -23,8 +23,4 @@
 # Also add -fno-caret-diagnostics to prevent clangs own compiler warnings from
 # coming through:
 # https://github.com/llvm/llvm-project/blob/3f3faa36ff3d84af3c3ed84772d7e4278bc44ff1/libc/cmake/modules/LLVMLibCObjectRules.cmake#L226
-echo ${CLANG_TIDY:-$(which clang-tidy)}
-echo ${CONDA_BUILD_SYSROOT}/usr/include
-echo "$@"
-echo "---------------"
-${CLANG_TIDY:-$(which clang-tidy)} --warnings-as-errors='*' --extra-arg=-fno-caret-diagnostics "$@"
+${CLANG_TIDY:-clang-tidy} --warnings-as-errors='*' --extra-arg=-fno-caret-diagnostics "$@"
