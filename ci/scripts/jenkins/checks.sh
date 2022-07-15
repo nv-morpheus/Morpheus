@@ -33,6 +33,9 @@ mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER
 
 show_conda_info
 
+gpuci_logger "Runing Python style checks"
+${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
+
 gpuci_logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja \
       -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
@@ -43,11 +46,8 @@ cmake -B build -G Ninja \
       -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF \
       .
 
-gpuci_logger "Runing Python style checks"
-${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
-
 gpuci_logger "Runing C++ style checks"
-${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
+SKIP_IWYU=1 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
 
 gpuci_logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
