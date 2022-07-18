@@ -33,6 +33,21 @@ mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER
 
 show_conda_info
 
+gpuci_logger "Installing IWYU"
+export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
+cd ${WORKSPACE_TMP}
+git clone https://github.com/include-what-you-use/include-what-you-use.git ${IWYU_DIR}
+cd ${IWYU_DIR}
+git checkout clang_12
+cmake -G Ninja \
+    -DCMAKE_PREFIX_PATH=$(llvm-config --cmakedir) \
+    -DCMAKE_C_COMPILER=$(which clang) \
+    -DCMAKE_CXX_COMPILER=$(which clang++) \
+    -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} \
+    .
+
+cmake --build . --parallel ${PARALLEL_LEVEL} --target install
+
 gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
