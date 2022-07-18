@@ -48,6 +48,8 @@ cmake -G Ninja \
 
 cmake --build . --parallel ${PARALLEL_LEVEL} --target install
 
+cd ${MORPHEUS_ROOT}
+
 gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
