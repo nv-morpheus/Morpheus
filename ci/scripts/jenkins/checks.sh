@@ -37,7 +37,7 @@ gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 gpuci_logger "Configuring cmake for Morpheus"
-cmake -B build -G Ninja cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
+cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 gpuci_logger "Building targets that generate source code"
 cmake --build build --target style_checks --parallel ${PARALLEL_LEVEL}
