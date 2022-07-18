@@ -111,11 +111,11 @@ morpheus --log_level=DEBUG \
    `# Specify a NLP pipeline with 256 sequence length (Must match Triton config)` \
    pipeline-nlp --model_seq_length=256 \
    `# 1st Stage: Read from file` \
-   from-file --filename=examples/data/pcap_dump.jsonlines \
+   from-file --filename=../data/pcap_dump.jsonlines \
    `# 2nd Stage: Deserialize from JSON strings to objects` \
    deserialize \
    `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
-   preprocess --vocab_hash_file=morpheus/data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
+   preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --do_lower_case=True --truncation=True \
    `# 4th Stage: Send messages to Triton for inference. Specify the model loaded in Setup` \
    inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8000 --force_convert_inputs=True \
    `# 5th Stage: Monitor stage prints throughput information to the console` \
@@ -166,11 +166,11 @@ CPP Enabled: True
 ====Starting Pipeline====
 ====Pipeline Started====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=examples/data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=../data/pcap_dump.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
+Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=sid-minibert-onnx, server_url=localhost:8000, force_convert_inputs=True, use_shared_memory=False)>
   └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
