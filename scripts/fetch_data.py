@@ -34,7 +34,7 @@ def lfsPull(include_paths, poll_interval=0.1):
     """
     Performs a git lfs pull.
     """
-    cmd = 'git lfs pull -I "{}"'.format(','.join(include_paths))
+    cmd = 'git lfs pull -X "" -I "{}"'.format(','.join(include_paths))
     env = os.environ.copy()
 
     # Instruct git lfs to not supress progress output. Fetching the models can

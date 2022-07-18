@@ -1,7 +1,7 @@
 clx==0.0.1
 cudf==0+untagged.1.g788bddd
 cupy==9.1.0
-numpy==1.20.3
+numpy==1.22.0
 onnxruntime==1.10.0
 s3fs==2021.5.0
 scipy==1.6.0

@@ -20,5 +20,7 @@ channels:
 dependencies:
     - bash=5.1.16 # bash >=4.4 is necessary for morpheus cli auto-complete tests to pass.
     - conda-pack=0.7
+    - git-lfs=3.2
+    - git>=2.35.3 # Needed for wildcards on safe.directory
     - pkg-config=0.29
     - sccache=0.3

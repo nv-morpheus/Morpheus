@@ -17,9 +17,16 @@
 gpuci_logger "Env Setup"
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
-gpuci_logger "Procs: $(nproc)"
-gpuci_logger "Memory"
 
+# For non-gpu hosts nproc will correctly report the number of cores we are able to use
+# On a GPU host however nproc will report the total number of cores and PARALLEL_LEVEL
+# will be defined specifying the subset we are allowed to use.
+NUM_CORES=$(nproc)
+export PARALLEL_LEVEL=${PARALLEL_LEVEL:-${NUM_CORES}}
+gpuci_logger "Procs: ${NUM_CORES}"
+/usr/bin/lscpu
+
+gpuci_logger "Memory"
 /usr/bin/free -g
 
 gpuci_logger "User Info"

@@ -55,19 +55,21 @@ outputs:
         - ccache
         - ninja
       host:
+        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
         - librdkafka 1.7
-        - srf {{ minor_version }}
         - pip
         - pybind11-stubgen
         - python {{ python }}
         - rapidjson 1.1
         - scikit-build >=0.12
+        - srf {{ minor_version }}
         - versioneer-518
       run:
         - click >=8
+        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
         - cudf {{ rapids_version }}
         - cudf_kafka {{ rapids_version }}
         - cupy # Version determined from cudf
@@ -75,6 +77,7 @@ outputs:
         - grpcio # Version determined from cudf
         - mlflow >=1.23
         - networkx
+        - pandas 1.3
         - python
         - tqdm
         - typing_utils
@@ -86,15 +89,19 @@ outputs:
         - pytest-cov
         - pytest-benchmark
       source_files:
-        - pyproject.toml
-        - tests/*
+        # - .git/*
         - docker/conda/environments/*
+        - pyproject.toml
+        - scripts/fetch_data.py
+        - tests/*
       imports:
         - morpheus
         - morpheus._lib
       commands:
         # Install dependencies that are pip-only
         - mamba env update --prefix ${CONDA_PREFIX} --file docker/conda/environments/cuda{{ cuda_version }}_runtime.yml
+        # Ensure the test data is downloaded
+        - ./scripts/fetch_data.py fetch tests
         # Run pytest
         - pytest
 

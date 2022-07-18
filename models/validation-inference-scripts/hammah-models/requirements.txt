@@ -1,10 +1,9 @@
 clx==0.0.1
-cudf==0+untagged.1.g788bddd
 cupy==9.1.0
 dfencoder==0.0.35
 dill==0.3.4
 matplotlib==3.4.2
-numpy==1.20.3
+numpy==1.22.0
 pandas==1.0.1
 scikit_learn==1.0.2
 torch==1.7.1

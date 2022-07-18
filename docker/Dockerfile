@@ -61,7 +61,9 @@ RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     conda config --env --add channels conda-forge &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" python=${PYTHON_VER}
+    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" &&\
+    source activate base &&\
+    git lfs install
     # conda clean -afy
 
 # ============ Stage: conda_env ============
@@ -136,10 +138,10 @@ COPY docker/conda/environments/cuda${CUDA_VER}_runtime.yml ./docker/conda/enviro
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate morpheus &&\
-    # Install runtime dependencies that are pip-only
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_runtime.yml &&\
     # Install morpheus
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
+    # Install runtime dependencies that are pip-only
+    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_runtime.yml &&\
     # Clean and activate
     conda clean -afy
 
