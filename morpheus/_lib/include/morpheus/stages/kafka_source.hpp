@@ -17,15 +17,14 @@
 
 #pragma once
 
-#include <morpheus/messages/meta.hpp>
+#include "morpheus/messages/meta.hpp"
 
+#include <cudf/io/types.hpp>
+#include <librdkafka/rdkafkacpp.h>
 #include <pysrf/node.hpp>
 #include <srf/core/fiber_meta_data.hpp>
 #include <srf/core/task_queue.hpp>
 #include <srf/segment/builder.hpp>
-
-#include <librdkafka/rdkafkacpp.h>
-#include <cudf/io/types.hpp>
 
 #include <memory>
 #include <string>

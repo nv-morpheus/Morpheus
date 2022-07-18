@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/objects/table_info.hpp>
+#include "morpheus/objects/table_info.hpp"
 
 #include <ostream>
 #include <string>

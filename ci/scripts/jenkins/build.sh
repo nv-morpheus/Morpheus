@@ -41,16 +41,7 @@ cmake --version
 ninja --version
 
 gpuci_logger "Configuring cmake for Morpheus"
-cmake -B build -G Ninja \
-      -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
-      -DMORPHEUS_BUILD_BENCHMARKS=ON \
-      -DMORPHEUS_BUILD_EXAMPLES=ON \
-      -DMORPHEUS_BUILD_TESTS=ON \
-      -DMORPHEUS_USE_CONDA=ON \
-      -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF \
-      -DMORPHEUS_USE_CCACHE=ON \
-      -DCCACHE_PROGRAM_PATH=$(which sccache) \
-      .
+cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 gpuci_logger "Building Morpheus"
 cmake --build build -j --parallel ${PARALLEL_LEVEL}

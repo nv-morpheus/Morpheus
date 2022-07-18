@@ -17,16 +17,15 @@
 
 #pragma once
 
-#include <morpheus/messages/memory/response_memory.hpp>
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/messages/multi.hpp>
-#include <morpheus/objects/table_info.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
-#include <morpheus/utilities/table_util.hpp>
+#include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"
+#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/table_util.hpp"
 
 #include <cudf/types.hpp>
-
 #include <pybind11/pytypes.h>
 
 #include <cstddef>

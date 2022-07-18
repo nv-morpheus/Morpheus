@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/filter_detection.hpp>
+#include "morpheus/stages/filter_detection.hpp"
 
-#include <morpheus/utilities/matx_util.hpp>
+#include "morpheus/utilities/matx_util.hpp"
 
 #include <cstddef>
 #include <exception>

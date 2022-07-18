@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-#include <morpheus/messages/memory/response_memory.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/utilities/cupy_util.hpp>
+#include "morpheus/messages/memory/response_memory.hpp"
+
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/io/types.hpp>
-
 #include <pybind11/pytypes.h>
 
 #include <string>

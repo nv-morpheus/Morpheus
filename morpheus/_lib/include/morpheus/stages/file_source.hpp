@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/messages/meta.hpp>
+#include "morpheus/messages/meta.hpp"
 
 #include <pysrf/node.hpp>
 #include <srf/segment/builder.hpp>

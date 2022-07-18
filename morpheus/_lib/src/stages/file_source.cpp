@@ -15,20 +15,18 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/file_source.hpp>
-
-#include <srf/segment/builder.hpp>
+#include "morpheus/stages/file_source.hpp"
 
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
 #include <cudf/strings/replace.hpp>
 #include <cudf/types.hpp>
-#include <nvtext/subword_tokenize.hpp>
-
 #include <glog/logging.h>
+#include <nlohmann/json.hpp>
+#include <nvtext/subword_tokenize.hpp>
 #include <pybind11/gil.h>
 #include <pybind11/pytypes.h>
-#include <nlohmann/json.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <cstddef>
 #include <filesystem>

@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/file_types.hpp>
-#include <morpheus/utilities/cudf_util.hpp>
+#include "morpheus/objects/file_types.hpp"
+
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <pybind11/pybind11.h>
 

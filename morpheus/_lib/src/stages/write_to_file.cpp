@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/write_to_file.hpp>
+#include "morpheus/stages/write_to_file.hpp"
 
-#include <morpheus/utilities/matx_util.hpp>
+#include "morpheus/utilities/matx_util.hpp"
 
 #include <exception>
 #include <memory>

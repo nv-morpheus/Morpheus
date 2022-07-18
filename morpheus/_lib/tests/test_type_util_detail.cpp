@@ -17,7 +17,7 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
-#include <morpheus/utilities/type_util_detail.hpp>
+#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <gtest/gtest.h>  // for EXPECT_EQ
 

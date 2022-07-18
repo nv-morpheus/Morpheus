@@ -66,20 +66,30 @@ ForEachMacros:
   - foreach
   - Q_FOREACH
   - BOOST_FOREACH
-IncludeBlocks: Preserve
+IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex:           '^<ext/.*\.h>'
+  # The order of the groups is
+  # 0 - Main include file for .cpp
+  # 1 - source relative files `#include "./some_header.hpp"` (Grouped with 2)
+  # 2 - Morpheus API files `#include "morpheus/messages/meta.hpp`
+  # 3 - External installed libraries `#include <external_lib/some_header.hpp>`
+  # 4 - System includes `#include <string>`
+  # First match any Morpheus  headers
+  - Regex:           '^"morpheus\/.*\.(h|hpp)"'
     Priority:        2
-  - Regex:           '^<.*\.h>'
+  # Any relative quoted includes need to be with internal/public but on top (Thats why this group is last)
+  - Regex:           '^".*\.(h|hpp)"'
     Priority:        1
+  # Last is system includes which dont have a '/' like <string> or <mutex>
+  - Regex:           '<([a-z_])+>'
+    Priority:        4
+  # Finally, put all 3rd party includes before the system includes
   - Regex:           '^<.*'
-    Priority:        2
-  - Regex:           '.*'
     Priority:        3
 IncludeIsMainRegex: '([-_](test|unittest))?$'
 IndentCaseBlocks: false
 IndentCaseLabels: false
-IndentPPDirectives: None
+IndentPPDirectives: BeforeHash
 IndentWidth:     4
 IndentWrappedFunctionNames: false
 JavaScriptQuotes: Leave
@@ -148,7 +158,7 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: Cpp11
+Standard: c++17
 StatementMacros:
   - Q_UNUSED
   - QT_REQUIRE_VERSION

@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-#include <morpheus/messages/memory/inference_memory.hpp>
-#include <morpheus/messages/memory/inference_memory_nlp.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/utilities/cupy_util.hpp>
+#include "morpheus/messages/memory/inference_memory_nlp.hpp"
+
+#include "morpheus/messages/memory/inference_memory.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/utilities/cupy_util.hpp"
 
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
