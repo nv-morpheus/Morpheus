@@ -25,3 +25,25 @@ The `tests/tests_data/filter_probs.csv` contains 20 lines of data and the pipeli
 ```bash
 scripts/validation/strip_first_csv_col.py /tmp/morpheus-copy-test.csv | diff -q --ignore-all-space tests/tests_data/filter_probs.csv -
 ```
+
+## Partitioned Data Copying
+Same as above, but we cannot depend on the ordering of the records being preserved.
+1. Create a topic called "morpheus-copy-test-p" with three partitions
+```bash
+./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+$KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-copy-test-p  --partitions 3 --bootstrap-server `broker-list.sh`
+```
+1. Open a new terminal and launch a pipeline to listen to Kafka, from the root of the Morpheus repo run:
+```bash
+morpheus --log_level=DEBUG run pipeline-nlp from-kafka --input_topic morpheus-copy-test-p --bootstrap_servers "${BROKER_LIST}" deserialize monitor --description read serialize to-file --filename=/tmp/morpheus-copy-test-p.csv --overwrite
+```
+1. Open a new terminal and launch a Kafka writer process:
+```bash
+morpheus --log_level=DEBUG run pipeline-nlp from-file --filename=tests/tests_data/filter_probs.csv deserialize  serialize --exclude='^_ts_' to-kafka --output_topic morpheus-copy-test-p --bootstrap_servers "${BROKER_LIST}"
+```
+The `tests/tests_data/filter_probs.csv` contains 20 lines of data and the pipeline should complete rather quickly (less than 5 seconds).
+1. Return to the first terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Cntrl-C.
+1. If successful our output file `/tmp/morpheus-copy-test-p.csv` should contain the same records as those in `tests/tests_data/filter_probs.csv` however they are most likely out of order. To verify the output we will strip the new ID column and compare the sorted outputs:
+```bash
+scripts/validation/strip_first_csv_col.py /tmp/morpheus-copy-test-p.csv | sort | diff -q --ignore-all-space - <(sort tests/tests_data/filter_probs.csv)
+```
