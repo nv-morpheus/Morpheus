@@ -281,7 +281,10 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
 7. Launch the Kafka shell
    1. To configure the cluster, you will need to launch into a container that has the Kafka shell.
-   2. You can do this with `./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME`.
+   2. You can do this with:
+      ```bash
+      ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+      ```
    3. However, this makes it difficult to load data into the cluster. Instead, you can manually launch the Kafka shell by running:
       ```bash
       # Change to the morpheus root to make it easier for mounting volumes
