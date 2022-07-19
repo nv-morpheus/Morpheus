@@ -35,6 +35,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -79,9 +80,29 @@ class MultiMessage
     void set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors);
 
     /**
-     * TODO(Documentation)
+     * @brief Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on the
+     * given `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying `meta`
+     * and the actual slicing of the dataframe is applied later when `get_meta` is called.
+     *
+     * @param start
+     * @param stop
+     * @return std::shared_ptr<MultiMessage>
      */
     std::shared_ptr<MultiMessage> get_slice(size_t start, size_t stop) const;
+
+    /**
+     * @brief Creates a deep copy of the current message along with a copy of the underlying `meta` selecting the rows
+     * of `meta` defined by pairs of start, stop rows expressed in the `ranges` argument.
+     *
+     * This allows for copying several non-contiguous rows from the underlying dataframe into a new dataframe, however
+     * this comes at a much higher cost compared to the `get_slice` method.
+     *
+     * @param ranges
+     * @param num_selected_rows
+     * @return std::shared_ptr<MultiMessage>
+     */
+    std::shared_ptr<MultiMessage> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                              size_t num_selected_rows) const;
 
   protected:
     // This internal function is used to allow virtual overriding while `get_slice` allows for hiding of base class.
@@ -100,11 +121,35 @@ class MultiMessage
     //
     // These will be logically equivalent
     // assert(std::dynamic_ptr_cast<DerivedMultiMessage>(other_base) == other_derived);
+    virtual std::shared_ptr<MultiMessage> internal_get_slice(size_t start, size_t stop) const;
 
     /**
-     * TODO(Documentation)
+     * @brief Similar to `internal_get_slice` allows sublasses to define their own `copy_ranges` returning the actual
+     * derived class instead of requiring users to have to cast returned pointers.
+     *
+     * @param ranges
+     * @param num_selected_rows
+     * @return std::shared_ptr<MultiMessage>
      */
-    virtual std::shared_ptr<MultiMessage> internal_get_slice(size_t start, size_t stop) const;
+    virtual std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                               size_t num_selected_rows) const;
+
+    /**
+     * @brief Creates a deep copy of `meta` with the specified ranges.
+     *
+     * @param ranges
+     * @return std::shared_ptr<MessageMeta>
+     */
+    virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const;
+
+    /**
+     * @brief Applies the message offset to the elements in `ranges` casting the results to `TensorIndex`
+     *
+     * @param ranges
+     * @return std::vector<std::pair<TensorIndex, TensorIndex>>
+     */
+    std::vector<std::pair<TensorIndex, TensorIndex>> apply_offset_to_ranges(
+        std::size_t offset, const std::vector<std::pair<size_t, size_t>> &ranges) const;
 };
 
 /****** MultiMessageInterfaceProxy**************************/
@@ -156,6 +201,8 @@ struct MultiMessageInterfaceProxy
      */
     static pybind11::object get_meta_by_col(MultiMessage &self, pybind11::object columns);
 
+    static pybind11::object get_meta_list(MultiMessage &self, pybind11::object col_name);
+
     /**
      * TODO(Documentation)
      */
@@ -165,6 +212,10 @@ struct MultiMessageInterfaceProxy
      * TODO(Documentation)
      */
     static std::shared_ptr<MultiMessage> get_slice(MultiMessage &self, std::size_t start, std::size_t stop);
+
+    static std::shared_ptr<MultiMessage> copy_ranges(MultiMessage &self,
+                                                     const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                     pybind11::object num_selected_rows);
 };
 
 #pragma GCC visibility pop

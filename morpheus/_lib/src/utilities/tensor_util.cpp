@@ -21,7 +21,6 @@
 
 #include <glog/logging.h>  // for DCHECK_EQ
 
-#include <algorithm>  // for copy
 #include <experimental/iterator>
 #include <functional>   // for multiplies
 #include <iterator>     // for begin, end

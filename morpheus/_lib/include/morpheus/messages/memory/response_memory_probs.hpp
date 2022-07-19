@@ -40,6 +40,8 @@ class ResponseMemoryProbs : public ResponseMemory
 {
   public:
     ResponseMemoryProbs(size_t count, TensorObject probs);
+    ResponseMemoryProbs(size_t count, tensor_map_t &&tensors);
+    ResponseMemoryProbs(ResponseMemory &&other);
 
     /**
      * TODO(Documentation)

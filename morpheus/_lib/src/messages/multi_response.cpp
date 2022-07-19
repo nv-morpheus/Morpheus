@@ -22,6 +22,7 @@
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/objects/tensor.hpp>
 #include <morpheus/utilities/cupy_util.hpp>
+#include <morpheus/utilities/tensor_util.hpp>
 
 #include <cudf/types.hpp>
 
@@ -31,6 +32,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include "morpheus/objects/tensor_object.hpp"
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -54,11 +56,11 @@ TensorObject MultiResponseMessage::get_output(const std::string &name)
     // check if we are getting the entire input
     if (this->offset == 0 && this->count == this->memory->count)
     {
-        return this->memory->outputs[name];
+        return this->memory->tensors[name];
     }
 
     // TODO(MDD): This really needs to return the slice of the tensor
-    return this->memory->outputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
+    return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
                                              {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
@@ -69,11 +71,11 @@ const TensorObject MultiResponseMessage::get_output(const std::string &name) con
     // check if we are getting the entire input
     if (this->offset == 0 && this->count == this->memory->count)
     {
-        return this->memory->outputs[name];
+        return this->memory->tensors[name];
     }
 
     // TODO(MDD): This really needs to return the slice of the tensor
-    return this->memory->outputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
+    return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
                                              {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
@@ -101,6 +103,28 @@ std::shared_ptr<MultiMessage> MultiResponseMessage::internal_get_slice(std::size
 
     return std::make_shared<MultiResponseMessage>(
         this->meta, mess_start, mess_stop - mess_start, this->memory, start, stop - start);
+}
+
+std::shared_ptr<MultiResponseMessage> MultiResponseMessage::copy_ranges(
+    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+{
+    return std::static_pointer_cast<MultiResponseMessage>(this->internal_copy_ranges(ranges, num_selected_rows));
+}
+
+std::shared_ptr<MultiMessage> MultiResponseMessage::internal_copy_ranges(
+    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+{
+    auto msg_meta = copy_meta_ranges(ranges);
+    auto mem      = copy_output_ranges(ranges, num_selected_rows);
+    return std::make_shared<MultiResponseMessage>(msg_meta, 0, num_selected_rows, mem, 0, num_selected_rows);
+}
+
+std::shared_ptr<ResponseMemory> MultiResponseMessage::copy_output_ranges(
+    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+{
+    auto offset_ranges = apply_offset_to_ranges(offset, ranges);
+    auto tensors       = memory->copy_tensor_ranges(offset_ranges, num_selected_rows);
+    return std::make_shared<ResponseMemory>(num_selected_rows, std::move(tensors));
 }
 
 /****** MultiResponseMessageInterfaceProxy *************************/

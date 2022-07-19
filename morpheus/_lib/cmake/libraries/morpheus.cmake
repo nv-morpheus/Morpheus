@@ -22,6 +22,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory_nlp.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/response_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/response_memory_probs.cpp
+    ${MORPHEUS_LIB_ROOT}/src/messages/memory/tensor_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/meta.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_inference.cpp

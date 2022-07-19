@@ -122,9 +122,11 @@ morpheus --log_level=DEBUG \
    monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
    `# 6th Stage: Add results from inference to the messages` \
    add-class \
-   `# 7th Stage: Convert from objects back into strings` \
+   `# 7th Stage: Filtering removes any messages that did not detect SI` \
+   filter \
+   `# 8th Stage: Convert from objects back into strings` \
    serialize --exclude '^_ts_' \
-   `# 8th Stage: Write out the JSON lines to the detections.jsonlines file` \
+   `# 9th Stage: Write out the JSON lines to the detections.jsonlines file` \
    to-file --filename=detections.jsonlines --overwrite
 ```
 
