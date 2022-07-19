@@ -600,7 +600,7 @@ struct TensorObject final
     }
 
     /**
-     * @brief Creates a depp copy of the specified rows specified as vector<pair<start, stop>> not inclusive
+     * @brief Creates a deep copy of the rows specified in the exclusive ranges of vector<pair<start, stop>>
      * of the stop row.
      *
      * @param selected_rows
