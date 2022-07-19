@@ -18,6 +18,7 @@
 #include "morpheus/objects/fiber_queue.hpp"
 
 #include <boost/fiber/channel_op_status.hpp>
+#include <pybind11/gil.h>  // for gil_scoped_release
 #include <pybind11/pytypes.h>
 
 #include <chrono>

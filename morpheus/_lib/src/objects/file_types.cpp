@@ -20,6 +20,7 @@
 #include "morpheus/utilities/string_util.hpp"
 
 #include <filesystem>
+#include <sstream>  // ostringstream needed by MORPHEUS_CONCAT_STR
 #include <stdexcept>
 
 namespace morpheus {

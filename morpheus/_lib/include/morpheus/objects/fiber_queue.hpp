@@ -19,77 +19,78 @@
 
 #include <boost/fiber/buffered_channel.hpp>
 #include <boost/fiber/channel_op_status.hpp>
-
-#include <pybind11/pybind11.h>
+#include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/pytypes.h>
 
-#include <memory>
 #include <cstddef>
+#include <memory>
 
 namespace morpheus {
-    /****** Component public implementations *******************/
-    /****** FiberQueue****************************************/
+/****** Component public implementations *******************/
+/****** FiberQueue****************************************/
+/**
+ * TODO(Documentation)
+ */
+class FiberQueue
+{
+  public:
+    FiberQueue(std::size_t max_size);
+
     /**
      * TODO(Documentation)
      */
-    class FiberQueue {
-    public:
-        FiberQueue(std::size_t max_size);
+    boost::fibers::channel_op_status put(pybind11::object &&item, bool block = true, float timeout = 0.0);
 
-        /**
-         * TODO(Documentation)
-         */
-        boost::fibers::channel_op_status put(pybind11::object &&item, bool block = true, float timeout = 0.0);
+    /**
+     * TODO(Documentation)
+     */
+    boost::fibers::channel_op_status get(pybind11::object &item, bool block = true, float timeout = 0.0);
 
-        /**
-         * TODO(Documentation)
-         */
-        boost::fibers::channel_op_status get(pybind11::object &item, bool block = true, float timeout = 0.0);
+    /**
+     * TODO(Documentation)
+     */
+    void close();
 
-        /**
-         * TODO(Documentation)
-         */
-        void close();
+    /**
+     * TODO(Documentation)
+     */
+    bool is_closed();
 
-        /**
-         * TODO(Documentation)
-         */
-        bool is_closed();
+    /**
+     * TODO(Documentation)
+     */
+    void join();
 
-        /**
-         * TODO(Documentation)
-         */
-        void join();
-
-    private:
-        boost::fibers::buffered_channel<pybind11::object> m_queue;
-    };
+  private:
+    boost::fibers::buffered_channel<pybind11::object> m_queue;
+};
 
 #pragma GCC visibility push(default)
-    /****** FiberQueueInterfaceProxy *************************/
+/****** FiberQueueInterfaceProxy *************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct FiberQueueInterfaceProxy
+{
     /**
-     * @brief Interface proxy, used to insulate python bindings.
+     * @brief Create and initialize a FIberQueue, and return a shared pointer to the result.
      */
-    struct FiberQueueInterfaceProxy {
-        /**
-         * @brief Create and initialize a FIberQueue, and return a shared pointer to the result.
-         */
-        static std::shared_ptr<morpheus::FiberQueue> init(std::size_t max_size);
+    static std::shared_ptr<morpheus::FiberQueue> init(std::size_t max_size);
 
-        /**
-         * TODO(Documentation)
-         */
-        static void put(morpheus::FiberQueue &self, pybind11::object item, bool block = true, float timeout = 0.0);
+    /**
+     * TODO(Documentation)
+     */
+    static void put(morpheus::FiberQueue &self, pybind11::object item, bool block = true, float timeout = 0.0);
 
-        /**
-         * TODO(Documentation)
-         */
-        static pybind11::object get(morpheus::FiberQueue &self, bool block = true, float timeout = 0.0);
+    /**
+     * TODO(Documentation)
+     */
+    static pybind11::object get(morpheus::FiberQueue &self, bool block = true, float timeout = 0.0);
 
-        /**
-         * TODO(Documentation)
-         */
-        static void close(morpheus::FiberQueue &self);
-    };
+    /**
+     * TODO(Documentation)
+     */
+    static void close(morpheus::FiberQueue &self);
+};
 #pragma GCC visibility pop
-}
+}  // namespace morpheus
