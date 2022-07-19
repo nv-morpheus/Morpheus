@@ -21,7 +21,7 @@ More advanced users, or those who are interested in using the latest pre-release
 The following sections must be followed prior to building the Morpheus container or building Morpheus from source.
 
 #### Requirements
-- Pascal architecture or better
+- Pascal architecture GPU or better
 - NVIDIA driver `450.80.02` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)

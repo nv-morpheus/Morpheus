@@ -73,11 +73,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
 
 #### Prerequisites
 
-- Pascal architecture or better
-- NVIDIA driver `450.80.02` or higher
-- [Docker](https://docs.docker.com/get-docker/)
-- [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-
+1. Ensure all [requirements](README.md#requirements) from [README.md](README.md) are met.
 1. Build the development container
    ```bash
    ./docker/build_container_dev.sh
@@ -154,7 +150,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 - Pascal architecture or better
 - NVIDIA driver `450.80.02` or higher
-- [CUDA 11.0+](https://developer.nvidia.com/cuda-downloads)
+- [Cuda 11.5](https://developer.nvidia.com/cuda-11-5-2-download-archive)
 - `conda` and `mamba`
   - See the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:
