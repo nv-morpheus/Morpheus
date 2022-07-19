@@ -12,6 +12,10 @@
 # the License.
 # =============================================================================
 
+list(APPEND CMAKE_MESSAGE_CONTEXT "cuda_utils")
+
+find_package(pybind11 REQUIRED)
+
 add_library(cuda_utils
     SHARED
       ${MORPHEUS_LIB_ROOT}/src/objects/dev_mem_info.cpp
@@ -34,6 +38,7 @@ target_link_libraries(cuda_utils
       matx::matx
       cudf::cudf
       Python3::NumPy
+      pybind11::pybind11
 )
 
 set_target_properties(cuda_utils
@@ -54,3 +59,5 @@ install(
 if (MORPHEUS_PYTHON_INPLACE_BUILD)
   inplace_build_copy(cuda_utils ${MORPHEUS_LIB_ROOT})
 endif()
+
+list(POP_BACK CMAKE_MESSAGE_CONTEXT)
