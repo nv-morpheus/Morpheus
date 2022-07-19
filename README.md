@@ -27,14 +27,6 @@ The following sections must be followed prior to building the Morpheus container
 - [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [Git LFS](https://git-lfs.github.com/)
 
-#### Git LFS
-
-The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
-
-If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
-```bash
-git lfs install
-```
 
 #### Clone the Repository
 
@@ -44,10 +36,37 @@ git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
 
-**Note:** If the repository was cloned before `Git LFS` was installed, you can ensure you have downloaded the LFS files with the command:
+#### Git LFS
 
+The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned.
+
+The `scripts/fetch_data.py` script can be used to fetch the Morpheus pre-trained models, and other files required for running the training/validation scripts and example pipelines.
+
+Usage of the script is as follows:
 ```bash
-git lfs pull
+scripts/fetch_data.py fetch <dataset> [<dataset>...]
+```
+
+At time of writing the defined datasets are:
+* all - Metaset includes all others
+* examples - Data needed by scripts in the `examples` subdir
+* models - Morpheus models (largest dataset)
+* tests - Data used by unittests
+* validation - Subset of the models dataset needed by some unittests
+
+To download just the examples and models:
+```bash
+scripts/fetch_data.py fetch examples models
+```
+
+To download the data needed for unittests:
+```bash
+scripts/fetch_data.py fetch tests validation
+```
+
+If `Git LFS` is not installed the before cloning the repository, the `scripts/fetch_data.py` script will fail. If this is the case follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
+```bash
+git lfs install
 ```
 
 ### Build Morpheus Container
