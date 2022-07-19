@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-#include <morpheus/messages/multi_inference_fil.hpp>
+#include "morpheus/messages/multi_inference_fil.hpp"
 
-#include <morpheus/messages/memory/inference_memory.hpp>
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/messages/multi_inference.hpp>
-#include <morpheus/objects/tensor.hpp>
+#include "morpheus/messages/memory/inference_memory.hpp"
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/tensor.hpp"
 
 #include <cudf/types.hpp>
 

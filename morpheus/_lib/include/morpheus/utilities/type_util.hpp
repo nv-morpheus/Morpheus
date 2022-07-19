@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/utilities/type_util_detail.hpp>
+#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cudf/types.hpp>
 #include <cudf/utilities/traits.hpp>

@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/tensor_util.hpp>
+#include "morpheus/utilities/tensor_util.hpp"
 
+#include <experimental/iterator>
+#include <glog/logging.h>              // for DCHECK_EQ
 #include <srf/utils/sort_indexes.hpp>  // for sort_indexes
 
-#include <glog/logging.h>  // for DCHECK_EQ
-
-#include <algorithm>  // for copy
-#include <experimental/iterator>
+#include <algorithm>    // for copy
 #include <functional>   // for multiplies
 #include <iterator>     // for begin, end
 #include <numeric>      // for accumulate

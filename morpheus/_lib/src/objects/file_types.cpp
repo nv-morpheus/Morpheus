@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/file_types.hpp>
+#include "morpheus/objects/file_types.hpp"
 
-#include <morpheus/utilities/string_util.hpp>
+#include "morpheus/utilities/string_util.hpp"
 
 #include <filesystem>
+#include <sstream>  // ostringstream needed by MORPHEUS_CONCAT_STR
 #include <stdexcept>
 
 namespace morpheus {

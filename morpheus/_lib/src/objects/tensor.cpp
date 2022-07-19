@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/tensor.hpp>
+#include "morpheus/objects/tensor.hpp"
 
-#include <morpheus/objects/rmm_tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
-#include <morpheus/utilities/type_util.hpp>
+#include "morpheus/objects/rmm_tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <rmm/device_buffer.hpp>
 

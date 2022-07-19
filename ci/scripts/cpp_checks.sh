@@ -27,6 +27,7 @@ if [[ "${SKIP_IWYU}" == "" && -z "${IWYU_TOOL}" ]]; then
 fi
 
 # Pre-populate the return values in case they are skipped
+PRAGMA_CHECK_RETVAL=0
 CLANG_TIDY_RETVAL=0
 CLANG_FORMAT_RETVAL=0
 IWYU_RETVAL=0
@@ -41,6 +42,16 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
    for f in "${MORPHEUS_MODIFIED_FILES[@]}"; do
       echo "  $f"
    done
+
+   # Check for `#pragma once` in any .hpp or .h file
+   if [[ "${SKIP_PRAGMA_CHECK}" == "" ]]; then
+
+      PRAGMA_CHECK_OUTPUT=`grep -rL --include=\*.{h,hpp} --exclude-dir={build,.cache} -e '#pragma once' $(get_modified_files $CPP_FILE_REGEX)`
+
+      if [[ -n "${PRAGMA_CHECK_OUTPUT}" ]]; then
+         PRAGMA_CHECK_RETVAL=1
+      fi
+   fi
 
    # Clang-tidy
    if [[ "${SKIP_CLANG_TIDY}" == "" ]]; then
@@ -69,7 +80,7 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
    # Include What You Use
    if [[ "${SKIP_IWYU}" == "" ]]; then
-      IWYU_DIRS="benchmarks examples python src tools"
+      IWYU_DIRS="morpheus"
       NUM_PROC=$(get_num_proc)
       IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_DIRS} 2>&1`
       IWYU_RETVAL=$?
@@ -79,6 +90,19 @@ else
 fi
 
 # Now check the values
+if [[ "${SKIP_PRAGMA_CHECK}" != "" ]]; then
+   echo -e "\n\n>>>> SKIPPED: pragma check\n\n"
+elif [[ "${PRAGMA_CHECK_RETVAL}" != "0" ]]; then
+   echo -e "\n\n>>>> FAILED: pragma check; begin output\n\n"
+   echo -e "Missing \`#pragma once\` in the following files:"
+   echo -e "${PRAGMA_CHECK_OUTPUT}"
+   echo -e "\n\n>>>> FAILED: pragma check; end output\n\n" \
+           "To auto-fix many issues (not all) run:\n" \
+           "   ./ci/scripts/fix_all.sh\n\n"
+else
+   echo -e "\n\n>>>> PASSED: pragma check\n\n"
+fi
+
 if [[ "${SKIP_CLANG_TIDY}" != "" ]]; then
    echo -e "\n\n>>>> SKIPPED: clang-tidy check\n\n"
 elif [[ "${CLANG_TIDY_RETVAL}" != "0" ]]; then

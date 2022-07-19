@@ -84,8 +84,12 @@ endif()
 ##### Morpheus Python Setup ######
 ##################################
 
+# Create a custom target to allow preparing for style checks
+add_custom_target(style_checks
+  COMMENT "Building dependencies for style checks"
+)
 
-# Include the main trtlab code
+# Include the main morpheus code
 add_subdirectory(morpheus)
 
 # Get all of the python files to copy to the build directory

@@ -28,6 +28,8 @@ morpheus_add_cython_libraries(
       ${MORPHEUS_LIB_INSTALL_DIR}
 )
 
+add_dependencies(style_checks ${cudf_helpers_target})
+
 if (MORPHEUS_PYTHON_INPLACE_BUILD)
   inplace_build_copy(${cudf_helpers_target} ${MORPHEUS_LIB_ROOT})
 endif()

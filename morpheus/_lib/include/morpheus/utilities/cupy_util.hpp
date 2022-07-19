@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>

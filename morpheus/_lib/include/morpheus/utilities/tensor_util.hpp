@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <iosfwd>  // for ostream
 #include <string>  // for string

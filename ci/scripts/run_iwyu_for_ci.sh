@@ -25,5 +25,5 @@ ${IWYU_TOOL_PY:-iwyu_tool.py} "$@" -- \
    -Xiwyu --no_fwd_decls \
    -Xiwyu --quoted_includes_first \
    -Xiwyu --cxx17ns \
-   -Xiwyu --no_comments \
+   -Xiwyu --max_line_length=120 \
    --driver-mode=g++

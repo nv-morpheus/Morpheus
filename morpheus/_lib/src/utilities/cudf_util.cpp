@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/cudf_util.hpp>
+#include "morpheus/utilities/cudf_util.hpp"
 
-#include <morpheus/objects/table_info.hpp>
+#include "morpheus/objects/table_info.hpp"
 
+#include <cudf/table/table.hpp>
 #include <glog/logging.h>
 #include <pybind11/gil.h>
-#include <cudf/table/table.hpp>
 
 /**
  * **************This needs to come last.********************

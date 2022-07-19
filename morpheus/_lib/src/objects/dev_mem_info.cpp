@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/dev_mem_info.hpp>
+#include "morpheus/objects/dev_mem_info.hpp"
 
 namespace morpheus {
-    // Component public implementations
-    // ************ DevMemInfo************************* //
-    void *DevMemInfo::data() const {
-        return static_cast<uint8_t *>(buffer->data()) + offset;
-    }
+// Component public implementations
+// ************ DevMemInfo************************* //
+void *DevMemInfo::data() const
+{
+    return static_cast<uint8_t *>(buffer->data()) + offset;
 }
+}  // namespace morpheus

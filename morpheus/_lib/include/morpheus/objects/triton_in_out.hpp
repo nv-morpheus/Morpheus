@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/utilities/type_util.hpp>
+#include "morpheus/utilities/type_util.hpp"
 
 #include <string>
 #include <vector>
