@@ -304,22 +304,6 @@ Launching a full production Kafka cluster is outside the scope of this project. 
 
       **Note:** This will consume messages.
 
-### Launching Triton Server
-
-Many of the validation tests and example workflows require a Triton server to function. To launch Triton server, use the following command:
-
-```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:21.12-py3 \
-    tritonserver --model-repository=/models/triton-model-repo \
-                 --exit-on-error=false \
-                 --model-control-mode=explicit \
-                 --load-model abp-nvsmi-xgb \
-                 --load-model sid-minibert-onnx \
-                 --load-model phishing-bert-onnx
-```
-This will launch Triton using port 8001 for the GRPC server. This needs to match the Morpheus configuration.
-
 ### Pipeline Validation
 
 To verify that all pipelines are working correctly, validation scripts have been added at `${MORPHEUS_ROOT}/scripts/validation`. There are scripts for each of the main workflows: Anomalous Behavior Profiling (ABP), Humans-as-Machines-Machines-as-Humans (HAMMAH), Phishing Detection (Phishing), and Sensitive Information Detection (SID).

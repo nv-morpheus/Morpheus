@@ -25,6 +25,7 @@ The following sections must be followed prior to building the Morpheus container
 - NVIDIA driver `450.80.02` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+- [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `22.02` or higher
 - [Git LFS](https://git-lfs.github.com/)
 
 
@@ -94,6 +95,22 @@ DOCKER_IMAGE_TAG="v22.06.00a-runtime" ./docker/run_container_release.sh
 ### Build from Source
 
 It's possible to build from source outside of a container. However, due to the large number of dependencies, this can be complex and is only necessary for developers. Instructions for developers and contributors can be found in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Launching Triton Server
+
+Many of the validation tests and example workflows require a Triton server to function.
+Use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
+
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
+	-v $PWD/models:/models \
+	nvcr.io/nvidia/tritonserver:22.02-py3 \
+	tritonserver --model-repository=/models/triton-model-repo \
+		--exit-on-error=false \
+		--log-info=true \
+		--strict-readiness=false
+```
+This will launch Triton using the default network ports (8000 for HTTP, 8001 for GRPC, and 8002 for metrics).
 
 ## Running Morpheus
 
