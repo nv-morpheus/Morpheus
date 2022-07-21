@@ -7,7 +7,7 @@
 
 ## Simple Data Copying
 ### Checking KafkaSourceStage
-
+#### Single Partition Topic Test
 1. Open a new terminal and create a topic called "morpheus-src-copy-test" with only a single partition
     ```bash
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
@@ -31,7 +31,7 @@
 
 1. Return to the Kafka terminal and run:
     ```bash
-    cat /workspace/tests/tests_data/filter_probs.json | \
+    cat /workspace/tests/tests_data/filter_probs.jsonlines | \
         $KAFKA_HOME/bin/kafka-console-producer.sh \
         --topic=morpheus-src-copy-test --broker-list=`broker-list.sh` -
     ```
@@ -43,7 +43,40 @@
     diff -q --ignore-all-space ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.csv ${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv
     ```
 
+#### Partitioned Topic Test
+1. From the Kafka terminal create a new topic named "morpheus-src-copy-test-p" with three partitions:
+    ```bash
+    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-src-copy-test-p --partitions 3 --bootstrap-server `broker-list.sh`
+    ```
+
+1. Open a new terminal and launch a pipeline to listen to Kafka, from the root of the Morpheus repo run:
+    ```bash
+    morpheus --log_level=DEBUG run \
+        pipeline-nlp \
+        from-kafka --input_topic morpheus-src-copy-test-p --bootstrap_servers "${BROKER_LIST}" \
+        deserialize \
+        monitor --description "Kafka Read" \
+        serialize \
+        to-file --include-index-col=false --filename=${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test-p.csv --overwrite
+    ```
+
+1. Return to the Kafka terminal and run:
+    ```bash
+    cat /workspace/tests/tests_data/filter_probs.jsonlines | \
+        $KAFKA_HOME/bin/kafka-console-producer.sh \
+        --topic=morpheus-src-copy-test-p --broker-list=`broker-list.sh` -
+    ```
+
+1. Return to the Morpheus terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Cntrl-C.
+
+1. If successful the output file `.tmp/morpheus-src-copy-test-p.csv` should contain the same records as those in `tests/tests_data/filter_probs.csv` however they are most likely out of order. To verify the output we will compare the sorted outputs:
+    ```bash
+    diff -q --ignore-all-space <(sort tests/tests_data/filter_probs.csv) <(sort .tmp/morpheus-src-copy-test-p.csv)
+    ```
+
+
 ### Checking WriteToKafkaStage
+#### Single Partition Topic Test
 1. Open a new terminal and create a topic called "morpheus-sink-copy-test" with only a single partition, and start a consumer on that topic:
     ```bash
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
@@ -80,29 +113,39 @@
 
 1. Stop the consumer in the Kafka terminal.
 
+#### Partitioned Topic Test
+1. From the Kafka terminal create a new topic named "morpheus-sink-copy-test-p" with three partitions, and start a consumer on that topic:
+    ```bash
+    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-sink-copy-test-p --partitions 3 --bootstrap-server `broker-list.sh`
 
-## Partitioned Data Copying
-Same as above, but we cannot depend on the ordering of the records being preserved.
-1. Create a topic called "morpheus-copy-test-p" with three partitions
-    ```bash
-    ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
-    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-copy-test-p  --partitions 3 --bootstrap-server `broker-list.sh`
+    $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-sink-copy-test-p \
+        --bootstrap-server `broker-list.sh` > /workspace/.tmp/morpheus-sink-copy-test-p.jsonlines
     ```
-1. Open a new terminal and launch a pipeline to listen to Kafka, from the root of the Morpheus repo run:
+
+1. Open a new terminal and from the Morpheus root run:
     ```bash
-    morpheus --log_level=DEBUG run pipeline-nlp from-kafka --input_topic morpheus-copy-test-p --bootstrap_servers "${BROKER_LIST}" deserialize monitor --description read serialize to-file --filename=/tmp/morpheus-copy-test-p.csv --overwrite
-    ```
-1. Open a new terminal and launch a Kafka writer process:
-    ```bash
-    morpheus --log_level=DEBUG run pipeline-nlp from-file --filename=tests/tests_data/filter_probs.csv deserialize  serialize --exclude='^_ts_' to-kafka --output_topic morpheus-copy-test-p --bootstrap_servers "${BROKER_LIST}"
+    morpheus --log_level=DEBUG run \
+        pipeline-nlp \
+        from-file --filename=${MORPHEUS_ROOT}/tests/tests_data/filter_probs.csv \
+        deserialize  \
+        serialize \
+        to-kafka --output_topic morpheus-sink-copy-test-p --bootstrap_servers "${BROKER_LIST}"
     ```
     The `tests/tests_data/filter_probs.csv` contains 20 lines of data and the pipeline should complete rather quickly (less than 5 seconds).
 
-1. Return to the first terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Cntrl-C.
-1. If successful our output file `/tmp/morpheus-copy-test-p.csv` should contain the same records as those in `tests/tests_data/filter_probs.csv` however they are most likely out of order. To verify the output we will strip the new ID column and compare the sorted outputs:
+1. The Kafka consumer we started in step #1 won't give us any sort of indication that it has concluded we will indirectly check the progress by counting the rows in the output file. Once the Morpheus pipeline completes check the number of lines in the output:
     ```bash
-    scripts/validation/strip_first_csv_col.py /tmp/morpheus-copy-test-p.csv | sort | diff -q --ignore-all-space - <(sort tests/tests_data/filter_probs.csv)
+    wc -l ${MORPHEUS_ROOT}/.tmp/morpheus-sink-copy-test-p.jsonlines
     ```
+
+1. Once all 20 lines have been written to the output file, verify the contents with:
+    ```bash
+    diff -q --ignore-all-space <(sort ${MORPHEUS_ROOT}/.tmp/morpheus-sink-copy-test-p.jsonlines | jq --sort-keys) <(sort ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.jsonlines | jq --sort-keys)
+    ```
+    Note due to the multiple partitions the consumer most likely receieved records out of order, so we are comparing the sorted output of both files.
+
+1. Stop the consumer in the Kafka terminal.
+
 
 ## Validation Pipeline
 For this test we are going to split the ABP validation pipeline into three pipelines roughly this will look like:
