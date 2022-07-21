@@ -1,6 +1,6 @@
 ## Pre-reqs
 1. Launch Kafka using instructions from the [Quick Launch Kafka Cluster](../../CONTRIBUTING.md#quick-launch-kafka-cluster) section of [CONTRIBUTING.md](../../CONTRIBUTING.md)
-1. Populate an environment variable `BROKER_LIST` with the IP:Ports of the nodes in the Kafka cluster. Ensure this environment variable is set in the terminals where Morpheus is executed:
+1. Populate an environment variable `BROKER_LIST` with the IP:Ports of the nodes in the Kafka cluster. Ensure this environment variable is set in all of the terminals where Morpheus is executed:
     ```bash
     BROKER_LIST=$(HOST_IP=$KAFKA_ADVERTISED_HOST_NAME ./broker-list.sh)
     ```
@@ -148,46 +148,29 @@
 
 
 ## Validation Pipeline
-For this test we are going to split the ABP validation pipeline into three pipelines roughly this will look like:
+For this test we are going to replace the from & to file stages from the ABP validation pipeline with Kafka stages, reading input data from a Kafka topic named "morpheus-abp-pre" and writing results to a topic named "morpheus-abp-post"
 
-Pipe 1:
-
-    from-file -> to-kafka topic=morpheus-abp-pre
-
-
-Pipe 2:
-
-    from-kafka topic=morpheus-abp-pre -> <actual inference pipeline> -> to-kafka topic=morpheus-abp-post
-
-Pipe 3:
-
-    from-kafka topic=morpheus-abp-post -> to-file
-
-1. Create two Kafka topics both with only a single partition.
+1. Create two Kafka topics both with only a single partition, and launch a consumer listening to .
     ```bash
     ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-abp-pre  --partitions 1 --bootstrap-server `broker-list.sh`
+
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-abp-post  --partitions 1 --bootstrap-server `broker-list.sh`
+
+    $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-abp-post \
+        --bootstrap-server `broker-list.sh` > /workspace/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines
     ```
+
 1. In a new terminal launch Triton:
     ```bash
-    docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models \
+    docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v ${MORPHEUS_ROOT}/models:/models \
         nvcr.io/nvidia/tritonserver:22.02-py3 \
         tritonserver --model-repository=/models/triton-model-repo \
                      --exit-on-error=false \
                      --model-control-mode=explicit \
                      --load-model abp-nvsmi-xgb
     ```
-1. Open a new terminal and launch a pipeline to listen to Kafka, from the root of the Morpheus repo run:
-    ```bash
-    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
-        pipeline-fil \
-        from-kafka --input_topic morpheus-abp-post --bootstrap_servers "${BROKER_LIST}" \
-        monitor --description "Kafka Read" \
-        deserialize \
-        serialize \
-        to-file --filename=/tmp/val-abp-kafka.json --overwrite
-    ```
+
 1. Open a new terminal and launch the inference pipeline which will both listen and write to kafka:
     ```bash
     morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
@@ -203,19 +186,26 @@ Pipe 3:
         to-kafka --output_topic morpheus-abp-post --bootstrap_servers "${BROKER_LIST}" \
         monitor --description "Kafka Write"
     ```
-1. Open a new terminal and launch the pipeline which will write the source data into Kafka:
+
+1. Open a new terminal and launch a Kafka producer to feed the morpheus-abp-pre topic with the input data:
     ```bash
-    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 \
-        pipeline-fil \
-        from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/abp-validation-data.jsonlines \
-        deserialize \
-        serialize \
-        to-kafka --output_topic morpheus-abp-pre --bootstrap_servers "${BROKER_LIST}" \
-        monitor --description "Kafka Write"
+    export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
+
+    cat /workspace/models/datasets/validation-data/abp-validation-data.jsonlines | \
+        $KAFKA_HOME/bin/kafka-console-producer.sh \
+        --topic=morpheus-abp-pre --broker-list=`broker-list.sh` -
     ```
     This command should execute quickly writing `1242` records and should complete in less than 5 seconds.
-1. Shutdown the other two pipelines once their respective monitor stages have recorded `1242` records.
-1. Output file should be identicle to the `models/datasets/validation-data/abp-validation-data.jsonlines` file:
+
+1. Return to the Morpheus terminal. Once the `Kafka Write` monitor has reported that `1242` messages has been written shutdown Morpheus with Cntrl-C. We can check the number of lines in the outut file:
     ```bash
-    diff -q --ignore-all-space ${MORPHEUS_ROOT}/models/datasets/validation-data/abp-validation-data.jsonlines /tmp/val-abp-kafka.json
+    wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines
+    ```
+
+1. Once all `1242` lines have been written to the output file, verify the contents with:
+    ```bash
+    diff -q --ignore-all-space ${MORPHEUS_ROOT}/models/datasets/validation-data/abp-validation-data.jsonlines ${MORPHEUS_ROOT}/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines
     ```
