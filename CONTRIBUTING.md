@@ -288,7 +288,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    3. However, this makes it difficult to load data into the cluster. Instead, you can manually launch the Kafka shell by running:
       ```bash
       # Change to the morpheus root to make it easier for mounting volumes
-      cd ${MORPHEUS_HOME}
+      cd ${MORPHEUS_ROOT}
 
       # Run the Kafka shell docker container
       docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
