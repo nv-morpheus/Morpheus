@@ -207,5 +207,5 @@ For this test we are going to replace the from & to file stages from the ABP val
 
 1. Once all `1242` lines have been written to the output file, verify the contents with:
     ```bash
-    diff -q --ignore-all-space ${MORPHEUS_ROOT}/models/datasets/validation-data/abp-validation-data.jsonlines ${MORPHEUS_ROOT}/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines
+    diff -q --ignore-all-space <(cat ${MORPHEUS_ROOT}/models/datasets/validation-data/abp-validation-data.jsonlines | jq --sort-keys) <(cat ${MORPHEUS_ROOT}/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines | jq --sort-keys)
     ```
