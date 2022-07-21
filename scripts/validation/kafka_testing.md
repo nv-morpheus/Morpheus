@@ -6,26 +6,80 @@
     ```
 
 ## Simple Data Copying
-1. Create a topic called "morpheus-copy-test" with only a single partition
+### Checking KafkaSourceStage
+
+1. Open a new terminal and create a topic called "morpheus-src-copy-test" with only a single partition
     ```bash
-    ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
-    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
+    
+    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-src-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
     ```
+    Keep this shell & container open you will need it in later steps.
+
 1. Open a new terminal and launch a pipeline to listen to Kafka, from the root of the Morpheus repo run:
     ```bash
-    morpheus --log_level=DEBUG run pipeline-nlp from-kafka --input_topic morpheus-copy-test --bootstrap_servers "${BROKER_LIST}" deserialize monitor --description read serialize to-file --filename=/tmp/morpheus-copy-test.csv --overwrite
+    morpheus --log_level=DEBUG run \
+        pipeline-nlp \
+        from-kafka --input_topic morpheus-src-copy-test --bootstrap_servers "${BROKER_LIST}" \
+        deserialize \
+        monitor --description "Kafka Read" \
+        serialize \
+        to-file --include-index-col=false --filename=${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv --overwrite
     ```
-1. Open a new terminal and launch a Kafka writer process:
+
+1. Return to the Kafka terminal and run:
     ```bash
-    morpheus --log_level=DEBUG run pipeline-nlp from-file --filename=tests/tests_data/filter_probs.csv deserialize  serialize --exclude='^_ts_' to-kafka --output_topic morpheus-copy-test --bootstrap_servers "${BROKER_LIST}"
+    cat /workspace/tests/tests_data/filter_probs.json | \
+        $KAFKA_HOME/bin/kafka-console-producer.sh \
+        --topic=morpheus-src-copy-test --broker-list=`broker-list.sh` -
+    ```
+
+1. Return to the Morpheus terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Cntrl-C.
+
+1. If successful the output file `.tmp/morpheus-src-copy-test.csv` should be identicle to `tests/tests_data/filter_probs.csv`. Verify:
+    ```bash
+    diff -q --ignore-all-space ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.csv ${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv
+    ```
+
+### Checking WriteToKafkaStage
+1. Open a new terminal and create a topic called "morpheus-sink-copy-test" with only a single partition, and start a consumer on that topic:
+    ```bash
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
+    
+    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-sink-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
+
+    $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-sink-copy-test \
+        --bootstrap-server `broker-list.sh` > /workspace/.tmp/morpheus-sink-copy-test.jsonlines
+    ```
+
+1. Open a new terminal and from the Morpheus root run:
+    ```bash
+    morpheus --log_level=DEBUG run \
+        pipeline-nlp \
+        from-file --filename=${MORPHEUS_ROOT}/tests/tests_data/filter_probs.csv \
+        deserialize  \
+        serialize \
+        to-kafka --output_topic morpheus-sink-copy-test --bootstrap_servers "${BROKER_LIST}"
     ```
     The `tests/tests_data/filter_probs.csv` contains 20 lines of data and the pipeline should complete rather quickly (less than 5 seconds).
 
-1. Return to the first terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Cntrl-C.
-1. If successful our output file `/tmp/morpheus-copy-test.csv` should be identicle to `tests/tests_data/filter_probs.csv` with the addition of cuDF's ID column. To verify the output we will strip the new ID column and pipe the output to `diff`:
+1. The Kafka consumer we started in step #1 won't give us any sort of indication that it has concluded we will indirectly check the progress by counting the rows in the output file. Once the Morpheus pipeline completes check the number of lines in the output:
     ```bash
-    scripts/validation/strip_first_csv_col.py /tmp/morpheus-copy-test.csv | diff -q --ignore-all-space tests/tests_data/filter_probs.csv -
+    wc -l ${MORPHEUS_ROOT}/.tmp/morpheus-sink-copy-test.jsonlines
     ```
+
+1. Once all 20 lines have been written to the output file, verify the contents with:
+    ```bash
+    diff -q --ignore-all-space <(cat ${MORPHEUS_ROOT}/.tmp/morpheus-sink-copy-test.jsonlines | jq --sort-keys) <(cat ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.jsonlines | jq --sort-keys)
+    ```
+    Note the usage of `jq --sort-keys` which will reformat the json outut, sorting the keys, this ensures that `{"a": 5, "b": 6}` and `{"b": 6,   "a": 5}` are considered equivelant.
+
+1. Stop the consumer in the Kafka terminal.
+
 
 ## Partitioned Data Copying
 Same as above, but we cannot depend on the ordering of the records being preserved.
