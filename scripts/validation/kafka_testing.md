@@ -23,8 +23,8 @@
     morpheus --log_level=DEBUG run \
         pipeline-nlp \
         from-kafka --input_topic morpheus-src-copy-test --bootstrap_servers "${BROKER_LIST}" \
-        deserialize \
         monitor --description "Kafka Read" \
+        deserialize \
         serialize \
         to-file --include-index-col=false --filename=${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv --overwrite
     ```
@@ -41,6 +41,19 @@
 1. If successful the output file `.tmp/morpheus-src-copy-test.csv` should be identicle to `tests/tests_data/filter_probs.csv`. Verify:
     ```bash
     diff -q --ignore-all-space ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.csv ${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv
+    ```
+
+1. Rerun steps 2-4 tests changing the Morpheus command in step #2 with:
+    ```bash
+    morpheus --log_level=DEBUG run --use_cpp=false \
+        pipeline-nlp \
+        from-kafka --input_topic morpheus-src-copy-test --bootstrap_servers "${BROKER_LIST}" \
+        monitor --description "Kafka Read" \
+        deserialize \
+        monitor --description "Deserial" \
+        serialize \
+        monitor --description "Serial" \
+        to-file --include-index-col=false --filename=${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv --overwrite
     ```
 
 #### Partitioned Topic Test
