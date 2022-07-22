@@ -248,7 +248,7 @@ For this test we are going to replace to-file stage from the Hammah validation p
 
 1. Once all `847` rows have been written, return to the Kafka terminal and stop the consumer with Cntrl-C.
 
-1. Verify the output with:
+1. Verify the output with, expect to see `38` unmatched rows:
     ```bash
     ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
         ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-user123-validation-data.csv \
@@ -299,4 +299,69 @@ Similar to the Hammah User123 test, we are going to replace to-file stage from t
         ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-role-g-validation-data.csv \
         ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-role-g-pytorch.jsonlines  \
         --index_col="_index_" --exclude "event_dt" --rel_tol=0.15
+    ```
+
+## Phishing Validation Pipeline
+For this test we are going to replace the from & to file stages from the Phishing validation pipeline with Kafka stages, reading input data from a Kafka topic named "morpheus-phishing-pre" and writing results to a topic named "morpheus-phishing-post"
+
+1. Create two Kafka topics both with only a single partition, and launch a consumer listening to the morpheus-phishing-post topic.
+    ```bash${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+        ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-user123-validation-data.csv \
+        ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-user123-pytorch.jsonlines \
+        --index_col="_index_" --exclude "event_dt" --rel_tol=0.1-post \
+        --bootstrap-server `broker-list.sh` > /workspace/.tmp/val_kafka_phishing.jsonlines
+    ```
+
+1. In a new terminal launch Triton:
+    ```bash
+    docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v ${MORPHEUS_ROOT}/models:/models \
+        nvcr.io/nvidia/tritonserver:22.02-py3 \
+        tritonserver --model-repository=/models/triton-model-repo \
+                     --exit-on-error=false \
+                     --model-control-mode=explicit \
+                     --load-model phishing-bert-onnx
+    ```
+
+1. Open a new terminal and launch the inference pipeline which will both listen and write to kafka:
+    ```bash
+    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+        ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-user123-validation-data.csv \
+        ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-user123-pytorch.jsonlines \
+        --index_col="_index_" --exclude "event_dt" --rel_tol=0.1
+        deserialize \
+        preprocess --vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt \
+            --truncation=True --do_lower_case=True --add_special_tokens=False \
+        inf-triton --model_name=phishing-bert-onnx --server_url="localhost:8000" --force_convert_inputs=True \
+        monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
+        add-class --label=pred --threshold=0.7 \
+        serialize \
+        to-kafka --output_topic morpheus-phishing-post --bootstrap_servers "${BROKER_LIST}" \
+        monitor --description "Kafka Write"
+    ```
+
+1. Open a new terminal and launch a Kafka producer to feed the morpheus-phishing-pre topic with the input data:
+    ```bash
+    export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
+
+    cat /workspace/models/datasets/validation-data/phishing-email-validation-data.jsonlines | \
+        $KAFKA_HOME/bin/kafka-console-producer.sh \
+        --topic=morpheus-phishing-pre --broker-list=`broker-list.sh` -
+    ```
+    This command should execute quickly writing `1010` records and should complete in less than 5 seconds.
+
+1. Return to the Morpheus terminal. The pipeline will take aproximately 2 minutes to complete. Once the `Kafka Write` monitor has reported that `1010` messages has been written shutdown Morpheus with Cntrl-C. We can check the number of lines in the outut file:
+    ```bash
+    wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_phishing.jsonlines
+    ```
+
+1. Once all `1010` rows have been written, return to the Kafka terminal and stop the consumer with Cntrl-C.
+
+1. Verify the output with, expect to see `43` un-matched rows:
+    ```bash
+    ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+        ${MORPHEUS_ROOT}/models/datasets/validation-data/phishing-email-validation-data.jsonlines \
+        ${MORPHEUS_ROOT}/.tmp/val_kafka_phishing.jsonlines
     ```
