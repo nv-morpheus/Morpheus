@@ -13,7 +13,8 @@
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
          -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
          -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
-
+    ```
+    ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-src-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
     ```
     Keep this shell & container open you will need it in later steps.
@@ -82,7 +83,8 @@
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
          -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
          -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
-
+    ```
+    ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-sink-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
 
     $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-sink-copy-test \
@@ -193,7 +195,8 @@ For this test we are going to replace the from & to file stages from the ABP val
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
          -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
          -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
-
+    ```
+    ```bash
     cat /workspace/models/datasets/validation-data/abp-validation-data.jsonlines | \
         $KAFKA_HOME/bin/kafka-console-producer.sh \
         --topic=morpheus-abp-pre --broker-list=`broker-list.sh` -
@@ -327,7 +330,7 @@ For this test we are going to replace the from & to file stages from the Phishin
     morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=32 \
         pipeline-nlp --model_seq_length=128 --labels_file=${MORPHEUS_ROOT}/morpheus/data/labels_phishing.txt \
         from-kafka --input_topic morpheus-phishing-pre --bootstrap_servers "${BROKER_LIST}" \
-        monitor --description "Kafka Read" \ 
+        monitor --description "Kafka Read" \
         deserialize \
         preprocess --vocab_hash_file=${MORPHEUS_ROOT}/morpheus/data/bert-base-uncased-hash.txt \
             --truncation=True --do_lower_case=True --add_special_tokens=False \
@@ -345,7 +348,8 @@ For this test we are going to replace the from & to file stages from the Phishin
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
          -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
          -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
-
+    ```
+    ```bash
     cat /workspace/models/datasets/validation-data/phishing-email-validation-data.jsonlines | \
         $KAFKA_HOME/bin/kafka-console-producer.sh \
         --topic=morpheus-phishing-pre --broker-list=`broker-list.sh` -
