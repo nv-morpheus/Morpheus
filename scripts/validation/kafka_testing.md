@@ -43,7 +43,9 @@
     diff -q --ignore-all-space ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.csv ${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv
     ```
 
-1. Rerun steps 2-4 tests changing the Morpheus command in step #2 with:
+1. [SKIP known issue: https://github.com/nv-morpheus/Morpheus/issues/299 ]
+    
+    Rerun steps 2-4 tests changing the Morpheus command in step #2 with:
     ```bash
     morpheus --log_level=DEBUG run --use_cpp=false \
         pipeline-nlp \
