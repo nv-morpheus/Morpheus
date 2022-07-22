@@ -14,8 +14,6 @@
 
 import logging
 import time
-import weakref
-from email import message
 
 import confluent_kafka as ck
 import pandas as pd
