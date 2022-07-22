@@ -75,7 +75,7 @@ class KafkaSourceStage(SingleOutputSource):
             'group.id': group_id,
             'session.timeout.ms': "60000",
             "auto.offset.reset": auto_offset_reset,
-            'enable.auto.commit': False
+            'enable.auto.commit': 'false'
         }
 
         self._topic = input_topic
@@ -148,7 +148,7 @@ class KafkaSourceStage(SingleOutputSource):
 
     def _build_source(self, builder: srf.Builder) -> StreamPair:
 
-        if (self._build_cpp_node() and False):
+        if (self._build_cpp_node()):
             source = _stages.KafkaSourceStage(builder,
                                               self.unique_name,
                                               self._max_batch_size,
