@@ -30,7 +30,7 @@ from morpheus.config import ConfigOnnxToTRT
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.config import auto_determine_bootstrap
-from morpheus.utils.logging import configure_logging
+from morpheus.utils.logger import configure_logging
 
 # pylint: disable=line-too-long, import-outside-toplevel, invalid-name, global-at-module-level, unused-argument
 
