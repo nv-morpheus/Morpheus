@@ -124,11 +124,14 @@ def compare_df(df_a: pd.DataFrame,
 
         mismatch_df = merged.loc[mismatched_idx]
 
-        logger.debug("Results do not match. Diff %d/%d (%f %%). First 10 mismatched rows:",
-                     diff_rows,
-                     total_rows,
-                     diff_rows / total_rows * 100.0)
-        logger.debug(mismatch_df[:20])
+        if diff_rows > 0:
+            logger.debug("Results do not match. Diff %d/%d (%f %%). First 10 mismatched rows:",
+                         diff_rows,
+                         total_rows,
+                         diff_rows / total_rows * 100.0)
+            logger.debug(mismatch_df[:20])
+        else:
+            logger.info("Results match validation dataset")
 
     # Now build the output
     return {
