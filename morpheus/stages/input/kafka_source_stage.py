@@ -124,11 +124,17 @@ class KafkaSourceStage(SingleOutputSource):
                 if msg_error is None:
                     payload = msg.value()
                     if payload is not None:
-                        df = cudf.io.read_json(payload, lines=True)
-                        if (not self._disable_commit):
-                            consumer.commit(message=msg)
+                        df = None
+                        try:
+                            df = cudf.io.read_json(payload, lines=True)
+                        except Exception as e:
+                            logger.error("Error parsing payload into a dataframe : {}".format(e))
+                        finally:
+                            if (not self._disable_commit):
+                                consumer.commit(message=msg)
 
-                        yield MessageMeta(df)
+                        if df is not None:
+                            yield MessageMeta(df)
 
                 elif msg_error == ck.KafkaError._PARTITION_EOF:
                     time.sleep(self._poll_interval)
