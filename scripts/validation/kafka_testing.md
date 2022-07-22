@@ -210,15 +210,61 @@ For this test we are going to replace the from & to file stages from the ABP val
     diff -q --ignore-all-space <(cat ${MORPHEUS_ROOT}/models/datasets/validation-data/abp-validation-data.jsonlines | jq --sort-keys) <(cat ${MORPHEUS_ROOT}/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines | jq --sort-keys)
     ```
 
-## Hammah Role-g Validation Pipeline
-For this test we are going to replace to-file stage from the Hammah validation pipeline with the to-kafka stage using a topic named "morpheus-hammah". Note: this pipeline requires a custom `UserMessageMeta` class which the from-kafka stage is currently unable to generatem, for that reason the `CloudTrailSourceStage` remains in-place.
+## Hammah Validation Pipeline
+### User123
+For this test we are going to replace to-file stage from the Hammah validation pipeline with the to-kafka stage using a topic named "morpheus-hammah-user123". Note: this pipeline requires a custom `UserMessageMeta` class which the from-kafka stage is currently unable to generate, for that reason the `CloudTrailSourceStage` remains in-place.
 
 1. Create the Kafka topic, and launch a consumer listening to .
     ```bash
     ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
-    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-hammah --partitions 1 --bootstrap-server `broker-list.sh`
+    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-hammah-user123 --partitions 1 --bootstrap-server `broker-list.sh`
 
-    $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-hammah \
+    $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-hammah-user123 \
+        --bootstrap-server `broker-list.sh` > /workspace/.tmp/val_kafka_hammah-user123-pytorch.jsonlines
+    ```
+
+1. Open a new terminal and launch the pipeline which will write results to kafka:
+    ```bash
+    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=false \
+      pipeline-ae --userid_filter="user123" --userid_column_name="userIdentitysessionContextsessionIssueruserName" \
+      from-cloudtrail --input_glob="${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-*.csv" \
+      train-ae --train_data_glob="${MORPHEUS_ROOT}/models/datasets/training-data/hammah-*.csv"  --seed 42 \
+      preprocess \
+      inf-pytorch \
+      add-scores \
+      timeseries --resolution=1m --zscore_threshold=8.0 --hot_start \
+      monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
+      serialize --exclude='event_dt|tlsDetailsclientProvidedHostHeader' \
+      to-kafka --output_topic morpheus-hammah-user123 --bootstrap_servers "${BROKER_LIST}" \
+      monitor --description "Kafka Write"
+    ```
+
+    This pipeline should complete in approximately 10 seconds, with the Kafka monitor stage recording `847` messages written to Kafka.
+
+1. The Kafka consumer we started in step #1 won't give us any sort of indication as to how many records have been consumed, we will indirectly check the progress by counting the rows in the output file. Once the Morpheus pipeline completes check the number of lines in the output:
+    ```bash
+    wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-user123-pytorch.jsonlines
+    ```
+
+1. Once all `847` rows have been written, return to the Kafka terminal and stop the consumer with Cntrl-C.
+
+1. Verify the output with:
+    ```bash
+    ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+        ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-user123-validation-data.csv \
+        ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-user123-pytorch.jsonlines \
+        --index_col="_index_" --exclude "event_dt" --rel_tol=0.1
+    ```
+
+### Role-g
+Similar to the Hammah User123 test, we are going to replace to-file stage from the Hammah validation pipeline with the to-kafka stage using a topic named "morpheus-hammah-role-g".
+
+1. Create the Kafka topic, and launch a consumer listening to .
+    ```bash
+    ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-hammah-role-g --partitions 1 --bootstrap-server `broker-list.sh`
+
+    $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-hammah-role-g \
         --bootstrap-server `broker-list.sh` > /workspace/.tmp/val_kafka_hammah-role-g-pytorch.jsonlines
     ```
 
@@ -234,7 +280,7 @@ For this test we are going to replace to-file stage from the Hammah validation p
       timeseries --resolution=10m --zscore_threshold=8.0 \
       monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
       serialize --exclude='event_dt|tlsDetailsclientProvidedHostHeader' \
-      to-kafka --output_topic morpheus-hammah --bootstrap_servers "${BROKER_LIST}" \
+      to-kafka --output_topic morpheus-hammah-role-g --bootstrap_servers "${BROKER_LIST}" \
       monitor --description "Kafka Write"
     ```
 
