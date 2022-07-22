@@ -13,7 +13,7 @@
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
          -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
          -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
-    
+
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-src-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
     ```
     Keep this shell & container open you will need it in later steps.
@@ -41,21 +41,6 @@
 1. If successful the output file `.tmp/morpheus-src-copy-test.csv` should be identicle to `tests/tests_data/filter_probs.csv`. Verify:
     ```bash
     diff -q --ignore-all-space ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.csv ${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv
-    ```
-
-1. [SKIP known issue: https://github.com/nv-morpheus/Morpheus/issues/299 ]
-    
-    Rerun steps 2-4 tests changing the Morpheus command in step #2 with:
-    ```bash
-    morpheus --log_level=DEBUG run --use_cpp=false \
-        pipeline-nlp \
-        from-kafka --input_topic morpheus-src-copy-test --bootstrap_servers "${BROKER_LIST}" \
-        monitor --description "Kafka Read" \
-        deserialize \
-        monitor --description "Deserial" \
-        serialize \
-        monitor --description "Serial" \
-        to-file --include-index-col=false --filename=${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv --overwrite
     ```
 
 #### Partitioned Topic Test
@@ -97,7 +82,7 @@
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
          -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
          -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
-    
+
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-sink-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
 
     $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-sink-copy-test \
@@ -115,7 +100,7 @@
     ```
     The `tests/tests_data/filter_probs.csv` contains 20 lines of data and the pipeline should complete rather quickly (less than 5 seconds).
 
-1. The Kafka consumer we started in step #1 won't give us any sort of indication that it has concluded we will indirectly check the progress by counting the rows in the output file. Once the Morpheus pipeline completes check the number of lines in the output:
+1. The Kafka consumer we started in step #1 won't give us any sort of indication as to how many records have been consumed, we will indirectly check the progress by counting the rows in the output file. Once the Morpheus pipeline completes check the number of lines in the output:
     ```bash
     wc -l ${MORPHEUS_ROOT}/.tmp/morpheus-sink-copy-test.jsonlines
     ```
@@ -162,10 +147,10 @@
 1. Stop the consumer in the Kafka terminal.
 
 
-## Validation Pipeline
+## ABP Validation Pipeline
 For this test we are going to replace the from & to file stages from the ABP validation pipeline with Kafka stages, reading input data from a Kafka topic named "morpheus-abp-pre" and writing results to a topic named "morpheus-abp-post"
 
-1. Create two Kafka topics both with only a single partition, and launch a consumer listening to .
+1. Create two Kafka topics both with only a single partition, and launch a consumer listening to the morpheus-abp-post topic.
     ```bash
     ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-abp-pre  --partitions 1 --bootstrap-server `broker-list.sh`
@@ -223,4 +208,49 @@ For this test we are going to replace the from & to file stages from the ABP val
 1. Once all `1242` lines have been written to the output file, verify the contents with:
     ```bash
     diff -q --ignore-all-space <(cat ${MORPHEUS_ROOT}/models/datasets/validation-data/abp-validation-data.jsonlines | jq --sort-keys) <(cat ${MORPHEUS_ROOT}/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines | jq --sort-keys)
+    ```
+
+## Hammah Role-g Validation Pipeline
+For this test we are going to replace to-file stage from the Hammah validation pipeline with the to-kafka stage using a topic named "morpheus-hammah". Note: this pipeline requires a custom `UserMessageMeta` class which the from-kafka stage is currently unable to generatem, for that reason the `CloudTrailSourceStage` remains in-place.
+
+1. Create the Kafka topic, and launch a consumer listening to .
+    ```bash
+    ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+    $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-hammah --partitions 1 --bootstrap-server `broker-list.sh`
+
+    $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-hammah \
+        --bootstrap-server `broker-list.sh` > /workspace/.tmp/val_kafka_hammah-role-g-pytorch.jsonlines
+    ```
+
+1. Open a new terminal and launch the pipeline which will write results to kafka:
+    ```bash
+    morpheus --log_level=DEBUG run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=false \
+      pipeline-ae --userid_filter="role-g" --userid_column_name="userIdentitysessionContextsessionIssueruserName" \
+      from-cloudtrail --input_glob="${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-*.csv" \
+      train-ae --train_data_glob="${MORPHEUS_ROOT}/models/datasets/training-data/hammah-*.csv"  --seed 42 \
+      preprocess \
+      inf-pytorch \
+      add-scores \
+      timeseries --resolution=10m --zscore_threshold=8.0 \
+      monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
+      serialize --exclude='event_dt|tlsDetailsclientProvidedHostHeader' \
+      to-kafka --output_topic morpheus-hammah --bootstrap_servers "${BROKER_LIST}" \
+      monitor --description "Kafka Write"
+    ```
+
+    This pipeline should complete in approximately 10 seconds, with the Kafka monitor stage recording `314` messages written to Kafka.
+
+1. The Kafka consumer we started in step #1 won't give us any sort of indication as to how many records have been consumed, we will indirectly check the progress by counting the rows in the output file. Once the Morpheus pipeline completes check the number of lines in the output:
+    ```bash
+    wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-role-g-pytorch.jsonlines
+    ```
+
+1. Once all `314` rows have been written, return to the Kafka terminal and stop the consumer with Cntrl-C.
+
+1. Verify the output with:
+    ```bash
+    ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+        ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-role-g-validation-data.csv \
+        ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-role-g-pytorch.jsonlines  \
+        --index_col="_index_" --exclude "event_dt" --rel_tol=0.15
     ```

@@ -14,26 +14,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import logging
 import re
+import sys
 import typing
 
 import datacompy
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+from morpheus._lib.file_types import FileTypes
+from morpheus.io.deserializers import read_file_to_df
+from morpheus.utils.logger import configure_logging
+
+logger = logging.getLogger("morpheus.utils.compare_df")
 
 
 def filter_df(df: pd.DataFrame,
               include_columns: typing.List[str],
               exclude_columns: typing.List[str],
               replace_idx: str = None):
-    include_columns = None
 
     if (include_columns is not None and len(include_columns) > 0):
         include_columns = re.compile("({})".format("|".join(include_columns)))
 
-    exclude_columns = [re.compile(x) for x in exclude_columns]
+    if exclude_columns is not None:
+        exclude_columns = [re.compile(x) for x in exclude_columns]
+    else:
+        exclude_columns = []
 
     # Filter out any known good/bad columns we dont want to compare
     columns: typing.List[str] = []
@@ -62,8 +70,8 @@ def filter_df(df: pd.DataFrame,
 
 def compare_df(df_a: pd.DataFrame,
                df_b: pd.DataFrame,
-               include_columns: typing.List[str],
-               exclude_columns: typing.List[str],
+               include_columns: typing.List[str] = None,
+               exclude_columns: typing.List[str] = None,
                replace_idx: str = None,
                abs_tol: float = 0.001,
                rel_tol: float = 0.005,
@@ -110,7 +118,6 @@ def compare_df(df_a: pd.DataFrame,
         logger.info("Results match validation dataset")
     else:
         match_columns = comparison.intersect_rows[same_columns + "_match"]
-
         mismatched_idx = match_columns[match_columns.apply(lambda r: not r.all(), axis=1)].index
 
         merged = pd.concat([df_a_filtered, df_b_filtered], keys=[dfa_name, dfb_name]).swaplevel().sort_index()
@@ -132,3 +139,53 @@ def compare_df(df_a: pd.DataFrame,
         "extra_cols": list(extra_columns),
         "missing_cols": list(missing_columns),
     }
+
+
+def parse_args():
+    argparser = argparse.ArgumentParser("Compares two data files which are parsable as Pandas dataframes")
+    argparser.add_argument("data_files", nargs=2, help="Files to compare")
+    argparser.add_argument('--include',
+                           nargs='*',
+                           help=("Which columns to include in the validation. "
+                                 "Resulting columns is the intersection of all regex. Include applied before exclude"))
+    argparser.add_argument(
+        '--exclude',
+        nargs='*',
+        default=[r'^ID$', r'^_ts_'],
+        help=("Which columns to exclude from the validation. "
+              "Resulting ignored columns is the intersection of all regex. Include applied before exclude"))
+    argparser.add_argument(
+        '--index_col',
+        help=("Specifies a column which will be used to align messages with rows in the validation dataset."))
+    argparser.add_argument('--abs_tol',
+                           type=float,
+                           default=0.001,
+                           help="Absolute tolerance to use when comparing float columns.")
+    argparser.add_argument('--rel_tol',
+                           type=float,
+                           default=0.05,
+                           help="Relative tolerance to use when comparing float columns.")
+    args = argparser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+    configure_logging(log_level=logging.DEBUG)
+
+    df_a = read_file_to_df(args.data_files[0], file_type=FileTypes.Auto, df_type='pandas')
+    df_b = read_file_to_df(args.data_files[1], file_type=FileTypes.Auto, df_type='pandas')
+    results = compare_df(df_a,
+                         df_b,
+                         include_columns=args.include,
+                         exclude_columns=args.exclude,
+                         replace_idx=args.index_col,
+                         abs_tol=args.abs_tol,
+                         rel_tol=args.rel_tol)
+
+    if results['diff_rows'] > 0:
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
