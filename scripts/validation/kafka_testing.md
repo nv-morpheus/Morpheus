@@ -310,7 +310,7 @@ Similar to the Hammah User123 test, we are going to replace to-file stage from t
 
 1. Once all `314` rows have been written, return to the Kafka terminal and stop the consumer with Cntrl-C.
 
-1. Verify the output with:
+1. Verify the output with, all rows should match:
     ```bash
     ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
         ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-role-g-validation-data.csv \
@@ -322,6 +322,11 @@ Similar to the Hammah User123 test, we are going to replace to-file stage from t
 For this test we are going to replace the from & to file stages from the Phishing validation pipeline with Kafka stages, reading input data from a Kafka topic named "morpheus-phishing-pre" and writing results to a topic named "morpheus-phishing-post"
 
 1. Create two Kafka topics both with only a single partition, and launch a consumer listening to the morpheus-phishing-post topic.
+    ```bash
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
+    ```
     ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-phishing-pre --partitions 1 --bootstrap-server `broker-list.sh`
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-phishing-post --partitions 1 --bootstrap-server `broker-list.sh`
