@@ -397,6 +397,11 @@ Note: Due to the complexity of the input data and a limitation of the cudf reade
 
 1. Create two Kafka topic and launch a consumer listening to the morpheus-sid-post topic.
     ```bash
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
+    ```
+    ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-sid-post --partitions 1 --bootstrap-server `broker-list.sh`
     $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-sid-post \
         --bootstrap-server `broker-list.sh` > /workspace/.tmp/val_kafka_sid.jsonlines
