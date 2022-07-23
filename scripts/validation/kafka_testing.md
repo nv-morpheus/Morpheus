@@ -375,7 +375,7 @@ For this test we are going to replace the from & to file stages from the Phishin
     ```
     This command should execute quickly writing `1010` records and should complete in less than 5 seconds.
 
-1. Return to the Morpheus terminal. The pipeline will take aproximately 2 minutes to complete. Once the `Kafka Write` monitor has reported that `1010` messages has been written shutdown Morpheus with Cntrl-C. We can check the number of lines in the outut file:
+1. Return to the Morpheus terminal. The pipeline will take anywhere from 2 to 5 minutes to complete. Once the `Kafka Write` monitor has reported that `1010` messages has been written shutdown Morpheus with Cntrl-C. We can check the number of lines in the outut file:
     ```bash
     wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_phishing.jsonlines
     ```
