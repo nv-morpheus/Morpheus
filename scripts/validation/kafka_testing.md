@@ -217,7 +217,7 @@ For this test we are going to replace the from & to file stages from the ABP val
     diff -q --ignore-all-space <(cat ${MORPHEUS_ROOT}/models/datasets/validation-data/abp-validation-data.jsonlines | jq --sort-keys) <(cat ${MORPHEUS_ROOT}/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines | jq --sort-keys)
     ```
 
-1. Stop the consumer in the first Kafka terminal.
+1. Stop the consumer in the first Kafka terminal, and stop Triton.
 
 ## Hammah Validation Pipeline
 ### User123
@@ -389,6 +389,8 @@ For this test we are going to replace the from & to file stages from the Phishin
         ${MORPHEUS_ROOT}/.tmp/val_kafka_phishing.jsonlines
     ```
 
+1. Stop Triton
+
 ## Sid Validation Pipeline
 For this test we are going to replace the file stage from the Sid validation pipeline with the to-kafka stage writing results to a topic named "morpheus-sid-post".
 Note: Due to the complexity of the input data and a limitation of the cudf reader we will need to keep the from-file source reading data as CSV.
@@ -439,3 +441,5 @@ Note: Due to the complexity of the input data and a limitation of the cudf reade
         ${MORPHEUS_ROOT}/models/datasets/validation-data/sid-validation-data.csv \
         ${MORPHEUS_ROOT}/.tmp/val_kafka_sid.jsonlines
     ```
+
+1. Stop Triton
