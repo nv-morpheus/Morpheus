@@ -154,7 +154,9 @@ For this test we are going to replace the from & to file stages from the ABP val
 
 1. Create two Kafka topics both with only a single partition, and launch a consumer listening to the morpheus-abp-post topic.
     ```bash
-    ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
     ```
     ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-abp-pre  --partitions 1 --bootstrap-server `broker-list.sh`
@@ -223,7 +225,11 @@ For this test we are going to replace to-file stage from the Hammah validation p
 
 1. Create the Kafka topic, and launch a consumer listening to .
     ```bash
-    ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
+    ```
+    ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-hammah-user123 --partitions 1 --bootstrap-server `broker-list.sh`
 
     $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-hammah-user123 \
@@ -268,7 +274,11 @@ Similar to the Hammah User123 test, we are going to replace to-file stage from t
 
 1. Create the Kafka topic, and launch a consumer listening to .
     ```bash
-    ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+    docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+         -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
+         -v ${MORPHEUS_ROOT}:/workspace wurstmeister/kafka /bin/bash
+    ```
+    ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-hammah-role-g --partitions 1 --bootstrap-server `broker-list.sh`
 
     $KAFKA_HOME/bin/kafka-console-consumer.sh --topic=morpheus-hammah-role-g \
