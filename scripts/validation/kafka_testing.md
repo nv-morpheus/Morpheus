@@ -155,6 +155,8 @@ For this test we are going to replace the from & to file stages from the ABP val
 1. Create two Kafka topics both with only a single partition, and launch a consumer listening to the morpheus-abp-post topic.
     ```bash
     ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+    ```
+    ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-abp-pre  --partitions 1 --bootstrap-server `broker-list.sh`
 
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-abp-post  --partitions 1 --bootstrap-server `broker-list.sh`
