@@ -25,7 +25,7 @@ def write_to_kafka(kafka_server: Tuple[Popen, int], message: bytes) -> None:
     """Write a message to kafka_server."""
     _, kafka_port = kafka_server
     producer = KafkaProducer(bootstrap_servers='localhost:{}'.format(kafka_port))
-    producer.send(TOPIC, message)
+    producer.send('morpheus-test', message)
     producer.flush()
 
 
@@ -35,5 +35,5 @@ def test_write_and_read(kafka_server: Tuple[Popen, int], kafka_consumer: KafkaCo
     write_to_kafka(kafka_server, message)
     consumed = list(kafka_consumer)
     assert len(consumed) == 1
-    assert consumed[0].topic == TOPIC
+    assert consumed[0].topic == 'morpheus-test'
     assert consumed[0].value == message
