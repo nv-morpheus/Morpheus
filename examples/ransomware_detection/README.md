@@ -27,7 +27,7 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 Example:
 
 ```
-docker pull nvcr.io/nvidia/tritonserver:22.02-py3
+docker pull nvcr.io/nvidia/tritonserver:22.06-py3
 ```
 
 ##### Start Triton Inference Server container
@@ -35,7 +35,7 @@ docker pull nvcr.io/nvidia/tritonserver:22.02-py3
 cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 
 # Run Triton in explicit mode
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:22.02-py3 \
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:22.06-py3 \
    tritonserver --model-repository=/models/triton-model-repo \
                 --exit-on-error=false \
                 --model-control-mode=explicit \
@@ -43,10 +43,10 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/model
 ```
 
 ## Requirements
-Prior to running the ransomware detection pipeline, additional requirements must be installed in to your conda environment.
+**Note**: Make sure `dask` and `distributed` are installed in your conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
 
-```bash
-conda install dask==2022.5.2 distributed==2022.5.2
+```bash	
+conda install dask==2022.7.0 distributed==2022.7.0
 ```
 
 ## Run Pipeline
