@@ -148,9 +148,9 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 #### Prerequisites
 
-- Pascal architecture or better
+- Pascal architecture GPU or better
 - NVIDIA driver `450.80.02` or higher
-- [Cuda 11.5](https://developer.nvidia.com/cuda-11-5-2-download-archive)
+- [CUDA 11.5](https://developer.nvidia.com/cuda-11-5-2-download-archive)
 - `conda` and `mamba`
   - See the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:

@@ -68,7 +68,7 @@ function wait_for_triton {
 
 function ensure_triton_running {
 
-   TRITON_IMAGE=${TRITON_IMAGE:-"nvcr.io/nvidia/tritonserver:22.02-py3"}
+   TRITON_IMAGE=${TRITON_IMAGE:-"nvcr.io/nvidia/tritonserver:22.06-py3"}
 
    IS_RUNNING=$(is_triton_running)
 
