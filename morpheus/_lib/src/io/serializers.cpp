@@ -17,10 +17,8 @@
 
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
-#include <memory>
 #include <morpheus/io/serializers.hpp>
 
-#include <bits/c++config.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -28,6 +26,7 @@
 #include <cudf/io/data_sink.hpp>
 #include <rmm/mr/device/per_device_resource.hpp>
 
+#include <memory>
 #include <numeric>
 #include <ostream>
 #include <sstream>
