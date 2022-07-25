@@ -18,9 +18,24 @@ import logging
 import os
 import subprocess
 import time
+from functools import partial
 
 import pytest
+import pytest_kafka
 import requests
+
+# Initialize pytest_kafka fixtures following the recomendations in:
+# https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
+KAFKA_SCRIPTS = os.path.join(os.path.dirname(pytest_kafka.__file__), 'kafka/bin/')
+KAFKA_BIN = os.path.join(KAFKA_SCRIPTS, 'kafka-server-start.sh')
+ZOOKEEPER_BIN = os.path.join(KAFKA_SCRIPTS, 'zookeeper-server-start.sh')
+
+teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
+zookeeper_proc = pytest_kafka.make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
+kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
+kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
+                                                  seek_to_beginning=True,
+                                                  kafka_topics=['morpheus-test'])
 
 
 def pytest_addoption(parser: pytest.Parser):
