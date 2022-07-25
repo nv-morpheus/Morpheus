@@ -42,12 +42,13 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    FilterDetectionsStage(float threshold);
+    FilterDetectionsStage(float threshold, bool copy = true);
 
   private:
     subscribe_fn_t build_operator();
 
     float m_threshold;
+    bool m_copy = copy;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
 };
@@ -63,7 +64,8 @@ struct FilterDetectionStageInterfaceProxy
      */
     static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &builder,
                                                                              const std::string &name,
-                                                                             float threshold);
+                                                                             float threshold,
+                                                                             bool copy = true);
 };
 
 #pragma GCC visibility pop
