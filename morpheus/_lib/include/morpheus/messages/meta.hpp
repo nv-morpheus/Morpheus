@@ -26,12 +26,12 @@
 #include <string>
 
 namespace morpheus {
+#pragma GCC visibility push(default)
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
 /**
  * TODO(Documentation)
  */
-#pragma GCC visibility push(default)
 class MessageMeta
 {
   public:
