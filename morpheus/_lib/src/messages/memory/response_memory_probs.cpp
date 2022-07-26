@@ -38,18 +38,6 @@ ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : Res
     this->tensors["probs"] = std::move(probs);
 }
 
-ResponseMemoryProbs::ResponseMemoryProbs(size_t count, tensor_map_t &&tensors) :
-  ResponseMemory(count, std::move(tensors))
-{
-    CHECK(has_tensor("probs")) << "ResponseMemoryProbs requeires an output named \"probs\"";
-}
-
-ResponseMemoryProbs::ResponseMemoryProbs(ResponseMemory &&other) : ResponseMemory{other.count, std::move(other.tensors)}
-{
-    CHECK(has_tensor("probs")) << "ResponseMemoryProbs requeires an output named \"probs\"";
-    other.count = 0;
-}
-
 const TensorObject &ResponseMemoryProbs::get_probs() const
 {
     auto found = this->tensors.find("probs");
