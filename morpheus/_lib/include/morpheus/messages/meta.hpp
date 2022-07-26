@@ -29,8 +29,11 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
+
 /**
- * TODO(Documentation)
+ * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
+ * Python and C++ representations of the table.
+ *
  */
 class MessageMeta
 {

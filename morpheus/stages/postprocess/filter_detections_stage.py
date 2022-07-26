@@ -42,6 +42,9 @@ class FilterDetectionsStage(SinglePortStage):
     non-adjacent rows. In this mode, the stage will generate only one output message for each incoming message,
     regardless of the size of the input and the number of matching records. However this comes at the cost of needing to
     allocate additional memory and perform the copy.
+    Note: In most other stages, messages emitted contain a reference to the original `MessageMeta` emitted into the
+    pipeline by the source stage. When using copy mode this won't be the case and could cause the original `MessageMeta`
+    to be deallocated after this stage.
 
     Setting `copy=False` should be used when either the number of matching records is expected to be very low or are
     likely to be contained in adjacent rows. In this mode, slices of contiguous blocks of rows are emitted in multiple

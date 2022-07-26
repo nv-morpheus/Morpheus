@@ -28,8 +28,11 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorMemory****************************************/
+
 /**
- * TODO(Documentation)
+ * @brief Container for holding a collection of named `TensorObject`s in a `std::map` keyed by name.
+ * Base class for `InferenceMemory` & `ResponseMemory`.
+ *
  */
 class TensorMemory
 {
