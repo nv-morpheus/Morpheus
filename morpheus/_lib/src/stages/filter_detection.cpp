@@ -120,7 +120,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                         }
                         else
                         {
-                            output.on_next(x->copy_ranges(selected_ranges, num_selected_rows));
+                            output.on_next(x->get_slice(slice_start, num_rows));
                         }
                     }
 
