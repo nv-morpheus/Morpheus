@@ -48,7 +48,7 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
     subscribe_fn_t build_operator();
 
     float m_threshold;
-    bool m_copy = copy;
+    bool m_copy;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
 };

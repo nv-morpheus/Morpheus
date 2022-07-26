@@ -32,9 +32,10 @@ namespace morpheus {
 
 // Component public implementations
 // ************ FilterDetectionStage **************************** //
-FilterDetectionsStage::FilterDetectionsStage(float threshold) :
+FilterDetectionsStage::FilterDetectionsStage(float threshold, bool copy) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_threshold(threshold)
+  m_threshold(threshold),
+  m_copy(copy)
 {}
 
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
@@ -79,6 +80,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                                               thresh_bool_buffer->size(),
                                               cudaMemcpyDeviceToHost));
 
+                    // Only used when m_copy is true
                     std::vector<std::pair<std::size_t, std::size_t>> selected_ranges;
                     std::size_t num_selected_rows = 0;
 
@@ -94,8 +96,16 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                         }
                         else if (!above_threshold && slice_start != num_rows)
                         {
-                            selected_ranges.emplace_back(std::pair{slice_start, row});
-                            num_selected_rows += (row - slice_start);
+                            if (m_copy)
+                            {
+                                selected_ranges.emplace_back(std::pair{slice_start, row});
+                                num_selected_rows += (row - slice_start);
+                            }
+                            else
+                            {
+                                output.on_next(x->get_slice(slice_start, row));
+                            }
+
                             slice_start = num_rows;
                         }
                     }
@@ -103,12 +113,22 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     if (slice_start != num_rows)
                     {
                         // Last row was above the threshold
-                        selected_ranges.emplace_back(std::pair{slice_start, num_rows});
-                        num_selected_rows += (num_rows - slice_start);
+                        if (m_copy)
+                        {
+                            selected_ranges.emplace_back(std::pair{slice_start, num_rows});
+                            num_selected_rows += (num_rows - slice_start);
+                        }
+                        else
+                        {
+                            output.on_next(x->copy_ranges(selected_ranges, num_selected_rows));
+                        }
                     }
 
+                    // num_selected_rows will always be 0 when m_copy is false,
+                    // or when m_copy is true, but none of the rows matched the output
                     if (num_selected_rows > 0)
                     {
+                        DCHECK(m_copy);
                         output.on_next(x->copy_ranges(selected_ranges, num_selected_rows));
                     }
                 },
@@ -119,9 +139,9 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
 std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, float threshold)
+    srf::segment::Builder &builder, const std::string &name, float threshold, bool copy)
 {
-    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold);
+    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy);
 
     return stage;
 }

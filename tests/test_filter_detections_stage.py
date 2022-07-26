@@ -29,6 +29,12 @@ from morpheus.stages.postprocess.filter_detections_stage import FilterDetections
 from utils import TEST_DIRS
 
 
+def _make_message(df, probs):
+    df_ = df[0:len(probs)]
+    mem = ResponseMemoryProbs(count=len(df_), probs=probs)
+    return MultiResponseProbsMessage(MessageMeta(df_), 0, len(df_), mem, 0, len(df_))
+
+
 def test_constructor(config):
     fds = FilterDetectionsStage(config)
     assert fds.name == "filter"
@@ -43,22 +49,17 @@ def test_constructor(config):
 
 
 @pytest.mark.use_python
-def test_filter(config):
+def test_filter_copy(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
 
     fds = FilterDetectionsStage(config, threshold=0.5)
 
-    def make_message(df, probs):
-        df_ = df[0:len(probs)]
-        mem = ResponseMemoryProbs(count=len(df_), probs=probs)
-        return MultiResponseProbsMessage(MessageMeta(df_), 0, len(df_), mem, 0, len(df_))
-
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
-    mock_message = make_message(df, probs)
+    mock_message = _make_message(df, probs)
 
     # All values are at or below the threshold
-    output_message = fds.filter(mock_message)
+    output_message = fds.filter_copy(mock_message)
     assert len(output_message.get_meta()) == 0
 
     # Only one row has a value above the threshold
@@ -68,9 +69,9 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message = make_message(df, probs)
+    mock_message = _make_message(df, probs)
 
-    output_message = fds.filter(mock_message)
+    output_message = fds.filter_copy(mock_message)
     assert output_message.get_meta().to_cupy().tolist() == df.loc[1:1, :].to_cupy().tolist()
 
     # Two adjacent rows have a value above the threashold
@@ -82,9 +83,9 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message = make_message(df, probs)
+    mock_message = _make_message(df, probs)
 
-    output_message = fds.filter(mock_message)
+    output_message = fds.filter_copy(mock_message)
     assert output_message.get_meta().to_cupy().tolist() == df.loc[2:3, :].to_cupy().tolist()
 
     # Two non-adjacent rows have a value above the threashold
@@ -97,14 +98,84 @@ def test_filter(config):
         [0.2, 0.4, 0.3],
     ])
 
-    mock_message = make_message(df, probs)
+    mock_message = _make_message(df, probs)
 
-    output_message = fds.filter(mock_message)
-    mask = [False, False, True, False, True, False]
+    output_message = fds.filter_copy(mock_message)
     mask = cp.zeros(len(df), dtype=cp.bool_)
     mask[2] = True
     mask[4] = True
     assert output_message.get_meta().to_cupy().tolist() == df.loc[mask, :].to_cupy().tolist()
+
+
+@pytest.mark.use_python
+def test_filter_slice(config):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+
+    fds = FilterDetectionsStage(config, threshold=0.5)
+
+    probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
+    mock_message = _make_message(df, probs)
+
+    # All values are at or below the threshold
+    output_messages = fds.filter_slice(mock_message)
+    assert len(output_messages) == 0
+
+    # Only one row has a value above the threshold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.2, 0.4, 0.3],
+    ])
+
+    mock_message = _make_message(df, probs)
+
+    output_messages = fds.filter_slice(mock_message)
+    assert len(output_messages) == 1
+    output_message = output_messages[0]
+    assert output_message.get_meta().to_cupy().tolist() == df.loc[1:1, :].to_cupy().tolist()
+
+    # Two adjacent rows have a value above the threashold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.2, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.1, 0.9, 0.2],
+        [0.2, 0.4, 0.3],
+    ])
+
+    mock_message = _make_message(df, probs)
+
+    output_messages = fds.filter_slice(mock_message)
+    assert len(output_messages) == 1
+    output_message = output_messages[0]
+    assert output_message.offset == 2
+    assert output_message.count == 2
+    assert output_message.get_meta().to_cupy().tolist() == df.loc[2:3, :].to_cupy().tolist()
+
+    # Two non-adjacent rows have a value above the threashold
+    probs = cp.array([
+        [0.2, 0.4, 0.3],
+        [0.1, 0.2, 0.3],
+        [0.1, 0.5, 0.8],
+        [0.4, 0.3, 0.2],
+        [0.1, 0.9, 0.2],
+        [0.2, 0.4, 0.3],
+    ])
+
+    mock_message = _make_message(df, probs)
+
+    output_messages = fds.filter_slice(mock_message)
+    assert len(output_messages) == 2
+    (m1, m2) = output_messages
+    assert m1.offset == 2
+    assert m1.count == 1
+
+    assert m2.offset == 4
+    assert m2.count == 1
+
+    assert m1.get_meta().to_cupy().tolist() == df.loc[2:2, :].to_cupy().tolist()
+    assert m2.get_meta().to_cupy().tolist() == df.loc[4:4, :].to_cupy().tolist()
 
 
 @pytest.mark.use_python

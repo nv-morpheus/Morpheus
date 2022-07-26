@@ -17,6 +17,7 @@ import typing
 
 import cupy as cp
 import srf
+from srf.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.config import Config
@@ -40,11 +41,12 @@ class FilterDetectionsStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, threshold: float = 0.5):
+    def __init__(self, c: Config, threshold: float = 0.5, copy: bool = True):
         super().__init__(c)
 
         # Probability to consider a detection
         self._threshold = threshold
+        self._copy = copy
 
     @property
     def name(self) -> str:
@@ -66,7 +68,16 @@ class FilterDetectionsStage(SinglePortStage):
         # Enable support by default
         return True
 
-    def filter(self, x: MultiResponseProbsMessage) -> MultiResponseProbsMessage:
+    def _find_detections(self, x: MultiResponseProbsMessage) -> cp.ndarray:
+        # Get per row detections
+        detections = (x.probs > self._threshold).any(axis=1)
+
+        # Surround in False to ensure we get an even number of pairs
+        detections = cp.concatenate([cp.array([False]), detections, cp.array([False])])
+
+        return cp.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
+
+    def filter_copy(self, x: MultiResponseProbsMessage) -> MultiResponseProbsMessage:
         """
         This function uses a threshold value to filter the messages.
 
@@ -78,23 +89,62 @@ class FilterDetectionsStage(SinglePortStage):
         Returns
         -------
         `morpheus.pipeline.messages.MultiResponseProbsMessage`
+            A new message containing a copy of the rows above the threshold.
+
+        """
+        true_pairs = self._find_detections(x)
+        return x.copy_ranges(true_pairs)
+
+    def filter_slice(self, x: MultiResponseProbsMessage) -> typing.List[MultiResponseProbsMessage]:
+        """
+        This function uses a threshold value to filter the messages.
+
+        Parameters
+        ----------
+        x : `morpheus.pipeline.messages.MultiResponseProbsMessage`
+            Response message with probabilities calculated from inference results.
+
+        Returns
+        -------
+        typing.List[`morpheus.pipeline.messages.MultiResponseProbsMessage`]
             List of filtered messages.
 
         """
-        # Get per row detections
-        detections = (x.probs > self._threshold).any(axis=1)
+        # Unfortunately we have to convert this to a list in case there are non-contiguous groups
+        output_list = []
 
-        # Surround in False to ensure we get an even number of pairs
-        detections = cp.concatenate([cp.array([False]), detections, cp.array([False])])
+        true_pairs = self._find_detections(x)
+        for pair in true_pairs:
+            pair = tuple(pair.tolist())
+            mess_offset = x.mess_offset + pair[0]
+            mess_count = pair[1] - pair[0]
 
-        true_pairs = cp.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
-        return x.copy_ranges(true_pairs)
+            # Filter empty message groups
+            if (mess_count == 0):
+                continue
+
+            output_list.append(
+                MultiResponseProbsMessage(x.meta,
+                                          mess_offset=mess_offset,
+                                          mess_count=mess_count,
+                                          memory=x.memory,
+                                          offset=pair[0],
+                                          count=mess_count))
+
+        return output_list
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         if self._build_cpp_node():
-            stream = _stages.FilterDetectionsStage(builder, self.unique_name, self._threshold)
+            stream = _stages.FilterDetectionsStage(builder, self.unique_name, self._threshold, self._copy)
         else:
-            stream = builder.make_node(self.unique_name, self.filter)
+            if self._copy:
+                stream = builder.make_node(self.unique_name, self.filter_copy)
+            else:
+                # Convert list back to individual MultiResponseProbsMessage
+                def flatten_fn(obs: srf.Observable, sub: srf.Subscriber):
+                    obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
+
+                stream = builder.make_node_full(self.unique_name, flatten_fn)
 
         builder.make_edge(input_stream[0], stream)
 
