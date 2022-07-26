@@ -50,6 +50,17 @@ void MultiResponseProbsMessage::set_probs(const TensorObject &probs)
     this->set_output("probs", probs);
 }
 
+std::shared_ptr<MultiMessage> MultiResponseProbsMessage::get_slice_impl(std::size_t start, std::size_t stop) const
+{
+    CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
+
+    auto mess_start = this->mess_offset + start;
+    auto mess_stop  = this->mess_offset + stop;
+
+    return std::make_shared<MultiResponseProbsMessage>(
+        this->meta, mess_start, mess_stop - mess_start, this->memory, start, stop - start);
+}
+
 /****** MultiResponseProbsMessageInterfaceProxy *************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.

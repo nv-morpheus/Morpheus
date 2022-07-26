@@ -92,6 +92,9 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
         return std::static_pointer_cast<MultiResponseProbsMessage>(
             this->internal_copy_ranges(ranges, num_selected_rows));
     }
+
+  protected:
+    std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const override;
 };
 
 /****** MultiResponseProbsMessageInterfaceProxy *************************/
