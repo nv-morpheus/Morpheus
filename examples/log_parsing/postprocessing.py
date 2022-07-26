@@ -58,7 +58,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
     def _postprocess(self, x: MultiPostprocLogParsingMessage):
 
-        infer_pdf = pd.DataFrame(x.seq_ids).astype(int)
+        infer_pdf = pd.DataFrame(x.seq_ids.get()).astype(int)
         infer_pdf.columns = ["doc", "start", "stop"]
         infer_pdf["confidences"] = x.confidences.tolist()
         infer_pdf["labels"] = x.labels.tolist()
