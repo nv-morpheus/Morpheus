@@ -29,7 +29,25 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** FilterDetectionStage********************************/
 /**
- * TODO(Documentation)
+ * The FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
+ * criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
+ * equal to `threshold`.
+ *
+ * This stage can operate in two different modes set by the `copy` argument.
+ * When the `copy` argument is `true` (default), rows that meet the filter criteria are copied into a new dataframe.
+ * When `false` sliced views are used instead.
+ *
+ * Setting `copy=true` should be used when the number of matching records is expected to be both high and in
+ * non-adjacent rows. In this mode, the stage will generate only one output message for each incoming message,
+ * regardless of the size of the input and the number of matching records. However this comes at the cost of needing to
+ * allocate additional memory and perform the copy.
+ *
+ * Setting `copy=false` should be used when either the number of matching records is expected to be very low or are
+ * likely to be contained in adjacent rows. In this mode, slices of contiguous blocks of rows are emitted in multiple
+ * output messages. Performing a slice is relatively low-cost, however for each incoming message the number of emitted
+ * messages could be high (in the worst case scenario as high as half the number of records in the incoming message).
+ * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
+ * the Python GIL.
  */
 #pragma GCC visibility push(default)
 class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,

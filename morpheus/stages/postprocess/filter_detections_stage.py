@@ -30,25 +30,25 @@ logger = logging.getLogger(__name__)
 
 class FilterDetectionsStage(SinglePortStage):
     """
-    This Stage class is used to filter results based on a given criteria.
-    Rows in the dataframe in `meta` are excluded if their associated value
-    in the `probs` array is less than or equal to `threshold`.
+    The FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
+    criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
+    equal to `threshold`.
 
-    When the `copy` argument is `True` (default) matching rows from both the
-    dataframe contained by `meta` and the response outputs are copied into a new
-    dataframe. When `False` sliced views are used instead.
+    This stage can operate in two different modes set by the `copy` argument.
+    When the `copy` argument is `True` (default), rows that meet the filter criteria are copied into a new dataframe.
+    When `False` sliced views are used instead.
 
-    Setting `copy=True` is useful when the number of matching records is expected to be both
-    high and in non-adjacent rows. The advantage of this is that for each incoming message there
-    will only be one output message regardless of the size of the input and the number of matching
-    records. However this comes at the cost of needing to allocate additional memory and perform the copy.
+    Setting `copy=True` should be used when the number of matching records is expected to be both high and in
+    non-adjacent rows. In this mode, the stage will generate only one output message for each incoming message,
+    regardless of the size of the input and the number of matching records. However this comes at the cost of needing to
+    allocate additional memory and perform the copy.
 
-    Setting `copy=False` is useful when either the number of matching records is very low or are likely
-    to be contained in adjacent rows. In this situation slices of adjacent rows are emitted. Performing
-    a slice is reletively low-cost, however for each incoming message the number of emitted messages could be high
-    (in the worst case scenario as high as half the number of records in the incoming message). This would likely
-    fill the output edge, and cause performance issues for downstream nodes especially if those nodes need
-    to acquire the Python GIL.
+    Setting `copy=False` should be used when either the number of matching records is expected to be very low or are
+    likely to be contained in adjacent rows. In this mode, slices of contiguous blocks of rows are emitted in multiple
+    output messages. Performing a slice is relatively low-cost, however for each incoming message the number of emitted
+    messages could be high (in the worst case scenario as high as half the number of records in the incoming message).
+    Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
+    the Python GIL.
 
     Parameters
     ----------
