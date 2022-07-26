@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/triton_inference.hpp>
+#include "morpheus/stages/triton_inference.hpp"
 
-#include <morpheus/messages/multi_response_probs.hpp>
-#include <morpheus/objects/triton_in_out.hpp>
-#include <morpheus/utilities/matx_util.hpp>
-#include <morpheus/utilities/stage_util.hpp>
-#include <morpheus/utilities/type_util.hpp>
-
-#include <pysrf/node.hpp>
+#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/objects/triton_in_out.hpp"
+#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/utilities/stage_util.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <glog/logging.h>
 #include <http_client.h>
 #include <nlohmann/json.hpp>
+#include <pysrf/node.hpp>
 
 #include <cstddef>
 #include <cstdint>
