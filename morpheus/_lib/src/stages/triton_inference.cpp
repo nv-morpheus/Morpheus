@@ -123,10 +123,8 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     size_t start = i;
                     size_t stop  = std::min(i + m_max_batch_size, x->count);
 
-                    sink_type_t mini_batch_input =
-                        std::static_pointer_cast<MultiInferenceMessage>(x->get_slice(start, stop));
-                    source_type_t mini_batch_output =
-                        std::static_pointer_cast<MultiResponseProbsMessage>(response->get_slice(start, stop));
+                    sink_type_t mini_batch_input    = x->get_slice(start, stop);
+                    source_type_t mini_batch_output = response->get_slice(start, stop);
 
                     // Iterate on the model inputs in case the model takes less than what tensors are available
                     std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>>

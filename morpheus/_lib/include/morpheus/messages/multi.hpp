@@ -67,11 +67,27 @@ class DerivedMultiMessage : public BasesT...
 
     std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
     {
-        return std::dynamic_pointer_cast<DerivedT>(this->get_slice_impl(start, stop));
+        std::shared_ptr<MultiMessage> new_message = this->clone_impl();
+
+        this->get_slice_impl(new_message, start, stop);
+
+        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
     }
 
+  protected:
+    virtual void get_slice_impl(std::shared_ptr<MultiMessage> new_message,
+                                std::size_t start,
+                                std::size_t stop) const = 0;
+
   private:
-    virtual std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const = 0;
+    virtual std::shared_ptr<MultiMessage> clone_impl() const
+    {
+        // Cast `this` to the derived type
+        auto derived_this = static_cast<const DerivedT *>(this);
+
+        // Use copy constructor to make a clone
+        return std::make_shared<DerivedT>(*derived_this);
+    }
 };
 
 // Single base class version. Should be the version used by default
@@ -84,13 +100,27 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
 
     std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
     {
-        return std::dynamic_pointer_cast<DerivedT>(this->get_slice_impl(start, stop));
+        std::shared_ptr<MultiMessage> new_message = this->clone_impl();
+
+        this->get_slice_impl(new_message, start, stop);
+
+        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
+    }
+
+  protected:
+    virtual void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const
+    {
+        return BaseT::get_slice_impl(new_message, start, stop);
     }
 
   private:
-    virtual std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const
+    virtual std::shared_ptr<MultiMessage> clone_impl() const
     {
-        return BaseT::get_slice_impl(start, stop);
+        // Cast `this` to the derived type
+        auto derived_this = static_cast<const DerivedT *>(this);
+
+        // Use copy constructor to make a clone
+        return std::make_shared<DerivedT>(*derived_this);
     }
 };
 
@@ -103,16 +133,33 @@ class DerivedMultiMessage<DerivedT>
 
     std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
     {
-        return std::dynamic_pointer_cast<DerivedT>(this->get_slice_impl(start, stop));
+        std::shared_ptr<MultiMessage> new_message = this->clone_impl();
+
+        this->get_slice_impl(new_message, start, stop);
+
+        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
     }
 
+  protected:
+    virtual void get_slice_impl(std::shared_ptr<MultiMessage> new_message,
+                                std::size_t start,
+                                std::size_t stop) const = 0;
+
   private:
-    virtual std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const = 0;
+    virtual std::shared_ptr<MultiMessage> clone_impl() const
+    {
+        // Cast `this` to the derived type
+        auto derived_this = static_cast<const DerivedT *>(this);
+
+        // Use copy constructor to make a clone
+        return std::make_shared<DerivedT>(*derived_this);
+    }
 };
 
 class MultiMessage : public DerivedMultiMessage<MultiMessage>
 {
   public:
+    MultiMessage(const MultiMessage &other) = default;
     MultiMessage(std::shared_ptr<MessageMeta> m, size_t o, size_t c);
 
     std::shared_ptr<MessageMeta> meta;
@@ -188,7 +235,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     //
     // These will be logically equivalent
     // assert(std::dynamic_ptr_cast<DerivedMultiMessage>(other_base) == other_derived);
-    std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const override;
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
 
     /**
      * @brief Similar to `internal_get_slice` allows sublasses to define their own `copy_ranges` returning the actual

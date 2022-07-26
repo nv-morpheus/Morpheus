@@ -40,6 +40,7 @@ namespace morpheus {
 class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiMessage>
 {
   public:
+    MultiInferenceMessage(const MultiInferenceMessage &other) = default;
     MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                           std::size_t mess_offset,
                           std::size_t mess_count,
@@ -92,7 +93,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const override;
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
 
     std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
                                                        size_t num_selected_rows) const override;

@@ -21,18 +21,18 @@
 #include <morpheus/messages/meta.hpp>
 #include <morpheus/messages/multi.hpp>
 #include <morpheus/objects/tensor.hpp>
+#include <morpheus/objects/tensor_object.hpp>
 #include <morpheus/utilities/cupy_util.hpp>
 #include <morpheus/utilities/tensor_util.hpp>
 
-#include <cudf/types.hpp>
-
+#include <glog/logging.h>
 #include <pybind11/pytypes.h>
+#include <cudf/types.hpp>
 
 #include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
-#include "morpheus/objects/tensor_object.hpp"
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -94,15 +94,19 @@ const void MultiResponseMessage::set_output(const std::string &name, const Tenso
 //     return std::static_pointer_cast<MultiResponseMessage>(this->internal_get_slice(start, stop));
 // }
 
-std::shared_ptr<MultiMessage> MultiResponseMessage::get_slice_impl(std::size_t start, std::size_t stop) const
+void MultiResponseMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message,
+                                          std::size_t start,
+                                          std::size_t stop) const
 {
     CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
 
-    auto mess_start = this->mess_offset + start;
-    auto mess_stop  = this->mess_offset + stop;
+    auto sliced_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiResponseMessage>(new_message));
 
-    return std::make_shared<MultiResponseMessage>(
-        this->meta, mess_start, mess_stop - mess_start, this->memory, start, stop - start);
+    sliced_message->offset = start;
+    sliced_message->count  = stop - start;
+
+    // Pass onto the base
+    DerivedMultiMessage::get_slice_impl(new_message, start, stop);
 }
 
 std::shared_ptr<MultiResponseMessage> MultiResponseMessage::copy_ranges(

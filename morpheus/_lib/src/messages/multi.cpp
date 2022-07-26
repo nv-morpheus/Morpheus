@@ -70,12 +70,10 @@ TableInfo MultiMessage::get_meta(const std::vector<std::string> &column_names)
 //     return std::static_pointer_cast<MultiMessage>(this->internal_get_slice(start, stop));
 // }
 
-std::shared_ptr<MultiMessage> MultiMessage::get_slice_impl(size_t start, size_t stop) const
+void MultiMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const
 {
-    auto mess_start = this->mess_offset + start;
-    auto mess_stop  = this->mess_offset + stop;
-
-    return std::make_shared<MultiMessage>(this->meta, mess_start, mess_stop - mess_start);
+    new_message->mess_offset = this->mess_offset + start;
+    new_message->mess_count  = this->mess_offset + stop - new_message->mess_offset;
 }
 
 std::shared_ptr<MultiMessage> MultiMessage::copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,

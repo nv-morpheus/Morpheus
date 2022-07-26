@@ -75,12 +75,16 @@ const void MultiInferenceMessage::set_input(const std::string &name, const Tenso
 //     return std::static_pointer_cast<MultiInferenceMessage>(this->internal_get_slice(start, stop));
 // }
 
-std::shared_ptr<MultiMessage> MultiInferenceMessage::get_slice_impl(std::size_t start, std::size_t stop) const
+void MultiInferenceMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message,
+                                           std::size_t start,
+                                           std::size_t stop) const
 {
     CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
 
-    auto mess_start = this->mess_offset + start;
-    auto mess_stop  = this->mess_offset + stop;
+    auto sliced_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiInferenceMessage>(new_message));
+
+    sliced_message->offset = start;
+    sliced_message->count  = stop - start;
 
     // If we have more inference rows than message rows, we need to use the seq_ids to figure out the slicing. This
     // will be slow and should be avoided at all costs
@@ -88,13 +92,13 @@ std::shared_ptr<MultiMessage> MultiInferenceMessage::get_slice_impl(std::size_t 
     {
         auto seq_ids = this->get_input("seq_ids");
 
-        // Convert to MatX to access elements
-        mess_start = this->mess_offset + seq_ids.read_element<int32_t>({(TensorIndex)start, 0});
-        mess_stop  = this->mess_offset + seq_ids.read_element<int32_t>({(TensorIndex)stop - 1, 0}) + 1;
+        // Determine the new start and stop before passing onto the base
+        start = seq_ids.read_element<int32_t>({(TensorIndex)start, 0});
+        stop  = seq_ids.read_element<int32_t>({(TensorIndex)stop - 1, 0}) + 1;
     }
 
-    return std::make_shared<MultiInferenceMessage>(
-        this->meta, mess_start, mess_stop - mess_start, this->memory, start, stop - start);
+    // Pass onto the base
+    DerivedMultiMessage::get_slice_impl(new_message, start, stop);
 }
 
 std::shared_ptr<MultiInferenceMessage> MultiInferenceMessage::copy_ranges(
