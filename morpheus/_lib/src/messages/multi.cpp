@@ -64,13 +64,13 @@ TableInfo MultiMessage::get_meta(const std::vector<std::string> &column_names)
     return sliced_info;
 }
 
-std::shared_ptr<MultiMessage> MultiMessage::get_slice(size_t start, size_t stop) const
-{
-    // This can only cast down
-    return std::static_pointer_cast<MultiMessage>(this->internal_get_slice(start, stop));
-}
+// std::shared_ptr<MultiMessage> MultiMessage::get_slice(size_t start, size_t stop) const
+// {
+//     // This can only cast down
+//     return std::static_pointer_cast<MultiMessage>(this->internal_get_slice(start, stop));
+// }
 
-std::shared_ptr<MultiMessage> MultiMessage::internal_get_slice(size_t start, size_t stop) const
+std::shared_ptr<MultiMessage> MultiMessage::get_slice_impl(size_t start, size_t stop) const
 {
     auto mess_start = this->mess_offset + start;
     auto mess_stop  = this->mess_offset + stop;

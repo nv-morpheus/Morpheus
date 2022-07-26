@@ -37,7 +37,7 @@ MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<morpheus::M
                                                      std::shared_ptr<morpheus::ResponseMemory> memory,
                                                      size_t offset,
                                                      size_t count) :
-  MultiResponseMessage(meta, mess_offset, mess_count, memory, offset, count)
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
 const TensorObject MultiResponseProbsMessage::get_probs() const

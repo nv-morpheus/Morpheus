@@ -37,7 +37,7 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class MultiInferenceMessage : public MultiMessage
+class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiMessage>
 {
   public:
     MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
@@ -61,16 +61,18 @@ class MultiInferenceMessage : public MultiMessage
      */
     const void set_input(const std::string &name, const TensorObject &value);
 
-    /**
-     * @brief Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on the
-     * given `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying `meta`
-     * or `memory` objects. The actual slicing of each is applied later when `get_meta` and `get_input` is called.
-     *
-     * @param start
-     * @param stop
-     * @return std::shared_ptr<MultiInferenceMessage>
-     */
-    std::shared_ptr<MultiInferenceMessage> get_slice(std::size_t start, std::size_t stop) const;
+    // /**
+    //  * @brief Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on
+    //  the
+    //  * given `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying
+    //  `meta`
+    //  * or `memory` objects. The actual slicing of each is applied later when `get_meta` and `get_input` is called.
+    //  *
+    //  * @param start
+    //  * @param stop
+    //  * @return std::shared_ptr<MultiInferenceMessage>
+    //  */
+    // std::shared_ptr<MultiInferenceMessage> get_slice(std::size_t start, std::size_t stop) const;
 
     /**
      * @brief Creates a deep copy of the current message along with a copy of the underlying `meta` and `memory`
@@ -90,7 +92,7 @@ class MultiInferenceMessage : public MultiMessage
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<MultiMessage> internal_get_slice(std::size_t start, std::size_t stop) const override;
+    std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const override;
 
     std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
                                                        size_t num_selected_rows) const override;

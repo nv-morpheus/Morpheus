@@ -43,7 +43,7 @@ MultiResponseMessage::MultiResponseMessage(std::shared_ptr<morpheus::MessageMeta
                                            std::shared_ptr<ResponseMemory> memory,
                                            std::size_t offset,
                                            std::size_t count) :
-  MultiMessage(meta, mess_offset, mess_count),
+  DerivedMultiMessage(meta, mess_offset, mess_count),
   memory(std::move(memory)),
   offset(offset),
   count(count)
@@ -88,13 +88,13 @@ const void MultiResponseMessage::set_output(const std::string &name, const Tenso
     slice = value;
 }
 
-std::shared_ptr<MultiResponseMessage> MultiResponseMessage::get_slice(std::size_t start, std::size_t stop) const
-{
-    // This can only cast down
-    return std::static_pointer_cast<MultiResponseMessage>(this->internal_get_slice(start, stop));
-}
+// std::shared_ptr<MultiResponseMessage> MultiResponseMessage::get_slice(std::size_t start, std::size_t stop) const
+// {
+//     // This can only cast down
+//     return std::static_pointer_cast<MultiResponseMessage>(this->internal_get_slice(start, stop));
+// }
 
-std::shared_ptr<MultiMessage> MultiResponseMessage::internal_get_slice(std::size_t start, std::size_t stop) const
+std::shared_ptr<MultiMessage> MultiResponseMessage::get_slice_impl(std::size_t start, std::size_t stop) const
 {
     CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
 

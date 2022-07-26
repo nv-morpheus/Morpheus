@@ -45,7 +45,72 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class MultiMessage
+
+class MultiMessage;
+
+/**
+ * @brief All classes that are derived from MultiMessage should use this class. It will automatically add the
+ * `get_slice` function with the correct return type. Uses the CRTP pattern. This supports multiple base classes but in
+ * reality it should not be used. Multiple base classes are used to make template specialization easier.
+ *
+ * @tparam DerivedT The deriving class. Should be used like `class MyDerivedMultiMessage: public
+ *         DerivedMultiMessage<MyDerivedMultiMessage, MultiMessage>`
+ * @tparam BasesT The base classes that the class should derive from. If the class should function like `class
+ *         MyDerivedMultiMessage: public MyBaseMultiMessage`, then `class MyDerivedMultiMessage: public
+ *         DerivedMultiMessage<MyDerivedMultiMessage, MyBaseMultiMessage>` shoud be used.
+ */
+template <typename DerivedT, typename... BasesT>
+class DerivedMultiMessage : public BasesT...
+{
+  public:
+    virtual ~DerivedMultiMessage() = default;
+
+    std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
+    {
+        return std::dynamic_pointer_cast<DerivedT>(this->get_slice_impl(start, stop));
+    }
+
+  private:
+    virtual std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const = 0;
+};
+
+// Single base class version. Should be the version used by default
+template <typename DerivedT, typename BaseT>
+class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
+{
+  public:
+    using BaseT::BaseT;
+    virtual ~DerivedMultiMessage() = default;
+
+    std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
+    {
+        return std::dynamic_pointer_cast<DerivedT>(this->get_slice_impl(start, stop));
+    }
+
+  private:
+    virtual std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const
+    {
+        return BaseT::get_slice_impl(start, stop);
+    }
+};
+
+// No base class version. This should only be used by `MultiMessage` itself.
+template <typename DerivedT>
+class DerivedMultiMessage<DerivedT>
+{
+  public:
+    virtual ~DerivedMultiMessage() = default;
+
+    std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
+    {
+        return std::dynamic_pointer_cast<DerivedT>(this->get_slice_impl(start, stop));
+    }
+
+  private:
+    virtual std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const = 0;
+};
+
+class MultiMessage : public DerivedMultiMessage<MultiMessage>
 {
   public:
     MultiMessage(std::shared_ptr<MessageMeta> m, size_t o, size_t c);
@@ -79,16 +144,18 @@ class MultiMessage
      */
     void set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors);
 
-    /**
-     * @brief Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on the
-     * given `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying `meta`
-     * and the actual slicing of the dataframe is applied later when `get_meta` is called.
-     *
-     * @param start
-     * @param stop
-     * @return std::shared_ptr<MultiMessage>
-     */
-    std::shared_ptr<MultiMessage> get_slice(size_t start, size_t stop) const;
+    // /**
+    //  * @brief Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on
+    //  the
+    //  * given `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying
+    //  `meta`
+    //  * and the actual slicing of the dataframe is applied later when `get_meta` is called.
+    //  *
+    //  * @param start
+    //  * @param stop
+    //  * @return std::shared_ptr<MultiMessage>
+    //  */
+    // std::shared_ptr<MultiMessageBase> get_slice(size_t start, size_t stop) const;
 
     /**
      * @brief Creates a deep copy of the current message along with a copy of the underlying `meta` selecting the rows
@@ -121,7 +188,7 @@ class MultiMessage
     //
     // These will be logically equivalent
     // assert(std::dynamic_ptr_cast<DerivedMultiMessage>(other_base) == other_derived);
-    virtual std::shared_ptr<MultiMessage> internal_get_slice(size_t start, size_t stop) const;
+    std::shared_ptr<MultiMessage> get_slice_impl(std::size_t start, std::size_t stop) const override;
 
     /**
      * @brief Similar to `internal_get_slice` allows sublasses to define their own `copy_ranges` returning the actual
