@@ -45,10 +45,13 @@ class TqdmLoggingHandler(logging.Handler):
 
             with tqdm.external_write_mode(file=file, nolock=False):
                 # Write the message
-                click.echo(click.style(msg, **color_kwargs), file=file, err=is_error)
+                srf.core.logging.log(msg=click.style(msg, **color_kwargs),
+                                     py_level=record.levelno,
+                                     filename=record.filename,
+                                     line=record.lineno)
                 self.flush()
-
-        except (KeyboardInterrupt, SystemExit):
+        # See issue 36272 https://bugs.python.org/issue36272
+        except (KeyboardInterrupt, SystemExit, RecursionError):  # noqa
             raise
         except Exception:
             self.handleError(record)
