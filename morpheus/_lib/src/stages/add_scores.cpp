@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/add_scores.hpp>
+#include "morpheus/stages/add_scores.hpp"
 
-#include <morpheus/utilities/matx_util.hpp>
+#include "morpheus/utilities/matx_util.hpp"
 
 #include <cstddef>
 #include <exception>

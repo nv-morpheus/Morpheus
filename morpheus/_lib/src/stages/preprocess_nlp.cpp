@@ -15,18 +15,17 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/preprocess_nlp.hpp>
+#include "morpheus/stages/preprocess_nlp.hpp"
 
-#include <morpheus/messages/multi_inference.hpp>
-#include <morpheus/utilities/type_util.hpp>
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
-#include <pysrf/node.hpp>
-#include <srf/segment/builder.hpp>
-
-#include <librdkafka/rdkafkacpp.h>
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <librdkafka/rdkafkacpp.h>
 #include <nvtext/subword_tokenize.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <cstdint>
 #include <exception>

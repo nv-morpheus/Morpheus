@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/matx_util.hpp>
+#include "morpheus/utilities/matx_util.hpp"
 
-#include <morpheus/objects/dev_mem_info.hpp>
-#include <morpheus/utilities/type_util.hpp>
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/dev_mem_info.hpp"
+#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <srf/cuda/sync.hpp>
 
