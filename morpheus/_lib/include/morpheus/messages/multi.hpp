@@ -105,10 +105,27 @@ class DerivedMultiMessage : public BasesT...
     }
 
   protected:
+    /**
+     * @brief Applies a slice of the attribures contained in `new_message`. Subclasses need only be concerned with their
+     * own attributes, and can safely avoid overriding this method if they don't add any new attributes to their base.
+     *
+     * @param new_message
+     * @param start
+     * @param stop
+     */
     virtual void get_slice_impl(std::shared_ptr<MultiMessage> new_message,
                                 std::size_t start,
                                 std::size_t stop) const = 0;
 
+    /**
+     * @brief Similar to `get_slice_impl`, performs a copy of all attributes in `new_message` according to the rows
+     * specified by `ranges`. Subclasses need only be concerned with copying their own attributes, and can safely avoid
+     * overriding this method if they don't add any new attributes to their base.
+     *
+     * @param new_message
+     * @param ranges
+     * @param num_selected_rows
+     */
     virtual void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
                                   const std::vector<std::pair<size_t, size_t>> &ranges,
                                   size_t num_selected_rows) const = 0;
@@ -257,33 +274,8 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     void set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors);
 
   protected:
-    // TODO: Update docstrings
-    // This internal function is used to allow virtual overriding while `get_slice` allows for hiding of base class.
-    // This allows users to avoid casting every class after calling get_slice but still supports calling `get_slice`
-    // from a base class. For example, the following all works:
-    // std::shared_ptr<DerivedMultiMessage> derived_message = std::make_shared<DerivedMultiMessage>();
-    //
-    // // No cast is necessary here
-    // std::shared_ptr<DerivedMultiMessage> other_derived = derived_message->get_slice(0, 10);
-    //
-    // // Conversion to base class
-    // std::shared_ptr<MultiMessage> base_message = derived_message;
-    //
-    // // This also works
-    // std::shared_ptr<MultiMessage> other_base = base_message->get_slice(0, 10);
-    //
-    // These will be logically equivalent
-    // assert(std::dynamic_ptr_cast<DerivedMultiMessage>(other_base) == other_derived);
     void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
 
-    /**
-     * @brief Similar to `get_slice_impl` allows sublasses to define their own `copy_ranges` returning the actual
-     * derived class instead of requiring users to have to cast returned pointers.
-     *
-     * @param ranges
-     * @param num_selected_rows
-     * @return std::shared_ptr<MultiMessage>
-     */
     void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
                           const std::vector<std::pair<size_t, size_t>> &ranges,
                           size_t num_selected_rows) const override;
