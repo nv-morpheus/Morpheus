@@ -69,12 +69,6 @@ const void MultiInferenceMessage::set_input(const std::string &name, const Tenso
     slice = value;
 }
 
-// std::shared_ptr<MultiInferenceMessage> MultiInferenceMessage::get_slice(std::size_t start, std::size_t stop) const
-// {
-//     // This can only cast down
-//     return std::static_pointer_cast<MultiInferenceMessage>(this->internal_get_slice(start, stop));
-// }
-
 void MultiInferenceMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message,
                                            std::size_t start,
                                            std::size_t stop) const
@@ -101,18 +95,16 @@ void MultiInferenceMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_mes
     DerivedMultiMessage::get_slice_impl(new_message, start, stop);
 }
 
-std::shared_ptr<MultiInferenceMessage> MultiInferenceMessage::copy_ranges(
-    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+void MultiInferenceMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                                             const std::vector<std::pair<size_t, size_t>> &ranges,
+                                             size_t num_selected_rows) const
 {
-    return std::static_pointer_cast<MultiInferenceMessage>(this->internal_copy_ranges(ranges, num_selected_rows));
-}
+    auto copied_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiInferenceMessage>(new_message));
+    DerivedMultiMessage::copy_ranges_impl(copied_message, ranges, num_selected_rows);
 
-std::shared_ptr<MultiMessage> MultiInferenceMessage::internal_copy_ranges(
-    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
-{
-    auto msg_meta = copy_meta_ranges(ranges);
-    auto mem      = copy_input_ranges(ranges, num_selected_rows);
-    return std::make_shared<MultiInferenceMessage>(msg_meta, 0, num_selected_rows, mem, 0, num_selected_rows);
+    copied_message->offset = 0;
+    copied_message->count  = num_selected_rows;
+    copied_message->memory = copy_input_ranges(ranges, num_selected_rows);
 }
 
 std::shared_ptr<InferenceMemory> MultiInferenceMessage::copy_input_ranges(

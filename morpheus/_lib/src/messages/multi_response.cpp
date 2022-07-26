@@ -109,18 +109,16 @@ void MultiResponseMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_mess
     DerivedMultiMessage::get_slice_impl(new_message, start, stop);
 }
 
-std::shared_ptr<MultiResponseMessage> MultiResponseMessage::copy_ranges(
-    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+void MultiResponseMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                                            const std::vector<std::pair<size_t, size_t>> &ranges,
+                                            size_t num_selected_rows) const
 {
-    return std::static_pointer_cast<MultiResponseMessage>(this->internal_copy_ranges(ranges, num_selected_rows));
-}
+    auto copied_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiResponseMessage>(new_message));
+    DerivedMultiMessage::copy_ranges_impl(copied_message, ranges, num_selected_rows);
 
-std::shared_ptr<MultiMessage> MultiResponseMessage::internal_copy_ranges(
-    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
-{
-    auto msg_meta = copy_meta_ranges(ranges);
-    auto mem      = copy_output_ranges(ranges, num_selected_rows);
-    return std::make_shared<MultiResponseMessage>(msg_meta, 0, num_selected_rows, mem, 0, num_selected_rows);
+    copied_message->offset = 0;
+    copied_message->count  = num_selected_rows;
+    copied_message->memory = copy_output_ranges(ranges, num_selected_rows);
 }
 
 std::shared_ptr<ResponseMemory> MultiResponseMessage::copy_output_ranges(

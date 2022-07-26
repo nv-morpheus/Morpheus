@@ -70,41 +70,15 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      */
     const void set_output(const std::string &name, const TensorObject &value);
 
-    // /**
-    //  * @brief Creates a copy of the current message calculating new `mess_offset` and `mess_count` values based on
-    //  the
-    //  * given `start` & `stop` values. This method is reletively light-weight as it does not copy the underlying
-    //  `meta`
-    //  * or `memory` objects. The actual slicing of each is applied later when `get_meta` and `get_output` is called.
-    //  *
-    //  * @param start
-    //  * @param stop
-    //  * @return std::shared_ptr<MultiResponseMessage>
-    //  */
-    // std::shared_ptr<MultiResponseMessage> get_slice(std::size_t start, std::size_t stop) const;
-
-    /**
-     * @brief Creates a deep copy of the current message along with a copy of the underlying `meta` and `memory`
-     * selecting the rows of both. Defined by pairs of start, stop rows expressed in the `ranges` argument.
-     *
-     * This allows for copying several non-contiguous rows from the underlying dataframe and tensors into a new objects,
-     * however this comes at a much higher cost compared to the `get_slice` method.
-     *
-     * @param ranges
-     * @param num_selected_rows
-     * @return std::shared_ptr<MultiResponseMessage>
-     */
-    std::shared_ptr<MultiResponseMessage> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
-                                                      size_t num_selected_rows) const;
-
   protected:
     /**
      * TODO(Documentation)
      */
     void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
 
-    std::shared_ptr<MultiMessage> internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
-                                                       size_t num_selected_rows) const override;
+    void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                          const std::vector<std::pair<size_t, size_t>> &ranges,
+                          size_t num_selected_rows) const override;
 
     std::shared_ptr<ResponseMemory> copy_output_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
                                                        size_t num_selected_rows) const;

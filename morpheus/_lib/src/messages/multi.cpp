@@ -64,29 +64,19 @@ TableInfo MultiMessage::get_meta(const std::vector<std::string> &column_names)
     return sliced_info;
 }
 
-// std::shared_ptr<MultiMessage> MultiMessage::get_slice(size_t start, size_t stop) const
-// {
-//     // This can only cast down
-//     return std::static_pointer_cast<MultiMessage>(this->internal_get_slice(start, stop));
-// }
-
 void MultiMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const
 {
     new_message->mess_offset = this->mess_offset + start;
     new_message->mess_count  = this->mess_offset + stop - new_message->mess_offset;
 }
 
-std::shared_ptr<MultiMessage> MultiMessage::copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
-                                                        size_t num_selected_rows) const
+void MultiMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                                    const std::vector<std::pair<size_t, size_t>> &ranges,
+                                    size_t num_selected_rows) const
 {
-    return std::static_pointer_cast<MultiMessage>(this->internal_copy_ranges(ranges, num_selected_rows));
-}
-
-std::shared_ptr<MultiMessage> MultiMessage::internal_copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
-                                                                 size_t num_selected_rows) const
-{
-    auto msg_meta = copy_meta_ranges(ranges);
-    return std::make_shared<MultiMessage>(msg_meta, 0, num_selected_rows);
+    new_message->mess_offset = 0;
+    new_message->mess_count  = num_selected_rows;
+    new_message->meta        = copy_meta_ranges(ranges);
 }
 
 std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const
