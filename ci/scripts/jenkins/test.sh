@@ -35,7 +35,7 @@ npm install --silent -g camouflage-server
 
 # Kafka tests need Java, since this stage is the only one that needs it, installing it here rather than adding it to
 # the ci.yaml file
-morpheus install -c conda-forge "openjdk=11.0.15"
+mamba install -c conda-forge "openjdk=11.0.15"
 export PYTEST_KAFKA_DIR=${WORKSPACE_TMP}/pytest-kafka
 
 # Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
