@@ -15,25 +15,24 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/kafka_source.hpp>
+#include "morpheus/stages/kafka_source.hpp"
 
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/utilities/stage_util.hpp>
-#include <morpheus/utilities/string_util.hpp>
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/utilities/stage_util.hpp"
+#include "morpheus/utilities/string_util.hpp"
 
-#include <pysrf/node.hpp>
-#include <srf/runnable/context.hpp>
-#include <srf/segment/builder.hpp>
-
-#include <glog/logging.h>
-#include <http_client.h>
-#include <librdkafka/rdkafkacpp.h>
 #include <boost/fiber/recursive_mutex.hpp>
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
 #include <cudf/strings/replace.hpp>
+#include <glog/logging.h>
+#include <http_client.h>
+#include <librdkafka/rdkafkacpp.h>
 #include <nlohmann/json.hpp>
 #include <nvtext/subword_tokenize.hpp>
+#include <pysrf/node.hpp>
+#include <srf/runnable/context.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <chrono>
 #include <cstddef>

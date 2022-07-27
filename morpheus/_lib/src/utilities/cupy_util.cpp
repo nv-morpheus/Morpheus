@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/cupy_util.hpp>
+#include "morpheus/utilities/cupy_util.hpp"
 
-#include <morpheus/objects/tensor.hpp>
+#include "morpheus/objects/tensor.hpp"
 
 #include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep

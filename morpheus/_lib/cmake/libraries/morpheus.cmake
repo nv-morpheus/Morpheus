@@ -34,7 +34,6 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/objects/wrapped_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/python_data_table.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/rmm_tensor.cpp
-    ${MORPHEUS_LIB_ROOT}/src/objects/table_info.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_classification.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_scores.cpp
@@ -57,6 +56,7 @@ add_library(${PROJECT_NAME}::morpheus ALIAS morpheus)
 
 target_link_libraries(morpheus
     PUBLIC
+      cuda_utils
       ${cudf_helpers_target}
       TritonClient::httpclient_static
       RDKAFKA::RDKAFKA

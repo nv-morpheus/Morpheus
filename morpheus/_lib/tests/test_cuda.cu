@@ -17,7 +17,7 @@
 
 #include "test_morpheus.hpp"
 
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <srf/cuda/common.hpp> // for SRF_CHECK_CUDA
 #include <srf/cuda/sync.hpp> // for enqueue_stream_sync_event

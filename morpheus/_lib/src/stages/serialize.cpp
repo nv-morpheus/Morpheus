@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/serialize.hpp>
+#include "morpheus/stages/serialize.hpp"
 
 #include <exception>
 #include <memory>
