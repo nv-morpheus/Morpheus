@@ -19,7 +19,9 @@ import srf
 
 import cuml
 
+import morpheus.cli
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -27,9 +29,21 @@ from morpheus.pipeline.stream_pair import StreamPair
 from .graph_sage_stage import GraphSAGEMultiMessage
 
 
+@morpheus.cli.register_stage("gnn-fraud-classification", modes=[PipelineModes.OTHER])
 class ClassificationStage(SinglePortStage):
 
     def __init__(self, c: Config, model_xgb_file: str):
+        """
+        The GNN Fraud Classification Stage
+
+        Parameters
+        ----------
+        c : Config
+            The Morpheus global config object
+        model_xgb_file : str
+            The XGB model to load
+        """
+
         super().__init__(c)
 
         self._xgb_model = cuml.ForestInference.load(model_xgb_file, output_class=True)
@@ -41,7 +55,7 @@ class ClassificationStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (GraphSAGEMultiMessage, )
 
-    def supports_cpp_node():
+    def supports_cpp_node(self):
         return False
 
     def _process_message(self, message: GraphSAGEMultiMessage):

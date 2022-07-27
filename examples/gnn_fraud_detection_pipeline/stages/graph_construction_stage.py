@@ -19,11 +19,12 @@ import typing
 import networkx as nx
 import pandas as pd
 import srf
-from stellargraph import StellarGraph
 
 import cudf
 
+from morpheus.cli import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -31,12 +32,23 @@ from morpheus.pipeline.stream_pair import StreamPair
 
 @dataclasses.dataclass
 class FraudGraphMultiMessage(MultiMessage):
-    graph: StellarGraph
+    graph: "stellargraph.StellarGraph"
 
 
+@register_stage("fraud-graph-construction", modes=[PipelineModes.OTHER])
 class FraudGraphConstructionStage(SinglePortStage):
 
     def __init__(self, c: Config, training_file: str):
+        """
+        Create a fraud-graph-construction stage
+
+        Parameters
+        ----------
+        c : Config
+            The Morpheus config object
+        training_file : str
+            A CSV training file to load to seed the graph
+        """
         super().__init__(c)
         self._training_data = cudf.read_csv(training_file)
         self._column_names = self._training_data.columns.values.tolist()
@@ -48,11 +60,14 @@ class FraudGraphConstructionStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiMessage, )
 
-    def supports_cpp_node():
+    def supports_cpp_node(self):
         return False
 
     @staticmethod
-    def _graph_construction(nodes, edges, node_features) -> StellarGraph:
+    def _graph_construction(nodes, edges, node_features) -> "stellargraph.StellarGraph":
+
+        from stellargraph import StellarGraph
+
         g_nx = nx.Graph()
 
         # add nodes
@@ -65,7 +80,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         return StellarGraph(g_nx, node_type_name="ntype", node_features=node_features)
 
     @staticmethod
-    def _build_graph_features(dataset: pd.DataFrame) -> StellarGraph:
+    def _build_graph_features(dataset: pd.DataFrame) -> "stellargraph.StellarGraph":
 
         nodes = {
             "client": dataset.client_node,

@@ -12,16 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
+import importlib
 import logging
 import os
+import types
 import typing
 import warnings
 from functools import update_wrapper
 
 import click
+import pluggy
 from click.globals import get_current_context
 
 import morpheus
+from morpheus.cli import hookspecs
+from morpheus.cli.default_command_hooks import DefaultCommandHooks
+from morpheus.cli.utils import PluginSpec
+from morpheus.cli.utils import _get_log_levels
+from morpheus.cli.utils import _parse_log_level
+from morpheus.cli.utils import get_config_from_ctx
+from morpheus.cli.utils import get_pipeline_from_ctx
+from morpheus.cli.utils import prepare_command
+from morpheus.cli.utils import str_to_file_type
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigBase
@@ -44,14 +57,6 @@ DEFAULT_CONFIG = Config()
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
 
-
-def str_to_file_type(file_type_str: str):
-    from morpheus._lib.file_types import FileTypes
-    file_type_members = {name.lower(): t for (name, t) in FileTypes.__members__.items()}
-
-    return file_type_members[file_type_str]
-
-
 command_kwargs = {
     "context_settings": dict(show_default=True, ),
 }
@@ -64,6 +69,96 @@ global logger
 logger = logging.getLogger("morpheus.cli")
 
 
+class PluginManager():
+
+    def __init__(self):
+        self._pm = pluggy.PluginManager("morpheus")
+        self._pm.add_hookspecs(hookspecs)
+        self._pm.register(DefaultCommandHooks(), name="morpheus_default")
+
+        self._plugins_loaded = False
+        self._plugin_specs: typing.List[PluginSpec] = []
+
+    def _get_plugin_specs_as_list(self, specs: PluginSpec) -> typing.List[str]:
+        """Parse a plugins specification into a list of plugin names."""
+        # None means empty.
+        if specs is None:
+            return []
+        # Workaround for #3899 - a submodule which happens to be called "pytest_plugins".
+        if isinstance(specs, types.ModuleType):
+            return []
+        # Comma-separated list.
+        if isinstance(specs, str):
+            return specs.split(",") if specs else []
+        # Direct specification.
+        if isinstance(specs, collections.abc.Sequence):
+            return list(specs)
+        raise RuntimeError("Plugins may be specified as a sequence or a ','-separated string of plugin names. Got: %r" %
+                           specs)
+
+    def _ensure_plugins_loaded(self):
+
+        if (self._plugins_loaded):
+            return
+
+        # # Now that all command line plugins have been added, add any from the env variable
+        # self.add_plugin_option(os.environ.get("MORPHEUS_CLI_PLUGINS"))
+
+        # Loop over all specs and load the plugins
+        for s in self._plugin_specs:
+            try:
+                mod = importlib.import_module(s)
+
+                # Sucessfully loaded. Register
+                self._pm.register(mod)
+
+            except ImportError as e:
+                raise ImportError(f'Error importing plugin "{s}": {e.args[0]}').with_traceback(e.__traceback__) from e
+
+        # Finally, consider setuptools entrypoints
+        self._pm.load_setuptools_entrypoints("morpheus")
+
+        self._plugins_loaded = True
+
+    def add_plugin_option(self, spec: PluginSpec):
+        # Append to the list of specs
+        self._plugin_specs.extend(self._get_plugin_specs_as_list(spec))
+
+    def get_pipeline_command_list(self, mode: PipelineModes) -> typing.List[str]:
+
+        self._ensure_plugins_loaded()
+
+        command_names = []
+
+        # Run the plugins to find all commands
+        returned_command_names_array = self._pm.hook.morpheus_cli_collect_stage_names(mode=mode)
+
+        # Each plugin returns an array so convert the array of arrays to just an array
+        for name_array in returned_command_names_array:
+            command_names.extend(name_array)
+
+        return command_names
+
+    def get_pipeline_command(self, mode: PipelineModes, cmd_name: str) -> click.Command:
+
+        self._ensure_plugins_loaded()
+
+        command = self._pm.hook.morpheus_cli_make_stage_command(mode=mode, stage_name=cmd_name)
+
+        return command
+
+
+global PLUGIN_MANAGER
+PLUGIN_MANAGER = None
+
+
+def get_plugin_manager():
+    global PLUGIN_MANAGER
+    if (PLUGIN_MANAGER is None):
+        PLUGIN_MANAGER = PluginManager()
+    return PLUGIN_MANAGER
+
+
 class AliasedGroup(click.Group):
 
     def get_command(self, ctx, cmd_name):
@@ -71,6 +166,48 @@ class AliasedGroup(click.Group):
             cmd_name = ALIASES[cmd_name]
         except KeyError:
             pass
+        return super().get_command(ctx, cmd_name)
+
+
+class PluginGroup(AliasedGroup):
+
+    def __init__(
+        self,
+        name: typing.Optional[str] = None,
+        commands: typing.Optional[typing.Union[typing.Dict[str, click.Command], typing.Sequence[click.Command]]] = None,
+        **attrs: typing.Any,
+    ):
+        self._pipeline_mode = attrs.pop("pipeline_mode", PipelineModes.OTHER)
+
+        super().__init__(name, commands, **attrs)
+
+        self._plugin_manager = get_plugin_manager()
+
+    def list_commands(self, ctx: click.Context) -> typing.List[str]:
+
+        # Get the list of commands from the base
+        command_list = super().list_commands(ctx)
+
+        # Extend it with any plugins
+        plugin_command_list = self._plugin_manager.get_pipeline_command_list(self._pipeline_mode)
+
+        duplicate_commands = [x for x in plugin_command_list if x in command_list]
+
+        if (len(duplicate_commands) > 0):
+            raise RuntimeError("Plugins registered the following duplicate commands: ".format(
+                ", ".join(duplicate_commands)))
+
+        command_list.extend(plugin_command_list)
+
+        return command_list
+
+    def get_command(self, ctx, cmd_name):
+
+        # Check if the command is already loaded
+        if (cmd_name not in self.commands):
+            # Try and load it from the plugins
+            self.commands[cmd_name] = self._plugin_manager.get_pipeline_command(self._pipeline_mode, cmd_name)
+
         return super().get_command(ctx, cmd_name)
 
 
@@ -116,101 +253,6 @@ class MorpheusRelativePath(click.Path):
         return super().convert(value, param, ctx)
 
 
-def _without_empty_args(passed_args):
-    return {k: v for k, v in passed_args.items() if v is not None}
-
-
-def without_empty_args(f):
-    """
-    Removes keyword arguments that have a None value
-    """
-
-    def new_func(*args, **kwargs):
-        kwargs = _without_empty_args(kwargs)
-        return f(get_current_context(), *args, **kwargs)
-
-    return update_wrapper(new_func, f)
-
-
-def show_defaults(f):
-    """
-    Ensures the click.Context has `show_defaults` set to True. (Seems like a bug currently)
-    """
-
-    def new_func(*args, **kwargs):
-        ctx: click.Context = get_current_context()
-        ctx.show_default = True
-        return f(*args, **kwargs)
-
-    return update_wrapper(new_func, f)
-
-
-def _apply_to_config(config: ConfigBase, **kwargs):
-    for param in kwargs:
-        if hasattr(config, param):
-            setattr(config, param, kwargs[param])
-        else:
-            warnings.warn(f"No config option matches for {param}")
-
-    return config
-
-
-def prepare_command(parse_config: bool = False):
-
-    def inner_prepare_command(f):
-        """
-        Preparse command for use. Combines @without_empty_args, @show_defaults and @click.pass_context
-        """
-
-        def new_func(*args, **kwargs):
-            ctx: click.Context = get_current_context()
-            ctx.show_default = True
-
-            kwargs = _without_empty_args(kwargs)
-
-            # Apply the config if desired
-            if parse_config:
-                config = get_config_from_ctx(ctx)
-
-                _apply_to_config(config, **kwargs)
-
-            return f(ctx, *args, **kwargs)
-
-        return update_wrapper(new_func, f)
-
-    return inner_prepare_command
-
-
-def get_config_from_ctx(ctx) -> Config:
-    ctx_dict = ctx.ensure_object(dict)
-
-    if "config" not in ctx_dict:
-        ctx_dict["config"] = Config()
-
-    return ctx_dict["config"]
-
-
-def get_pipeline_from_ctx(ctx):
-    ctx_dict = ctx.ensure_object(dict)
-
-    assert "pipeline" in ctx_dict, "Inconsistent configuration. Pipeline accessed before created"
-
-    return ctx_dict["pipeline"]
-
-
-log_levels = list(logging._nameToLevel.keys())
-
-if ("NOTSET" in log_levels):
-    log_levels.remove("NOTSET")
-
-
-def _parse_log_level(ctx, param, value):
-    x = logging._nameToLevel.get(value.upper(), None)
-    if x is None:
-        raise click.BadParameter('Must be one of {}. Passed: {}'.format(", ".join(logging._nameToLevel.keys()), value))
-    return x
-
-
 @click.group(name="morpheus",
              chain=False,
              invoke_without_command=True,
@@ -220,7 +262,7 @@ def _parse_log_level(ctx, param, value):
 @click.option('--debug/--no-debug', default=False)
 @click.option("--log_level",
               default=logging.getLevelName(DEFAULT_CONFIG.log_level),
-              type=click.Choice(log_levels, case_sensitive=False),
+              type=click.Choice(_get_log_levels(), case_sensitive=False),
               callback=_parse_log_level,
               help="Specify the logging level to use.")
 @click.option('--log_config_file',
@@ -228,11 +270,18 @@ def _parse_log_level(ctx, param, value):
               type=click.Path(exists=True, dir_okay=False),
               help=("Config file to use to configure logging. Use only for advanced situations. "
                     "Can accept both JSON and ini style configurations"))
+@click.option("plugins",
+              '--plugin',
+              envvar="PLUGINS",
+              multiple=True,
+              type=str,
+              help="Adds a Morpheus CLI plugin. Can either be a module name or path to a python module")
 @click.version_option()
 @prepare_command(parse_config=True)
 def cli(ctx: click.Context,
         log_level: int = DEFAULT_CONFIG.log_level,
         log_config_file: str = DEFAULT_CONFIG.log_config_file,
+        plugins: typing.List[str] = None,
         **kwargs):
 
     # ensure that ctx.obj exists and is a dict (in case `cli()` is called
@@ -245,6 +294,13 @@ def cli(ctx: click.Context,
     # Re-get the logger class
     global logger  # pylint: disable=global-statement
     logger = logging.getLogger("morpheus.cli")
+
+    if (plugins is not None):
+        # If plugin is specified, add that to the plugin manager
+        pm = get_plugin_manager()
+
+        for p in plugins:
+            pm.add_plugin_option(p)
 
 
 @cli.group(short_help="Run a utility tool", no_args_is_help=True, **command_kwargs)
@@ -358,7 +414,8 @@ def run(ctx: click.Context, **kwargs):
 @click.group(chain=True,
              short_help="Run the inference pipeline with a NLP model",
              no_args_is_help=True,
-             cls=AliasedGroup,
+             cls=PluginGroup,
+             pipeline_mode=PipelineModes.NLP,
              **command_kwargs)
 @click.option('--model_seq_length',
               default=256,
@@ -417,7 +474,8 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
 @click.group(chain=True,
              short_help="Run the inference pipeline with a FIL model",
              no_args_is_help=True,
-             cls=AliasedGroup,
+             cls=PluginGroup,
+             pipeline_mode=PipelineModes.FIL,
              **command_kwargs)
 @click.option('--model_fea_length',
               default=29,
@@ -576,16 +634,76 @@ def pipeline_ae(ctx: click.Context, **kwargs):
     return p
 
 
+@click.group(chain=True,
+             short_help="Run a custom inference pipeline without a specific model type",
+             no_args_is_help=True,
+             cls=PluginGroup,
+             pipeline_mode=PipelineModes.OTHER,
+             **command_kwargs)
+@click.option('--model_fea_length',
+              default=1,
+              type=click.IntRange(min=1),
+              help="Number of features trained in the model")
+@click.option('--labels_file',
+              default=None,
+              type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
+              help=("Specifies a file to read labels from in order to convert class IDs into labels. "
+                    "A label file is a simple text file where each line corresponds to a label."))
+@click.option('--viz_file',
+              default=None,
+              type=click.Path(dir_okay=False, writable=True),
+              help="Save a visualization of the pipeline at the specified location")
+@prepare_command()
+def pipeline_other(ctx: click.Context, **kwargs):
+    """
+    Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The
+    output of each stage will become the input for the next stage. For example, to read, classify and write to a file,
+    the following stages could be used
+
+    \b
+    pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
+    --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
+
+    \b
+    Pipelines must follow a few rules:
+    1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
+    2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
+    3. Only one inference stage can be used. Zero is also fine
+    4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
+
+    """
+
+    click.secho("Configuring Pipeline via CLI", fg="green")
+
+    config = get_config_from_ctx(ctx)
+    config.mode = PipelineModes.OTHER
+    config.feature_length = kwargs["model_fea_length"]
+
+    config.fil = ConfigFIL()
+
+    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
+        with open(kwargs["labels_file"], "r") as lf:
+            config.class_labels = [x.strip() for x in lf.readlines()]
+            logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
+
+    from morpheus.pipeline import LinearPipeline
+
+    p = ctx.obj["pipeline"] = LinearPipeline(config)
+
+    return p
+
+
 @pipeline_nlp.result_callback()
 @pipeline_fil.result_callback()
 @pipeline_ae.result_callback()
+@pipeline_other.result_callback()
 @click.pass_context
 def post_pipeline(ctx: click.Context, *args, **kwargs):
 
     config = get_config_from_ctx(ctx)
 
     logger.info("Config: \n%s", config.to_string())
-    logger.info("CPP Enabled: {}".format(CppConfig.get_should_use_cpp()))
+    logger.info("CPP Enabled: %s", CppConfig.get_should_use_cpp())
 
     click.secho("Starting pipeline via CLI... Ctrl+C to Quit", fg="red")
 
@@ -1388,6 +1506,7 @@ def gen_viz(ctx: click.Context, **kwargs):
 run.add_command(pipeline_nlp)
 run.add_command(pipeline_fil)
 run.add_command(pipeline_ae)
+run.add_command(pipeline_other)
 
 # NLP Pipeline
 pipeline_nlp.add_command(add_class)
@@ -1450,6 +1569,26 @@ pipeline_ae.add_command(to_file)
 pipeline_ae.add_command(to_kafka)
 pipeline_ae.add_command(train_ae)
 pipeline_ae.add_command(validate)
+
+# Other Pipeline
+pipeline_other.add_command(add_class)
+pipeline_other.add_command(add_scores)
+pipeline_other.add_command(buffer)
+pipeline_other.add_command(delay)
+pipeline_other.add_command(deserialize)
+pipeline_other.add_command(dropna)
+pipeline_other.add_command(filter_command)
+pipeline_other.add_command(from_file)
+pipeline_other.add_command(from_kafka)
+pipeline_other.add_command(inf_identity)
+pipeline_other.add_command(inf_pytorch)
+pipeline_other.add_command(inf_triton)
+pipeline_other.add_command(mlflow_drift)
+pipeline_other.add_command(monitor)
+pipeline_other.add_command(serialize)
+pipeline_other.add_command(to_file)
+pipeline_other.add_command(to_kafka)
+pipeline_other.add_command(validate)
 
 
 def run_cli():
