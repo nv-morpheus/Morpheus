@@ -18,7 +18,6 @@ import logging
 import os
 import subprocess
 import time
-import typing
 from functools import partial
 
 import pytest
