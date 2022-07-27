@@ -56,6 +56,8 @@ class KafkaSourceStage(SingleOutputSource):
     auto_offset_reset : str, default = "latest"
         Sets the value for the configuration option 'auto.offset.reset'. See the kafka documentation for more
         information on the effects of each value."
+    stop_after: int, default = 0
+        Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     """
 
     def __init__(self,
@@ -66,7 +68,8 @@ class KafkaSourceStage(SingleOutputSource):
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
-                 auto_offset_reset: str = "latest"):
+                 auto_offset_reset: str = "latest",
+                 stop_after: int = 0):
         super().__init__(c)
 
         self._consumer_conf = {
@@ -82,6 +85,7 @@ class KafkaSourceStage(SingleOutputSource):
         self._max_concurrent = c.num_threads
         self._disable_commit = disable_commit
         self._disable_pre_filtering = disable_pre_filtering
+        self._stop_after = stop_after
         self._client = None
 
         # Flag to indicate whether or not we should stop
@@ -153,6 +157,7 @@ class KafkaSourceStage(SingleOutputSource):
 
             attempts = 0
             max_attempts = 5
+            records_emitted = 0
 
             # Attempt to connect to the cluster. Try 5 times before giving up
             while attempts < max_attempts:
@@ -273,8 +278,14 @@ class KafkaSourceStage(SingleOutputSource):
 
                             # Push the message meta
                             yield meta
+
+                            records_emitted += meta.count
+                            if self._stop_after > 0 and records_emitted >= self._stop_after:
+                                raise StopIteration()
                     else:
                         time.sleep(self._poll_interval)
+            except StopIteration:
+                raise
             except Exception:
                 logger.exception(("Error occurred in `from-kafka` stage with broker '%s' while processing messages"),
                                  self._consumer_conf["bootstrap.servers"])
@@ -356,7 +367,8 @@ class KafkaSourceStage(SingleOutputSource):
                                               int(self._poll_interval * 1000),
                                               self._consumer_params,
                                               self._disable_commit,
-                                              self._disable_pre_filtering)
+                                              self._disable_pre_filtering,
+                                              self._stop_after)
 
             # Only use multiple progress engines with C++. The python implementation will duplicate messages with
             # multiple threads

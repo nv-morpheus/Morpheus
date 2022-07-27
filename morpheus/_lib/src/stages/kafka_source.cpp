@@ -244,19 +244,22 @@ KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
                                    int32_t batch_timeout_ms,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
-                                   bool disable_pre_filtering) :
+                                   bool disable_pre_filtering,
+                                   size_t stop_after) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topic(std::move(topic)),
   m_batch_timeout_ms(batch_timeout_ms),
   m_config(std::move(config)),
   m_disable_commit(disable_commit),
-  m_disable_pre_filtering(disable_pre_filtering)
+  m_disable_pre_filtering(disable_pre_filtering),
+  m_stop_after{stop_after}
 {}
 
 KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> sub) -> void {
+        size_t records_emitted = 0;
         // Build rebalancer
         KafkaSourceStage__Rebalancer rebalancer(
             [this]() { return this->batch_timeout_ms(); },
@@ -265,9 +268,9 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 auto &ctx = srf::runnable::Context::get_runtime_context();
                 return MORPHEUS_CONCAT_STR(ctx.info() << " " << str_to_display);
             },
-            [sub, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
+            [sub, &records_emitted, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
                 // If we are unsubscribed, throw an error to break the loops
-                if (!sub.is_subscribed())
+                if (!sub.is_subscribed() || (m_stop_after > 0 && records_emitted >= m_stop_after))
                 {
                     throw KafkaSourceStage__UnsubscribedException();
                 }
@@ -289,8 +292,9 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                     return false;
                 }
 
+                auto num_records = batch->count();
                 sub.on_next(std::move(batch));
-
+                records_emitted += num_records;
                 return m_requires_commit;
             });
 
@@ -571,10 +575,11 @@ std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     int32_t batch_timeout_ms,
     std::map<std::string, std::string> config,
     bool disable_commits,
-    bool disable_pre_filtering)
+    bool disable_pre_filtering,
+    size_t stop_after)
 {
     auto stage = builder.construct_object<KafkaSourceStage>(
-        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering);
+        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering, stop_after);
 
     return stage;
 }
