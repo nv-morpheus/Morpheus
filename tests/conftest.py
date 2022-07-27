@@ -18,24 +18,55 @@ import logging
 import os
 import subprocess
 import time
+import typing
 from functools import partial
 
 import pytest
-import pytest_kafka
 import requests
 
-# Initialize pytest_kafka fixtures following the recomendations in:
-# https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
-KAFKA_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
-KAFKA_BIN = os.path.join(KAFKA_SCRIPTS, 'kafka-server-start.sh')
-ZOOKEEPER_BIN = os.path.join(KAFKA_SCRIPTS, 'zookeeper-server-start.sh')
+KAFKA_TOPIC = 'morpheus-test'
+zookeeper_proc = None
+kafka_server = None
+kafka_consumer = None
+pytest_kafka_setup_error = None
 
-teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
-zookeeper_proc = pytest_kafka.make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
-kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
-kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
-                                                  seek_to_beginning=True,
-                                                  kafka_topics=['morpheus-test'])
+
+def init_pytest_kafka():
+    """
+    pytest_kafka is currently required to be installed manually, along with a download of Kafka and a functional JDK.
+    Since the Kafka tests don't run by default, we will silently fail to initialize unless --run_kafka is enabled.
+
+    Issue #9 should make the instalation of Kafka simpler:
+    https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
+    """
+    global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error
+    try:
+        import pytest_kafka
+
+        # Initialize pytest_kafka fixtures following the recomendations in:
+        # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
+        KAFKA_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
+        KAFKA_BIN = os.path.join(KAFKA_SCRIPTS, 'kafka-server-start.sh')
+        ZOOKEEPER_BIN = os.path.join(KAFKA_SCRIPTS, 'zookeeper-server-start.sh')
+
+        for kafka_script in (KAFKA_BIN, ZOOKEEPER_BIN):
+            if not os.path.exists(kafka_script):
+                raise RuntimeError("Required Kafka script not found: {}".format(kafka_script))
+
+        teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
+        zookeeper_proc = pytest_kafka.make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
+        kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
+        kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
+                                                          seek_to_beginning=True,
+                                                          kafka_topics=[KAFKA_TOPIC])
+
+        return True
+    except Exception as e:
+        pytest_kafka_setup_error = e
+        return False
+
+
+pytest_kafka_avail = init_pytest_kafka()
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -94,10 +125,15 @@ def pytest_runtest_setup(item):
             pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
 
 
-def pytest_collection_modifyitems(items):
+def pytest_collection_modifyitems(config, items):
     """
     To support old unittest style tests, try to determine the mark from the name
     """
+
+    if config.getoption("--run_kafka") and not pytest_kafka_avail:
+        raise RuntimeError(
+            "--run_kafka requested but pytest_kafka not available due to: {}".format(pytest_kafka_setup_error))
+
     for item in items:
         if "no_cpp" in item.nodeid:
             item.add_marker(pytest.mark.use_python)
@@ -175,6 +211,11 @@ def config(request: pytest.FixtureRequest):
         CppConfig.set_should_use_cpp(True if request.param else False)
 
     yield Config()
+
+
+@pytest.fixture(scope="function")
+def kafka_topic():
+    yield KAFKA_TOPIC
 
 
 @pytest.fixture(scope="function")
