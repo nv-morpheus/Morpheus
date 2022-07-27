@@ -46,7 +46,6 @@ def _write_to_kafka(bootstrap_servers: str, kafka_topic: str, input_file: str) -
 
 
 @pytest.mark.kafka
-@pytest.mark.use_cpp
 def test_kafka_source_stage_pipe(tmp_path, config, kafka_server: Tuple[Popen, int], kafka_topic: str) -> None:
     _, kafka_port = kafka_server
     bootstrap_servers = "localhost:{}".format(kafka_port)

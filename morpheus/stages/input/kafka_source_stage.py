@@ -290,7 +290,8 @@ class KafkaSourceStage(SingleOutputSource):
                 logger.exception(("Error occurred in `from-kafka` stage with broker '%s' while processing messages"),
                                  self._consumer_conf["bootstrap.servers"])
                 raise
-
+        except StopIteration:
+            pass
         finally:
             # Close the consumer and call on_completed
             if (consumer):
