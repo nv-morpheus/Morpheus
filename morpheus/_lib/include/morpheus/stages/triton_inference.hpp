@@ -17,14 +17,13 @@
 
 #pragma once
 
-#include <morpheus/messages/multi_inference.hpp>
-#include <morpheus/messages/multi_response_probs.hpp>
-#include <morpheus/objects/triton_in_out.hpp>
-
-#include <pysrf/node.hpp>
-#include <srf/segment/builder.hpp>
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/objects/triton_in_out.hpp"
 
 #include <http_client.h>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <memory>
 #include <string>

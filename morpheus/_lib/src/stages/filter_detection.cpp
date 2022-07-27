@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/filter_detection.hpp>
+#include "morpheus/stages/filter_detection.hpp"
 
-#include <morpheus/utilities/matx_util.hpp>
-#include <morpheus/utilities/tensor_util.hpp>  // for TensorUtils::get_element_stride
+#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
 #include <glog/logging.h>  // for CHECK
 

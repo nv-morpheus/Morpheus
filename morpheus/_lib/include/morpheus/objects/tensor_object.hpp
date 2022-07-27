@@ -17,18 +17,16 @@
 
 #pragma once
 
-#include <morpheus/utilities/type_util_detail.hpp>
-
-#include <morpheus/utilities/string_util.hpp>
-
-#include <srf/cuda/common.hpp>
-#include <srf/memory/blob.hpp>
-#include <srf/memory/default_resources.hpp>
-#include <srf/memory/memory_kind.hpp>  // for memory_kind_type
+#include "morpheus/utilities/string_util.hpp"
+#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
 #include <rmm/device_uvector.hpp>
+#include <srf/cuda/common.hpp>
+#include <srf/memory/blob.hpp>
+#include <srf/memory/default_resources.hpp>
+#include <srf/memory/memory_kind.hpp>  // for memory_kind_type
 
 #include <algorithm>
 #include <array>

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <algorithm>  // for copy, min_element & transform
 #include <iosfwd>  // for ostream

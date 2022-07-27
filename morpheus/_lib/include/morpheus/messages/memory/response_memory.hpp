@@ -17,11 +17,11 @@
 
 #pragma once
 
-#include <morpheus/messages/memory/tensor_memory.hpp>
-#include <morpheus/objects/tensor.hpp>
+#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/objects/tensor.hpp"
 
-#include <pybind11/pytypes.h>
 #include <cudf/io/types.hpp>
+#include <pybind11/pytypes.h>
 
 #include <string>
 #include <vector>

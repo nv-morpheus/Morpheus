@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include <morpheus/messages/memory/inference_memory.hpp>
+#include "morpheus/messages/memory/inference_memory.hpp"
 
 #include <cudf/io/types.hpp>
 

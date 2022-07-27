@@ -17,10 +17,10 @@
 
 #pragma once
 
-#include <morpheus/objects/table_info.hpp>
+#include "morpheus/objects/table_info.hpp"
 
-#include <pybind11/pybind11.h>
 #include <cudf/io/types.hpp>
+#include <pybind11/pybind11.h>
 
 #include <memory>
 #include <string>
@@ -29,7 +29,6 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
-
 /**
  * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
  * Python and C++ representations of the table.
@@ -49,8 +48,7 @@ class MessageMeta
     size_t count() const;
 
     /**
-     * @brief
-     *
+     * TODO(Documentation)
      */
     TableInfo get_info() const;
 

@@ -17,12 +17,11 @@
 
 #pragma once
 
-#include <morpheus/messages/multi_inference.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
-
 #include <pybind11/pybind11.h>
 
 #include <cstddef>

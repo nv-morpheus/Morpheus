@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/tensor_util.hpp>
+#include "morpheus/utilities/tensor_util.hpp"
 
+// todo move
+#include <experimental/iterator>       // for make_ostream_joiner
+#include <glog/logging.h>              // for DCHECK_EQ
 #include <srf/utils/sort_indexes.hpp>  // for sort_indexes
 
-#include <glog/logging.h>  // for DCHECK_EQ
-
-#include <experimental/iterator>
+#include <algorithm>    // for copy
 #include <functional>   // for multiplies
 #include <iterator>     // for begin, end
 #include <numeric>      // for accumulate
@@ -31,7 +32,6 @@
 #include <vector>       // for vector
 
 namespace morpheus {
-
 void TensorUtils::write_shape_to_stream(const shape_type& shape, std::ostream& os)
 {
     os << "(";

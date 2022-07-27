@@ -17,16 +17,15 @@
 
 #pragma once
 
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/objects/table_info.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
-
 #include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
