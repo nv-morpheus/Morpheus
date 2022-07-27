@@ -17,12 +17,14 @@
 
 #include "morpheus/utilities/tensor_util.hpp"
 
-// todo move
-#include <experimental/iterator>       // for make_ostream_joiner
 #include <glog/logging.h>              // for DCHECK_EQ
 #include <srf/utils/sort_indexes.hpp>  // for sort_indexes
 
-#include <algorithm>    // for copy
+#include <algorithm>  // for copy
+// clang-format off
+// prevent from moving this into the third-party section
+#include <experimental/iterator>  // for make_ostream_joiner
+// clang-format on
 #include <functional>   // for multiplies
 #include <iterator>     // for begin, end
 #include <numeric>      // for accumulate
