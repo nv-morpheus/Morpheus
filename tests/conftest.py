@@ -49,6 +49,13 @@ def pytest_addoption(parser: pytest.Parser):
         help="Run slow tests that would otherwise be skipped",
     )
 
+    parser.addoption(
+        "--run_kafka",
+        action="store_true",
+        dest="run_kafka",
+        help="Run kafka tests that would otherwise be skipped",
+    )
+
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):
     """
@@ -81,6 +88,10 @@ def pytest_runtest_setup(item):
     if (not item.config.getoption("--run_slow")):
         if (item.get_closest_marker("slow") is not None):
             pytest.skip("Skipping slow tests by default. Use --run_slow to enable")
+
+    if (not item.config.getoption("--run_kafka")):
+        if (item.get_closest_marker("kafka") is not None):
+            pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
 
 
 def pytest_collection_modifyitems(items):
