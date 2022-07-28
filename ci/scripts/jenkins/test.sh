@@ -38,6 +38,9 @@ npm install --silent -g camouflage-server
 mamba install -c conda-forge "openjdk=11.0.15"
 export PYTEST_KAFKA_DIR=${WORKSPACE_TMP}/pytest-kafka
 
+# Ensure we have a clean checkout
+rm -rf ${PYTEST_KAFKA_DIR}
+
 # Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
 # https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
 git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${PYTEST_KAFKA_DIR}
