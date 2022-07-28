@@ -37,6 +37,7 @@ pytest_kafka_setup_error = None
 KAFKA_SERVER_CONFIG_TEMPLATE = '''\
 reserved.broker.max.id=65535
 broker.id={kafka_port}
+advertised.listeners=PLAINTEXT://127.0.0.1:{kafka_port}
 listeners=PLAINTEXT://127.0.0.1:{kafka_port}
 log.dirs={kafka_log_dir}
 num.partitions=1
