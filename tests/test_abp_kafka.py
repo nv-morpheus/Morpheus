@@ -16,7 +16,6 @@
 
 import os
 import typing
-from subprocess import Popen
 from unittest import mock
 
 import numpy as np
@@ -33,18 +32,14 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
-from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.utils.compare_df import compare_df
 from utils import TEST_DIRS
-from utils import calc_error_val
 from utils import write_file_to_kafka
 
 # End-to-end test intended to imitate the ABP validation test
@@ -58,7 +53,7 @@ MODEL_MAX_BATCH_SIZE = 1024
 @mock.patch('tritonclient.grpc.InferenceServerClient')
 def test_abp_no_cpp(mock_triton_client,
                     config: Config,
-                    kafka_bootstrap_servers,
+                    kafka_bootstrap_servers: str,
                     kafka_topics: typing.Tuple[str, str],
                     kafka_consumer: KafkaConsumer):
     mock_metadata = {
@@ -128,12 +123,11 @@ def test_abp_no_cpp(mock_triton_client,
 
     pipe.run()
 
-    kafka_messages = list(kafka_consumer)
-    assert len(kafka_messages) == num_records
-
     val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
-    output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_messages),
+    output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_consumer),
                                   lines=True).to_pandas()
+
+    assert len(output_df) == num_records
 
     results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
 
@@ -188,12 +182,11 @@ def test_abp_cpp(config,
 
     pipe.run()
 
-    kafka_messages = list(kafka_consumer)
-    assert len(kafka_messages) == num_records
-
     val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
-    output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_messages),
+    output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_consumer),
                                   lines=True).to_pandas()
+
+    assert len(output_df) == num_records
 
     results = compare_df(val_df, output_df, exclude_columns=[r'^ID$', r'^_ts_'], rel_tol=0.05)
 
