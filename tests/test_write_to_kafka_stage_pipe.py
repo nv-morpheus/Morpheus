@@ -16,8 +16,6 @@
 
 import os
 import typing
-from subprocess import Popen
-from unittest.util import strclass
 
 import numpy as np
 import pytest
@@ -37,7 +35,7 @@ from utils import TEST_DIRS
 
 @pytest.mark.kafka
 def test_write_to_kafka_stage_pipe(config,
-                                   kafka_bootstrap_servers: strclass,
+                                   kafka_bootstrap_servers: str,
                                    kafka_consumer: KafkaConsumer,
                                    kafka_topics: typing.Tuple[str, str]) -> None:
     """
