@@ -61,6 +61,7 @@ def init_pytest_kafka():
         zookeeper_proc = pytest_kafka.make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
         kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
         kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
+                                                          group_id='morpheus_unittest_reader',
                                                           seek_to_beginning=True,
                                                           kafka_topics=[KAFKA_TOPICS.output_topic])
 
