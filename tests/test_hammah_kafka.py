@@ -138,6 +138,7 @@ def test_hammah_roleg(mock_ae,
     assert results['diff_rows'] == 3
 
 
+@pytest.mark.kafka
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules(preprocess_ae_stage)
