@@ -52,7 +52,6 @@ MODEL_MAX_BATCH_SIZE = 32
 @mock.patch('tritonclient.grpc.InferenceServerClient')
 def test_email_no_cpp(mock_triton_client,
                       config,
-                      tmp_path,
                       kafka_bootstrap_servers: str,
                       kafka_topics: typing.Tuple[str, str],
                       kafka_consumer: KafkaConsumer):
@@ -148,7 +147,6 @@ def test_email_no_cpp(mock_triton_client,
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_email_cpp(config,
-                   tmp_path,
                    kafka_bootstrap_servers: str,
                    kafka_topics: typing.Tuple[str, str],
                    kafka_consumer: KafkaConsumer):
