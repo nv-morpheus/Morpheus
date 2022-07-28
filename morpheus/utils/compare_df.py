@@ -76,7 +76,8 @@ def compare_df(df_a: pd.DataFrame,
                abs_tol: float = 0.001,
                rel_tol: float = 0.005,
                dfa_name: str = "val",
-               dfb_name: str = "res"):
+               dfb_name: str = "res",
+               show_report: bool = False):
     """
     Compares two pandas Dataframe, returning a comparison summary as a dict in the form of:
     ```
@@ -130,6 +131,8 @@ def compare_df(df_a: pd.DataFrame,
                          total_rows,
                          diff_rows / total_rows * 100.0)
             logger.debug(mismatch_df[:20])
+            if show_report:
+                logger.debug(comparison.report())
         else:
             logger.info("Results match validation dataset")
 
