@@ -15,8 +15,8 @@
 # limitations under the License.
 
 import os
+import typing
 from subprocess import Popen
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -36,9 +36,9 @@ from utils import TEST_DIRS
 
 @pytest.mark.kafka
 def test_write_to_kafka_stage_pipe(config,
-                                   kafka_server: Tuple[Popen, int],
+                                   kafka_server: typing.Tuple[Popen, int],
                                    kafka_consumer: KafkaConsumer,
-                                   kafka_topic: str) -> None:
+                                   kafka_topics: typing.Tuple[str, str]) -> None:
     """
     Even though WriteToKafkaStage only has a Python impl, testing with both C++ and Python execution
     to ensure it works just as well with the C++ impls of the message classes.
@@ -52,7 +52,8 @@ def test_write_to_kafka_stage_pipe(config,
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
-    pipe.add_stage(WriteToKafkaStage(config, bootstrap_servers=bootstrap_servers, output_topic=kafka_topic))
+    pipe.add_stage(
+        WriteToKafkaStage(config, bootstrap_servers=bootstrap_servers, output_topic=kafka_topics.output_topic))
     pipe.run()
 
     input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values

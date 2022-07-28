@@ -15,12 +15,11 @@
 # limitations under the License.
 
 import os
+import typing
 from subprocess import Popen
-from typing import Tuple
 
 import numpy as np
 import pytest
-from kafka import KafkaProducer
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.io.deserializers import read_file_to_df
@@ -30,23 +29,14 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
-
-
-def _write_to_kafka(bootstrap_servers: str, kafka_topic: str, input_file: str) -> int:
-    num_records = 0
-    producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
-    with open(input_file) as fh:
-        for line in fh:
-            producer.send(kafka_topic, line.strip().encode('utf-8'))
-            num_records += 1
-
-    producer.flush()
-
-    return num_records
+from utils import write_file_to_kafka
 
 
 @pytest.mark.kafka
-def test_kafka_source_stage_pipe(tmp_path, config, kafka_server: Tuple[Popen, int], kafka_topic: str) -> None:
+def test_kafka_source_stage_pipe(tmp_path,
+                                 config,
+                                 kafka_server: typing.Tuple[Popen, int],
+                                 kafka_topics: typing.Tuple[str, str]) -> None:
     _, kafka_port = kafka_server
     bootstrap_servers = "localhost:{}".format(kafka_port)
 
@@ -54,13 +44,13 @@ def test_kafka_source_stage_pipe(tmp_path, config, kafka_server: Tuple[Popen, in
     out_file = os.path.join(tmp_path, 'results.jsonlines')
 
     # Fill our topic with the input data
-    num_records = _write_to_kafka(bootstrap_servers, kafka_topic, input_file)
+    num_records = write_file_to_kafka(bootstrap_servers, kafka_topics.input_topic, input_file)
 
     pipe = LinearPipeline(config)
     pipe.set_source(
         KafkaSourceStage(config,
                          bootstrap_servers=bootstrap_servers,
-                         input_topic=kafka_topic,
+                         input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          stop_after=num_records))
     pipe.add_stage(DeserializeStage(config))

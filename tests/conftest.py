@@ -18,12 +18,16 @@ import logging
 import os
 import subprocess
 import time
+from collections import namedtuple
 from functools import partial
 
 import pytest
 import requests
 
-KAFKA_TOPIC = 'morpheus-test'
+# actual topic names not important, but we will need two of them.
+KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
+                                                                           'morpheus_output_topic')
+
 zookeeper_proc = None
 kafka_server = None
 kafka_consumer = None
@@ -57,7 +61,7 @@ def init_pytest_kafka():
         kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
         kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
                                                           seek_to_beginning=True,
-                                                          kafka_topics=[KAFKA_TOPIC])
+                                                          kafka_topics=[KAFKA_TOPICS.output_topic])
 
         return True
     except Exception as e:
@@ -213,8 +217,11 @@ def config(request: pytest.FixtureRequest):
 
 
 @pytest.fixture(scope="function")
-def kafka_topic():
-    yield KAFKA_TOPIC
+def kafka_topics():
+    """
+    Used by tests that require both an input and an output topic
+    """
+    yield KAFKA_TOPICS
 
 
 @pytest.fixture(scope="function")
