@@ -58,7 +58,7 @@ MODEL_MAX_BATCH_SIZE = 1024
 @mock.patch('tritonclient.grpc.InferenceServerClient')
 def test_abp_no_cpp(mock_triton_client,
                     config: Config,
-                    kafka_server: typing.Tuple[Popen, int],
+                    kafka_bootstrap_servers,
                     kafka_topics: typing.Tuple[str, str],
                     kafka_consumer: KafkaConsumer):
     mock_metadata = {
@@ -89,9 +89,6 @@ def test_abp_no_cpp(mock_triton_client,
 
     mock_triton_client.async_infer.side_effect = async_infer
 
-    _, kafka_port = kafka_server
-    bootstrap_servers = "localhost:{}".format(kafka_port)
-
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE
@@ -108,13 +105,13 @@ def test_abp_no_cpp(mock_triton_client,
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
 
     # Fill our topic with the input data
-    num_records = write_file_to_kafka(bootstrap_servers, kafka_topics.input_topic, val_file_name)
+    num_records = write_file_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, val_file_name)
 
     # Disabling commits due to known issue in Python impl: https://github.com/nv-morpheus/Morpheus/issues/294
     pipe = LinearPipeline(config)
     pipe.set_source(
         KafkaSourceStage(config,
-                         bootstrap_servers=bootstrap_servers,
+                         bootstrap_servers=kafka_bootstrap_servers,
                          input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          disable_commit=True,
@@ -127,7 +124,7 @@ def test_abp_no_cpp(mock_triton_client,
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
-        WriteToKafkaStage(config, bootstrap_servers=bootstrap_servers, output_topic=kafka_topics.output_topic))
+        WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
 
     pipe.run()
 
@@ -148,7 +145,7 @@ def test_abp_no_cpp(mock_triton_client,
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
 def test_abp_cpp(config,
-                 kafka_server: typing.Tuple[Popen, int],
+                 kafka_bootstrap_servers: str,
                  kafka_topics: typing.Tuple[str, str],
                  kafka_consumer: KafkaConsumer):
     config.mode = PipelineModes.FIL
@@ -166,14 +163,12 @@ def test_abp_cpp(config,
 
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
 
-    _, kafka_port = kafka_server
-    bootstrap_servers = "localhost:{}".format(kafka_port)
-    num_records = write_file_to_kafka(bootstrap_servers, kafka_topics.input_topic, val_file_name)
+    num_records = write_file_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, val_file_name)
 
     pipe = LinearPipeline(config)
     pipe.set_source(
         KafkaSourceStage(config,
-                         bootstrap_servers=bootstrap_servers,
+                         bootstrap_servers=kafka_bootstrap_servers,
                          input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          stop_after=num_records))
@@ -189,7 +184,7 @@ def test_abp_cpp(config,
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
-        WriteToKafkaStage(config, bootstrap_servers=bootstrap_servers, output_topic=kafka_topics.output_topic))
+        WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
 
     pipe.run()
 

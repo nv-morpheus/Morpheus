@@ -18,6 +18,7 @@ import logging
 import os
 import subprocess
 import time
+import typing
 from collections import namedtuple
 from functools import partial
 
@@ -219,9 +220,18 @@ def config(request: pytest.FixtureRequest):
 @pytest.fixture(scope="function")
 def kafka_topics():
     """
-    Used by tests that require both an input and an output topic
+    Returns a named tuple of Kafka topic names in the form of (input_topic, output_topic)
     """
     yield KAFKA_TOPICS
+
+
+@pytest.fixture(scope="function")
+def kafka_bootstrap_servers(kafka_server: typing.Tuple[subprocess.Popen, int]):
+    """
+    Used by tests that require both an input and an output topic
+    """
+    kafka_port = kafka_server[1]
+    yield "localhost:{}".format(kafka_port)
 
 
 @pytest.fixture(scope="function")

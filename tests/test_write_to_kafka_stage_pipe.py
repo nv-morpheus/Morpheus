@@ -17,6 +17,7 @@
 import os
 import typing
 from subprocess import Popen
+from unittest.util import strclass
 
 import numpy as np
 import pytest
@@ -36,16 +37,13 @@ from utils import TEST_DIRS
 
 @pytest.mark.kafka
 def test_write_to_kafka_stage_pipe(config,
-                                   kafka_server: typing.Tuple[Popen, int],
+                                   kafka_bootstrap_servers: strclass,
                                    kafka_consumer: KafkaConsumer,
                                    kafka_topics: typing.Tuple[str, str]) -> None:
     """
     Even though WriteToKafkaStage only has a Python impl, testing with both C++ and Python execution
     to ensure it works just as well with the C++ impls of the message classes.
     """
-    _, kafka_port = kafka_server
-    bootstrap_servers = "localhost:{}".format(kafka_port)
-
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
 
     pipe = LinearPipeline(config)
@@ -53,7 +51,7 @@ def test_write_to_kafka_stage_pipe(config,
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
-        WriteToKafkaStage(config, bootstrap_servers=bootstrap_servers, output_topic=kafka_topics.output_topic))
+        WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
     pipe.run()
 
     input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
