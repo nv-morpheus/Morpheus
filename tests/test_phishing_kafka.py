@@ -125,13 +125,13 @@ def test_email_no_cpp(mock_triton_client,
 
     pipe.run()
 
+    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+
     output_buf = StringIO()
     for rec in kafka_consumer:
         output_buf.write("{}\n".format(rec.value.decode("utf-8")))
 
     output_buf.seek(0)
-
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
     output_df = pandas.read_json(output_buf, lines=True)
     output_df = filter_null_data(output_df)
 
@@ -190,13 +190,13 @@ def test_email_cpp(config,
 
     pipe.run()
 
+    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
+
     output_buf = StringIO()
     for rec in kafka_consumer:
         output_buf.write("{}\n".format(rec.value.decode("utf-8")))
 
     output_buf.seek(0)
-
-    val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
     output_df = pandas.read_json(output_buf, lines=True)
     output_df = filter_null_data(output_df)
 

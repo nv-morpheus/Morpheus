@@ -16,19 +16,20 @@
 
 import os
 import typing
+from io import StringIO
 from unittest import mock
 
 import numpy as np
+import pandas
 import pytest
 from kafka import KafkaConsumer
-
-import cudf
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.io.utils import filter_null_data
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -124,8 +125,13 @@ def test_abp_no_cpp(mock_triton_client,
     pipe.run()
 
     val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
-    output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_consumer),
-                                  lines=True).to_pandas()
+    output_buf = StringIO()
+    for rec in kafka_consumer:
+        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+
+    output_buf.seek(0)
+    output_df = pandas.read_json(output_buf, lines=True)
+    output_df = filter_null_data(output_df)
 
     assert len(output_df) == num_records
 
@@ -183,8 +189,13 @@ def test_abp_cpp(config,
     pipe.run()
 
     val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
-    output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_consumer),
-                                  lines=True).to_pandas()
+    output_buf = StringIO()
+    for rec in kafka_consumer:
+        output_buf.write("{}\n".format(rec.value.decode("utf-8")))
+
+    output_buf.seek(0)
+    output_df = pandas.read_json(output_buf, lines=True)
+    output_df = filter_null_data(output_df)
 
     assert len(output_df) == num_records
 
