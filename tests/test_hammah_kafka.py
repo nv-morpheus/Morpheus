@@ -124,6 +124,8 @@ def test_hammah_roleg(mock_ae,
     output_df = pandas.read_json(output_buf, lines=True)
     output_df = filter_null_data(output_df)
 
+    assert len(output_df) == len(val_df)
+
     results = compare_df(
         val_df,
         output_df,
@@ -213,6 +215,8 @@ def test_hammah_user123(mock_ae,
     output_buf.seek(0)
     output_df = pandas.read_json(output_buf, lines=True)
     output_df = filter_null_data(output_df)
+
+    assert len(output_df) == len(val_df)
 
     results = compare_df(
         val_df,
