@@ -24,7 +24,9 @@ from srf.core import operators as ops
 
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
+from morpheus.cli import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import UserMessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -34,6 +36,7 @@ from morpheus.utils.directory_watcher import DirectoryWatcher
 logger = logging.getLogger(__name__)
 
 
+@register_stage("from-cloudtrail", modes=[PipelineModes.AE])
 class CloudTrailSourceStage(SingleOutputSource):
     """
     Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline

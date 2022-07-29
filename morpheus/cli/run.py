@@ -26,6 +26,7 @@ import pluggy
 from click.globals import get_current_context
 
 import morpheus
+import morpheus.stages.input.cloud_trail_source_stage
 from morpheus.cli import hookspecs
 from morpheus.cli.default_command_hooks import DefaultCommandHooks
 from morpheus.cli.utils import PluginSpec
@@ -102,7 +103,7 @@ class PluginManager():
             return
 
         # # Now that all command line plugins have been added, add any from the env variable
-        # self.add_plugin_option(os.environ.get("MORPHEUS_CLI_PLUGINS"))
+        self.add_plugin_option(os.environ.get("MORPHEUS_PLUGINS"))
 
         # Loop over all specs and load the plugins
         for s in self._plugin_specs:
@@ -270,12 +271,14 @@ class MorpheusRelativePath(click.Path):
               type=click.Path(exists=True, dir_okay=False),
               help=("Config file to use to configure logging. Use only for advanced situations. "
                     "Can accept both JSON and ini style configurations"))
-@click.option("plugins",
-              '--plugin',
-              envvar="PLUGINS",
-              multiple=True,
-              type=str,
-              help="Adds a Morpheus CLI plugin. Can either be a module name or path to a python module")
+@click.option(
+    "plugins",
+    '--plugin',
+    #   envvar="PLUGINS",
+    allow_from_autoenv=False,
+    multiple=True,
+    type=str,
+    help="Adds a Morpheus CLI plugin. Can either be a module name or path to a python module")
 @click.version_option()
 @prepare_command(parse_config=True)
 def cli(ctx: click.Context,
@@ -548,7 +551,8 @@ def pipeline_fil(ctx: click.Context, **kwargs):
 @click.group(chain=True,
              short_help="Run the inference pipeline with an AutoEncoder model",
              no_args_is_help=True,
-             cls=AliasedGroup,
+             cls=PluginGroup,
+             pipeline_mode=PipelineModes.AE,
              **command_kwargs)
 @click.option('--columns_file',
               default="data/columns_ae.txt",
@@ -801,60 +805,60 @@ def from_kafka(ctx: click.Context, **kwargs):
     return stage
 
 
-@click.command(short_help="Load messages from a Cloudtrail directory", **command_kwargs)
-@click.option('--input_glob',
-              type=str,
-              required=True,
-              help=("Input glob pattern to match files to read. For example, './input_dir/*.json' would read all "
-                    "files with the 'json' extension in the directory 'input_dir'."))
-@click.option('--watch_directory',
-              type=bool,
-              default=False,
-              help=("The watch directory option instructs this stage to not close down once all files have been read. "
-                    "Instead it will read all files that match the 'input_glob' pattern, and then continue to watch "
-                    "the directory for additional files. Any new files that are added that match the glob will then "
-                    "be processed."))
-@click.option('--max_files',
-              type=click.IntRange(min=1),
-              help=("Max number of files to read. Useful for debugging to limit startup time. "
-                    "Default value of -1 is unlimited."))
-@click.option('--file-type',
-              type=click.Choice(FILE_TYPE_NAMES, case_sensitive=False),
-              default="auto",
-              help=("Indicates what type of file to read. "
-                    "Specifying 'auto' will determine the file type from the extension."))
-@click.option('--repeat',
-              default=1,
-              type=click.IntRange(min=1),
-              help=("Repeats the input dataset multiple times. Useful to extend small datasets for debugging."))
-@click.option('--sort_glob',
-              type=bool,
-              default=False,
-              help=("If true the list of files matching `input_glob` will be processed in sorted order."))
-@click.option('--recursive',
-              type=bool,
-              default=True,
-              help=("If true, events will be emitted for the files in subdirectories matching `input_glob`."))
-@click.option('--queue_max_size',
-              type=int,
-              default=128,
-              help=("Maximum queue size to hold the file paths to be processed that match `input_glob`."))
-@click.option('--batch_timeout', type=float, default=5.0, help=("Timeout to retrieve batch messages from the queue."))
-@prepare_command()
-def from_cloudtrail(ctx: click.Context, **kwargs):
+# @click.command(short_help="Load messages from a Cloudtrail directory", **command_kwargs)
+# @click.option('--input_glob',
+#               type=str,
+#               required=True,
+#               help=("Input glob pattern to match files to read. For example, './input_dir/*.json' would read all "
+#                     "files with the 'json' extension in the directory 'input_dir'."))
+# @click.option('--watch_directory',
+#               type=bool,
+#               default=False,
+#               help=("The watch directory option instructs this stage to not close down once all files have been read. "
+#                     "Instead it will read all files that match the 'input_glob' pattern, and then continue to watch "
+#                     "the directory for additional files. Any new files that are added that match the glob will then "
+#                     "be processed."))
+# @click.option('--max_files',
+#               type=click.IntRange(min=1),
+#               help=("Max number of files to read. Useful for debugging to limit startup time. "
+#                     "Default value of -1 is unlimited."))
+# @click.option('--file-type',
+#               type=click.Choice(FILE_TYPE_NAMES, case_sensitive=False),
+#               default="auto",
+#               help=("Indicates what type of file to read. "
+#                     "Specifying 'auto' will determine the file type from the extension."))
+# @click.option('--repeat',
+#               default=1,
+#               type=click.IntRange(min=1),
+#               help=("Repeats the input dataset multiple times. Useful to extend small datasets for debugging."))
+# @click.option('--sort_glob',
+#               type=bool,
+#               default=False,
+#               help=("If true the list of files matching `input_glob` will be processed in sorted order."))
+# @click.option('--recursive',
+#               type=bool,
+#               default=True,
+#               help=("If true, events will be emitted for the files in subdirectories matching `input_glob`."))
+# @click.option('--queue_max_size',
+#               type=int,
+#               default=128,
+#               help=("Maximum queue size to hold the file paths to be processed that match `input_glob`."))
+# @click.option('--batch_timeout', type=float, default=5.0, help=("Timeout to retrieve batch messages from the queue."))
+# @prepare_command()
+# def from_cloudtrail(ctx: click.Context, **kwargs):
 
-    config = get_config_from_ctx(ctx)
-    p = get_pipeline_from_ctx(ctx)
+#     config = get_config_from_ctx(ctx)
+#     p = get_pipeline_from_ctx(ctx)
 
-    from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
+#     from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 
-    file_type = str_to_file_type(kwargs.pop("file_type").lower())
+#     file_type = str_to_file_type(kwargs.pop("file_type").lower())
 
-    stage = CloudTrailSourceStage(config, file_type=file_type, **kwargs)
+#     stage = CloudTrailSourceStage(config, file_type=file_type, **kwargs)
 
-    p.set_source(stage)
+#     p.set_source(stage)
 
-    return stage
+#     return stage
 
 
 @click.command(short_help="Display throughput numbers at a specific point in the pipeline", **command_kwargs)
@@ -1557,7 +1561,7 @@ pipeline_ae.add_command(add_scores)
 pipeline_ae.add_command(buffer)
 pipeline_ae.add_command(delay)
 pipeline_ae.add_command(filter_command)
-pipeline_ae.add_command(from_cloudtrail)
+# pipeline_ae.add_command(from_cloudtrail)
 pipeline_ae.add_command(gen_viz)
 pipeline_ae.add_command(inf_pytorch_ae)
 pipeline_ae.add_command(inf_triton)
@@ -1592,6 +1596,7 @@ pipeline_other.add_command(validate)
 
 
 def run_cli():
+    print("Running CLI")
     cli(obj={}, auto_envvar_prefix='MORPHEUS', show_default=True, prog_name="morpheus")
 
 

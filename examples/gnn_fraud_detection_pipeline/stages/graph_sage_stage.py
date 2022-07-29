@@ -17,8 +17,6 @@ import dataclasses
 import typing
 
 import srf
-import tensorflow as tf
-from stellargraph.mapper import HinSAGENodeGenerator
 
 import cudf
 
@@ -50,6 +48,10 @@ class GraphSAGEStage(SinglePortStage):
                  target_node: str = "transaction"):
         super().__init__(c)
 
+        # Must import stellargraph before loading the model
+        import stellargraph.mapper  # noqa
+        import tensorflow as tf
+
         self._keras_model = tf.keras.models.load_model(model_hinsage_file)
         self._batch_size = batch_size
         self._sample_size = list(sample_size)
@@ -72,6 +74,8 @@ class GraphSAGEStage(SinglePortStage):
         trained_model,
         node_identifiers,
     ):
+
+        from stellargraph.mapper import HinSAGENodeGenerator
 
         # perform inductive learning from trained graph model
         # The mapper feeds data from sampled subgraph to HinSAGE model
