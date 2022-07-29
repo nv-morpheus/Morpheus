@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/wrapped_tensor.hpp>
+#include "morpheus/objects/wrapped_tensor.hpp"
 
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>

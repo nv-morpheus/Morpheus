@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/rmm_tensor.hpp>
+#include "morpheus/objects/rmm_tensor.hpp"
 
-#include <morpheus/objects/tensor_object.hpp>
-#include <morpheus/utilities/matx_util.hpp>
-#include <morpheus/utilities/type_util.hpp>
+#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
-#include <pybind11/pybind11.h>
 #include <cudf/types.hpp>
+#include <pybind11/pybind11.h>
 #include <rmm/device_buffer.hpp>
 
 #include <cstdint>

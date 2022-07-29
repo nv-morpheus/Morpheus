@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/tensor_object.hpp"
 
-#include <morpheus/utilities/tensor_util.hpp>
+#include "morpheus/utilities/tensor_util.hpp"
 
 #include <srf/memory/blob.hpp>       // for blob
 #include <srf/utils/type_utils.hpp>  // for DataType
