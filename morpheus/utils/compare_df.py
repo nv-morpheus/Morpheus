@@ -20,7 +20,7 @@ import typing
 import datacompy
 import pandas as pd
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def filter_df(df: pd.DataFrame,
