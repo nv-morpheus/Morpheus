@@ -96,7 +96,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     size_t m_max_batch_size{128};
     uint32_t m_batch_timeout_ms{100};
 
-    std::string m_topic{"test_pcap"};
+    std::string m_topic;
     std::map<std::string, std::string> m_config;
 
     bool m_disable_commit{false};

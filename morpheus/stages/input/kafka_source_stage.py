@@ -63,8 +63,9 @@ class KafkaSourceStage(SingleOutputSource):
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topic: str = "test_pcap",
-                 group_id: str = "custreamz",
+                 input_topic: str,
+                 group_id: str = "morpheus",
+                 client_id: str = None,
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
@@ -78,6 +79,8 @@ class KafkaSourceStage(SingleOutputSource):
             'session.timeout.ms': "60000",
             "auto.offset.reset": auto_offset_reset
         }
+        if client_id is not None:
+            self._consumer_conf['client.id'] = client_id
 
         self._input_topic = input_topic
         self._poll_interval = poll_interval
@@ -99,7 +102,6 @@ class KafkaSourceStage(SingleOutputSource):
         refresh_partitions = False
         max_batch_size = self._max_batch_size
         keys = False
-        engine = None
 
         self._consumer_params = consumer_params
         # Override the auto-commit config to enforce custom streamz checkpointing
@@ -114,7 +116,6 @@ class KafkaSourceStage(SingleOutputSource):
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
         self._max_batch_size = max_batch_size
         self._keys = keys
-        self._engine = engine
         self._started = False
 
     @property
@@ -144,13 +145,7 @@ class KafkaSourceStage(SingleOutputSource):
             # Now begin the script
             import confluent_kafka as ck
 
-            if self._engine == "cudf":  # pragma: no cover
-                from custreamz import kafka
-
-            if self._engine == "cudf":  # pragma: no cover
-                consumer = kafka.Consumer(consumer_params)
-            else:
-                consumer = ck.Consumer(consumer_params)
+            consumer = ck.Consumer(consumer_params)
 
             # weakref.finalize(self, lambda c=consumer: _close_consumer(c))
             tp = ck.TopicPartition(self._topic, 0, 0)
@@ -195,10 +190,7 @@ class KafkaSourceStage(SingleOutputSource):
 
                     kafka_cluster_metadata = consumer.list_topics(self._topic)
 
-                    if self._engine == "cudf":  # pragma: no cover
-                        npartitions = len(kafka_cluster_metadata[self._topic.encode('utf-8')])
-                    else:
-                        npartitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
+                    npartitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
 
                 positions = [0] * npartitions
 
@@ -222,10 +214,7 @@ class KafkaSourceStage(SingleOutputSource):
                     if self._refresh_partitions:
                         kafka_cluster_metadata = consumer.list_topics(self._topic)
 
-                        if self._engine == "cudf":  # pragma: no cover
-                            new_partitions = len(kafka_cluster_metadata[self._topic.encode('utf-8')])
-                        else:
-                            new_partitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
+                        new_partitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
 
                         if new_partitions > npartitions:
                             positions.extend([-1001] * (new_partitions - npartitions))

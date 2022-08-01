@@ -645,8 +645,9 @@ def from_file(ctx: click.Context, **kwargs):
               required=True,
               help=("Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, "
                     "this can be set to 'auto' to automatically determine the cluster IPs and ports"))
-@click.option('--input_topic', type=str, default="test_pcap", required=True, help="Kafka topic to read from")
-@click.option('--group_id', type=str, default="custreamz", required=True, help="")
+@click.option('--input_topic', type=str, required=True, help="Kafka topic to read from")
+@click.option('--group_id', type=str, default="morpheus", required=True, help="Kafka group id")
+@click.option('--client_id', type=str, required=False, help="Optional string to identify client")
 @click.option('--poll_interval',
               type=str,
               default="10millis",
@@ -1350,6 +1351,7 @@ def to_file(ctx: click.Context, **kwargs):
               help=("Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, "
                     "this can be set to 'auto' to automatically determine the cluster IPs and ports"))
 @click.option('--output_topic', type=str, required=True, help="Output Kafka topic to publish to")
+@click.option('--client_id', type=str, required=False, help="Optional string to identify client")
 @prepare_command()
 def to_kafka(ctx: click.Context, **kwargs):
 
