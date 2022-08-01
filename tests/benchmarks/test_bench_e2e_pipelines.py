@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 
@@ -40,44 +41,8 @@ from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.logging import configure_logging
 from utils import TEST_DIRS
 
-E2E_TEST_CONFIGS = {
-    "test_sid_nlp_e2e": {
-        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'sid-validation-data.csv'),
-        "repeat": 10,
-        "num_threads": 8,
-        "pipeline_batch_size": 1024,
-        "model_max_batch_size": 64,
-        "feature_length": 256,
-        "edge_buffer_size": 4
-    },
-    "test_abp_fil_e2e": {
-        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines'),
-        "repeat": 100,
-        "num_threads": 8,
-        "pipeline_batch_size": 1024,
-        "model_max_batch_size": 1024,
-        "feature_length": 29,
-        "edge_buffer_size": 4
-    },
-    "test_phishing_nlp_e2e": {
-        "file_path": os.path.join(TEST_DIRS.validation_data_dir, 'phishing-email-validation-data.jsonlines'),
-        "repeat": 10,
-        "num_threads": 8,
-        "pipeline_batch_size": 1024,
-        "model_max_batch_size": 64,
-        "feature_length": 128,
-        "edge_buffer_size": 4
-    },
-    "test_cloudtrail_ae_e2e": {
-        "glob_path": os.path.join(TEST_DIRS.validation_data_dir, 'hammah-*.csv'),
-        "repeat": 1,
-        "num_threads": 1,
-        "pipeline_batch_size": 1024,
-        "model_max_batch_size": 1024,
-        "feature_length": 32,
-        "edge_buffer_size": 4
-    }
-}
+with open('e2e_test_configs.json', 'r') as f:
+    E2E_TEST_CONFIGS = json.load(f)
 
 
 def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_file, model_name):
@@ -94,7 +59,10 @@ def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_fil
                            do_lower_case=True,
                            add_special_tokens=False))
     pipeline.add_stage(
-        TritonInferenceStage(config, model_name=model_name, server_url="localhost:8001", force_convert_inputs=True))
+        TritonInferenceStage(config,
+                             model_name=model_name,
+                             server_url=E2E_TEST_CONFIGS["triton_server_url"],
+                             force_convert_inputs=True))
     pipeline.add_stage(AddClassificationsStage(config, threshold=0.5, prefix=""))
     pipeline.add_stage(MonitorStage(config))
     pipeline.add_stage(SerializeStage(config))
@@ -113,7 +81,10 @@ def fil_pipeline(config: Config, input_file, repeat, output_file, model_name):
     pipeline.add_stage(DeserializeStage(config))
     pipeline.add_stage(PreprocessFILStage(config))
     pipeline.add_stage(
-        TritonInferenceStage(config, model_name=model_name, server_url="localhost:8001", force_convert_inputs=True))
+        TritonInferenceStage(config,
+                             model_name=model_name,
+                             server_url=E2E_TEST_CONFIGS["triton_server_url"],
+                             force_convert_inputs=True))
     pipeline.add_stage(AddClassificationsStage(config, threshold=0.5, prefix=""))
     pipeline.add_stage(MonitorStage(config))
     pipeline.add_stage(SerializeStage(config))
@@ -245,10 +216,8 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
     CppConfig.set_should_use_cpp(False)
 
     input_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["glob_path"]
-    print(input_glob)
     repeat = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["repeat"]
     train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "hammah-*.csv")
-    print(train_data_glob)
     output_filepath = os.path.join(tmp_path, "cloudtrail_ae_e2e_output.csv")
 
     benchmark(ae_pipeline, config, input_glob, repeat, train_data_glob, output_filepath)
