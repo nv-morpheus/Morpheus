@@ -34,25 +34,6 @@ kafka_server = None
 kafka_consumer = None
 pytest_kafka_setup_error = None
 
-KAFKA_SERVER_CONFIG_TEMPLATE = '''\
-reserved.broker.max.id=65535
-broker.id={kafka_port}
-advertised.listeners=PLAINTEXT://127.0.0.1:{kafka_port}
-listeners=PLAINTEXT://127.0.0.1:{kafka_port}
-log.dirs={kafka_log_dir}
-num.partitions=1
-# The number of threads lowered to 1 - may boost startup time:
-num.recovery.threads.per.data.dir=1
-num.network.threads=1
-num.io.threads=1
-log.retention.hours=1
-log.segment.bytes=1073741824
-zookeeper.connect=localhost:{zk_port}
-zookeeper.connection.timeout.ms=6000
-offsets.topic.replication.factor=1
-default.replication.factor=1
-'''
-
 
 def init_pytest_kafka():
     """
@@ -65,7 +46,7 @@ def init_pytest_kafka():
     global zookeeper_proc, kafka_server, kafka_consumer, pytest_kafka_setup_error
     try:
         import pytest_kafka
-
+        os.environ['KAFKA_OPTS'] = "-Djava.net.preferIPv4Stack=True"
         # Initialize pytest_kafka fixtures following the recomendations in:
         # https://gitlab.com/karolinepauls/pytest-kafka/-/blob/master/README.rst
         KAFKA_SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(pytest_kafka.__file__)), 'kafka/bin/')
@@ -78,18 +59,12 @@ def init_pytest_kafka():
 
         teardown_fn = partial(pytest_kafka.terminate, signal_fn=subprocess.Popen.kill)
         zookeeper_proc = pytest_kafka.make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
-        kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN,
-                                                      'zookeeper_proc',
-                                                      teardown_fn=teardown_fn,
-                                                      timeout=60,
-                                                      kafka_config_template=KAFKA_SERVER_CONFIG_TEMPLATE)
+        kafka_server = pytest_kafka.make_kafka_server(KAFKA_BIN, 'zookeeper_proc', teardown_fn=teardown_fn)
         kafka_consumer = pytest_kafka.make_kafka_consumer('kafka_server',
                                                           group_id='morpheus_unittest_reader',
+                                                          client_id='morpheus_unittest_reader',
                                                           seek_to_beginning=True,
-                                                          kafka_topics=[KAFKA_TOPICS.output_topic],
-                                                          consumer_timeout_ms=5000,
-                                                          reconnect_backoff_ms=100,
-                                                          reconnect_backoff_max_ms=10000)
+                                                          kafka_topics=[KAFKA_TOPICS.output_topic])
 
         return True
     except Exception as e:
