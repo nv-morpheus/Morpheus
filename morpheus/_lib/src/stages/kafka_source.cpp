@@ -62,7 +62,7 @@ namespace morpheus {
 class KafkaSourceStage__UnsubscribedException : public std::exception
 {};
 
-class KafkaSourceStage__StopAfter : public std::exception
+class KafkaSourceStageStopAfter : public std::exception
 {};
 
 // ************ KafkaSourceStage__Rebalancer *************************//
@@ -277,7 +277,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 }
                 else if (m_stop_after > 0 && records_emitted >= m_stop_after)
                 {
-                    throw KafkaSourceStage__StopAfter();
+                    throw KafkaSourceStageStopAfter();
                 }
 
                 if (message_batch.empty())
@@ -327,7 +327,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 }
             }
 
-        } catch (KafkaSourceStage__StopAfter)
+        } catch (KafkaSourceStageStopAfter)
         {
             DLOG(INFO) << "Completed after emitting " << records_emitted << " records";
         } catch (std::exception &ex)
