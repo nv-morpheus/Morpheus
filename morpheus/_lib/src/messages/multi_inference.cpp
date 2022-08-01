@@ -73,8 +73,6 @@ void MultiInferenceMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_mes
                                            std::size_t start,
                                            std::size_t stop) const
 {
-    CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
-
     auto sliced_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiInferenceMessage>(new_message));
 
     sliced_message->offset = start;
@@ -82,7 +80,7 @@ void MultiInferenceMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_mes
 
     // If we have more inference rows than message rows, we need to use the seq_ids to figure out the slicing. This
     // will be slow and should be avoided at all costs
-    if (this->memory->has_input("seq_ids") && this->count != this->mess_count)
+    if (this->count != this->mess_count && this->memory->has_input("seq_ids"))
     {
         auto seq_ids = this->get_input("seq_ids");
 
@@ -146,12 +144,6 @@ std::size_t MultiInferenceMessageInterfaceProxy::count(MultiInferenceMessage &se
 pybind11::object MultiInferenceMessageInterfaceProxy::get_input(MultiInferenceMessage &self, const std::string &name)
 {
     const auto &py_tensor = CupyUtil::tensor_to_cupy(self.get_input(name));
-
-    //  //  Need to get just our portion. TODO(MDD): THis should be handled in get_input
-    //  py::object sliced = py_tensor[py::make_tuple(
-    //      py::slice(py::int_(self.offset), py::int_(self.offset + self.count), py::none()),
-    //      py::slice(py::none(), py::none(), py::none()))];
-
     return py_tensor;
 }
 
@@ -159,13 +151,6 @@ std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::get_
                                                                                       std::size_t start,
                                                                                       std::size_t stop)
 {
-    // py::object seq_ids = CupyUtil::tensor_to_cupy(self.get_input("seq_ids"), m);
-
-    // int mess_start = seq_ids[py::make_tuple(start, 0)].attr("item")().cast<int>();
-    // int mess_stop  = seq_ids[py::make_tuple(stop - 1, 0)].attr("item")().cast<int>() + 1;
-
-    // return std::make_shared<MultiInferenceMessage>(
-    //     self.meta, mess_start, mess_stop - mess_start, self.memory, start, stop - start);
     return self.get_slice(start, stop);
 }
 }  // namespace morpheus
