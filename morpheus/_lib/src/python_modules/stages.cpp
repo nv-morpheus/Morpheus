@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/add_classification.hpp>
-#include <morpheus/stages/add_scores.hpp>
-#include <morpheus/stages/deserialization.hpp>
-#include <morpheus/stages/file_source.hpp>
-#include <morpheus/stages/filter_detection.hpp>
-#include <morpheus/stages/kafka_source.hpp>
-#include <morpheus/stages/preprocess_fil.hpp>
-#include <morpheus/stages/preprocess_nlp.hpp>
-#include <morpheus/stages/serialize.hpp>
-#include <morpheus/stages/triton_inference.hpp>
-#include <morpheus/stages/write_to_file.hpp>
-#include <morpheus/utilities/cudf_util.hpp>
+#include "morpheus/stages/add_classification.hpp"
+#include "morpheus/stages/add_scores.hpp"
+#include "morpheus/stages/deserialization.hpp"
+#include "morpheus/stages/file_source.hpp"
+#include "morpheus/stages/filter_detection.hpp"
+#include "morpheus/stages/kafka_source.hpp"
+#include "morpheus/stages/preprocess_fil.hpp"
+#include "morpheus/stages/preprocess_nlp.hpp"
+#include "morpheus/stages/serialize.hpp"
+#include "morpheus/stages/triton_inference.hpp"
+#include "morpheus/stages/write_to_file.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <srf/segment/object.hpp>
 

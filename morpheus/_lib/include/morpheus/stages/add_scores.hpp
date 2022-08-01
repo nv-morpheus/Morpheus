@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/messages/multi_response_probs.hpp>
+#include "morpheus/messages/multi_response_probs.hpp"
 
 #include <pysrf/node.hpp>
 #include <srf/segment/builder.hpp>

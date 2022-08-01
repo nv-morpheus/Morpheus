@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/table_info.hpp>
+#include "morpheus/objects/table_info.hpp"
 
-#include <morpheus/utilities/type_util_detail.hpp>
+#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cudf/copying.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
-
 #include <glog/logging.h>
 #include <pybind11/gil.h>
 #include <pybind11/pytypes.h>

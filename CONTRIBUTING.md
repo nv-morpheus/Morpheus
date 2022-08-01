@@ -65,32 +65,7 @@ cd $MORPHEUS_ROOT
 ```
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
-By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Usage of the script is as follows:
-```bash
-scripts/fetch_data.py fetch <dataset> [<dataset>...]
-```
-
-At time of writing the defined datasets are:
-* all - Metaset includes all others
-* examples - Data needed by scripts in the `examples` subdir
-* models - Morpheus models (largest dataset)
-* tests - Data used by unittests
-* validation - Subset of the models dataset needed by some unittests
-
-To download just the examples and models:
-```bash
-scripts/fetch_data.py fetch examples models
-```
-
-To download the data needed for unittests:
-```bash
-scripts/fetch_data.py fetch tests validation
-```
-
-If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command.
-```bash
-scripts/fetch_data.py fetch all
-```
+By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. See the section [Git LFS](README.md#git-lfs) of the [README.md](README.md) file for details on this.
 
 ### Build in Docker Container
 
@@ -98,11 +73,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
 
 #### Prerequisites
 
-- Pascal architecture or better
-- NVIDIA driver `450.80.02` or higher
-- [Docker](https://docs.docker.com/get-docker/)
-- [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-
+1. Ensure all [requirements](README.md#requirements) from [README.md](README.md) are met.
 1. Build the development container
    ```bash
    ./docker/build_container_dev.sh
@@ -177,9 +148,9 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 #### Prerequisites
 
-- Pascal architecture or better
+- Pascal architecture GPU or better
 - NVIDIA driver `450.80.02` or higher
-- [CUDA 11.0+](https://developer.nvidia.com/cuda-downloads)
+- [CUDA 11.5](https://developer.nvidia.com/cuda-11-5-2-download-archive)
 - `conda` and `mamba`
   - See the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:
@@ -338,22 +309,6 @@ Launching a full production Kafka cluster is outside the scope of this project. 
       ```
 
       **Note:** This will consume messages.
-
-### Launching Triton Server
-
-Many of the validation tests and example workflows require a Triton server to function. To launch Triton server, use the following command:
-
-```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:21.12-py3 \
-    tritonserver --model-repository=/models/triton-model-repo \
-                 --exit-on-error=false \
-                 --model-control-mode=explicit \
-                 --load-model abp-nvsmi-xgb \
-                 --load-model sid-minibert-onnx \
-                 --load-model phishing-bert-onnx
-```
-This will launch Triton using port 8001 for the GRPC server. This needs to match the Morpheus configuration.
 
 ### Pipeline Validation
 

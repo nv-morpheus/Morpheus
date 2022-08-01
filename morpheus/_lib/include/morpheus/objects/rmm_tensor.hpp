@@ -17,11 +17,10 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor_object.hpp>
-#include <morpheus/utilities/type_util.hpp>
+#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <cudf/types.hpp>
-
 #include <rmm/device_buffer.hpp>
 #include <rmm/device_uvector.hpp>
 

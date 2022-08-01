@@ -15,25 +15,24 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/preprocess_fil.hpp>
+#include "morpheus/stages/preprocess_fil.hpp"
 
-#include <morpheus/messages/memory/inference_memory_fil.hpp>
-#include <morpheus/utilities/matx_util.hpp>
-#include <morpheus/utilities/type_util.hpp>
-#include <morpheus/utilities/type_util_detail.hpp>
+#include "morpheus/messages/memory/inference_memory_fil.hpp"
+#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/utilities/type_util_detail.hpp"
 
-#include <pysrf/node.hpp>
-#include <srf/segment/builder.hpp>
-
-#include <http_client.h>
-#include <librdkafka/rdkafkacpp.h>
-#include <pybind11/gil.h>
-#include <pybind11/pytypes.h>
 #include <cudf/detail/utilities/vector_factories.hpp>
 #include <cudf/io/json.hpp>
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <http_client.h>
+#include <librdkafka/rdkafkacpp.h>
+#include <pybind11/gil.h>
+#include <pybind11/pytypes.h>
+#include <pysrf/node.hpp>
 #include <rxcpp/rx-observable.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <cstddef>
 #include <cstdint>
