@@ -16,7 +16,6 @@
 
 import os
 import typing
-from subprocess import Popen
 
 import numpy as np
 import pytest
