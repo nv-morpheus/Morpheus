@@ -28,7 +28,7 @@ from utils import TEST_DIRS
 from utils import ConvMsg
 
 
-def test_filter_detections_stage_pipe(config, tmp_path):
+def _test_filter_detections_stage_pipe(config, tmp_path, copy=True):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
 
@@ -38,7 +38,7 @@ def test_filter_detections_stage_pipe(config, tmp_path):
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config))
-    pipe.add_stage(FilterDetectionsStage(config, threshold=threshold))
+    pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
@@ -54,3 +54,11 @@ def test_filter_detections_stage_pipe(config, tmp_path):
 
     expected = input_data[np.any(input_data >= threshold, axis=1), :]
     assert output_data.tolist() == expected.tolist()
+
+
+def test_filter_detections_stage_pipe_copy(config, tmp_path):
+    return _test_filter_detections_stage_pipe(config, tmp_path, True)
+
+
+def test_filter_detections_stage_pipe_slice(config, tmp_path):
+    return _test_filter_detections_stage_pipe(config, tmp_path, False)

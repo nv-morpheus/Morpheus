@@ -39,7 +39,7 @@ MultiInferenceMessage::MultiInferenceMessage(std::shared_ptr<morpheus::MessageMe
                                              std::shared_ptr<morpheus::InferenceMemory> memory,
                                              std::size_t offset,
                                              std::size_t count) :
-  MultiMessage(meta, mess_offset, mess_count),
+  DerivedMultiMessage(meta, mess_offset, mess_count),
   memory(std::move(memory)),
   offset(offset),
   count(count)
@@ -52,12 +52,12 @@ const TensorObject MultiInferenceMessage::get_input(const std::string &name) con
     // check if we are getting the entire input
     if (this->offset == 0 && this->count == this->memory->count)
     {
-        return this->memory->inputs[name];
+        return this->memory->tensors[name];
     }
 
     // TODO(MDD): This really needs to return the slice of the tensor
-    return this->memory->inputs[name].slice({static_cast<cudf::size_type>(this->offset), 0},
-                                            {static_cast<cudf::size_type>(this->offset + this->count), -1});
+    return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
+                                             {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
 const void MultiInferenceMessage::set_input(const std::string &name, const TensorObject &value)
@@ -69,18 +69,16 @@ const void MultiInferenceMessage::set_input(const std::string &name, const Tenso
     slice = value;
 }
 
-std::shared_ptr<MultiInferenceMessage> MultiInferenceMessage::get_slice(std::size_t start, std::size_t stop) const
-{
-    // This can only cast down
-    return std::static_pointer_cast<MultiInferenceMessage>(this->internal_get_slice(start, stop));
-}
-
-std::shared_ptr<MultiMessage> MultiInferenceMessage::internal_get_slice(std::size_t start, std::size_t stop) const
+void MultiInferenceMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message,
+                                           std::size_t start,
+                                           std::size_t stop) const
 {
     CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
 
-    auto mess_start = this->mess_offset + start;
-    auto mess_stop  = this->mess_offset + stop;
+    auto sliced_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiInferenceMessage>(new_message));
+
+    sliced_message->offset = start;
+    sliced_message->count  = stop - start;
 
     // If we have more inference rows than message rows, we need to use the seq_ids to figure out the slicing. This
     // will be slow and should be avoided at all costs
@@ -88,13 +86,33 @@ std::shared_ptr<MultiMessage> MultiInferenceMessage::internal_get_slice(std::siz
     {
         auto seq_ids = this->get_input("seq_ids");
 
-        // Convert to MatX to access elements
-        mess_start = this->mess_offset + seq_ids.read_element<int32_t>({(TensorIndex)start, 0});
-        mess_stop  = this->mess_offset + seq_ids.read_element<int32_t>({(TensorIndex)stop - 1, 0}) + 1;
+        // Determine the new start and stop before passing onto the base
+        start = seq_ids.read_element<int32_t>({(TensorIndex)start, 0});
+        stop  = seq_ids.read_element<int32_t>({(TensorIndex)stop - 1, 0}) + 1;
     }
 
-    return std::make_shared<MultiInferenceMessage>(
-        this->meta, mess_start, mess_stop - mess_start, this->memory, start, stop - start);
+    // Pass onto the base
+    DerivedMultiMessage::get_slice_impl(new_message, start, stop);
+}
+
+void MultiInferenceMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                                             const std::vector<std::pair<size_t, size_t>> &ranges,
+                                             size_t num_selected_rows) const
+{
+    auto copied_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiInferenceMessage>(new_message));
+    DerivedMultiMessage::copy_ranges_impl(copied_message, ranges, num_selected_rows);
+
+    copied_message->offset = 0;
+    copied_message->count  = num_selected_rows;
+    copied_message->memory = copy_input_ranges(ranges, num_selected_rows);
+}
+
+std::shared_ptr<InferenceMemory> MultiInferenceMessage::copy_input_ranges(
+    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+{
+    auto offset_ranges = apply_offset_to_ranges(offset, ranges);
+    auto tensors       = memory->copy_tensor_ranges(offset_ranges, num_selected_rows);
+    return std::make_shared<InferenceMemory>(num_selected_rows, std::move(tensors));
 }
 
 /****** <MultiInferenceMessage>InterfaceProxy *************************/

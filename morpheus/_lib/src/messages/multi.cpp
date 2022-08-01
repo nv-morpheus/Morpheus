@@ -20,6 +20,9 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
 
+#include <cudf/concatenate.hpp>
+#include <cudf/copying.hpp>
+#include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
 
 #include <memory>
@@ -61,18 +64,43 @@ TableInfo MultiMessage::get_meta(const std::vector<std::string> &column_names)
     return sliced_info;
 }
 
-std::shared_ptr<MultiMessage> MultiMessage::get_slice(size_t start, size_t stop) const
+void MultiMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const
 {
-    // This can only cast down
-    return std::static_pointer_cast<MultiMessage>(this->internal_get_slice(start, stop));
+    new_message->mess_offset = this->mess_offset + start;
+    new_message->mess_count  = this->mess_offset + stop - new_message->mess_offset;
 }
 
-std::shared_ptr<MultiMessage> MultiMessage::internal_get_slice(size_t start, size_t stop) const
+void MultiMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                                    const std::vector<std::pair<size_t, size_t>> &ranges,
+                                    size_t num_selected_rows) const
 {
-    auto mess_start = this->mess_offset + start;
-    auto mess_stop  = this->mess_offset + stop;
+    new_message->mess_offset = 0;
+    new_message->mess_count  = num_selected_rows;
+    new_message->meta        = copy_meta_ranges(ranges);
+}
 
-    return std::make_shared<MultiMessage>(this->meta, mess_start, mess_stop - mess_start);
+std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const
+{
+    // copy ranges into a sequntial list of values
+    // https://github.com/rapidsai/cudf/issues/11223
+    std::vector<cudf::size_type> cudf_ranges;
+    for (const auto &p : ranges)
+    {
+        cudf_ranges.push_back(static_cast<cudf::size_type>(p.first));
+        cudf_ranges.push_back(static_cast<cudf::size_type>(p.second));
+    }
+
+    auto table_info                       = this->meta->get_info();
+    std::vector<std::string> column_names = table_info.get_column_names();
+    column_names.insert(column_names.begin(), std::string());  // cudf id col
+    cudf::io::table_metadata metadata{std::move(column_names)};
+
+    auto table_view                     = table_info.get_view();
+    auto sliced_views                   = cudf::slice(table_view, cudf_ranges);
+    cudf::io::table_with_metadata table = {cudf::concatenate(sliced_views, rmm::mr::get_current_device_resource()),
+                                           std::move(metadata)};
+
+    return MessageMeta::create_from_cpp(std::move(table), 1);
 }
 
 void MultiMessage::set_meta(const std::string &col_name, TensorObject tensor)
@@ -122,6 +150,18 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
                                         cudaMemcpyDeviceToDevice));
         }
     }
+}
+
+std::vector<std::pair<TensorIndex, TensorIndex>> MultiMessage::apply_offset_to_ranges(
+    std::size_t offset, const std::vector<std::pair<size_t, size_t>> &ranges) const
+{
+    std::vector<std::pair<TensorIndex, TensorIndex>> offset_ranges(ranges.size());
+    std::transform(
+        ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const std::pair<size_t, size_t> range) {
+            return std::pair{offset + range.first, offset + range.second};
+        });
+
+    return offset_ranges;
 }
 
 /****** MultiMessageInterfaceProxy *************************/
@@ -209,6 +249,26 @@ pybind11::object MultiMessageInterfaceProxy::get_meta_by_col(MultiMessage &self,
     return df_slice;
 }
 
+pybind11::object MultiMessageInterfaceProxy::get_meta_list(MultiMessage &self, pybind11::object col_name)
+{
+    std::vector<std::string> column_names;
+    if (!col_name.is_none())
+    {
+        column_names.emplace_back(col_name.cast<std::string>());
+    }
+
+    auto info = self.get_meta(column_names);
+    auto meta = info.as_py_object();
+    if (!col_name.is_none())
+    {  // needed to slice off the id column
+        meta = meta[col_name];
+    }
+
+    auto arrow_tbl           = meta.attr("to_arrow")();
+    pybind11::object py_list = arrow_tbl.attr("to_pylist")();
+    return py_list;
+}
+
 void MultiMessageInterfaceProxy::set_meta(MultiMessage &self, pybind11::object columns, pybind11::object value)
 {
     // Mimic this python code
@@ -228,5 +288,23 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage
 {
     // Returns shared_ptr
     return self.get_slice(start, stop);
+}
+
+std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(
+    MultiMessage &self, const std::vector<std::pair<size_t, size_t>> &ranges, pybind11::object num_selected_rows)
+{
+    std::size_t num_rows = 0;
+    if (num_selected_rows.is_none())
+    {
+        for (const auto &range : ranges)
+        {
+            num_rows += range.second - range.first;
+        }
+    }
+    else
+    {
+        num_rows = num_selected_rows.cast<std::size_t>();
+    }
+    return self.copy_ranges(ranges, num_rows);
 }
 }  // namespace morpheus
