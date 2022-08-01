@@ -62,6 +62,9 @@ namespace morpheus {
 class KafkaSourceStage__UnsubscribedException : public std::exception
 {};
 
+class KafkaSourceStage__StopAfter : public std::exception
+{};
+
 // ************ KafkaSourceStage__Rebalancer *************************//
 class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
 {
@@ -84,7 +87,6 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
         // auto batch_timeout = std::chrono::milliseconds(m_parent.batch_timeout_ms());
         auto batch_timeout = std::chrono::milliseconds(m_batch_timeout_fn());
 
-        size_t msg_count = 0;
         std::vector<std::unique_ptr<RdKafka::Message>> messages;
 
         auto now       = std::chrono::high_resolution_clock::now();
@@ -120,7 +122,7 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
 
             // Update now
             now = std::chrono::high_resolution_clock::now();
-        } while (msg_count < m_max_batch_size_fn() && now < batch_end);
+        } while (messages.size() < m_max_batch_size_fn() && now < batch_end);
 
         return std::move(messages);
     }
@@ -269,9 +271,13 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
             },
             [sub, &records_emitted, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
                 // If we are unsubscribed, throw an error to break the loops
-                if (!sub.is_subscribed() || (m_stop_after > 0 && records_emitted >= m_stop_after))
+                if (!sub.is_subscribed())
                 {
                     throw KafkaSourceStage__UnsubscribedException();
+                }
+                else if (m_stop_after > 0 && records_emitted >= m_stop_after)
+                {
+                    throw KafkaSourceStage__StopAfter();
                 }
 
                 if (message_batch.empty())
@@ -321,6 +327,9 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 }
             }
 
+        } catch (KafkaSourceStage__StopAfter)
+        {
+            DLOG(INFO) << "Completed after emitting " << records_emitted << " records";
         } catch (std::exception &ex)
         {
             LOG(ERROR) << "Exception in rebalance_loop. Msg: " << ex.what();
