@@ -110,6 +110,7 @@ def test_abp_no_cpp(mock_triton_client,
                          bootstrap_servers=kafka_bootstrap_servers,
                          input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
+                         poll_interval="1seconds",
                          disable_commit=True,
                          stop_after=num_records))
     pipe.add_stage(DeserializeStage(config))
@@ -172,6 +173,7 @@ def test_abp_cpp(config,
                          bootstrap_servers=kafka_bootstrap_servers,
                          input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
+                         poll_interval="1seconds",
                          stop_after=num_records))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(PreprocessFILStage(config))

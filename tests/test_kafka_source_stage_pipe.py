@@ -33,25 +33,21 @@ from utils import write_file_to_kafka
 
 
 @pytest.mark.kafka
-def test_kafka_source_stage_pipe(tmp_path,
-                                 config,
-                                 kafka_server: typing.Tuple[Popen, int],
+def test_kafka_source_stage_pipe(tmp_path, config, kafka_bootstrap_servers: str,
                                  kafka_topics: typing.Tuple[str, str]) -> None:
-    _, kafka_port = kafka_server
-    bootstrap_servers = "localhost:{}".format(kafka_port)
-
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
     out_file = os.path.join(tmp_path, 'results.jsonlines')
 
     # Fill our topic with the input data
-    num_records = write_file_to_kafka(bootstrap_servers, kafka_topics.input_topic, input_file)
+    num_records = write_file_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, input_file)
 
     pipe = LinearPipeline(config)
     pipe.set_source(
         KafkaSourceStage(config,
-                         bootstrap_servers=bootstrap_servers,
+                         bootstrap_servers=kafka_bootstrap_servers,
                          input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
+                         poll_interval="1seconds",
                          stop_after=num_records))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
