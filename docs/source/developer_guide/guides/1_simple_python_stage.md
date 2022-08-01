@@ -124,7 +124,7 @@ from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.utils.logging import configure_logging
+from morpheus.utils.logger import configure_logging
 
 from pass_thru import PassThruStage
 ```
@@ -185,7 +185,7 @@ from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.utils.logging import configure_logging
+from morpheus.utils.logger import configure_logging
 
 from pass_thru import PassThruStage
 

@@ -2,6 +2,7 @@
 1. Launch Kafka using instructions from the [Quick Launch Kafka Cluster](../../CONTRIBUTING.md#quick-launch-kafka-cluster) section of [CONTRIBUTING.md](../../CONTRIBUTING.md)
 1. Populate an environment variable `BROKER_LIST` with the IP:Ports of the nodes in the Kafka cluster. Ensure this environment variable is set in all of the terminals where Morpheus is executed:
     ```bash
+    export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
     BROKER_LIST=$(HOST_IP=$KAFKA_ADVERTISED_HOST_NAME ./broker-list.sh)
     ```
 
@@ -448,3 +449,17 @@ Note: Due to the complexity of the input data and a limitation of the cudf reade
     ```
 
 1. Stop Triton
+
+## Optional Cleanup
+### Delete all topics
+1. Return to the Kafka terminal and run:
+    ```bash
+    $KAFKA_HOME/bin/kafka-topics.sh --list --bootstrap-server `broker-list.sh` | xargs -I'{}' $KAFKA_HOME/bin/kafka-topics.sh --delete --bootstrap-server `broker-list.sh` --topic='{}'
+    ```
+
+### Shutdown Kafka
+1. From the root of the `kafka-docker` repo run (in the host OS not inside a container):
+    ```bash
+    docker-compose stop
+    docker-compose rm
+    ```
