@@ -87,12 +87,6 @@ const void MultiResponseMessage::set_output(const std::string &name, const Tenso
     slice = value;
 }
 
-// std::shared_ptr<MultiResponseMessage> MultiResponseMessage::get_slice(std::size_t start, std::size_t stop) const
-// {
-//     // This can only cast down
-//     return std::static_pointer_cast<MultiResponseMessage>(this->internal_get_slice(start, stop));
-// }
-
 void MultiResponseMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message,
                                           std::size_t start,
                                           std::size_t stop) const
