@@ -17,46 +17,37 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"
 
-#include <cstddef>
-#include <map>
+#include <cudf/io/types.hpp>
+#include <pybind11/pytypes.h>
+
 #include <string>
+#include <vector>
 
 namespace morpheus {
+/****** Component public implementations *******************/
+/****** TensorMemory****************************************/
 
 /**
- * TODO(Documentation)
+ * @brief Container for holding a collection of named `TensorObject`s in a `std::map` keyed by name.
+ * Base class for `InferenceMemory` & `ResponseMemory`.
+ *
  */
-class InferenceMemory : public TensorMemory
+class TensorMemory
 {
   public:
-    InferenceMemory(size_t count);
-    InferenceMemory(size_t count, tensor_map_t&& tensors);
+    using tensor_map_t = std::map<std::string, TensorObject>;
 
-    /**
-     * @brief Checks if a tensor named `name` exists in `tensors`
-     *
-     * @param name
-     * @return true
-     * @return false
-     */
-    bool has_input(const std::string& name) const;
+    TensorMemory(size_t count);
+    TensorMemory(size_t count, tensor_map_t &&tensors);
+
+    size_t count{0};
+    tensor_map_t tensors;
+
+    bool has_tensor(const std::string &name) const;
+    tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>> &ranges,
+                                    size_t num_selected_rows) const;
 };
 
-/****** InferenceMemoryInterfaceProxy *************************/
-#pragma GCC visibility push(default)
-/**
- * @brief Interface proxy, used to insulate python bindings.
- */
-struct InferenceMemoryInterfaceProxy
-{
-    /**
-     * TODO(Documentation)
-     */
-    static std::size_t get_count(InferenceMemory& self);
-};
-#pragma GCC visibility pop
 }  // namespace morpheus

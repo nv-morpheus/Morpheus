@@ -39,7 +39,7 @@
 #include <ostream>
 #include <stdexcept>  // for runtime_error
 #include <string>
-#include <utility>  // for exchange, move
+#include <utility>  // for exchange, move & pair
 #include <vector>
 // IWYU is confusing std::size_t with __gnu_cxx::size_t for some reason
 // when we define vector<size_t>
@@ -142,6 +142,9 @@ struct ITensorOperations
     virtual std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex>& dims) const = 0;
 
     virtual std::shared_ptr<ITensor> deep_copy() const = 0;
+
+    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+                                               TensorIndex num_rows) const = 0;
 
     virtual std::shared_ptr<ITensor> as_type(DataType dtype) const = 0;
 };
@@ -592,6 +595,20 @@ struct TensorObject final
         }
 
         return TensorObject(m_tensor->as_type(dtype));
+    }
+
+    /**
+     * @brief Creates a deep copy of the rows specified in the exclusive ranges of vector<pair<start, stop>>
+     * of the stop row.
+     *
+     * @param selected_rows
+     * @param num_rows
+     * @return TensorObject
+     */
+    TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+                           TensorIndex num_rows) const
+    {
+        return TensorObject(m_tensor->copy_rows(selected_rows, num_rows));
     }
 
   protected:
