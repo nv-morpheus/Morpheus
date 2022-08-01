@@ -47,6 +47,7 @@ def test_kafka_source_stage_pipe(tmp_path, config, kafka_bootstrap_servers: str,
                          input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
+                         client_id='morpheus_kafka_source_stage_pipe',
                          stop_after=num_records))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))

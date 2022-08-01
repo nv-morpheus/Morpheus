@@ -49,7 +49,10 @@ def test_write_to_kafka_stage_pipe(config,
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
-        WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
+        WriteToKafkaStage(config,
+                          bootstrap_servers=kafka_bootstrap_servers,
+                          output_topic=kafka_topics.output_topic,
+                          client_id='morpheus_test_write_to_kafka_stage_pipe'))
     pipe.run()
 
     input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
