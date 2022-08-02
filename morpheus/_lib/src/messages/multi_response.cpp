@@ -98,14 +98,8 @@ void MultiResponseMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_mess
 
     // If we have more inference rows than message rows, we need to use the seq_ids to figure out the slicing. This
     // will be slow and should be avoided at all costs
-    if (this->count != this->mess_count && this->memory->has_output("seq_ids"))
-    {
-        auto seq_ids = this->get_output("seq_ids");
-
-        // Determine the new start and stop before passing onto the base
-        start = seq_ids.read_element<int32_t>({(TensorIndex)start, 0});
-        stop  = seq_ids.read_element<int32_t>({(TensorIndex)stop - 1, 0}) + 1;
-    }
+    DCHECK(this->count == this->mess_count)
+        << "Number of rows in response output does not match number of messages in DF";
 
     // Pass onto the base
     DerivedMultiMessage::get_slice_impl(new_message, start, stop);
