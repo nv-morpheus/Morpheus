@@ -41,7 +41,8 @@ from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from morpheus.utils.logging import configure_logging
 from utils import TEST_DIRS
 
-with open('e2e_test_configs.json', 'r') as f:
+e2e_config_file = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
+with open(e2e_config_file, 'r') as f:
     E2E_TEST_CONFIGS = json.load(f)
 
 
