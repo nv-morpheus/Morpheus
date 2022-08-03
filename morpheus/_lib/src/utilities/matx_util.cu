@@ -243,6 +243,34 @@ namespace morpheus {
         }
     };
 
+    struct MatxUtil__MatxReduceMax {
+        matx::index_t num_cols;
+        void *input_data;
+        void *output_data;
+        rmm::cuda_stream_view stream;
+
+        template<typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()> * = nullptr>
+        void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
+            throw std::invalid_argument("Unsupported conversion");
+        }
+
+        template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
+        void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
+            auto input_count = stop - start + 1;
+            matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(input_count), num_cols});
+            matx::tensorShape_t<1> output_shape({1});
+
+            auto input_ptr = static_cast<InputT *>(input_data) + start;
+            auto output_ptr = static_cast<InputT *>(output_data) + output_idx;
+
+            matx::tensor_t<InputT, 2> input_tensor(input_ptr, input_shape);
+
+            matx::tensor_t<InputT, 1> output_tensor(output_ptr, output_shape);
+
+            matx::rmax(output_tensor, input_tensor, stream.value());
+        }
+    };
+
     // Component public implementations
     // ************ MatxUtil************************* //
     std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo &input, TypeId output_type) {
@@ -332,6 +360,53 @@ namespace morpheus {
                               output->data(),
                               thresh_val,
                               stride);
+
+        srf::enqueue_stream_sync_event(output->stream()).get();
+
+        return output;
+    }
+
+    std::shared_ptr<rmm::device_buffer>
+    reduce_max(const DevMemInfo &input,
+               const std::vector<int32_t> &seq_ids,
+               const std::vector<int64_t> &input_shape,
+               const std::vector<int64_t> &output_shape)
+    {
+        auto dtype = DType(input.type_id);
+        auto elem_size = dtype.item_size();
+        auto cudf_type = cudf::data_type{dtype.cudf_type_id()};
+
+        std::size_t output_element_count = output_shape[0] * output_shape[1];
+        std::size_t output_buff_size = elem_size * output_element_count;
+        DCHECK(output_element_count <= input.element_count) << "Output buffer size should be less than or equal to the input";
+        DCHECK(input_shape[1] == output_shape[1]) << "Number of input and output columns must match";
+
+        auto output = std::make_shared<rmm::device_buffer>(output_buff_size,
+                                                                  input.buffer->stream(),
+                                                                  input.buffer->memory_resource());
+
+        MatxUtil__MatxReduceMax matx_reduce_max{input_shape[1], input.data(), output->data(), output->stream()};
+
+        std::size_t start = 0;
+        for (std::size_t i=0; i < seq_ids.size(); ++i)
+        {
+            auto idx = seq_ids[i];
+            if (idx != seq_ids[start])
+            {
+                cudf::type_dispatcher(cudf_type,
+                                      matx_reduce_max,
+                                      start,
+                                      i,
+                                      seq_ids[start]);
+                start = i;
+            }
+        }
+
+        cudf::type_dispatcher(cudf_type,
+                              matx_reduce_max,
+                              start,
+                              seq_ids.size() - 1,
+                              seq_ids[start]);
 
         srf::enqueue_stream_sync_event(output->stream()).get();
 

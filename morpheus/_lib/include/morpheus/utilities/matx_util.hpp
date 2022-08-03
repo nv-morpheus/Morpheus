@@ -24,6 +24,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <vector>
 
 namespace morpheus {
 struct MatxUtil
@@ -63,5 +64,21 @@ struct MatxUtil
                                                          const std::vector<TensorIndex> &stride,
                                                          double thresh_val,
                                                          bool by_row);
+
+    /**
+     * @brief Returns a buffer with `output_shape` containing the max value from values in `input` mapped according to
+     * `seq_ids`. Ex given a hypothetical input of:
+     *
+     *     input =   [5, 2, 8, 9, 8, 2, 1]
+     *     seq_ids = [0, 0, 0, 1, 2, 3, 3]
+     *
+     * Will return:
+     *               [8, 9, 8, 2]
+     * @return std::shared_ptr<rmm::device_buffer>
+     */
+    static std::shared_ptr<rmm::device_buffer> reduce_max(const DevMemInfo &input,
+                                                          const std::vector<int32_t> &seq_ids,
+                                                          const std::vector<int64_t> &input_shape,
+                                                          const std::vector<int64_t> &output_shape);
 };
 }  // namespace morpheus

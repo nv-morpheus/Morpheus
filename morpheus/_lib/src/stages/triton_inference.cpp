@@ -23,6 +23,7 @@
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/type_util.hpp"
 
+#include <bits/c++config.h>
 #include <glog/logging.h>
 #include <http_client.h>
 #include <nlohmann/json.hpp>
@@ -87,7 +88,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, &client](sink_type_t x) {
-                auto reponse_memory = std::make_shared<ResponseMemory>(x->count);
+                auto reponse_memory = std::make_shared<ResponseMemory>(x->mess_count);
 
                 // Create the output memory blocks
                 for (auto &model_output : m_model_outputs)
@@ -95,7 +96,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     auto total_shape = model_output.shape;
 
                     // First dimension will always end up being the number of rows
-                    total_shape[0] = x->count;
+                    total_shape[0] = x->mess_count;
 
                     auto elem_count = std::accumulate(total_shape.begin(), total_shape.end(), 1, std::multiplies<>());
 
@@ -177,6 +178,17 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                     CHECK_TRITON(client->Infer(&results, m_options, inputs, outputs));
 
+                    auto seq_ids    = mini_batch_input->get_input("seq_ids");
+                    auto num_rows   = seq_ids.count();
+                    auto seq_id_col = seq_ids.slice({0, 0}, {static_cast<TensorIndex>(num_rows), 1});
+
+                    std::vector<int32_t> host_seq_ids(num_rows);
+                    SRF_CHECK_CUDA(
+                        cudaMemcpy(host_seq_ids.data(), seq_id_col.data(), seq_id_col.bytes(), cudaMemcpyDeviceToHost));
+
+                    const auto seq_offset = host_seq_ids.front();
+                    const auto seq_count  = host_seq_ids.back() + 1 - seq_offset;
+
                     for (auto &model_output : m_model_outputs)
                     {
                         std::vector<int64_t> output_shape;
@@ -199,6 +211,20 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         SRF_CHECK_CUDA(
                             cudaMemcpy(output_buffer->data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
 
+                        if (mini_batch_input->mess_count != mini_batch_input->count)
+                        {
+                            // we need both the shpae of the response output and our destination output
+                            std::vector<int64_t> mapped_output_shape{output_shape};
+                            mapped_output_shape[0] = mini_batch_output->count;
+
+                            size_t element_count =
+                                std::accumulate(output_shape.begin(), output_shape.end(), 1, std::multiplies<>());
+
+                            output_buffer = MatxUtil::reduce_max(DevMemInfo{element_count, model_output.datatype.type_id(), output_buffer, 0}, 
+                                                                 host_seq_ids, output_shape, mapped_output_shape);
+                            output_shape = std::move(mapped_output_shape);
+                        }
+
                         // If we need to do logits, do that here
                         if (m_needs_logits)
                         {
@@ -212,8 +238,8 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                             model_output.mapped_name,
                             Tensor::create(std::move(output_buffer),
                                            model_output.datatype,
-                                           std::vector<TensorIndex>{static_cast<int>(output_shape[0]),
-                                                                    static_cast<int>(output_shape[1])},
+                                           std::vector<TensorIndex>{static_cast<TensorIndex>(output_shape[0]),
+                                                                    static_cast<TensorIndex>(output_shape[1])},
                                            std::vector<TensorIndex>{},
                                            0));
                     }
