@@ -23,7 +23,8 @@ from cudf_kafka._lib.kafka import KafkaDatasource
 import cudf
 
 import morpheus._lib.stages as _stages
-from morpheus.config import Config
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config, PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
@@ -31,6 +32,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+@register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class KafkaSourceStage(SingleOutputSource):
     """
     Load messages from a Kafka cluster.

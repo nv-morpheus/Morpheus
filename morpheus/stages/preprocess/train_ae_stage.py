@@ -25,7 +25,9 @@ from dfencoder import AutoEncoder
 from srf.core import operators as ops
 
 from morpheus._lib.file_types import FileTypes
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -108,9 +110,13 @@ class _UserModelManager(object):
         return model
 
 
+@register_stage("train-ae", modes=[PipelineModes.AE])
 class TrainAEStage(MultiMessageStage):
     """
-    Autoencoder usecases are preprocessed with this stage class.
+    Train an Autoencoder model on incoming data.
+
+    This stage is used to train an Autoencoder model on incoming data a supply that model to downstream stages. The
+    Autoencoder workflows use this stage as a pre-processing step to build the model for inference.
 
     Parameters
     ----------

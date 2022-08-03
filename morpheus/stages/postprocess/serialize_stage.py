@@ -20,6 +20,7 @@ from functools import partial
 import srf
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -27,8 +28,11 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+@register_stage("serialize")
 class SerializeStage(SinglePortStage):
     """
+    Include & exclude columns from messages.
+
     This class filters columns from a `MultiMessage` object emitting a `MessageMeta`.
 
     Parameters

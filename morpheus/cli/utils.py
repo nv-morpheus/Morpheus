@@ -24,6 +24,9 @@ from click.globals import get_current_context
 from morpheus.config import Config
 from morpheus.config import ConfigBase
 
+if (typing.TYPE_CHECKING):
+    from morpheus.pipeline.linear_pipeline import LinearPipeline
+
 PluginSpec = typing.Union[None, types.ModuleType, str, typing.Sequence[str]]
 
 
@@ -81,8 +84,16 @@ def prepare_command(parse_config: bool = False):
         """
 
         def new_func(*args, **kwargs):
+
+            # If we are running help, dont run the callback. Just exit
+            if ("--help" in click.get_os_args()):
+                return
+
             ctx: click.Context = get_current_context()
             ctx.show_default = True
+
+            # Set the max width. This will still default to the users console width
+            # ctx.max_content_width = 200
 
             kwargs = _without_empty_args(kwargs)
 
@@ -108,7 +119,7 @@ def get_config_from_ctx(ctx) -> Config:
     return ctx_dict["config"]
 
 
-def get_pipeline_from_ctx(ctx):
+def get_pipeline_from_ctx(ctx) -> "LinearPipeline":
     ctx_dict = ctx.ensure_object(dict)
 
     assert "pipeline" in ctx_dict, "Inconsistent configuration. Pipeline accessed before created"

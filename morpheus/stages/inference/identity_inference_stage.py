@@ -15,8 +15,9 @@
 import typing
 
 import cupy as cp
+from morpheus.cli.register_stage import register_stage
 
-from morpheus.config import Config
+from morpheus.config import Config, PipelineModes
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
@@ -59,8 +60,11 @@ class _IdentityInferenceWorker(InferenceWorker):
         tmp(batch, cb)
 
 
+@register_stage("inf-identity", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class IdentityInferenceStage(InferenceStage):
     """
+    Perform inference for testing that performs a no-op.
+
     Inference stage that simply returns output of zeros with same dimensions as input. Should only be used for testing.
 
     Parameters

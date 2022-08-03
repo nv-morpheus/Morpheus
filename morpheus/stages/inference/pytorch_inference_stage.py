@@ -15,8 +15,9 @@
 import typing
 
 import cupy as cp
+from morpheus.cli.register_stage import register_stage
 
-from morpheus.config import Config
+from morpheus.config import Config, PipelineModes
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
@@ -105,8 +106,11 @@ class _PyTorchInferenceWorker(InferenceWorker):
         cb(response_mem)
 
 
+@register_stage("inf-pytorch", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class PyTorchInferenceStage(InferenceStage):
     """
+    Perform inference with PyTorch.
+
     Pipeline stage for PyTorch inferencing. Uses `PyTorchInference` to process inference inputs using PyTorch.
     Inference outputs are run through sigmoid function to calculate probabilities which are then returned with response.
 

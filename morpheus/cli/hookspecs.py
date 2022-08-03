@@ -3,10 +3,15 @@ import typing
 import click
 import pluggy
 
+from morpheus.cli.stage_registry import StageRegistry
 from morpheus.config import PipelineModes
 
 hookspec = pluggy.HookspecMarker("morpheus")
 
+
+@hookspec
+def morpheus_cli_collect_stages(registry: StageRegistry):
+    pass
 
 @hookspec
 def morpheus_cli_collect_stage_names(mode: PipelineModes) -> typing.List[str]:

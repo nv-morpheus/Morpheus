@@ -16,6 +16,7 @@ import logging
 import typing
 
 import srf
+from morpheus.cli.register_stage import register_stage
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -25,8 +26,11 @@ from morpheus.utils.logging import deprecated_stage_warning
 logger = logging.getLogger(__name__)
 
 
+@register_stage("delay")
 class DelayStage(SinglePortStage):
     """
+    Delay results for a certain duration.
+
     Delay stage class. Used to buffer all inputs until the timeout duration is hit. At that point all messages
     will be dumped into downstream stages. Useful for testing performance of one stage at a time.
 

@@ -26,6 +26,7 @@ from srf.core import operators as ops
 import cudf
 
 from morpheus._lib.file_types import FileTypes
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiMessage
@@ -35,8 +36,11 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+@register_stage("validate")
 class ValidationStage(MultiMessageStage):
     """
+    Validate pipeline output for testing.
+
     The validation stage can be used to combine all output data into a single dataframe and compare against a known good
     file.
 

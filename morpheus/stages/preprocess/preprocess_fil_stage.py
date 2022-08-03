@@ -24,7 +24,8 @@ import srf
 import cudf
 
 import morpheus._lib.stages as _stages
-from morpheus.config import Config
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config, PipelineModes
 from morpheus.messages import InferenceMemoryFIL
 from morpheus.messages import MultiInferenceFILMessage
 from morpheus.messages import MultiInferenceMessage
@@ -34,9 +35,10 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 logger = logging.getLogger(__name__)
 
 
+@register_stage("preprocess", modes=[PipelineModes.FIL])
 class PreprocessFILStage(PreprocessBaseStage):
     """
-    FIL usecases are preprocessed with this stage class.
+    Prepare FIL input DataFrames for inference.
 
     Parameters
     ----------

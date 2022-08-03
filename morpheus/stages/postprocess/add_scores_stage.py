@@ -18,6 +18,7 @@ import typing
 import srf
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -26,8 +27,11 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+@register_stage("add-scores")
 class AddScoresStage(SinglePortStage):
     """
+    Add probability scores to each message.
+
     Add score labels based on probabilities calculated in inference stage. Label indexes will be looked up in
     the Config.class_labels property.
 

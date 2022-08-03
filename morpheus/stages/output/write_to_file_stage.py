@@ -24,6 +24,7 @@ import cudf
 import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
@@ -31,8 +32,11 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+@register_stage("to-file")
 class WriteToFileStage(SinglePortStage):
     """
+    Write all messages to a file.
+
     This class writes messages to a file. This class does not buffer or keep the file open between messages.
     It should not be used in production code.
 

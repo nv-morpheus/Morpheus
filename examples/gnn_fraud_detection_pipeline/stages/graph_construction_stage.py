@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import dataclasses
+import pathlib
 import typing
 
 import networkx as nx
@@ -38,7 +39,7 @@ class FraudGraphMultiMessage(MultiMessage):
 @register_stage("fraud-graph-construction", modes=[PipelineModes.OTHER])
 class FraudGraphConstructionStage(SinglePortStage):
 
-    def __init__(self, c: Config, training_file: str):
+    def __init__(self, c: Config, training_file: pathlib.Path):
         """
         Create a fraud-graph-construction stage
 
@@ -46,7 +47,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         ----------
         c : Config
             The Morpheus config object
-        training_file : str
+        training_file : pathlib.Path, exists = True, dir_okay = False
             A CSV training file to load to seed the graph
         """
         super().__init__(c)

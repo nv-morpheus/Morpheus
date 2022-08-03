@@ -39,6 +39,8 @@ logger = logging.getLogger(__name__)
 @register_stage("from-cloudtrail", modes=[PipelineModes.AE])
 class CloudTrailSourceStage(SingleOutputSource):
     """
+    Load messages from a Cloudtrail directory.
+
     Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline
     immediately. Useful for testing performance and accuracy of a pipeline.
 

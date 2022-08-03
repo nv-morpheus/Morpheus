@@ -31,6 +31,7 @@ from tritonclient.utils import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
@@ -829,8 +830,11 @@ class TritonInferenceAE(_TritonInferenceWorker):
         return mem
 
 
+@register_stage("inf-triton")
 class TritonInferenceStage(InferenceStage):
     """
+    Perform inference with Triton Inference Server.
+
     This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
 
     Parameters

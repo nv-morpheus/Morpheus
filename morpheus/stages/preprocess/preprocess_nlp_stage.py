@@ -21,7 +21,8 @@ import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
 import morpheus._lib.stages as _stages
-from morpheus.config import Config
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config, PipelineModes
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
@@ -30,9 +31,10 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
 
+@register_stage("preprocess", modes=[PipelineModes.NLP])
 class PreprocessNLPStage(PreprocessBaseStage):
     """
-    NLP usecases are preprocessed with this stage class.
+    Prepare NLP input DataFrames for inference.
 
     Parameters
     ----------

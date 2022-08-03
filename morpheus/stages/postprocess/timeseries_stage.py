@@ -24,8 +24,9 @@ import cupy as cp
 import pandas as pd
 import srf
 from srf.core import operators as ops
+from morpheus.cli.register_stage import register_stage
 
-from morpheus.config import Config
+from morpheus.config import Config, PipelineModes
 from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -368,10 +369,12 @@ class UserTimeSeries(object):
         return output_messages
 
 
+@register_stage("timeseries", modes=[PipelineModes.AE])
 class TimeSeriesStage(SinglePortStage):
     """
-    Perform time series anomaly detection and add prediction. Uses default resolution of
-    "hour".
+    Perform time series anomaly detection and add prediction.
+
+    Uses default resolution of "hour".
 
     Parameters
     ----------
