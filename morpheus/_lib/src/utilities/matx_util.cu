@@ -367,7 +367,7 @@ namespace morpheus {
     }
 
     std::shared_ptr<rmm::device_buffer>
-    reduce_max(const DevMemInfo &input,
+    MatxUtil::reduce_max(const DevMemInfo &input,
                const std::vector<int32_t> &seq_ids,
                const std::vector<int64_t> &input_shape,
                const std::vector<int64_t> &output_shape)
