@@ -96,8 +96,9 @@ void MultiResponseMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_mess
     sliced_message->offset = start;
     sliced_message->count  = stop - start;
 
-    // If we have more inference rows than message rows, we need to use the seq_ids to figure out the slicing. This
-    // will be slow and should be avoided at all costs
+    // Currently our output lengths should always match mess_count, and even if they didn't we wouldn't have any way to
+    // associate rows in the output with rows in the dataframe. Note on the input side we have the seq_ids array to
+    // but we don't have any equivelant for the output.
     DCHECK(this->count == this->mess_count)
         << "Number of rows in response output does not match number of messages in DF";
 
