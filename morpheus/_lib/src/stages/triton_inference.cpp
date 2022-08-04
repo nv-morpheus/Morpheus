@@ -102,11 +102,10 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 // Create the output memory blocks
                 for (auto &model_output : m_model_outputs)
                 {
-                    auto total_shape = model_output.shape;
+                    std::vector<TensorIndex> total_shape{model_output.shape.begin(), model_output.shape.end()};
 
                     // First dimension will always end up being the number of rows in the dataframe
-                    total_shape[0] = x->mess_count;
-
+                    total_shape[0]  = static_cast<TensorIndex>(x->mess_count);
                     auto elem_count = get_elem_count(total_shape);
 
                     // Create the output memory
@@ -114,17 +113,16 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         elem_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
 
                     reponse_memory->tensors[model_output.mapped_name] = Tensor::create(
-                        std::move(output_buffer),
-                        model_output.datatype,
-                        std::vector<TensorIndex>{static_cast<int>(total_shape[0]), static_cast<int>(total_shape[1])},
-                        std::vector<TensorIndex>{},
-                        0);
+                        std::move(output_buffer), model_output.datatype, total_shape, std::vector<TensorIndex>{}, 0);
                 }
 
                 // This will be the final output of all mini-batches
                 auto response = std::make_shared<MultiResponseProbsMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(reponse_memory), 0, reponse_memory->count);
 
+                // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
+                // The output tensors we store in `reponse_memory` will all be of the same length as the the dataframe.
+                // seq_ids has three columns, but we are only interested in the first column.
                 auto seq_ids         = x->get_input("seq_ids");
                 const auto item_size = seq_ids.dtype().item_size();
 
@@ -146,23 +144,19 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                     sink_type_t mini_batch_input = x->get_slice(start, stop);
 
-                    size_t out_start, out_stop;
+                    size_t out_start = start;
+                    size_t out_stop  = stop;
                     if (needs_seq_ids)
                     {
-                        out_start = host_seq_ids[start];
-                        if (stop < x->count)
+                        out_start = host_seq_ids[out_start];
+                        if (out_stop < host_seq_ids.size())
                         {
-                            out_stop = host_seq_ids[stop];
+                            out_stop = host_seq_ids[out_stop];
                         }
                         else
                         {
                             out_stop = x->mess_count;
                         }
-                    }
-                    else
-                    {
-                        out_start = start;
-                        out_stop  = stop;
                     }
 
                     source_type_t mini_batch_output = response->get_slice(out_start, out_stop);
