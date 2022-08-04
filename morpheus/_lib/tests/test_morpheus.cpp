@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2018-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,13 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "test_morpheus.hpp"
 
-#include <cudf/io/types.hpp>
-#include <glog/logging.h>  // IWYU pragma: keep
-#include <gtest/gtest.h>   // IWYU pragma: keep
+#include <cudf/io/csv.hpp>
+#include <cudf/table/table.hpp>
 
-#include <string>
-
-cudf::io::table_with_metadata load_table_from_csv(std::string filename);
-
-#define TEST_CLASS(name)                      \
-    class Test##name : public ::testing::Test \
-    {}
+cudf::io::table_with_metadata load_table_from_csv(std::string filename)
+{
+    auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{filename});
+    return cudf::io::read_csv(options.build());
+}
