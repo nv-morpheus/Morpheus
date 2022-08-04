@@ -12,12 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 
 def run_cli():
 
-    from morpheus.cli.commands import cli
+    try:
+        start_time = time.time()
 
-    cli(obj={}, auto_envvar_prefix='MORPHEUS', show_default=True, prog_name="morpheus")
+        from morpheus.cli.commands import cli
+
+        cli(obj={}, auto_envvar_prefix='MORPHEUS', show_default=True, prog_name="morpheus")
+
+    finally:
+        print("Total CLI runtime: {} ms".format((time.time() - start_time) * 1000.0))
 
 
 if __name__ == '__main__':

@@ -21,8 +21,10 @@ import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.commands import MorpheusRelativePath
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config, PipelineModes
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
@@ -31,7 +33,12 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
 
-@register_stage("preprocess", modes=[PipelineModes.NLP])
+@register_stage(
+    "preprocess",
+    modes=[PipelineModes.NLP],
+    option_args={"vocab_hash_file": {
+        "type": MorpheusRelativePath(exists=True, dir_okay=False, resolve_path=True)
+    }})
 class PreprocessNLPStage(PreprocessBaseStage):
     """
     Prepare NLP input DataFrames for inference.
@@ -40,7 +47,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    vocab_hashfile : str
+    vocab_hash_file : str
         Path to hash file containing vocabulary of words with token-ids. This can be created from the raw vocabulary
         using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
     truncation : bool
@@ -61,10 +68,10 @@ class PreprocessNLPStage(PreprocessBaseStage):
 
     def __init__(self,
                  c: Config,
-                 vocab_hash_file: str,
-                 truncation: bool,
-                 do_lower_case: bool,
-                 add_special_tokens: bool,
+                 vocab_hash_file: str = "data/bert-base-cased-hash.txt",
+                 truncation: bool = False,
+                 do_lower_case: bool = False,
+                 add_special_tokens: bool = False,
                  stride: int = -1):
         super().__init__(c)
 

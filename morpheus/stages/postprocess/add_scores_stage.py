@@ -27,7 +27,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("add-scores")
+@register_stage("add-scores", rename_options={"labels": "--label"})
 class AddScoresStage(SinglePortStage):
     """
     Add probability scores to each message.
@@ -39,12 +39,12 @@ class AddScoresStage(SinglePortStage):
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance.
-    labels: list, default = None
-        The list of labels to add classifications for. Each item in the list will determine its index from the
+    labels : list, default = None, multiple = True, show_default = "[Config.class_labels]"
+        Converts probability indexes into classification scores. Each item in the list will determine its index from the
         Config.class_labels property and must be one of the available class labels. Leave as None to add all labels in
         the Config.class_labels property.
-    prefix: str, default = ""
-        A prefix to append to each label.
+    prefix : str, default = ""
+        Prefix to add to each label. Allows adding labels different from the Config.class_labels property.
 
     """
 

@@ -54,7 +54,7 @@ class FileSourceStage(SingleOutputSource):
     file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
-    repeat : int, default = 1
+    repeat : int, default = 1, min = 1
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
     filter_null : bool, default = True
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down

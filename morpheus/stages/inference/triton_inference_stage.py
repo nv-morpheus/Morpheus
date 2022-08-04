@@ -849,7 +849,7 @@ class TritonInferenceStage(InferenceStage):
     force_convert_inputs : bool
         Instructs the stage to convert the incoming data to the same format that Triton is expecting. If set to False,
         data will only be converted if it would not result in the loss of data.
-    use_shared_memory: bool, default = False
+    use_shared_memory : bool, default = False
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine.
     """

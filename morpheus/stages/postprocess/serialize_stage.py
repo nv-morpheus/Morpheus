@@ -43,7 +43,7 @@ class SerializeStage(SinglePortStage):
         Attributes that are required send to downstream stage.
     exclude : typing.List[str]
         Attributes that are not required send to downstream stage.
-    fixed_columns: bool
+    fixed_columns : bool
         When `True` `SerializeStage` will assume that the Dataframe in all messages contain the same columns as the
         first message received.
     """

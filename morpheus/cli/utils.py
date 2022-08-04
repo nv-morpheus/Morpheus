@@ -19,7 +19,7 @@ import warnings
 from functools import update_wrapper
 
 import click
-from click.globals import get_current_context
+import click.globals
 
 from morpheus.config import Config
 from morpheus.config import ConfigBase
@@ -48,7 +48,7 @@ def without_empty_args(f):
 
     def new_func(*args, **kwargs):
         kwargs = _without_empty_args(kwargs)
-        return f(get_current_context(), *args, **kwargs)
+        return f(click.globals.get_current_context(), *args, **kwargs)
 
     return update_wrapper(new_func, f)
 
@@ -59,7 +59,7 @@ def show_defaults(f):
     """
 
     def new_func(*args, **kwargs):
-        ctx: click.Context = get_current_context()
+        ctx: click.Context = click.globals.get_current_context()
         ctx.show_default = True
         return f(*args, **kwargs)
 
@@ -89,7 +89,7 @@ def prepare_command(parse_config: bool = False):
             if ("--help" in click.get_os_args()):
                 return
 
-            ctx: click.Context = get_current_context()
+            ctx: click.Context = click.globals.get_current_context()
             ctx.show_default = True
 
             # Set the max width. This will still default to the users console width

@@ -1,4 +1,5 @@
 import enum
+import functools
 import inspect
 import pathlib
 import re
@@ -101,10 +102,12 @@ def parse_type_value(value_str: str) -> typing.Any:
         return True
     if (value_lower == "false"):
         return False
+    if (value_lower == "none"):
+        return None
     if (value_str.startswith('"') and value_str.endswith('"')):
-        return value_str
+        return value_str.strip('"')
     if (value_str.startswith("'") and value_str.endswith("'")):
-        return value_str
+        return value_str.strip("'")
 
     # Try to parse as float
     try:
@@ -157,7 +160,35 @@ def get_doc_kwargs(doc_type_str: str) -> dict:
     return out_dict
 
 
+def partial_pop_kwargs(function, input_dict: dict):
+    """
+    Binds any matching kwargs in `input_dict` to arguments in `function`. Any that match are popped from the dictionary.
+    Returned value is a `functools.partial` with matching arguments bound
+    """
+
+    # Get the function signature
+    fn_sig = inspect.signature(function)
+
+    bound_args = {
+        input_name: input_dict.pop(input_name)
+        for input_name in list(input_dict.keys()) if input_name in fn_sig.parameters
+    }
+
+    return functools.partial(function, **bound_args)
+
+
+def has_matching_kwargs(function, input_dict: dict) -> bool:
+    # Check for any matching arguments between function and input_dict
+
+    # Get the function signature
+    fn_sig = inspect.signature(function)
+
+    return len([True for input_name in list(input_dict.keys()) if input_name in fn_sig.parameters]) > 0
+
+
 def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
+
+    doc_type_kwargs = get_doc_kwargs(doc_type)
 
     if (annotation == inspect.Parameter.empty):
         raise RuntimeError("All types must be specified to auto register stage")
@@ -166,34 +197,64 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         # For variable length array, use multiple=True
         options_kwargs["multiple"] = True
         options_kwargs["type"] = get_args(annotation)[0]
+
     elif (issubtype(annotation, pathlib.Path)):
-
-        type_dict = get_doc_kwargs(doc_type)
-
         # For paths, use the Path option and apply any kwargs
-        options_kwargs["type"] = click.Path(**type_dict)
+        options_kwargs["type"] = partial_pop_kwargs(click.Path, doc_type_kwargs)()
+
     elif (issubtype(annotation, Enum)):
-        options_kwargs["type"] = click.Choice()
+        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)([x.value for x in annotation])
 
-    elif (issubtype(annotation, bool)):
+        def convert_to_enum(_: click.Context, _2: click.Parameter, value: str):
+            return annotation[value]
 
-        options_kwargs["type"] = annotation
+        options_kwargs["callback"] = convert_to_enum
 
-        type_dict = get_doc_kwargs(doc_type)
+    elif (issubtype(annotation, int) and not issubtype(annotation, bool)):
+        # Check if there are any range arguments. Otherwise use a normal int
+        if (has_matching_kwargs(click.IntRange, doc_type_kwargs)):
+            options_kwargs["type"] = partial_pop_kwargs(click.IntRange, doc_type_kwargs)()
+        else:
+            options_kwargs["type"] = annotation
 
-        # Apply the is_flag option
-        if (type_dict.get("is_flag", False)):
-            options_kwargs["is_flag"] = True
+    elif (issubtype(annotation, float)):
+        # Check if there are any range arguments. Otherwise use a normal int
+        if (has_matching_kwargs(click.FloatRange, doc_type_kwargs)):
+            options_kwargs["type"] = partial_pop_kwargs(click.FloatRange, doc_type_kwargs)()
+        else:
+            options_kwargs["type"] = annotation
 
     else:
         options_kwargs["type"] = annotation
+
+    # Update any remaining docstring kwargs
+    options_kwargs.update(doc_type_kwargs)
+
+
+def compute_option_name(stage_arg_name: str, rename_options: typing.Dict[str, str] = dict()) -> tuple:
+
+    rename_val = rename_options.get(stage_arg_name, f"--{stage_arg_name}")
+
+    if (issubtype(type(rename_val), str)):
+        rename_val = (rename_val, )
+    elif (not issubtype(type(rename_val), tuple)):
+        rename_val = tuple(rename_val)
+
+    for n in rename_val:
+        if (not n.startswith("-")):
+            raise RuntimeError("Rename value '{}' for option '{}', must start with '-'. i.e. '--my_new_option".format(
+                n, stage_arg_name))
+
+    # Create the click option name as a ("stage_arg_name", "--rename1", "--rename2", "-r")
+    return (stage_arg_name, ) + rename_val
 
 
 def register_stage(command_name: str = None,
                    modes: typing.Sequence[PipelineModes] = None,
                    ignore_args: typing.List[str] = list(),
                    command_args: dict = dict(),
-                   option_args: typing.Dict[str, dict] = dict()):
+                   option_args: typing.Dict[str, dict] = dict(),
+                   rename_options: typing.Dict[str, str] = dict()):
 
     if (modes is None):
         modes = [x for x in PipelineModes]
@@ -249,9 +310,12 @@ def register_stage(command_name: str = None,
                     set_options_param_type(option_kwargs, p_value.annotation, get_param_type(numpy_doc, p_name))
 
                     # Now overwrite with any user supplied values for this option
-                    option_kwargs.update(option_kwargs.get(p_name, {}))
+                    option_kwargs.update(option_args.get(p_name, {}))
 
-                    option = click.Option((f"--{p_name}", ), **option_kwargs)
+                    # Get the name settings
+                    click_option_name = compute_option_name(p_name, rename_options)
+
+                    option = click.Option(click_option_name, **option_kwargs)
 
                     command_params.append(option)
 

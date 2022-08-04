@@ -15,6 +15,7 @@
 import logging
 import time
 import weakref
+from enum import Enum
 
 import pandas as pd
 import srf
@@ -24,7 +25,8 @@ import cudf
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config, PipelineModes
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
@@ -32,7 +34,14 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
+class AutoOffsetReset(Enum):
+    """The supported offset options in Kafka"""
+    EARLIEST = "earliest"
+    LATEST = "latest"
+    NONE = "none"
+
+
+@register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER], option_args={"bootstrap": {"callback": }})
 class KafkaSourceStage(SingleOutputSource):
     """
     Load messages from a Kafka cluster.
@@ -42,20 +51,21 @@ class KafkaSourceStage(SingleOutputSource):
     c : `morpheus.config.Config`
         Pipeline configuration instance.
     bootstrap_servers : str
-        Kafka cluster bootstrap servers separated by a comma.
+        Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, this can be set to
+        'auto' to automatically determine the cluster IPs and ports
     input_topic : str
         Input kafka topic.
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
     poll_interval : str
         Seconds that elapse between polling Kafka for new messages. Follows the pandas interval format.
-    disable_commit: bool, default = False
+    disable_commit : bool, default = False
         Enabling this option will skip committing messages as they are pulled off the server. This is only useful for
         debugging, allowing the user to process the same messages multiple times.
     disable_pre_filtering : bool, default = False
         Enabling this option will skip pre-filtering of json messages. This is only useful when inputs are known to be
         valid json.
-    auto_offset_reset : str, default = "latest"
+    auto_offset_reset : `AutoOffsetReset`, default = AutoOffsetReset.LATEST, case_sensitive = False
         Sets the value for the configuration option 'auto.offset.reset'. See the kafka documentation for more
         information on the effects of each value."
     """
@@ -68,7 +78,7 @@ class KafkaSourceStage(SingleOutputSource):
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
-                 auto_offset_reset: str = "latest"):
+                 auto_offset_reset: AutoOffsetReset = AutoOffsetReset.LATEST):
         super().__init__(c)
 
         self._consumer_conf = {
