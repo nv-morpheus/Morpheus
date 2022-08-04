@@ -476,7 +476,6 @@ struct TensorObject final
         auto stride = this->get_stride();
         auto shape  = this->get_shape();
 
-        DCHECK(stride.size() == N) << "Length of idx must match lengh of stride";
         DCHECK(shape.size() == N) << "Length of idx must match lengh of shape";
 
         CHECK(std::transform_reduce(
@@ -507,7 +506,6 @@ struct TensorObject final
         auto stride = this->get_stride();
         auto shape  = this->get_shape();
 
-        DCHECK(stride.size() == N) << "Length of idx must match lengh of stride";
         DCHECK(shape.size() == N) << "Length of idx must match lengh of shape";
 
         CHECK(
