@@ -266,7 +266,9 @@ namespace morpheus {
             matx::tensor_t<InputT, 2> input_tensor(input_ptr, input_shape);
             matx::tensor_t<InputT, 1> output_tensor(output_ptr, output_shape);
 
-            // we need to transpose the input such that rmax will reduce the rows
+            // We need to transpose the input such that rmax will reduce the rows
+            // Matx performs reductions over the innermost dimensions.
+            // see https://nvidia.github.io/MatX/api/reduce.html
             matx::rmax(output_tensor, input_tensor.Permute({1, 0}), stream.value());
         }
     };
