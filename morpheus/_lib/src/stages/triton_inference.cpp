@@ -239,9 +239,11 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         SRF_CHECK_CUDA(
                             cudaMemcpy(output_buffer->data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
 
-                        if (needs_seq_ids)
+                        if (needs_seq_ids && output_shape[0] != mini_batch_output->count)
                         {
-                            // we need both the shpae of the response output and our destination output
+                            // Since we are working with slices of both the input and the output, the seq_ids have
+                            // already been applied to the output's start & stop, so we only need to reduce the
+                            // response tensort when the size doesn't match our output
                             std::vector<int64_t> mapped_output_shape{output_shape};
                             mapped_output_shape[0] = mini_batch_output->count;
 
