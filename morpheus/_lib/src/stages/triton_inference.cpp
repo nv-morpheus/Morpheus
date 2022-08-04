@@ -120,20 +120,24 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 auto response = std::make_shared<MultiResponseProbsMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(reponse_memory), 0, reponse_memory->count);
 
-                // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
-                // The output tensors we store in `reponse_memory` will all be of the same length as the the dataframe.
-                // seq_ids has three columns, but we are only interested in the first column.
-                auto seq_ids         = x->get_input("seq_ids");
-                const auto item_size = seq_ids.dtype().item_size();
+                std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
+                if (needs_seq_ids)
+                {
+                    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
+                    // The output tensors we store in `reponse_memory` will all be of the same length as the the
+                    // dataframe. seq_ids has three columns, but we are only interested in the first column.
+                    auto seq_ids         = x->get_input("seq_ids");
+                    const auto item_size = seq_ids.dtype().item_size();
 
-                std::vector<int32_t> host_seq_ids(x->count);
-                SRF_CHECK_CUDA(cudaMemcpy2D(host_seq_ids.data(),
-                                            item_size,
-                                            seq_ids.data(),
-                                            seq_ids.stride(0) * item_size,
-                                            item_size,
-                                            host_seq_ids.size(),
-                                            cudaMemcpyDeviceToHost));
+                    host_seq_ids = std::make_unique<std::vector<int32_t>>(x->count);
+                    SRF_CHECK_CUDA(cudaMemcpy2D(host_seq_ids->data(),
+                                                item_size,
+                                                seq_ids.data(),
+                                                seq_ids.stride(0) * item_size,
+                                                item_size,
+                                                host_seq_ids->size(),
+                                                cudaMemcpyDeviceToHost));
+                }
 
                 for (size_t i = 0; i < x->count; i += m_max_batch_size)
                 {
@@ -148,10 +152,10 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     size_t out_stop  = stop;
                     if (needs_seq_ids)
                     {
-                        out_start = host_seq_ids[out_start];
-                        if (out_stop < host_seq_ids.size())
+                        out_start = (*host_seq_ids)[out_start];
+                        if (out_stop < host_seq_ids->size())
                         {
-                            out_stop = host_seq_ids[out_stop];
+                            out_stop = (*host_seq_ids)[out_stop];
                         }
                         else
                         {
@@ -245,7 +249,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                             output_buffer = MatxUtil::reduce_max(
                                 DevMemInfo{element_count, model_output.datatype.type_id(), output_buffer, 0},
-                                host_seq_ids,
+                                *host_seq_ids,
                                 mini_batch_input->offset,
                                 output_shape,
                                 mapped_output_shape);
