@@ -256,18 +256,18 @@ namespace morpheus {
 
         template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
         void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
-            auto input_count = stop - start + 1;
+            auto input_count = stop - start;
             matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(input_count), num_cols});
-            matx::tensorShape_t<1> output_shape({1});
+            matx::tensorShape_t<1> output_shape({num_cols});
 
-            auto input_ptr = static_cast<InputT *>(input_data) + start;
-            auto output_ptr = static_cast<InputT *>(output_data) + output_idx;
+            auto input_ptr = static_cast<InputT *>(input_data) + (start * num_cols);
+            auto output_ptr = static_cast<InputT *>(output_data) + (output_idx * num_cols);
 
             matx::tensor_t<InputT, 2> input_tensor(input_ptr, input_shape);
-
             matx::tensor_t<InputT, 1> output_tensor(output_ptr, output_shape);
 
-            matx::rmax(output_tensor, input_tensor, stream.value());
+            // we need to transpose the input such that rmax will reduce the rows
+            matx::rmax(output_tensor, input_tensor.Permute({1, 0}), stream.value());
         }
     };
 
@@ -369,35 +369,40 @@ namespace morpheus {
     std::shared_ptr<rmm::device_buffer>
     MatxUtil::reduce_max(const DevMemInfo &input,
                const std::vector<int32_t> &seq_ids,
+               size_t seq_id_offset,
                const std::vector<int64_t> &input_shape,
                const std::vector<int64_t> &output_shape)
     {
         auto dtype = DType(input.type_id);
         auto elem_size = dtype.item_size();
         auto cudf_type = cudf::data_type{dtype.cudf_type_id()};
+        auto num_input_rows = input_shape[0];
+        auto num_input_cols = input_shape[1];
 
         std::size_t output_element_count = output_shape[0] * output_shape[1];
         std::size_t output_buff_size = elem_size * output_element_count;
+
         DCHECK(output_element_count <= input.element_count) << "Output buffer size should be less than or equal to the input";
-        DCHECK(input_shape[1] == output_shape[1]) << "Number of input and output columns must match";
+        DCHECK(num_input_cols == output_shape[1]) << "Number of input and output columns must match";
 
         auto output = std::make_shared<rmm::device_buffer>(output_buff_size,
-                                                                  input.buffer->stream(),
-                                                                  input.buffer->memory_resource());
+                                                           input.buffer->stream(),
+                                                           input.buffer->memory_resource());
 
-        MatxUtil__MatxReduceMax matx_reduce_max{input_shape[1], input.data(), output->data(), output->stream()};
+        MatxUtil__MatxReduceMax matx_reduce_max{num_input_cols, input.data(), output->data(), output->stream()};
 
         std::size_t start = 0;
-        for (std::size_t i=0; i < seq_ids.size(); ++i)
+        auto output_offset = seq_ids[seq_id_offset];
+        for (std::size_t i=0; i < num_input_rows; ++i)
         {
-            auto idx = seq_ids[i];
-            if (idx != seq_ids[start])
+            auto idx = seq_ids[i+seq_id_offset];
+            if (idx != seq_ids[start+seq_id_offset])
             {
                 cudf::type_dispatcher(cudf_type,
                                       matx_reduce_max,
                                       start,
                                       i,
-                                      seq_ids[start]);
+                                      seq_ids[start+seq_id_offset]-output_offset);
                 start = i;
             }
         }
@@ -405,11 +410,10 @@ namespace morpheus {
         cudf::type_dispatcher(cudf_type,
                               matx_reduce_max,
                               start,
-                              seq_ids.size() - 1,
-                              seq_ids[start]);
+                              num_input_rows,
+                              seq_ids[start+seq_id_offset]-output_offset);
 
         srf::enqueue_stream_sync_event(output->stream()).get();
-
         return output;
     }
 }
