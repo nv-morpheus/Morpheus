@@ -36,16 +36,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("validate",
-                option_args={
-                    "include": {
-                        "required": False
-                    }, "exclude": {
-                        "required": False
-                    }, "index_col": {
-                        "required": False
-                    }
-                })
+@register_stage("validate")
 class ValidationStage(MultiMessageStage):
     """
     Validate pipeline output for testing.

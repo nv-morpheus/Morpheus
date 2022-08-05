@@ -28,7 +28,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-@register_stage("serialize", option_args={"include": {"required": False}, "exclude": {"required": False}})
+@register_stage("serialize")
 class SerializeStage(SinglePortStage):
     """
     Include & exclude columns from messages.
@@ -39,7 +39,7 @@ class SerializeStage(SinglePortStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    include : typing.List[str]
+    include : typing.List[str], default = [], show_default="All Columns",
         Attributes that are required send to downstream stage.
     exclude : typing.List[str]
         Attributes that are not required send to downstream stage.
@@ -50,7 +50,7 @@ class SerializeStage(SinglePortStage):
 
     def __init__(self,
                  c: Config,
-                 include: typing.List[str] = None,
+                 include: typing.List[str] = [],
                  exclude: typing.List[str] = [r'^ID$', r'^_ts_'],
                  fixed_columns: bool = True):
         super().__init__(c)

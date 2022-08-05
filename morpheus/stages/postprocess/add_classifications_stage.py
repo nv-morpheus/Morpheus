@@ -26,7 +26,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("add-class", rename_options={"labels": "--label"}, option_args={"labels": {"required": False}})
+@register_stage("add-class", rename_options={"labels": "--label"})
 class AddClassificationsStage(SinglePortStage):
     """
     Add detected classifications to each message.
