@@ -248,12 +248,15 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                             size_t element_count = get_elem_count(output_shape);
 
+                            // Triton results are always in row-major as required by the KServe protocol
+                            // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
+                            std::vector<int64_t> stride{output_shape[1], 1};
                             output_buffer = MatxUtil::reduce_max(
                                 DevMemInfo{element_count, model_output.datatype.type_id(), output_buffer, 0},
                                 *host_seq_ids,
                                 mini_batch_input->offset,
                                 output_shape,
-                                {output_shape[1], 1},  // Not sure how to determine stride of output assuming row major
+                                stride,
                                 mapped_output_shape);
                             output_shape = std::move(mapped_output_shape);
                         }
