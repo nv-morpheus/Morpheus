@@ -41,7 +41,7 @@ class AutoOffsetReset(Enum):
     NONE = "none"
 
 
-@register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER], option_args={"bootstrap": {"callback": }})
+@register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class KafkaSourceStage(SingleOutputSource):
     """
     Load messages from a Kafka cluster.
