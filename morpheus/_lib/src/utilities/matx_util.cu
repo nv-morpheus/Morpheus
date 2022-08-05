@@ -244,6 +244,7 @@ namespace morpheus {
     };
 
     struct MatxUtil__MatxReduceMax {
+        matx::index_t num_input_rows;
         matx::index_t num_cols;
         void *input_data;
         void *output_data;
@@ -260,8 +261,8 @@ namespace morpheus {
             matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(input_count), num_cols});
             matx::tensorShape_t<1> output_shape({num_cols});
 
-            auto input_ptr = static_cast<InputT *>(input_data) + (start * num_cols);
-            auto output_ptr = static_cast<InputT *>(output_data) + (output_idx * num_cols);
+            auto input_ptr = static_cast<InputT *>(input_data) + start * num_cols;
+            auto output_ptr = static_cast<InputT *>(output_data) + output_idx * num_cols;
 
             matx::tensor_t<InputT, 2> input_tensor(input_ptr, input_shape);
             matx::tensor_t<InputT, 1> output_tensor(output_ptr, output_shape);
@@ -370,10 +371,10 @@ namespace morpheus {
 
     std::shared_ptr<rmm::device_buffer>
     MatxUtil::reduce_max(const DevMemInfo &input,
-               const std::vector<int32_t> &seq_ids,
-               size_t seq_id_offset,
-               const std::vector<int64_t> &input_shape,
-               const std::vector<int64_t> &output_shape)
+                         const std::vector<int32_t> &seq_ids,
+                         size_t seq_id_offset,
+                         const std::vector<int64_t> &input_shape,
+                         const std::vector<int64_t> &output_shape)
     {
         auto dtype = DType(input.type_id);
         auto elem_size = dtype.item_size();
@@ -391,7 +392,7 @@ namespace morpheus {
                                                            input.buffer->stream(),
                                                            input.buffer->memory_resource());
 
-        MatxUtil__MatxReduceMax matx_reduce_max{num_input_cols, input.data(), output->data(), output->stream()};
+        MatxUtil__MatxReduceMax matx_reduce_max{num_input_rows, num_input_cols, input.data(), output->data(), output->stream()};
 
         std::size_t start = 0;
         auto output_offset = seq_ids[seq_id_offset];
