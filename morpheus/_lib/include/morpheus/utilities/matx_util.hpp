@@ -67,7 +67,7 @@ struct MatxUtil
 
     /**
      * @brief Returns a buffer with `output_shape` containing the max value from values in `input` mapped according to
-     * `seq_ids`. 
+     * `seq_ids`.
      * Ex given a hypothetical input of:
      *
      *     input =   [5, 2, 8, 9, 8, 2, 1]
