@@ -23,7 +23,6 @@
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/type_util.hpp"
 
-#include <bits/c++config.h>
 #include <glog/logging.h>
 #include <http_client.h>
 #include <nlohmann/json.hpp>
