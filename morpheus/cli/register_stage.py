@@ -299,13 +299,17 @@ def register_stage(command_name: str = None,
                         continue
 
                     option_kwargs = {}
-                    option_kwargs["required"] = True
 
                     # See if we have some sort of documentation for this argument
                     option_kwargs["help"] = get_param_doc(numpy_doc, p_name)
 
                     # Set the default value if not empty
-                    option_kwargs["default"] = p_value.default if p_value.default != inspect.Parameter.empty else None
+                    if p_value.default != inspect.Parameter.empty:
+                        option_kwargs["required"] = False
+                        option_kwargs["default"] = p_value.default
+                    else:
+                        option_kwargs["required"] = True
+                        option_kwargs["default"] = None
 
                     set_options_param_type(option_kwargs, p_value.annotation, get_param_type(numpy_doc, p_name))
 
