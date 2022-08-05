@@ -246,6 +246,8 @@ namespace morpheus {
     struct MatxUtil__MatxReduceMax {
         matx::index_t num_input_rows;
         matx::index_t num_cols;
+        std::vector<matx::index_t> input_stride;
+        matx::index_t num_output_rows;
         void *input_data;
         void *output_data;
         rmm::cuda_stream_view stream;
@@ -261,11 +263,17 @@ namespace morpheus {
             matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(input_count), num_cols});
             matx::tensorShape_t<1> output_shape({num_cols});
 
-            auto input_ptr = static_cast<InputT *>(input_data) + start * num_cols;
-            auto output_ptr = static_cast<InputT *>(output_data) + output_idx * num_cols;
+            matx::index_t output_stride[2] = {input_stride[0], input_stride[1]};
+            if (output_stride[0] == 1)
+            {
+                output_stride[1] = num_output_rows;
+            }
 
-            matx::tensor_t<InputT, 2> input_tensor(input_ptr, input_shape);
-            matx::tensor_t<InputT, 1> output_tensor(output_ptr, output_shape);
+            auto input_ptr = static_cast<InputT *>(input_data) + (start * input_stride[0]);
+            auto output_ptr = static_cast<InputT *>(output_data) + (output_idx *  output_stride[0]);
+
+            matx::tensor_t<InputT, 2> input_tensor(input_ptr, input_shape, {input_stride[0], input_stride[1]});
+            matx::tensor_t<InputT, 1> output_tensor(output_ptr, output_shape, {output_stride[1]});
 
             // We need to transpose the input such that rmax will reduce the rows
             // Matx performs reductions over the innermost dimensions.
@@ -374,6 +382,7 @@ namespace morpheus {
                          const std::vector<int32_t> &seq_ids,
                          size_t seq_id_offset,
                          const std::vector<int64_t> &input_shape,
+                         const std::vector<int64_t> &input_stride,
                          const std::vector<int64_t> &output_shape)
     {
         auto dtype = DType(input.type_id);
@@ -382,6 +391,7 @@ namespace morpheus {
         auto num_input_rows = input_shape[0];
         auto num_input_cols = input_shape[1];
 
+        std::vector<matx::index_t>matx_stride{input_stride[0], input_stride[1]};
         std::size_t output_element_count = output_shape[0] * output_shape[1];
         std::size_t output_buff_size = elem_size * output_element_count;
 
@@ -392,7 +402,7 @@ namespace morpheus {
                                                            input.buffer->stream(),
                                                            input.buffer->memory_resource());
 
-        MatxUtil__MatxReduceMax matx_reduce_max{num_input_rows, num_input_cols, input.data(), output->data(), output->stream()};
+        MatxUtil__MatxReduceMax matx_reduce_max{num_input_rows, num_input_cols, matx_stride, output_shape[0], input.data(), output->data(), output->stream()};
 
         std::size_t start = 0;
         auto output_offset = seq_ids[seq_id_offset];

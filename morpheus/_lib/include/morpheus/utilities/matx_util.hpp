@@ -67,7 +67,7 @@ struct MatxUtil
 
     /**
      * @brief Returns a buffer with `output_shape` containing the max value from values in `input` mapped according to
-     * `seq_ids`. Currently only works for data in row-major
+     * `seq_ids`. 
      * Ex given a hypothetical input of:
      *
      *     input =   [5, 2, 8, 9, 8, 2, 1]
@@ -81,6 +81,7 @@ struct MatxUtil
                                                           const std::vector<int32_t> &seq_ids,
                                                           size_t seq_id_offset,
                                                           const std::vector<int64_t> &input_shape,
+                                                          const std::vector<int64_t> &input_stride,
                                                           const std::vector<int64_t> &output_shape);
 };
 }  // namespace morpheus

@@ -254,6 +254,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                                 *host_seq_ids,
                                 mini_batch_input->offset,
                                 output_shape,
+                                {output_shape[1], 1},  // Not sure how to determine stride of output assuming row major
                                 mapped_output_shape);
                             output_shape = std::move(mapped_output_shape);
                         }

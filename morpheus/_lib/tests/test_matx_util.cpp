@@ -26,6 +26,8 @@
 #include <rmm/device_buffer.hpp>
 #include <srf/cuda/common.hpp>
 
+#include <cstdlib>  // for std::getenv
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -50,7 +52,7 @@ TEST_F(TestMatxUtil, ReduceMax1d)
     DevMemInfo dm{input.size(), dtype.type_id(), input_buffer, 0};
     std::vector<int64_t> input_shape{static_cast<int64_t>(input.size()), 1};
     std::vector<int64_t> output_shape{static_cast<int64_t>(expected_output.size()), 1};
-    auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, output_shape);
+    auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, {1, 0}, output_shape);
 
     std::vector<float> output(expected_output.size());
     SRF_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
@@ -105,7 +107,71 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     DevMemInfo dm{input.size(), dtype.type_id(), input_buffer, 0};
     std::vector<int64_t> input_shape{static_cast<int64_t>(num_rows), static_cast<int64_t>(num_cols)};
     std::vector<int64_t> output_shape{static_cast<int64_t>(expected_rows), static_cast<int64_t>(num_cols)};
-    auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, output_shape);
+    auto output_buffer =
+        MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, {static_cast<int64_t>(num_cols), 1}, output_shape);
+
+    EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
+
+    std::vector<double> output(expected_rows * num_cols);
+    SRF_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
+
+    EXPECT_EQ(output.size(), expected_output.size());
+    for (std::size_t i = 0; i < output.size(); ++i)
+    {
+        EXPECT_DOUBLE_EQ(output[i], expected_output[i]);
+    }
+}
+
+TEST_F(TestMatxUtil, ReduceMax2dColMajor)
+{
+    std::filesystem::path morpheus_root{std::getenv("MORPHEUS_ROOT")};
+    auto input_file = morpheus_root / "tests/tests_data/filter_probs.csv";
+
+    auto table_m  = load_table_from_csv(input_file);
+    auto num_rows = table_m.tbl->num_rows();
+    auto num_cols = table_m.tbl->num_columns();
+
+    EXPECT_EQ(num_rows, 20);
+    EXPECT_EQ(num_cols, 4);
+
+    // Copy data from table into one big buffer
+    auto dtype            = DType::from_cudf(table_m.tbl->get_column(0).type().id());
+    std::size_t buff_size = num_cols * num_rows * dtype.item_size();
+
+    EXPECT_EQ(dtype.item_size(), sizeof(double));
+    auto input_buffer = std::make_shared<rmm::device_buffer>(buff_size, rmm::cuda_stream_per_thread);
+
+    std::size_t offset{0};
+    for (cudf::size_type i = 0; i < num_cols; ++i)
+    {
+        auto cv = table_m.tbl->get_column(i).view();
+        SRF_CHECK_CUDA(cudaMemcpy(static_cast<uint8_t*>(input_buffer->data()) + offset,
+                                  cv.data<uint8_t>(),
+                                  num_rows * dtype.item_size(),
+                                  cudaMemcpyDeviceToDevice));
+
+        offset += num_rows * dtype.item_size();
+    }
+
+    EXPECT_EQ(offset, buff_size);
+
+    // reducing 20 rows down to 12
+    std::vector<int32_t> seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 7, 7, 7, 8, 9, 9, 10, 11};
+    // disabling formatting so I can enter the literal values by column
+    // clang-format off
+    std::vector<double> expected_output{0.1, 1.0, 1.0, 1.0, 0.5, 0.3, 0.9, 0.5, 0.0, 0.6, 0.8, 0.1,
+                                        0.7, 0.9, 0.6, 0.2, 0.8, 0.4, 0.3, 0.5, 0.3, 1.0, 0.8, 0.9,
+                                        0.7, 0.5, 0.7, 0.2, 0.6, 0.1, 1.0, 0.6, 0.5, 0.8, 1.0, 0.1,
+                                        0.7, 0.9, 0.9, 0.9, 0.0, 0.4, 0.6, 0.8, 0.6, 0.7, 0.6, 0.3};
+    // clang-format on
+    const std::size_t expected_rows = 12;
+    EXPECT_EQ(expected_rows * num_cols, expected_output.size());
+
+    DevMemInfo dm{static_cast<std::size_t>(num_rows * num_cols), dtype.type_id(), input_buffer, 0};
+    std::vector<int64_t> input_shape{static_cast<int64_t>(num_rows), static_cast<int64_t>(num_cols)};
+    std::vector<int64_t> output_shape{static_cast<int64_t>(expected_rows), static_cast<int64_t>(num_cols)};
+    auto output_buffer =
+        MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, {1, static_cast<int64_t>(num_rows)}, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
 
