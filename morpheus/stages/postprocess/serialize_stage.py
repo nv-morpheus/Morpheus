@@ -28,7 +28,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-@register_stage("serialize")
+@register_stage("serialize", option_args={"include": {"required": False}, "exclude": {"required": False}})
 class SerializeStage(SinglePortStage):
     """
     Include & exclude columns from messages.

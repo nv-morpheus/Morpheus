@@ -36,7 +36,16 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("validate")
+@register_stage("validate",
+                option_args={
+                    "include": {
+                        "required": False
+                    }, "exclude": {
+                        "required": False
+                    }, "index_col": {
+                        "required": False
+                    }
+                })
 class ValidationStage(MultiMessageStage):
     """
     Validate pipeline output for testing.
@@ -52,7 +61,7 @@ class ValidationStage(MultiMessageStage):
         The comparison file.
     results_file_name : str
         Where to output a JSON containing the validation results.
-    overwrite : bool, optional
+    overwrite : boolean, default = False, is_flag = True
         Whether to overwrite the validation results if they exist, by default False.
     include : typing.List[str], optional
         Any columns to include. By default all columns are included.

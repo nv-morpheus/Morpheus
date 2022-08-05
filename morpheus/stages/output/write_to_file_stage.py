@@ -46,7 +46,7 @@ class WriteToFileStage(SinglePortStage):
         Pipeline configuration instance.
     filename : str
         Name of the file to which the messages will be written.
-    overwrite : bool
+    overwrite : boolean, default = False, is_flag = True
         Overwrite file if exists. Will generate an error otherwise.
     file_type : `morpheus._lib.file_types.FileTypes`, optional
         File type of output (FileTypes.JSON, FileTypes.CSV, FileTypes.Auto), by default FileTypes.Auto.
