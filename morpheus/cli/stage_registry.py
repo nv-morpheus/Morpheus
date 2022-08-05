@@ -1,10 +1,13 @@
 import dataclasses
+import logging
 import time
 import typing
 
 import click
 
 from morpheus.config import PipelineModes
+
+logger = logging.getLogger(__file__)
 
 
 @dataclasses.dataclass
@@ -95,7 +98,8 @@ class StageRegistry:
         mode_stages = self._get_stages_for_mode(mode)
 
         if (stage.name in mode_stages):
-            raise RuntimeError("The stage '{}' has already been added for mode: {}".format(stage.name, mode))
+            # TODO: Figure out if this is something that only the unittests encounter
+            logging.debug("The stage '{}' has already been added for mode: {}".format(stage.name, mode))
 
         mode_stages[stage.name] = stage
 
