@@ -70,16 +70,17 @@ class InferenceWorker:
             Response message with probabilities calculated from inference results.
         """
 
-        output_dims = self.calc_output_dims(x)
+        dims = self.calc_output_dims(x)
+        output_dims = (x.mess_count, *dims[1:])
 
-        memory = ResponseMemoryProbs(count=x.count, probs=cp.zeros(output_dims))
+        memory = ResponseMemoryProbs(count=output_dims[0], probs=cp.zeros(output_dims))
 
         output_message = MultiResponseProbsMessage(meta=x.meta,
                                                    mess_offset=x.mess_offset,
                                                    mess_count=x.mess_count,
                                                    memory=memory,
-                                                   offset=x.offset,
-                                                   count=x.count)
+                                                   offset=0,
+                                                   count=memory.count)
         return output_message
 
     @abstractmethod
@@ -384,10 +385,15 @@ class InferenceStage(MultiMessageStage):
 
         probs = memory.get_output("probs")
 
+        seq_offset = inf.seq_ids[0, 0].item()
+        seq_count = inf.seq_ids[-1, 0].item() + 1 - seq_offset
+
         # Two scenarios:
         if (inf.mess_count == inf.count):
+            assert seq_count == res.count
+
             # In message and out message have same count. Just use probs as is
-            probs[inf.offset:inf.count + inf.offset, :] = res.probs
+            probs[seq_offset:seq_offset + seq_count, :] = res.probs
         else:
             assert inf.count == res.count
 

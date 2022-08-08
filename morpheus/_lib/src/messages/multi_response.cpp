@@ -91,12 +91,16 @@ void MultiResponseMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_mess
                                           std::size_t start,
                                           std::size_t stop) const
 {
-    CHECK(this->mess_count == this->count) << "At this time, mess_count and count must be the same for slicing";
-
     auto sliced_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiResponseMessage>(new_message));
 
     sliced_message->offset = start;
     sliced_message->count  = stop - start;
+
+    // Currently our output lengths should always match mess_count, and even if they didn't we wouldn't have any way to
+    // associate rows in the output with rows in the dataframe. Note on the input side we have the seq_ids array to
+    // but we don't have any equivelant for the output.
+    DCHECK(this->count == this->mess_count)
+        << "Number of rows in response output does not match number of messages in DF";
 
     // Pass onto the base
     DerivedMultiMessage::get_slice_impl(new_message, start, stop);

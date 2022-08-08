@@ -476,8 +476,10 @@ struct TensorObject final
         auto stride = this->get_stride();
         auto shape  = this->get_shape();
 
+        CHECK(shape.size() == N) << "Length of idx must match lengh of shape";
+
         CHECK(std::transform_reduce(
-            stride.begin(), stride.end(), std::begin(idx), 0, std::logical_and<>(), std::less<>()))
+            shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::greater<>()))
             << "Index is outsize of the bounds of the tensor. Index="
             << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
             << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
@@ -504,8 +506,10 @@ struct TensorObject final
         auto stride = this->get_stride();
         auto shape  = this->get_shape();
 
-        CHECK(std::transform_reduce(
-            stride.begin(), stride.end(), std::begin(idx), 0, std::logical_and<>(), std::less<>()))
+        CHECK(shape.size() == N) << "Length of idx must match lengh of shape";
+
+        CHECK(
+            std::transform_reduce(shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::less<>()))
             << "Index is outsize of the bounds of the tensor. Index="
             << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
             << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
