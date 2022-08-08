@@ -19,6 +19,8 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "tests")
 add_executable(test_libmorpheus
   # test_cuda.cu
   test_main.cpp
+  test_matx_util.cpp
+  test_morpheus.cpp
   test_multi_slices.cpp
   test_tensor.cpp
   test_type_util_detail.cpp

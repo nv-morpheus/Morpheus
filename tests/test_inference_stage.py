@@ -40,7 +40,8 @@ def _mk_message(count=1, mess_count=1, offset=0, mess_offset=0):
     m.mess_offset = mess_offset
     m.mess_count = mess_count
     m.probs = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
-    m.get_input.return_value = cp.array([[0, 1, 2], [0, 1, 2]])
+    m.seq_ids = cp.array([list(range(count)), list(range(count)), list(range(count))])
+    m.get_input.return_value = cp.array([[0, 1, 2], [0, 1, 2], [0, 1, 2]])
     return m
 
 
@@ -138,6 +139,7 @@ def test_py_inf_fn_on_next(mock_ops, mock_future, config):
     mock_slice = mock.MagicMock()
     mock_slice.mess_count = 1
     mock_slice.count = 1
+    mock_slice.seq_ids = mock_message.seq_ids
     mock_message.get_slice.return_value = mock_slice
 
     output_message = on_next(mock_message)

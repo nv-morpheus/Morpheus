@@ -19,7 +19,6 @@
 
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
-#include <cudf/io/csv.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/strings/replace.hpp>
 #include <cudf/table/table.hpp>
@@ -28,12 +27,6 @@
 #include <cstdlib>
 #include <filesystem>
 #include <vector>
-
-cudf::io::table_with_metadata load_table_from_csv(std::string filename)
-{
-    auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{filename});
-    return cudf::io::read_csv(options.build());
-}
 
 TEST_CLASS(Masking);
 
