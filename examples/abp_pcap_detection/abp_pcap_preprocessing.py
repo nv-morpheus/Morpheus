@@ -21,8 +21,8 @@ import srf
 
 import cudf
 
-import morpheus
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryFIL
@@ -32,10 +32,10 @@ from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
-@morpheus.cli.register_stage([PipelineModes.FIL])
+@register_stage("pcap-preprocess", modes=[PipelineModes.FIL])
 class AbpPcapPreprocessingStage(PreprocessBaseStage):
 
-    def __init__(self, c: Config, count: int, count_name: str = "county", *args, **kwargs):
+    def __init__(self, c: Config):
         """
         My Class
 
@@ -43,8 +43,6 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         ----------
         c : Config
             The morpheus config
-        count : int
-            The count
         count_name : str
             The count name property
         """
@@ -70,8 +68,6 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         assert self._fea_length == len(
             self.features
         ), f"Number of features in preprocessing {len(self.features)}, does not match configuration {self._fea_length}"
-
-        self._count = count
 
     @property
     def name(self) -> str:
