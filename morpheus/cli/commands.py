@@ -17,6 +17,7 @@ import functools
 import importlib
 import logging
 import os
+import sys
 import time
 import types
 import typing
@@ -117,7 +118,14 @@ class PluginManager():
         # Loop over all specs and load the plugins
         for s in self._plugin_specs:
             try:
-                mod = importlib.import_module(s)
+                if os.path.exists(s):
+                    mod_name = os.path.splitext(os.path.basename(s))[0]
+                    spec = importlib.util.spec_from_file_location(mod_name, s)
+                    mod = importlib.util.module_from_spec(spec)
+                    sys.modules[mod_name] = mod
+                    spec.loader.exec_module(mod)
+                else:
+                    mod = importlib.import_module(s)
 
                 # Sucessfully loaded. Register
                 self._pm.register(mod)
