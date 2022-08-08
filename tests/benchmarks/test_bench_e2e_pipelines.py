@@ -38,7 +38,7 @@ from morpheus.stages.preprocess.preprocess_ae_stage import PreprocessAEStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
-from morpheus.utils.logging import configure_logging
+from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
 
 e2e_config_file = os.path.join(TEST_DIRS.morpheus_root, "tests/benchmarks/e2e_test_configs.json")
