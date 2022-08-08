@@ -24,9 +24,10 @@ import cupy as cp
 import pandas as pd
 import srf
 from srf.core import operators as ops
-from morpheus.cli.register_stage import register_stage
 
-from morpheus.config import Config, PipelineModes
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -380,36 +381,36 @@ class TimeSeriesStage(SinglePortStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    resolution : str
+    resolution : str, default = "1 h"
         Time series resolution. Logs will be binned into groups of this size. Uses the pandas time delta format, i.e.,
         '10m' for 10 minutes.
-    min_window : str
+    min_window : str, default = "12 h"
         Minimum window on either side of a log necessary for calculation. Logs will be skipped during a warmup phase
         while this window is filled. Uses the pandas time delta format, i.e., '10m' for 10 minutes.
-    hot_start : bool, default = False
+    hot_start : bool, default = False, is_flag = True
         This flag prevents the stage from ignoring messages during a warm up phase while the min_window is filled.
         Enabling 'hot_start' will run calculations on all messages even if the min_window is not satisfied on both
         sides, i.e., during startup or teardown. This is likely to increase the number of false positives but can be
         helpful for debugging and testing on small datasets.
-    cold_end : bool, default = True
+    cold_end : bool, default = False, is_flag = True
         This flag is the inverse of `hot_start` and prevents ignoring messages that don't satisfy the `min_window`
         during the shutdown phase. This is likely to increase the number of false positives but can be helpful for
         debugging and testing on small datasets.
-    filter_percent : float, default = 90
+    filter_percent : float, default = 90.0, min=0.0, max=100.0
         The percent of timeseries samples to remove from the inverse FFT for spectral density filtering.
-    zscore_threshold : float, default = 8.0
+    zscore_threshold : float, default = 8.0, min=0.0
         The z-score threshold required to flag datapoints. The value indicates the number of standard deviations from
         the mean that is required to be flagged. Increasing this value will decrease the number of detections.
     """
 
     def __init__(self,
                  c: Config,
-                 resolution: str,
-                 min_window: str,
-                 hot_start: bool,
-                 cold_end: bool,
-                 filter_percent: float,
-                 zscore_threshold: float):
+                 resolution: str = "1 h",
+                 min_window: str = "12 h",
+                 hot_start: bool = False,
+                 cold_end: bool = False,
+                 filter_percent: float = 90.0,
+                 zscore_threshold: float = 8.0):
         super().__init__(c)
 
         self._feature_length = c.feature_length
