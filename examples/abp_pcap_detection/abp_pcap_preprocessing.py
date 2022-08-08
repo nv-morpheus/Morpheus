@@ -37,14 +37,12 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
 
     def __init__(self, c: Config):
         """
-        My Class
+        Pre-processing of PCAP data for Anomalous Behavior Profiling Detection Pipeline
 
         Parameters
         ----------
         c : Config
             The morpheus config
-        count_name : str
-            The count name property
         """
 
         super().__init__(c)
