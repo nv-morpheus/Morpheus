@@ -419,7 +419,11 @@ class TimeSeriesStage(SinglePortStage):
         self._min_window = min_window
         self._hot_start = hot_start
         self._cold_end = cold_end
+
+        assert filter_percent >= 0.0 and filter_percent <= 100.0
         self._filter_percent = filter_percent
+
+        assert zscore_threshold >= 0.0
         self._zscore_threshold = zscore_threshold
 
         self._timeseries_per_user: typing.Dict[str, UserTimeSeries] = {}
