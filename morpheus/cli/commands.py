@@ -551,12 +551,17 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
               default=29,
               type=click.IntRange(min=1),
               help="Number of features trained in the model")
+@click.option('--label',
+              type=str,
+              default=["mining"],
+              multiple=True,
+              help=("Specify output labels. Ignored when --labels_file is specified"))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
                     "A label file is a simple text file where each line corresponds to a label. "
-                    "If unspecified, only a single output label is created for FIL"))
+                    "If unspecified the value specified by the --label flag will be used."))
 @click.option('--columns_file',
               default="data/columns_fil.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
@@ -598,8 +603,7 @@ def pipeline_fil(ctx: click.Context, **kwargs):
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
-        # Use a default single label
-        config.class_labels = ["mining"]
+        config.class_labels = list(kwargs.pop('label'))
 
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
         with open(kwargs["columns_file"], "r") as lf:
