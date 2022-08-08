@@ -136,7 +136,7 @@ class MonitorStage(SinglePortStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    description : str
+    description : str, default = "Progress"
         Name to show for this Monitor Stage in the console window.
     smoothing : float
         Smoothing parameter to determine how much the throughput should be averaged. 0 = Instantaneous, 1 =
