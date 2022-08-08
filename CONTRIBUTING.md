@@ -232,17 +232,24 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    ```bash
    export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
    ```
-5. Update the `kafka-docker/docker-compose.yml` so the environment variable `KAFKA_ADVERTISED_HOST_NAME` matches the previous step. For example, the line should look like:
+5. Update the `kafka-docker/docker-compose.yml`, performing two changes:
+   1. Update the `ports` entry to:
+      ```yml
+      ports:
+         - "0.0.0.0::9092"
+      ```
+      This will prevent the containers from attempting to map IPv6 ports.
+   1. Change the value of `KAFKA_ADVERTISED_HOST_NAME` to match the value of the `KAFKA_ADVERTISED_HOST_NAME` environment variable from the previous step. For example, the line should look like:
 
-   ```yml
-   environment:
-      KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
-   ```
-   Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
+      ```yml
+      environment:
+         KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
+      ```
+      Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
 
-   ```bash
-   $ echo $KAFKA_ADVERTISED_HOST_NAME
-   "172.17.0.1"
+      ```bash
+      $ echo $KAFKA_ADVERTISED_HOST_NAME
+      "172.17.0.1"
    ```
 6. Launch kafka with 3 instances:
 
@@ -252,11 +259,14 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
 7. Launch the Kafka shell
    1. To configure the cluster, you will need to launch into a container that has the Kafka shell.
-   2. You can do this with `./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME`.
+   2. You can do this with:
+      ```bash
+      ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+      ```
    3. However, this makes it difficult to load data into the cluster. Instead, you can manually launch the Kafka shell by running:
       ```bash
       # Change to the morpheus root to make it easier for mounting volumes
-      cd ${MORPHEUS_HOME}
+      cd ${MORPHEUS_ROOT}
 
       # Run the Kafka shell docker container
       docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
