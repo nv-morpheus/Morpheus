@@ -3,7 +3,7 @@
 1. Populate an environment variable `BROKER_LIST` with the IP:Ports of the nodes in the Kafka cluster. Ensure this environment variable is set in all of the terminals where Morpheus is executed:
     ```bash
     export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
-    BROKER_LIST=$(HOST_IP=$KAFKA_ADVERTISED_HOST_NAME ./broker-list.sh)
+    export BROKER_LIST=$(HOST_IP=$KAFKA_ADVERTISED_HOST_NAME ./broker-list.sh)
     ```
 
 ## Simple Data Copying
@@ -264,7 +264,7 @@ For this test we are going to replace to-file stage from the Hammah validation p
 
 1. Verify the output with, expect to see `38` unmatched rows:
     ```bash
-    ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+    ${MORPHEUS_ROOT}/scripts/compare_data_files.py \
         ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-user123-validation-data.csv \
         ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-user123-pytorch.jsonlines \
         --index_col="_index_" --exclude "event_dt" --rel_tol=0.1
@@ -313,7 +313,7 @@ Similar to the Hammah User123 test, we are going to replace to-file stage from t
 
 1. Verify the output with, all rows should match:
     ```bash
-    ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+    ${MORPHEUS_ROOT}/scripts/compare_data_files.py \
         ${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-role-g-validation-data.csv \
         ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-role-g-pytorch.jsonlines  \
         --index_col="_index_" --exclude "event_dt" --rel_tol=0.15
@@ -385,7 +385,7 @@ For this test we are going to replace the from & to file stages from the Phishin
 
 1. Verify the output with, expect to see `43` un-matched rows:
     ```bash
-    ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+    ${MORPHEUS_ROOT}/scripts/compare_data_files.py \
         ${MORPHEUS_ROOT}/models/datasets/validation-data/phishing-email-validation-data.jsonlines \
         ${MORPHEUS_ROOT}/.tmp/val_kafka_phishing.jsonlines
     ```
@@ -443,7 +443,7 @@ Note: Due to the complexity of the input data and a limitation of the cudf reade
 
 1. Verify the output with, expect to see `25` un-matched rows:
     ```bash
-    ${MORPHEUS_ROOT}/morpheus/utils/compare_df.py \
+    ${MORPHEUS_ROOT}/scripts/compare_data_files.py \
         ${MORPHEUS_ROOT}/models/datasets/validation-data/sid-validation-data.csv \
         ${MORPHEUS_ROOT}/.tmp/val_kafka_sid.jsonlines
     ```

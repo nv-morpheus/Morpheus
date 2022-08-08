@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
@@ -28,35 +28,25 @@
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** ResponseMemory****************************************/
-ResponseMemory::ResponseMemory(size_t count) : TensorMemory(count) {}
-ResponseMemory::ResponseMemory(size_t count, tensor_map_t &&tensors) : TensorMemory(count, std::move(tensors)) {}
+/****** TensorMemory****************************************/
+TensorMemory::TensorMemory(size_t count) : count(count) {}
+TensorMemory::TensorMemory(size_t count, tensor_map_t &&tensors) : count(count), tensors(std::move(tensors)) {}
 
-bool ResponseMemory::has_output(const std::string &name) const
+bool TensorMemory::has_tensor(const std::string &name) const
 {
-    return this->has_tensor(name);
+    return this->tensors.find(name) != this->tensors.end();
 }
 
-/****** ResponseMemoryInterfaceProxy *************************/
-pybind11::object ResponseMemoryInterfaceProxy::get_output(ResponseMemory &self, const std::string &name)
+TensorMemory::tensor_map_t TensorMemory::copy_tensor_ranges(
+    const std::vector<std::pair<TensorIndex, TensorIndex>> &ranges, size_t num_selected_rows) const
 {
-    // Directly return the tensor object
-    if (!self.has_tensor(name))
+    tensor_map_t tensors;
+    for (const auto &p : this->tensors)
     {
-        throw pybind11::key_error();
+        tensors.insert(std::pair{p.first, p.second.copy_rows(ranges, num_selected_rows)});
     }
 
-    return CupyUtil::tensor_to_cupy(self.tensors[name]);
+    return tensors;
 }
 
-TensorObject ResponseMemoryInterfaceProxy::get_output_tensor(ResponseMemory &self, const std::string &name)
-{
-    // Directly return the tensor object
-    if (!self.has_tensor(name))
-    {
-        throw pybind11::key_error();
-    }
-
-    return self.tensors[name];
-}
 }  // namespace morpheus

@@ -34,13 +34,13 @@ namespace morpheus {
 /****** ResponseMemoryProbs****************************************/
 ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : ResponseMemory(count)
 {
-    this->outputs["probs"] = std::move(probs);
+    this->tensors["probs"] = std::move(probs);
 }
 
 const TensorObject &ResponseMemoryProbs::get_probs() const
 {
-    auto found = this->outputs.find("probs");
-    if (found == this->outputs.end())
+    auto found = this->tensors.find("probs");
+    if (found == this->tensors.end())
     {
         throw std::runtime_error("Tensor: 'probs' not found in memory");
     }
@@ -50,7 +50,7 @@ const TensorObject &ResponseMemoryProbs::get_probs() const
 
 void ResponseMemoryProbs::set_probs(TensorObject probs)
 {
-    this->outputs["probs"] = std::move(probs);
+    this->tensors["probs"] = std::move(probs);
 }
 
 /****** ResponseMemoryProbsInterfaceProxy *************************/

@@ -96,7 +96,8 @@ PYBIND11_MODULE(stages, m)
         .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("threshold"));
+             py::arg("threshold"),
+             py::arg("copy") = true);
 
     py::class_<srf::segment::Object<InferenceClientStage>,
                srf::segment::ObjectProperties,

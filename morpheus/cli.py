@@ -1117,6 +1117,10 @@ def add_scores(ctx: click.Context, **kwargs):
               default=0.5,
               required=True,
               help=("All messages without a probability above this threshold will be filtered away"))
+@click.option('--copy',
+              default=True,
+              type=bool,
+              help=("When true copy filtered output into a new dataframe, use sliced views otherwise."))
 @prepare_command()
 def filter_command(ctx: click.Context, **kwargs):
 

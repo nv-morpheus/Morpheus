@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,20 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import logging
 import re
-import sys
 import typing
 
 import datacompy
 import pandas as pd
 
-from morpheus._lib.file_types import FileTypes
-from morpheus.io.deserializers import read_file_to_df
-from morpheus.utils.logger import configure_logging
-
-logger = logging.getLogger("morpheus.utils.compare_df")
+logger = logging.getLogger(__name__)
 
 
 def filter_df(df: pd.DataFrame,
@@ -145,53 +138,3 @@ def compare_df(df_a: pd.DataFrame,
         "extra_cols": list(extra_columns),
         "missing_cols": list(missing_columns),
     }
-
-
-def parse_args():
-    argparser = argparse.ArgumentParser("Compares two data files which are parsable as Pandas dataframes")
-    argparser.add_argument("data_files", nargs=2, help="Files to compare")
-    argparser.add_argument('--include',
-                           nargs='*',
-                           help=("Which columns to include in the validation. "
-                                 "Resulting columns is the intersection of all regex. Include applied before exclude"))
-    argparser.add_argument(
-        '--exclude',
-        nargs='*',
-        default=[r'^ID$', r'^_ts_'],
-        help=("Which columns to exclude from the validation. "
-              "Resulting ignored columns is the intersection of all regex. Include applied before exclude"))
-    argparser.add_argument(
-        '--index_col',
-        help=("Specifies a column which will be used to align messages with rows in the validation dataset."))
-    argparser.add_argument('--abs_tol',
-                           type=float,
-                           default=0.001,
-                           help="Absolute tolerance to use when comparing float columns.")
-    argparser.add_argument('--rel_tol',
-                           type=float,
-                           default=0.05,
-                           help="Relative tolerance to use when comparing float columns.")
-    args = argparser.parse_args()
-    return args
-
-
-def main():
-    args = parse_args()
-    configure_logging(log_level=logging.DEBUG)
-
-    df_a = read_file_to_df(args.data_files[0], file_type=FileTypes.Auto, df_type='pandas')
-    df_b = read_file_to_df(args.data_files[1], file_type=FileTypes.Auto, df_type='pandas')
-    results = compare_df(df_a,
-                         df_b,
-                         include_columns=args.include,
-                         exclude_columns=args.exclude,
-                         replace_idx=args.index_col,
-                         abs_tol=args.abs_tol,
-                         rel_tol=args.rel_tol)
-
-    if results['diff_rows'] > 0:
-        sys.exit(1)
-
-
-if __name__ == '__main__':
-    main()
