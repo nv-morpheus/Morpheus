@@ -29,33 +29,34 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemory****************************************/
-ResponseMemory::ResponseMemory(size_t count) : count(count) {}
+ResponseMemory::ResponseMemory(size_t count) : TensorMemory(count) {}
+ResponseMemory::ResponseMemory(size_t count, tensor_map_t &&tensors) : TensorMemory(count, std::move(tensors)) {}
 
 bool ResponseMemory::has_output(const std::string &name) const
 {
-    return this->outputs.find(name) != this->outputs.end();
+    return this->has_tensor(name);
 }
 
 /****** ResponseMemoryInterfaceProxy *************************/
 pybind11::object ResponseMemoryInterfaceProxy::get_output(ResponseMemory &self, const std::string &name)
 {
     // Directly return the tensor object
-    if (!self.has_output(name))
+    if (!self.has_tensor(name))
     {
         throw pybind11::key_error();
     }
 
-    return CupyUtil::tensor_to_cupy(self.outputs[name]);
+    return CupyUtil::tensor_to_cupy(self.tensors[name]);
 }
 
 TensorObject ResponseMemoryInterfaceProxy::get_output_tensor(ResponseMemory &self, const std::string &name)
 {
     // Directly return the tensor object
-    if (!self.has_output(name))
+    if (!self.has_tensor(name))
     {
         throw pybind11::key_error();
     }
 
-    return self.outputs[name];
+    return self.tensors[name];
 }
 }  // namespace morpheus

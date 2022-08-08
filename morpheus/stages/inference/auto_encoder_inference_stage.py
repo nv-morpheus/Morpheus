@@ -57,17 +57,18 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
             Response message with autoencoder results calculated from inference results.
         """
 
-        output_dims = self.calc_output_dims(x)
+        dims = self.calc_output_dims(x)
+        output_dims = (x.mess_count, *dims[1:])
 
-        memory = ResponseMemoryProbs(count=x.count, probs=cp.zeros(output_dims))
+        memory = ResponseMemoryProbs(count=output_dims[0], probs=cp.zeros(output_dims))
 
         # Override the default to return the response AE
         output_message = MultiResponseAEMessage(meta=x.meta,
                                                 mess_offset=x.mess_offset,
                                                 mess_count=x.mess_count,
                                                 memory=memory,
-                                                offset=x.offset,
-                                                count=x.count,
+                                                offset=0,
+                                                count=memory.count,
                                                 user_id=x.user_id)
         return output_message
 

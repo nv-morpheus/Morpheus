@@ -96,7 +96,8 @@ PYBIND11_MODULE(stages, m)
         .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("threshold"));
+             py::arg("threshold"),
+             py::arg("copy") = true);
 
     py::class_<srf::segment::Object<InferenceClientStage>,
                srf::segment::ObjectProperties,
@@ -167,8 +168,9 @@ PYBIND11_MODULE(stages, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
-             py::arg("mode")      = "w",
-             py::arg("file_type") = 0);  // Setting this to FileTypes::AUTO throws a conversion error at runtime
+             py::arg("mode")              = "w",
+             py::arg("file_type")         = 0,  // Setting this to FileTypes::AUTO throws a conversion error at runtime
+             py::arg("include_index_col") = true);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

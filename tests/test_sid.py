@@ -120,10 +120,7 @@ def test_minibert_no_cpp(mock_triton_client, config, tmp_path):
     assert results.diff_rows == 1333
 
 
-@pytest.mark.slow
-@pytest.mark.use_cpp
-@pytest.mark.usefixtures("launch_mock_triton")
-def test_minibert_cpp(config, tmp_path):
+def _run_minibert_cpp(config, tmp_path, model_name, truncated):
     config.mode = PipelineModes.NLP
     config.class_labels = [
         "address",
@@ -154,14 +151,11 @@ def test_minibert_cpp(config, tmp_path):
     pipe.add_stage(
         PreprocessNLPStage(config,
                            vocab_hash_file=vocab_file_name,
-                           truncation=True,
+                           truncation=truncated,
                            do_lower_case=True,
                            add_special_tokens=False))
     pipe.add_stage(
-        TritonInferenceStage(config,
-                             model_name='sid-minibert-onnx',
-                             server_url='localhost:8001',
-                             force_convert_inputs=True))
+        TritonInferenceStage(config, model_name=model_name, server_url='localhost:8001', force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config, threshold=0.5, prefix="si_"))
     pipe.add_stage(
@@ -170,5 +164,20 @@ def test_minibert_cpp(config, tmp_path):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
-    results = calc_error_val(results_file_name)
+    return calc_error_val(results_file_name)
+
+
+@pytest.mark.slow
+@pytest.mark.use_cpp
+@pytest.mark.usefixtures("launch_mock_triton")
+def test_minibert_cpp_truncated(config, tmp_path):
+    results = _run_minibert_cpp(config, tmp_path, 'sid-minibert-onnx', True)
     assert results.diff_rows == 1204
+
+
+@pytest.mark.slow
+@pytest.mark.use_cpp
+@pytest.mark.usefixtures("launch_mock_triton")
+def test_minibert_cpp(config, tmp_path):
+    results = _run_minibert_cpp(config, tmp_path, 'sid-minibert-onnx-no-trunc', False)
+    assert results.diff_rows == 18

@@ -85,6 +85,7 @@ outputs:
     test:
       requires:
         - cudatoolkit {{ cuda_version }}.*
+        - gputil
         - pytest
         - pytest-cov
         - pytest-benchmark
