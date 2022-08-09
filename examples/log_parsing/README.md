@@ -107,7 +107,6 @@ morpheus --log_level INFO \
 	run --num_threads 1 --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32  \
 	pipeline-nlp \
 	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
-	buffer \
 	deserialize \
 	log-preprocess --vocab_hash_file ./models/training-tuning-scripts/sid-models/resources/bert-base-cased-hash.txt --stride 64 \
 	monitor --description "Preprocessing rate" \
