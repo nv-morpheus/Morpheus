@@ -615,11 +615,11 @@ class TritonInferenceNLP(_TritonInferenceWorker):
         inference server.
     server_url : str
         Triton server gRPC URL including the port.
-    force_convert_inputs : bool, default = False, is_flag = True
+    force_convert_inputs : bool
         Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
         data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
         data would be lost (i.e., double -> float).
-    use_shared_memory : bool, default = False, is_flag = True
+    use_shared_memory : bool
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine.
     inout_mapping : typing.Dict[str, str]
@@ -687,11 +687,11 @@ class TritonInferenceFIL(_TritonInferenceWorker):
         inference server.
     server_url : str
         Triton server gRPC URL including the port.
-    force_convert_inputs : bool, default = False, is_flag = True
+    force_convert_inputs : bool
         Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
         data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
         data would be lost (i.e., double -> float).
-    use_shared_memory: bool : bool, default = False, is_flag = True
+    use_shared_memory: bool
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine.
     inout_mapping : typing.Dict[str, str]
@@ -754,11 +754,11 @@ class TritonInferenceAE(_TritonInferenceWorker):
         inference server.
     server_url : str
         Triton server gRPC URL including the port.
-    force_convert_inputs : bool, default = False, is_flag = True
+    force_convert_inputs : bool
         Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
         data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
         data would be lost (i.e., double -> float).
-    use_shared_memory: bool : bool, default = False, is_flag = True
+    use_shared_memory: bool
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine.
     inout_mapping : typing.Dict[str, str]
@@ -846,7 +846,7 @@ class TritonInferenceStage(InferenceStage):
         server.
     server_url : str
         Triton server URL.
-    force_convert_inputs : bool, default = False, is_flag = True
+    force_convert_inputs : bool, default = False
         Instructs the stage to convert the incoming data to the same format that Triton is expecting. If set to False,
         data will only be converted if it would not result in the loss of data.
     use_shared_memory : bool, default = False, is_flag = True
