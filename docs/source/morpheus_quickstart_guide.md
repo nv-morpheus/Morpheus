@@ -1138,15 +1138,13 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.
 
 
-<!---
 ## Known Issues
 
 | Issue | Description |
 | ------ | ------ |
-| | |
+| nv-morpheus/SRF#157 | Azure subscriptions have hard limits for vCPU. Using more threads than vCPU can lead to an abort in SRF, so reduce the number of pipeline threads to be equal to or less than vGPU. |
 
-Let's add any important issues that need to be brought to the attention of users here.
--->
+
 
 [Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.06/examples
 [Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.06/CONTRIBUTING.md
