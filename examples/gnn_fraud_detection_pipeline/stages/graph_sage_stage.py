@@ -20,7 +20,7 @@ import srf
 
 import cudf
 
-from morpheus.cli import register_stage
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage

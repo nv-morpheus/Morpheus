@@ -19,7 +19,7 @@ import srf
 
 import cuml
 
-import morpheus.cli
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
@@ -29,7 +29,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 from .graph_sage_stage import GraphSAGEMultiMessage
 
 
-@morpheus.cli.register_stage("gnn-fraud-classification", modes=[PipelineModes.OTHER])
+@register_stage("gnn-fraud-classification", modes=[PipelineModes.OTHER])
 class ClassificationStage(SinglePortStage):
 
     def __init__(self, c: Config, model_xgb_file: str):
