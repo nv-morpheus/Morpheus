@@ -109,7 +109,7 @@ morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preproc
     deserialize \
     pcap-preprocess \
     monitor --description "Preprocessing rate" \
-    inf-triton --model_name "abp-pcap-xgb" --server_url "localhost:8001" --force_convert_inputs \
+    inf-triton --model_name "abp-pcap-xgb" --server_url "localhost:8001" --force_convert_inputs=True \
     monitor --description "Inference rate" --unit inf \
     add-class --label=probs \
     monitor --description "Add classification rate" --unit "add-class" \
