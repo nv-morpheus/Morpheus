@@ -1142,7 +1142,7 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 
 | Issue | Description |
 | ------ | ------ |
-| nv-morpheus/SRF#157 | Azure subscriptions have hard limits for vCPU. Using more threads than vCPU can lead to an abort in SRF, so reduce the number of pipeline threads to be equal to or less than vGPU. |
+| nv-morpheus/SRF#157 | Azure subscriptions have hard limits for vCPU. Using more threads than vCPU can lead to an abort in SRF, so reduce the number of pipeline threads to be equal to or less than vCPU. |
 
 
 
