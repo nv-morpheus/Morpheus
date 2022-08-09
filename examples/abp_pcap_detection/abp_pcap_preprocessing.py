@@ -173,6 +173,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         req_cols = ["flow_id", "rollup_time"]
 
         for col in req_cols:
+            # TODO: temporary work-around for Issue #286
             x.meta.df[col] = merged_df[col].copy(True)
 
         del merged_df
