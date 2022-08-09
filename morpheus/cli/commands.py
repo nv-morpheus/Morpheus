@@ -494,11 +494,13 @@ def run(ctx: click.Context, **kwargs):
                     "output will be padded with 0s. If the tokenized string is longer than max_length and "
                     "do_truncate == False, there will be multiple returned sequences containing the "
                     "overflowing token-ids. Default value is 256"))
+@click.option('--label', type=str, default=None, multiple=True, help=("Specify output labels."))
 @click.option('--labels_file',
               default="data/labels_nlp.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
-                    "A label file is a simple text file where each line corresponds to a label"))
+                    "A label file is a simple text file where each line corresponds to a label."
+                    "Ignored when --label is specified"))
 @click.option('--viz_file',
               default=None,
               type=click.Path(dir_okay=False, writable=True),
@@ -529,7 +531,10 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
     config.mode = PipelineModes.NLP
     config.feature_length = kwargs["model_seq_length"]
 
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
+    labels = kwargs['label']
+    if len(labels):
+        config.class_labels = list(labels)
+    else:
         with open(kwargs["labels_file"], "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
@@ -598,12 +603,13 @@ def pipeline_fil(ctx: click.Context, **kwargs):
 
     config.fil = ConfigFIL()
 
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
-        with open(kwargs["labels_file"], "r") as lf:
+    labels_file = kwargs.get("labels_file")
+    if (labels_file is not None):
+        with open(labels_file, "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
-        config.class_labels = list(kwargs.pop('label'))
+        config.class_labels = list(kwargs['label'])
 
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
         with open(kwargs["columns_file"], "r") as lf:
@@ -629,6 +635,11 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               default="data/columns_ae.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=(""))
+@click.option('--label',
+              type=str,
+              default=["ae_anomaly_score"],
+              multiple=True,
+              help=("Specify output labels. Ignored when --labels_file is specified"))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
@@ -689,13 +700,13 @@ def pipeline_ae(ctx: click.Context, **kwargs):
         # Use a default single label
         config.class_labels = ["ae_anomaly_score"]
 
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
-        with open(kwargs["labels_file"], "r") as lf:
+    labels_file = kwargs.get("labels_file")
+    if (labels_file is not None):
+        with open(labels_file, "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
-        # Use a default single label
-        config.class_labels = ["ae_anomaly_score"]
+        config.class_labels = list(kwargs['label'])
 
     if ("userid_filter" in kwargs):
         config.ae.userid_filter = kwargs["userid_filter"]
@@ -719,6 +730,11 @@ def pipeline_ae(ctx: click.Context, **kwargs):
               default=1,
               type=click.IntRange(min=1),
               help="Number of features trained in the model")
+@click.option('--label',
+              type=str,
+              default=None,
+              multiple=True,
+              help=("Specify output labels. Ignored when --labels_file is specified"))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
@@ -756,10 +772,15 @@ def pipeline_other(ctx: click.Context, **kwargs):
 
     config.fil = ConfigFIL()
 
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
-        with open(kwargs["labels_file"], "r") as lf:
+    labels_file = kwargs.get("labels_file")
+    if (labels_file is not None):
+        with open(labels_file, "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
+    else:
+        labels = kwargs["label"]
+        if len(labels):
+            config.class_labels = list(labels)
 
     from morpheus.pipeline import LinearPipeline
 
