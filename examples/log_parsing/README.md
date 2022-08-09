@@ -49,24 +49,24 @@ Once Triton server finishes starting up, it will display the status of all loade
 
 ### Run Log Parsing Pipeline
 
-Run the following from the root of the Morpheus repo to start the log parsing pipeline:
+Run the following from the `examples/log_parsing` directory to start the log parsing pipeline:
 
-```
-python ./examples/log_parsing/run.py \
+```bash
+python run.py \
     --num_threads 1 \
-    --input_file ./models/datasets/validation-data/log-parsing-validation-data-input.csv \
+    --input_file ${MORPHEUS_ROOT}/models/datasets/validation-data/log-parsing-validation-data-input.csv \
     --output_file ./log-parsing-output.jsonlines \
-    --model_vocab_hash_file=./models/training-tuning-scripts/sid-models/resources/bert-base-cased-hash.txt \
-    --model_vocab_file=./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
+    --model_vocab_hash_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-cased-hash.txt \
+    --model_vocab_file=${MORPHEUS_ROOT}/models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
     --model_seq_length=256 \
     --model_name log-parsing-onnx \
-    --model_config_file=./models/log-parsing-models/log-parsing-config-20220418.json \
+    --model_config_file=${MORPHEUS_ROOT}/models/log-parsing-models/log-parsing-config-20220418.json \
     --server_url localhost:8001
 ```
 
 Use `--help` to display information about the command line options:
 
-```
+```bash
 python ./examples/log_parsing/run.py --help
 
 Options:
@@ -92,4 +92,29 @@ Options:
   --model_config_file TEXT        Model config file  [required]
   --server_url TEXT               Tritonserver url  [required]
   --help                          Show this message and exit.
+```
+
+### CLI Example
+The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplush the same goal. To do this we must ensure that the `examples`/log_parsing directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+
+From the root of the Morpheus repo run:
+```bash
+PYTHONPATH="examples/log_parsing" \
+morpheus --log_level INFO \
+	--plugin "preprocessing" \
+	--plugin "inference" \
+	--plugin "postprocessing" \
+	run --num_threads 1 --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32  \
+	pipeline-nlp \
+	from-file --filename ./models/datasets/validation-data/log-parsing-validation-data-input.csv  \
+	buffer \
+	deserialize \
+	log-preprocess --vocab_hash_file ./models/training-tuning-scripts/sid-models/resources/bert-base-cased-hash.txt --stride 64 \
+	monitor --description "Preprocessing rate" \
+	inf-logparsing --model_name log-parsing-onnx --server_url localhost:8001 --force_convert_inputs=True \
+	monitor --description "Inference rate" --unit inf \
+	log-postprocess --vocab_path ./models/training-tuning-scripts/sid-models/resources/bert-base-cased-vocab.txt \
+		--model_config_path=./models/log-parsing-models/log-parsing-config-20220418.json \
+	to-file --filename ./log-parsing-output.jsonlines --overwrite  \
+	monitor --description "Postprocessing rate"
 ```
