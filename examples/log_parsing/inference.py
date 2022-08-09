@@ -27,7 +27,9 @@ from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
 from messages import PostprocMemoryLogParsing
 from messages import ResponseMemoryLogParsing
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -149,9 +151,10 @@ class TritonInferenceLogParsing(_TritonInferenceWorker):
         self._mem_pool.return_obj(m)
 
 
+@register_stage("inf-logparsing", modes=[PipelineModes.NLP])
 class LogParsingInferenceStage(InferenceStage):
     """
-    This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
+    NLP Triton inference stage for log parsing pipeline.
 
     Parameters
     ----------
@@ -162,7 +165,10 @@ class LogParsingInferenceStage(InferenceStage):
         server.
     server_url : str
         Triton server URL
-    use_shared_memory: bool, default = False
+    force_convert_inputs : bool, default = False
+        Instructs the stage to convert the incoming data to the same format that Triton is expecting. If set to False,
+        data will only be converted if it would not result in the loss of data.
+    use_shared_memory: bool, default = False, is_flag = True
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine
 
@@ -172,7 +178,7 @@ class LogParsingInferenceStage(InferenceStage):
                  c: Config,
                  model_name: str,
                  server_url: str,
-                 force_convert_inputs: bool,
+                 force_convert_inputs: bool = False,
                  use_shared_memory: bool = False):
         super().__init__(c)
 
