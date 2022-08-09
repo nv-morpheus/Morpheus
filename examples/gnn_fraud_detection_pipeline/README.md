@@ -88,3 +88,28 @@ Inference rate[Complete]: 265messages [00:01, 150.23messages/s]
 Add classification rate[Complete]: 265messages [00:01, 147.11messages/s]
 Serialize rate[Complete]: 265messages [00:01, 142.31messages/s]
 ```
+
+### CLI Example
+The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplush the same goal. To do this we must ensure that the `examples` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+Note: Since the `gnn_fraud_detection_pipeline` module is visible to Python we can specify the plugins by their module name rather than the more verbose file path.
+
+From the root of the Morpheus repo run:
+```bash
+PYTHONPATH="examples" \
+morpheus --log_level INFO \
+	--plugin "gnn_fraud_detection_pipeline.stages.classification_stage" \
+	--plugin "gnn_fraud_detection_pipeline.stages.graph_construction_stage" \
+	--plugin "gnn_fraud_detection_pipeline.stages.graph_sage_stage" \
+	run --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32 --edge_buffer_size 4 \
+	pipeline-other --model_fea_length 70 --label=probs \
+	from-file --filename examples/gnn_fraud_detection_pipeline/validation.csv --filter_null False \
+	deserialize \
+	fraud-graph-construction --training_file examples/gnn_fraud_detection_pipeline/training.csv \
+	monitor --description "Graph construction rate" \
+	gnn-fraud-sage --model_hinsage_file examples/gnn_fraud_detection_pipeline/model/hinsage-model.pt \
+	monitor --description "Inference rate" \
+	gnn-fraud-classification --model_xgb_file examples/gnn_fraud_detection_pipeline/model/xgb-model.pt \
+	monitor --description "Add classification rate" \
+	serialize \
+	to-file --filename "output.csv" --overwrite
+```
