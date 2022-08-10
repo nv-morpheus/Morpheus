@@ -26,16 +26,14 @@
 #include <srf/cuda/common.hpp>
 #include <srf/memory/blob.hpp>
 #include <srf/memory/default_resources.hpp>
-#include <srf/memory/memory_kind.hpp>  // for memory_kind_type
 
 #include <algorithm>
 #include <array>
 #include <cstddef>  // for size_t, byte
 #include <cstdint>
 #include <functional>
-#include <iterator>
-#include <memory>
-#include <numeric>
+#include <memory>  // for shared_ptr
+#include <numeric> // IWYU pragma: keep
 #include <ostream>
 #include <stdexcept>  // for runtime_error
 #include <string>
@@ -43,6 +41,7 @@
 #include <vector>
 // IWYU is confusing std::size_t with __gnu_cxx::size_t for some reason
 // when we define vector<size_t>
+// The <numeric> header is needed for transform_reduce but IWYU thinks we don't need it
 // IWYU pragma: no_include <ext/new_allocator.h>
 
 namespace morpheus {

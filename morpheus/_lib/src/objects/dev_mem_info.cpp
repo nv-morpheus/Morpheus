@@ -17,6 +17,8 @@
 
 #include "morpheus/objects/dev_mem_info.hpp"
 
+#include <cstdint>  // for uint8_t
+
 namespace morpheus {
 // Component public implementations
 // ************ DevMemInfo************************* //

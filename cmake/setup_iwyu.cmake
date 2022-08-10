@@ -30,8 +30,7 @@ function(configure_iwyu)
         -Xiwyu; --verbose=${MORPHEUS_IWYU_VERBOSITY};
         -Xiwyu; --no_fwd_decls;
         -Xiwyu; --quoted_includes_first;
-        -Xiwyu; --cxx17ns;
-        -Xiwyu --no_comments)
+        -Xiwyu; --cxx17ns;)
 
     # Convert these to space separated arguments
     string(REPLACE ";" " " MORPHEUS_IWYU_OPTIONS "${MORPHEUS_IWYU_OPTIONS}")

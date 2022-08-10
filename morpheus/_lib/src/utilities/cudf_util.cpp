@@ -22,6 +22,10 @@
 #include <cudf/table/table.hpp>
 #include <glog/logging.h>
 #include <pybind11/gil.h>
+#include <pybind11/pytypes.h>
+
+#include <ostream>  // Needed for logging
+#include <utility>  // for move
 
 /**
  * **************This needs to come last.********************
