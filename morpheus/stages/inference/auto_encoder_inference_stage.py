@@ -15,9 +15,10 @@
 import typing
 
 import cupy as cp
-from morpheus.cli.register_stage import register_stage
 
-from morpheus.config import Config, PipelineModes
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs

@@ -18,9 +18,10 @@ from functools import partial
 
 import cupy as cp
 import srf
-from morpheus.cli.register_stage import register_stage
 
-from morpheus.config import Config, PipelineModes
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryAE
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage

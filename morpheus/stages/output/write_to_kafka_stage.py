@@ -19,8 +19,8 @@ import typing
 import confluent_kafka as ck
 import srf
 from srf.core import operators as ops
-from morpheus.cli.register_stage import register_stage
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta

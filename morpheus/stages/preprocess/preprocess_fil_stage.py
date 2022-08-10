@@ -25,7 +25,8 @@ import cudf
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config, PipelineModes
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryFIL
 from morpheus.messages import MultiInferenceFILMessage
 from morpheus.messages import MultiInferenceMessage
