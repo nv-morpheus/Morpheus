@@ -37,6 +37,7 @@ from morpheus.cli.utils import _parse_log_level
 from morpheus.cli.utils import get_config_from_ctx
 from morpheus.cli.utils import get_pipeline_from_ctx
 from morpheus.cli.utils import prepare_command
+from morpheus.cli.utils import str_to_file_type
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
@@ -238,7 +239,7 @@ class PluginGroup(AliasedGroup):
         duplicate_commands = [x for x in plugin_command_list if x in command_list]
 
         if (len(duplicate_commands) > 0):
-            raise RuntimeError("Plugins registered the following duplicate commands: ".format(
+            raise RuntimeError("Plugins registered the following duplicate commands: {}".format(
                 ", ".join(duplicate_commands)))
 
         command_list.extend(plugin_command_list)

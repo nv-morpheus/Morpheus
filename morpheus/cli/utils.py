@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import sys
 import types
 import typing
 import warnings

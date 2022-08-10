@@ -96,8 +96,7 @@ class LazyStageInfo(StageInfo):
 class StageRegistry:
 
     def __init__(self) -> None:
-
-        # Stages are registered on a per mode basis so different stages can have the same command name for different modes
+        # Stages are registered on a per mode basis, different stages can have the same command name for different modes
         self._registered_stages: typing.Dict[PipelineModes, typing.Dict[str, StageInfo]] = {}
 
     def _get_stages_for_mode(self, mode: PipelineModes) -> typing.Dict[str, StageInfo]:

@@ -271,7 +271,8 @@ def register_stage(command_name: str = None,
                         config_param_name = p_name
                         continue
                     elif (p_name in ignore_args):
-                        assert p_value.default != inspect.Parameter.empty, "Cannot ignore argument without default value"
+                        assert p_value.default != inspect.Parameter.empty, (
+                            "Cannot ignore argument without default value")
                         continue
                     elif (p_value.kind == inspect.Parameter.VAR_POSITIONAL):
                         continue
@@ -359,11 +360,13 @@ def register_stage(command_name: str = None,
                     # Verify its a lazy stage info with the same
                     if (not isinstance(registered_stage, LazyStageInfo)):
                         raise RuntimeError(
-                            "Registering stage '{}' failed. Stage is already registered. Ensure `register_stage` is only executed once for each mode and name combination"
-                        )
+                            ("Registering stage '{}' failed. Stage is already registered. Ensure `register_stage` is "
+                             "only executed once for each mode and name combination").format(
+                                 registered_stage.qualified_name))
 
                     if (registered_stage.qualified_name != get_full_qualname(stage_class)):
-                        raise RuntimeError("")
+                        raise RuntimeError("Qualified name {} != {}".format(registered_stage.qualified_name,
+                                                                            get_full_qualname(stage_class)))
 
                     existing_registrations.update(registered_stage.modes)
 
