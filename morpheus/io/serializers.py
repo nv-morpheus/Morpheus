@@ -19,7 +19,10 @@ from io import StringIO
 import cudf
 
 
-def df_to_csv(df: cudf.DataFrame, include_header=False, strip_newline=False) -> typing.List[str]:
+def df_to_csv(df: cudf.DataFrame,
+              include_header=False,
+              strip_newline=False,
+              include_index_col=True) -> typing.List[str]:
     """
     Serializes a DataFrame into CSV and returns the serialized output seperated by lines.
 
@@ -31,13 +34,15 @@ def df_to_csv(df: cudf.DataFrame, include_header=False, strip_newline=False) -> 
         Whether or not to include the header, by default False.
     strip_newline : bool, optional
         Whether or not to strip the newline characters from each string, by default False.
+    include_index_col: bool, optional
+        Write out the index as a column, by default True.
 
     Returns
     -------
     typing.List[str]
         List of strings for each line
     """
-    results = df.to_csv(header=include_header)
+    results = df.to_csv(header=include_header, index=include_index_col)
     if strip_newline:
         results = results.split("\n")
     else:
@@ -46,7 +51,7 @@ def df_to_csv(df: cudf.DataFrame, include_header=False, strip_newline=False) -> 
     return results
 
 
-def df_to_json(df: cudf.DataFrame, strip_newlines=False) -> typing.List[str]:
+def df_to_json(df: cudf.DataFrame, strip_newlines=False, include_index_col=True) -> typing.List[str]:
     """
     Serializes a DataFrame into JSON and returns the serialized output seperated by lines.
 
@@ -56,7 +61,10 @@ def df_to_json(df: cudf.DataFrame, strip_newlines=False) -> typing.List[str]:
         Input DataFrame to serialize.
     strip_newline : bool, optional
         Whether or not to strip the newline characters from each string, by default False.
-
+    include_index_col: bool, optional
+        Write out the index as a column, by default True.
+        Note: This value is currently being ignored due to a known issue in Pandas:
+            https://github.com/pandas-dev/pandas/issues/37600
     Returns
     -------
     typing.List[str]
@@ -65,7 +73,7 @@ def df_to_json(df: cudf.DataFrame, strip_newlines=False) -> typing.List[str]:
     str_buf = StringIO()
 
     # Convert to list of json string objects
-    df.to_json(str_buf, orient="records", lines=True)
+    df.to_json(str_buf, orient="records", lines=True, index=include_index_col)
 
     # Start from beginning
     str_buf.seek(0)

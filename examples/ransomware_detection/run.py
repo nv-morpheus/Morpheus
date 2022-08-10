@@ -29,7 +29,7 @@ from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.utils.logging import configure_logging
+from morpheus.utils.logger import configure_logging
 from stages.create_features import CreateFeaturesRWStage
 from stages.preprocessing import PreprocessingRWStage
 

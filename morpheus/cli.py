@@ -30,7 +30,7 @@ from morpheus.config import ConfigOnnxToTRT
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.config import auto_determine_bootstrap
-from morpheus.utils.logging import configure_logging
+from morpheus.utils.logger import configure_logging
 
 # pylint: disable=line-too-long, import-outside-toplevel, invalid-name, global-at-module-level, unused-argument
 
@@ -1116,6 +1116,10 @@ def add_scores(ctx: click.Context, **kwargs):
               default=0.5,
               required=True,
               help=("All messages without a probability above this threshold will be filtered away"))
+@click.option('--copy',
+              default=True,
+              type=bool,
+              help=("When true copy filtered output into a new dataframe, use sliced views otherwise."))
 @prepare_command()
 def filter_command(ctx: click.Context, **kwargs):
 
@@ -1321,6 +1325,12 @@ def validate(ctx: click.Context, **kwargs):
 @click.command(short_help="Write all messages to a file", **command_kwargs)
 @click.option('--filename', type=click.Path(writable=True), required=True, help="The file to write to")
 @click.option('--overwrite', is_flag=True, help="Whether or not to overwrite the target file")
+@click.option('--include-index-col',
+              'include_index_col',
+              default=True,
+              type=bool,
+              help=("Includes dataframe's index column in the output "
+                    "Note: this currently only works for CSV file output"))
 @prepare_command()
 def to_file(ctx: click.Context, **kwargs):
 

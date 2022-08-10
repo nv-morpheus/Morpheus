@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,7 +68,7 @@ function wait_for_triton {
 
 function ensure_triton_running {
 
-   TRITON_IMAGE=${TRITON_IMAGE:-"nvcr.io/nvidia/tritonserver:22.02-py3"}
+   TRITON_IMAGE=${TRITON_IMAGE:-"nvcr.io/nvidia/tritonserver:22.06-py3"}
 
    IS_RUNNING=$(is_triton_running)
 

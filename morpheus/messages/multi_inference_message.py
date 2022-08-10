@@ -20,27 +20,16 @@ import cupy as cp
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
-from morpheus.messages.message_base import MessageData
 from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages.tensor_memory import TensorMemory
 
 
 @dataclasses.dataclass
-class InferenceMemory(MessageData, cpp_class=_messages.InferenceMemory):
+class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
     hold generic tensor data in cupy arrays.
-
-    Parameters
-    ----------
-    count : int
-        Number of inference inputs.
-    inputs : typing.Dict[str, cupy.ndarray]
-        Inference inputs to model.
-
     """
-    count: int
-
-    inputs: typing.Dict[str, cp.ndarray] = dataclasses.field(default_factory=dict, init=False)
 
 
 def get_input(instance, name: str):
@@ -65,10 +54,10 @@ def get_input(instance, name: str):
     AttributeError
         If input name does not exist in message container.
     """
-    if (name not in instance.inputs):
+    if (name not in instance.tensors):
         raise AttributeError
 
-    return instance.inputs[name]
+    return instance.tensors[name]
 
 
 def set_input(instance, name: str, value):
@@ -86,7 +75,7 @@ def set_input(instance, name: str, value):
         Value to set for input.
     """
     # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-    instance.inputs[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+    instance.tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
 
 
 @dataclasses.dataclass
@@ -165,7 +154,7 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
 @dataclasses.dataclass
 class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMessage):
     """
-    This is a container class that holds the InferenceMemory container and the metadata of the data contained
+    This is a container class that holds the TensorMemory container and the metadata of the data contained
     within it. Builds on top of the `MultiMessage` class to add additional data for inferencing.
 
     This class requires two separate memory blocks for a batch. One for the message metadata (i.e., start time,
@@ -177,7 +166,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
     Parameters
     ----------
-    memory : `InferenceMemory`
+    memory : `TensorMemory`
         Inference memory.
     offset : int
         Message offset in inference memory instance.
@@ -185,14 +174,14 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
         Message count in inference memory instance.
 
     """
-    memory: InferenceMemory = dataclasses.field(repr=False)
+    memory: TensorMemory = dataclasses.field(repr=False)
     offset: int
     count: int
 
     @property
     def inputs(self):
         """
-        Get inputs stored in the InferenceMemory container.
+        Get inputs stored in the TensorMemory container.
 
         Returns
         -------
@@ -201,7 +190,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
         """
 
-        return {key: self.get_input(key) for key in self.memory.inputs.keys()}
+        return {key: self.get_input(key) for key in self.memory.tensors.keys()}
 
     def __getstate__(self):
         return self.__dict__
@@ -211,7 +200,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
     def __getattr__(self, name: str) -> typing.Any:
 
-        input_val = self.memory.inputs.get(name, None)
+        input_val = self.memory.tensors.get(name, None)
 
         if (input_val is not None):
             return input_val[self.offset:self.offset + self.count, :]
@@ -220,7 +209,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
     def get_input(self, name: str):
         """
-        Get input stored in the InferenceMemory container.
+        Get input stored in the TensorMemory container.
 
         Parameters
         ----------
@@ -234,7 +223,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
         """
 
-        return self.memory.inputs[name][self.offset:self.offset + self.count, :]
+        return self.memory.tensors[name][self.offset:self.offset + self.count, :]
 
     def get_slice(self, start, stop):
         """

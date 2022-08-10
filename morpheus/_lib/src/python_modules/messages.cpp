@@ -119,7 +119,13 @@ PYBIND11_MODULE(messages, m)
                  &MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("set_meta", &MultiMessageInterfaceProxy::set_meta, py::return_value_policy::move)
-        .def("get_slice", &MultiMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal);
+        .def("get_slice", &MultiMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal)
+        .def("copy_ranges",
+             &MultiMessageInterfaceProxy::copy_ranges,
+             py::arg("ranges"),
+             py::arg("num_selected_rows") = py::none(),
+             py::return_value_policy::move)
+        .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
     py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
         .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count);
@@ -195,6 +201,9 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("memory", &MultiInferenceFILMessageInterfaceProxy::memory)
         .def_property_readonly("offset", &MultiInferenceFILMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
+
+    py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
+        .def_readonly("count", &TensorMemory::count);
 
     py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def_readonly("count", &ResponseMemory::count)
