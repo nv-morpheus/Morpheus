@@ -56,7 +56,7 @@ class WriteToFileStage(SinglePortStage):
     def __init__(self,
                  c: Config,
                  filename: str,
-                 overwrite: bool,
+                 overwrite: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  include_index_col: bool = True):
 
