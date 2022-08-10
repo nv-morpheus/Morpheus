@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import enum
 import functools
 import inspect
 import pathlib
@@ -29,7 +28,6 @@ from typing_utils import issubtype
 from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.stage_registry import StageInfo
-from morpheus.cli.stage_registry import StageRegistry
 from morpheus.cli.utils import get_config_from_ctx
 from morpheus.cli.utils import get_pipeline_from_ctx
 from morpheus.cli.utils import prepare_command
@@ -37,46 +35,6 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.utils.type_utils import _DecoratorType
 from morpheus.utils.type_utils import get_full_qualname
-
-# def _get_config_from_ctx(ctx) -> Config:
-#     ctx_dict = ctx.ensure_object(dict)
-
-#     if "config" not in ctx_dict:
-#         ctx_dict["config"] = Config()
-
-#     return ctx_dict["config"]
-
-# def _get_pipeline_from_ctx(ctx):
-#     ctx_dict = ctx.ensure_object(dict)
-
-#     assert "pipeline" in ctx_dict, "Inconsistent configuration. Pipeline accessed before created"
-
-#     return ctx_dict["pipeline"]
-
-# def _prepare_command(parse_config: bool = False):
-
-#     def inner_prepare_command(f):
-#         """
-#         Preparse command for use. Combines @without_empty_args, @show_defaults and @click.pass_context
-#         """
-
-#         def new_func(*args, **kwargs):
-#             ctx: click.Context = get_current_context()
-#             ctx.show_default = True
-
-#             kwargs = _without_empty_args(kwargs)
-
-#             # Apply the config if desired
-#             if parse_config:
-#                 config = get_config_from_ctx(ctx)
-
-#                 _apply_to_config(config, **kwargs)
-
-#             return f(ctx, *args, **kwargs)
-
-#         return update_wrapper(new_func, f)
-
-#     return inner_prepare_command
 
 
 def class_name_to_command_name(class_name: str) -> str:
@@ -218,10 +176,17 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         options_kwargs["type"] = partial_pop_kwargs(click.Path, doc_type_kwargs)()
 
     elif (issubtype(annotation, Enum)):
-        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)([x.value for x in annotation])
+        enum_map = {x.name.lower(): x.value for x in annotation}
+        case_sensitive = doc_type_kwargs.get('case_sensitive', True)
+        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(list(enum_map.values()))
 
         def convert_to_enum(_: click.Context, _2: click.Parameter, value: str):
-            return annotation[value]
+            if case_sensitive:
+                result = annotation[value]
+            else:
+                result = enum_map[value.lower()]
+
+            return result
 
         options_kwargs["callback"] = convert_to_enum
 
