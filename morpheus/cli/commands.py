@@ -25,14 +25,11 @@ import typing
 import click
 import pluggy
 
-import_start_time = time.time()
-
 import morpheus
 from morpheus.cli import hookspecs
 from morpheus.cli.default_command_hooks import DefaultCommandHooks
 from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
-from morpheus.cli.stage_registry import StageInfo
 from morpheus.cli.stage_registry import StageRegistry
 from morpheus.cli.utils import PluginSpec
 from morpheus.cli.utils import _get_log_levels
@@ -42,7 +39,6 @@ from morpheus.cli.utils import get_pipeline_from_ctx
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
-from morpheus.config import ConfigBase
 from morpheus.config import ConfigFIL
 from morpheus.config import ConfigOnnxToTRT
 from morpheus.config import CppConfig
