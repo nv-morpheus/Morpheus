@@ -24,7 +24,7 @@ from click.testing import CliRunner
 from mlflow.tracking import fluent
 
 import morpheus
-from morpheus import cli
+from morpheus.cli import commands
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
@@ -90,7 +90,7 @@ def callback_values(request: pytest.FixtureRequest):
 
     marker = request.node.get_closest_marker("replace_callback")
     group_name = marker.args[0]
-    group = getattr(cli, group_name)
+    group = getattr(commands, group_name)
 
     @group.result_callback(replace=True)
     @click.pass_context
@@ -120,8 +120,7 @@ def mlflow_uri(tmp_path):
         mlflow.end_run()
 
 
-@pytest.mark.skip("TODO: fix if this is still here in my PR, please call it out")
-@pytest.mark.reload_modules(cli)
+@pytest.mark.reload_modules(commands)
 @pytest.mark.usefixtures("reload_modules")
 @pytest.mark.use_python
 class TestCLI:
@@ -135,25 +134,25 @@ class TestCLI:
 
     def test_help(self):
         runner = CliRunner()
-        result = runner.invoke(cli.cli, ['--help'])
+        result = runner.invoke(commands.cli, ['--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(cli.cli, ['tools', '--help'])
+        result = runner.invoke(commands.cli, ['tools', '--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(cli.cli, ['run', '--help'])
+        result = runner.invoke(commands.cli, ['run', '--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(cli.cli, ['run', 'pipeline-ae', '--help'])
+        result = runner.invoke(commands.cli, ['run', 'pipeline-ae', '--help'])
         assert result.exit_code == 0, result.output
 
     def test_autocomplete(self, tmp_path):
         runner = CliRunner()
-        result = runner.invoke(cli.cli, ['tools', 'autocomplete', 'show'], env={'HOME': str(tmp_path)})
+        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'show'], env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
         # The actual results of this are specific to the implementation of click_completion
-        result = runner.invoke(cli.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
+        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
                                env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
@@ -184,7 +183,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -273,7 +272,7 @@ class TestCLI:
                 MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args)
+        result = runner.invoke(commands.cli, args)
 
         assert result.exit_code == 47, result.output
 
@@ -355,7 +354,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -442,7 +441,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -555,7 +554,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -652,7 +651,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -758,7 +757,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         config = obj["config"]
@@ -780,7 +779,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         expected_labels = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
@@ -825,7 +824,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -873,7 +872,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -934,7 +933,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
