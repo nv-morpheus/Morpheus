@@ -595,7 +595,7 @@ class TestCLI:
         assert monitor._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ['pred']
+        assert add_class._labels == ('pred', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
@@ -727,7 +727,7 @@ class TestCLI:
         assert monitor._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ['pred']
+        assert add_class._labels == ('pred', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
