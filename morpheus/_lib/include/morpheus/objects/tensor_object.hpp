@@ -32,8 +32,8 @@
 #include <cstddef>  // for size_t, byte
 #include <cstdint>
 #include <functional>
-#include <memory>  // for shared_ptr
-#include <numeric> // IWYU pragma: keep
+#include <memory>   // for shared_ptr
+#include <numeric>  // IWYU pragma: keep
 #include <ostream>
 #include <stdexcept>  // for runtime_error
 #include <string>
