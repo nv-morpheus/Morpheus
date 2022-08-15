@@ -17,18 +17,25 @@
 
 #include "morpheus/objects/rmm_tensor.hpp"
 
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for get_element_stride
 #include "morpheus/utilities/type_util.hpp"
 
-#include <cudf/types.hpp>
-#include <pybind11/pybind11.h>
+#include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
+#include <glog/logging.h>            // for DCHECK_LT, COMPACT_GOOGLE_LOG_FATAL, DCHECK, DCHECK_EQ, LogMessageFatal
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
+#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
 
+#include <algorithm>  // for copy, transform
 #include <cstdint>
+#include <functional>  // for multiplies, plus, minus
+#include <iterator>    // for back_insert_iterator, back_inserter
 #include <memory>
-#include <string>
+#include <numeric>  // for accumulate, transform_reduce
+#include <ostream>  // needed for logging
 #include <vector>
 
 namespace morpheus {

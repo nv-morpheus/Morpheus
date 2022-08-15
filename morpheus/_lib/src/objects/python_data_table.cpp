@@ -21,8 +21,9 @@
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <cudf/types.hpp>
+#include <pybind11/cast.h>  // for object::cast
 #include <pybind11/gil.h>
-#include <pybind11/pytypes.h>
+#include <pybind11/pybind11.h>
 
 #include <utility>
 

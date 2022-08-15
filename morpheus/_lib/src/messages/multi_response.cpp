@@ -18,9 +18,9 @@
 #include "morpheus/messages/multi_response.hpp"
 
 #include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory::tensor_map_t
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 
@@ -30,6 +30,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <ostream>  // needed for logging
 #include <string>
 #include <utility>
 

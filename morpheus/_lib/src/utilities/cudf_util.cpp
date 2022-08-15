@@ -19,10 +19,9 @@
 
 #include "morpheus/objects/table_info.hpp"
 
-#include <cudf/table/table.hpp>
+#include <cudf/table/table.hpp>  // IWYU pragma: keep
 #include <glog/logging.h>
-#include <pybind11/gil.h>
-#include <pybind11/pytypes.h>
+#include <pybind11/pybind11.h>
 
 #include <ostream>  // Needed for logging
 #include <utility>  // for move

@@ -23,10 +23,9 @@
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <glog/logging.h>
-#include <pybind11/gil.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
-#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pybind11/gil.h>       // for gil_scoped_acquire
+#include <pybind11/pybind11.h>  // IWYU pragma: keep
+#include <pybind11/stl.h>       // IWYU pragma: keep
 
 #include <algorithm>  // for find, transform
 #include <array>      // needed for pybind11::make_tuple

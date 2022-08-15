@@ -20,7 +20,6 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
@@ -29,6 +28,8 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <utility>  // for pair
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations********************/

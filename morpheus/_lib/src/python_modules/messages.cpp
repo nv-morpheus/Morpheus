@@ -38,6 +38,7 @@
 #include <srf/node/edge_connector.hpp>
 
 #include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <vector>
 

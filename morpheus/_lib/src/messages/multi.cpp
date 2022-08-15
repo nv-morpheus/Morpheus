@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>

@@ -19,8 +19,7 @@
 
 #include <boost/fiber/channel_op_status.hpp>
 #include <pybind11/gil.h>  // for gil_scoped_release
-#include <pybind11/pytypes.h>
-#include <pyerrors.h>  // for PyErr_SetNone
+#include <pybind11/pybind11.h>
 
 #include <chrono>
 #include <functional>  // for ref, reference_wrapper

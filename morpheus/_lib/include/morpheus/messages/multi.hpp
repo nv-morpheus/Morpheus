@@ -19,19 +19,14 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <cudf/copying.hpp>
-#include <cudf/io/types.hpp>
-#include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
-#include <pybind11/cast.h>
-#include <pybind11/gil.h>
-#include <pybind11/pybind11.h>
+#include <glog/logging.h>  // for DCHECK_NOTNULL
 #include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 
+#include <cstddef>  // for size_t
 #include <memory>
 #include <string>
 #include <utility>  // for pair

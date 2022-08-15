@@ -18,11 +18,8 @@
 #pragma once
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"
 
 #include <cstddef>
-#include <map>
 #include <string>
 
 namespace morpheus {
