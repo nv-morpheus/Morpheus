@@ -21,10 +21,11 @@
 #include <rxcpp/rx.hpp>
 #include <srf/segment/builder.hpp>
 
+#include <algorithm>  // for min
 #include <cstddef>
 #include <exception>
 #include <memory>
-#include <mutex>
+#include <type_traits>  // for declval
 #include <utility>
 
 namespace morpheus {

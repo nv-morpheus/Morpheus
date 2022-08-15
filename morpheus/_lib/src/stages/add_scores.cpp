@@ -18,21 +18,30 @@
 #include "morpheus/stages/add_scores.hpp"
 
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 
-#include <rxcpp/rx.hpp>
+#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
+#include <glog/logging.h>
+#include <rmm/cuda_stream_view.hpp>        // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>           // for device_buffer
 #include <srf/channel/status.hpp>          // for Status
+#include <srf/cuda/common.hpp>             // for SRF_CHECK_CUDA
 #include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
 #include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <srf/segment/object.hpp>          // for Object
 
-#include <cstddef>
-#include <cstddef>  // for size_t
+#include <algorithm>  // for min_element, transform
+#include <cstddef>    // for size_t
 #include <exception>
+#include <functional>  // for divides, placeholders
 #include <map>
 #include <memory>
-#include <mutex>
+#include <ostream>      // for logging
+#include <type_traits>  // for declval
+#include <utility>      // for move
 #include <vector>
+// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
+// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace morpheus {
 // Component public implementations
