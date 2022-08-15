@@ -75,6 +75,9 @@
 { "include": [ "\"rxcpp/rx-grouped_observable.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<sources/rx-iterate.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 
+#Triton Client
+{ "include": ["\"common.h\"", "private", "<http_client.h>", "public"] },
+
 ## Symbol mappings
 # stdlib
 { "symbol": ["__gnu_cxx::__enable_if<true, double>::__type", "private", "<cmath>", "public"] },
