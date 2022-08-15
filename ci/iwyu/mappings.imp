@@ -124,6 +124,7 @@
 { "symbol": ["pybind11::return_value_policy", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["pybind11::return_value_policy::move", "private", "<pybind11/pybind11.h>", "public"] },
 { "symbol": ["pybind11::return_value_policy::reference_internal", "private", "<pybind11/pybind11.h>", "public"] },
+{ "symbol": ["pybind11::size_t", "private", "<pybind11/pytypes.h>", "public"] },
 { "symbol": ["pybind11::stop_iteration", "private", "<pybind11/pybind11.h>", "public"] },
 
 # spdlog
