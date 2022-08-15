@@ -20,10 +20,19 @@
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 
+#include <rxcpp/rx.hpp>
+#include <srf/channel/status.hpp>          // for Status
+#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <srf/segment/object.hpp>          // for Object
+
 #include <cstddef>
+#include <cstddef>  // for size_t
 #include <exception>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 namespace morpheus {
 // Component public implementations

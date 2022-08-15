@@ -17,6 +17,7 @@
 
 #include "morpheus/stages/add_classification.hpp"
 
+#include "morpheus/objects/tensor.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 
 #include <cstddef>

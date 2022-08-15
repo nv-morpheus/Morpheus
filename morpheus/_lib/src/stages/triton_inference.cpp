@@ -18,6 +18,7 @@
 #include "morpheus/stages/triton_inference.hpp"
 
 #include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/triton_in_out.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/stage_util.hpp"

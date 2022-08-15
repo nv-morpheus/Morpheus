@@ -18,6 +18,7 @@
 #include "morpheus/stages/preprocess_nlp.hpp"
 
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/tensor.hpp"
 #include "morpheus/utilities/type_util.hpp"
 
 #include <cudf/types.hpp>

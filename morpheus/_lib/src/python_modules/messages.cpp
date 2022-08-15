@@ -20,6 +20,7 @@
 #include "morpheus/messages/memory/inference_memory_nlp.hpp"
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/messages/memory/response_memory_probs.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
@@ -27,19 +28,21 @@
 #include "morpheus/messages/multi_inference_nlp.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/data_table.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
-#include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pybind11/stl.h>          // IWYU pragma: keep
+#include <pysrf/utils.hpp>         // for pysrf::import
+#include <srf/channel/status.hpp>  // for Status
 #include <srf/node/edge_connector.hpp>
 
 #include <cstddef>
 #include <filesystem>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace morpheus {

@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/deserialization.hpp"
+#include "morpheus/stages/deserialize.hpp"
 
 #include <pysrf/node.hpp>
+#include <rxcpp/rx.hpp>
 #include <srf/segment/builder.hpp>
 
 #include <cstddef>

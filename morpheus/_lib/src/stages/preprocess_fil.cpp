@@ -18,12 +18,14 @@
 #include "morpheus/stages/preprocess_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
+#include "morpheus/objects/tensor.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/type_util.hpp"
 #include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cudf/detail/utilities/vector_factories.hpp>
 #include <cudf/io/json.hpp>
+#include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
 #include <http_client.h>

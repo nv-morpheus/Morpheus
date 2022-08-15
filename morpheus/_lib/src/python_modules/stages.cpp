@@ -28,7 +28,13 @@
 #include "morpheus/stages/write_to_file.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <pybind11/attr.h>      // for multiple_inheritance
+#include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+#include <pybind11/pytypes.h>   // for dict, sequence
+#include <pysrf/utils.hpp>      // for pysrf::import
 #include <srf/segment/object.hpp>
+
+#include <memory>
 
 namespace morpheus {
 namespace py = pybind11;
