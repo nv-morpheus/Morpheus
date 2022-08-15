@@ -39,18 +39,24 @@
 
 # rxcpp
 # Hide includes that are exported by <rxcpp/rx.hpp>
+{ "include": [ "\"rx-includes.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-util.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "\"rxcpp/rx-util.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-predef.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "\"rxcpp/rx-predef.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-subscription.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "\"rxcpp/rx-subscription.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
+{ "include": [ "<rx-observable.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
+{ "include": [ "<rx-observer.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-observer.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "\"rxcpp/rx-observer.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
+{ "include": [ "<rx-operators.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
+{ "include": [ "<rx-predef.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-scheduler.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "\"rxcpp/rx-scheduler.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-subscriber.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "\"rxcpp/rx-subscriber.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
+{ "include": [ "<rx-subscriber.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-notification.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "\"rxcpp/rx-notification.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-coordination.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
@@ -67,6 +73,7 @@
 { "include": [ "\"rxcpp/rx-connectable_observable.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "<rxcpp/rx-grouped_observable.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 { "include": [ "\"rxcpp/rx-grouped_observable.hpp\"", private, "<rxcpp/rx.hpp>", "public" ] },
+{ "include": [ "<sources/rx-iterate.hpp>", private, "<rxcpp/rx.hpp>", "public" ] },
 
 ## Symbol mappings
 # stdlib

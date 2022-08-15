@@ -17,7 +17,7 @@
 
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
-#include "morpheus/stages/deserialization.hpp"
+#include "morpheus/stages/deserialize.hpp"
 #include "morpheus/stages/file_source.hpp"
 #include "morpheus/stages/filter_detection.hpp"
 #include "morpheus/stages/kafka_source.hpp"
