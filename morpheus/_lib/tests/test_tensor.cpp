@@ -17,8 +17,8 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils, TensorUtils::shape_type
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils, TensorUtils::shape_type
 
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
 
