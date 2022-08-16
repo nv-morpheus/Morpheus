@@ -84,6 +84,8 @@
 { "symbol": ["std::__success_type<std::chrono::duration<long, std::ratio<1, 1000000000>>>::type" , "private", "<chrono>", "public"] },
 { "symbol": ["__cxxabiv1::__forced_unwind", "private", "<future>", "public"] },
 { "symbol": ["std::filesystem", "private", "<filesystem>", "public"] },
+{ "symbol": ["size_t", , "private", "<cstddef>", "public"] },
+{ "symbol": ["std::size_t", , "private", "<cstddef>", "public"] },
 
 # boost
 { "symbol": ["__forced_unwind", "private", "<boost/fiber/all.hpp>", "public"] },
