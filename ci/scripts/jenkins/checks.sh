@@ -17,11 +17,12 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
+export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
 
 fetch_base_branch
 
 gpuci_logger "Creating conda env"
-rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/ ${WORKSPACE_TMP}/iwyu
+rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/ ${IWYU_DIR}
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
@@ -34,10 +35,8 @@ mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER
 show_conda_info
 
 gpuci_logger "Installing IWYU"
-export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
-cd ${WORKSPACE_TMP}
 git clone https://github.com/include-what-you-use/include-what-you-use.git ${IWYU_DIR}
-cd ${IWYU_DIR}
+pushd ${IWYU_DIR}
 git checkout clang_12
 cmake -G Ninja \
     -DCMAKE_PREFIX_PATH=$(llvm-config --cmakedir) \
@@ -48,7 +47,7 @@ cmake -G Ninja \
 
 cmake --build . --parallel ${PARALLEL_LEVEL} --target install
 
-cd ${MORPHEUS_ROOT}
+popd
 
 gpuci_logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
