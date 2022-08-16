@@ -26,6 +26,8 @@
 #include <string>   // for allocator, operator==, basic_string, string
 #include <vector>   // for vector
 // IWYU pragma: no_include "morpheus/utilities/string_util.hpp"
+// IWYU thinks we need ext/new_allocator.h for size_t for some reason
+// IWYU pragma: no_include <ext/new_allocator.h>
 
 using namespace morpheus;
 

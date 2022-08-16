@@ -36,6 +36,8 @@
 #include <ostream>      // needed for glog
 #include <type_traits>  // for declval (indirectly via templates)
 #include <utility>      // for pair
+// IWYU thinks we need ext/new_allocator.h for size_t for some reason
+// IWYU pragma: no_include <ext/new_allocator.h>
 
 namespace morpheus {
 
