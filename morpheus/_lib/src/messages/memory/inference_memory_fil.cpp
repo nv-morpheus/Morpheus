@@ -18,17 +18,17 @@
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
+#include <map>  // this->tensors is a map
 #include <memory>
+#include <stdexcept>  // for runtime_error
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -36,14 +36,14 @@ namespace morpheus {
 InferenceMemoryFIL::InferenceMemoryFIL(size_t count, TensorObject input__0, TensorObject seq_ids) :
   InferenceMemory(count)
 {
-    this->inputs["input__0"] = std::move(input__0);
-    this->inputs["seq_ids"]  = std::move(seq_ids);
+    this->tensors["input__0"] = std::move(input__0);
+    this->tensors["seq_ids"]  = std::move(seq_ids);
 }
 
 const TensorObject &InferenceMemoryFIL::get_input__0() const
 {
-    auto found = this->inputs.find("input__0");
-    if (found == this->inputs.end())
+    auto found = this->tensors.find("input__0");
+    if (found == this->tensors.end())
     {
         throw std::runtime_error("Tensor: 'input__0' not found in memory");
     }
@@ -53,13 +53,13 @@ const TensorObject &InferenceMemoryFIL::get_input__0() const
 
 void InferenceMemoryFIL::set_input__0(TensorObject input__0)
 {
-    this->inputs["input__0"] = std::move(input__0);
+    this->tensors["input__0"] = std::move(input__0);
 }
 
 const TensorObject &InferenceMemoryFIL::get_seq_ids() const
 {
-    auto found = this->inputs.find("seq_ids");
-    if (found == this->inputs.end())
+    auto found = this->tensors.find("seq_ids");
+    if (found == this->tensors.end())
     {
         throw std::runtime_error("Tensor: 'seq_ids' not found in memory");
     }
@@ -69,7 +69,7 @@ const TensorObject &InferenceMemoryFIL::get_seq_ids() const
 
 void InferenceMemoryFIL::set_seq_ids(TensorObject seq_ids)
 {
-    this->inputs["seq_ids"] = std::move(seq_ids);
+    this->tensors["seq_ids"] = std::move(seq_ids);
 }
 /****** InferenceMemoryFILInterfaceProxy *************************/
 std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(cudf::size_type count,
@@ -88,7 +88,7 @@ std::size_t InferenceMemoryFILInterfaceProxy::count(InferenceMemoryFIL &self)
 
 TensorObject InferenceMemoryFILInterfaceProxy::get_tensor(InferenceMemoryFIL &self, const std::string &name)
 {
-    return self.inputs[name];
+    return self.tensors[name];
 }
 
 pybind11::object InferenceMemoryFILInterfaceProxy::get_input__0(InferenceMemoryFIL &self)

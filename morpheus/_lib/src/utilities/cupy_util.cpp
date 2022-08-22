@@ -18,13 +18,24 @@
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include "morpheus/objects/tensor.hpp"
+#include "morpheus/utilities/type_util.hpp"  // for DType
 
+#include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
 #include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/gil.h>         // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pybind11/stl.h>            // IWYU pragma: keep
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>     // for device_buffer
+
+#include <array>    // for array
+#include <cstddef>  // for size_t
+#include <cstdint>  // for uintptr_t
+#include <memory>   // for make_shared
+#include <string>   // for string
+#include <vector>   // for vector
 
 namespace morpheus {
 pybind11::object CupyUtil::cp_module = pybind11::none();

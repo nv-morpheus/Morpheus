@@ -17,16 +17,16 @@
 
 #pragma once
 
+#include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
+#include "morpheus/messages/meta.hpp"                     // for MessageMeta
 #include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
-#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>
 #include <memory>
-#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/

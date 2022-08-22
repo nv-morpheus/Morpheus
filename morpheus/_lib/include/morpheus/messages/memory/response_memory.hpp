@@ -17,13 +17,13 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 
-#include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>
 
+#include <cstddef>  // for size_t
 #include <string>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -31,16 +31,18 @@ namespace morpheus {
 /**
  * TODO(Documentation)
  */
-class ResponseMemory
+class ResponseMemory : public TensorMemory
 {
   public:
     ResponseMemory(size_t count);
-
-    size_t count{0};
-    std::map<std::string, TensorObject> outputs;
+    ResponseMemory(size_t count, tensor_map_t &&tensors);
 
     /**
-     * TODO(Documentation)
+     * @brief Checks if a tensor named `name` exists in `tensors`
+     *
+     * @param name
+     * @return true
+     * @return false
      */
     bool has_output(const std::string &name) const;
 };

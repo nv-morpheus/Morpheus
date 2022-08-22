@@ -20,10 +20,7 @@
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/table_info.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/utilities/table_util.hpp"
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
@@ -31,6 +28,8 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <utility>  // for pair
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -39,9 +38,10 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class MultiResponseMessage : public MultiMessage
+class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, MultiMessage>
 {
   public:
+    MultiResponseMessage(const MultiResponseMessage &other) = default;
     MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
                          std::size_t mess_offset,
                          std::size_t mess_count,
@@ -68,17 +68,18 @@ class MultiResponseMessage : public MultiMessage
      */
     const void set_output(const std::string &name, const TensorObject &value);
 
-    /**
-     * TODO(Documentation)
-     * TODO(Devin) Should we be shadowing MultiMessage::get_slice?
-     */
-    std::shared_ptr<MultiResponseMessage> get_slice(std::size_t start, std::size_t stop) const;
-
   protected:
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<MultiMessage> internal_get_slice(std::size_t start, std::size_t stop) const override;
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
+
+    void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                          const std::vector<std::pair<size_t, size_t>> &ranges,
+                          size_t num_selected_rows) const override;
+
+    std::shared_ptr<ResponseMemory> copy_output_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                       size_t num_selected_rows) const;
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/

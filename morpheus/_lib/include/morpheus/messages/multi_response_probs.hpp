@@ -21,12 +21,12 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_response.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
+#include <cstddef>  // for size_t
 #include <memory>
 
 namespace morpheus {
@@ -36,9 +36,10 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class MultiResponseProbsMessage : public MultiResponseMessage
+class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsMessage, MultiResponseMessage>
 {
   public:
+    MultiResponseProbsMessage(const MultiResponseProbsMessage &other) = default;
     MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                               size_t mess_offset,
                               size_t mess_count,
@@ -55,15 +56,6 @@ class MultiResponseProbsMessage : public MultiResponseMessage
      * TODO(Documentation)
      */
     void set_probs(const TensorObject &probs);
-
-    /**
-     * TODO(Documentation)
-     */
-    std::shared_ptr<MultiResponseProbsMessage> get_slice(size_t start, size_t stop) const
-    {
-        // This can only cast down
-        return std::static_pointer_cast<MultiResponseProbsMessage>(this->internal_get_slice(start, stop));
-    }
 };
 
 /****** MultiResponseProbsMessageInterfaceProxy *************************/

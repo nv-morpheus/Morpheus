@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,35 +18,35 @@
 #pragma once
 
 #include <cudf/types.hpp>
-
 #include <pybind11/pytypes.h>
 
 namespace morpheus {
-    class TableInfo;
+class TableInfo;
 
-    /****** Component public implementations *******************/
-    /****** IDataTable******************************************/
+/****** Component public implementations *******************/
+/****** IDataTable******************************************/
+
+/**
+ * @brief Owning object which owns a unique_ptr<cudf::table>, table_metadata, and index information
+ * Why this doesnt exist in cudf is beyond me
+ */
+struct IDataTable : public std::enable_shared_from_this<IDataTable>
+{
+    IDataTable() = default;
 
     /**
-     * @brief Owning object which owns a unique_ptr<cudf::table>, table_metadata, and index information
-     * Why this doesnt exist in cudf is beyond me
+     * TODO(Documentation)
      */
-    struct IDataTable : public std::enable_shared_from_this<IDataTable> {
-        IDataTable() = default;
+    virtual cudf::size_type count() const = 0;
 
-        /**
-         * TODO(Documentation)
-         */
-        virtual cudf::size_type count() const = 0;
+    /**
+     * TODO(Documentation)
+     */
+    virtual TableInfo get_info() const = 0;
 
-        /**
-         * TODO(Documentation)
-         */
-        virtual TableInfo get_info() const = 0;
-
-        /**
-         * TODO(Documentation)
-         */
-        virtual const pybind11::object &get_py_object() const = 0;
-    };
-}
+    /**
+     * TODO(Documentation)
+     */
+    virtual const pybind11::object &get_py_object() const = 0;
+};
+}  // namespace morpheus

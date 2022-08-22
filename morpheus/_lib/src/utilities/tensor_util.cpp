@@ -17,11 +17,13 @@
 
 #include "morpheus/utilities/tensor_util.hpp"
 
-#include <experimental/iterator>
 #include <glog/logging.h>              // for DCHECK_EQ
 #include <srf/utils/sort_indexes.hpp>  // for sort_indexes
 
-#include <algorithm>    // for copy
+// clang-format off
+// prevent from moving this into the third-party section
+#include <experimental/iterator>  // for make_ostream_joiner
+// clang-format on
 #include <functional>   // for multiplies
 #include <iterator>     // for begin, end
 #include <numeric>      // for accumulate
@@ -31,7 +33,6 @@
 #include <vector>       // for vector
 
 namespace morpheus {
-
 void TensorUtils::write_shape_to_stream(const shape_type& shape, std::ostream& os)
 {
     os << "(";

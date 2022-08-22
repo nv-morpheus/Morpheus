@@ -17,19 +17,18 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 
-#include <cudf/io/types.hpp>
-
 #include <string>
-#include <vector>
+#include <utility>  // for move
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemory****************************************/
-InferenceMemory::InferenceMemory(size_t count) : count(count) {}
+InferenceMemory::InferenceMemory(size_t count) : TensorMemory(count) {}
+InferenceMemory::InferenceMemory(size_t count, tensor_map_t&& tensors) : TensorMemory(count, std::move(tensors)) {}
 
 bool InferenceMemory::has_input(const std::string& name) const
 {
-    return this->inputs.find(name) != this->inputs.end();
+    return this->has_tensor(name);
 }
 
 /****** InferenceMemoryInterfaceProxy *************************/

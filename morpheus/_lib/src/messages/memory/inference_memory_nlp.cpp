@@ -18,13 +18,16 @@
 #include "morpheus/messages/memory/inference_memory_nlp.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include <pybind11/cast.h>
+#include <cudf/types.hpp>  // for size_type
 #include <pybind11/pytypes.h>
 
 #include <cstddef>
+#include <map>        // this->tensors is a map
+#include <stdexcept>  // for runtime_error
+#include <utility>    // for move, pair
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -35,15 +38,15 @@ InferenceMemoryNLP::InferenceMemoryNLP(std::size_t count,
                                        TensorObject seq_ids) :
   InferenceMemory(count)
 {
-    this->inputs["input_ids"]  = std::move(input_ids);
-    this->inputs["input_mask"] = std::move(input_mask);
-    this->inputs["seq_ids"]    = std::move(seq_ids);
+    this->tensors["input_ids"]  = std::move(input_ids);
+    this->tensors["input_mask"] = std::move(input_mask);
+    this->tensors["seq_ids"]    = std::move(seq_ids);
 }
 
 const TensorObject &InferenceMemoryNLP::get_input_ids() const
 {
-    auto found = this->inputs.find("input_ids");
-    if (found == this->inputs.end())
+    auto found = this->tensors.find("input_ids");
+    if (found == this->tensors.end())
     {
         throw std::runtime_error("Tensor: 'input_ids' not found in memory");
     }
@@ -53,13 +56,13 @@ const TensorObject &InferenceMemoryNLP::get_input_ids() const
 
 void InferenceMemoryNLP::set_input_ids(TensorObject input_ids)
 {
-    this->inputs["input_ids"] = std::move(input_ids);
+    this->tensors["input_ids"] = std::move(input_ids);
 }
 
 const TensorObject &InferenceMemoryNLP::get_input_mask() const
 {
-    auto found = this->inputs.find("input_mask");
-    if (found == this->inputs.end())
+    auto found = this->tensors.find("input_mask");
+    if (found == this->tensors.end())
     {
         throw std::runtime_error("Tensor: 'input_mask' not found in memory");
     }
@@ -69,13 +72,13 @@ const TensorObject &InferenceMemoryNLP::get_input_mask() const
 
 void InferenceMemoryNLP::set_input_mask(TensorObject input_mask)
 {
-    this->inputs["input_mask"] = std::move(input_mask);
+    this->tensors["input_mask"] = std::move(input_mask);
 }
 
 const TensorObject &InferenceMemoryNLP::get_seq_ids() const
 {
-    auto found = this->inputs.find("seq_ids");
-    if (found == this->inputs.end())
+    auto found = this->tensors.find("seq_ids");
+    if (found == this->tensors.end())
     {
         throw std::runtime_error("Tensor: 'seq_ids' not found in memory");
     }
@@ -85,7 +88,7 @@ const TensorObject &InferenceMemoryNLP::get_seq_ids() const
 
 void InferenceMemoryNLP::set_seq_ids(TensorObject seq_ids)
 {
-    this->inputs["seq_ids"] = std::move(seq_ids);
+    this->tensors["seq_ids"] = std::move(seq_ids);
 }
 
 /****** InferenceMemoryNLPInterfaceProxy *************************/

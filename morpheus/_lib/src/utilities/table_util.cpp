@@ -20,9 +20,11 @@
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
 #include <glog/logging.h>
+#include <pybind11/pybind11.h>
 
 #include <filesystem>
-#include <memory>
+#include <ostream>    // needed for logging
+#include <stdexcept>  // for runtime_error
 
 namespace fs = std::filesystem;
 namespace py = pybind11;

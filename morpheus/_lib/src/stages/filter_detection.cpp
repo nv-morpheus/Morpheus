@@ -15,21 +15,38 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/filter_detection.hpp"
+#include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
+#include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
+#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/utilities/tensor_util.hpp"       // for TensorUtils::get_element_stride
+#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
+
+#include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
+#include <glog/logging.h>            // for CHECK
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>     // for device_buffer
+#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
 
 #include <cstddef>
+#include <cstdint>  // for uint8_t
 #include <exception>
 #include <memory>
-#include <mutex>
+#include <ostream>      // needed for glog
+#include <type_traits>  // for declval (indirectly via templates)
+#include <utility>      // for pair
+// IWYU thinks we need ext/new_allocator.h for size_t for some reason
+// IWYU pragma: no_include <ext/new_allocator.h>
 
 namespace morpheus {
+
 // Component public implementations
 // ************ FilterDetectionStage **************************** //
-FilterDetectionsStage::FilterDetectionsStage(float threshold) :
+FilterDetectionsStage::FilterDetectionsStage(float threshold, bool copy) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_threshold(threshold)
+  m_threshold(threshold),
+  m_copy(copy)
 {}
 
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
@@ -55,16 +72,8 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     SRF_CHECK_CUDA(
                         cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
-                    // Depending on the input the stride is given in bytes or elements,
-                    // divide the stride elements by the smallest item to ensure tensor_stride is defined in
-                    // terms of elements
-                    std::vector<TensorIndex> tensor_stride(stride.size());
-                    auto min_stride = std::min_element(stride.cbegin(), stride.cend());
-
-                    std::transform(stride.cbegin(),
-                                   stride.cend(),
-                                   tensor_stride.begin(),
-                                   std::bind(std::divides<>(), std::placeholders::_1, *min_stride));
+                    // Depending on the input the stride is given in bytes or elements, convert to elements
+                    auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(stride);
 
                     // Now call the threshold function
                     auto thresh_bool_buffer =
@@ -74,7 +83,6 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                                             tensor_stride,
                                             m_threshold,
                                             true);
-
                     std::vector<uint8_t> host_bool_values(num_rows);
 
                     // Copy bools back to host
@@ -82,6 +90,10 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                                               thresh_bool_buffer->data(),
                                               thresh_bool_buffer->size(),
                                               cudaMemcpyDeviceToHost));
+
+                    // Only used when m_copy is true
+                    std::vector<std::pair<std::size_t, std::size_t>> selected_ranges;
+                    std::size_t num_selected_rows = 0;
 
                     // We are slicing by rows, using num_rows as our marker for undefined
                     std::size_t slice_start = num_rows;
@@ -95,7 +107,16 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                         }
                         else if (!above_threshold && slice_start != num_rows)
                         {
-                            output.on_next(x->get_slice(slice_start, row));
+                            if (m_copy)
+                            {
+                                selected_ranges.emplace_back(std::pair{slice_start, row});
+                                num_selected_rows += (row - slice_start);
+                            }
+                            else
+                            {
+                                output.on_next(x->get_slice(slice_start, row));
+                            }
+
                             slice_start = num_rows;
                         }
                     }
@@ -103,7 +124,23 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     if (slice_start != num_rows)
                     {
                         // Last row was above the threshold
-                        output.on_next(x->get_slice(slice_start, num_rows));
+                        if (m_copy)
+                        {
+                            selected_ranges.emplace_back(std::pair{slice_start, num_rows});
+                            num_selected_rows += (num_rows - slice_start);
+                        }
+                        else
+                        {
+                            output.on_next(x->get_slice(slice_start, num_rows));
+                        }
+                    }
+
+                    // num_selected_rows will always be 0 when m_copy is false,
+                    // or when m_copy is true, but none of the rows matched the output
+                    if (num_selected_rows > 0)
+                    {
+                        DCHECK(m_copy);
+                        output.on_next(x->copy_ranges(selected_ranges, num_selected_rows));
                     }
                 },
                 [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
@@ -113,9 +150,9 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
 std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, float threshold)
+    srf::segment::Builder &builder, const std::string &name, float threshold, bool copy)
 {
-    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold);
+    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy);
 
     return stage;
 }

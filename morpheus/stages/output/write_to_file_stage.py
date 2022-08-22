@@ -53,7 +53,12 @@ class WriteToFileStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, filename: str, overwrite: bool, file_type: FileTypes = FileTypes.Auto):
+    def __init__(self,
+                 c: Config,
+                 filename: str,
+                 overwrite: bool,
+                 file_type: FileTypes = FileTypes.Auto,
+                 include_index_col: bool = True):
 
         super().__init__(c)
 
@@ -73,6 +78,7 @@ class WriteToFileStage(SinglePortStage):
             self._file_type = determine_file_type(self._output_file)
 
         self._is_first = True
+        self._include_index_col = include_index_col
 
     @property
     def name(self) -> str:
@@ -95,9 +101,11 @@ class WriteToFileStage(SinglePortStage):
 
     def _convert_to_strings(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
         if (self._file_type == FileTypes.JSON):
-            output_strs = serializers.df_to_json(df)
+            output_strs = serializers.df_to_json(df, include_index_col=self._include_index_col)
         elif (self._file_type == FileTypes.CSV):
-            output_strs = serializers.df_to_csv(df, include_header=self._is_first)
+            output_strs = serializers.df_to_csv(df,
+                                                include_header=self._is_first,
+                                                include_index_col=self._include_index_col)
             self._is_first = False
         else:
             raise NotImplementedError("Unknown file type: {}".format(self._file_type))
@@ -114,7 +122,12 @@ class WriteToFileStage(SinglePortStage):
 
         # Sink to file
         if (self._build_cpp_node()):
-            to_file = _stages.WriteToFileStage(builder, self.unique_name, self._output_file, "w", self._file_type)
+            to_file = _stages.WriteToFileStage(builder,
+                                               self.unique_name,
+                                               self._output_file,
+                                               "w",
+                                               self._file_type,
+                                               self._include_index_col)
         else:
 
             def node_fn(obs: srf.Observable, sub: srf.Subscriber):
