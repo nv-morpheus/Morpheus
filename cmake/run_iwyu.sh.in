@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#!/bin/bash
+# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Morpheus dependencies only needed during a CI build
-name: morpheus
-channels:
-    - conda-forge
-dependencies:
-    - bash=5.1.16 # bash >=4.4 is necessary for morpheus cli auto-complete tests to pass.
-    - clang=12
-    - clang-tools=12
-    - clangdev=12
-    - clangxx=12
-    - conda-pack=0.7
-    - git-lfs=3.2
-    - git>=2.35.3 # Needed for wildcards on safe.directory
-    - llvmdev=12
-    - pip
-    - pkg-config=0.29
-    - sccache=0.3
-    - pip:
-      - yapf==0.32
+# Allows running ccache with options inside of CMake. CMake does not work well
+# with setting variables before calling a command
+${MORPHEUS_IWYU_PROGRAM} ${MORPHEUS_IWYU_OPTIONS} "$@"

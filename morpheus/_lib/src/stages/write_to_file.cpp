@@ -15,16 +15,22 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/write_to_file.hpp"
+#include "morpheus/stages/write_to_file.hpp"  // IWYU pragma: accosiated
 
-#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/io/serializers.hpp"
+#include "morpheus/utilities/string_util.hpp"
+
+#include <glog/logging.h>
 
 #include <exception>
 #include <memory>
-#include <mutex>
+#include <stdexcept>  // for invalid_argument, runtime_error
 #include <string>
+#include <type_traits>  // for declval (indirectly via templates)
+#include <utility>      // for forward, move, addressof
 
 namespace morpheus {
+
 // Component public implementations
 // ************ WriteToFileStage **************************** //
 WriteToFileStage::WriteToFileStage(const std::string &filename,

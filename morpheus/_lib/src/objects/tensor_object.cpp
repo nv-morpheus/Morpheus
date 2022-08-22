@@ -20,7 +20,6 @@
 #include "morpheus/utilities/tensor_util.hpp"
 
 #include <srf/memory/blob.hpp>       // for blob
-#include <srf/utils/type_utils.hpp>  // for DataType
 
 #include <vector>
 

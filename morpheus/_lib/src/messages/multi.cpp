@@ -19,16 +19,28 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/utilities/type_util_detail.hpp"  // for TypeId, DataType
 
+#include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
+#include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
+#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
+#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
+#include <srf/cuda/common.hpp>                    // for SRF_CHECK_CUDA
 
+#include <algorithm>  // for transform
+#include <array>      // needed for pybind11::make_tuple
+#include <cstdint>    // for uint8_t
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+// IWYU pragma: no_include <unordered_map>
 
 namespace morpheus {
 /****** Component public implementations *******************/

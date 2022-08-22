@@ -18,10 +18,14 @@
 #include "morpheus/objects/fiber_queue.hpp"
 
 #include <boost/fiber/channel_op_status.hpp>
-#include <pybind11/pytypes.h>
+#include <pybind11/gil.h>  // for gil_scoped_release
+#include <pybind11/pybind11.h>
 
 #include <chrono>
+#include <functional>  // for ref, reference_wrapper
 #include <memory>
+#include <ratio>      // for ratio needed for std::chrono::duration
+#include <stdexcept>  // for invalid_argument, runtime_error
 #include <utility>
 
 namespace morpheus {

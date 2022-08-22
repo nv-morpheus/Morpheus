@@ -80,7 +80,7 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
    # Include What You Use
    if [[ "${SKIP_IWYU}" == "" ]]; then
-      IWYU_DIRS="benchmarks examples python src tools"
+      IWYU_DIRS="morpheus"
       NUM_PROC=$(get_num_proc)
       IWYU_OUTPUT=`${IWYU_TOOL} -p ${BUILD_DIR} -j ${NUM_PROC} ${IWYU_DIRS} 2>&1`
       IWYU_RETVAL=$?

@@ -21,30 +21,40 @@
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
+#include <boost/fiber/operations.hpp>  // for sleep_for, yield
 #include <boost/fiber/recursive_mutex.hpp>
-#include <cudf/io/csv.hpp>
+#include <cudf/column/column.hpp>  // for column
 #include <cudf/io/json.hpp>
+#include <cudf/scalar/scalar.hpp>  // for string_scalar
 #include <cudf/strings/replace.hpp>
+#include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
+#include <cudf/table/table.hpp>                  // for table
 #include <glog/logging.h>
-#include <http_client.h>
 #include <librdkafka/rdkafkacpp.h>
 #include <nlohmann/json.hpp>
-#include <nvtext/subword_tokenize.hpp>
 #include <pysrf/node.hpp>
 #include <srf/runnable/context.hpp>
 #include <srf/segment/builder.hpp>
+#include <srf/types.hpp>  // for SharedFuture
 
+#include <algorithm>  // for find, min, transform
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <initializer_list>  // for initializer_list
+#include <iterator>          // for back_insert_iterator, back_inserter
 #include <memory>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
+// IWYU thinks we need atomic for vector.emplace_back of a unique_ptr
+// and __alloc_traits<>::value_type for vector assignments
+// IWYU pragma: no_include <atomic>
+// IWYU pragma: no_include <ext/alloc_traits.h>
 
 #define CHECK_KAFKA(command, expected, msg)                                                                    \
     {                                                                                                          \

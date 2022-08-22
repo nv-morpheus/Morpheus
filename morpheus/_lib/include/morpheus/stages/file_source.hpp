@@ -19,11 +19,17 @@
 
 #include "morpheus/messages/meta.hpp"
 
+#include <cudf/io/types.hpp>  // for table_with_metadata
 #include <pysrf/node.hpp>
+#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
+#include <srf/channel/status.hpp>          // for Status
+#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <srf/segment/builder.hpp>
+#include <srf/segment/object.hpp>  // for Object
 
 #include <memory>
 #include <string>
+#include <vector>  // for vector
 
 namespace morpheus {
 /****** Component public implementations *******************/
