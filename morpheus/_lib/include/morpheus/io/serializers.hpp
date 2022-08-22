@@ -21,7 +21,6 @@
 
 #include <ostream>
 #include <string>
-#include <vector>
 
 namespace morpheus {
 

@@ -17,13 +17,14 @@
 
 #pragma once
 
+#include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
+#include "morpheus/messages/meta.hpp"                     // for MessageMeta
 #include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
 
+#include <cstddef>  // for size_t
 #include <memory>
 
 namespace morpheus {
