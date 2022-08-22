@@ -17,11 +17,17 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
-#include <morpheus/utilities/tensor_util.hpp>  // for TensorUtils, TensorUtils::shape_type
+#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils, TensorUtils::shape_type
 
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
 
-#include <string>  // for allocator, operator==, basic_string, string
+#include <cstddef>  // for size_t
+#include <string>   // for allocator, operator==, basic_string, string
+#include <vector>   // for vector
+// IWYU pragma: no_include "morpheus/utilities/string_util.hpp"
+// IWYU thinks we need ext/new_allocator.h for size_t for some reason
+// IWYU pragma: no_include <ext/new_allocator.h>
 
 using namespace morpheus;
 

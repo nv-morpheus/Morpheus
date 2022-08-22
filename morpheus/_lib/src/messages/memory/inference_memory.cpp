@@ -17,10 +17,8 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 
-#include <cudf/io/types.hpp>
-
 #include <string>
-#include <vector>
+#include <utility>  // for move
 
 namespace morpheus {
 /****** Component public implementations *******************/

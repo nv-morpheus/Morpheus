@@ -18,7 +18,6 @@
 #include "morpheus/messages/multi_response_probs.hpp"
 
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>
@@ -26,7 +25,6 @@
 
 #include <memory>
 #include <utility>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

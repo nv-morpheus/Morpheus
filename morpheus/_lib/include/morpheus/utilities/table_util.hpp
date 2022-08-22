@@ -16,17 +16,9 @@
  */
 
 #include <cudf/io/types.hpp>
-#include <cudf/table/table.hpp>
-#include <pysrf/utils.hpp>
-#include <srf/channel/channel.hpp>
+#include <cudf/table/table.hpp>  // IWYU pragma: keep
 
-#include <pybind11/cast.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
-
-#include <cstddef>
-#include <memory>
-#include <vector>
+#include <string>
 
 #pragma once
 

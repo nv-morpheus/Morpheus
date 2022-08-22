@@ -19,17 +19,22 @@
 
 #include <cudf/io/csv.hpp>
 #include <cudf/io/data_sink.hpp>
+#include <cudf/io/types.hpp>  // for column_name_info, sink_info, table_metadata
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <rmm/mr/device/per_device_resource.hpp>
 
-#include <memory>
+#include <array>    // for array
+#include <cstddef>  // for size_t
 #include <numeric>
 #include <ostream>
-#include <sstream>
+#include <sstream>  // IWYU pragma: keep
+#include <vector>
+// IWYU pragma: no_include <unordered_map>
 
 namespace morpheus {
 namespace py = pybind11;
