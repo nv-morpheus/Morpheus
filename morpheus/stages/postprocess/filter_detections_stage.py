@@ -32,6 +32,8 @@ logger = logging.getLogger(__name__)
 @register_stage("filter")
 class FilterDetectionsStage(SinglePortStage):
     """
+    Filter message by a classification threshold.
+
     The FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
     criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
     equal to `threshold`.
