@@ -24,7 +24,9 @@ import pandas as pd
 import srf
 from srf.core import operators as ops
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline import SingleOutputSource
 from morpheus.pipeline import StreamPair
@@ -33,6 +35,7 @@ from morpheus.utils.directory_watcher import DirectoryWatcher
 logger = logging.getLogger(__name__)
 
 
+@register_stage("from-appshield", modes=[PipelineModes.FIL])
 class AppShieldSourceStage(SingleOutputSource):
     """
     Source stage is used to load Appshield messages from one or more plugins into a dataframe.

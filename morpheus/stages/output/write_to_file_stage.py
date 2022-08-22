@@ -32,7 +32,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-@register_stage("to-file")
+@register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
 class WriteToFileStage(SinglePortStage):
     """
     Write all messages to a file.
@@ -46,17 +46,18 @@ class WriteToFileStage(SinglePortStage):
         Pipeline configuration instance.
     filename : str
         Name of the file to which the messages will be written.
-    overwrite : bool
+    overwrite : boolean, default = False, is_flag = True
         Overwrite file if exists. Will generate an error otherwise.
     file_type : `morpheus._lib.file_types.FileTypes`, optional
         File type of output (FileTypes.JSON, FileTypes.CSV, FileTypes.Auto), by default FileTypes.Auto.
-
+    include_index_col : bool, default = True
+        Write out the index as a column, by default True.
     """
 
     def __init__(self,
                  c: Config,
                  filename: str,
-                 overwrite: bool,
+                 overwrite: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  include_index_col: bool = True):
 

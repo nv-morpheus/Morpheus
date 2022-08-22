@@ -64,7 +64,7 @@ def df_to_json(df: cudf.DataFrame, strip_newlines=False, include_index_col=True)
     include_index_col: bool, optional
         Write out the index as a column, by default True.
         Note: This value is currently being ignored due to a known issue in Pandas:
-            https://github.com/pandas-dev/pandas/issues/37600
+        https://github.com/pandas-dev/pandas/issues/37600
     Returns
     -------
     typing.List[str]

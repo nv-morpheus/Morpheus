@@ -19,9 +19,10 @@ import typing
 import cupy as cp
 import mlflow
 import srf
-from morpheus.cli.register_stage import register_stage
 
-from morpheus.config import Config, PipelineModes
+from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage

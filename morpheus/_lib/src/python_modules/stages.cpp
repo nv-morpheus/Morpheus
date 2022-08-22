@@ -53,7 +53,7 @@ PYBIND11_MODULE(stages, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    py::module_::import() srf::pysrf::import(m, "cupy");
+    srf::pysrf::import(m, "cupy");
     srf::pysrf::import(m, "morpheus._lib.messages");
     srf::pysrf::import(m, "morpheus._lib.file_types");
 

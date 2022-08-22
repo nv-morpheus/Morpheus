@@ -21,6 +21,7 @@ import srf
 
 import morpheus
 from morpheus._lib.file_types import FileTypes
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiMessage
@@ -47,6 +48,7 @@ class TestDirectories(object):
 TEST_DIRS = TestDirectories()
 
 
+@register_stage("unittest-conv-msg")
 class ConvMsg(SinglePortStage):
     """
     Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage

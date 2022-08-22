@@ -1,4 +1,18 @@
-import enum
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import functools
 import inspect
 import pathlib
@@ -14,7 +28,6 @@ from typing_utils import issubtype
 from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.stage_registry import StageInfo
-from morpheus.cli.stage_registry import StageRegistry
 from morpheus.cli.utils import get_config_from_ctx
 from morpheus.cli.utils import get_pipeline_from_ctx
 from morpheus.cli.utils import prepare_command
@@ -22,46 +35,6 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.utils.type_utils import _DecoratorType
 from morpheus.utils.type_utils import get_full_qualname
-
-# def _get_config_from_ctx(ctx) -> Config:
-#     ctx_dict = ctx.ensure_object(dict)
-
-#     if "config" not in ctx_dict:
-#         ctx_dict["config"] = Config()
-
-#     return ctx_dict["config"]
-
-# def _get_pipeline_from_ctx(ctx):
-#     ctx_dict = ctx.ensure_object(dict)
-
-#     assert "pipeline" in ctx_dict, "Inconsistent configuration. Pipeline accessed before created"
-
-#     return ctx_dict["pipeline"]
-
-# def _prepare_command(parse_config: bool = False):
-
-#     def inner_prepare_command(f):
-#         """
-#         Preparse command for use. Combines @without_empty_args, @show_defaults and @click.pass_context
-#         """
-
-#         def new_func(*args, **kwargs):
-#             ctx: click.Context = get_current_context()
-#             ctx.show_default = True
-
-#             kwargs = _without_empty_args(kwargs)
-
-#             # Apply the config if desired
-#             if parse_config:
-#                 config = get_config_from_ctx(ctx)
-
-#                 _apply_to_config(config, **kwargs)
-
-#             return f(ctx, *args, **kwargs)
-
-#         return update_wrapper(new_func, f)
-
-#     return inner_prepare_command
 
 
 def class_name_to_command_name(class_name: str) -> str:
@@ -203,10 +176,17 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         options_kwargs["type"] = partial_pop_kwargs(click.Path, doc_type_kwargs)()
 
     elif (issubtype(annotation, Enum)):
-        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)([x.value for x in annotation])
+        enum_map = {x.name.lower(): x.value for x in annotation}
+        case_sensitive = doc_type_kwargs.get('case_sensitive', True)
+        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(list(enum_map.values()))
 
         def convert_to_enum(_: click.Context, _2: click.Parameter, value: str):
-            return annotation[value]
+            if case_sensitive:
+                result = annotation[value]
+            else:
+                result = enum_map[value.lower()]
+
+            return result
 
         options_kwargs["callback"] = convert_to_enum
 
@@ -291,7 +271,8 @@ def register_stage(command_name: str = None,
                         config_param_name = p_name
                         continue
                     elif (p_name in ignore_args):
-                        assert p_value.default != inspect.Parameter.empty, "Cannot ignore argument without default value"
+                        assert p_value.default != inspect.Parameter.empty, (
+                            "Cannot ignore argument without default value")
                         continue
                     elif (p_value.kind == inspect.Parameter.VAR_POSITIONAL):
                         continue
@@ -299,13 +280,17 @@ def register_stage(command_name: str = None,
                         continue
 
                     option_kwargs = {}
-                    option_kwargs["required"] = True
 
                     # See if we have some sort of documentation for this argument
                     option_kwargs["help"] = get_param_doc(numpy_doc, p_name)
 
                     # Set the default value if not empty
-                    option_kwargs["default"] = p_value.default if p_value.default != inspect.Parameter.empty else None
+                    if p_value.default != inspect.Parameter.empty:
+                        option_kwargs["required"] = False
+                        option_kwargs["default"] = p_value.default
+                    else:
+                        option_kwargs["required"] = True
+                        option_kwargs["default"] = None
 
                     set_options_param_type(option_kwargs, p_value.annotation, get_param_type(numpy_doc, p_name))
 
@@ -375,11 +360,13 @@ def register_stage(command_name: str = None,
                     # Verify its a lazy stage info with the same
                     if (not isinstance(registered_stage, LazyStageInfo)):
                         raise RuntimeError(
-                            "Registering stage '{}' failed. Stage is already registered. Ensure `register_stage` is only executed once for each mode and name combination"
-                        )
+                            ("Registering stage '{}' failed. Stage is already registered. Ensure `register_stage` is "
+                             "only executed once for each mode and name combination").format(
+                                 registered_stage.qualified_name))
 
                     if (registered_stage.qualified_name != get_full_qualname(stage_class)):
-                        raise RuntimeError("")
+                        raise RuntimeError("Qualified name {} != {}".format(registered_stage.qualified_name,
+                                                                            get_full_qualname(stage_class)))
 
                     existing_registrations.update(registered_stage.modes)
 

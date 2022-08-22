@@ -41,7 +41,7 @@ class AutoOffsetReset(Enum):
     NONE = "none"
 
 
-@register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER], option_args={"bootstrap": {"callback": }})
+@register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class KafkaSourceStage(SingleOutputSource):
     """
     Load messages from a Kafka cluster.
@@ -78,8 +78,11 @@ class KafkaSourceStage(SingleOutputSource):
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
-                 auto_offset_reset: AutoOffsetReset = AutoOffsetReset.LATEST):
+                 auto_offset_reset: AutoOffsetReset = 'latest'):
         super().__init__(c)
+
+        if isinstance(auto_offset_reset, AutoOffsetReset):
+            auto_offset_reset = auto_offset_reset.value
 
         self._consumer_conf = {
             'bootstrap.servers': bootstrap_servers,

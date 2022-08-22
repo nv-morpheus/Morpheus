@@ -17,6 +17,7 @@ import functools
 import importlib
 import logging
 import os
+import sys
 import time
 import types
 import typing
@@ -24,14 +25,11 @@ import typing
 import click
 import pluggy
 
-import_start_time = time.time()
-
 import morpheus
 from morpheus.cli import hookspecs
 from morpheus.cli.default_command_hooks import DefaultCommandHooks
 from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
-from morpheus.cli.stage_registry import StageInfo
 from morpheus.cli.stage_registry import StageRegistry
 from morpheus.cli.utils import PluginSpec
 from morpheus.cli.utils import _get_log_levels
@@ -39,9 +37,9 @@ from morpheus.cli.utils import _parse_log_level
 from morpheus.cli.utils import get_config_from_ctx
 from morpheus.cli.utils import get_pipeline_from_ctx
 from morpheus.cli.utils import prepare_command
+from morpheus.cli.utils import str_to_file_type
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
-from morpheus.config import ConfigBase
 from morpheus.config import ConfigFIL
 from morpheus.config import ConfigOnnxToTRT
 from morpheus.config import CppConfig
@@ -117,7 +115,14 @@ class PluginManager():
         # Loop over all specs and load the plugins
         for s in self._plugin_specs:
             try:
-                mod = importlib.import_module(s)
+                if os.path.exists(s):
+                    mod_name = os.path.splitext(os.path.basename(s))[0]
+                    spec = importlib.util.spec_from_file_location(mod_name, s)
+                    mod = importlib.util.module_from_spec(spec)
+                    sys.modules[mod_name] = mod
+                    spec.loader.exec_module(mod)
+                else:
+                    mod = importlib.import_module(s)
 
                 # Sucessfully loaded. Register
                 self._pm.register(mod)
@@ -234,7 +239,7 @@ class PluginGroup(AliasedGroup):
         duplicate_commands = [x for x in plugin_command_list if x in command_list]
 
         if (len(duplicate_commands) > 0):
-            raise RuntimeError("Plugins registered the following duplicate commands: ".format(
+            raise RuntimeError("Plugins registered the following duplicate commands: {}".format(
                 ", ".join(duplicate_commands)))
 
         command_list.extend(plugin_command_list)
@@ -486,11 +491,13 @@ def run(ctx: click.Context, **kwargs):
                     "output will be padded with 0s. If the tokenized string is longer than max_length and "
                     "do_truncate == False, there will be multiple returned sequences containing the "
                     "overflowing token-ids. Default value is 256"))
+@click.option('--label', type=str, default=None, multiple=True, help=("Specify output labels."))
 @click.option('--labels_file',
               default="data/labels_nlp.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
-                    "A label file is a simple text file where each line corresponds to a label"))
+                    "A label file is a simple text file where each line corresponds to a label."
+                    "Ignored when --label is specified"))
 @click.option('--viz_file',
               default=None,
               type=click.Path(dir_okay=False, writable=True),
@@ -521,7 +528,10 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
     config.mode = PipelineModes.NLP
     config.feature_length = kwargs["model_seq_length"]
 
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
+    labels = kwargs['label']
+    if len(labels):
+        config.class_labels = list(labels)
+    else:
         with open(kwargs["labels_file"], "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
@@ -543,12 +553,17 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
               default=29,
               type=click.IntRange(min=1),
               help="Number of features trained in the model")
+@click.option('--label',
+              type=str,
+              default=["mining"],
+              multiple=True,
+              help=("Specify output labels. Ignored when --labels_file is specified"))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=("Specifies a file to read labels from in order to convert class IDs into labels. "
                     "A label file is a simple text file where each line corresponds to a label. "
-                    "If unspecified, only a single output label is created for FIL"))
+                    "If unspecified the value specified by the --label flag will be used."))
 @click.option('--columns_file',
               default="data/columns_fil.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
@@ -585,13 +600,13 @@ def pipeline_fil(ctx: click.Context, **kwargs):
 
     config.fil = ConfigFIL()
 
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
-        with open(kwargs["labels_file"], "r") as lf:
+    labels_file = kwargs.get("labels_file")
+    if (labels_file is not None):
+        with open(labels_file, "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
-        # Use a default single label
-        config.class_labels = ["mining"]
+        config.class_labels = list(kwargs['label'])
 
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
         with open(kwargs["columns_file"], "r") as lf:
@@ -617,6 +632,11 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               default="data/columns_ae.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=(""))
+@click.option('--label',
+              type=str,
+              default=["ae_anomaly_score"],
+              multiple=True,
+              help=("Specify output labels. Ignored when --labels_file is specified"))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
@@ -677,13 +697,13 @@ def pipeline_ae(ctx: click.Context, **kwargs):
         # Use a default single label
         config.class_labels = ["ae_anomaly_score"]
 
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
-        with open(kwargs["labels_file"], "r") as lf:
+    labels_file = kwargs.get("labels_file")
+    if (labels_file is not None):
+        with open(labels_file, "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
-        # Use a default single label
-        config.class_labels = ["ae_anomaly_score"]
+        config.class_labels = list(kwargs['label'])
 
     if ("userid_filter" in kwargs):
         config.ae.userid_filter = kwargs["userid_filter"]
@@ -707,6 +727,11 @@ def pipeline_ae(ctx: click.Context, **kwargs):
               default=1,
               type=click.IntRange(min=1),
               help="Number of features trained in the model")
+@click.option('--label',
+              type=str,
+              default=None,
+              multiple=True,
+              help=("Specify output labels. Ignored when --labels_file is specified"))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
@@ -744,10 +769,15 @@ def pipeline_other(ctx: click.Context, **kwargs):
 
     config.fil = ConfigFIL()
 
-    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
-        with open(kwargs["labels_file"], "r") as lf:
+    labels_file = kwargs.get("labels_file")
+    if (labels_file is not None):
+        with open(labels_file, "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
+    else:
+        labels = kwargs["label"]
+        if len(labels):
+            config.class_labels = list(labels)
 
     from morpheus.pipeline import LinearPipeline
 
@@ -1581,88 +1611,6 @@ run.add_command(pipeline_fil)
 run.add_command(pipeline_ae)
 run.add_command(pipeline_other)
 
-# # NLP Pipeline
-# pipeline_nlp.add_command(add_class)
-# pipeline_nlp.add_command(add_scores)
-# pipeline_nlp.add_command(buffer)
-# pipeline_nlp.add_command(delay)
-# pipeline_nlp.add_command(deserialize)
-# pipeline_nlp.add_command(dropna)
-# pipeline_nlp.add_command(filter_command)
-# pipeline_nlp.add_command(from_file)
-# pipeline_nlp.add_command(from_kafka)
-# pipeline_nlp.add_command(gen_viz)
-# pipeline_nlp.add_command(inf_identity)
-# pipeline_nlp.add_command(inf_pytorch)
-# pipeline_nlp.add_command(inf_triton)
-# pipeline_nlp.add_command(mlflow_drift)
-# pipeline_nlp.add_command(monitor)
-# pipeline_nlp.add_command(preprocess_nlp)
-# pipeline_nlp.add_command(serialize)
-# pipeline_nlp.add_command(to_file)
-# pipeline_nlp.add_command(to_kafka)
-# pipeline_nlp.add_command(validate)
-
-# # FIL Pipeline
-# pipeline_fil.add_command(add_class)
-# pipeline_fil.add_command(add_scores)
-# pipeline_fil.add_command(buffer)
-# pipeline_fil.add_command(delay)
-# pipeline_fil.add_command(deserialize)
-# pipeline_fil.add_command(dropna)
-# pipeline_fil.add_command(filter_command)
-# pipeline_fil.add_command(from_file)
-# pipeline_fil.add_command(from_kafka)
-# pipeline_fil.add_command(inf_identity)
-# pipeline_fil.add_command(inf_pytorch)
-# pipeline_fil.add_command(inf_triton)
-# pipeline_fil.add_command(mlflow_drift)
-# pipeline_fil.add_command(monitor)
-# pipeline_fil.add_command(preprocess_fil)
-# pipeline_fil.add_command(serialize)
-# pipeline_fil.add_command(to_file)
-# pipeline_fil.add_command(to_kafka)
-# pipeline_fil.add_command(validate)
-
-# # AE Pipeline
-# pipeline_ae.add_command(add_class)
-# pipeline_ae.add_command(add_scores)
-# pipeline_ae.add_command(buffer)
-# pipeline_ae.add_command(delay)
-# pipeline_ae.add_command(filter_command)
-# pipeline_ae.add_command(from_cloudtrail)
-# pipeline_ae.add_command(gen_viz)
-# pipeline_ae.add_command(inf_pytorch_ae)
-# pipeline_ae.add_command(inf_triton)
-# pipeline_ae.add_command(monitor)
-# pipeline_ae.add_command(preprocess_ae)
-# pipeline_ae.add_command(serialize)
-# pipeline_ae.add_command(timeseries)
-# pipeline_ae.add_command(to_file)
-# pipeline_ae.add_command(to_kafka)
-# pipeline_ae.add_command(train_ae)
-# pipeline_ae.add_command(validate)
-
-# # Other Pipeline
-# pipeline_other.add_command(add_class)
-# pipeline_other.add_command(add_scores)
-# pipeline_other.add_command(buffer)
-# pipeline_other.add_command(delay)
-# pipeline_other.add_command(deserialize)
-# pipeline_other.add_command(dropna)
-# pipeline_other.add_command(filter_command)
-# pipeline_other.add_command(from_file)
-# pipeline_other.add_command(from_kafka)
-# pipeline_other.add_command(inf_identity)
-# pipeline_other.add_command(inf_pytorch)
-# pipeline_other.add_command(inf_triton)
-# pipeline_other.add_command(mlflow_drift)
-# pipeline_other.add_command(monitor)
-# pipeline_other.add_command(serialize)
-# pipeline_other.add_command(to_file)
-# pipeline_other.add_command(to_kafka)
-# pipeline_other.add_command(validate)
-
 ALL = (PipelineModes.AE, PipelineModes.NLP, PipelineModes.FIL, PipelineModes.OTHER)
 NOT_AE = (PipelineModes.NLP, PipelineModes.FIL, PipelineModes.OTHER)
 AE_ONLY = (PipelineModes.AE, )
@@ -1677,9 +1625,10 @@ add_command("delay", "morpheus.stages.general.delay_stage.DelayStage", modes=ALL
 add_command("deserialize", "morpheus.stages.preprocess.deserialize_stage.DeserializeStage", modes=NOT_AE)
 add_command("dropna", "morpheus.stages.preprocess.drop_null_stage.DropNullStage", modes=NOT_AE)
 add_command("filter", "morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage", modes=ALL)
-add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=NOT_AE)
-add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStage", modes=NOT_AE)
+add_command("from-appshield", "morpheus.stages.input.appshield_source_stage.AppShieldSourceStage", modes=FIL_ONLY)
 add_command("from-cloudtrail", "morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage", modes=AE_ONLY)
+add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStage", modes=NOT_AE)
+add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=NOT_AE)
 add_command("gen-viz", "morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage", modes=NLP_ONLY)
 add_command("inf-identity", "morpheus.stages.inference.identity_inference_stage.IdentityInferenceStage", modes=NOT_AE)
 add_command("inf-pytorch",

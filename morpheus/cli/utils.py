@@ -84,11 +84,6 @@ def prepare_command(parse_config: bool = False):
         """
 
         def new_func(*args, **kwargs):
-
-            # If we are running help, dont run the callback. Just exit
-            if ("--help" in click.get_os_args()):
-                return
-
             ctx: click.Context = click.globals.get_current_context()
             ctx.show_default = True
 

@@ -1,10 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import dataclasses
+import logging
 import time
 import typing
 
 import click
 
 from morpheus.config import PipelineModes
+
+logger = logging.getLogger(__file__)
 
 
 @dataclasses.dataclass
@@ -78,8 +96,7 @@ class LazyStageInfo(StageInfo):
 class StageRegistry:
 
     def __init__(self) -> None:
-
-        # Stages are registered on a per mode basis so different stages can have the same command name for different modes
+        # Stages are registered on a per mode basis, different stages can have the same command name for different modes
         self._registered_stages: typing.Dict[PipelineModes, typing.Dict[str, StageInfo]] = {}
 
     def _get_stages_for_mode(self, mode: PipelineModes) -> typing.Dict[str, StageInfo]:
@@ -95,7 +112,8 @@ class StageRegistry:
         mode_stages = self._get_stages_for_mode(mode)
 
         if (stage.name in mode_stages):
-            raise RuntimeError("The stage '{}' has already been added for mode: {}".format(stage.name, mode))
+            # TODO: Figure out if this is something that only the unittests encounter
+            logging.debug("The stage '{}' has already been added for mode: {}".format(stage.name, mode))
 
         mode_stages[stage.name] = stage
 
