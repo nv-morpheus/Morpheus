@@ -30,8 +30,8 @@ morpheus_add_cython_libraries(
 
 # This target generates headers used by other parts of the code base.
 # The C++ checks used in CI need these headers but don't require an actual build.
-# The `style_checks` target allows these to be generated without a full build of Morpheus.
-add_dependencies(style_checks ${cudf_helpers_target})
+# The `morpheus_style_checks` target allows these to be generated without a full build of Morpheus.
+add_dependencies(${PROJECT_NAME}_style_checks ${cudf_helpers_target})
 
 if (MORPHEUS_PYTHON_INPLACE_BUILD)
   inplace_build_copy(${cudf_helpers_target} ${MORPHEUS_LIB_ROOT})
