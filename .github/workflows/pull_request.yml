@@ -1,0 +1,44 @@
+name: Build pull request
+
+on:
+  push:
+    branches:
+      - 'pull-request/**'
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+env:
+  CUDA_VER: "11.5"
+  MORPHEUS_ROOT: "${GITHUB_WORKSPACE}/morpheus"
+  PYTHON_VER: "3.8"
+  RAPIDS_VER: "22.06"
+  WORKSPACE: "${GITHUB_WORKSPACE}/morpheus"
+  WORKSPACE_TMP: "${GITHUB_WORKSPACE}/tmp"
+  USE_SCCACHE: "1"
+  GIT_COMMIT: "${GITHUB_SHA}"
+
+jobs:
+  check:
+    name: Check
+    runs-on: [self-hosted, linux, amd64, cpu4]
+    timeout-minutes: 60
+    container:
+      image: gpuci/rapidsai-driver:22.04-cuda11.5-devel-centos7-py3.8
+    strategy:
+      fail-fast: true
+
+    with:
+      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+
+      - name: Check
+        run: ./morpheus/ci/scripts/github/checks.sh

@@ -19,8 +19,6 @@ set -e
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
 
-fetch_base_branch
-
 gpuci_logger "Creating conda env"
 rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/ ${IWYU_DIR}
 conda config --add pkgs_dirs /opt/conda/pkgs

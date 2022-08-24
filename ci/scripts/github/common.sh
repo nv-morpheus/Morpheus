@@ -15,6 +15,10 @@
 # limitations under the License.
 
 gpuci_logger "Env Setup"
+gpuci_logger "Environ:"
+env | sort
+gpuci_logger "---------Environ:"
+mkdir -p WORKSPACE_TMP
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 
@@ -56,27 +60,11 @@ export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUIL
 
 export FETCH_STATUS=0
 
+export BASE_BRANCH="${GITHUB_BASE_REF}"
+export CHANGE_TARGET="origin/${BASE_BRANCH}"
+
 gpuci_logger "Environ:"
 env | sort
-
-function fetch_base_branch() {
-    gpuci_logger "Retrieving base branch from GitHub API"
-    [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
-    RESP=$(
-    curl -s \
-        -H "Accept: application/vnd.github.v3+json" \
-        "${CURL_HEADERS[@]}" \
-        "https://api.github.com/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
-    )
-
-    BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
-
-    # Change target is the branch name we are merging into but due to the weird way jenkins does
-    # the checkout it isn't recognized by git without the origin/ prefix
-    export CHANGE_TARGET="origin/${BASE_BRANCH}"
-    gpuci_logger "Base branch: ${BASE_BRANCH}"
-}
-
 
 function fetch_s3() {
     ENDPOINT=$1
