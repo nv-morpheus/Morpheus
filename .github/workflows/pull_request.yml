@@ -30,9 +30,6 @@ jobs:
     strategy:
       fail-fast: true
 
-    with:
-      AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-      AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -41,4 +38,7 @@ jobs:
           path: 'morpheus'
 
       - name: Check
+        with:
+          AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
         run: ./morpheus/ci/scripts/github/checks.sh
