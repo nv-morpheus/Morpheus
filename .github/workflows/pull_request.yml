@@ -38,7 +38,8 @@ jobs:
           path: 'morpheus'
 
       - name: Check
+        shell: bash
+        run: ./morpheus/ci/scripts/github/checks.sh
         with:
           AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-        run: ./morpheus/ci/scripts/github/checks.sh
