@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-  AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+  # AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+  # AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
   CUDA_VER: "11.5"
   MORPHEUS_ROOT: "${GITHUB_WORKSPACE}/morpheus"
   PYTHON_VER: "3.8"
