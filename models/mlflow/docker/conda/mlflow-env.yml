@@ -21,7 +21,8 @@ dependencies:
   - python=3.8
   - pip
   - onnx
-  - openssl>=1.1.1o
+  - openssl>=1.1.1q
+  - psycopg2<3
   - pip:
+    - boto3
     - mlflow
-
