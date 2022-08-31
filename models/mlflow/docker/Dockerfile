@@ -14,9 +14,8 @@
 # limitations under the License.
 
 ARG FROM_IMAGE=gpuci/miniforge-cuda
-ARG CUDA_VER=11.4
+ARG CUDA_VER=11.5
 ARG LINUX_VER=ubuntu20.04
-ARG TRITON_VER=r22.02
 FROM ${FROM_IMAGE}:${CUDA_VER}-runtime-${LINUX_VER} AS base
 
 WORKDIR /mlflow
@@ -31,7 +30,7 @@ RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]
 
 ARG TRITON_DIR=/mlflow/triton-inference-server
-ARG TRITON_VER=r21.12
+ARG TRITON_VER=r22.07
 
 RUN mkdir ${TRITON_DIR} && \
     cd ${TRITON_DIR} && \
@@ -42,6 +41,9 @@ RUN mkdir ${TRITON_DIR} && \
 
 RUN ln -sf ${TRITON_DIR}/server/deploy/mlflow-triton-plugin/scripts/publish_model_to_mlflow.py /mlflow && \
     mkdir /mlflow/artifacts
+
+# remedy for CVE-2015-20107
+RUN find / -name '*mailcap*.*py*' | xargs rm
 
 ENV MLFLOW_MODEL_REPO=/mlflow/artifacts
 ENV MLFLOW_TRACKING_URI=sqlite:////tmp/mlflow-db.sqlite
