@@ -40,7 +40,7 @@ gpuci_logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 gpuci_logger "Building targets that generate source code"
-cmake --build build --target style_checks --parallel ${PARALLEL_LEVEL}
+cmake --build build --target morpheus_style_checks --parallel ${PARALLEL_LEVEL}
 
 gpuci_logger "sccache usage for source build:"
 sccache --show-stats
