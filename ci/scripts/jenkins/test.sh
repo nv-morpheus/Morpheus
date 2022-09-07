@@ -33,6 +33,21 @@ CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/wheel -name "*.x"))
 gpuci_logger "Installing test dependencies"
 npm install --silent -g camouflage-server
 
+# Kafka tests need Java, since this stage is the only one that needs it, installing it here rather than adding it to
+# the ci.yaml file
+mamba install -c conda-forge "openjdk=11.0.15"
+export PYTEST_KAFKA_DIR=${WORKSPACE_TMP}/pytest-kafka
+
+# Ensure we have a clean checkout
+rm -rf ${PYTEST_KAFKA_DIR}
+
+# Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
+# https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
+git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${PYTEST_KAFKA_DIR}
+pushd ${PYTEST_KAFKA_DIR}
+python setup.py develop
+popd
+
 # Before running any .git commands, set this as a safe directory
 git config --global --add safe.directory ${MORPHEUS_ROOT}
 
@@ -70,7 +85,7 @@ cd ${MORPHEUS_ROOT}/tests
 
 set +e
 
-python -I -m pytest --run_slow \
+python -I -m pytest --run_slow --run_kafka \
        --junit-xml=${REPORTS_DIR}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \

@@ -131,7 +131,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("batch_timeout_ms"),
              py::arg("config"),
              py::arg("disable_commits")       = false,
-             py::arg("disable_pre_filtering") = false);
+             py::arg("disable_pre_filtering") = false,
+             py::arg("stop_after")            = 0);
 
     py::class_<srf::segment::Object<PreprocessFILStage>,
                srf::segment::ObjectProperties,
