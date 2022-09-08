@@ -31,8 +31,8 @@ dependencies:
     - cuda-nvml-dev=11.5
     - cuda-python<=11.7.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.5
-    - cudf 22.06
-    - cudf_kafka 22.06.*
+    - cudf 22.08
+    - cudf_kafka 22.08.*
     - cupy=9.5.0
     - cython=0.29.24
     - docker-compose=1.29.2
@@ -69,7 +69,7 @@ dependencies:
     - scikit-build=0.13
     - sphinx
     - sphinx_rtd_theme
-    - srf 22.06.*
+    - srf 22.08.*
     - sysroot_linux-64=2.17
     - tqdm
     - yapf=0.32.0

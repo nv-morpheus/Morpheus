@@ -7,7 +7,7 @@ pipeline {
     }
     environment {
         PYTHON_VER = '3.8'
-        RAPIDS_VER = '22.06'
+        RAPIDS_VER = '22.08'
         CUDA_VER = '11.5'
         USE_SCCACHE = '1'
         HOME = "${WORKSPACE}"
