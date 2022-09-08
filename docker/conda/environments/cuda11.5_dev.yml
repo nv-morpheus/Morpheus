@@ -69,7 +69,7 @@ dependencies:
     - scikit-build=0.13
     - sphinx
     - sphinx_rtd_theme
-    - srf 22.08.*
+    - srf 22.09.*
     - sysroot_linux-64=2.17
     - tqdm
     - yapf=0.32.0

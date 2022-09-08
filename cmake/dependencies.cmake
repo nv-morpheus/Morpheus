@@ -104,7 +104,7 @@ include(deps/Configure_rdkafka)
 
 # SRF (Should come after all third party but before NVIDIA repos)
 # =====
-set(SRF_VERSION 22.08 CACHE STRING "Which version of SRF to use")
+set(SRF_VERSION 22.09 CACHE STRING "Which version of SRF to use")
 include(deps/Configure_srf)
 
 # CuDF
