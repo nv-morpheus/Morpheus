@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/matx_util.hpp>
+#include "morpheus/utilities/matx_util.hpp"
 
-#include <morpheus/objects/dev_mem_info.hpp>
-#include <morpheus/utilities/type_util.hpp>
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/dev_mem_info.hpp"
+#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <srf/cuda/sync.hpp>
 
@@ -243,6 +243,45 @@ namespace morpheus {
         }
     };
 
+    struct MatxUtil__MatxReduceMax {
+        matx::index_t num_input_rows;
+        matx::index_t num_cols;
+        std::vector<matx::index_t> input_stride;
+        matx::index_t num_output_rows;
+        void *input_data;
+        void *output_data;
+        rmm::cuda_stream_view stream;
+
+        template<typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()> * = nullptr>
+        void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
+            throw std::invalid_argument("Unsupported conversion");
+        }
+
+        template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
+        void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
+            auto input_count = stop - start;
+            matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(input_count), num_cols});
+            matx::tensorShape_t<1> output_shape({num_cols});
+
+            matx::index_t output_stride[2] = {input_stride[0], input_stride[1]};
+            if (output_stride[0] == 1)
+            {
+                output_stride[1] = num_output_rows;
+            }
+
+            auto input_ptr = static_cast<InputT *>(input_data) + (start * input_stride[0]);
+            auto output_ptr = static_cast<InputT *>(output_data) + (output_idx *  output_stride[0]);
+
+            matx::tensor_t<InputT, 2> input_tensor(input_ptr, input_shape, {input_stride[0], input_stride[1]});
+            matx::tensor_t<InputT, 1> output_tensor(output_ptr, output_shape, {output_stride[1]});
+
+            // We need to transpose the input such that rmax will reduce the rows
+            // Matx performs reductions over the innermost dimensions.
+            // see https://nvidia.github.io/MatX/api/reduce.html
+            matx::rmax(output_tensor, input_tensor.Permute({1, 0}), stream.value());
+        }
+    };
+
     // Component public implementations
     // ************ MatxUtil************************* //
     std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo &input, TypeId output_type) {
@@ -335,6 +374,59 @@ namespace morpheus {
 
         srf::enqueue_stream_sync_event(output->stream()).get();
 
+        return output;
+    }
+
+    std::shared_ptr<rmm::device_buffer>
+    MatxUtil::reduce_max(const DevMemInfo &input,
+                         const std::vector<int32_t> &seq_ids,
+                         size_t seq_id_offset,
+                         const std::vector<int64_t> &input_shape,
+                         const std::vector<int64_t> &input_stride,
+                         const std::vector<int64_t> &output_shape)
+    {
+        auto dtype = DType(input.type_id);
+        auto elem_size = dtype.item_size();
+        auto cudf_type = cudf::data_type{dtype.cudf_type_id()};
+        auto num_input_rows = input_shape[0];
+        auto num_input_cols = input_shape[1];
+
+        std::vector<matx::index_t>matx_stride{input_stride[0], input_stride[1]};
+        std::size_t output_element_count = output_shape[0] * output_shape[1];
+        std::size_t output_buff_size = elem_size * output_element_count;
+
+        DCHECK(output_element_count <= input.element_count) << "Output buffer size should be less than or equal to the input";
+        DCHECK(num_input_cols == output_shape[1]) << "Number of input and output columns must match";
+
+        auto output = std::make_shared<rmm::device_buffer>(output_buff_size,
+                                                           input.buffer->stream(),
+                                                           input.buffer->memory_resource());
+
+        MatxUtil__MatxReduceMax matx_reduce_max{num_input_rows, num_input_cols, matx_stride, output_shape[0], input.data(), output->data(), output->stream()};
+
+        std::size_t start = 0;
+        auto output_offset = seq_ids[seq_id_offset];
+        for (std::size_t i=0; i < num_input_rows; ++i)
+        {
+            auto idx = seq_ids[i+seq_id_offset];
+            if (idx != seq_ids[start+seq_id_offset])
+            {
+                cudf::type_dispatcher(cudf_type,
+                                      matx_reduce_max,
+                                      start,
+                                      i,
+                                      seq_ids[start+seq_id_offset]-output_offset);
+                start = i;
+            }
+        }
+
+        cudf::type_dispatcher(cudf_type,
+                              matx_reduce_max,
+                              start,
+                              num_input_rows,
+                              seq_ids[start+seq_id_offset]-output_offset);
+
+        srf::enqueue_stream_sync_event(output->stream()).get();
         return output;
     }
 }

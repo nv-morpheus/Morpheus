@@ -15,18 +15,17 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/preprocess_nlp.hpp>
+#include "morpheus/stages/preprocess_nlp.hpp"
 
-#include <morpheus/messages/multi_inference.hpp>
-#include <morpheus/utilities/type_util.hpp>
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
-#include <pysrf/node.hpp>
-#include <srf/segment/builder.hpp>
-
-#include <librdkafka/rdkafkacpp.h>
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <librdkafka/rdkafkacpp.h>
 #include <nvtext/subword_tokenize.hpp>
+#include <pysrf/node.hpp>
+#include <srf/segment/builder.hpp>
 
 #include <cstdint>
 #include <exception>
@@ -90,7 +89,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                     cudf::cast(token_results.tensor_token_ids->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
 
-                memory->inputs["input_ids"] = std::move(
+                memory->tensors["input_ids"] = std::move(
                     Tensor::create(std::move(input_ids_released.data),
                                    DType::create<int32_t>(),
                                    std::vector<TensorIndex>{length, static_cast<int>(token_results.sequence_length)},
@@ -101,7 +100,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 auto input_mask_released =
                     cudf::cast(token_results.tensor_attention_mask->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
-                memory->inputs["input_mask"] = std::move(
+                memory->tensors["input_mask"] = std::move(
                     Tensor::create(std::move(input_mask_released.data),
                                    DType::create<int32_t>(),
                                    std::vector<TensorIndex>{length, static_cast<int>(token_results.sequence_length)},
@@ -111,7 +110,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 length = token_results.tensor_metadata->size() / 3;
                 auto seq_ids_released =
                     cudf::cast(token_results.tensor_metadata->view(), cudf::data_type(cudf::type_id::INT32))->release();
-                memory->inputs["seq_ids"] =
+                memory->tensors["seq_ids"] =
                     std::move(Tensor::create(std::move(seq_ids_released.data),
                                              DType::create<int32_t>(),
                                              std::vector<TensorIndex>{length, static_cast<int32_t>(3)},

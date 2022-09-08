@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-#include <morpheus/messages/multi_response_probs.hpp>
+#include "morpheus/messages/multi_response_probs.hpp"
 
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/utilities/cupy_util.hpp>
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/utilities/cupy_util.hpp"
 
-#include <pybind11/pytypes.h>
 #include <cudf/types.hpp>
+#include <pybind11/pytypes.h>
 
 #include <memory>
 #include <utility>
@@ -37,7 +37,7 @@ MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<morpheus::M
                                                      std::shared_ptr<morpheus::ResponseMemory> memory,
                                                      size_t offset,
                                                      size_t count) :
-  MultiResponseMessage(meta, mess_offset, mess_count, memory, offset, count)
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
 const TensorObject MultiResponseProbsMessage::get_probs() const

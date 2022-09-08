@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/triton_inference.hpp>
+#include "morpheus/stages/triton_inference.hpp"
 
-#include <morpheus/messages/multi_response_probs.hpp>
-#include <morpheus/objects/triton_in_out.hpp>
-#include <morpheus/utilities/matx_util.hpp>
-#include <morpheus/utilities/stage_util.hpp>
-#include <morpheus/utilities/type_util.hpp>
-
-#include <pysrf/node.hpp>
+#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/objects/triton_in_out.hpp"
+#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/utilities/stage_util.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <glog/logging.h>
 #include <http_client.h>
 #include <nlohmann/json.hpp>
+#include <pysrf/node.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -54,6 +53,12 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
         LOG(ERROR) << err_msg;
         throw std::runtime_error(err_msg);
     }
+}
+
+template <typename IndexT>
+inline IndexT get_elem_count(const std::vector<IndexT> &shape)
+{
+    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
 }
 }  // namespace
 
@@ -88,33 +93,50 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, &client](sink_type_t x) {
-                auto reponse_memory = std::make_shared<ResponseMemory>(x->count);
+                // When our tensor lengths are longer than our dataframe we will need to use the seq_ids
+                // array to lookup how the values should map back into the dataframe
+                const bool needs_seq_ids = x->mess_count != x->count;
+                auto reponse_memory      = std::make_shared<ResponseMemory>(x->mess_count);
 
                 // Create the output memory blocks
                 for (auto &model_output : m_model_outputs)
                 {
-                    auto total_shape = model_output.shape;
+                    std::vector<TensorIndex> total_shape{model_output.shape.begin(), model_output.shape.end()};
 
-                    // First dimension will always end up being the number of rows
-                    total_shape[0] = x->count;
-
-                    auto elem_count = std::accumulate(total_shape.begin(), total_shape.end(), 1, std::multiplies<>());
+                    // First dimension will always end up being the number of rows in the dataframe
+                    total_shape[0]  = static_cast<TensorIndex>(x->mess_count);
+                    auto elem_count = get_elem_count(total_shape);
 
                     // Create the output memory
                     auto output_buffer = std::make_shared<rmm::device_buffer>(
                         elem_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
 
-                    reponse_memory->outputs[model_output.mapped_name] = Tensor::create(
-                        std::move(output_buffer),
-                        model_output.datatype,
-                        std::vector<TensorIndex>{static_cast<int>(total_shape[0]), static_cast<int>(total_shape[1])},
-                        std::vector<TensorIndex>{},
-                        0);
+                    reponse_memory->tensors[model_output.mapped_name] = Tensor::create(
+                        std::move(output_buffer), model_output.datatype, total_shape, std::vector<TensorIndex>{}, 0);
                 }
 
                 // This will be the final output of all mini-batches
                 auto response = std::make_shared<MultiResponseProbsMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(reponse_memory), 0, reponse_memory->count);
+
+                std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
+                if (needs_seq_ids)
+                {
+                    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
+                    // The output tensors we store in `reponse_memory` will all be of the same length as the the
+                    // dataframe. seq_ids has three columns, but we are only interested in the first column.
+                    auto seq_ids         = x->get_input("seq_ids");
+                    const auto item_size = seq_ids.dtype().item_size();
+
+                    host_seq_ids = std::make_unique<std::vector<int32_t>>(x->count);
+                    SRF_CHECK_CUDA(cudaMemcpy2D(host_seq_ids->data(),
+                                                item_size,
+                                                seq_ids.data(),
+                                                seq_ids.stride(0) * item_size,
+                                                item_size,
+                                                host_seq_ids->size(),
+                                                cudaMemcpyDeviceToHost));
+                }
 
                 for (size_t i = 0; i < x->count; i += m_max_batch_size)
                 {
@@ -123,10 +145,24 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     size_t start = i;
                     size_t stop  = std::min(i + m_max_batch_size, x->count);
 
-                    sink_type_t mini_batch_input =
-                        std::static_pointer_cast<MultiInferenceMessage>(x->get_slice(start, stop));
-                    source_type_t mini_batch_output =
-                        std::static_pointer_cast<MultiResponseProbsMessage>(response->get_slice(start, stop));
+                    sink_type_t mini_batch_input = x->get_slice(start, stop);
+
+                    size_t out_start = start;
+                    size_t out_stop  = stop;
+                    if (needs_seq_ids)
+                    {
+                        out_start = (*host_seq_ids)[out_start];
+                        if (out_stop < host_seq_ids->size())
+                        {
+                            out_stop = (*host_seq_ids)[out_stop];
+                        }
+                        else
+                        {
+                            out_stop = x->mess_count;
+                        }
+                    }
+
+                    source_type_t mini_batch_output = response->get_slice(out_start, out_stop);
 
                     // Iterate on the model inputs in case the model takes less than what tensors are available
                     std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>>
@@ -202,12 +238,34 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         SRF_CHECK_CUDA(
                             cudaMemcpy(output_buffer->data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
 
+                        if (needs_seq_ids && output_shape[0] != mini_batch_output->count)
+                        {
+                            // Since we are working with slices of both the input and the output, the seq_ids have
+                            // already been applied to the output's start & stop, so we only need to reduce the
+                            // response tensort when the size doesn't match our output
+                            std::vector<int64_t> mapped_output_shape{output_shape};
+                            mapped_output_shape[0] = mini_batch_output->count;
+
+                            size_t element_count = get_elem_count(output_shape);
+
+                            // Triton results are always in row-major as required by the KServe protocol
+                            // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
+                            std::vector<int64_t> stride{output_shape[1], 1};
+                            output_buffer = MatxUtil::reduce_max(
+                                DevMemInfo{element_count, model_output.datatype.type_id(), output_buffer, 0},
+                                *host_seq_ids,
+                                mini_batch_input->offset,
+                                output_shape,
+                                stride,
+                                mapped_output_shape);
+                            output_shape = std::move(mapped_output_shape);
+                        }
+
                         // If we need to do logits, do that here
                         if (m_needs_logits)
                         {
-                            size_t element_count =
-                                std::accumulate(output_shape.begin(), output_shape.end(), 1, std::multiplies<>());
-                            output_buffer = MatxUtil::logits(
+                            size_t element_count = get_elem_count(output_shape);
+                            output_buffer        = MatxUtil::logits(
                                 DevMemInfo{element_count, model_output.datatype.type_id(), output_buffer, 0});
                         }
 
@@ -215,8 +273,8 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                             model_output.mapped_name,
                             Tensor::create(std::move(output_buffer),
                                            model_output.datatype,
-                                           std::vector<TensorIndex>{static_cast<int>(output_shape[0]),
-                                                                    static_cast<int>(output_shape[1])},
+                                           std::vector<TensorIndex>{static_cast<TensorIndex>(output_shape[0]),
+                                                                    static_cast<TensorIndex>(output_shape[1])},
                                            std::vector<TensorIndex>{},
                                            0));
                     }

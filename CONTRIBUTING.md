@@ -49,7 +49,7 @@ The following instructions are for developers who are getting started with the M
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
  - `PYTHON_VER`: The desired Python version. Minimum required is `3.8`
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.06`
+ - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.08`
  - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.5`
 
 
@@ -57,7 +57,7 @@ All of the following instructions assume several variables have been set:
 
 ```bash
 export PYTHON_VER=3.8
-export RAPIDS_VER=22.06
+export RAPIDS_VER=22.08
 export CUDA_VER=11.5
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
@@ -65,32 +65,7 @@ cd $MORPHEUS_ROOT
 ```
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
-By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. Usage of the script is as follows:
-```bash
-scripts/fetch_data.py fetch <dataset> [<dataset>...]
-```
-
-At time of writing the defined datasets are:
-* all - Metaset includes all others
-* examples - Data needed by scripts in the `examples` subdir
-* models - Morpheus models (largest dataset)
-* tests - Data used by unittests
-* validation - Subset of the models dataset needed by some unittests
-
-To download just the examples and models:
-```bash
-scripts/fetch_data.py fetch examples models
-```
-
-To download the data needed for unittests:
-```bash
-scripts/fetch_data.py fetch tests validation
-```
-
-If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command.
-```bash
-scripts/fetch_data.py fetch all
-```
+By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. See the section [Git LFS](README.md#git-lfs) of the [README.md](README.md) file for details on this.
 
 ### Build in Docker Container
 
@@ -98,11 +73,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
 
 #### Prerequisites
 
-- Pascal architecture or better
-- NVIDIA driver `450.80.02` or higher
-- [Docker](https://docs.docker.com/get-docker/)
-- [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-
+1. Ensure all [requirements](README.md#requirements) from [README.md](README.md) are met.
 1. Build the development container
    ```bash
    ./docker/build_container_dev.sh
@@ -177,9 +148,9 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 #### Prerequisites
 
-- Pascal architecture or better
+- Pascal architecture GPU or better
 - NVIDIA driver `450.80.02` or higher
-- [CUDA 11.0+](https://developer.nvidia.com/cuda-downloads)
+- [CUDA 11.5](https://developer.nvidia.com/cuda-11-5-2-download-archive)
 - `conda` and `mamba`
   - See the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:
@@ -194,7 +165,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 1. Setup env variables and clone the repo:
    ```bash
    export PYTHON_VER=3.8
-   export RAPIDS_VER=22.06
+   export RAPIDS_VER=22.08
    export CUDA_VER=11.5
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
@@ -261,17 +232,24 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    ```bash
    export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
    ```
-5. Update the `kafka-docker/docker-compose.yml` so the environment variable `KAFKA_ADVERTISED_HOST_NAME` matches the previous step. For example, the line should look like:
+5. Update the `kafka-docker/docker-compose.yml`, performing two changes:
+   1. Update the `ports` entry to:
+      ```yml
+      ports:
+         - "0.0.0.0::9092"
+      ```
+      This will prevent the containers from attempting to map IPv6 ports.
+   1. Change the value of `KAFKA_ADVERTISED_HOST_NAME` to match the value of the `KAFKA_ADVERTISED_HOST_NAME` environment variable from the previous step. For example, the line should look like:
 
-   ```yml
-   environment:
-      KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
-   ```
-   Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
+      ```yml
+      environment:
+         KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
+      ```
+      Which should match the value of `$KAFKA_ADVERTISED_HOST_NAME` from the previous step:
 
-   ```bash
-   $ echo $KAFKA_ADVERTISED_HOST_NAME
-   "172.17.0.1"
+      ```bash
+      $ echo $KAFKA_ADVERTISED_HOST_NAME
+      "172.17.0.1"
    ```
 6. Launch kafka with 3 instances:
 
@@ -281,11 +259,14 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
 7. Launch the Kafka shell
    1. To configure the cluster, you will need to launch into a container that has the Kafka shell.
-   2. You can do this with `./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME`.
+   2. You can do this with:
+      ```bash
+      ./start-kafka-shell.sh $KAFKA_ADVERTISED_HOST_NAME
+      ```
    3. However, this makes it difficult to load data into the cluster. Instead, you can manually launch the Kafka shell by running:
       ```bash
       # Change to the morpheus root to make it easier for mounting volumes
-      cd ${MORPHEUS_HOME}
+      cd ${MORPHEUS_ROOT}
 
       # Run the Kafka shell docker container
       docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
@@ -328,22 +309,6 @@ Launching a full production Kafka cluster is outside the scope of this project. 
       ```
 
       **Note:** This will consume messages.
-
-### Launching Triton Server
-
-Many of the validation tests and example workflows require a Triton server to function. To launch Triton server, use the following command:
-
-```bash
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models \
-  nvcr.io/nvidia/tritonserver:21.12-py3 \
-    tritonserver --model-repository=/models/triton-model-repo \
-                 --exit-on-error=false \
-                 --model-control-mode=explicit \
-                 --load-model abp-nvsmi-xgb \
-                 --load-model sid-minibert-onnx \
-                 --load-model phishing-bert-onnx
-```
-This will launch Triton using port 8001 for the GRPC server. This needs to match the Morpheus configuration.
 
 ### Pipeline Validation
 

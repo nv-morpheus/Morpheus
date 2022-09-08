@@ -39,13 +39,25 @@ def test_build_output_message(config):
     iw = IW(pq)
 
     mock_message = mock.MagicMock()
-    mock_message.count = 2
+    mock_message.count = 10
     mock_message.mess_offset = 11
-    mock_message.mess_count = 10
+    mock_message.mess_count = 2
     mock_message.offset = 12
 
     response = iw.build_output_message(mock_message)
     assert response.count == 2
     assert response.mess_offset == 11
-    assert response.mess_count == 10
-    assert response.offset == 12
+    assert response.mess_count == 2
+    assert response.offset == 0
+
+    mock_message = mock.MagicMock()
+    mock_message.count = 2
+    mock_message.mess_offset = 11
+    mock_message.mess_count = 2
+    mock_message.offset = 12
+
+    response = iw.build_output_message(mock_message)
+    assert response.count == 2
+    assert response.mess_offset == 11
+    assert response.mess_count == 2
+    assert response.offset == 0

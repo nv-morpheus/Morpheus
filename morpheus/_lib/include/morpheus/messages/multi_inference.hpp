@@ -17,14 +17,14 @@
 
 #pragma once
 
-#include <morpheus/messages/memory/inference_memory.hpp>
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/messages/multi.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/messages/memory/inference_memory.hpp"
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
-#include <pybind11/pytypes.h>
 #include <cudf/types.hpp>
+#include <pybind11/pytypes.h>
 
 #include <cstddef>
 #include <memory>
@@ -37,9 +37,10 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class MultiInferenceMessage : public MultiMessage
+class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiMessage>
 {
   public:
+    MultiInferenceMessage(const MultiInferenceMessage &other) = default;
     MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                           std::size_t mess_offset,
                           std::size_t mess_count,
@@ -61,16 +62,18 @@ class MultiInferenceMessage : public MultiMessage
      */
     const void set_input(const std::string &name, const TensorObject &value);
 
-    /**
-     * TODO(Documentation)
-     */
-    std::shared_ptr<MultiInferenceMessage> get_slice(std::size_t start, std::size_t stop) const;
-
   protected:
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<MultiMessage> internal_get_slice(std::size_t start, std::size_t stop) const override;
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
+
+    void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                          const std::vector<std::pair<size_t, size_t>> &ranges,
+                          size_t num_selected_rows) const override;
+
+    std::shared_ptr<InferenceMemory> copy_input_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+                                                       size_t num_selected_rows) const;
 };
 
 /****** MultiInferenceMessageInterfaceProxy****************/

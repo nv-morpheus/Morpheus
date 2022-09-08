@@ -21,6 +21,7 @@ import os
 
 import appdirs
 import click
+import srf
 from tqdm import tqdm
 
 
@@ -46,8 +47,8 @@ class TqdmLoggingHandler(logging.Handler):
                 # Write the message
                 click.echo(click.style(msg, **color_kwargs), file=file, err=is_error)
                 self.flush()
-
-        except (KeyboardInterrupt, SystemExit):
+        # See issue 36272 https://bugs.python.org/issue36272
+        except (KeyboardInterrupt, SystemExit, RecursionError):  # noqa
             raise
         except Exception:
             self.handleError(record)
@@ -96,6 +97,9 @@ def _configure_from_log_level(log_level: int):
     """
     # Default config with level
     logging.captureWarnings(True)
+
+    # Set the SRF logging level to match
+    srf.logging.set_level(log_level)
 
     # Get the root Morpheus logger
     morpheus_logger = logging.getLogger("morpheus")
@@ -160,6 +164,9 @@ def configure_logging(log_level: int, log_config_file: str = None):
         will be loaded via `logging.config.dictConfig()` (See `here
         <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`__). Defaults to None.
     """
+
+    # Start by initializing SRF logging
+    srf.logging.init_logging("morpheus")
 
     if (log_config_file is not None):
         # Configure using log file

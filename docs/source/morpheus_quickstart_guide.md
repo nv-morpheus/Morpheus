@@ -165,7 +165,7 @@ The Morpheus AI Engine consists of the following components:
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.08.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -207,7 +207,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following command to pull the Morpheus SDK Client chart on to your instance:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.08.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 #### Morpheus SDK Client in Sleep Mode
@@ -245,7 +245,7 @@ $ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 The Morpheus MLflow Triton Plugin is used to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort 30500. Follow the below steps to install the Morpheus MLflow Triton Plugin:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.06.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.08.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -575,11 +575,11 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
-        --labels_file=./morpheus/data/labels_phishing.txt \
+        --labels_file=data/labels_phishing.txt \
         from-file --filename=./examples/data/email.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
         inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8001 --force_convert_inputs=True \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
@@ -605,11 +605,11 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --use_cpp=True \
       pipeline-nlp \
         --model_seq_length=128 \
-        --labels_file=./morpheus/data/labels_phishing.txt \
+        --labels_file=data/labels_phishing.txt \
         from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
         monitor --description 'FromKafka Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
         inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8001 \
         monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
@@ -655,7 +655,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         from-file --filename=./examples/data/pcap_dump.jsonlines \
         monitor --description 'FromFile Rate' --smoothing=0.001 \
         deserialize \
-        preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+        preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description='Preprocessing rate' \
         inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
         monitor --description='Inference rate' --smoothing=0.001 --unit inf \
@@ -684,7 +684,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           from-kafka --input_topic <YOUR_INPUT_KAFKA_TOPIC> --bootstrap_servers broker:9092 \
           monitor --description 'FromKafka Rate' --smoothing=0.001 \
           deserialize \
-          preprocess --vocab_hash_file=./morpheus/data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+          preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
           monitor --description='Preprocessing Rate' \
           inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
           monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
@@ -1138,19 +1138,17 @@ This section lists solutions to problems you might encounter with Morpheus or fr
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.
 
 
-<!---
 ## Known Issues
 
 | Issue | Description |
 | ------ | ------ |
-| | |
+| nv-morpheus/SRF#157 | Azure subscriptions have hard limits for vCPU. Using more threads than vCPU can lead to an abort in SRF, so reduce the number of pipeline threads to be equal to or less than vCPU. |
 
-Let's add any important issues that need to be brought to the attention of users here.
--->
 
-[Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.06/examples
-[Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.06/CONTRIBUTING.md
-[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.06/docs/source/developer_guide/guides
+
+[Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.08/examples
+[Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.08/CONTRIBUTING.md
+[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.08/docs/source/developer_guide/guides
 [Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
 [NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
 [NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1

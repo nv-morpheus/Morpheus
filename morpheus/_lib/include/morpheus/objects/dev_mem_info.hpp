@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <morpheus/utilities/type_util_detail.hpp>
+#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <rmm/device_buffer.hpp>
 
@@ -42,7 +42,9 @@ struct DevMemInfo
     size_t offset;
 
     /**
-     * TODO(Documentation)
+     * @brief Returns raw pointer to underlying buffer offset by the `offset`
+     *
+     * @return void*
      */
     void *data() const;
 };

@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/write_to_file.hpp>
+#include "morpheus/stages/write_to_file.hpp"
 
-#include <morpheus/utilities/matx_util.hpp>
+#include "morpheus/utilities/matx_util.hpp"
 
 #include <exception>
 #include <memory>
@@ -27,9 +27,13 @@
 namespace morpheus {
 // Component public implementations
 // ************ WriteToFileStage **************************** //
-WriteToFileStage::WriteToFileStage(const std::string &filename, std::ios::openmode mode, FileTypes file_type) :
+WriteToFileStage::WriteToFileStage(const std::string &filename,
+                                   std::ios::openmode mode,
+                                   FileTypes file_type,
+                                   bool include_index_col) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_is_first(true)
+  m_is_first(true),
+  m_include_index_col(include_index_col)
 {
     if (file_type == FileTypes::Auto)
     {
@@ -59,13 +63,13 @@ WriteToFileStage::WriteToFileStage(const std::string &filename, std::ios::openmo
 void WriteToFileStage::write_json(WriteToFileStage::sink_type_t &msg)
 {
     // Call df_to_json passing our fstream
-    df_to_json(msg->get_info(), m_fstream);
+    df_to_json(msg->get_info(), m_fstream, m_include_index_col);
 }
 
 void WriteToFileStage::write_csv(WriteToFileStage::sink_type_t &msg)
 {
     // Call df_to_csv passing our fstream
-    df_to_csv(msg->get_info(), m_fstream, m_is_first);
+    df_to_csv(msg->get_info(), m_fstream, m_is_first, m_include_index_col);
 }
 
 void WriteToFileStage::close()
@@ -102,7 +106,8 @@ std::shared_ptr<srf::segment::Object<WriteToFileStage>> WriteToFileStageInterfac
     const std::string &name,
     const std::string &filename,
     const std::string &mode,
-    FileTypes file_type)
+    FileTypes file_type,
+    bool include_index_col)
 {
     std::ios::openmode fsmode = std::ios::out;
 
@@ -138,7 +143,7 @@ std::shared_ptr<srf::segment::Object<WriteToFileStage>> WriteToFileStageInterfac
         throw std::runtime_error(std::string("Unsupported file mode. Must choose either 'w' or 'a'. Mode: ") + mode);
     }
 
-    auto stage = builder.construct_object<WriteToFileStage>(name, filename, fsmode, file_type);
+    auto stage = builder.construct_object<WriteToFileStage>(name, filename, fsmode, file_type, include_index_col);
 
     return stage;
 }

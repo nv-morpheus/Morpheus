@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/type_util_detail.hpp>
+#include "morpheus/utilities/type_util_detail.hpp"
 
-#include <morpheus/utilities/string_util.hpp>
+#include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>
 

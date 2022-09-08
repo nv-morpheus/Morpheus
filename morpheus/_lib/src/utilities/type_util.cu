@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include <morpheus/utilities/type_util.hpp>
+#include "morpheus/utilities/type_util.hpp"
 
 #include <stdexcept>
 #include <string>
