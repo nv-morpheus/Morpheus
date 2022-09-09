@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-set(RAPIDS_VERSION "22.08" CACHE STRING "Global default version for all Rapids project dependencies")
-set(RAPIDS_CMAKE_VERSION "${RAPIDS_VERSION}" CACHE STRING "Version of rapids-cmake to use")
+set(MORPHEUS_RAPIDS_VERSION "22.08" CACHE STRING "Global default version for all Rapids project dependencies")
+set(RAPIDS_CMAKE_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Version of rapids-cmake to use")
 
 # Download and load the repo according to the rapids-cmake instructions if it does not exist
 # NOTE: Use a different file than RAPIDS.cmake because MatX will just override it: https://github.com/NVIDIA/MatX/pull/192
