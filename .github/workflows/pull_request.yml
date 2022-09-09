@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: fixgit
-        shell: "/bin/bash"
+        shell: bash
         run: echo "/opt/conda/envs/rapids/bin" >> $GITHUB_PATH
 
       - name: Checkout
