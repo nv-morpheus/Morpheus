@@ -393,7 +393,7 @@ class _TritonInferenceWorker(InferenceWorker):
     inout_mapping : typing.Dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
         Morpheus names do not match the model.
-    use_shared_memory: bool, default = True
+    use_shared_memory: bool, default = False
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
         transfer time but requires that Morpheus and Triton are located on the same machine.
     """

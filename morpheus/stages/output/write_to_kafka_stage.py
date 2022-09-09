@@ -44,10 +44,12 @@ class WriteToKafkaStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, bootstrap_servers: str, output_topic: str):
+    def __init__(self, c: Config, bootstrap_servers: str, output_topic: str, client_id: str = None):
         super().__init__(c)
 
         self._kafka_conf = {'bootstrap.servers': bootstrap_servers}
+        if client_id is not None:
+            self._kafka_conf['client.id'] = client_id
 
         self._output_topic = output_topic
         self._poll_time = 0.2
