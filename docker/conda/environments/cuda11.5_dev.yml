@@ -27,6 +27,7 @@ dependencies:
     - boost-cpp=1.74
     - cachetools=5.0.0
     - ccache>=3.7
+    - clangdev=14
     - cmake=3.22
     - cuda-nvml-dev=11.5
     - cuda-python<=11.7.0 # Remove when Issue #251 is closed
@@ -49,6 +50,7 @@ dependencies:
     - grpc-cpp>=1.43
     - gtest=1.10
     - gxx_linux-64=9.4
+    - include-what-you-use=0.18
     - isort
     - mlflow>=1.23
     - myst-parser==0.17
