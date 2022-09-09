@@ -34,10 +34,6 @@ jobs:
       fail-fast: true
 
     steps:
-      - name: fixgit
-        shell: bash
-        run: ./morpheus/ci/scripts/github/gixgit.sh
-
       - name: Checkout
         uses: actions/checkout@v3
         with:
