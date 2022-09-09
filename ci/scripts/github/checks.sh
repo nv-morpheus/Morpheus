@@ -20,18 +20,10 @@ cd ${MORPHEUS_ROOT}
 source ${WORKSPACE}/ci/scripts/github/common.sh
 export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
 
-echo "cur-dir = $(pwd)"
+echo "cur-dir = $(git status)"
 echo "$(ls -latr)"
 echo "----"
-cd ../
-echo "cur-dir = $(pwd)"
-echo "$(ls -latr)"
-echo "----"
-cd ../
-echo "cur-dir = $(pwd)"
-echo "$(ls -latr)"
-echo "----"
-exit 1
+
 
 gpuci_logger "Creating conda env"
 rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/ ${IWYU_DIR}
