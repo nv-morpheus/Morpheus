@@ -71,13 +71,13 @@ To get started, first pull the NGC container:
 
 .. code-block:: console
 
-   $ docker pull nvcr.io/nvidia/morpheus/morpheus:22.06-runtime
+   $ docker pull nvcr.io/nvidia/morpheus/morpheus:22.08-runtime
 
 Launch an interactive container to start using Morpheus:
 
 .. code-block:: console
 
-   $ docker run --rm -ti --net=host --gpus=all nvcr.io/nvidia/morpheus/morpheus:22.06-runtime bash
+   $ docker run --rm -ti --net=host --gpus=all nvcr.io/nvidia/morpheus/morpheus:22.08-runtime bash
    (morpheus) root@958a683a8a26:/workspace# morpheus --help
    Usage: morpheus [OPTIONS] COMMAND [ARGS]...Options:
      --debug / --no-debug            [default: False]

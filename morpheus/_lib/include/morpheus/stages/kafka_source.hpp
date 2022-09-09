@@ -56,7 +56,8 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
                      int32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
                      bool disable_commit        = false,
-                     bool disable_pre_filtering = false);
+                     bool disable_pre_filtering = false,
+                     size_t stop_after          = 0);
 
     ~KafkaSourceStage() override = default;
 
@@ -100,12 +101,13 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     size_t m_max_batch_size{128};
     uint32_t m_batch_timeout_ms{100};
 
-    std::string m_topic{"test_pcap"};
+    std::string m_topic;
     std::map<std::string, std::string> m_config;
 
     bool m_disable_commit{false};
     bool m_disable_pre_filtering{false};
     bool m_requires_commit{false};  // Whether or not manual committing is required
+    size_t m_stop_after{0};
 
     void *m_rebalancer;
 };
@@ -126,7 +128,8 @@ struct KafkaSourceStageInterfaceProxy
                                                                         int32_t batch_timeout_ms,
                                                                         std::map<std::string, std::string> config,
                                                                         bool disable_commits,
-                                                                        bool disable_pre_filtering);
+                                                                        bool disable_pre_filtering,
+                                                                        size_t stop_after = 0);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

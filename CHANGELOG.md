@@ -1,4 +1,39 @@
-# Morpheus 22.06.001 (15 Jul 2022)
+# Morpheus 22.08.00 (7 Sep 2022)
+
+## 🐛 Bug Fixes
+
+- Fixing compilation with SRF 22.08a ([#332](https://github.com/nv-morpheus/Morpheus/pull/332)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Update Ransomware Models ([#295](https://github.com/nv-morpheus/Morpheus/pull/295)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Bump numpy from 1.19.5 to 1.22.0 in /models/validation-inference-scripts/fraud-detection-models ([#175](https://github.com/nv-morpheus/Morpheus/pull/175)) @dependabot[bot]
+- Bump numpy from 1.19.5 to 1.22.0 in /models/training-tuning-scripts/fraud-detection-models ([#174](https://github.com/nv-morpheus/Morpheus/pull/174)) @dependabot[bot]
+- Bump numpy from 1.20.3 to 1.22.0 in /models/validation-inference-scripts/phishing-models ([#173](https://github.com/nv-morpheus/Morpheus/pull/173)) @dependabot[bot]
+- Bump numpy from 1.20.3 to 1.22.0 in /models/validation-inference-scripts/hammah-models ([#172](https://github.com/nv-morpheus/Morpheus/pull/172)) @dependabot[bot]
+
+## 📖 Documentation
+
+- Add Azure known issue to QSG ([#323](https://github.com/nv-morpheus/Morpheus/pull/323)) [@pdmack](https://github.com/pdmack)
+- QSG updates for data dir ([#302](https://github.com/nv-morpheus/Morpheus/pull/302)) [@pdmack](https://github.com/pdmack)
+- Manual testing of Morpheus with Kafka &amp; Validation improvements ([#290](https://github.com/nv-morpheus/Morpheus/pull/290)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Updates README.md to include instructions for launching Triton ([#289](https://github.com/nv-morpheus/Morpheus/pull/289)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update NLP SI example readme ([#284](https://github.com/nv-morpheus/Morpheus/pull/284)) [@pdmack](https://github.com/pdmack)
+- Update GNN example readme ([#283](https://github.com/nv-morpheus/Morpheus/pull/283)) [@pdmack](https://github.com/pdmack)
+
+## 🚀 New Features
+
+- E2E benchmark tests ([#269](https://github.com/nv-morpheus/Morpheus/pull/269)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Use SRF Logging ([#266](https://github.com/nv-morpheus/Morpheus/pull/266)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+
+## 🛠️ Improvements
+
+- Fixes issues with NLP pipelines when data is not truncated ([#316](https://github.com/nv-morpheus/Morpheus/pull/316)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update include ordering and style ([#277](https://github.com/nv-morpheus/Morpheus/pull/277)) [@dagardner-nv](https://github.com/dagardner-nv)
+- MonitorStage add a blank space between the rate and the unit description ([#275](https://github.com/nv-morpheus/Morpheus/pull/275)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Ensure TableInfo only appears in one lib ([#273](https://github.com/nv-morpheus/Morpheus/pull/273)) [@dagardner-nv](https://github.com/dagardner-nv)
+- copy multiple ranges for MultiMessage ([#231](https://github.com/nv-morpheus/Morpheus/pull/231)) [@dagardner-nv](https://github.com/dagardner-nv)
+- GPU not needed for build &amp; documentation CI stages ([#181](https://github.com/nv-morpheus/Morpheus/pull/181)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+
+# Morpheus 22.06.01 (15 Jul 2022)
 
 ## 🐛 Bug Fixes
 

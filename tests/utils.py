@@ -16,6 +16,7 @@
 import collections
 import json
 import os
+import time
 
 import srf
 
@@ -113,3 +114,27 @@ def calc_error_val(results_file):
     total_rows = results['total_rows']
     diff_rows = results['diff_rows']
     return Results(total_rows=total_rows, diff_rows=diff_rows, error_pct=(diff_rows / total_rows) * 100)
+
+
+def write_file_to_kafka(bootstrap_servers: str,
+                        kafka_topic: str,
+                        input_file: str,
+                        client_id: str = 'morpheus_unittest_writer') -> int:
+    """
+    Writes data from `inpute_file` into a given Kafka topic, emitting one message for each line int he file.
+    Returning the number of messages written
+    """
+    from kafka import KafkaProducer
+    num_records = 0
+    producer = KafkaProducer(bootstrap_servers=bootstrap_servers, client_id=client_id)
+    with open(input_file) as fh:
+        for line in fh:
+            producer.send(kafka_topic, line.strip().encode('utf-8'))
+            num_records += 1
+
+    producer.flush()
+
+    assert num_records > 0
+    time.sleep(1)
+
+    return num_records

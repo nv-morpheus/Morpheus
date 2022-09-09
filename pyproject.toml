@@ -11,7 +11,8 @@ build-backend = "setuptools.build_meta"
 # These show up when querying `pytest --markers`
 [tool.pytest.ini_options]
 markers = [
-   "slow: Slow tests, the tests covered by this also need to be run in their own processes until #71 is resolved",
+   "slow: Slow tests",
+   "kafka: Tests that require a running instance of kafka",
    "use_cpp: Test support C++ nodes and objects",
    "use_python: Test only supports Python nodes and objects",
    "replace_callback: Replaces the results_callback in cli",
