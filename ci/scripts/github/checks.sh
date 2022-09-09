@@ -20,6 +20,15 @@ cd ${MORPHEUS_ROOT}
 source ${WORKSPACE}/ci/scripts/github/common.sh
 export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
 
+echo "cur-dir = $(pwd)"
+echo "$(ls -latr)"
+echo "----"
+cd ../
+echo "cur-dir = $(pwd)"
+echo "$(ls -latr)"
+echo "----"
+exit 1
+
 gpuci_logger "Creating conda env"
 rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/ ${IWYU_DIR}
 conda config --add pkgs_dirs /opt/conda/pkgs
@@ -49,8 +58,6 @@ cmake --build . --parallel ${PARALLEL_LEVEL} --target install
 popd
 
 gpuci_logger "Runing Python style checks"
-echo "cur-dir = $(pwd)"
-echo "$(ls -latr)"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 gpuci_logger "Configuring cmake for Morpheus"
