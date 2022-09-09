@@ -16,7 +16,7 @@
 
 set -e
 
-source ${WORKSPACE}/ci/scripts/jenkins/common.sh
+source ${WORKSPACE}/ci/scripts/github/common.sh
 /usr/bin/nvidia-smi
 
 # Restore the environment and then ensure we have the CI dependencies
