@@ -89,7 +89,7 @@ endif()
 ##################################
 
 # Create a custom target to allow preparing for style checks
-add_custom_target(style_checks
+add_custom_target(${PROJECT_NAME}_style_checks
   COMMENT "Building dependencies for style checks"
 )
 
