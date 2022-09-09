@@ -16,6 +16,7 @@
 
 set -e
 
+cd ${MORPHEUS_ROOT}
 echo "curr dir $(pwd)"
 echo "ls $(ls -l)"
 echo "ws = ${WORKSPACE}"
