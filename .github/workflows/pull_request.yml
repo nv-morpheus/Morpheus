@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: fixgit
         shell: bash
-        run: echo "/opt/conda/envs/rapids/bin" >> $GITHUB_PATH
+        run: ./morpheus/ci/scripts/github/gixgit.sh
 
       - name: Checkout
         uses: actions/checkout@v3
