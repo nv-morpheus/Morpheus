@@ -21,6 +21,7 @@ env:
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"
   USE_SCCACHE: "1"
   GIT_COMMIT: "${{ github.sha }}"
+  PATH: "/opt/conda/envs/rapids/bin"
 
 jobs:
   check:
@@ -33,6 +34,9 @@ jobs:
       fail-fast: true
 
     steps:
+      - name: fixgit
+        shell: bash
+        run: echo "/opt/conda/envs/rapids/bin" >> $GITHUB_PATH
       - name: Checkout
         uses: actions/checkout@v3
         with:
