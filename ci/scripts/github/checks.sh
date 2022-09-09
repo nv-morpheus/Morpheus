@@ -20,11 +20,6 @@ cd ${MORPHEUS_ROOT}
 source ${WORKSPACE}/ci/scripts/github/common.sh
 export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
 
-echo "cur-dir = $(git status)"
-echo "$(ls -latr)"
-echo "----"
-
-
 gpuci_logger "Creating conda env"
 rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/ ${IWYU_DIR}
 conda config --add pkgs_dirs /opt/conda/pkgs
