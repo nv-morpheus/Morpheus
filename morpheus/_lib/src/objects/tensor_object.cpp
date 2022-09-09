@@ -17,9 +17,6 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include "morpheus/utilities/tensor_util.hpp"
-
-
 #include <vector>
 
 namespace morpheus {
