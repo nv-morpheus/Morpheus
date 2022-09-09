@@ -27,6 +27,10 @@ cd ../
 echo "cur-dir = $(pwd)"
 echo "$(ls -latr)"
 echo "----"
+cd ../
+echo "cur-dir = $(pwd)"
+echo "$(ls -latr)"
+echo "----"
 exit 1
 
 gpuci_logger "Creating conda env"

@@ -17,10 +17,12 @@
 gpuci_logger "Env Setup"
 gpuci_logger "Environ:"
 env | sort
-gpuci_logger "---------Environ:"
-mkdir -p WORKSPACE_TMP
+gpuci_logger "---------"
+mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
+echo "MORPHEUS_ROOT=${MORPHEUS_ROOT}"
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
+echo "MORPHEUS_ROOT=${MORPHEUS_ROOT}"
 
 # For non-gpu hosts nproc will correctly report the number of cores we are able to use
 # On a GPU host however nproc will report the total number of cores and PARALLEL_LEVEL
