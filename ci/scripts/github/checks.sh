@@ -17,9 +17,6 @@
 set -e
 
 cd ${MORPHEUS_ROOT}
-echo "curr dir $(pwd)"
-echo "ls $(ls -l)"
-echo "ws = ${WORKSPACE}"
 source ${WORKSPACE}/ci/scripts/github/common.sh
 export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
 
@@ -52,6 +49,8 @@ cmake --build . --parallel ${PARALLEL_LEVEL} --target install
 popd
 
 gpuci_logger "Runing Python style checks"
+echo "cur-dir = $(pwd)"
+echo "$(ls -latr)"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 gpuci_logger "Configuring cmake for Morpheus"
