@@ -16,6 +16,9 @@
 
 set -e
 
+echo "curr dir $(pwd)"
+echo "ls $(ls -l)"
+echo "ws = ${WORKSPACE}"
 source ${WORKSPACE}/ci/scripts/github/common.sh
 export IWYU_DIR="${WORKSPACE_TMP}/iwyu"
 
