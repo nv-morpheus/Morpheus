@@ -48,9 +48,6 @@ pushd ${PYTEST_KAFKA_DIR}
 python setup.py develop
 popd
 
-# Before running any .git commands, set this as a safe directory
-git config --global --add safe.directory ${MORPHEUS_ROOT}
-
 gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
