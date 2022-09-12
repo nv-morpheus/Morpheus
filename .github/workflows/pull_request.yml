@@ -82,3 +82,45 @@ jobs:
       - name: Build:linux:x86_64:gcc
         shell: bash
         run: ./morpheus/ci/scripts/github/build.sh
+
+  test:
+    name: Test
+    needs: [build]
+    runs-on: [self-hosted, linux, amd64, gpu-v100-495-1]
+    timeout-minutes: 60
+    container:
+      image: gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+
+      - name: Test:linux:x86_64:gcc
+        shell: bash
+        run: ./morpheus/ci/scripts/github/test.sh
+
+  documentation:
+    name: Documentation
+    needs: [build]
+    runs-on: [self-hosted, linux, amd64, cpu4]
+    timeout-minutes: 60
+    container:
+      image: gpuci/rapidsai-driver:22.04-cuda11.5-devel-centos7-py3.8
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+
+      - name: build_docs
+        shell: bash
+        run: ./morpheus/ci/scripts/github/docs.sh
