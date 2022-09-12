@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+function print_env_vars() {
+    gpuci_logger "Environ:"
+    env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN" | sort
+}
+
 gpuci_logger "Env Setup"
 print_env_vars
 gpuci_logger "---------"
@@ -115,9 +120,4 @@ function show_conda_info() {
     conda info
     conda config --show-sources
     conda list --show-channel-urls
-}
-
-function print_env_vars() {
-    gpuci_logger "Environ:"
-    env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN" | sort
 }
