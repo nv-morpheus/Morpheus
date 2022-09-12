@@ -97,9 +97,7 @@ From the root of the Morpheus repo run:
 ```bash
 PYTHONPATH="examples" \
 morpheus --log_level INFO \
-	--plugin "gnn_fraud_detection_pipeline.stages.classification_stage" \
-	--plugin "gnn_fraud_detection_pipeline.stages.graph_construction_stage" \
-	--plugin "gnn_fraud_detection_pipeline.stages.graph_sage_stage" \
+	--plugin "gnn_fraud_detection_pipeline" \
 	run --use_cpp False --pipeline_batch_size 1024 --model_max_batch_size 32 --edge_buffer_size 4 \
 	pipeline-other --model_fea_length 70 --label=probs \
 	from-file --filename examples/gnn_fraud_detection_pipeline/validation.csv --filter_null False \

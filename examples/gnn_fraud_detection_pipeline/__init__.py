@@ -18,8 +18,6 @@ from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.stage_registry import StageRegistry
 from morpheus.config import PipelineModes
 
-from . import stages
-
 
 @hookimpl
 def morpheus_cli_collect_stages(registry: StageRegistry):
@@ -27,4 +25,14 @@ def morpheus_cli_collect_stages(registry: StageRegistry):
     registry.add_stage_info(
         LazyStageInfo("gnn-fraud-classification",
                       __package__ + ".stages.classification_stage.ClassificationStage",
+                      modes=[PipelineModes.OTHER]))
+
+    registry.add_stage_info(
+        LazyStageInfo("fraud-graph-construction",
+                      __package__ + ".stages.graph_construction_stage.FraudGraphConstructionStage",
+                      modes=[PipelineModes.OTHER]))
+
+    registry.add_stage_info(
+        LazyStageInfo("gnn-fraud-sage",
+                      __package__ + ".stages.graph_sage_stage.GraphSAGEStage",
                       modes=[PipelineModes.OTHER]))

@@ -44,7 +44,7 @@ class AddScoresStage(SinglePortStage):
         Config.class_labels property and must be one of the available class labels. Leave as None to add all labels in
         the Config.class_labels property.
     prefix : str, default = ""
-        Prefix to add to each label. Allows adding labels different from the Config.class_labels property.
+        Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
 
     """
 
