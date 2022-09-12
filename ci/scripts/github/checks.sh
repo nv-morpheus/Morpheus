@@ -18,8 +18,6 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-# Needed to pickup the jq command
-conda activate rapids
 fetch_base_branch
 
 gpuci_logger "Creating conda env"

@@ -15,8 +15,7 @@
 # limitations under the License.
 
 gpuci_logger "Env Setup"
-gpuci_logger "Environ:"
-env | sort
+print_env_vars
 gpuci_logger "---------"
 mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
@@ -60,8 +59,7 @@ export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUIL
 
 export FETCH_STATUS=0
 
-gpuci_logger "Environ:"
-env | sort
+print_env_vars
 
 function fetch_base_branch() {
     gpuci_logger "Retrieving base branch from GitHub API"
@@ -73,7 +71,7 @@ function fetch_base_branch() {
         "${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
     )
 
-    BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
+    BASE_BRANCH=$(echo "${RESP}" | /usr/local/bin/jq -r '.base.ref')
 
     # Change target is the branch name we are merging into but due to the weird way jenkins does
     # the checkout it isn't recognized by git without the origin/ prefix
@@ -117,4 +115,9 @@ function show_conda_info() {
     conda info
     conda config --show-sources
     conda list --show-channel-urls
+}
+
+function print_env_vars() {
+    gpuci_logger "Environ:"
+    env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN" | sort
 }
