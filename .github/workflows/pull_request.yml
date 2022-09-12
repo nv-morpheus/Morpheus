@@ -21,7 +21,7 @@ env:
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"
   USE_SCCACHE: "1"
   GIT_COMMIT: "${{ github.sha }}"
-  PATH: "/opt/conda/envs/rapids/bin"
+  PATH: "/opt/conda/envs/rapids/bin:/opt/conda/condabin:/usr/local/gcc9/bin:/usr/local/binutils/bin:/usr/lib64/openmpi/bin:/opt/conda/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 jobs:
   check:
