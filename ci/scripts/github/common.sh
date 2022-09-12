@@ -42,9 +42,9 @@ gpuci_logger "User Info"
 id
 
 # For PRs, $GIT_BRANCH is like: pull-request/989
-REPO_NAME=$(basename "${GIT_URL}" .git)
-ORG_NAME=$(basename "$(dirname "${GIT_URL}")")
-PR_NUM="${GIT_BRANCH##*/}"
+REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
+ORG_NAME="${GITHUB_REPOSITORY_OWNER}"
+PR_NUM="${GITHUB_REF_NAME##*/}"
 
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
