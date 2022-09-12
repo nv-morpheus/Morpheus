@@ -13,9 +13,9 @@ concurrency:
 env:
   AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
   AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+  CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_VER: "11.5"
   GIT_COMMIT: "${{ github.sha }}"
-  GITHUB_BASE_REF: "${{ github.base_ref }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
   PYTHON_VER: "3.8"
   RAPIDS_VER: "22.06"

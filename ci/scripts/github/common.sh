@@ -21,6 +21,7 @@ gpuci_logger "---------"
 mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
+echo "cur_dir=$(pwd) mr=${MORPHEUS_ROOT}"
 cd ${MORPHEUS_ROOT}
 
 # For non-gpu hosts nproc will correctly report the number of cores we are able to use
@@ -37,10 +38,7 @@ gpuci_logger "Memory"
 gpuci_logger "User Info"
 id
 
-gpuci_logger "Retrieving base branch from GitHub API"
 # For PRs, $GIT_BRANCH is like: pull-request/989
-REPO_NAME=$(basename "${GIT_URL}" .git)
-ORG_NAME=$(basename "$(dirname "${GIT_URL}")")
 PR_NUM="${GIT_BRANCH##*/}"
 
 # S3 vars
@@ -60,9 +58,6 @@ export SCCACHE_IDLE_TIMEOUT=32768
 export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_USE_CCACHE=ON"
 
 export FETCH_STATUS=0
-
-export BASE_BRANCH="${GITHUB_BASE_REF}"
-export CHANGE_TARGET="${BASE_BRANCH}"
 
 gpuci_logger "Environ:"
 env | sort
