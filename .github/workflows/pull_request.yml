@@ -38,9 +38,7 @@ env:
   USE_SCCACHE: "1"
   WORKSPACE: "${{ github.workspace }}/morpheus"
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"
-  PATH: "/opt/conda/envs/rapids/bin:/opt/conda/condabin:/usr/local/gcc9/bin:/usr/local/binutils/bin:
-    /usr/lib64/openmpi/bin:/opt/conda/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:
-    /usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  PATH: "/opt/conda/envs/rapids/bin:/opt/conda/condabin:/usr/local/gcc9/bin:/usr/local/binutils/bin:/usr/lib64/openmpi/bin:/opt/conda/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 
 jobs:
@@ -80,6 +78,6 @@ jobs:
           lfs: false
           path: 'morpheus'
 
-      - name: Check
+      - name: Build:linux:x86_64:gcc
         shell: bash
         run: ./morpheus/ci/scripts/github/build.sh

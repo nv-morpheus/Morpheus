@@ -43,7 +43,7 @@ gpuci_logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 gpuci_logger "Building Morpheus"
-cmake --build build -j --parallel ${PARALLEL_LEVEL}
+cmake --build build --parallel ${PARALLEL_LEVEL}
 
 gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
