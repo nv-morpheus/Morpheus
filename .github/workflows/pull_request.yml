@@ -11,19 +11,21 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-  # AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+  AWS_ACCESS_KEY_ID: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+  AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
   CUDA_VER: "11.5"
+  GIT_COMMIT: "${{ github.sha }}"
+  GITHUB_BASE_REF: "${{ github.base_ref }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
   PYTHON_VER: "3.8"
   RAPIDS_VER: "22.06"
+  USE_SCCACHE: "1"
   WORKSPACE: "${{ github.workspace }}/morpheus"
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"
-  USE_SCCACHE: "1"
-  GIT_COMMIT: "${{ github.sha }}"
   PATH: "/opt/conda/envs/rapids/bin:/opt/conda/condabin:/usr/local/gcc9/bin:/usr/local/binutils/bin:
     /usr/lib64/openmpi/bin:/opt/conda/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:
     /usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 
 jobs:
   check:
