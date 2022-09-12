@@ -56,7 +56,7 @@ export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}/pull-request/${PR_NUM}/${GIT_COMMIT}
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
 export SCCACHE_BUCKET=rapids-sccache
-export SCCACHE_REGION=us-west-2
+export SCCACHE_REGION="${AWS_DEFAULT_REGION}"
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
