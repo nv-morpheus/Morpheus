@@ -43,7 +43,6 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
-          fetch-depth: '0'
 
       - name: Check
         shell: bash
