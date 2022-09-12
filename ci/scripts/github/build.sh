@@ -19,7 +19,6 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
 gpuci_logger "Creating conda env"
-rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
