@@ -18,6 +18,8 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
+fetch_base_branch
+
 gpuci_logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
@@ -46,4 +48,4 @@ gpuci_logger "Runing C++ style checks"
 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
 
 gpuci_logger "Checking copyright headers"
-python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
+python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${BASE_BRANCH} ${GIT_COMMIT}

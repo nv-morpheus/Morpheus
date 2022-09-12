@@ -15,6 +15,7 @@ env:
   AWS_SECRET_ACCESS_KEY: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
   CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_VER: "11.5"
+  GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
   PYTHON_VER: "3.8"
