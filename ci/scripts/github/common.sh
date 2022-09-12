@@ -80,7 +80,7 @@ function fetch_base_branch() {
 
     # Change target is the branch name we are merging into but due to the weird way jenkins does
     # the checkout it isn't recognized by git without the origin/ prefix
-    export CHANGE_TARGET="${BASE_BRANCH}"
+    export CHANGE_TARGET="origin/${BASE_BRANCH}"
     gpuci_logger "Base branch: ${BASE_BRANCH}"
 }
 
