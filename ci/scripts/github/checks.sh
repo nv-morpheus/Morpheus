@@ -16,10 +16,12 @@
 
 set -e
 
+echo "pwd=$(pwd) mr=${MORPHEUS_ROOT}"
 cd ${MORPHEUS_ROOT}
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
 gpuci_logger "Creating conda env"
+echo "mr= $(ls -latr)"
 rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
