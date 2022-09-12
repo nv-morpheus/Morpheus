@@ -19,14 +19,11 @@ channels:
     - conda-forge
 dependencies:
     - bash=5.1.16 # bash >=4.4 is necessary for morpheus cli auto-complete tests to pass.
-    - clang=12
-    - clang-tools=12
-    - clangdev=12
-    - clangxx=12
+    - clangdev=14 # Needed for IWYU to actually compile the code
     - conda-pack=0.7
     - git-lfs=3.2
     - git>=2.35.3 # Needed for wildcards on safe.directory
-    - llvmdev=12
+    - include-what-you-use=0.18
     - pip
     - pkg-config=0.29
     - sccache=0.3

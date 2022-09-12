@@ -17,10 +17,6 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include "morpheus/utilities/tensor_util.hpp"
-
-#include <srf/memory/blob.hpp>       // for blob
-
 #include <vector>
 
 namespace morpheus {
@@ -37,51 +33,4 @@ static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::ve
     }
 }
 
-TensorView::TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape) :
-  srf::memory::blob(std::move(bv)),
-  m_dtype(std::move(dtype)),
-  m_shape(std::move(shape))
-{
-    TensorUtils::set_contiguous_stride(m_shape, m_stride);
-
-    // validate the memory block defined by the blob has sufficient capacity to
-    // hold a tensor of shape/stride.
-}
-
-TensorView::TensorView(srf::memory::blob bv,
-                       DataType dtype,
-                       std::vector<TensorIndex> shape,
-                       std::vector<TensorIndex> stride) :
-  srf::memory::blob(std::move(bv)),
-  m_dtype(std::move(dtype)),
-  m_shape(std::move(shape)),
-  m_stride(std::move(stride))
-{
-    CHECK_EQ(m_shape.size(), m_stride.size());
-
-    // for now, we are only supporting row-major in the TensorView
-
-    // validate row-major
-
-    // validate the memory block defined by the blob has sufficient capacity to
-    // hold a tensor of shape/stride.
-}
-
-bool TensorView::is_contiguous() const
-{
-    return TensorUtils::has_contiguous_stride(shape(), stride());
-}
-
-const DataType& TensorView::dtype() const
-{
-    return m_dtype;
-}
-const std::vector<TensorIndex>& TensorView::shape() const
-{
-    return m_shape;
-}
-const std::vector<TensorIndex>& TensorView::stride() const
-{
-    return m_stride;
-}
 }  // namespace morpheus
