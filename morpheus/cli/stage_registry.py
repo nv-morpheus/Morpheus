@@ -15,7 +15,6 @@
 
 import dataclasses
 import logging
-import time
 import typing
 
 import click

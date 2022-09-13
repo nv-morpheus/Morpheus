@@ -42,6 +42,9 @@ from morpheus.utils.compare_df import compare_df
 from utils import TEST_DIRS
 from utils import write_file_to_kafka
 
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
+
 # End-to-end test intended to imitate the ABP validation test
 FEATURE_LENGTH = 29
 MODEL_MAX_BATCH_SIZE = 1024
