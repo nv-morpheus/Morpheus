@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import collections
+import functools
 import inspect
 import logging
 import typing
@@ -37,6 +38,7 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
     # Save the signature only once
     sig = inspect.signature(func, follow_wrapped=True)
 
+    @functools.wraps(func)
     def inner(self: "StreamWrapper", c: Config, *args, **kwargs):
 
         # Actually call init first. This way any super classes strings will be overridden

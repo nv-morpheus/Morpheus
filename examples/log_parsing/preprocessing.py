@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pathlib
 import string
 import typing
 from functools import partial
@@ -21,7 +22,9 @@ import srf
 import cudf
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
@@ -30,6 +33,7 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 from morpheus.utils.cudf_subword_helper import tokenize_text_series
 
 
+@register_stage("log-preprocess", modes=[PipelineModes.NLP])
 class PreprocessLogParsingStage(PreprocessBaseStage):
     """
     NLP usecases are preprocessed with this stage class.
@@ -38,16 +42,18 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance
-    vocab_hashfile : str
+    vocab_hashfile : pathlib.Path, exists = True, dir_okay = False
         Path to hash file containing vocabulary of words with token-ids. This can be created from the raw vocabulary
         using the `cudf.utils.hash_vocab_utils.hash_vocab` function
-    truncation : bool
+    truncation : bool, default = False, is_flag = True
         If set to true, strings will be truncated and padded to max_length. Each input string will result in exactly one
         output sequence. If set to false, there may be multiple output sequences when the max_length is smaller
         than generated tokens.
-    do_lower_case : bool
+    do_lower_case : bool, default = False, is_flag = True
         If set to true, original text will be lowercased before encoding.
-    stride : int
+    add_special_tokens : bool, default = False, is_flag = True
+        Whether or not to encode the sequences with the special tokens of the BERT classification model.
+    stride : int, default = -1
         If `truncation` == False and the tokenized string is larger than max_length, the sequences containing the
         overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is equal to stride
         there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will be repeated on
@@ -57,10 +63,10 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
 
     def __init__(self,
                  c: Config,
-                 vocab_hash_file: str,
-                 truncation: bool,
-                 do_lower_case: bool,
-                 add_special_tokens: bool,
+                 vocab_hash_file: pathlib.Path,
+                 truncation: bool = False,
+                 do_lower_case: bool = False,
+                 add_special_tokens: bool = False,
                  stride: int = -1):
         super().__init__(c)
 

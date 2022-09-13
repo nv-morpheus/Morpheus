@@ -16,7 +16,9 @@ import typing
 
 import cupy as cp
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
@@ -103,9 +105,10 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
         cb(mem)
 
 
+@register_stage("inf-pytorch", modes=[PipelineModes.AE])
 class AutoEncoderInferenceStage(InferenceStage):
     """
-    Inference stage for the AE pipeline.
+    Perform inference with PyTorch.
     """
 
     def __init__(self, c: Config):

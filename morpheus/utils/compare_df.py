@@ -72,17 +72,17 @@ def compare_df(df_a: pd.DataFrame,
                dfb_name: str = "res",
                show_report: bool = False):
     """
-    Compares two pandas Dataframe, returning a comparison summary as a dict in the form of:
-    ```
-    {
-        "total_rows": <int>,
-        "matching_rows": <int>,
-        "diff_rows": <int>,
-        "matching_cols": <[str]>,
-        "extra_cols": extra_cols: <[str]>,
-        "missing_cols": missing_cols: <[str]>,
-    }
-    ```
+    Compares two pandas Dataframe, returning a comparison summary as a dict in the form of::
+
+        {
+            "total_rows": <int>,
+            "matching_rows": <int>,
+            "diff_rows": <int>,
+            "matching_cols": <[str]>,
+            "extra_cols": extra_cols: <[str]>,
+            "missing_cols": missing_cols: <[str]>,
+        }
+
     """
     df_a_filtered = filter_df(df_a, include_columns, exclude_columns, replace_idx=replace_idx)
     df_b_filtered = filter_df(df_b, include_columns, exclude_columns, replace_idx=replace_idx)

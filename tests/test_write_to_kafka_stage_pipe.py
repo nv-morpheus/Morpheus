@@ -19,7 +19,6 @@ import typing
 
 import numpy as np
 import pytest
-from kafka import KafkaConsumer
 
 import cudf
 
@@ -32,11 +31,14 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
+
 
 @pytest.mark.kafka
 def test_write_to_kafka_stage_pipe(config,
                                    kafka_bootstrap_servers: str,
-                                   kafka_consumer: KafkaConsumer,
+                                   kafka_consumer: "KafkaConsumer",
                                    kafka_topics: typing.Tuple[str, str]) -> None:
     """
     Even though WriteToKafkaStage only has a Python impl, testing with both C++ and Python execution

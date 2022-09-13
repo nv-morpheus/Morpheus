@@ -45,7 +45,7 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/model
 ## Requirements
 **Note**: Make sure `dask` and `distributed` are installed in your conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
 
-```bash	
+```bash
 conda install dask==2022.7.0 distributed==2022.7.0
 ```
 
@@ -55,7 +55,7 @@ Launch the example using the following
 ```bash
 cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 
-python run.py --server_url=<TRITON_SERVER:PORT> \
+python run.py --server_url=localhost:8001 \
               --model_name=ransomw-model-short-rf \
               --conf_file=./config/ransomware_detection.yaml \
               --input_glob=${MORPHEUS_ROOT}/examples/data/appshield/*/snapshot-*/*.json \

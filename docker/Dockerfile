@@ -45,7 +45,7 @@ ARG CUDA_VER
 # Install dependencies to build
 RUN apt-get update &&\
     apt-get upgrade -y &&\
-    curl -sL https://deb.nodesource.com/setup_12.x | bash - &&\
+    curl -sL https://deb.nodesource.com/setup_16.x | bash - &&\
     apt-get install --no-install-recommends -y \
         build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs git-lfs \
     && rm -rf /var/lib/apt/lists/*
