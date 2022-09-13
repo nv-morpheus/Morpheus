@@ -1,0 +1,8 @@
+accessdevicebrowser
+accessdeviceos
+accessdevicelocationcity
+authdevicename
+result
+reason
+locincrement
+logcount

@@ -7,7 +7,7 @@ click>=8
 configargparse
 datacompy
 docker
-git+https://github.com/efajardo-nv/dfencoder.git@nv-updates#egg=dfencoder
+git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder
 grpcio-channelz
 networkx
 numpydoc

@@ -24,10 +24,13 @@ from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_config_from_ctx
+from morpheus.cli.utils import get_enum_values
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_pipeline_from_ctx
+from morpheus.cli.utils import parse_enum
 from morpheus.cli.utils import parse_log_level
 from morpheus.cli.utils import prepare_command
+from morpheus.config import AEFeatureScalar
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
@@ -83,7 +86,9 @@ class PluginGroup(AliasedGroup):
         commands: typing.Optional[typing.Union[typing.Dict[str, click.Command], typing.Sequence[click.Command]]] = None,
         **attrs: typing.Any,
     ):
-        self._pipeline_mode = attrs.pop("pipeline_mode", PipelineModes.OTHER)
+        self._pipeline_mode = attrs.pop("pipeline_mode", None)
+
+        assert self._pipeline_mode is not None, "Must specify `pipeline_mode` when using `PluginGroup`"
 
         super().__init__(name, commands, **attrs)
 
@@ -430,14 +435,9 @@ def pipeline_fil(ctx: click.Context, **kwargs):
              cls=PluginGroup,
              pipeline_mode=PipelineModes.AE)
 @click.option('--columns_file',
-              default="data/columns_ae.txt",
+              required=True,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
               help=(""))
-@click.option('--label',
-              type=str,
-              default=["ae_anomaly_score"],
-              multiple=True,
-              help=("Specify output labels. Ignored when --labels_file is specified"))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
@@ -454,6 +454,15 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               default=None,
               help=("Specifying this value will filter all incoming data to only use rows with matching User IDs. "
                     "Which column is used for the User ID is specified by `userid_column_name`"))
+@click.option('--feature_scaler',
+              type=click.Choice(get_enum_values(AEFeatureScalar), case_sensitive=False),
+              default=AEFeatureScalar.STANDARD.value,
+              callback=functools.partial(parse_enum, enum_class=AEFeatureScalar, case_sensitive=False),
+              help=("Autoencoder feature scaler"))
+@click.option('--use_generic_model',
+              is_flag=True,
+              type=bool,
+              help=("Whether to use a generic model when user does not have minimum number of training rows"))
 @click.option('--viz_file',
               default=None,
               type=click.Path(dir_okay=False, writable=True),
@@ -489,6 +498,8 @@ def pipeline_ae(ctx: click.Context, **kwargs):
 
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = kwargs["userid_column_name"]
+    config.ae.feature_scaler = kwargs["feature_scaler"]
+    config.ae.use_generic_model = kwargs["use_generic_model"]
 
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
         with open(kwargs["columns_file"], "r") as lf:
@@ -496,15 +507,15 @@ def pipeline_ae(ctx: click.Context, **kwargs):
             logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
     else:
         # Use a default single label
-        config.class_labels = ["ae_anomaly_score"]
+        config.class_labels = ["reconstruct_loss", "zscore"]
 
-    labels_file = kwargs.get("labels_file")
-    if (labels_file is not None):
-        with open(labels_file, "r") as lf:
+    if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
+        with open(kwargs["labels_file"], "r") as lf:
             config.class_labels = [x.strip() for x in lf.readlines()]
             logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
-        config.class_labels = list(kwargs['label'])
+        # Use a default single label
+        config.class_labels = ["reconstruct_loss", "zscore"]
 
     if ("userid_filter" in kwargs):
         config.ae.userid_filter = kwargs["userid_filter"]
