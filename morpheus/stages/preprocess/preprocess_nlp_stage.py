@@ -21,8 +21,8 @@ import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 
 import morpheus._lib.stages as _stages
-from morpheus.cli.commands import MorpheusRelativePath
 from morpheus.cli.register_stage import register_stage
+from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryNLP

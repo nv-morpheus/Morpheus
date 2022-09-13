@@ -68,8 +68,6 @@ class LazyStageInfo(StageInfo):
 
     def _lazy_build(self):
 
-        start_time = time.time()
-
         import importlib
 
         mod = importlib.import_module(self.package_name)
@@ -87,8 +85,6 @@ class LazyStageInfo(StageInfo):
             raise RuntimeError(
                 "Class {} did not have attribute '_morpheus_registered_stage'. Did you use register_stage?".format(
                     self.qualified_name))
-
-        print("Loading load of '{}' took: {} ms".format(self.name, (time.time() - start_time) * 1000.0))
 
         return stage_class_info.build_command()
 

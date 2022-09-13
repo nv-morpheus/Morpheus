@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import os
 import types
 import typing
 import warnings
@@ -21,12 +22,15 @@ from functools import update_wrapper
 import click
 import click.globals
 
+import morpheus
 from morpheus.config import Config
 from morpheus.config import ConfigBase
 
 # Ignore pipeline unless we are typechecking since it takes a while to import
 if (typing.TYPE_CHECKING):
     from morpheus.pipeline.linear_pipeline import LinearPipeline
+
+logger = logging.getLogger(__name__)
 
 PluginSpec = typing.Union[None, types.ModuleType, str, typing.Sequence[str]]
 
@@ -130,12 +134,61 @@ if ("NOTSET" in morpheus_log_levels):
     morpheus_log_levels.remove("NOTSET")
 
 
-def _get_log_levels():
+def get_log_levels():
+    """
+    Returns a list of all available logging levels in string format
+    """
     return morpheus_log_levels
 
 
-def _parse_log_level(ctx, param, value):
+def parse_log_level(ctx, param, value):
+    """
+    Click callback that parses a command line value into a logging level
+    """
+
     x = logging._nameToLevel.get(value.upper(), None)
     if x is None:
         raise click.BadParameter('Must be one of {}. Passed: {}'.format(", ".join(logging._nameToLevel.keys()), value))
     return x
+
+
+class MorpheusRelativePath(click.Path):
+    """
+    A specialization of the `click.Path` class that falls back to using package relative paths if the file cannot be
+    found. Takes the exact same parameters as `click.Path`
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Append "data" to the name so it can be different than normal click.Path
+        self.name = "data " + self.name
+
+    def convert(self,
+                value: typing.Any,
+                param: typing.Optional["click.Parameter"],
+                ctx: typing.Optional["click.Context"]) -> typing.Any:
+
+        # First check if the path is relative
+        if (not os.path.isabs(value)):
+
+            # See if the file exists.
+            does_exist = os.path.exists(value)
+
+            if (not does_exist):
+                # If it doesnt exist, then try to make it relative to the morpheus library root
+                morpheus_root = os.path.dirname(morpheus.__file__)
+
+                value_abs_to_root = os.path.join(morpheus_root, value)
+
+                # If the file relative to our package exists, use that instead
+                if (os.path.exists(value_abs_to_root)):
+                    logger.debug(("Parameter, '%s', with relative path, '%s', does not exist. "
+                                  "Using package relative location: '%s'"),
+                                 param.name,
+                                 value,
+                                 value_abs_to_root)
+
+                    return super().convert(value_abs_to_root, param, ctx)
+
+        return super().convert(value, param, ctx)

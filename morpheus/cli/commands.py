@@ -12,29 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
 import functools
-import importlib
 import logging
 import os
-import sys
-import types
 import typing
 
 import click
-import pluggy
 
-import morpheus
-from morpheus.cli import hookspecs
-from morpheus.cli.default_command_hooks import DefaultCommandHooks
+from morpheus.cli.plugin_manager import PluginManager
 from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
-from morpheus.cli.stage_registry import StageRegistry
-from morpheus.cli.utils import PluginSpec
-from morpheus.cli.utils import _get_log_levels
-from morpheus.cli.utils import _parse_log_level
+from morpheus.cli.utils import MorpheusRelativePath
 from morpheus.cli.utils import get_config_from_ctx
+from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_pipeline_from_ctx
+from morpheus.cli.utils import parse_log_level
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -62,96 +54,6 @@ ALIASES = {
 
 global logger
 logger = logging.getLogger("morpheus.cli")
-
-
-class PluginManager():
-
-    def __init__(self):
-        self._pm = pluggy.PluginManager("morpheus")
-        self._pm.add_hookspecs(hookspecs)
-        self._pm.register(DefaultCommandHooks(), name="morpheus_default")
-
-        self._plugins_loaded = False
-        self._plugin_specs: typing.List[PluginSpec] = []
-
-        self._stage_registry: StageRegistry = None
-
-    def _get_plugin_specs_as_list(self, specs: PluginSpec) -> typing.List[str]:
-        """Parse a plugins specification into a list of plugin names."""
-        # None means empty.
-        if specs is None:
-            return []
-        # Workaround for #3899 - a submodule which happens to be called "pytest_plugins".
-        if isinstance(specs, types.ModuleType):
-            return []
-        # Comma-separated list.
-        if isinstance(specs, str):
-            return specs.split(",") if specs else []
-        # Direct specification.
-        if isinstance(specs, collections.abc.Sequence):
-            return list(specs)
-        raise RuntimeError("Plugins may be specified as a sequence or a ','-separated string of plugin names. Got: %r" %
-                           specs)
-
-    def _ensure_plugins_loaded(self):
-
-        if (self._plugins_loaded):
-            return
-
-        # # Now that all command line plugins have been added, add any from the env variable
-        self.add_plugin_option(os.environ.get("MORPHEUS_PLUGINS"))
-
-        # Loop over all specs and load the plugins
-        for s in self._plugin_specs:
-            try:
-                if os.path.exists(s):
-                    mod_name = os.path.splitext(os.path.basename(s))[0]
-                    spec = importlib.util.spec_from_file_location(mod_name, s)
-                    mod = importlib.util.module_from_spec(spec)
-                    sys.modules[mod_name] = mod
-                    spec.loader.exec_module(mod)
-                else:
-                    mod = importlib.import_module(s)
-
-                # Sucessfully loaded. Register
-                self._pm.register(mod)
-
-            except ImportError as e:
-                raise ImportError(f'Error importing plugin "{s}": {e.args[0]}').with_traceback(e.__traceback__) from e
-
-        # Finally, consider setuptools entrypoints
-        self._pm.load_setuptools_entrypoints("morpheus")
-
-        self._plugins_loaded = True
-
-    def add_plugin_option(self, spec: PluginSpec):
-        # Append to the list of specs
-        self._plugin_specs.extend(self._get_plugin_specs_as_list(spec))
-
-    def get_registered_stages(self) -> StageRegistry:
-
-        if (self._stage_registry is None):
-
-            self._ensure_plugins_loaded()
-
-            # Start with the global registry (optionally make a clone?)
-            self._stage_registry = GlobalStageRegistry.get()
-
-            # Now call the plugin system to add stages as necessary
-            self._pm.hook.morpheus_cli_collect_stages(registry=self._stage_registry)
-
-        return self._stage_registry
-
-
-global PLUGIN_MANAGER
-PLUGIN_MANAGER = None
-
-
-def get_plugin_manager():
-    global PLUGIN_MANAGER
-    if (PLUGIN_MANAGER is None):
-        PLUGIN_MANAGER = PluginManager()
-    return PLUGIN_MANAGER
 
 
 # Command to add the command. We cache the response so this only executes once (which can happen with module load).
@@ -185,7 +87,7 @@ class PluginGroup(AliasedGroup):
 
         super().__init__(name, commands, **attrs)
 
-        self._plugin_manager = get_plugin_manager()
+        self._plugin_manager = PluginManager.get()
 
     def list_commands(self, ctx: click.Context) -> typing.List[str]:
 
@@ -228,54 +130,12 @@ class PluginGroup(AliasedGroup):
         return super().get_command(ctx, cmd_name)
 
 
-class MorpheusRelativePath(click.Path):
-    """
-    A specialization of the `click.Path` class that falls back to using package relative paths if the file cannot be
-    found. Takes the exact same parameters as `click.Path`
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Append "data" to the name so it can be different than normal click.Path
-        self.name = "data " + self.name
-
-    def convert(self,
-                value: typing.Any,
-                param: typing.Optional["click.Parameter"],
-                ctx: typing.Optional["click.Context"]) -> typing.Any:
-
-        # First check if the path is relative
-        if (not os.path.isabs(value)):
-
-            # See if the file exists.
-            does_exist = os.path.exists(value)
-
-            if (not does_exist):
-                # If it doesnt exist, then try to make it relative to the morpheus library root
-                morpheus_root = os.path.dirname(morpheus.__file__)
-
-                value_abs_to_root = os.path.join(morpheus_root, value)
-
-                # If the file relative to our package exists, use that instead
-                if (os.path.exists(value_abs_to_root)):
-                    logger.debug(("Parameter, '%s', with relative path, '%s', does not exist. "
-                                  "Using package relative location: '%s'"),
-                                 param.name,
-                                 value,
-                                 value_abs_to_root)
-
-                    return super().convert(value_abs_to_root, param, ctx)
-
-        return super().convert(value, param, ctx)
-
-
 @click.group(name="morpheus", chain=False, invoke_without_command=True, no_args_is_help=True, cls=AliasedGroup)
 @click.option('--debug/--no-debug', default=False)
 @click.option("--log_level",
               default=logging.getLevelName(DEFAULT_CONFIG.log_level),
-              type=click.Choice(_get_log_levels(), case_sensitive=False),
-              callback=_parse_log_level,
+              type=click.Choice(get_log_levels(), case_sensitive=False),
+              callback=parse_log_level,
               help="Specify the logging level to use.")
 @click.option('--log_config_file',
               default=DEFAULT_CONFIG.log_config_file,
@@ -310,7 +170,7 @@ def cli(ctx: click.Context,
 
     if (plugins is not None):
         # If plugin is specified, add that to the plugin manager
-        pm = get_plugin_manager()
+        pm = PluginManager.get()
 
         for p in plugins:
             pm.add_plugin_option(p)
