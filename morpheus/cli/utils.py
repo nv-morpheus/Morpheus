@@ -24,6 +24,7 @@ import click.globals
 from morpheus.config import Config
 from morpheus.config import ConfigBase
 
+# Ignore pipeline unless we are typechecking since it takes a while to import
 if (typing.TYPE_CHECKING):
     from morpheus.pipeline.linear_pipeline import LinearPipeline
 
@@ -31,6 +32,7 @@ PluginSpec = typing.Union[None, types.ModuleType, str, typing.Sequence[str]]
 
 
 def str_to_file_type(file_type_str: str):
+    # Delay FileTypes since this will import ._lib
     from morpheus._lib.file_types import FileTypes
     file_type_members = {name.lower(): t for (name, t) in FileTypes.__members__.items()}
 
@@ -88,7 +90,7 @@ def prepare_command(parse_config: bool = False):
             ctx.show_default = True
 
             # Set the max width. This will still default to the users console width
-            # ctx.max_content_width = 200
+            ctx.max_content_width = 200
 
             kwargs = _without_empty_args(kwargs)
 

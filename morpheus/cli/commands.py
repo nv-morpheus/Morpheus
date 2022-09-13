@@ -18,7 +18,6 @@ import importlib
 import logging
 import os
 import sys
-import time
 import types
 import typing
 
@@ -37,14 +36,12 @@ from morpheus.cli.utils import _parse_log_level
 from morpheus.cli.utils import get_config_from_ctx
 from morpheus.cli.utils import get_pipeline_from_ctx
 from morpheus.cli.utils import prepare_command
-from morpheus.cli.utils import str_to_file_type
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
 from morpheus.config import ConfigOnnxToTRT
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.config import auto_determine_bootstrap
 from morpheus.utils.logger import configure_logging
 
 # pylint: disable=line-too-long, import-outside-toplevel, invalid-name, global-at-module-level, unused-argument
@@ -58,12 +55,6 @@ DEFAULT_CONFIG = Config()
 # List all of the options in from morpheus._lib.file_types.FileTypes without importing the object. This slows down
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
-
-command_kwargs = {
-    # "context_settings": {
-    #     "show_default": True,  # "max_content_width": 200
-    # },
-}
 
 ALIASES = {
     "pipeline": "pipeline-nlp",
@@ -107,8 +98,6 @@ class PluginManager():
         if (self._plugins_loaded):
             return
 
-        start_time = time.time()
-
         # # Now that all command line plugins have been added, add any from the env variable
         self.add_plugin_option(os.environ.get("MORPHEUS_PLUGINS"))
 
@@ -132,10 +121,6 @@ class PluginManager():
 
         # Finally, consider setuptools entrypoints
         self._pm.load_setuptools_entrypoints("morpheus")
-
-        end_time = time.time()
-
-        print("Loading plugins took: {} ms".format((end_time - start_time) * 1000.0))
 
         self._plugins_loaded = True
 
@@ -285,12 +270,7 @@ class MorpheusRelativePath(click.Path):
         return super().convert(value, param, ctx)
 
 
-@click.group(name="morpheus",
-             chain=False,
-             invoke_without_command=True,
-             no_args_is_help=True,
-             cls=AliasedGroup,
-             **command_kwargs)
+@click.group(name="morpheus", chain=False, invoke_without_command=True, no_args_is_help=True, cls=AliasedGroup)
 @click.option('--debug/--no-debug', default=False)
 @click.option("--log_level",
               default=logging.getLevelName(DEFAULT_CONFIG.log_level),
@@ -302,14 +282,13 @@ class MorpheusRelativePath(click.Path):
               type=click.Path(exists=True, dir_okay=False),
               help=("Config file to use to configure logging. Use only for advanced situations. "
                     "Can accept both JSON and ini style configurations"))
-@click.option(
-    "plugins",
-    '--plugin',
-    #   envvar="PLUGINS",
-    allow_from_autoenv=False,
-    multiple=True,
-    type=str,
-    help="Adds a Morpheus CLI plugin. Can either be a module name or path to a python module")
+@click.option("plugins",
+              '--plugin',
+              allow_from_autoenv=False,
+              multiple=True,
+              type=str,
+              help=("Adds a Morpheus CLI plugin. "
+                    "Can either be a module name or path to a python module"))
 @click.version_option()
 @prepare_command(parse_config=True)
 def cli(ctx: click.Context,
@@ -317,15 +296,6 @@ def cli(ctx: click.Context,
         log_config_file: str = DEFAULT_CONFIG.log_config_file,
         plugins: typing.List[str] = None,
         **kwargs):
-
-    start_time = time.time()
-
-    def print_duration():
-        end_time = time.time()
-
-        print("Running CLI took: {} ms".format((end_time - start_time) * 1000.0))
-
-    ctx.call_on_close(print_duration)
 
     # ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below
@@ -346,14 +316,14 @@ def cli(ctx: click.Context,
             pm.add_plugin_option(p)
 
 
-@cli.group(short_help="Run a utility tool", no_args_is_help=True, **command_kwargs)
+@cli.group(short_help="Run a utility tool", no_args_is_help=True)
 @prepare_command()
 def tools(ctx: click.Context, **kwargs):
 
     pass
 
 
-@tools.command(short_help="Converts an ONNX model to a TRT engine", **command_kwargs)
+@tools.command(short_help="Converts an ONNX model to a TRT engine")
 @click.option("--input_model", type=click.Path(exists=True, readable=True), required=True)
 @click.option("--output_model", type=click.Path(exists=False, writable=True), required=True)
 @click.option('--batches', type=(int, int), required=True, multiple=True)
@@ -378,9 +348,7 @@ def onnx_to_trt(ctx: click.Context, **kwargs):
     gen_engine(c)
 
 
-@tools.group(short_help="Utility for installing/updating/removing shell completion for Morpheus",
-             no_args_is_help=True,
-             **command_kwargs)
+@tools.group(short_help="Utility for installing/updating/removing shell completion for Morpheus", no_args_is_help=True)
 def autocomplete(**kwargs):
     pass
 
@@ -420,7 +388,7 @@ def install(**kwargs):
     click.echo('%s completion installed in %s' % (shell, path))
 
 
-@cli.group(short_help="Run one of the available pipelines", no_args_is_help=True, cls=AliasedGroup, **command_kwargs)
+@cli.group(short_help="Run one of the available pipelines", no_args_is_help=True, cls=AliasedGroup)
 @click.option('--num_threads',
               default=os.cpu_count(),
               type=click.IntRange(min=1),
@@ -458,8 +426,7 @@ def run(ctx: click.Context, **kwargs):
              short_help="Run the inference pipeline with a NLP model",
              no_args_is_help=True,
              cls=PluginGroup,
-             pipeline_mode=PipelineModes.NLP,
-             **command_kwargs)
+             pipeline_mode=PipelineModes.NLP)
 @click.option('--model_seq_length',
               default=256,
               type=click.IntRange(min=1),
@@ -523,8 +490,7 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
              short_help="Run the inference pipeline with a FIL model",
              no_args_is_help=True,
              cls=PluginGroup,
-             pipeline_mode=PipelineModes.FIL,
-             **command_kwargs)
+             pipeline_mode=PipelineModes.FIL)
 @click.option('--model_fea_length',
               default=29,
               type=click.IntRange(min=1),
@@ -602,8 +568,7 @@ def pipeline_fil(ctx: click.Context, **kwargs):
              short_help="Run the inference pipeline with an AutoEncoder model",
              no_args_is_help=True,
              cls=PluginGroup,
-             pipeline_mode=PipelineModes.AE,
-             **command_kwargs)
+             pipeline_mode=PipelineModes.AE)
 @click.option('--columns_file',
               default="data/columns_ae.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
@@ -697,8 +662,7 @@ def pipeline_ae(ctx: click.Context, **kwargs):
              short_help="Run a custom inference pipeline without a specific model type",
              no_args_is_help=True,
              cls=PluginGroup,
-             pipeline_mode=PipelineModes.OTHER,
-             **command_kwargs)
+             pipeline_mode=PipelineModes.OTHER)
 @click.option('--model_fea_length',
               default=1,
               type=click.IntRange(min=1),
