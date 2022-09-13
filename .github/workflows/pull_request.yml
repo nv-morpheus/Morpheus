@@ -89,10 +89,10 @@ jobs:
     needs: [check, build]
     runs-on: [self-hosted, linux, amd64, gpu-v100-495-1]
     timeout-minutes: 60
-    env:
-      NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
     container:
       image: gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
     strategy:
       fail-fast: true
 
