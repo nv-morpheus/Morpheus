@@ -24,7 +24,9 @@ import pandas as pd
 import srf
 from srf.core import operators as ops
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.pipeline import SingleOutputSource
 from morpheus.pipeline import StreamPair
@@ -33,6 +35,7 @@ from morpheus.utils.directory_watcher import DirectoryWatcher
 logger = logging.getLogger(__name__)
 
 
+@register_stage("from-appshield", modes=[PipelineModes.FIL])
 class AppShieldSourceStage(SingleOutputSource):
     """
     Source stage is used to load Appshield messages from one or more plugins into a dataframe.
@@ -46,27 +49,27 @@ class AppShieldSourceStage(SingleOutputSource):
     input_glob : str
         Input glob pattern to match files to read. For example, `./input_dir/<source>/snapshot-*/*.json` would read all
         files with the 'json' extension in the directory input_dir.
-    plugins_include: List[str], default = None
+    plugins_include : List[str], default = None
         Plugins for appshield to be extracted.
-    cols_include: List[str], default = None
+    cols_include : List[str], default = None
         Raw features to extract from appshield plugins data.
-    cols_exclude: List[str], default = ["SHA256"]
+    cols_exclude : List[str], default = ["SHA256"]
         Columns that aren't essential should be excluded.
     watch_directory : bool, default = False
         The watch directory option instructs this stage to not close down once all files have been read. Instead it will
         read all files that match the 'input_glob' pattern, and then continue to watch the directory for additional
         files. Any new files that are added that match the glob will then be processed.
-    max_files: int, default = -1
+    max_files : int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
     sort_glob : bool, default = False
         If true the list of files matching `input_glob` will be processed in sorted order.
-    recursive: bool, default = True
+    recursive : bool, default = True
         If true, events will be emitted for the files in subdirectories matching `input_glob`.
-    queue_max_size: int, default = 128
+    queue_max_size : int, default = 128
         Maximum queue size to hold the file paths to be processed that match `input_glob`.
-    batch_timeout: float, default = 5.0
+    batch_timeout : float, default = 5.0
         Timeout to retrieve batch messages from the queue.
-    encoding: str, default = latin1
+    encoding : str, default = latin1
         Encoding to read a file.
     """
 

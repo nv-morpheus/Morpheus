@@ -17,12 +17,12 @@ import dataclasses
 import typing
 
 import srf
-import tensorflow as tf
-from stellargraph.mapper import HinSAGENodeGenerator
 
 import cudf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -36,19 +36,25 @@ class GraphSAGEMultiMessage(MultiMessage):
     inductive_embedding_column_names: typing.List[str]
 
 
+@register_stage("gnn-fraud-sage", modes=[PipelineModes.OTHER])
 class GraphSAGEStage(SinglePortStage):
 
     def __init__(self,
                  c: Config,
                  model_hinsage_file: str,
                  batch_size: int = 5,
-                 sample_size=[2, 32],
+                 sample_size: typing.List[int] = [2, 32],
                  record_id: str = "index",
                  target_node: str = "transaction"):
         super().__init__(c)
+
+        # Must import stellargraph before loading the model
+        import stellargraph.mapper  # noqa
+        import tensorflow as tf
+
         self._keras_model = tf.keras.models.load_model(model_hinsage_file)
         self._batch_size = batch_size
-        self._sample_size = sample_size
+        self._sample_size = list(sample_size)
         self._record_id = record_id
         self._target_node = target_node
 
@@ -59,7 +65,7 @@ class GraphSAGEStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (FraudGraphMultiMessage, )
 
-    def supports_cpp_node():
+    def supports_cpp_node(self):
         return False
 
     def _inductive_step_hinsage(
@@ -68,6 +74,9 @@ class GraphSAGEStage(SinglePortStage):
         trained_model,
         node_identifiers,
     ):
+
+        from stellargraph.mapper import HinSAGENodeGenerator
+
         # perform inductive learning from trained graph model
         # The mapper feeds data from sampled subgraph to HinSAGE model
         generator = HinSAGENodeGenerator(graph, self._batch_size, self._sample_size, head_node_type=self._target_node)

@@ -22,7 +22,6 @@ from unittest import mock
 import numpy as np
 import pandas
 import pytest
-from kafka import KafkaConsumer
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import PipelineModes
@@ -41,6 +40,9 @@ from morpheus.utils.compare_df import compare_df
 from utils import TEST_DIRS
 from utils import write_file_to_kafka
 
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
+
 # End-to-end test intended to imitate the Phishing validation test
 FEATURE_LENGTH = 128
 MODEL_MAX_BATCH_SIZE = 32
@@ -54,7 +56,7 @@ def test_email_no_cpp(mock_triton_client,
                       config,
                       kafka_bootstrap_servers: str,
                       kafka_topics: typing.Tuple[str, str],
-                      kafka_consumer: KafkaConsumer):
+                      kafka_consumer: "KafkaConsumer"):
     mock_metadata = {
         "inputs": [{
             "name": "input_ids", "datatype": "INT64", "shape": [-1, FEATURE_LENGTH]
@@ -150,7 +152,7 @@ def test_email_no_cpp(mock_triton_client,
 def test_email_cpp(config,
                    kafka_bootstrap_servers: str,
                    kafka_topics: typing.Tuple[str, str],
-                   kafka_consumer: KafkaConsumer):
+                   kafka_consumer: "KafkaConsumer"):
     config.mode = PipelineModes.NLP
     config.class_labels = ["score", "pred"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE

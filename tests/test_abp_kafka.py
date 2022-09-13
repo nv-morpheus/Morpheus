@@ -22,7 +22,6 @@ from unittest import mock
 import numpy as np
 import pandas
 import pytest
-from kafka import KafkaConsumer
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
@@ -43,6 +42,9 @@ from morpheus.utils.compare_df import compare_df
 from utils import TEST_DIRS
 from utils import write_file_to_kafka
 
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
+
 # End-to-end test intended to imitate the ABP validation test
 FEATURE_LENGTH = 29
 MODEL_MAX_BATCH_SIZE = 1024
@@ -56,7 +58,7 @@ def test_abp_no_cpp(mock_triton_client,
                     config: Config,
                     kafka_bootstrap_servers: str,
                     kafka_topics: typing.Tuple[str, str],
-                    kafka_consumer: KafkaConsumer):
+                    kafka_consumer: "KafkaConsumer"):
     mock_metadata = {
         "inputs": [{
             'name': 'input__0', 'datatype': 'FP32', "shape": [-1, FEATURE_LENGTH]
@@ -149,7 +151,7 @@ def test_abp_no_cpp(mock_triton_client,
 def test_abp_cpp(config,
                  kafka_bootstrap_servers: str,
                  kafka_topics: typing.Tuple[str, str],
-                 kafka_consumer: KafkaConsumer):
+                 kafka_consumer: "KafkaConsumer"):
     config.mode = PipelineModes.FIL
     config.class_labels = ["mining"]
     config.model_max_batch_size = MODEL_MAX_BATCH_SIZE

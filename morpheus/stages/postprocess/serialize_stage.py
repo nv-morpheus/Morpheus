@@ -20,6 +20,7 @@ from functools import partial
 import srf
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -27,26 +28,29 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+@register_stage("serialize")
 class SerializeStage(SinglePortStage):
     """
+    Include & exclude columns from messages.
+
     This class filters columns from a `MultiMessage` object emitting a `MessageMeta`.
 
     Parameters
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    include : typing.List[str]
+    include : typing.List[str], default = [], show_default="All Columns",
         Attributes that are required send to downstream stage.
     exclude : typing.List[str]
         Attributes that are not required send to downstream stage.
-    fixed_columns: bool
+    fixed_columns : bool
         When `True` `SerializeStage` will assume that the Dataframe in all messages contain the same columns as the
         first message received.
     """
 
     def __init__(self,
                  c: Config,
-                 include: typing.List[str] = None,
+                 include: typing.List[str] = [],
                  exclude: typing.List[str] = [r'^ID$', r'^_ts_'],
                  fixed_columns: bool = True):
         super().__init__(c)

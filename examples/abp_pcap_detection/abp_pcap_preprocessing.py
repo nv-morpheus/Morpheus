@@ -22,7 +22,9 @@ import srf
 import cudf
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryFIL
 from morpheus.messages import MultiInferenceFILMessage
 from morpheus.messages import MultiInferenceMessage
@@ -30,9 +32,19 @@ from morpheus.messages import MultiMessage
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
+@register_stage("pcap-preprocess", modes=[PipelineModes.FIL])
 class AbpPcapPreprocessingStage(PreprocessBaseStage):
 
     def __init__(self, c: Config):
+        """
+        Pre-processing of PCAP data for Anomalous Behavior Profiling Detection Pipeline
+
+        Parameters
+        ----------
+        c : Config
+            The morpheus config
+        """
+
         super().__init__(c)
 
         self._fea_length = c.feature_length
@@ -161,7 +173,8 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         req_cols = ["flow_id", "rollup_time"]
 
         for col in req_cols:
-            x.set_meta(col, merged_df[col].to_arrow().to_pylist())
+            # TODO: temporary work-around for Issue #286
+            x.meta.df[col] = merged_df[col].copy(True)
 
         del merged_df
 

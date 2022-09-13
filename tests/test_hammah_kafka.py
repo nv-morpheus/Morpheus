@@ -23,7 +23,6 @@ from unittest import mock
 import numpy as np
 import pandas
 import pytest
-from kafka import KafkaConsumer
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import ConfigAutoEncoder
@@ -44,6 +43,9 @@ from morpheus.utils.compare_df import compare_df
 from morpheus.utils.logger import configure_logging
 from utils import TEST_DIRS
 
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
+
 configure_logging(log_level=logging.DEBUG)
 # End-to-end test intended to imitate the hammah validation test
 
@@ -59,7 +61,7 @@ def test_hammah_roleg(mock_ae,
                       config,
                       kafka_bootstrap_servers: str,
                       kafka_topics: typing.Tuple[str, str],
-                      kafka_consumer: KafkaConsumer):
+                      kafka_consumer: "KafkaConsumer"):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'hammah_roleg_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'hammah_roleg_anomaly_score.csv'), delimiter=',')
 
@@ -151,7 +153,7 @@ def test_hammah_user123(mock_ae,
                         config,
                         kafka_bootstrap_servers: str,
                         kafka_topics: typing.Tuple[str, str],
-                        kafka_consumer: KafkaConsumer):
+                        kafka_consumer: "KafkaConsumer"):
     tensor_data = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'hammah_user123_tensor.csv'), delimiter=',')
     anomaly_score = np.loadtxt(os.path.join(TEST_DIRS.tests_data_dir, 'hammah_user123_anomaly_score.csv'),
                                delimiter=',')

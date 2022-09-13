@@ -24,6 +24,7 @@ import cudf
 import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
@@ -31,8 +32,11 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+@register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
 class WriteToFileStage(SinglePortStage):
     """
+    Write all messages to a file.
+
     This class writes messages to a file. This class does not buffer or keep the file open between messages.
     It should not be used in production code.
 
@@ -42,17 +46,18 @@ class WriteToFileStage(SinglePortStage):
         Pipeline configuration instance.
     filename : str
         Name of the file to which the messages will be written.
-    overwrite : bool
+    overwrite : boolean, default = False, is_flag = True
         Overwrite file if exists. Will generate an error otherwise.
     file_type : `morpheus._lib.file_types.FileTypes`, optional
         File type of output (FileTypes.JSON, FileTypes.CSV, FileTypes.Auto), by default FileTypes.Auto.
-
+    include_index_col : bool, default = True
+        Write out the index as a column, by default True.
     """
 
     def __init__(self,
                  c: Config,
                  filename: str,
-                 overwrite: bool,
+                 overwrite: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  include_index_col: bool = True):
 

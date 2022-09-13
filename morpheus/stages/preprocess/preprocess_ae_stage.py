@@ -19,7 +19,9 @@ from functools import partial
 import cupy as cp
 import srf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryAE
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
@@ -30,9 +32,10 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 logger = logging.getLogger(__name__)
 
 
+@register_stage("preprocess", modes=[PipelineModes.AE])
 class PreprocessAEStage(PreprocessBaseStage):
     """
-    Autoencoder usecases are preprocessed with this stage class.
+    Prepare Autoencoder input DataFrames for inference.
 
     Parameters
     ----------

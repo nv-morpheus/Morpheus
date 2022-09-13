@@ -10,6 +10,7 @@ docker
 git+https://github.com/efajardo-nv/dfencoder.git@nv-updates#egg=dfencoder
 grpcio-channelz
 networkx
+numpydoc
 nvidia-pyindex
 pybind11-stubgen==0.10.5
 torch==1.10.2+cu113

@@ -22,15 +22,18 @@ import numpy as np
 import pandas as pd
 import srf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+@register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
 class GenerateVizFramesStage(SinglePortStage):
     """
-    Class to generate visualization frames.
+    Write out vizualization DataFrames.
 
     Parameters
     ----------
