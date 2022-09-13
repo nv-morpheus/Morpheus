@@ -78,7 +78,7 @@ def infer(validationdata, model, output):
     with open(model, 'rb') as f:
         model = dill.load(f)
 
-    scores = model.get_anomaly_score(X_val)
+    scores = model.get_anomaly_score(X_val)[3]
     X_val['ae_anomaly_score'] = scores
 
     X_val.sort_values('ae_anomaly_score', ascending=False).head(10)

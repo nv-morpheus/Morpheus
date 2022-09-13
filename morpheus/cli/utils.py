@@ -17,6 +17,7 @@ import os
 import types
 import typing
 import warnings
+from enum import Enum
 from functools import update_wrapper
 
 import click
@@ -150,6 +151,37 @@ def parse_log_level(ctx, param, value):
     if x is None:
         raise click.BadParameter('Must be one of {}. Passed: {}'.format(", ".join(logging._nameToLevel.keys()), value))
     return x
+
+
+def get_enum_map(enum_class: typing.Type):
+
+    assert issubclass(enum_class, Enum), "Must pass a class that derives from Enum"
+
+    enum_map = {x.name: x.value for x in enum_class}
+
+    return enum_map
+
+
+def get_enum_values(enum_class: typing.Type):
+
+    enum_map = get_enum_map(enum_class)
+
+    return list(enum_map.values())
+
+
+def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: typing.Type, case_sensitive=True):
+
+    enum_map = get_enum_map(enum_class)
+
+    if case_sensitive:
+        result = enum_map[value]
+    else:
+        # Make the keys lowercase
+        enum_map = {key.lower(): value for key, value in enum_map.items()}
+
+        result = enum_map[value.lower()]
+
+    return result
 
 
 class MorpheusRelativePath(click.Path):

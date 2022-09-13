@@ -1,0 +1,11 @@
+locationcountryOrRegion
+appDisplayName
+locationcity
+clientAppUsed
+deviceDetaildisplayName
+deviceDetailbrowser
+deviceDetailoperatingSystem
+statusfailureReason
+locincrement
+appincrement
+logcount

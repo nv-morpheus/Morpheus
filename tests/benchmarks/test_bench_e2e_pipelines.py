@@ -211,14 +211,14 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentityaccountId"
     config.ae.userid_filter = "Account-123456789"
-    ae_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_ae.txt')
+    ae_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')
     with open(ae_cols_filepath, "r") as lf:
         config.ae.feature_columns = [x.strip() for x in lf.readlines()]
     CppConfig.set_should_use_cpp(False)
 
     input_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["glob_path"]
     repeat = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["repeat"]
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "hammah-*.csv")
+    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "dfp-*.csv")
     output_filepath = os.path.join(tmp_path, "cloudtrail_ae_e2e_output.csv")
 
     benchmark(ae_pipeline, config, input_glob, repeat, train_data_glob, output_filepath)

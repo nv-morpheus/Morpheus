@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ source ${SCRIPT_DIR}/../val-run-pipeline.sh
 HAMMAH_TYPE=${HAMMAH_TYPE:-$1}
 
 HAMMAH_INPUT_FILE=${SID_INPUT_FILE:-"${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-${HAMMAH_TYPE}-validation-data.csv"}
-HAMMAH_TRUTH_FILE=${SID_TRUTH_FILE:-"${MORPHEUS_ROOT}/models/datasets/validation-data/hammah-${HAMMAH_TYPE}-validation-data.csv"}
+HAMMAH_TRUTH_FILE=${SID_TRUTH_FILE:-"${MORPHEUS_ROOT}/models/datasets/validation-data/dfp-cloudtrail-${HAMMAH_TYPE}-validation-data-output.csv"}
 
 MODEL_FILE=${MODEL_FILE:-"${MORPHEUS_ROOT}/models/hammah-models/hammah-${HAMMAH_TYPE}-20211017.pkl"}
 MODEL_DIRECTORY=${MODEL_FILE%/*}

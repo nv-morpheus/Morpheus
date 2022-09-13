@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 class MultiAEMessage(MultiMessage):
 
     model: AutoEncoder
+    # train_loss_scores: cp.ndarray
+    train_scores_mean: float
+    train_scores_std: float
 
     def get_slice(self, start, stop):
         """
@@ -45,4 +48,9 @@ class MultiAEMessage(MultiMessage):
             A new `MultiAEMessage` with sliced offset and count.
 
         """
-        return MultiAEMessage(meta=self.meta, mess_offset=start, mess_count=stop - start, model=self.model)
+        return MultiAEMessage(meta=self.meta,
+                              mess_offset=start,
+                              mess_count=stop - start,
+                              model=self.model,
+                              train_scores_mean=self.train_scores_mean,
+                              train_scores_std=self.train_scores_std)

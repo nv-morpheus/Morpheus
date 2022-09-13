@@ -333,7 +333,7 @@ drwxr-xr-x 3 ubuntu ubuntu 4096 Apr 13 23:47 sid-minibert-onnx
 drwxr-xr-x 2 root   root   4096 Apr 21 17:09 abp-models
 drwxr-xr-x 4 root   root   4096 Apr 21 17:09 datasets
 drwxr-xr-x 4 root   root   4096 Apr 21 17:09 fraud-detection-models
-drwxr-xr-x 2 root   root   4096 Apr 21 17:09 hammah-models
+drwxr-xr-x 2 root   root   4096 Apr 21 17:09 dfp-models
 drwxr-xr-x 3 root   root   4096 Apr 21 17:10 mlflow
 drwxr-xr-x 2 root   root   4096 Apr 21 17:10 log-parsing-models
 drwxr-xr-x 2 root   root   4096 Apr 21 17:10 phishing-models

@@ -60,7 +60,7 @@ MONITOR_ARGS = ['monitor', '--description', 'Unittest', '--smoothing=0.001', '--
 VALIDATE_ARGS = [
     'validate',
     '--val_file_name',
-    os.path.join(TEST_DIRS.validation_data_dir, 'hammah-role-g-validation-data.csv'),
+    os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-role-g-validation-data-output.csv'),
     '--results_file_name=results.json',
     '--index_col=_index_',
     '--exclude',
@@ -161,10 +161,11 @@ class TestCLI:
     @pytest.mark.replace_callback('pipeline_ae')
     def test_pipeline_ae(self, config, callback_values):
         """
-        Build a pipeline roughly ressembles the hammah validation script
+        Build a pipeline roughly ressembles the DFP validation script
         """
         args = (GENERAL_ARGS + [
             'pipeline-ae',
+            '--columns_file=data/columns_ae_cloudtrail.txt',
             '--userid_filter=user321',
             '--userid_column_name=user_col',
             'from-cloudtrail',
@@ -192,7 +193,7 @@ class TestCLI:
         config = obj["config"]
         assert config.mode == PipelineModes.AE
         assert not CppConfig.get_should_use_cpp()
-        assert config.class_labels == ["ae_anomaly_score"]
+        assert config.class_labels == ["reconstruct_loss", "zscore"]
         assert config.model_max_batch_size == 1024
         assert config.pipeline_batch_size == 1024
         assert config.num_threads == 12
@@ -201,7 +202,7 @@ class TestCLI:
         config.ae.userid_column_name = "user_col"
         config.ae.userid_filter = "user321"
 
-        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae.txt'))
+        expected_columns = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt'))
         assert config.ae.feature_columns == expected_columns
 
         pipe = callback_values['pipe']
@@ -235,7 +236,7 @@ class TestCLI:
 
         assert isinstance(validation, ValidationStage)
         assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'hammah-role-g-validation-data.csv')
+                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -256,6 +257,7 @@ class TestCLI:
         """
         args = (GENERAL_ARGS + [
             'pipeline-ae',
+            '--columns_file=data/columns_ae_cloudtrail.txt',
             '--userid_filter=user321',
             '--userid_column_name=user_col',
             'from-cloudtrail',
@@ -330,7 +332,7 @@ class TestCLI:
 
         assert isinstance(validation, ValidationStage)
         assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'hammah-role-g-validation-data.csv')
+                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -399,7 +401,7 @@ class TestCLI:
 
         assert isinstance(validation, ValidationStage)
         assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'hammah-role-g-validation-data.csv')
+                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -523,7 +525,7 @@ class TestCLI:
 
         assert isinstance(validation, ValidationStage)
         assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'hammah-role-g-validation-data.csv')
+                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -607,7 +609,7 @@ class TestCLI:
 
         assert isinstance(validation, ValidationStage)
         assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'hammah-role-g-validation-data.csv')
+                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -742,7 +744,7 @@ class TestCLI:
 
         assert isinstance(validation, ValidationStage)
         assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'hammah-role-g-validation-data.csv')
+                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -899,7 +901,7 @@ class TestCLI:
         """
 
         labels_file = "data/labels_ae.txt"
-        columns_file = "data/columns_ae.txt"
+        columns_file = "data/columns_ae_cloudtrail.txt"
 
         labels_file_local = os.path.join(tmp_path, labels_file)
         columns_file_local = os.path.join(tmp_path, columns_file)
