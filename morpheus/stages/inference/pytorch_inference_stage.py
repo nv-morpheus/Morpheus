@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pathlib
 import typing
 
 import cupy as cp
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryProbs
@@ -105,22 +108,25 @@ class _PyTorchInferenceWorker(InferenceWorker):
         cb(response_mem)
 
 
+@register_stage("inf-pytorch", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class PyTorchInferenceStage(InferenceStage):
     """
+    Perform inference with PyTorch.
+
     Pipeline stage for PyTorch inferencing. Uses `PyTorchInference` to process inference inputs using PyTorch.
     Inference outputs are run through sigmoid function to calculate probabilities which are then returned with response.
 
     Parameters
     ----------
-    model_filename : str
+    model_filename : pathlib.Path, exists = True, dir_okay = False
         Model file path.
     """
 
-    def __init__(self, c: Config, model_filename: str):
+    def __init__(self, c: Config, model_filename: pathlib.Path):
         super().__init__(c)
 
         self._config = c
-        self._model_filename = model_filename
+        self._model_filename = str(model_filename)
 
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 

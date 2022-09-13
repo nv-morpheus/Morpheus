@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ipython
-myst-parser==0.17.2
-nbsphinx
-sphinx
-sphinx_rtd_theme
+import pluggy
+
+# Must be before the other imports
+hookimpl = pluggy.HookimplMarker("morpheus")
+"""Marker to be imported and used in plugins (and for own implementations)"""
+
+from morpheus.cli.register_stage import register_stage
+from morpheus.cli.run import run_cli  # Import the run_cli command into the cli module

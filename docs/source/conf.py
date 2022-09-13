@@ -104,7 +104,7 @@ autodoc_typehints_description_target = "documented"  # Dont double up on type hi
 add_module_names = False  # Remove namespaces from class/method signatures
 myst_heading_anchors = 4  # Generate links for markdown headers
 autodoc_mock_imports = [
-    "morpheus.cli",  # Dont document the CLI in Sphinx
+    "morpheus.cli.commands",  # Dont document the CLI in Sphinx
     "tqdm",
     "tensorrt",
 ]

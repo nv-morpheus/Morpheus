@@ -24,7 +24,7 @@ from click.testing import CliRunner
 from mlflow.tracking import fluent
 
 import morpheus
-from morpheus import cli
+from morpheus.cli import commands
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
@@ -53,6 +53,7 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.stages.preprocess.train_ae_stage import TrainAEStage
 from utils import TEST_DIRS
+from utils import ConvMsg
 
 GENERAL_ARGS = ['run', '--num_threads=12', '--pipeline_batch_size=1024', '--model_max_batch_size=1024', '--use_cpp=0']
 MONITOR_ARGS = ['monitor', '--description', 'Unittest', '--smoothing=0.001', '--unit', 'inf']
@@ -90,7 +91,7 @@ def callback_values(request: pytest.FixtureRequest):
 
     marker = request.node.get_closest_marker("replace_callback")
     group_name = marker.args[0]
-    group = getattr(cli, group_name)
+    group = getattr(commands, group_name)
 
     @group.result_callback(replace=True)
     @click.pass_context
@@ -120,7 +121,7 @@ def mlflow_uri(tmp_path):
         mlflow.end_run()
 
 
-@pytest.mark.reload_modules(cli)
+@pytest.mark.reload_modules(commands)
 @pytest.mark.usefixtures("reload_modules")
 @pytest.mark.use_python
 class TestCLI:
@@ -134,25 +135,25 @@ class TestCLI:
 
     def test_help(self):
         runner = CliRunner()
-        result = runner.invoke(cli.cli, ['--help'])
+        result = runner.invoke(commands.cli, ['--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(cli.cli, ['tools', '--help'])
+        result = runner.invoke(commands.cli, ['tools', '--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(cli.cli, ['run', '--help'])
+        result = runner.invoke(commands.cli, ['run', '--help'])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(cli.cli, ['run', 'pipeline-ae', '--help'])
+        result = runner.invoke(commands.cli, ['run', 'pipeline-ae', '--help'])
         assert result.exit_code == 0, result.output
 
     def test_autocomplete(self, tmp_path):
         runner = CliRunner()
-        result = runner.invoke(cli.cli, ['tools', 'autocomplete', 'show'], env={'HOME': str(tmp_path)})
+        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'show'], env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
         # The actual results of this are specific to the implementation of click_completion
-        result = runner.invoke(cli.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
+        result = runner.invoke(commands.cli, ['tools', 'autocomplete', 'install', '--shell=bash'],
                                env={'HOME': str(tmp_path)})
         assert result.exit_code == 0, result.output
 
@@ -183,7 +184,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -260,6 +261,7 @@ class TestCLI:
             'from-cloudtrail',
             '--input_glob=input_glob*.csv',
             'add-class',
+            'unittest-conv-msg',
             'filter',
             'train-ae',
             '--train_data_glob=train_glob*.csv',
@@ -272,7 +274,7 @@ class TestCLI:
                 MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args)
+        result = runner.invoke(commands.cli, args)
 
         assert result.exit_code == 47, result.output
 
@@ -281,6 +283,7 @@ class TestCLI:
         [
             cloud_trail,
             add_class,
+            conv_msg,
             filter_stage,
             train_ae,
             process_ae,
@@ -299,6 +302,7 @@ class TestCLI:
         assert cloud_trail._watcher._input_glob == "input_glob*.csv"
 
         assert isinstance(add_class, AddClassificationsStage)
+        assert isinstance(conv_msg, ConvMsg)
         assert isinstance(filter_stage, FilterDetectionsStage)
 
         assert isinstance(train_ae, TrainAEStage)
@@ -354,7 +358,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -429,6 +433,7 @@ class TestCLI:
             'xyz',
             'preprocess',
             'add-scores',
+            'unittest-conv-msg',
             'inf-identity',
             'inf-pytorch',
             '--model_filename',
@@ -441,7 +446,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -465,6 +470,7 @@ class TestCLI:
             dropna,
             process_fil,
             add_scores,
+            conv_msg,
             inf_ident,
             inf_pytorch,
             mlflow_drift,
@@ -494,6 +500,7 @@ class TestCLI:
         assert isinstance(process_fil, PreprocessFILStage)
 
         assert isinstance(add_scores, AddScoresStage)
+        assert isinstance(conv_msg, ConvMsg)
         assert isinstance(inf_ident, IdentityInferenceStage)
 
         assert isinstance(inf_pytorch, PyTorchInferenceStage)
@@ -554,7 +561,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -595,7 +602,7 @@ class TestCLI:
         assert monitor._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ['pred']
+        assert add_class._labels == ('pred', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
@@ -639,6 +646,7 @@ class TestCLI:
                     '--do_lower_case=True',
                     '--add_special_tokens=False',
                     'add-scores',
+                    'unittest-conv-msg',
                     'inf-identity',
                     'inf-pytorch',
                     '--model_filename',
@@ -651,7 +659,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -675,6 +683,7 @@ class TestCLI:
             dropna,
             process_nlp,
             add_scores,
+            conv_msg,
             inf_ident,
             inf_pytorch,
             mlflow_drift,
@@ -708,6 +717,7 @@ class TestCLI:
         assert not process_nlp._add_special_tokens
 
         assert isinstance(add_scores, AddScoresStage)
+        assert isinstance(conv_msg, ConvMsg)
         assert isinstance(inf_ident, IdentityInferenceStage)
 
         assert isinstance(inf_pytorch, PyTorchInferenceStage)
@@ -727,7 +737,7 @@ class TestCLI:
         assert monitor._unit == 'inf'
 
         assert isinstance(add_class, AddClassificationsStage)
-        assert add_class._labels == ['pred']
+        assert add_class._labels == ('pred', )
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
@@ -757,7 +767,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         config = obj["config"]
@@ -779,7 +789,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         expected_labels = self._read_data_file(os.path.join(TEST_DIRS.data_dir, 'labels_nlp.txt'))
@@ -824,7 +834,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -872,7 +882,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly
@@ -933,7 +943,7 @@ class TestCLI:
 
         obj = {}
         runner = CliRunner()
-        result = runner.invoke(cli.cli, args, obj=obj)
+        result = runner.invoke(commands.cli, args, obj=obj)
         assert result.exit_code == 47, result.output
 
         # Ensure our config is populated correctly

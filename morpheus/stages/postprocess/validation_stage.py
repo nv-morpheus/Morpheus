@@ -25,6 +25,7 @@ from srf.core import operators as ops
 import cudf
 
 from morpheus._lib.file_types import FileTypes
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiMessage
@@ -35,8 +36,11 @@ from morpheus.utils import compare_df
 logger = logging.getLogger(__name__)
 
 
+@register_stage("validate")
 class ValidationStage(MultiMessageStage):
     """
+    Validate pipeline output for testing.
+
     The validation stage can be used to combine all output data into a single dataframe and compare against a known good
     file.
 
@@ -48,7 +52,7 @@ class ValidationStage(MultiMessageStage):
         The comparison file.
     results_file_name : str
         Where to output a JSON containing the validation results.
-    overwrite : bool, optional
+    overwrite : boolean, default = False, is_flag = True
         Whether to overwrite the validation results if they exist, by default False.
     include : typing.List[str], optional
         Any columns to include. By default all columns are included.

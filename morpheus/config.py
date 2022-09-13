@@ -185,9 +185,6 @@ class Config(ConfigBase):
         The size of buffered channels to use between nodes in a pipeline. Larger values reduce backpressure at the cost
         of memory. Smaller values will push messages through the pipeline quicker. Must be greater than 1 and a power of
         2 (i.e., 2, 4, 8, 16, etc.).
-    use_cpp : bool, default = True
-        Whether or not to use C++ node and message types or to prefer Python. Only use as a last resort if bugs are
-        encountered.
 
     Attributes
     ----------
@@ -201,6 +198,7 @@ class Config(ConfigBase):
     debug: bool = False
     log_level: int = logging.WARN
     log_config_file: str = None
+    plugins: typing.Optional[typing.List[str]] = None
 
     mode: PipelineModes = PipelineModes.OTHER
 

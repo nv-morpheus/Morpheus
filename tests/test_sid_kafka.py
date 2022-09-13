@@ -22,7 +22,6 @@ from unittest import mock
 import numpy as np
 import pandas
 import pytest
-from kafka import KafkaConsumer
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import PipelineModes
@@ -40,6 +39,9 @@ from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from morpheus.utils.compare_df import compare_df
 from utils import TEST_DIRS
 
+if (typing.TYPE_CHECKING):
+    from kafka import KafkaConsumer
+
 # End-to-end test intended to imitate the Sid validation test
 FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
@@ -53,7 +55,7 @@ def test_minibert_no_cpp(mock_triton_client,
                          config,
                          kafka_bootstrap_servers: str,
                          kafka_topics: typing.Tuple[str, str],
-                         kafka_consumer: KafkaConsumer):
+                         kafka_consumer: "KafkaConsumer"):
     mock_metadata = {
         "inputs": [{
             "name": "input_ids", "datatype": "INT32", "shape": [-1, FEATURE_LENGTH]
@@ -149,7 +151,7 @@ def test_minibert_no_cpp(mock_triton_client,
 def test_minibert_cpp(config,
                       kafka_bootstrap_servers: str,
                       kafka_topics: typing.Tuple[str, str],
-                      kafka_consumer: KafkaConsumer):
+                      kafka_consumer: "KafkaConsumer"):
     config.mode = PipelineModes.NLP
     config.class_labels = [
         "address",

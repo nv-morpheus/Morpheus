@@ -25,7 +25,9 @@ from dfencoder import AutoEncoder
 from srf.core import operators as ops
 
 from morpheus._lib.file_types import FileTypes
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -108,9 +110,13 @@ class _UserModelManager(object):
         return model
 
 
+@register_stage("train-ae", modes=[PipelineModes.AE])
 class TrainAEStage(MultiMessageStage):
     """
-    Autoencoder usecases are preprocessed with this stage class.
+    Train an Autoencoder model on incoming data.
+
+    This stage is used to train an Autoencoder model on incoming data a supply that model to downstream stages. The
+    Autoencoder workflows use this stage as a pre-processing step to build the model for inference.
 
     Parameters
     ----------
@@ -119,15 +125,18 @@ class TrainAEStage(MultiMessageStage):
     pretrained_filename : str, default = None
         Load a pre-trained model from a file.
     train_data_glob : str, default = None
-        Input glob pattern to match files to read.
-    train_epochs : int, default = 25
-        Passed in as the `epoch` parameter to `AutoEncoder.fit` causes data to be trained in `train_epochs` batches.
-    train_max_history : int, default = 1000
-        Truncate training data to at most `train_max_history` rows.
+        On startup, all files matching this glob pattern will be loaded and used to train a model for each unique user
+        ID.
+    train_epochs : int, default = 25, min = 1
+        The number of epochs to train user models for. Passed in as the `epoch` parameter to `AutoEncoder.fit` causes
+        data to be trained in `train_epochs` batches.
+    train_max_history : int, default = 1000, min = 1
+        Maximum amount of rows that will be retained in history. As new data arrives, models will be retrained with a
+        maximum number of rows specified by this value.
     seed : int, default = None
-        When not None, ensure random number generators are seeded with `seed` to control reproducibility of user model
-        training.
-    sort_glob : bool, default = False
+        Seed to use when training. When not None, ensure random number generators are seeded with `seed` to control
+        reproducibility of user model training.
+    sort_glob : bool, default = False, is_flag = True
         If true the list of files matching `input_glob` will be processed in sorted order.
     """
 
