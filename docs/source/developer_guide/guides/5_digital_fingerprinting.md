@@ -1,0 +1,166 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+# 5. Digital Fingerprinting (DFP)
+
+## Overview
+Every account, user, service and machine has a digital fingerprint​, which represents the typical actions performed and not performed over a given period of time.  Understanding every entity's day-to-day, moment-by-moment work helps us identify anomalous behavior and uncover potential threats in the environment​.
+
+To construct this digital fingerprint we will be training unsupervised behavioral models at various granularities, including a generic model for all users in the organization along with fine-grained models for each user to monitor their behavior. These models are continuously updated and retrained overtime​, and alerts are triggered when deviations from normality occur for any user​.
+
+## Training Sources
+The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The [digital fingerprinting example](/examples/digital_fingerprinting/README.md) included in Morpheus ingests logs from [AWS CloudTrail](https://docs.aws.amazon.com/cloudtrail/index.html), [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins) and [Duo Authentication](https://help.duo.com/s/article/1023?language=en_US).
+
+The location of these logs could be either local to the machine running Morpheus, a shared filesystem like NFS or on a remote store such as [Amazon S3](https://aws.amazon.com/s3/).
+
+Additional data sources and remote stores can easily be added using the Morpheus SDK, the key to applying DFP to a new data source is through the process of feature selection. Any data source can be fed into DFP after some preprocessing to get a feature vector per log/data point​.  Since DFP builds a targeted model for each entity (user/service/machine... etc.), it would work best if the chosen data source has a field that uniquely identifies the entity we’re trying to model.
+
+
+### DFP Features
+
+#### AWS CloudTrail
+| Feature | Description |
+| ------- | ----------- |
+| userIdentityaccessKeyId | e.g., ACPOSBUM5JG5BOW7B2TR, ABTHWOIIC0L5POZJM2FF, AYI2CM8JC3NCFM4VMMB4 |
+| userAgent | e.g., Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 10.0; Trident/5.1), Mozilla/5.0 (Linux; Android 4.3.1) AppleWebKit/536.1 (KHTML, like Gecko) Chrome/62.0.822.0 Safari/536.1, Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10 7_0; rv:1.9.4.20) Gecko/2012-06-10 12:09:43 Firefox/3.8 |
+| userIdentitysessionContextsessionIssueruserName | e.g., role-g |
+| sourceIPAddress | e.g., 208.49.113.40, 123.79.131.26, 128.170.173.123 |
+| userIdentityaccountId | e.g., Account-123456789 |
+| errorMessage | e.g., The input fails to satisfy the constraints specified by an AWS service., The specified subnet cannot be found in the VPN with which the Client VPN endpoint is associated., Your account is currently blocked. Contact aws-verification@amazon.com if you have questions. |
+| userIdentitytype | e.g., FederatedUser |
+| eventName | e.g., GetSendQuota, ListTagsForResource, DescribeManagedPrefixLists |
+| userIdentityprincipalId | e.g., 39c71b3a-ad54-4c28-916b-3da010b92564, 0baf594e-28c1-46cf-b261-f60b4c4790d1, 7f8a985f-df3b-4c5c-92c0-e8bffd68abbf |
+| errorCode | e.g., success, MissingAction, ValidationError |
+| eventSource | e.g., lopez-byrd.info, robinson.com, lin.com |
+| userIdentityarn | e.g., arn:aws:4a40df8e-c56a-4e6c-acff-f24eebbc4512, arn:aws:573fd2d9-4345-487a-9673-87de888e4e10, arn:aws:c8c23266-13bb-4d89-bce9-a6eef8989214 |
+| apiVersion | e.g., 1984-11-26, 1990-05-27, 2001-06-09 |
+
+#### Azure Active Directory
+| Feature | Description |
+| ------- | ----------- |
+| appDisplayName | e.g., Windows sign in, MS Teams, Office 365​ |
+| clientAppUsed | e.g., IMAP4, Browser​ |
+| deviceDetail.displayName | e.g., username-LT​ |
+| deviceDetail.browser | e.g., EDGE 98.0.xyz, Chrome 98.0.xyz​ |
+| deviceDetail.operatingSystem | e.g., Linux, IOS 15, Windows 10​ |
+| statusfailureReason | e.g., external security challenge not satisfied, error validating credentials​ |
+| riskEventTypesv2 | AzureADThreatIntel, unfamiliarFeatures​ |
+| location.countryOrRegion | country or region name​ |
+| location.city | city name |
+
+##### Derived Features
+| Feature | Description |
+| ------- | ----------- |
+| logcount | tracks the number of logs generated by a user within that day (increments with every log)​ |
+| locincrement | increments every time we observe a new city (location.city) in a user’s logs within that day​ |
+| appincrement | increments every time we observe a new app (appDisplayName) in a user’s logs within that day​ |
+
+#### Duo Authentication
+| Feature | Description |
+| ------- | ----------- |
+| auth_device.name | phone number​ |
+| access_device.browser | e.g., Edge, Chrome, Chrome Mobile​ |
+| access_device.os | e.g., Android, Windows​ |
+| result | SUCCESS or FAILURE ​ |
+| reason | reason for the results, e.g., User Cancelled, User Approved, User Mistake, No Response​ |
+| access_device.location.city | city name |
+
+##### Derived Features
+| Feature | Description |
+| ------- | ----------- |
+| logcount| tracks the number of logs generated by a user within that day (increments with every log)​ |
+| locincrement | increments every time we observe a new city (location.city) in a user’s logs within that day​ |
+
+
+## High Level Architecture
+DFP in Morpheus is accomplished via two independent pipelines: training and inference​. The pipelines communicate via a shared model store ([MLflow](https://mlflow.org/)), and both share many common components​, as Morpheus is composed of reusable stages which can be easily mixed and matched.
+
+![High Level Architecture](img/dfp_high_level_arch.png)
+
+#### Training Pipeline
+* Trains user models and uploads to the model store​
+* Capable of training individual user models or a fallback generic model for all users​
+
+#### Inference Pipeline
+* Downloads user models from the model store​
+* Generates anomaly scores per log​
+* Sends detected anomalies to monitoring services
+
+#### Monitoring
+* Detected anomilies are published to an S3 bucket, directory or a Kafka topic.
+* Output can be integrated with a monitoring tool.
+
+
+## Runtune Environment Setup
+![Runtune Environment Setup](img/dfp_runtime_env.png)
+
+DFP in Morpheus is built as an application of containerized services​ and can be run in two ways:
+1. Using docker-compose for testing and development​
+1. Using helm charts for production Kubernetes deployment​
+
+### System requirements for the DFP reference architecture:
+##### Running via docker-compose:
+* [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/) installed on the host machine​
+* Supported GPU with [nvidia-docker runtime​]((https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker))
+
+##### Running via Kubernetes​
+* [Kubernetes](https://kubernetes.io/) cluster configured with GPU resources​
+* [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
+
+Note: For GPU Requirements see [README.md](/README.md#requirements)
+
+### Services
+The reference architecture is composed of the following services:​
+| Service | Description |
+| ------- | ----------- |
+| [MLflow](https://mlflow.org/) | Provides a versioned model store​ |
+| [Jupyter Server](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html)​ | Necessary for testing and development of the pipelines​ |
+| Morpheus Training Pipeline​ | Trains the autoencoder models and uploads to MLFlow |
+| Morpheus Inference Pipeline​ | Downloads models from MLFlow for inferencing​ & Publishes anomalies |
+
+
+## Morpheus Configuration
+![Morpheus Configuration](img/dfp_deployment_configs.png)
+
+### Pipeline Structure Configuration
+![Pipeline Structure Configuration](img/dfp_pipeline_structure.png)
+
+The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, i.e., the S3 reader can be swapped with a file reader or any other Morpheus input stage, similarly the S3 writer can be replaced with any Morpheus output stage.  Regardless of the inputs & outputs the core pipeline should renmain unchanged.  While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
+
+
+### Input Stages
+![Input Stages](img/dfp_input_config.png)
+
+##### MultiFileSource
+The [`MultiFileSource`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py) receives a path or list of paths (`filenames`), and will collectively be emitted into the pipeline as an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) object.  The paths may include wildcards `*` and can be S3 urls (`s3://path`) as defined by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files).
+
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `filenames` | `List[str]` or `str` | Paths to source file to be read from |
+
+
+##### DFPFileBatcherStage
+The [`DFPFileBatcherStage`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py) groups data in the incoming DataFrame in batches of a time period (per day default).  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `date_conversion_func` | `function` | Function receives a single [fsspec.core.OpenFile](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFile) argument and returns a `datetime.datetime` object |
+| `period` | `str` | Time period to group data by, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases) |
+| `sampling_rate_s` | `int` | Optional, default=`0`. When non-zero a subset of the incoming data files will be sampled, only including a file if the `datetime` returned by `date_conversion_func` is at least `sampling_rate_s` seconds greater than  the `datetime` of the previously included file |

@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import torch
 from dfencoder import AutoEncoder
+from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 from morpheus.config import Config
@@ -73,7 +74,7 @@ class DFPDataLoader:
                 self._current_index = min((self._current_index + 1), self._frame_count)
             else:  # Adding another frame would exceed our memory limit, return
                 if (total_frames == self._frame_count):
-                    logger.debug("Caching full training set.")
+                    logger.debug(f"Caching full training set.")
                     self._aggregate_cache = aggregate_frame
 
                 return aggregate_frame
@@ -83,7 +84,7 @@ class DFPDataLoader:
 
             # Epoch rolled, return what we have
             if (total_frames == self._frame_count):
-                logger.debug("Caching full training set.")
+                logger.debug(f"Caching full training set.")
                 self._aggregate_cache = aggregate_frame
 
             return aggregate_frame
@@ -165,7 +166,7 @@ class UserModelManager(object):
                         break
 
                     if (batches == 0 and (df_batch.shape[0] < self._min_history)):
-                        raise InsufficientDataError("Insuffient training data.")
+                        raise InsufficientDataError(f"Insuffient training data.")
 
                     if (df_batch.shape[0] < 10):  # If we've already trained on some data, make sure we can tts this.
                         break
@@ -184,7 +185,7 @@ class UserModelManager(object):
         except InsufficientDataError:
             logger.debug(f"Training AE model for user: '{self._user_id}... Skipped")
             return None, None
-        except Exception:
+        except Exception as e:
             logger.exception("Error during training for user: %s", self._user_id, exc_info=True)
             return None, None
 
@@ -237,6 +238,8 @@ class UserModelManager(object):
             device="cuda")
 
         final_df = combined_df[combined_df.columns.intersection(self._feature_columns)]
+
+        # X_train, X_val = train_test_split(final_df, shuffle=False, test_size=0.2, random_state=42)
 
         logger.debug("Training AE model for user: '%s'...", self._user_id)
         model.fit(final_df, epochs=self._epochs)

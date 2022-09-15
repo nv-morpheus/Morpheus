@@ -49,9 +49,7 @@ Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
   4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
 
 Options:
-  --columns_file FILE             [default: /my_data/gitrepos/efajardo-nv/Morp
-                                  heus/morpheus/data/columns_ae_cloudtrail.txt
-                                  ]
+  --columns_file FILE             [default: morpheus/data/columns_ae_cloudtrail.txt]
   --labels_file FILE              Specifies a file to read labels from in
                                   order to convert class IDs into labels. A
                                   label file is a simple text file where each

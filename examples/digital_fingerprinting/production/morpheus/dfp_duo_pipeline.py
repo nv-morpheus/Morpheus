@@ -185,8 +185,7 @@ def run_pipeline(train_users,
                    true_values=["success", "SUCCESS"],
                    false_values=["denied", "DENIED", "FRAUD"]),
         ColumnInfo(name="reason", dtype=str),
-        # CustomColumn(name="user.groups", dtype=str, process_column_fn=partial(column_listjoin,
-        # col_name="user.groups"))
+        # CustomColumn(name="user.groups", dtype=str, process_column_fn=partial(column_listjoin, col_name="user.groups"))
     ]
 
     source_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],

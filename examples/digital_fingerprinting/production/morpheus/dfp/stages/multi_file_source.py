@@ -32,30 +32,16 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class MultiFileSource(SingleOutputSource):
     """
-    Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
-    testing performance and accuracy of a pipeline.
+    Source stage is used to load messages from files and dumping the contents into the pipeline immediately.
 
     Parameters
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    filename : str
-        Name of the file from which the messages will be read.
-    iterative: boolean
-        Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
-        good for interleaving source stages.
-    file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
-        Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
-        Supported extensions: 'json', 'csv'
-    repeat: int, default = 1
-        Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-    filter_null: bool, default = True
-        Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
-        the line with processing. Setting this to True is recommended.
-    cudf_kwargs: dict, default=None
-        keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
-        `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
-        and with `file_type` == 'csv', this defaults to ``{}``.
+    filenames : List[str]
+        List of paths to be read from, can be a list of S3 urls (`s3://path`) amd can include wildcard characters `*`
+        as defined by `fsspec`:
+        https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files
     """
 
     def __init__(

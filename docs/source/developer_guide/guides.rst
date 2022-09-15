@@ -25,3 +25,4 @@ Morpheus includes several stages to choose from when building a custom pipeline,
    guides/2_real_world_phishing
    guides/3_simple_cpp_stage
    guides/4_source_cpp_stage
+   guides/5_digital_fingerprinting

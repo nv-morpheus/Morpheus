@@ -129,9 +129,9 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                                         permission in self._databricks_permissions.items()]
             }
 
-            requests.patch(url=patch_registered_model_permissions_url,
-                           headers=headers,
-                           json=patch_registered_model_permissions_body)
+            patch_registered_model_permissions_response = requests.patch(url=patch_registered_model_permissions_url,
+                                                                         headers=headers,
+                                                                         json=patch_registered_model_permissions_body)
 
         except Exception:
             logger.exception("Error occurred trying to apply model permissions to model: %s",
@@ -246,7 +246,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
                 logger.debug("ML Flow model upload complete: %s:%s:%s", user, reg_model_name, mv.version)
 
-        except Exception:
+        except Exception as e:
             logger.exception("Error uploading model to ML Flow", exc_info=True)
 
         return message
