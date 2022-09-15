@@ -145,8 +145,8 @@ The stages in both the Training and Inference pipelines can be mixed and matched
 ### Input Stages
 ![Input Stages](img/dfp_input_config.png)
 
-##### MultiFileSource
-The [`MultiFileSource`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py) receives a path or list of paths (`filenames`), and will collectively be emitted into the pipeline as an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) object.  The paths may include wildcards `*` and can be S3 urls (`s3://path`) as defined by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files).
+#### MultiFileSource
+The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py)) receives a path or list of paths (`filenames`), and will collectively be emitted into the pipeline as an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) object.  The paths may include wildcards `*` and can be S3 urls (`s3://path`) as defined by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files).
 
 
 | Argument | Type | Descirption |
@@ -155,8 +155,8 @@ The [`MultiFileSource`](/examples/digital_fingerprinting/production/morpheus/dfp
 | `filenames` | `List[str]` or `str` | Paths to source file to be read from |
 
 
-##### DFPFileBatcherStage
-The [`DFPFileBatcherStage`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py) groups data in the incoming DataFrame in batches of a time period (per day default).  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
+#### DFPFileBatcherStage
+The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming DataFrame in batches of a time period (per day default).  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
@@ -164,3 +164,20 @@ The [`DFPFileBatcherStage`](/examples/digital_fingerprinting/production/morpheus
 | `date_conversion_func` | `function` | Function receives a single [fsspec.core.OpenFile](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFile) argument and returns a `datetime.datetime` object |
 | `period` | `str` | Time period to group data by, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases) |
 | `sampling_rate_s` | `int` | Optional, default=`0`. When non-zero a subset of the incoming data files will be sampled, only including a file if the `datetime` returned by `date_conversion_func` is at least `sampling_rate_s` seconds greater than  the `datetime` of the previously included file |
+
+For situations where the creation date of of the log file is encoded in the filename is desired, the `date_extractor` in the [`examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py`](/examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py) module can be used.  The `date_extractor` will need to have a regex pattern bound to it before being passed in as a parameter to `DFPFileBatcherStage`, for input files containing an ISO 8601 formatted date string the `iso_date_regex` regex can be used ex:
+```python
+from functools import partial
+
+from dfp.utils.file_utils import date_extractor
+from dfp.utils.file_utils import iso_date_regex
+```
+```python
+# Batch files into buckets by time. Use the default ISO date extractor from the filename
+pipeline.add_stage(
+    DFPFileBatcherStage(config,
+                        period="D",
+                        date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex)))
+```
+
+Note: in cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
