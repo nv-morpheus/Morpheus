@@ -226,7 +226,7 @@ class Pipeline():
         for s in list(self._stages):
             await s.join()
 
-    def build_and_start(self):
+    async def build_and_start(self):
 
         if (not self.is_built):
             try:
@@ -235,7 +235,15 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
+        await self.async_start()
+
         self.start()
+
+    async def async_start(self):
+
+        # Loop over all stages and call on_start if it exists
+        for s in self._stages:
+            await s.start_async()
 
     def _on_start(self):
 
@@ -417,7 +425,7 @@ class Pipeline():
             loop.add_signal_handler(s, term_signal)
 
         try:
-            self.build_and_start()
+            await self.build_and_start()
 
             # Wait for completion
             await self.join()
