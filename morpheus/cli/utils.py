@@ -184,6 +184,32 @@ def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: ty
     return result
 
 
+def load_labels_file(labels_file: str) -> typing.List[str]:
+    with open(labels_file, "r") as lf:
+        return [x.strip() for x in lf.readlines()]
+
+
+def get_package_relative_file(filename: str):
+    # First check if the path is relative
+    if (not os.path.isabs(filename)):
+
+        # See if the file exists.
+        does_exist = os.path.exists(filename)
+
+        if (not does_exist):
+            # If it doesnt exist, then try to make it relative to the morpheus library root
+            morpheus_root = os.path.dirname(morpheus.__file__)
+
+            value_abs_to_root = os.path.join(morpheus_root, filename)
+
+            # If the file relative to our package exists, use that instead
+            if (os.path.exists(value_abs_to_root)):
+
+                return value_abs_to_root
+
+    return filename
+
+
 class MorpheusRelativePath(click.Path):
     """
     A specialization of the `click.Path` class that falls back to using package relative paths if the file cannot be
@@ -201,26 +227,13 @@ class MorpheusRelativePath(click.Path):
                 param: typing.Optional["click.Parameter"],
                 ctx: typing.Optional["click.Context"]) -> typing.Any:
 
-        # First check if the path is relative
-        if (not os.path.isabs(value)):
+        package_relative = get_package_relative_file(value)
 
-            # See if the file exists.
-            does_exist = os.path.exists(value)
+        if (package_relative != value):
+            logger.debug(("Parameter, '%s', with relative path, '%s', does not exist. "
+                          "Using package relative location: '%s'"),
+                         param.name,
+                         value,
+                         package_relative)
 
-            if (not does_exist):
-                # If it doesnt exist, then try to make it relative to the morpheus library root
-                morpheus_root = os.path.dirname(morpheus.__file__)
-
-                value_abs_to_root = os.path.join(morpheus_root, value)
-
-                # If the file relative to our package exists, use that instead
-                if (os.path.exists(value_abs_to_root)):
-                    logger.debug(("Parameter, '%s', with relative path, '%s', does not exist. "
-                                  "Using package relative location: '%s'"),
-                                 param.name,
-                                 value,
-                                 value_abs_to_root)
-
-                    return super().convert(value_abs_to_root, param, ctx)
-
-        return super().convert(value, param, ctx)
+        return super().convert(package_relative, param, ctx)

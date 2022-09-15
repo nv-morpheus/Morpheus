@@ -1,0 +1,9 @@
+# Ignore any Dockerfile
+Dockerfile
+
+# ML Flow files
+artifacts/
+mlflow.db
+
+# Ignore any S3 cache folders
+*.s3_cache

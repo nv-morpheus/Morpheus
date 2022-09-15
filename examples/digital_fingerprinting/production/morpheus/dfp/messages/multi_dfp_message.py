@@ -14,21 +14,49 @@
 
 import dataclasses
 import logging
+import typing
 
-from dfencoder import AutoEncoder
-
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class MultiAEMessage(MultiMessage):
+class DFPMessageMeta(MessageMeta, cpp_class=None):
+    """
+    This class extends MessageMeta to also hold userid corresponding to batched metadata.
 
-    model: AutoEncoder
-    # train_loss_scores: cp.ndarray
-    train_scores_mean: float = 0.0
-    train_scores_std: float = 1.0
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input rows in dataframe.
+    user_id : str
+        User id.
+
+    """
+    user_id: str
+
+    def get_df(self):
+        return self.df
+
+    def set_df(self, df):
+        self.df = df
+
+
+@dataclasses.dataclass
+class MultiDFPMessage(MultiMessage):
+
+    def __post_init__(self):
+
+        assert isinstance(self.meta, DFPMessageMeta), "`meta` must be an instance of DFPMessageMeta"
+
+    @property
+    def user_id(self):
+        return typing.cast(DFPMessageMeta, self.meta).user_id
+
+    def get_meta_dataframe(self):
+        return typing.cast(DFPMessageMeta, self.meta).get_df()
 
     def get_slice(self, start, stop):
         """
@@ -48,9 +76,4 @@ class MultiAEMessage(MultiMessage):
             A new `MultiAEMessage` with sliced offset and count.
 
         """
-        return MultiAEMessage(meta=self.meta,
-                              mess_offset=start,
-                              mess_count=stop - start,
-                              model=self.model,
-                              train_scores_mean=self.train_scores_mean,
-                              train_scores_std=self.train_scores_std)
+        return MultiDFPMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
