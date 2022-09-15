@@ -12,6 +12,7 @@ grpcio-channelz
 networkx
 numpydoc
 nvidia-pyindex
+pluggy
 pybind11-stubgen==0.10.5
 torch==1.10.2+cu113
 tqdm
