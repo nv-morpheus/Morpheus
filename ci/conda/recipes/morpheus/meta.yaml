@@ -78,6 +78,7 @@ outputs:
         - mlflow >=1.23
         - networkx
         - pandas 1.3
+        - pluggy
         - python
         - tqdm
         - typing_utils
