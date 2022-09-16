@@ -4,16 +4,11 @@
 
 To run the demo you will need the following:
 - Docker
-- NodeJS
-  - See the installation guide [here](https://nodejs.org/en/download/)
-- `yarn`
-  - Once NodeJS is installed with NPM, run `npm install --global yarn` to install yarn
 - `docker-compose` (Tested with version 1.29)
 
 ## Setup
 
-To run this demo, ensure all submodules are checked out
-
+To run this demo, ensure all submodules are checked out:
 ```bash
 git submodule update --init --recursive
 ```
@@ -21,11 +16,12 @@ git submodule update --init --recursive
 ### Build Morpheus Dev Container
 
 Before launching the demo, we need the dev container for Morpheus to be created:
-
 ```bash
 export DOCKER_IMAGE_TAG="sid-viz"
+```
 
 # Build the dev container
+```bash
 ./docker/build_container_dev.sh
 ```
 
@@ -33,17 +29,23 @@ export DOCKER_IMAGE_TAG="sid-viz"
 
 We will use docker-compose to build and run the entire demo. To launch everything, run the following from the repo root:
 
+Save the Morpheus repo directory:
 ```bash
-# Save the Morpheus repo directory
 export MORPHEUS_HOME=$(git rev-parse --show-toplevel)
+```
 
-# Ensure SID model is downloaded for deployment to Triton
+Ensure SID model is downloaded for deployment to Triton:
+```bash
 ./scripts/fetch_data.py fetch models
+```
 
-# Change to the example directory
+Change to the example directory:
+```bash
 cd ${MORPHEUS_HOME}/examples/sid_visualization
+```
 
-# Launch the containers
+Launch the containers:
+```bash
 DOCKER_BUILDKIT=1 docker-compose up --build -d
 ```
 
@@ -53,33 +55,40 @@ The following GUI should be displayed when all containers have completed launchi
 
 ### Build Morpheus
 
-Once docker-compose has been launched, exec into the container to build and run Morpheus:
+Once docker-compose command has completed and GUI is displayed, exec into the container to build and run Morpheus:
 
+Exec into the morpheus container:
 ```bash
-# Exec into the morpheus container
 docker-compose exec morpheus bash
+```
 
-# Inside the container, compile morpheus
+Inside the container, compile morpheus:
+```bash
 BUILD_DIR=build-docker ./scripts/compile.sh
+```
 
-# Install morpheus with an extra dependency
+Install morpheus with an extra dependency:
+```bash
 pip install -e . && pip install websockets
+```
 
-# Verify Morpheus is installed
+Verify Morpheus is installed:
+```bash
 morpheus --version
+```
 
-# Ensure the data has been downloaded
+Ensure the data has been downloaded:
+```bash
 ./scripts/fetch_data.py fetch examples
 ```
 
-** Note: Keep this shell in the Morpheus Dev container running. It will be used later to start Morpheus.
+***Keep this shell in the Morpheus Dev container running. It will be used later to start Morpheus.***
 
 ## Running the Demo
 
 ### Running Morpheus
 
 After the GUI has been launched, Morpheus now needs to be started. In the same shell used to build Morpheus (the one running the Morpheus Dev container), run the following:
-
 ```bash
 python examples/sid_visualization/run.py \
   --debug --use_cpp=False --num_threads=1 \
@@ -90,7 +99,7 @@ python examples/sid_visualization/run.py \
   --input_file=./examples/data/sid_visualization/group4-benign-49nodes.jsonlines
 ```
 
-** Note: The first run of this scripts will take a few minutes to allow Triton to convert the deployed ONNX model to TensorRT. Subsequent runs will not include this conversion step so will be much quicker.
+**Note:** The first run of this script will take a few minutes to allow Triton to convert the deployed ONNX model to TensorRT. Subsequent runs will not include this conversion step so will be much quicker.
 
 This launch will use all of the available datasets. Each dataset will show up as one batch in the visualization. Here is a description of each dataset:
 
@@ -115,8 +124,8 @@ Use the slider or the following buttons to step through the inferences batches i
 | <img src="./img/replay.png"> | Step through all inference batches from beginning |
 | <img src="./img/pause.png">  | Pause animation                                   |
 
-The graph visualization on the right shows nodes in the current inference batch represented as
-green spheres. White (benign) and red (SI) packets can be seen flowing between the node connections.
+The visualization on the right shows nodes in the current inference batch represented as
+green spheres. White (benign) and red (SI) packets are shown flowing between the node connections.
 While the animation is running, you can click the pause button or toggle off `Simulating`. Once paused, 
 you will be able to hover over an individual packet to view its contents.
 
@@ -126,7 +135,9 @@ It's also possible to launch the demo using the Morpheus CLI using the following
 
 ```bash
 DEMO_DATASET="examples/data/sid_visualization/group1-benign-2nodes.jsonlines"
+```
 
+```bash
 morpheus --log_level=DEBUG \
    run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=32 --edge_buffer_size=4 --use_cpp=False \
       pipeline-nlp --model_seq_length=256 \
