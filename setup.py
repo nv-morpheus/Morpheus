@@ -44,7 +44,6 @@ setup(
         "datacompy",
         "docker",
         "dfencoder @ git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder",
-        "grpcio-channelz",
         "mlflow>=1.23",
         "networkx",
         "pandas>=1.3",

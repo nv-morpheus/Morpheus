@@ -8,7 +8,6 @@ configargparse
 datacompy
 docker
 git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder
-grpcio-channelz
 networkx
 numpydoc
 nvidia-pyindex
