@@ -86,10 +86,10 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.08.00a` use the following:
+You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.09.00a` use the following:
 
 ```bash
-DOCKER_IMAGE_TAG="v22.08.00a-runtime" ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG="v22.09.00a-runtime" ./docker/run_container_release.sh
 ```
 
 ### Build from Source

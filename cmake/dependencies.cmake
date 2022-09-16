@@ -104,17 +104,17 @@ include(deps/Configure_rdkafka)
 
 # SRF (Should come after all third party but before NVIDIA repos)
 # =====
-set(SRF_VERSION 22.08 CACHE STRING "Which version of SRF to use")
+set(SRF_VERSION 22.09 CACHE STRING "Which version of SRF to use")
 include(deps/Configure_srf)
 
 # CuDF
 # =====
-set(CUDF_VERSION "${RAPIDS_VERSION}" CACHE STRING "Which version of cuDF to use")
+set(CUDF_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of cuDF to use")
 include(deps/Configure_cudf)
 
 # Triton-client
 # =====
-set(TRITONCLIENT_VERSION "${RAPIDS_VERSION}" CACHE STRING "Which version of TritonClient to use")
+set(TRITONCLIENT_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of TritonClient to use")
 include(deps/Configure_TritonClient)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
