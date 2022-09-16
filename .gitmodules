@@ -1,0 +1,4 @@
+[submodule "examples/sid_visualization/viz"]
+	path = examples/sid_visualization/viz
+	url = ../../nv-morpheus/morpheus-visualizations.git
+	branch = branch-22.09

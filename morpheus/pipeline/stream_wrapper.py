@@ -39,13 +39,13 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
     sig = inspect.signature(func, follow_wrapped=True)
 
     @functools.wraps(func)
-    def inner(self: "StreamWrapper", c: Config, *args, **kwargs):
+    def inner(self: "StreamWrapper", *args, **kwargs):
 
         # Actually call init first. This way any super classes strings will be overridden
-        func(self, c, *args, **kwargs)
+        func(self, *args, **kwargs)
 
         # Determine all set values
-        bound = sig.bind(self, c, *args, **kwargs)
+        bound = sig.bind(self, *args, **kwargs)
         bound.apply_defaults()
 
         init_pairs = []
@@ -53,7 +53,7 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
         for key, val in bound.arguments.items():
 
             # We really dont care about these
-            if (key == "self" or key == "c"):
+            if (key == "self" or sig.parameters[key].annotation == Config):
                 continue
 
             init_pairs.append(f"{key}={val}")
