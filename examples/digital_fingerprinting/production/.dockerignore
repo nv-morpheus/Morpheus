@@ -1,6 +1,10 @@
 # Ignore any Dockerfile
 Dockerfile
 
+# Ignore docker-compose files
+docker-compose.yml
+.env*
+
 # ML Flow files
 artifacts/
 mlflow.db

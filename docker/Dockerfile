@@ -86,7 +86,7 @@ RUN source activate morpheus &&\
 
 # Set the entrypoint to use the entrypoint.sh script which sets the conda env
 COPY docker/entrypoint.sh ./docker/
-ENTRYPOINT [ "/opt/conda/bin/tini", "--", "docker/entrypoint.sh" ]
+ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
 
 # Reset the shell back to normal
 SHELL ["/bin/bash", "-c"]

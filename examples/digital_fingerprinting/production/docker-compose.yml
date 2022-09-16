@@ -17,22 +17,6 @@
 version: '3.3'
 
 services:
-  db:
-    restart: always
-    image: mysql/mysql-server
-    container_name: mlflow_db
-    expose:
-      - "3306"
-    networks:
-      - backend
-    environment:
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST}
-    volumes:
-      - db_data:/var/lib/mysql
 
   mlflow:
     restart: always
@@ -44,20 +28,19 @@ services:
     networks:
       - frontend
       - backend
-    # command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} --serve-artifacts --artifacts-destination /opt/mlflow/artifacts --host 0.0.0.0
     command: mlflow server --gunicorn-opts "--log-level debug" --backend-store-uri sqlite:////opt/mlflow/dbdata/mlflow.db --serve-artifacts --artifacts-destination /opt/mlflow/artifacts --host 0.0.0.0
     volumes:
       - db_data:/opt/mlflow/dbdata
       - mlflow_data:/opt/mlflow/artifacts
-    # depends_on:
-    #   - db
 
   jupyter:
     restart: always
     build:
-      context: ./jupyter
+      context: ./
+      dockerfile: ./Dockerfile
+      target: jupyter
       args:
-        - MORPHEUS_CONTAINER_VERSION=v22.08.00a-runtime
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
     image: dfp_morpheus_jupyter
     container_name: jupyter
     ports:
@@ -65,24 +48,24 @@ services:
     networks:
       - frontend
       - backend
-    environment:
-      - VAULT_ROLE_ID=${VAULT_ROLE_ID}
-      - VAULT_SECRET_ID=${VAULT_SECRET_ID}
     command: jupyter-lab --no-browser --allow-root --ip='*'
     volumes:
-      - ../..:/work
-    working_dir: /work/examples/dfp_workflow
+      - ../../..:/workspace
     depends_on:
       - mlflow
     profiles:
       - dev
+    cap_add:
+      - sys_nice
 
   morpheus_training:
     # restart: always
     build:
-      context: ./morpheus
+      context: ./
+      dockerfile: ./Dockerfile
+      target: runtime
       args:
-        - MORPHEUS_CONTAINER_VERSION=v22.08.00a-runtime
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
     image: dfp_morpheus
     container_name: morpheus_training
     networks:
@@ -91,25 +74,18 @@ services:
     environment:
       # Colorize the terminal in the container if possible
       TERM: "${TERM:-}"
-      # PS1: "$$(whoami):$$(pwd) $$ "
-      VAULT_ROLE_ID: "${VAULT_ROLE_ID}"
-      VAULT_SECRET_ID: "${VAULT_SECRET_ID}"
-      DFP_CACHE_DIR: "/work/.cache/dfp"
+      DFP_CACHE_DIR: "/workspace/.cache/dfp"
       DFP_TRACKING_URI: "http://mlflow:5000"
     command: ./launch.sh --train_users=generic --duration=1d
     volumes:
-      # - ./.s3_cache:/work/.s3_cache
-      - ../..:/work
-      # - /etc/passwd:/etc/passwd:ro
-      # - /etc/group:/etc/group:ro
-    working_dir: /work/examples/dfp_workflow/morpheus
+      - ../../..:/workspace
+    # working_dir: /workspace/examples/digital_fingerprinting/production/morpheus
     depends_on:
       - mlflow
     profiles:
       - training
     cap_add:
       - sys_nice
-    user: "${UID}:${GID}"
 
   # nginx:
   #   restart: always
