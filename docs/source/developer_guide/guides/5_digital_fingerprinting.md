@@ -139,7 +139,7 @@ The reference architecture is composed of the following services:​
 ### Pipeline Structure Configuration
 ![Pipeline Structure Configuration](img/dfp_pipeline_structure.png)
 
-The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, i.e., the S3 reader can be swapped with a file reader or any other Morpheus input stage, similarly the S3 writer can be replaced with any Morpheus output stage.  Regardless of the inputs & outputs the core pipeline should renmain unchanged.  While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
+The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, i.e., the `MultiFileSource` can be configured to pull from S3 or from local files and can be replaced altogether with any other Morpheus input stage. similarly the S3 writer can be replaced with any Morpheus output stage.  Regardless of the inputs & outputs the core pipeline should renmain unchanged.  While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
 
 
 ### Input Stages
@@ -203,3 +203,10 @@ This stage is able to download & load data files concurrently by multiple method
 This stage will cache the resulting `DataFrame` in `cache_dir`, since we are caching the `DataFrame`s and not the source files, a cache hit avoids the cost of parsing the incoming data. In the case of remote storage systems such as S3 this avoids both parsing and a download on a cache hit.  One consequence of this is that any change to the `schema` will require purging cached files in the `cache_dir` before those changes are visible.
 
 Note: this caching is in addition to any caching which may have occurred when using the optional `filecache::` prefix.
+
+
+### Output Stages
+![Output Stages](img/dfp_output_config.png)
+
+#### WriteToS3Stage
+The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py)) stage writes the resulting anomaly detections to S3.
