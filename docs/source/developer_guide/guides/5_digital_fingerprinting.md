@@ -261,11 +261,17 @@ The `DFPSplitUsersStage` [examples/digital_fingerprinting/production/morpheus/df
 | `only_users` | `List[str]` or `None` | Limit records to a specific list of users, when `include_generic` is `True` the generic user's records will also be limited to the users in this list |
 
 #### DFPRollingWindowStage
-The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py) stage.
+The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py) stage will trim incoming events within a specific size or time window as specified by the `min_history`, `min_increment` and `max_history` constructor arguments.
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
+| `min_history` | `int` | Exclude users with less than `min_history` records, setting this to `1` effectively disables this feature |
+| `min_increment` | `int` | Exclude incoming batches for users where less than `min_increment` new records have been added since the last batch, setting this to `0` effectively disables this feature |
+| `max_history` | `int`, `str` or `None` | When not `None`, include up to `max_history` records. When `max_history` is an int, then the last `max_history` records will be included. When `max_history` is a `str` it is assumed to represent a duration parsable by [`pandas.Timedelta`](https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html) and only those records within the window of [latest timestamp - `max_history`, latest timestamp] will be included. |
+| `cache_dir` | `str` | Optional path to cache directory, cached items will be stored in a subdirectory under `cache_dir` named `rolling-user-data` this directory, along with `cache_dir` will be created if it does not already exist. |
+
+Note: this stage computes a row hash for the first and last rows of the incoming `DataFrame` as such all data contained must be hashable, any non-hashable values such as `lists` should be dropped or conveted into hashable types in the `DFPFileToDataFrameStage`.
 
 #### DFPPreprocessingStage
 The `DFPPreprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_preprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_preprocessing_stage.py) stage, the actual logic of preprocessing is defined in the `input_schema` argument.  Since this stage occurrs in the pipeline after the `DFPFileBatcherStage` and `DFPSplitUsersStage` stages all records in the incoming `DataFrame` correspond to only a single user within a specific time period allowing for columns to be computer on a per-user per-time period basis such as the `logcount` and `locincrement` features mentioned above.  Making the type of processing performed in this stage different than those performed in the `DFPFileToDataFrameStage`.
