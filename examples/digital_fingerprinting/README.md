@@ -18,7 +18,7 @@
 
 ## Organization
 
-The DFP example workflows in Morpheus are designed to scale up to company wide workloads and handle several different log types which resulted in a large number of moving parts to handle the various servies and configuration options. To simplify things, the DFP workflow is provided as two separate examples: a simple, "starter" pipeline for new users and a complex, "production" pipeline for full scale deployments. While these two examples both peform the same general tasks, they do so in very different ways. The following is a breakdown of the differences between the two examples.
+The DFP example workflows in Morpheus are designed to scale up to company wide workloads and handle several different log types which resulted in a large number of moving parts to handle the various services and configuration options. To simplify things, the DFP workflow is provided as two separate examples: a simple, "starter" pipeline for new users and a complex, "production" pipeline for full scale deployments. While these two examples both peform the same general tasks, they do so in very different ways. The following is a breakdown of the differences between the two examples.
 
 ### The "Starter" Example
 
@@ -26,13 +26,13 @@ This example is designed to simplify the number of stages and components and pro
 
 Key Differences:
  * A single pipeline which performs both training and inference
- * Requires no external servies
+ * Requires no external services
  * Can be run from the Morpheus CLI
 
 
 ### The "Production" Example
 
-This example is designed to show what a full scale, productionr ready, DFP deployment in Morpheus would look like. It contains all of the necessary componets (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
+This example is designed to show what a full scale, production ready, DFP deployment in Morpheus would look like. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
 
 Key Differences:
  * Multiple pipelines are specialized to perform either training or inference
