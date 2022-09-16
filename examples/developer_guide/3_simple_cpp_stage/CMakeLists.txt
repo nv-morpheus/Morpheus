@@ -36,6 +36,20 @@ target_include_directories(morpheus_example
 )
 
 set_target_properties(morpheus_example PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
+if(MORPHEUS_PYTHON_INPLACE_BUILD)
+  set_target_properties(morpheus_example
+    PROPERTIES
+      INSTALL_RPATH "${PROJECT_SOURCE_DIR}/morpheus/_lib"
+  )
+else()
+  # TODO: https://github.com/nv-morpheus/Morpheus/issues/331
+  set_target_properties(morpheus_example
+    PROPERTIES
+      INSTALL_RPATH "${Python3_SITELIB}/morpheus/_lib"
+  )
+endif()
+
 inplace_build_copy(morpheus_example "${CMAKE_CURRENT_SOURCE_DIR}/_lib")
 
 message(STATUS " Install dest: (morpheus_example) ${CMAKE_CURRENT_BINARY_DIR}/_lib")

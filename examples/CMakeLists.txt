@@ -13,13 +13,6 @@
 # =============================================================================
 list(APPEND CMAKE_MESSAGE_CONTEXT "examples")
 
-if(MORPHEUS_PYTHON_INPLACE_BUILD)
-  link_directories(AFTER "${PROJECT_SOURCE_DIR}/morpheus/_lib")
-else()
-  # TODO: https://github.com/nv-morpheus/Morpheus/issues/331
-  link_directories(AFTER "${Python3_SITELIB}/morpheus/_lib")
-endif()
-
 add_subdirectory(developer_guide/3_simple_cpp_stage)
 add_subdirectory(developer_guide/4_rabbitmq_cpp_Stage)
 
