@@ -289,7 +289,7 @@ Note: If using a remote MLflow server, users will need to call [`mlflow.set_trac
 ### Inference Stages
 
 #### DFPInferenceStage
-The `DFPInferenceStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py) stage loads models from MLflow and performs inferences against those models.  This stage emits a message containing the original `DataFrame` along with new columns containing the anomaly score (`mean_abs_z`), along with the name and version of the model that generated that score (`model_version`).  For each feature in the model three additional columns will also be added:
+The `DFPInferenceStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py) stage loads models from MLflow and performs inferences against those models.  This stage emits a message containing the original `DataFrame` along with new columns containing the z score (`mean_abs_z`), along with the name and version of the model that generated that score (`model_version`).  For each feature in the model three additional columns will also be added:
 * `<feature name>_loss` : The loss
 * `<feature name>_z_loss` : The loss z-score
 * `<feature name>_pred` : The predicted value
@@ -307,7 +307,7 @@ For any user without an associated model in MLflow, the model for the generic us
 
 
 #### DFPPostprocessingStage
-The `DFPPostprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py) stage
+The `DFPPostprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py) stage filters records contained in the `DataFrame` emits a new `dfp.messages.DFPMessageMeta` message containing all records with a z score greater than `z_score_threshold` or `None` if no records are greater than `z_score_threshold`.
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
