@@ -250,7 +250,15 @@ The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/s
 These stages are common to both the training & inference pipelines, unlike the input & output stages these are specific to the DFP pipeline and intended to be configured but not replacable.
 
 #### DFPSplitUsersStage
-TODO
+The `DFPSplitUsersStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_split_users_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_split_users_stage.py) stage recieves an incoming `DataFrame` and emits a `list` of `DFPMessageMeta` where each `DFPMessageMeta` represents the records associated for a given user.  This allows for downstream stages to perform all nescesary opperations on a per user basis.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `include_generic` | `bool` | When `True` a `DFPMessageMeta` will be constructed for the generic user containing all records not excluded by the `skip_users` and `only_users` filters |
+| `include_individual` | `bool` | When `True` a `DFPMessageMeta` instance will be constructed for each user not excluded by the `skip_users` and `only_users` filters |
+| `skip_users` | `List[str]` or `None` | List of users to exclude, when `include_generic` is `True` excluded records will also be excluded from the generic user |
+| `only_users` | `List[str]` or `None` | Limit records to a specific list of users, when `include_generic` is `True` the generic user's records will also be limited to the users in this list |
 
 #### DFPRollingWindowStage
 TODO
