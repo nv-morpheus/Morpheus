@@ -158,7 +158,7 @@ Note: this stage does not actually download the data files, allowing the file li
 
 
 #### DFPFileBatcherStage
-The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming DataFrame in batches of a time period (per day default).  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
+The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming `DataFrame` in batches of a time period (per day default).  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
@@ -187,7 +187,7 @@ pipeline.add_stage(
 Note: in cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
 
 #### DFPFileToDataFrameStage
-The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py)) stage receives a `list` of an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) and loads them into a single DataFrame which is then emitted into the pipeline.  When the parent stage is `DFPFileBatcherStage` each batch (typically one day) is concatenated into a single DataFrame, without this if the parent was `MultiFileSource` the entire dataset is loaded into a single DataFrame.  Because of this, it is important to chose a `period` argument for `DFPFileBatcherStage` small enough such that each batch can fit into memory.
+The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py)) stage receives a `list` of an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) and loads them into a single `DataFrame` which is then emitted into the pipeline.  When the parent stage is `DFPFileBatcherStage` each batch (typically one day) is concatenated into a single `DataFrame`, without this if the parent was `MultiFileSource` the entire dataset is loaded into a single `DataFrame`.  Because of this, it is important to chose a `period` argument for `DFPFileBatcherStage` small enough such that each batch can fit into memory.
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
@@ -195,8 +195,11 @@ The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morph
 | `schema` | `dfp.utils.column_info.DataFrameInputSchema` | Schema specifying columns to load, along with any necessary renames and data type conversions  |
 | `filter_null` | `bool` | Optional: Whether to filter null rows after loading, by default True. |
 | `file_type` | `morpheus._lib.file_types.FileTypes` (enum) | Optional: Indicates file type to be loaded. Currently supported values at time of writing are: `FileTypes.Auto`, `FileTypes.CSV`, and `FileTypes.JSON`. Default value is `FileTypes.Auto` which will infer the type based on the file extension, set this value if using a custom extension |
-| `parser_kwargs` | `dict` or `None` | Optional: additional keyword arguments to be passed into the DataFrame parser, currently this is going to be either [`pandas.read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html) or [`pandas.read_json`](https://pandas.pydata.org/docs/reference/api/pandas.read_json.html) |
+| `parser_kwargs` | `dict` or `None` | Optional: additional keyword arguments to be passed into the `DataFrame` parser, currently this is going to be either [`pandas.read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html) or [`pandas.read_json`](https://pandas.pydata.org/docs/reference/api/pandas.read_json.html) |
 | `cache_dir` | `str` | Optional: path to cache location, defaults to `./.cache/dfp` |
 
-
 This stage is able to download & load data files concurrently by multiple methods, currently supported methods are: `single_thread`, `multiprocess`, `dask`, and `dask_thread`.  The method used is chosen by setting the `FILE_DOWNLOAD_TYPE` environment variable, and `dask_thread` is used by default, and `single_thread` effectively disables concurrent loading.
+
+This stage will cache the resulting `DataFrame` in `cache_dir`, since we are caching the `DataFrame`s and not the source files, a cache hit avoids the cost of parsing the incoming data. In the case of remote storage systems such as S3 this avoids both parsing and a download on a cache hit.  One consequence of this is that any change to the `schema` will require purging cached files in the `cache_dir` before those changes are visible.
+
+Note: this caching is in addition to any caching which may have occurred when using the optional `filecache::` prefix.
