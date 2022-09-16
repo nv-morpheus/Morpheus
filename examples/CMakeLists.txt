@@ -14,6 +14,6 @@
 list(APPEND CMAKE_MESSAGE_CONTEXT "examples")
 
 add_subdirectory(developer_guide/3_simple_cpp_stage)
-add_subdirectory(developer_guide/4_rabbitmq_cpp_Stage)
+add_subdirectory(developer_guide/4_rabbitmq_cpp_stage)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
