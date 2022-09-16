@@ -35,6 +35,11 @@ function(find_and_configure_rabbitmq version)
                       "BUILD_TOOLS OFF"
   )
 
+  if(rabbitmq_ADDED)
+    set(rabbitmq_SOURCE_DIR "${rabbitmq_SOURCE_DIR}" PARENT_SCOPE)
+    set(rabbitmq_BINARY_DIR "${rabbitmq_BINARY_DIR}" PARENT_SCOPE)
+  endif()
+
 endfunction()
 
 find_and_configure_rabbitmq(${RABBITMQ_VERSION})
