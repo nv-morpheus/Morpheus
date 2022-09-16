@@ -262,7 +262,7 @@ TODO
 ## Training Pipeline
 ![Training PipelineOverview](img/dfp_training_overview.png)
 
-Training must begin with the generic user model​ which is trained with the logs from all users.  This model serves as a fallback model for users & accounts without sufficient training data​.  The name of the generic user is defined in the Morpheus config object in the `Config.ae.fallback_username` attribute and defaults to `generic_user`.
+Training must begin with the generic user model​ which is trained with the logs from all users.  This model serves as a fallback model for users & accounts without sufficient training data​.  The name of the generic user is defined in the `ae.fallback_username` attribute of the Morpheus config object and defaults to `generic_user`.
 
 After training the generic model, individual user models can be trained​.  Individual user models provide better accuracy but require sufficient data​, many users do not have sufficient data to accurately train the model​.
 
@@ -289,14 +289,21 @@ Note: If using a remote MLflow server, users will need to call [`mlflow.set_trac
 ### Inference Stages
 
 #### DFPInferenceStage
-The `DFPInferenceStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py) stage loads models from MLflow and performs inferences against those models.  This stage emits a message containing the original `DataFrame` along with new columns containing the anomaly score (`mean_abs_z`), along with the name and version of the model that generated that score (`model_version`).  For performance models fetched from MLflow are cached locally, and are cached for up to 10 minutes allowing updated models to be routinely updated.  In addition to caching individual models the stage also maintains a cache of which models are available, so a newly trained user model published to MLflow won't be visible to an already running inference pipeline for up to 10 minutes.
+The `DFPInferenceStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py) stage loads models from MLflow and performs inferences against those models.  This stage emits a message containing the original `DataFrame` along with new columns containing the anomaly score (`mean_abs_z`), along with the name and version of the model that generated that score (`model_version`).  For each feature in the model three additional columns will also be added:
+* `<feature name>_loss` : The loss
+* `<feature name>_z_loss` : The loss z-score
+* `<feature name>_pred` : The predicted value
 
-For any user without an associated model in MLflow, the model for the generic user is used. The name of the generic user is defined in the Morpheus config object in the `Config.ae.fallback_username` attribute defaults to `generic_user`.
+For a hypothtetical feature named `result` the three added columns will be: `result_loss`, `result_z_loss`, `result_pred`.
+
+For performance models fetched from MLflow are cached locally, and are cached for up to 10 minutes allowing updated models to be routinely updated.  In addition to caching individual models the stage also maintains a cache of which models are available, so a newly trained user model published to MLflow won't be visible to an already running inference pipeline for up to 10 minutes.
+
+For any user without an associated model in MLflow, the model for the generic user is used. The name of the generic user is defined in the `ae.fallback_username` attribute of the Morpheus config object defaults to `generic_user`.
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `model_name_formatter` | `str` |
+| `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id`. |
 
 
 #### DFPPostprocessingStage
