@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: "3"
+
+x-with-gpus: &with_gpus
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - capabilities:
+            - gpu
+
+services:
+  triton:
+    image: nvcr.io/nvidia/tritonserver:22.06-py3
+    <<: *with_gpus
+    command: "tritonserver --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx --model-repository=/models/triton-model-repo"
+    environment:
+      NVIDIA_VISIBLE_DEVICES: "${NVIDIA_VISIBLE_DEVICES:-all}"
+    ports:
+      - "8000"
+      - "8001"
+      - "8002"
+    runtime: nvidia
+    volumes:
+      - "${MORPHEUS_HOME:-../..}/models:/models"
+
+  gui:
+    image: sid-viz:latest
+    <<: *with_gpus
+    build:
+      context: viz
+      args:
+        RAPIDSAI_GPU_ARCH: "${RAPIDSAI_GPU_ARCH:-}" # 60 | 70 | 75 | 80 | 86
+    cap_add:
+      - SYS_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - apparmor=unconfined
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: all
+      MORPHEUS_SOCKET_URL: "morpheus:8765"
+      # Colorize the terminal in the container if possible
+      TERM: "${TERM:-}"
+      # Use the host's X11 display
+      DISPLAY: "${DISPLAY:-}"
+      XAUTHORITY: "${XAUTHORITY:-}"
+      XDG_SESSION_TYPE: "${XDG_SESSION_TYPE:-}"
+      XDG_RUNTIME_DIR: "${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR must be set}"
+      DBUS_SESSION_BUS_ADDRESS: "${DBUS_SESSION_BUS_ADDRESS:?DBUS_SESSION_BUS_ADDRESS must be set}"
+    runtime: nvidia
+    volumes:
+      - "/etc/fonts:/etc/fonts:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+      - "/usr/share/fonts:/usr/share/fonts:ro"
+      - "/usr/share/icons:/usr/share/icons:ro"
+      - "${XDG_RUNTIME_DIR}:${XDG_RUNTIME_DIR}"
+      - "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket"
+
+  morpheus:
+    image: morpheus:sid-viz
+    <<: *with_gpus
+    command: bash
+    cap_add:
+      - SYS_NICE
+    depends_on:
+      - gui
+      - triton
+    environment:
+      BUILD_DIR: build-docker # Avoid conflicting with the host default build
+      NVIDIA_VISIBLE_DEVICES: "${NVIDIA_VISIBLE_DEVICES:-all}"
+    ports:
+      - "8765"
+    stdin_open: true
+    tty: true
+    runtime: nvidia
+    volumes:
+      - "${MORPHEUS_HOME:-../../}:/workspace"
