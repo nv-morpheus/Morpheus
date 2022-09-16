@@ -68,7 +68,7 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
 
 class StreamWrapper(ABC, collections.abc.Hashable):
     """
-    This abstract class serves as the morpheus.pipeline's base class. This class wraps a `srf.SegmentObject`
+    This abstract class serves as the morpheus pipeline's base class. This class wraps a `srf.SegmentObject`
     object and aids in hooking stages up together.
 
     Parameters

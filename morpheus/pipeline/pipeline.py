@@ -19,6 +19,8 @@ import signal
 import time
 import typing
 
+from collections import defaultdict
+from functools import partial
 import networkx
 import srf
 from tqdm import tqdm
@@ -55,8 +57,16 @@ class Pipeline():
 
         self._id_counter = 0
 
-        self._sources: typing.Set[SourceStage] = set()
+        # Complete set of nodes across segments in this pipeline
         self._stages: typing.Set[Stage] = set()
+        # Complete set of sources across segments in this pipeline
+        self._sources: typing.Set[SourceStage] = set()
+        # Dictionary containing segment information for this pipeline
+        self._segments: typing.Dict = defaultdict(lambda: {
+            "nodes": set(),
+            "ingress_ports": [],
+            "egress_ports": []
+        })
 
         self._exec_options = srf.Options()
         self._exec_options.topology.user_cpuset = "0-{}".format(c.num_threads - 1)
@@ -67,7 +77,8 @@ class Pipeline():
 
         self.batch_size = c.pipeline_batch_size
 
-        self._graph = networkx.DiGraph()
+        # self._graph = networkx.DiGraph()
+        self._segment_graphs = defaultdict(lambda: networkx.DiGraph())
 
         self._is_built = False
         self._is_build_complete = False
@@ -88,23 +99,30 @@ class Pipeline():
 
         return x
 
-    def add_node(self, node: StreamWrapper):
+    def add_node(self, node: StreamWrapper, segment_id: str = "main"):
 
         assert node._pipeline is None or node._pipeline is self, "A stage can only be added to one pipeline at a time"
 
-        # Add to list of stages if its a stage, not a source
+        segment_nodes = self._segments[segment_id]["nodes"]
+        segment_graph = self._segment_graphs[segment_id]
+
+        # Add to list of stages if it's a stage, not a source
         if (isinstance(node, Stage)):
+            segment_nodes.add(node)
             self._stages.add(node)
         elif (isinstance(node, SourceStage)):
+            segment_nodes.add(node)
             self._sources.add(node)
         else:
             raise NotImplementedError("add_node() failed. Unknown node type: {}".format(type(node)))
 
         node._pipeline = self
 
-        self._graph.add_node(node)
+        # self._graph.add_node(node)
+        segment_graph.add_node(node)
 
-    def add_edge(self, start: typing.Union[StreamWrapper, Sender], end: typing.Union[Stage, Receiver]):
+    def add_edge(self, start: typing.Union[StreamWrapper, Sender], end: typing.Union[Stage, Receiver],
+                 segment_id: str = "main"):
 
         if (isinstance(start, StreamWrapper)):
             start_port = start.output_ports[0]
@@ -117,16 +135,27 @@ class Pipeline():
             end_port = end
 
         # Ensure both are added to this pipeline
-        self.add_node(start_port.parent)
-        self.add_node(end_port.parent)
+        self.add_node(start_port.parent, segment_id)
+        self.add_node(end_port.parent, segment_id)
 
         start_port._output_receivers.append(end_port)
         end_port._input_senders.append(start_port)
 
-        self._graph.add_edge(start_port.parent,
-                             end_port.parent,
-                             start_port_idx=start_port.port_number,
-                             end_port_idx=end_port.port_number)
+        segment_graph = self._segment_graphs[segment_id]
+        segment_graph.add_edge(start_port.parent,
+                               end_port.parent,
+                               start_port_idx=start_port.port_number,
+                               end_port_idx=end_port.port_number)
+
+    def add_ingress(self, segment_id: str, ingress_tuple: typing.Tuple):
+        segment_data = self._segments[segment_id]["ingress_ports"]
+        segment_data.append(ingress_tuple)
+        print(f"Appending ingress tuple: {ingress_tuple}")
+
+    def add_egress(self, segment_id: str, egress_tuple: typing.Tuple):
+        segment_data = self._segments[segment_id]["egress_ports"]
+        segment_data.append(egress_tuple)
+        print(f"Appending egress tuple: {egress_tuple}")
 
     def build(self):
         """
@@ -146,43 +175,67 @@ class Pipeline():
 
         self._srf_pipeline = srf.Pipeline()
 
-        def inner_build(builder: srf.Builder):
-            logger.info("====Building Pipeline====")
+        def inner_build(builder: srf.Builder, segment_id: str):
+            segment_graph = self._segment_graphs[segment_id]
 
             # Get the list of stages and source
-            source_and_stages: typing.List[StreamWrapper] = list(self._sources) + list(self._stages)
+            # source_and_stages: typing.List[StreamWrapper] = list(self._sources) + list(self._stages)
+
+            # This should be a BFS search from all source nodes
+            for stage in networkx.topological_sort(self._segment_graphs[segment_id]):
+                stage.build(builder, do_propagate=False)
 
             # Now loop over stages
-            for s in source_and_stages:
+            # for s in source_and_stages:
+            #
+            #    if (s.can_build()):
+            #        s.build(builder)
 
-                if (s.can_build()):
-                    s.build(builder)
+            # if (not all([x.is_built for x in source_and_stages])):
+            #    # raise NotImplementedError("Circular pipelines are not yet supported!")
+            #    logger.warning("Circular pipeline detected! Building with reduced constraints")
 
-            if (not all([x.is_built for x in source_and_stages])):
-                # raise NotImplementedError("Circular pipelines are not yet supported!")
-                logger.warning("Circular pipeline detected! Building with reduced constraints")
+            #    for s in source_and_stages:
 
-                for s in source_and_stages:
+            #        if (s.can_build(check_ports=True)):
+            #            s.build()
 
-                    if (s.can_build(check_ports=True)):
-                        s.build()
-
-            if (not all([x.is_built for x in source_and_stages])):
+            # if (not all([x.is_built for x in source_and_stages])):
+            if (not all([x.is_built for x in segment_graph.nodes()])):
                 raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
 
             # Finally, execute the link phase (only necessary for circular pipelines)
-            for s in source_and_stages:
-
+            # for s in source_and_stages:
+            for s in segment_graph.nodes():
                 for p in s.input_ports:
                     p.link()
 
-            logger.info("====Building Pipeline Complete!====")
-            self._is_build_complete = True
+            # logger.info("====Building Pipeline Complete!====")
+            # self._is_build_complete = True
 
-            # Finally call _on_start
-            self._on_start()
+            ## Finally call _on_start
+            # self._on_start()
 
-        self._srf_pipeline.make_segment("main", inner_build)
+        logger.info("====Building Pipeline====")
+        for segment_id in self._segments.keys():
+            # segment_stages is a set of stages
+            segment_ingress_ports = self._segments[segment_id]["ingress_ports"]
+            segment_egress_ports = self._segments[segment_id]["egress_ports"]
+            segment_inner_build = partial(inner_build, segment_id=segment_id)
+
+
+            print(segment_id)
+            print(segment_ingress_ports)
+            print(segment_egress_ports)
+            print(segment_inner_build)
+            self._srf_pipeline.make_segment(segment_id, segment_ingress_ports,
+                                            segment_egress_ports, segment_inner_build)
+
+        logger.info("====Building Pipeline Complete!====")
+        self._is_build_complete = True
+
+        # Finally call _on_start
+        self._on_start()
 
         self._srf_executor.register_pipeline(self._srf_pipeline)
 
@@ -252,6 +305,7 @@ class Pipeline():
         for s in self._stages:
             s.on_start()
 
+    # TODO(Devin) : Probably going to break
     def visualize(self, filename: str = None, **graph_kwargs):
 
         # Mimic the streamz visualization
@@ -292,7 +346,10 @@ class Pipeline():
                                "be fixed in a future release.")
 
         # Now build up the nodes
-        for n, attrs in typing.cast(typing.Mapping[StreamWrapper, dict], self._graph.nodes).items():
+        # TODO(Devin)
+        segment_id = "segment_0"
+        for n, attrs in typing.cast(typing.Mapping[StreamWrapper, dict],
+                                    self._segment_graphs[segment_id].nodes).items():
             node_attrs = attrs.copy()
 
             label = ""
@@ -327,7 +384,10 @@ class Pipeline():
             gv_graph.node(n.unique_name, **node_attrs)
 
         # Build up edges
-        for e, attrs in typing.cast(typing.Mapping[typing.Tuple[StreamWrapper, StreamWrapper], dict], self._graph.edges()).items():  # noqa: E501
+        # TODO(Devin)
+        segment_id = "segment_0"
+        for e, attrs in typing.cast(typing.Mapping[typing.Tuple[StreamWrapper, StreamWrapper], dict],
+                                    self._segment_graphs[segment_id].edges()).items():  # noqa: E501
 
             edge_attrs = {}
 

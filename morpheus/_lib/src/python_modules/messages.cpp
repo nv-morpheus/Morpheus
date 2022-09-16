@@ -36,6 +36,7 @@
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>          // IWYU pragma: keep
 #include <pysrf/utils.hpp>         // for pysrf::import
+#include <pysrf/port_builders.hpp>
 #include <srf/channel/status.hpp>  // for Status
 #include <srf/node/edge_connector.hpp>
 
@@ -97,6 +98,9 @@ PYBIND11_MODULE(messages, m)
 
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    srf::pysrf::PortBuilderUtil::register_port_util<MessageMeta>();
+    srf::pysrf::PortBuilderUtil::register_port_util<MultiMessage>();
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
