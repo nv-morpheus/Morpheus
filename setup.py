@@ -40,18 +40,11 @@ setup(
     include_package_data=True,
     packages=find_packages(include=["morpheus", "morpheus.*"], exclude=['tests']),
     install_requires=[
-        "click>=8",
-        "datacompy",
-        "docker",
+        # Only list the packages which cannot be installed via conda here. Should mach the requirements in
+        # docker/conda/environments/requirements.txt
         "dfencoder @ git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder",
-        "mlflow>=1.23",
-        "networkx",
-        "pandas>=1.3",
-        "pluggy",
         "torch==1.10.2+cu113",
-        "tqdm",
-        "tritonclient[all]==2.17",  # Force to 2.17 since they require grpcio==1.41 for newer versions
-        "typing-utils",
+        "tritonclient[all]==2.17.*",  # Force to 2.17 since they require grpcio==1.41 for newer versions
     ],
     license="Apache",
     python_requires='>=3.8, <4',

@@ -28,7 +28,9 @@ dependencies:
     - cachetools=5.0.0
     - ccache>=3.7
     - clangdev=14
+    - click >=8
     - cmake=3.22
+    - configargparse=1.5
     - cuda-nvml-dev=11.5
     - cuda-python<=11.7.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.5
@@ -36,8 +38,9 @@ dependencies:
     - cudf_kafka 22.08.*
     - cupy=9.5.0
     - cython=0.29.24
+    - datacompy=0.8
     - docker-compose=1.29.2
-    - docker-py=5.0.3
+    - docker-py=5.0
     - faker=12.3.0
     - flake8
     - flatbuffers=2.0
@@ -55,13 +58,16 @@ dependencies:
     - isort
     - mlflow>=1.23
     - myst-parser==0.17
+    - networkx=2.8
     - ninja=1.10
     - nodejs=17.4.0
+    - numpydoc=1.4
     - pandas=1.3
     - pip
     - pkg-config # for srf cmake
+    - pluggy=1.0
     - protobuf=3.20
-    - pybind11-stubgen
+    - pybind11-stubgen=0.10.5
     - pydot
     - pytest
     - pytest-benchmark
@@ -74,7 +80,9 @@ dependencies:
     - sphinx_rtd_theme
     - srf 22.08.*
     - sysroot_linux-64=2.17
-    - tqdm
+    - tqdm=4
+    - typing_utils=0.1
+    - watchdog=2.1
     - yapf=0.32.0
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
