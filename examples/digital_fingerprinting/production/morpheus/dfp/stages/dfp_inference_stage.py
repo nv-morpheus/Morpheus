@@ -27,21 +27,17 @@ from morpheus.pipeline.stream_pair import StreamPair
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.model_cache import ModelCache
 from ..utils.model_cache import ModelManager
-from ..utils.model_cache import UserModelMap
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPInferenceStage(SinglePortStage):
 
-    def __init__(self, c: Config, model_name_formatter: str = ""):
+    def __init__(self, c: Config, model_name_formatter: str = "dfp-{user_id}"):
         super().__init__(c)
 
         self._client = MlflowClient()
         self._fallback_user = self._config.ae.fallback_username
-        self._model_name_formatter = model_name_formatter
-
-        self._users_to_models: typing.Dict[str, UserModelMap] = {}
 
         self._model_cache: typing.Dict[str, ModelCache] = {}
         self._model_cache_size_max = 10

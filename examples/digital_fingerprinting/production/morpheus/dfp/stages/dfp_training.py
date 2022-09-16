@@ -25,17 +25,33 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 from ..messages.multi_dfp_message import MultiDFPMessage
-from ..utils.user_model_manager import UserModelManager
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPTraining(SinglePortStage):
 
-    def __init__(self, c: Config):
+    def __init__(self, c: Config, model_kwargs: dict = None):
         super().__init__(c)
 
-        self._user_models: typing.Dict[str, UserModelManager] = {}
+        self._model_kwargs = {
+            "encoder_layers": [512, 500],  # layers of the encoding part
+            "decoder_layers": [512],  # layers of the decoding part
+            "activation": 'relu',  # activation function
+            "swap_p": 0.2,  # noise parameter
+            "lr": 0.001,  # learning rate
+            "lr_decay": .99,  # learning decay
+            "batch_size": 512,
+            "verbose": False,
+            "optimizer": 'sgd',  # SGD optimizer is selected(Stochastic gradient descent)
+            "scaler": 'standard',  # feature scaling method
+            "min_cats": 1,  # cut off for minority categories
+            "progress_bar": False,
+            "device": "cuda"
+        }
+
+        # Update the defaults
+        self._model_kwargs.update(model_kwargs if model_kwargs is not None else {})
 
     @property
     def name(self) -> str:
@@ -52,16 +68,17 @@ class DFPTraining(SinglePortStage):
             return None
 
         user_id = message.user_id
-        model_manager = UserModelManager(self._config,
-                                         user_id=user_id,
-                                         save_model=False,
-                                         epochs=30,
-                                         min_history=300,
-                                         max_history=-1,
-                                         seed=42,
-                                         model_class=AutoEncoder)
 
-        model = model_manager.train(message.get_meta_dataframe())
+        model = AutoEncoder(**self._model_kwargs)
+
+        final_df = message.get_meta_dataframe()
+
+        # Only train on the feature columns
+        final_df = final_df[final_df.columns.intersection(self._config.ae.feature_columns)]
+
+        logger.debug("Training AE model for user: '%s'...", user_id)
+        model.fit(final_df, epochs=30)
+        logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
         output_message = MultiAEMessage(message.meta,
                                         mess_offset=message.mess_offset,

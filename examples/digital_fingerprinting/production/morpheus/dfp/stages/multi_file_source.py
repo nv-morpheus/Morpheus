@@ -39,23 +39,10 @@ class MultiFileSource(SingleOutputSource):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    filename : str
-        Name of the file from which the messages will be read.
-    iterative: boolean
-        Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
-        good for interleaving source stages.
-    file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
-        Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
-        Supported extensions: 'json', 'csv'
-    repeat: int, default = 1
-        Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-    filter_null: bool, default = True
-        Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
-        the line with processing. Setting this to True is recommended.
-    cudf_kwargs: dict, default=None
-        keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
-        `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
-        and with `file_type` == 'csv', this defaults to ``{}``.
+    filenames : List[str]
+        List of paths to be read from, can be a list of S3 urls (`s3://path`) amd can include wildcard characters `*`
+        as defined by `fsspec`:
+        https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files
     """
 
     def __init__(
@@ -93,29 +80,6 @@ class MultiFileSource(SingleOutputSource):
                                "Check your input pattern and ensure any credentials are correct")
 
         yield files
-
-    def _generate_frames(self):
-
-        loaded_dfs = []
-
-        for f in self._filenames:
-
-            # Read the dataframe into memory
-            df = read_file_to_df(f,
-                                 self._file_type,
-                                 filter_nulls=True,
-                                 df_type="pandas",
-                                 parser_kwargs=self._parser_kwargs)
-
-            df = process_dataframe(df, self._input_schema)
-
-            loaded_dfs.append(df)
-
-        combined_df = pd.concat(loaded_dfs)
-
-        print("Sending {} rows".format(len(combined_df)))
-
-        yield combined_df
 
     def _build_source(self, builder: srf.Builder) -> StreamPair:
 

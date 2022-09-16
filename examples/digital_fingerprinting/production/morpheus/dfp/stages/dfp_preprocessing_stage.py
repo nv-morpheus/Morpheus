@@ -67,8 +67,7 @@ class DFPPreprocessingStage(SinglePortStage):
         df_processed = process_dataframe(message.get_meta_dataframe(), self._input_schema)
 
         # Apply the new dataframe, only the rows in the offset
-        message.set_meta(list(df_processed.columns),
-                         df_processed.iloc[message.mess_offset:message.mess_offset + message.mess_count])
+        message.set_meta_dataframe(list(df_processed.columns), df_processed)
 
         if logger.isEnabledFor(logging.DEBUG):
             duration = (time.time() - start_time) * 1000.0

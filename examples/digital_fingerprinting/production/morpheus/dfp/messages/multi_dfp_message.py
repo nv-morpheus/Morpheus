@@ -58,6 +58,19 @@ class MultiDFPMessage(MultiMessage):
     def get_meta_dataframe(self):
         return typing.cast(DFPMessageMeta, self.meta).get_df()
 
+    def set_meta_dataframe(self, columns: typing.Union[None, str, typing.List[str]], value):
+
+        df = typing.cast(DFPMessageMeta, self.meta).get_df()
+
+        if (columns is None):
+            # Set all columns
+            df[list(value.columns)] = value
+        else:
+            # If its a single column or list of columns, this is the same
+            df[columns] = value
+
+        typing.cast(DFPMessageMeta, self.meta).set_df(df)
+
     def get_slice(self, start, stop):
         """
         Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`

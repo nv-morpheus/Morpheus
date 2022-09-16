@@ -39,6 +39,8 @@ from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
+from ..utils.model_cache import user_to_model_name
+
 # Setup conda environment
 conda_env = {
     'channels': ['defaults', 'conda-forge'],
@@ -75,12 +77,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
     def user_id_to_model(self, user_id: str):
 
-        kwargs = {
-            "user_id": user_id,
-            "user_md5": hashlib.md5(user_id.encode('utf-8')).hexdigest(),
-        }
-
-        return self._model_name_formatter.format(**kwargs)
+        return user_to_model_name(user_id=user_id, model_name_formatter=self._model_name_formatter)
 
     def user_id_to_experiment(self, user_id: str):
         kwargs = {
