@@ -48,6 +48,7 @@ dependencies:
     - gmock=1.10
     - gputil
     - grpc-cpp>=1.43
+    - grpcio
     - gtest=1.10
     - gxx_linux-64=9.4
     - include-what-you-use=0.18
