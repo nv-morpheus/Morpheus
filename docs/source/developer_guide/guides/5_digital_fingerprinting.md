@@ -208,5 +208,39 @@ Note: this caching is in addition to any caching which may have occurred when us
 ### Output Stages
 ![Output Stages](img/dfp_output_config.png)
 
+For the inference pipeline any Morpheus output stage such as `morpheus.stages.output.write_to_file_stage.WriteToFileStage` and `morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage` could be used in addition to the `WriteToS3Stage` documented below.
+
+### Core Pipeline
+TODO: Document core stages common to both Trainign & Inference
+
 #### WriteToS3Stage
-The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py)) stage writes the resulting anomaly detections to S3.
+The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py)) stage writes the resulting anomaly detections to S3.  The `WriteToS3Stage` decouples the S3 specifc operations from the Morpheus stage, and as such receives an `s3_writer` argument.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `s3_writer` | `function` | User defined function which receives an instance of a `morpheus.messages.message_meta.MessageMeta` and returns that same message instance. Any S3 specific configurations such as bucket name should be bound to the method. |
+
+## Training Pipeline
+![Training Overview](img/dfp_training_overview.png)
+
+Training must begin with the generic user model​ which is trained with the logs from all users.  This model serves as a fallback model for users & accounts without sufficient training data​.
+
+After training the generic model, individual user models can be trained​.  Individual user models provide better accuracy but require sufficient data​, many users do not have sufficient data to accurately train the model​.
+
+### Training Stages
+
+#### DFPTraining
+The `DFPTraining` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_training.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_training.py) trains a model for each incoming `DataFrame` and emits an instance of `morpheus.messages.multi_ae_message.MultiAEMessage` containing the trained model.
+
+#### DFPMLFlowModelWriterStage
+The `DFPMLFlowModelWriterStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py) stage publishes trained models into MLflow, skipping any model which lacked sufficient training data (current required minimum is 300 log records).
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `model_name_formatter` | `str` | Optional format string to control the name of models stored in MLflow, default is `dfp-{user_id}`. Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
+| `experiment_name_formatter` | `str` | Optional format string to control the experiement name for models stored in MLfklow, default is `/dfp-models/{reg_model_name}`.  Currently available field names are: `user_id`, `user_md5` and `reg_model_name` which is the model name as defined by `model_name_formatter` once the field names have been applied. |
+| `databricks_permissions` | `dict` or `None` | Optional, when not `None` sets permissions needed when using a databricks hosted MLflow server |
+
+Note: If using a remote MLflow server, users will need to call [`mlflow.set_tracking_uri`](https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri) before starting the pipeline.
