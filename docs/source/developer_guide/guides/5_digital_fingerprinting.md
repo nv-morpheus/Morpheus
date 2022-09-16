@@ -141,6 +141,34 @@ The reference architecture is composed of the following services:​
 
 The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, i.e., the `MultiFileSource` can be configured to pull from S3 or from local files and can be replaced altogether with any other Morpheus input stage. similarly the S3 writer can be replaced with any Morpheus output stage.  Regardless of the inputs & outputs the core pipeline should renmain unchanged.  While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
 
+### Morpheus Config
+
+For both inference and training pipeline the Morpheus config object should be constructed with the same values, and should look like:
+```python
+import os
+
+from morpheus.config import Config
+from morpheus.config import ConfigAutoEncoder
+from morpheus.config import CppConfig
+from morpheus.cli.utils import get_package_relative_file
+from morpheus.cli.utils import load_labels_file
+```
+```python
+CppConfig.set_should_use_cpp(False)
+
+config = Config()
+config.num_threads = os.cpu_count()
+config.ae = ConfigAutoEncoder()
+config.ae.feature_columns = load_labels_file(get_package_relative_file("data/columns_ae_azure.txt"))
+```
+
+Other attributes which might be needed:
+| Attribute | Type | Default | Description |
+| --------- | ---- | ------- | ----------- |
+| `Config.ae.userid_column_name` | `str` | `userIdentityaccountId` | Column in the `DataFrame` containing the username or user ID |
+| `Config.ae.timestamp_column_name` |  `str` | `timestamp` | Column in the `DataFrame` containing the timestamp of the event |
+| `Config.ae.fallback_username` | `str` | `generic_user` | Name to use for the generic user model, shoudl nto match the name of any real users |
+
 ### Input Stages
 ![Input Stages](img/dfp_input_config.png)
 
@@ -234,7 +262,7 @@ TODO
 ## Training Pipeline
 ![Training PipelineOverview](img/dfp_training_overview.png)
 
-Training must begin with the generic user model​ which is trained with the logs from all users.  This model serves as a fallback model for users & accounts without sufficient training data​.
+Training must begin with the generic user model​ which is trained with the logs from all users.  This model serves as a fallback model for users & accounts without sufficient training data​.  The name of the generic user is defined in the Morpheus config object in the `Config.ae.fallback_username` attribute and defaults to `generic_user`.
 
 After training the generic model, individual user models can be trained​.  Individual user models provide better accuracy but require sufficient data​, many users do not have sufficient data to accurately train the model​.
 
@@ -261,7 +289,20 @@ Note: If using a remote MLflow server, users will need to call [`mlflow.set_trac
 ### Inference Stages
 
 #### DFPInferenceStage
-TODO
+The `DFPInferenceStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py) stage loads models from MLflow and performs inferences against those models.  This stage emits a message containing the original `DataFrame` along with new columns containing the anomaly score (`mean_abs_z`), along with the name and version of the model that generated that score (`model_version`).  For performance models fetched from MLflow are cached locally, and are cached for up to 10 minutes allowing updated models to be routinely updated.  In addition to caching individual models the stage also maintains a cache of which models are available, so a newly trained user model published to MLflow won't be visible to an already running inference pipeline for up to 10 minutes.
+
+For any user without an associated model in MLflow, the model for the generic user is used. The name of the generic user is defined in the Morpheus config object in the `Config.ae.fallback_username` attribute defaults to `generic_user`.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `model_name_formatter` | `str` |
+
 
 #### DFPPostprocessingStage
-TODO
+The `DFPPostprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py) stage
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `z_score_threshold` | `float` | Optional, sets the threshold value above which values of `mean_abs_z` must be above in order to be considered  an anomily, default is 2.0 |
