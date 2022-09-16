@@ -50,7 +50,7 @@ setup(
         "pluggy",
         "torch==1.10.2+cu113",
         "tqdm",
-        "tritonclient[all]",
+        "tritonclient[all]==2.17",  # Force to 2.17 since they require grpcio==1.41 for newer versions
         "typing-utils",
     ],
     license="Apache",
