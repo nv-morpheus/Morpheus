@@ -16,6 +16,5 @@
 ipython
 myst-parser==0.17.2
 nbsphinx
-numpydoc
 sphinx
 sphinx_rtd_theme

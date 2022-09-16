@@ -15,8 +15,8 @@
 """
 Example Usage:
 python hammah-20211017-script.py \
-       --trainingdata "../datasets/training-data/hammah-user123-training-data.csv"\
-       --valdata "../datasets/validation-data/hammah-user123-validation-data.csv"
+       --trainingdata "../../datasets/training-data/dfp-user123-training-data.csv"\
+       --valdata "../../datasets/validation-data/dfp-cloudtrail-user123-validation-data-input.csv"
 """
 
 import argparse

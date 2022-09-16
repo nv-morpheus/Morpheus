@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import glob
+import importlib
 import logging
+import pathlib
 import typing
 
 import dill
@@ -24,13 +26,13 @@ import torch
 from dfencoder import AutoEncoder
 from srf.core import operators as ops
 
-from morpheus._lib.file_types import FileTypes
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 
 logger = logging.getLogger(__name__)
 
@@ -51,14 +53,25 @@ class _UserModelManager(object):
         self._max_history: int = max_history
         self._seed: int = seed
         self._feature_columns = c.ae.feature_columns
+        self._feature_scaler = c.ae.feature_scaler
         self._epochs = epochs
         self._save_model = save_model
 
         self._model: AutoEncoder = None
+        self._train_scores_mean = None
+        self._train_scores_std = None
 
     @property
     def model(self):
         return self._model
+
+    @property
+    def train_scores_mean(self):
+        return self._train_scores_mean
+
+    @property
+    def train_scores_std(self):
+        return self._train_scores_std
 
     def train(self, df: pd.DataFrame) -> AutoEncoder:
 
@@ -68,9 +81,9 @@ class _UserModelManager(object):
 
             history = self._history.iloc[to_drop:, :]
 
-            combined_df = pd.concat([history, df])
+            train_df = pd.concat([history, df])
         else:
-            combined_df = df
+            train_df = df
 
         # If the seed is set, enforce that here
         if (self._seed is not None):
@@ -90,66 +103,98 @@ class _UserModelManager(object):
             # logger='ipynb',
             verbose=False,
             optimizer='sgd',  # SGD optimizer is selected(Stochastic gradient descent)
-            scaler='gauss_rank',  # feature scaling method
+            scaler=self._feature_scaler.value,  # feature scaling method
             min_cats=1,  # cut off for minority categories
-            progress_bar=False,
-        )
+            progress_bar=False)
 
         logger.debug("Training AE model for user: '%s'...", self._user_id)
-        model.fit(combined_df[combined_df.columns.intersection(self._feature_columns)], epochs=self._epochs)
+        model.fit(train_df, epochs=self._epochs)
+        train_loss_scores = model.get_anomaly_score(train_df)
+        scores_mean = train_loss_scores.mean()
+        scores_std = train_loss_scores.std()
+
         logger.debug("Training AE model for user: '%s'... Complete.", self._user_id)
 
         if (self._save_model):
             self._model = model
+            self._train_scores_mean = scores_mean
+            self._train_scores_std = scores_std
 
         # Save the history for next time
-        self._history = combined_df.iloc[max(0, len(combined_df) - self._max_history):, :]
+        self._history = train_df.iloc[max(0, len(train_df) - self._max_history):, :]
 
-        return model
+        return model, scores_mean, scores_std
 
 
+@register_stage("train-ae", modes=[PipelineModes.AE])
 class TrainAEStage(MultiMessageStage):
     """
-    Autoencoder usecases are preprocessed with this stage class.
+    Train an Autoencoder model on incoming data.
+
+    This stage is used to train an Autoencoder model on incoming data a supply that model to downstream stages. The
+    Autoencoder workflows use this stage as a pre-processing step to build the model for inference.
 
     Parameters
     ----------
     c : morpheus.config.Config
         Pipeline configuration instance.
-    pretrained_filename : str, default = None
-        Load a pre-trained model from a file.
+    pretrained_filename : pathlib.Path, default = None
+        Loads a single pre-trained model for all users.
     train_data_glob : str, default = None
-        Input glob pattern to match files to read.
-    train_epochs : int, default = 25
-        Passed in as the `epoch` parameter to `AutoEncoder.fit` causes data to be trained in `train_epochs` batches.
-    train_max_history : int, default = 1000
-        Truncate training data to at most `train_max_history` rows.
+        On startup, all files matching this glob pattern will be loaded and used to train a model for each unique user
+        ID.
+    source_stage_class : str, default = None
+        If train_data_glob provided, use source stage to batch training data per user.
+    train_epochs : int, default = 25, min = 1
+        The number of epochs to train user models for. Passed in as the `epoch` parameter to `AutoEncoder.fit` causes
+        data to be trained in `train_epochs` batches.
+    min_train_rows : int, default = 300
+        Minimum number of rows to train user model.
+    train_max_history : int, default = 1000, min = 1
+        Maximum amount of rows that will be retained in history. As new data arrives, models will be retrained with a
+        maximum number of rows specified by this value.
     seed : int, default = None
-        When not None, ensure random number generators are seeded with `seed` to control reproducibility of user model
-        training.
-    sort_glob : bool, default = False
+        Seed to use when training. When not None, ensure random number generators are seeded with `seed` to control
+        reproducibility of user model training.
+    sort_glob : bool, default = False, is_flag = True
         If true the list of files matching `input_glob` will be processed in sorted order.
+    models_output_filename : pathlib.Path, default = None, writable = True
+        The location to write trained models to
     """
 
     def __init__(self,
                  c: Config,
-                 pretrained_filename: str = None,
+                 pretrained_filename: pathlib.Path = None,
                  train_data_glob: str = None,
+                 source_stage_class: str = None,
                  train_epochs: int = 25,
+                 train_min_history: int = 300,
                  train_max_history: int = 1000,
                  seed: int = None,
-                 sort_glob: bool = False):
+                 sort_glob: bool = False,
+                 models_output_filename: pathlib.Path = None):
         super().__init__(c)
 
         self._config = c
         self._feature_columns = c.ae.feature_columns
+        self._use_generic_model = c.ae.use_generic_model
         self._batch_size = c.pipeline_batch_size
         self._pretrained_filename = pretrained_filename
         self._train_data_glob: str = train_data_glob
         self._train_epochs = train_epochs
+        self._train_min_history = train_min_history
         self._train_max_history = train_max_history
         self._seed = seed
         self._sort_glob = sort_glob
+        self._models_output_filename = models_output_filename
+
+        self._source_stage_class = source_stage_class
+        if self._source_stage_class is not None:
+            source_stage_module, source_stage_classname = self._source_stage_class.rsplit('.', 1)
+            # load the source stage module, will raise ImportError if module cannot be loaded
+            source_stage_module = importlib.import_module(source_stage_module)
+            # get the source stage class, will raise AttributeError if class cannot be found
+            self._source_stage_class = getattr(source_stage_module, source_stage_classname)
 
         # Single model for the entire pipeline
         self._pretrained_model: AutoEncoder = None
@@ -171,16 +216,24 @@ class TrainAEStage(MultiMessageStage):
     def supports_cpp_node(self):
         return False
 
-    def _get_pretrained_model(self, x: UserMessageMeta):
-        return self._pretrained_model
-
     def _get_per_user_model(self, x: UserMessageMeta):
 
-        if (x.user_id not in self._user_models):
-            raise RuntimeError("User ID ({}) was not found in the training dataset and cannot be processed.".format(
-                x.user_id))
+        model = None
+        train_scores_mean = None
+        train_scores_std = None
+        user_model = None
 
-        return self._user_models[x.user_id].model
+        if x.user_id in self._user_models:
+            user_model = self._user_models[x.user_id]
+        elif self._use_generic_model and "generic" in self._user_models.keys():
+            user_model = self._user_models["generic"]
+
+        if (user_model is not None):
+            model = user_model.model
+            train_scores_mean = user_model.train_scores_mean
+            train_scores_std = user_model.train_scores_std
+
+        return model, train_scores_mean, train_scores_std
 
     def _train_model(self, x: UserMessageMeta) -> typing.List[MultiAEMessage]:
 
@@ -192,9 +245,7 @@ class TrainAEStage(MultiMessageStage):
                                                              self._train_max_history,
                                                              self._seed)
 
-        model = self._user_models[x.user_id].train(x.df)
-
-        return model
+        return self._user_models[x.user_id].train(x.df)
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
@@ -208,30 +259,56 @@ class TrainAEStage(MultiMessageStage):
                                "The 'train_data_glob' will be ignored")
 
             with open(self._pretrained_filename, 'rb') as in_strm:
-                self._pretrained_model = dill.load(in_strm)
+                # self._pretrained_model = dill.load(in_strm)
+                self._user_models = dill.load(in_strm)
 
-            get_model_fn = self._get_pretrained_model
+            # get_model_fn = self._get_pretrained_model
+            get_model_fn = self._get_per_user_model
 
         elif (self._train_data_glob is not None):
+            if (self._source_stage_class is None):
+                raise RuntimeError("source_stage_class must be provided with train_data_glob")
             file_list = glob.glob(self._train_data_glob)
             if self._sort_glob:
                 file_list = sorted(file_list)
 
-            user_to_df = CloudTrailSourceStage.files_to_dfs_per_user(file_list,
-                                                                     FileTypes.Auto,
-                                                                     self._config.ae.userid_column_name,
-                                                                     self._feature_columns,
-                                                                     self._config.ae.userid_filter)
+            user_to_df = self._source_stage_class.files_to_dfs_per_user(file_list,
+                                                                        self._config.ae.userid_column_name,
+                                                                        self._feature_columns,
+                                                                        self._config.ae.userid_filter)
+
+            if self._use_generic_model:
+                self._user_models["generic"] = _UserModelManager(self._config,
+                                                                 "generic",
+                                                                 True,
+                                                                 self._train_epochs,
+                                                                 self._train_max_history,
+                                                                 self._seed)
+
+                all_users_df = pd.concat(user_to_df.values(), ignore_index=True)
+                all_users_df = self._source_stage_class.derive_features(all_users_df, self._feature_columns)
+                all_users_df = all_users_df.fillna("nan")
+                self._user_models["generic"].train(all_users_df)
 
             for user_id, df in user_to_df.items():
-                self._user_models[user_id] = _UserModelManager(self._config,
-                                                               user_id,
-                                                               True,
-                                                               self._train_epochs,
-                                                               self._train_max_history,
-                                                               self._seed)
+                if len(df.index) >= self._train_min_history:
+                    self._user_models[user_id] = _UserModelManager(self._config,
+                                                                   user_id,
+                                                                   True,
+                                                                   self._train_epochs,
+                                                                   self._train_max_history,
+                                                                   self._seed)
 
-                self._user_models[user_id].train(df)
+                    # Derive features here
+                    # print(df)
+                    df = self._source_stage_class.derive_features(df, self._feature_columns)
+                    df = df.fillna("nan")
+                    self._user_models[user_id].train(df)
+
+            # Save trained user models
+            if self._models_output_filename is not None:
+                with open(self._models_output_filename, 'wb') as out_strm:
+                    dill.dump(self._user_models, out_strm)
 
             get_model_fn = self._get_per_user_model
 
@@ -242,9 +319,14 @@ class TrainAEStage(MultiMessageStage):
 
             def on_next(x: UserMessageMeta):
 
-                model = get_model_fn(x)
+                model, scores_mean, scores_std = get_model_fn(x)
 
-                full_message = MultiAEMessage(meta=x, mess_offset=0, mess_count=x.count, model=model)
+                full_message = MultiAEMessage(meta=x,
+                                              mess_offset=0,
+                                              mess_count=x.count,
+                                              model=model,
+                                              train_scores_mean=scores_mean,
+                                              train_scores_std=scores_std)
 
                 to_send = []
 
