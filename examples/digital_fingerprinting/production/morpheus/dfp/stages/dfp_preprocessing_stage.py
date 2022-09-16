@@ -33,19 +33,10 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class DFPPreprocessingStage(SinglePortStage):
 
-    def __init__(self,
-                 c: Config,
-                 input_schema: DataFrameInputSchema,
-                 return_format: str = "data",
-                 only_new_batches=False):
+    def __init__(self, c: Config, input_schema: DataFrameInputSchema):
         super().__init__(c)
 
-        self._cache_ids = []
         self._input_schema = input_schema
-        self._df_user_frames = pd.DataFrame(columns=("username", "frame_path"))
-        self._cache_path = "preprocessing"
-        self._return_format = return_format
-        self._only_new_batches = only_new_batches
 
     @property
     def name(self) -> str:
