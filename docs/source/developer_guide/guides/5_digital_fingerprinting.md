@@ -146,7 +146,9 @@ The stages in both the Training and Inference pipelines can be mixed and matched
 ![Input Stages](img/dfp_input_config.png)
 
 #### MultiFileSource
-The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py)) receives a path or list of paths (`filenames`), and will collectively be emitted into the pipeline as an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) object.  The paths may include wildcards `*` and can be S3 urls (`s3://path`) as defined by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files).
+The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py)) receives a path or list of paths (`filenames`), and will collectively be emitted into the pipeline as an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) object.  The paths may include wildcards `*` as well as urls (ex: `s3://path`) to remote storage providers such as S3, FTP, GCP, Azure, Databricks and others as defined by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files).  In addition to this paths can be cached locally by prefixing them with `filecache::` (ex: `filecache::s3://bucket-name/key-name`).
+
+Note: this stage does not actually download the data files, allowing the file list to be filtered and batched prior to being downloaded.
 
 
 | Argument | Type | Descirption |
@@ -165,7 +167,9 @@ The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus
 | `period` | `str` | Time period to group data by, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases) |
 | `sampling_rate_s` | `int` | Optional, default=`0`. When non-zero a subset of the incoming data files will be sampled, only including a file if the `datetime` returned by `date_conversion_func` is at least `sampling_rate_s` seconds greater than  the `datetime` of the previously included file |
 
-For situations where the creation date of of the log file is encoded in the filename is desired, the `date_extractor` in the [`examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py`](/examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py) module can be used.  The `date_extractor` will need to have a regex pattern bound to it before being passed in as a parameter to `DFPFileBatcherStage`, for input files containing an ISO 8601 formatted date string the `iso_date_regex` regex can be used ex:
+For situations where the creation date of of the log file is encoded in the filename is desired, the `date_extractor` in the [`examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py`](/examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py) module can be used.  The `date_extractor` will need to have a regex pattern bound to it before being passed in as a parameter to `DFPFileBatcherStage`. The regex pattern will need to contain the following named groups: `year`, `month`, `day`, `hour`, `minute`, `second`, and optionally `microsecond`.
+
+For input files containing an ISO 8601 formatted date string the `iso_date_regex` regex can be used ex:
 ```python
 from functools import partial
 
@@ -181,3 +185,18 @@ pipeline.add_stage(
 ```
 
 Note: in cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
+
+#### DFPFileToDataFrameStage
+The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py)) stage receives a `list` of an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) and loads them into a single DataFrame which is then emitted into the pipeline.  When the parent stage is `DFPFileBatcherStage` each batch (typically one day) is concatenated into a single DataFrame, without this if the parent was `MultiFileSource` the entire dataset is loaded into a single DataFrame.  Because of this, it is important to chose a `period` argument for `DFPFileBatcherStage` small enough such that each batch can fit into memory.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `schema` | `dfp.utils.column_info.DataFrameInputSchema` | Schema specifying columns to load, along with any necessary renames and data type conversions  |
+| `filter_null` | `bool` | Optional: Whether to filter null rows after loading, by default True. |
+| `file_type` | `morpheus._lib.file_types.FileTypes` (enum) | Optional: Indicates file type to be loaded. Currently supported values at time of writing are: `FileTypes.Auto`, `FileTypes.CSV`, and `FileTypes.JSON`. Default value is `FileTypes.Auto` which will infer the type based on the file extension, set this value if using a custom extension |
+| `parser_kwargs` | `dict` or `None` | Optional: additional keyword arguments to be passed into the DataFrame parser, currently this is going to be either [`pandas.read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html) or [`pandas.read_json`](https://pandas.pydata.org/docs/reference/api/pandas.read_json.html) |
+| `cache_dir` | `str` | Optional: path to cache location, defaults to `./.cache/dfp` |
+
+
+This stage is able to download & load data files concurrently by multiple methods, currently supported methods are: `single_thread`, `multiprocess`, `dask`, and `dask_thread`.  The method used is chosen by setting the `FILE_DOWNLOAD_TYPE` environment variable, and `dask_thread` is used by default, and `single_thread` effectively disables concurrent loading.
