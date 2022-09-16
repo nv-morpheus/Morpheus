@@ -141,7 +141,6 @@ The reference architecture is composed of the following services:​
 
 The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, i.e., the `MultiFileSource` can be configured to pull from S3 or from local files and can be replaced altogether with any other Morpheus input stage. similarly the S3 writer can be replaced with any Morpheus output stage.  Regardless of the inputs & outputs the core pipeline should renmain unchanged.  While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
 
-
 ### Input Stages
 ![Input Stages](img/dfp_input_config.png)
 
@@ -149,7 +148,6 @@ The stages in both the Training and Inference pipelines can be mixed and matched
 The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py)) receives a path or list of paths (`filenames`), and will collectively be emitted into the pipeline as an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) object.  The paths may include wildcards `*` as well as urls (ex: `s3://path`) to remote storage providers such as S3, FTP, GCP, Azure, Databricks and others as defined by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files).  In addition to this paths can be cached locally by prefixing them with `filecache::` (ex: `filecache::s3://bucket-name/key-name`).
 
 Note: this stage does not actually download the data files, allowing the file list to be filtered and batched prior to being downloaded.
-
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
@@ -204,14 +202,13 @@ This stage will cache the resulting `DataFrame` in `cache_dir`, since we are cac
 
 Note: this caching is in addition to any caching which may have occurred when using the optional `filecache::` prefix.
 
+### DataFrameInputSchema
+TODO: Document input schemas and `ColumnInfo` subclasses
 
 ### Output Stages
 ![Output Stages](img/dfp_output_config.png)
 
 For the inference pipeline any Morpheus output stage such as `morpheus.stages.output.write_to_file_stage.WriteToFileStage` and `morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage` could be used in addition to the `WriteToS3Stage` documented below.
-
-### Core Pipeline
-TODO: Document core stages common to both Trainign & Inference
 
 #### WriteToS3Stage
 The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py)) stage writes the resulting anomaly detections to S3.  The `WriteToS3Stage` decouples the S3 specifc operations from the Morpheus stage, and as such receives an `s3_writer` argument.
@@ -221,8 +218,21 @@ The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/s
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `s3_writer` | `function` | User defined function which receives an instance of a `morpheus.messages.message_meta.MessageMeta` and returns that same message instance. Any S3 specific configurations such as bucket name should be bound to the method. |
 
+### Core Pipeline
+These stages are common to both the training & inference pipelines, unlike the input & output stages these are specific to the DFP pipeline and intended to be configured but not replacable.
+
+#### DFPSplitUsersStage
+TODO
+
+#### DFPRollingWindowStage
+TODO
+
+#### DFPPreprocessingStage
+TODO
+
+
 ## Training Pipeline
-![Training Overview](img/dfp_training_overview.png)
+![Training PipelineOverview](img/dfp_training_overview.png)
 
 Training must begin with the generic user model​ which is trained with the logs from all users.  This model serves as a fallback model for users & accounts without sufficient training data​.
 
@@ -244,3 +254,14 @@ The `DFPMLFlowModelWriterStage` [examples/digital_fingerprinting/production/morp
 | `databricks_permissions` | `dict` or `None` | Optional, when not `None` sets permissions needed when using a databricks hosted MLflow server |
 
 Note: If using a remote MLflow server, users will need to call [`mlflow.set_tracking_uri`](https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri) before starting the pipeline.
+
+## Inference Pipeline
+![Inference Pipeline Overview](img/dfp_inference_overview.png)
+
+### Inference Stages
+
+#### DFPInferenceStage
+TODO
+
+#### DFPPostprocessingStage
+TODO
