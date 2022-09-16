@@ -20,6 +20,7 @@ source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
 gpuci_logger "Creating conda env"
 rm -rf ${MORPHEUS_ROOT}/.cache/ ${MORPHEUS_ROOT}/build/
+
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
@@ -48,9 +49,14 @@ cmake --build build -j --parallel ${PARALLEL_LEVEL}
 
 gpuci_logger "sccache usage for morpheus build:"
 sccache --show-stats
+sccache --zero-stats &> /dev/null
 
 gpuci_logger "Installing Morpheus"
 cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
+pip install ${MORPHEUS_ROOT}/build/wheel
+
+gpuci_logger "sccache usage for building C++ examples:"
+sccache --show-stats
 
 gpuci_logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz

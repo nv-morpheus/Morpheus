@@ -96,6 +96,10 @@ add_custom_target(${PROJECT_NAME}_style_checks
 # Include the main morpheus code
 add_subdirectory(morpheus)
 
+if(MORPHEUS_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
 # Get all of the python files to copy to the build directory
 file(GLOB_RECURSE MORPHEUS_PYTHON_FILES
   RELATIVE ${PROJECT_SOURCE_DIR}

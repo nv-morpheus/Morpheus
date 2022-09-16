@@ -26,17 +26,19 @@ For communicating with [RabbitMQ](https://www.rabbitmq.com/) we will be using th
 Our includes section looks like:
 
 ```cpp
-#include <morpheus/messages/meta.hpp>  // for MessageMeta
-#include <srf/segment/builder.hpp> // for Segment
-#include <pysrf/node.hpp>  // for PythonSource
-
-#include <cudf/io/types.hpp>  // for table_with_metadata
-#include <SimpleAmqpClient/SimpleAmqpClient.h> // for AmqpClient::Channel::ptr_t
+#include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
+#include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
+#include <morpheus/messages/meta.hpp>           // for MessageMeta
+#include <pysrf/node.hpp>                       // for srf::pysrf::PythonSource
+#include <srf/segment/builder.hpp>              // for Segment Builder
+#include <srf/segment/object.hpp>               // for Segment Object
 
 #include <chrono>  // for chrono::milliseconds
 #include <memory>  // for shared_ptr
 #include <string>
 ```
+
+The SRF includes bring in the definitions for SRF `Builder`, `SegmentObject` and `PythonSource`.
 
 Our namespace and class definition looks like this:
 
@@ -53,10 +55,11 @@ class RabbitMQSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Mess
 {
   public:
     using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
-    using base_t::source_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscriber_fn_t;
 ```
 
-Our base class defines `source_type_t` as an alias for `std::shared_ptr<MessageMeta>` which we are going to use as it will appear in some of our function signatures. The way to think about `source_type_t` is that the stage we are writing emits objects of type `MessageMeta`. The class we are deriving from, `PythonSource`, defines this type to make writing function signatures easier.
+Our base class defines `source_type_t` as an alias for `std::shared_ptr<MessageMeta>` which we are going to use as it will appear in some of our function signatures. The way to think about `source_type_t` is that the stage we are writing emits objects of type `MessageMeta`. The `subscriber_fn_t` is an alias for a function which will receive an `rxcpp::subscriber` instance and emit messages into the pipeline.  The class we are deriving from, `PythonSource`, defines both of these to make writing function signatures easier.
 
 Our constructor looks similar to the constructor of our Python class with the majority of the parameters being specific to communicating with RabbitMQ. In this case the default destructor is sufficient.
 
@@ -72,13 +75,13 @@ RabbitMQSourceStage(const std::string &host,
 Our class will require a few private methods
 
 ```cpp
-rxcpp::observable<source_type_t> build_observable();
-void source_generator(rxcpp::subscriber<source_type_t> sub);
+subscriber_fn_t build();
+void source_generator(rxcpp::subscriber<source_type_t> subscriber);
 cudf::io::table_with_metadata from_json(const std::string &body) const;
 void close();
 ```
 
-The `build_observable` method is responsible for constructing an `rxcpp::observable` for our source type, the result of which will be passed into our base's constructor. A `rxcpp::observable` is constructed by passing it a reference to a function (typically a lambda) which receives a reference to an `rxcpp::subscriber`. Typically, this function is the center of a source stage, making calls to the `subscriber`'s `on_next`, `on_error`, and `on_completed` methods. For this example, the RabbitMQ-specific logic was broken out into the `source_generator` method, which should be analogous to the `source_generator` method from the Python class, and will emit new messages into the pipeline by calling `subscriber.on_next(message)`.
+The `build` method is responsible for returning a function with a signature matching `subscriber_fn_t`, the result of which will be passed into our base's constructor. Typically, this function is the center of a source stage, making calls to the `subscriber`'s `on_next`, `on_error`, and `on_completed` methods. For this example, the RabbitMQ-specific logic was broken out into the `source_generator` method, which should be analogous to the `source_generator` method from the Python class, and will emit new messages into the pipeline by calling `subscriber.on_next(message)`.
 
 The `from_json` method parses a JSON string to a cuDF [table_with_metadata](https://docs.rapids.ai/api/libcudf/stable/structcudf_1_1io_1_1table__with__metadata.html). Lastly, the `close` method disconnects from the RabbitMQ exchange.
 
@@ -91,17 +94,15 @@ AmqpClient::Channel::ptr_t m_channel;
 ```
 
 Wrapping it all together, our header file should look like this:
-`examples/rabbitmq/_lib/rabbitmq_source.hpp`
-
 ```cpp
 #pragma once
 
-#include <morpheus/messages/meta.hpp>  // for MessageMeta
-#include <pysrf/node.hpp>  // for srf::pysrf::PythonSource
-
-#include <cudf/io/types.hpp>  // for cudf::io::table_with_metadata
-
 #include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
+#include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
+#include <morpheus/messages/meta.hpp>           // for MessageMeta
+#include <pysrf/node.hpp>                       // for srf::pysrf::PythonSource
+#include <srf/segment/builder.hpp>              // for Segment Builder
+#include <srf/segment/object.hpp>               // for Segment Object
 
 #include <chrono>  // for chrono::milliseconds
 #include <memory>  // for shared_ptr
@@ -119,7 +120,8 @@ class RabbitMQSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Mess
 {
   public:
     using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
-    using base_t::source_type_t;
+    using typename base_t::source_type_t;
+    using typename base_t::subscriber_fn_t;
 
     RabbitMQSourceStage(const std::string &host,
                         const std::string &exchange,
@@ -130,8 +132,8 @@ class RabbitMQSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Mess
     ~RabbitMQSourceStage() override = default;
 
   private:
-    rxcpp::observable<source_type_t> build_observable();
-    void source_generator(rxcpp::subscriber<source_type_t> sub);
+    subscriber_fn_t build();
+    void source_generator(rxcpp::subscriber<source_type_t> subscriber);
     cudf::io::table_with_metadata from_json(const std::string &body) const;
     void close();
 
@@ -149,14 +151,13 @@ struct RabbitMQSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a RabbitMQSourceStage, and return the result.
      */
-    static std::shared_ptr<RabbitMQSourceStage> init(
-        srf::segment::Builder& builder,
-        const std::string &name,
-        const std::string &host,
-        const std::string &exchange,
-        const std::string &exchange_type,
-        const std::string &queue_name,
-        std::chrono::milliseconds poll_interval);
+    static std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>> init(srf::segment::Builder &builder,
+                                                                           const std::string &name,
+                                                                           const std::string &host,
+                                                                           const std::string &exchange,
+                                                                           const std::string &exchange_type,
+                                                                           const std::string &queue_name,
+                                                                           std::chrono::milliseconds poll_interval);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus_rabbit
@@ -169,23 +170,19 @@ Our includes section looks like:
 ```cpp
 #include "rabbitmq_source.hpp"
 
-#include <srf/segment/builder.hpp>
-#include <srf/core/segment_object.hpp>
-
+#include <boost/fiber/operations.hpp>  // for this_fiber::sleep_for
 #include <cudf/io/json.hpp>
 #include <cudf/table/table.hpp>
-
 #include <glog/logging.h>
-#include <pybind11/chrono.h>  // for timedelta->chrono
+#include <pybind11/chrono.h>  // for timedelta->chrono conversions
 #include <pybind11/pybind11.h>
-#include <boost/fiber/operations.hpp>  // for this_fiber::sleep_for
 
 #include <exception>
 #include <sstream>
 #include <vector>
 ```
 
-The two SRF includes bring in the actual definitions for SRF `Builder` and `SegmentObject`. The [Google Logging Library](https://github.com/google/glog) (glog) is used by Morpheus for logging; however, the choice of a logger is up to the individual developer.
+The [Google Logging Library](https://github.com/google/glog) (glog) is used by Morpheus for logging; however, the choice of a logger is up to the individual developer.
 
 SRF uses the [Boost.Fiber](https://www.boost.org/doc/libs/1_77_0/libs/fiber/doc/html/fiber/overview.html) library to perform task scheduling. In the future, SRF will likely expose a configuration option to choose between fibers or `std::thread`.
 For now, all Morpheus stages, both Python and C++, are executed within a fiber. In general, authors of a stage don't need to be too concerned about this detail, with two notable exceptions:
@@ -202,7 +199,7 @@ RabbitMQSourceStage::RabbitMQSourceStage(const std::string &host,
                                          const std::string &exchange_type,
                                          const std::string &queue_name,
                                          std::chrono::milliseconds poll_interval) :
-  base_t(build_observable()),
+  PythonSource(build()),
   m_channel{AmqpClient::Channel::Create(host)},
   m_poll_interval{poll_interval}
 {
@@ -212,31 +209,22 @@ RabbitMQSourceStage::RabbitMQSourceStage(const std::string &host,
 }
 ```
 
-The key thing to note is that the third argument in the invocation of our base's constructor is our observable:
+The key thing to note is the invocation of our base's constructor is the result of the `build` method:
 
 ```cpp
-base_t(build_observable())
+PythonSource(build()),
 ```
 
-The observable argument to the constructor contains an empty default value, allowing stage authors to later define the observable by calling the `set_source_observable` method. The constructor could instead be written as:
-
-```cpp
-base_t()
-{
-    this->set_source_observable(build_observable());
-}
-```
-
-Our `build_observable` method returns an observable, which needs to do three things:
+Our `build` method returns a function, which needs to do three things:
 1. Emit data into the pipeline by calling `rxcpp::subscriber`'s `on_next` method. In our example, this occurs in the `source_generator` method.
 1. When an error occurs, call the `rxcpp::subscriber`'s `on_error` method.
 1. When we are done, call the `rxcpp::subscriber`'s `on_complete` method.
 Note: For some source stages, such as ones that read input data from a file, there is a clear point where the stage is complete. Others such as this one are intended to continue running until it is shut down. For the latter situation, the stage can poll the `rxcpp::subscriber`'s `is_subscribed` method, which will return a value of `false` on shut down.
 
 ```cpp
-rxcpp::observable<RabbitMQSourceStage::source_type_t> RabbitMQSourceStage::build_observable()
+RabbitMQSourceStage::subscriber_fn_t RabbitMQSourceStage::build()
 {
-    return rxcpp::observable<>::create<source_type_t>([this](rxcpp::subscriber<source_type_t> subscriber) {
+    return [this](rxcpp::subscriber<source_type_t> subscriber) -> void {
         try
         {
             this->source_generator(subscriber);
@@ -250,20 +238,20 @@ rxcpp::observable<RabbitMQSourceStage::source_type_t> RabbitMQSourceStage::build
 
         close();
         subscriber.on_completed();
-    });
+    };
 }
 ```
 
-As a design decision, we left the majority of the RabbitMQ specific code in the `source_generator` method, leaving Morpheus specific code in the `build_observable` method. For each message that we receive and can successfully parse, we call the `rxcpp::subscriber`'s `on_next` method. When there are no messages in the queue, we yield the fiber by sleeping, potentially allowing the scheduler to perform a context switch.
+As a design decision, we left the majority of the RabbitMQ specific code in the `source_generator` method, leaving Morpheus specific code in the `build` method. For each message that we receive and can successfully parse, we call the `rxcpp::subscriber`'s `on_next` method. When there are no messages in the queue, we yield the fiber by sleeping, potentially allowing the scheduler to perform a context switch.
 
 ```cpp
 void RabbitMQSourceStage::source_generator(rxcpp::subscriber<RabbitMQSourceStage::source_type_t> subscriber)
 {
-    const std::string consumer_tag = m_connection->BasicConsume(m_queue_name, "", true, false);
+    const std::string consumer_tag = m_channel->BasicConsume(m_queue_name, "", true, false);
     while (subscriber.is_subscribed())
     {
         AmqpClient::Envelope::ptr_t envelope;
-        if (m_connection->BasicConsumeMessage(consumer_tag, envelope, 0))
+        if (m_channel->BasicConsumeMessage(consumer_tag, envelope, 0))
         {
             try
             {
@@ -274,7 +262,7 @@ void RabbitMQSourceStage::source_generator(rxcpp::subscriber<RabbitMQSourceStage
             {
                 LOG(ERROR) << "Error occurred converting RabbitMQ message to Dataframe: " << e.what();
             }
-            m_connection->BasicAck(envelope);
+            m_channel->BasicAck(envelope);
         }
         else
         {
@@ -312,19 +300,17 @@ void RabbitMQSourceStage::close()
 ## Python Proxy & Interface
 
 ```cpp
-std::shared_ptr<RabbitMQSourceStage>
-RabbitMQSourceStageInterfaceProxy::init(srf::segment::Builder& builder,
-                                        const std::string &name,
-                                        const std::string &host,
-                                        const std::string &exchange,
-                                        const std::string &exchange_type,
-                                        const std::string &queue_name,
-                                        std::chrono::milliseconds poll_interval)
+std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>> RabbitMQSourceStageInterfaceProxy::init(
+    srf::segment::Builder &builder,
+    const std::string &name,
+    const std::string &host,
+    const std::string &exchange,
+    const std::string &exchange_type,
+    const std::string &queue_name,
+    std::chrono::milliseconds poll_interval)
 {
-    auto stage =
-        builder.construct_object<RabbitMQSourceStage>(name, host, exchange, exchange_type, queue_name, poll_interval);
-
-    return stage;
+    return builder.construct_object<RabbitMQSourceStage>(
+        name, host, exchange, exchange_type, queue_name, poll_interval);
 }
 
 namespace py = pybind11;
@@ -332,7 +318,11 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_rabbit, m)
 {
-    py::class_<RabbitMQSourceStage, srf::segment::ObjectProperties, std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>>>(
+    srf::pysrf::import(m, "morpheus._lib.messages");
+
+    py::class_<srf::segment::Object<RabbitMQSourceStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>>>(
         m, "RabbitMQSourceStage", py::multiple_inheritance())
         .def(py::init<>(&RabbitMQSourceStageInterfaceProxy::init),
              py::arg("builder"),
@@ -346,21 +336,15 @@ PYBIND11_MODULE(morpheus_rabbit, m)
 ```
 
 Wrapping it all together, our source file should look like:
-`examples/rabbitmq/_lib/rabbitmq_source.cpp`
-
 ```cpp
 #include "rabbitmq_source.hpp"
 
-#include <srf/segment/builder.hpp>
-#include <srf/core/segment_object.hpp>
-
+#include <boost/fiber/operations.hpp>  // for this_fiber::sleep_for
 #include <cudf/io/json.hpp>
 #include <cudf/table/table.hpp>
-
 #include <glog/logging.h>
-#include <pybind11/chrono.h>  // for timedelta->chrono
+#include <pybind11/chrono.h>  // for timedelta->chrono conversions
 #include <pybind11/pybind11.h>
-#include <boost/fiber/operations.hpp>  // for this_fiber::sleep_for
 
 #include <exception>
 #include <sstream>
@@ -373,7 +357,7 @@ RabbitMQSourceStage::RabbitMQSourceStage(const std::string &host,
                                          const std::string &exchange_type,
                                          const std::string &queue_name,
                                          std::chrono::milliseconds poll_interval) :
-  base_t(build_observable()),
+  PythonSource(build()),
   m_channel{AmqpClient::Channel::Create(host)},
   m_poll_interval{poll_interval}
 {
@@ -382,9 +366,9 @@ RabbitMQSourceStage::RabbitMQSourceStage(const std::string &host,
     m_channel->BindQueue(m_queue_name, exchange);
 }
 
-rxcpp::observable<RabbitMQSourceStage::source_type_t> RabbitMQSourceStage::build_observable()
+RabbitMQSourceStage::subscriber_fn_t RabbitMQSourceStage::build()
 {
-    return rxcpp::observable<source_type_t>([this](rxcpp::subscriber<source_type_t> subscriber) {
+    return [this](rxcpp::subscriber<source_type_t> subscriber) -> void {
         try
         {
             this->source_generator(subscriber);
@@ -398,7 +382,7 @@ rxcpp::observable<RabbitMQSourceStage::source_type_t> RabbitMQSourceStage::build
 
         close();
         subscriber.on_completed();
-    });
+    };
 }
 
 void RabbitMQSourceStage::source_generator(rxcpp::subscriber<RabbitMQSourceStage::source_type_t> subscriber)
@@ -444,20 +428,17 @@ void RabbitMQSourceStage::close()
     }
 }
 
-// ************ WriteToFileStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>>
-RabbitMQSourceStageInterfaceProxy::init(srf::segment::Builder& builder,
-                                        const std::string &name,
-                                        const std::string &host,
-                                        const std::string &exchange,
-                                        const std::string &exchange_type,
-                                        const std::string &queue_name,
-                                        std::chrono::milliseconds poll_interval)
+std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>> RabbitMQSourceStageInterfaceProxy::init(
+    srf::segment::Builder &builder,
+    const std::string &name,
+    const std::string &host,
+    const std::string &exchange,
+    const std::string &exchange_type,
+    const std::string &queue_name,
+    std::chrono::milliseconds poll_interval)
 {
-    auto stage =
-        builder.construct_object<RabbitMQSourceStage>(name, host, exchange, exchange_type, queue_name, poll_interval);
-
-    return stage;
+    return builder.construct_object<RabbitMQSourceStage>(
+        name, host, exchange, exchange_type, queue_name, poll_interval);
 }
 
 namespace py = pybind11;
@@ -465,7 +446,11 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_rabbit, m)
 {
-    py::class_<RabbitMQSourceStage, srf::segment::ObjectProperties, std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>>>(
+    srf::pysrf::import(m, "morpheus._lib.messages");
+
+    py::class_<srf::segment::Object<RabbitMQSourceStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>>>(
         m, "RabbitMQSourceStage", py::multiple_inheritance())
         .def(py::init<>(&RabbitMQSourceStageInterfaceProxy::init),
              py::arg("builder"),
@@ -482,11 +467,6 @@ PYBIND11_MODULE(morpheus_rabbit, m)
 
 ## Python Changes
 
-As in the previous example we need to add an import of the `CppConfig` object.
-```python
-from morpheus.config import CppConfig
-```
-
 Previously, our stage connected to the RabbitMQ server in the constructor. This is no longer advantageous to us when C++ execution is enabled. Instead, we will record our constructor arguments and move the connection code to a new `connect` method. Our new constructor and `connect` methods are updated to:
 
 ```python
@@ -494,9 +474,9 @@ def __init__(self,
              config: Config,
              host: str,
              exchange: str,
-             exchange_type: str='fanout',
-             queue_name: str='',
-             poll_interval: timedelta=None):
+             exchange_type: str = 'fanout',
+             queue_name: str = '',
+             poll_interval: str = '100millis'):
     super().__init__(config)
     self._host = host
     self._exchange = exchange
@@ -506,29 +486,24 @@ def __init__(self,
     self._connection = None
     self._channel = None
 
-    if poll_interval is not None:
-        self._poll_interval = poll_interval
-    else:
-        self._poll_interval = timedelta(milliseconds=100)
+    self._poll_interval = pd.Timedelta(poll_interval)
 
+    # Flag to indicate whether or not we should stop
+    self._stop_requested = False
+```
+```python
 def connect(self):
-    self._connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=self._host))
+    self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=self._host))
 
     self._channel = self._connection.channel()
-    self._channel.exchange_declare(
-        exchange=self._exchange, exchange_type=self._exchange_type)
+    self._channel.exchange_declare(exchange=self._exchange, exchange_type=self._exchange_type)
 
-    result = self._channel.queue_declare(
-        queue=self._queue_name, exclusive=True)
+    result = self._channel.queue_declare(queue=self._queue_name, exclusive=True)
 
     # When queue_name='' we will receive a randomly generated queue name
     self._queue_name = result.method.queue
 
-    self._channel.queue_bind(
-        exchange=self._exchange, queue=self._queue_name)
-
-
+    self._channel.queue_bind(exchange=self._exchange, queue=self._queue_name)
 ```
 
 Lastly, our `_build_source` method needs to be updated to build a C++ node when `morpheus.config.CppConfig.get_should_use_cpp()` is configured to `True` by using the `self._build_cpp_node()` method.
@@ -536,16 +511,16 @@ Lastly, our `_build_source` method needs to be updated to build a C++ node when 
 ```python
 def _build_source(self, builder: srf.Builder) -> StreamPair:
     if self._build_cpp_node():
-        node = morpheus_rabbit_cpp.RabbitMQSourceStage(
-            builder,
-            self.unique_name,
-            self._host,
-            self._exchange,
-            self._exchange_type,
-            self._queue_name,
-            self._poll_interval
-        )
+        print("building C++ node")
+        node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
+                                                        self.unique_name,
+                                                        self._host,
+                                                        self._exchange,
+                                                        self._exchange_type,
+                                                        self._queue_name,
+                                                        self._poll_interval.to_pytimedelta())
     else:
+        print("building Python node")
         self.connect()
         node = builder.make_source(self.unique_name, self.source_generator)
     return node, MessageMeta
