@@ -1,0 +1,50 @@
+ARG MORPHEUS_CONTAINER=nvcr.io/nvidia/morpheus/morpheus
+ARG MORPHEUS_CONTAINER_VERSION=v22.09.00-runtime
+
+FROM ${MORPHEUS_CONTAINER}:${MORPHEUS_CONTAINER_VERSION} as base
+
+# # Fix the entrypoint to work with different WORKDIR
+ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
+
+SHELL ["/bin/bash", "-c"]
+
+# Set the workdir to the DFP base folder
+WORKDIR /workspace/examples/digital_fingerprinting/
+
+# Copy the conda_env file
+COPY ./conda_env.yml ./
+
+# Install DFP dependencies
+RUN source activate morpheus \
+    && mamba env update -n morpheus -f ./conda_env.yml
+
+# Set the tracking URI for mlflow
+ENV MLFLOW_TRACKING_URI="http://mlflow:5000"
+
+# This will get used by pipelines for the --s3_cache option
+# ENV DFP_S3_CACHE="/work/examples/dfp_workflow/morpheus/.s3_cache"
+
+# If any changes have been made from the base image, recopy the sources
+COPY . /workspace/examples/digital_fingerprinting/
+
+# Set the workdir to be the morpheus folder
+WORKDIR /workspace/examples/digital_fingerprinting/production/morpheus
+
+# ===== Setup for running unattended =====
+FROM base as runtime
+
+# Launch morpheus
+CMD ["./launch.sh"]
+
+# ===== Setup for running Jupyter =====
+FROM base as jupyter
+
+# Install the jupyter specific requirements
+RUN source activate morpheus \
+    && mamba install -y -c conda-forge \
+        ipywidgets \
+        jupyterlab \
+        nb_conda_kernels
+
+# Launch jupyter
+CMD ["jupyter-lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]

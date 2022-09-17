@@ -43,8 +43,8 @@ class DFPSplitUsersStage(SinglePortStage):
 
         self._include_generic = include_generic
         self._include_individual = include_individual
-        self._skip_users = skip_users
-        self._only_users = only_users
+        self._skip_users = skip_users if skip_users is not None else []
+        self._only_users = only_users if only_users is not None else []
 
         # Map of user ids to total number of messages. Keeps indexes monotonic and increasing per user
         self._user_index_map: typing.Dict[str, int] = {}

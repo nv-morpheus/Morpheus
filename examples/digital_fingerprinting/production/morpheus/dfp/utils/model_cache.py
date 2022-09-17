@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 import logging
 import threading
 import typing
@@ -44,6 +45,16 @@ def timed_acquire(lock: threading.Lock, timeout: float):
 
     finally:
         lock.release()
+
+
+def user_to_model_name(user_id: str, model_name_formatter: str):
+
+    kwargs = {
+        "user_id": user_id,
+        "user_md5": hashlib.md5(user_id.encode('utf-8')).hexdigest(),
+    }
+
+    return model_name_formatter.format(**kwargs)
 
 
 class ModelCache:
@@ -228,7 +239,7 @@ class ModelManager:
         return reg_model_name in self._existing_models
 
     def user_id_to_model(self, user_id: str):
-        return self._model_name_formatter.format(user_id=user_id)
+        return user_to_model_name(user_id=user_id, model_name_formatter=self._model_name_formatter)
 
     def load_user_model(self, client, user_id: str, fallback_user_ids: typing.List[str] = []) -> ModelCache:
 

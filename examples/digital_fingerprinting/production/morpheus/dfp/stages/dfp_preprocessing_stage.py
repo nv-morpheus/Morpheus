@@ -33,19 +33,10 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class DFPPreprocessingStage(SinglePortStage):
 
-    def __init__(self,
-                 c: Config,
-                 input_schema: DataFrameInputSchema,
-                 return_format: str = "data",
-                 only_new_batches=False):
+    def __init__(self, c: Config, input_schema: DataFrameInputSchema):
         super().__init__(c)
 
-        self._cache_ids = []
         self._input_schema = input_schema
-        self._df_user_frames = pd.DataFrame(columns=("username", "frame_path"))
-        self._cache_path = "preprocessing"
-        self._return_format = return_format
-        self._only_new_batches = only_new_batches
 
     @property
     def name(self) -> str:
@@ -67,8 +58,7 @@ class DFPPreprocessingStage(SinglePortStage):
         df_processed = process_dataframe(message.get_meta_dataframe(), self._input_schema)
 
         # Apply the new dataframe, only the rows in the offset
-        message.set_meta(list(df_processed.columns),
-                         df_processed.iloc[message.mess_offset:message.mess_offset + message.mess_count])
+        message.set_meta_dataframe(list(df_processed.columns), df_processed)
 
         if logger.isEnabledFor(logging.DEBUG):
             duration = (time.time() - start_time) * 1000.0

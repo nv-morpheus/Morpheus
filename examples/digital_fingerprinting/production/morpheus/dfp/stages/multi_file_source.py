@@ -80,29 +80,6 @@ class MultiFileSource(SingleOutputSource):
 
         yield files
 
-    def _generate_frames(self):
-
-        loaded_dfs = []
-
-        for f in self._filenames:
-
-            # Read the dataframe into memory
-            df = read_file_to_df(f,
-                                 self._file_type,
-                                 filter_nulls=True,
-                                 df_type="pandas",
-                                 parser_kwargs=self._parser_kwargs)
-
-            df = process_dataframe(df, self._input_schema)
-
-            loaded_dfs.append(df)
-
-        combined_df = pd.concat(loaded_dfs)
-
-        print("Sending {} rows".format(len(combined_df)))
-
-        yield combined_df
-
     def _build_source(self, builder: srf.Builder) -> StreamPair:
 
         if self._build_cpp_node():

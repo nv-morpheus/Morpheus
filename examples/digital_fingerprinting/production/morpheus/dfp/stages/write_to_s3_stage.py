@@ -49,7 +49,7 @@ class WriteToS3Stage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MessageMeta`, )
+        typing.Tuple(`morpheus.messages.message_meta.MessageMeta`, )
             Accepted input types.
 
         """

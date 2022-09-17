@@ -92,8 +92,6 @@ class DFPFileToDataFrameStage(SinglePortStage):
 
         self._schema = schema
 
-        self._batch_size = 10
-        self._batch_cache = []
         self._file_type = file_type
         self._filter_null = filter_null
         self._parser_kwargs = {} if parser_kwargs is None else parser_kwargs
@@ -102,7 +100,8 @@ class DFPFileToDataFrameStage(SinglePortStage):
         self._dask_cluster: Client = None
 
         self._download_method: typing.Literal["single_thread", "multiprocess", "dask",
-                                              "dask_thread"] = os.environ.get("FILE_DOWNLOAD_TYPE", "dask_thread")
+                                              "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE",
+                                                                              "dask_thread")
 
     @property
     def name(self) -> str:
