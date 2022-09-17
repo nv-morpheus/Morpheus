@@ -28,7 +28,8 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class MultiFileSource(SingleOutputSource):
     """
-    Source stage is used to load messages from files and dumping the contents into the pipeline immediately.
+    Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
+    testing performance and accuracy of a pipeline.
 
     Parameters
     ----------
