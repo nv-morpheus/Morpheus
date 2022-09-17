@@ -27,8 +27,8 @@ class MultiAEMessage(MultiMessage):
 
     model: AutoEncoder
     # train_loss_scores: cp.ndarray
-    train_scores_mean: float
-    train_scores_std: float
+    train_scores_mean: float = 0.0
+    train_scores_std: float = 1.0
 
     def get_slice(self, start, stop):
         """

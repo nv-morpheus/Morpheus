@@ -27,6 +27,7 @@ from morpheus.cli.utils import get_config_from_ctx
 from morpheus.cli.utils import get_enum_values
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_pipeline_from_ctx
+from morpheus.cli.utils import load_labels_file
 from morpheus.cli.utils import parse_enum
 from morpheus.cli.utils import parse_log_level
 from morpheus.cli.utils import prepare_command
@@ -340,9 +341,8 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
     if len(labels):
         config.class_labels = list(labels)
     else:
-        with open(kwargs["labels_file"], "r") as lf:
-            config.class_labels = [x.strip() for x in lf.readlines()]
-            logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
+        config.class_labels = load_labels_file(kwargs["labels_file"])
+        logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
 
     from morpheus.pipeline import LinearPipeline
 
@@ -409,16 +409,14 @@ def pipeline_fil(ctx: click.Context, **kwargs):
 
     labels_file = kwargs.get("labels_file")
     if (labels_file is not None):
-        with open(labels_file, "r") as lf:
-            config.class_labels = [x.strip() for x in lf.readlines()]
-            logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
+        config.class_labels = load_labels_file(labels_file)
+        logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
         config.class_labels = list(kwargs['label'])
 
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
-        with open(kwargs["columns_file"], "r") as lf:
-            config.fil.feature_columns = [x.strip() for x in lf.readlines()]
-            logger.debug("Loaded columns. Current columns: [%s]", str(config.fil.feature_columns))
+        config.fil.feature_columns = load_labels_file(kwargs["columns_file"])
+        logger.debug("Loaded columns. Current columns: [%s]", str(config.fil.feature_columns))
     else:
         raise ValueError('Unable to find columns file')
 
@@ -502,17 +500,15 @@ def pipeline_ae(ctx: click.Context, **kwargs):
     config.ae.use_generic_model = kwargs["use_generic_model"]
 
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
-        with open(kwargs["columns_file"], "r") as lf:
-            config.ae.feature_columns = [x.strip() for x in lf.readlines()]
-            logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
+        config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
+        logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
     else:
         # Use a default single label
         config.class_labels = ["reconstruct_loss", "zscore"]
 
     if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
-        with open(kwargs["labels_file"], "r") as lf:
-            config.class_labels = [x.strip() for x in lf.readlines()]
-            logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
+        config.class_labels = load_labels_file(kwargs["labels_file"])
+        logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
         # Use a default single label
         config.class_labels = ["reconstruct_loss", "zscore"]
@@ -582,9 +578,8 @@ def pipeline_other(ctx: click.Context, **kwargs):
 
     labels_file = kwargs.get("labels_file")
     if (labels_file is not None):
-        with open(labels_file, "r") as lf:
-            config.class_labels = [x.strip() for x in lf.readlines()]
-            logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
+        config.class_labels = load_labels_file(labels_file)
+        logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
     else:
         labels = kwargs["label"]
         if len(labels):

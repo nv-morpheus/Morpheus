@@ -381,14 +381,6 @@ def register_stage(command_name: str = None,
                 # Not registered, add to global registry
                 GlobalStageRegistry.get().add_stage_info(stage_info)
 
-                import sys
-                import weakref
-
-                def unregister_command():
-                    GlobalStageRegistry.get().remove_stage_info(stage_info)
-
-                weakref.finalize(sys.modules[stage_class.__module__], unregister_command)
-
         return stage_class
 
     return register_stage_inner

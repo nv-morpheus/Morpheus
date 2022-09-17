@@ -1,8 +1,7 @@
 accessdevicebrowser
 accessdeviceos
-accessdevicelocationcity
 authdevicename
-result
 reason
+result
 locincrement
 logcount
