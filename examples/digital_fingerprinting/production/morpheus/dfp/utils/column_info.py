@@ -193,7 +193,6 @@ def _process_columns(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
 
     # TODO(MDD): See what causes this to have such a perf impact over using df_in
     output_df = pd.DataFrame()
-    orig_cols = set(df_in.columns)
 
     # Iterate over the column info
     for ci in input_schema.column_info:

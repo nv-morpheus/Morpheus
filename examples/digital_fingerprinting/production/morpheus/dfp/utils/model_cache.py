@@ -216,8 +216,8 @@ class ModelManager:
                     self._existing_models.clear()
 
                     # Loop over the registered models with the pagination
-                    while ((results := client.list_registered_models(max_results=1000, page_token=results.token)) !=
-                           None):
+                    while ((results := client.list_registered_models(max_results=1000, page_token=results.token))
+                           is not None):
 
                         self._existing_models.update(model.name for model in results)
 
@@ -271,7 +271,8 @@ class ModelManager:
                     latest_versions = client.get_latest_versions(reg_model_name)
 
                     if (len(latest_versions) == 0):
-                        # Databricks doesnt like the `get_latest_versions` method for some reason. Before failing, try to just get the model and then use latest versions
+                        # Databricks doesnt like the `get_latest_versions` method for some reason. Before failing, try
+                        # to just get the model and then use latest versions
                         reg_model_obj = client.get_registered_model(reg_model_name)
 
                         latest_versions = None if reg_model_obj is None else reg_model_obj.latest_versions

@@ -263,7 +263,6 @@ class DFPAutoEncoder(dfencoder.AutoEncoder):
                         print(msg)
 
         # Getting training loss statistics
-        # mse_loss, bce_loss, cce_loss, _ = self.get_anomaly_score(pdf) if pdf_val is None else self.get_anomaly_score(pd.concat([pdf, pdf_val]))
         mse_loss, bce_loss, cce_loss, _ = self.get_anomaly_score(pdf)
         for i, ft in enumerate(self.numeric_fts):
             i_loss = mse_loss[:, i].cpu().numpy()

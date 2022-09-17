@@ -106,7 +106,7 @@ class DFPS3ToDataFrameStage(SinglePortStage):
             else:
                 try:
                     s3_df = pd.read_pickle(cache_location)
-                except Exception as e:
+                except Exception:
                     raise
 
             return s3_df
@@ -161,7 +161,7 @@ class DFPS3ToDataFrameStage(SinglePortStage):
 
             try:
                 output_df.to_pickle(batch_cache_location)
-            except:
+            except Exception:
                 logger.warning("Failed to save batch cache. Skipping cache for this batch.", exc_info=True)
 
             output_df["batch_count"] = batch_count
@@ -193,7 +193,7 @@ class DFPS3ToDataFrameStage(SinglePortStage):
                          duration)
 
             return output_df
-        except Exception as e:
+        except Exception:
             logger.exception("Error while converting S3 buckets to DF.")
             self._get_or_create_dataframe_from_s3_batch(s3_object_batch)
             raise

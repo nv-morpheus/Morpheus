@@ -115,7 +115,8 @@ class DFPSplitUsersStage(SinglePortStage):
 
             if (len(output_messages) > 0):
                 log_info.set_log(
-                    "Batch split users complete. Input: %s rows from %s to %s. Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms",
+                    ("Batch split users complete. Input: %s rows from %s to %s. "
+                     "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
                     len(message),
                     message[self._config.ae.timestamp_column_name].min(),
                     message[self._config.ae.timestamp_column_name].max(),

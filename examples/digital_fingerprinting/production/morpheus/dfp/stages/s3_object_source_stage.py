@@ -75,19 +75,6 @@ def s3_filter_azure(s3_bucket, start_date: date, end_date: date):
     yield filtered_objects
 
 
-#def s3_get_all(s3_bucket, prefix: str, start_date: datetime, end_date: datetime):
-#    filtered_objects = []
-#
-#    # TODO(MDD): Should use https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_objects_v2
-#    for obj in s3_bucket.objects.filter(Prefix=prefix):
-#
-#        if (obj.last_modified >= start_date and obj.last_modified < end_date):
-#            filtered_objects.append(obj)
-#
-#    print(f"Got {len(filtered_objects)} filtered objects")
-#    yield filtered_objects
-
-
 def s3_object_generator(bucket_name: str, filter_func, start_date: datetime, end_date: datetime):
     # Convert the start dates to UTC
     start_date_utc = start_date.astimezone(tz.tzutc())

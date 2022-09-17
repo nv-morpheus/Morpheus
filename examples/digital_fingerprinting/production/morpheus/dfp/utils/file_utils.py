@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
 import re
+from datetime import datetime
+from datetime import timezone
+
 import fsspec
 
 iso_date_regex = re.compile(r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"

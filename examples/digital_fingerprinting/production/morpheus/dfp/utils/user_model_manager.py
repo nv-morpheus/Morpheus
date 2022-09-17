@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 import torch
 from dfencoder import AutoEncoder
-from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 from morpheus.config import Config
@@ -74,7 +73,7 @@ class DFPDataLoader:
                 self._current_index = min((self._current_index + 1), self._frame_count)
             else:  # Adding another frame would exceed our memory limit, return
                 if (total_frames == self._frame_count):
-                    logger.debug(f"Caching full training set.")
+                    logger.debug("Caching full training set.")
                     self._aggregate_cache = aggregate_frame
 
                 return aggregate_frame
@@ -84,7 +83,7 @@ class DFPDataLoader:
 
             # Epoch rolled, return what we have
             if (total_frames == self._frame_count):
-                logger.debug(f"Caching full training set.")
+                logger.debug("Caching full training set.")
                 self._aggregate_cache = aggregate_frame
 
             return aggregate_frame
@@ -166,7 +165,7 @@ class UserModelManager(object):
                         break
 
                     if (batches == 0 and (df_batch.shape[0] < self._min_history)):
-                        raise InsufficientDataError(f"Insuffient training data.")
+                        raise InsufficientDataError("Insuffient training data.")
 
                     if (df_batch.shape[0] < 10):  # If we've already trained on some data, make sure we can tts this.
                         break
@@ -185,7 +184,7 @@ class UserModelManager(object):
         except InsufficientDataError:
             logger.debug(f"Training AE model for user: '{self._user_id}... Skipped")
             return None, None
-        except Exception as e:
+        except Exception:
             logger.exception("Error during training for user: %s", self._user_id, exc_info=True)
             return None, None
 

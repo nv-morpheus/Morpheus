@@ -16,7 +16,6 @@ import logging
 import time
 import typing
 
-import pandas as pd
 import srf
 from srf.core import operators as ops
 

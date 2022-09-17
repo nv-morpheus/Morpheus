@@ -27,7 +27,6 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 from ..messages.multi_dfp_message import DFPMessageMeta
-from dfencoder import AutoEncoder
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -50,11 +49,6 @@ class DFPPostprocessingStage(SinglePortStage):
         return (MultiAEMessage, )
 
     def _extract_events(self, message: MultiAEMessage):
-
-        # Return the message for the next stage
-        # user = message.meta.user_id
-        # df_user = message.get_meta()
-        model: AutoEncoder = message.model
 
         z_scores = message.get_meta("mean_abs_z")
 
