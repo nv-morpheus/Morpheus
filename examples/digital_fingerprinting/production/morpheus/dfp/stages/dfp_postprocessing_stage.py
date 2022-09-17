@@ -50,7 +50,6 @@ class DFPPostprocessingStage(SinglePortStage):
 
     def _extract_events(self, message: MultiAEMessage):
 
-        # Return the message for the next stage
         z_scores = message.get_meta("mean_abs_z")
 
         above_threshold_df = message.get_meta()[z_scores > self._z_score_threshold]
