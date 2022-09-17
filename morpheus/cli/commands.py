@@ -430,7 +430,8 @@ def pipeline_fil(ctx: click.Context, **kwargs):
 @click.group(chain=True,
              short_help="Run the inference pipeline with an AutoEncoder model",
              no_args_is_help=True,
-             cls=PluginGroup)
+             cls=PluginGroup,
+             pipeline_mode=PipelineModes.AE)
 @click.option('--columns_file',
               required=True,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
