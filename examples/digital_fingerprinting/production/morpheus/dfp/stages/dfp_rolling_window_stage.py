@@ -225,17 +225,6 @@ class DFPRollingWindowStage(SinglePortStage):
 
         user_cache = None
 
-        # if (os.path.exists(cache_location)):
-        #     try:
-
-        #         # Try to load any existing window
-        #         user_cache = CachedUserWindow.load(cache_location=cache_location)
-        #     except:
-        #         logger.warning("Error loading window cache at %s", cache_location, exc_info=True)
-
-        #         # Delete the existing file to prevent this from happening again
-        #         os.remove(cache_location)
-
         user_cache = self._user_cache_map.get(user_id, None)
 
         if (user_cache is None):
@@ -264,31 +253,6 @@ class DFPRollingWindowStage(SinglePortStage):
                 logger.warn(("Incoming data preceeded existing history. "
                              "Consider deleting the rolling window cache and restarting."))
                 return None
-
-            # # For the incoming one, calculate the row hash to identify duplicate rows
-            # incoming_df["_row_hash"] = pd.util.hash_pandas_object(incoming_df)
-
-            # # Concat the incoming data with the old data
-            # concat_df = pd.concat([existing_df, incoming_df])
-
-            # # Drop any duplicates (only really happens when debugging)
-            # concat_df = concat_df.drop_duplicates(subset=["_row_hash"], keep='first')
-
-            # # Save the number of new rows here
-            # new_row_count = len(concat_df) - len(existing_df)
-
-            # # Finally, ensure we are sorted. This also resets the index
-            # concat_df.sort_values(self._config.ae.timestamp_column_name, inplace=True, ignore_index=True)
-
-            # # Trim based on the rolling criteria
-            # concat_df = self._trim_dataframe(concat_df)
-
-            # # Update cache object
-            # user_cache.set_dataframe(concat_df,
-            #                          new_row_count=new_row_count,
-            #                          timestamp_column=self._config.ae.timestamp_column_name)
-
-            # current_df_count = len(concat_df)
 
             # Exit early if we dont have enough data
             if (user_cache.count < self._min_history):

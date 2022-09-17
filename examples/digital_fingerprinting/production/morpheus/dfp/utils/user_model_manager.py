@@ -238,8 +238,6 @@ class UserModelManager(object):
 
         final_df = combined_df[combined_df.columns.intersection(self._feature_columns)]
 
-        # X_train, X_val = train_test_split(final_df, shuffle=False, test_size=0.2, random_state=42)
-
         logger.debug("Training AE model for user: '%s'...", self._user_id)
         model.fit(final_df, epochs=self._epochs)
         logger.debug("Training AE model for user: '%s'... Complete.", self._user_id)

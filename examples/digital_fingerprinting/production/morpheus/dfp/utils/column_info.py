@@ -272,7 +272,6 @@ def process_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
     df_processed = _normalize_dataframe(df_in, input_schema)
 
     # Step 2 is to process columns
-    # df_processed = self._rename_columns(df_processed)
     df_processed = _process_columns(df_processed, input_schema)
 
     # Step 3 is to run the row filter if needed
