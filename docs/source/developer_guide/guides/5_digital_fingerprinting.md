@@ -239,12 +239,9 @@ from dfp.utils.column_info import DataFrameInputSchema
 from dfp.utils.column_info import DateTimeColumn
 ```
 ```python
-schema = DataFrameInputSchema(json_columns=['event'],
-                                column_info=[
-                                    DateTimeColumn(name=config.ae.timestamp_column_name,
-                                                   dtype=datetime,
-                                                   input_name='event.timestamp')
-                                ])
+schema = DataFrameInputSchema(
+    json_columns=['event'],
+    column_info=[DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name='event.timestamp')])
 ```
 
 In the above examples three opperations were performed:
@@ -261,6 +258,47 @@ The `DFPFileToDataFrameStage` is executed first and is responsible for flattenin
 | `preserve_columns` | `List[str]` or `str` | Optional regular expression string or list of regular expression strings that define columns in the input data which should be preserved in the output `DataFrame`. By default this is an empty `list`. |
 | `row_filter` | `function` or `None` | Optional function to be called after all other processing has been performed. This function receives the `DataFrame` as it's only argument returning a `DataFrame`. |
 
+#### ColumnInfo Classes
+The `ColumnInfo` class and subclasses define a single column.
+
+##### ColumnInfo
+Defines a single column and type-cast.
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+
+##### CustomColumn
+Defines a column to be computed by a user-defined function `process_column_fn`.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `process_column_fn` | `function` | Function which receives the entire `DataFrame` as it's only input, returning a new [`pandas.Series`](https://pandas.pydata.org/docs/reference/api/pandas.Series.html) object to be stored in column `name`. |
+
+##### RenameColumn
+Similar to `ColumnInfo` but adds the ability to also perform a rename.
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `input_name` | `str` | Original column name |
+
+##### BoolColumn
+Subclass of `RenameColumn` adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of 5 possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
+```python
+from dfp.utils.column_info import BoolColumn
+```
+```python
+field = BoolColumn(name="result",
+                   dtype=bool,
+                   input_name="result",
+                   true_values=["OK", "SUCCESS"],
+                   false_values=["DENIED", "CANCELED", "EXPIRED"])
+```
+
+We used strings in this example, however we also could have just as easily mapped integer status codes.
 
 ### Output Stages
 ![Output Stages](img/dfp_output_config.png)
