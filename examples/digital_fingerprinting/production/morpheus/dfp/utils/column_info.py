@@ -159,10 +159,10 @@ class IncrementColumn(DateTimeColumn):
     period: str = "D"
 
     def process_column(self, df: pd.DataFrame) -> pd.Series:
-        per_day = super().process_column(df).dt.to_period(self.period)
+        period = super().process_column(df).dt.to_period(self.period)
 
-        # Create the per-user, per-day log count
-        return df.groupby([self.groupby_column, per_day]).cumcount()
+        # Create the `groupby_column`, per-period log count
+        return df.groupby([self.groupby_column, period]).cumcount()
 
 
 @dataclasses.dataclass

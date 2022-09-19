@@ -298,7 +298,57 @@ field = BoolColumn(name="result",
                    false_values=["DENIED", "CANCELED", "EXPIRED"])
 ```
 
-We used strings in this example, however we also could have just as easily mapped integer status codes.
+We used strings in this example, however we also could have just as easily mapped integer status codes.  We also have the ability to map on to types other than boolean by providing custom values for true and false  (eg. `1`/`0`, `yes`/`no`) .
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Typically this should be `bool` however it could potentially be another type if `true_value` and `false_value` are specified. |
+| `input_name` | `str` | Original column name |
+| `true_value` | Any | Optional value to store for true values, should be of a type `dtype`. Defaults to `True`. |
+| `false_value` | Any | Optional value to store for false values, should be of a type `dtype`. Defaults to `False`. |
+| `true_values` | `List[str]` | List of string values to be interpreted as true. |
+| `false_values` | `List[str]` | List of string values to be interpreted as false. |
+
+##### DateTimeColumn
+Subclass of `RenameColumn` specific to casting UTC localized datetime values. When incoming values contain a time-zone offset string the values are converted to UTC, while values without a time-zone are assumed to be UTC.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `input_name` | `str` | Original column name |
+
+##### StringJoinColumn
+Subclass of `RenameColumn`, converts incoming `list` values to string by joining by `sep`.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `input_name` | `str` | Original column name |
+| `sep` | `str` | Separator string to use for the join |
+
+##### StringCatColumn
+Concatinate values from multiple columns into a new string column separated by `sep`.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `input_columns` | `List[str]` | List of columns to concatinate |
+| `sep` | `str` | Separator string |
+
+##### IncrementColumn
+Subclass of `DateTimeColumn`, counts the unique occurrences of a value in `groupby_column` over a specific time window `period` based on dates in the `input_name` field.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Should be `int` or other integer class |
+| `input_name` | `str` | Original column name containing timestamp values |
+| `groupby_column` | `str` | Column name to group by |
+| `period` | `str` | Optional time period to peform the calculation over, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). Defaults to `D` one day |
 
 ### Output Stages
 ![Output Stages](img/dfp_output_config.png)
