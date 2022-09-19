@@ -184,7 +184,7 @@ Note: this stage does not actually download the data files, allowing the file li
 
 
 #### DFPFileBatcherStage
-The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming `DataFrame` in batches of a time period (per day default).  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
+The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming `DataFrame` in batches of a time period (per day default).  This stage can potentially improve performance by combining multiple small files into a single batch.  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
@@ -218,7 +218,7 @@ The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morph
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `schema` | `dfp.utils.column_info.DataFrameInputSchema` | Schema specifying columns to load, along with any necessary renames and data type conversions  |
+| `schema` | `DataFrameInputSchema` | Schema specifying columns to load, along with any necessary renames and data type conversions  |
 | `filter_null` | `bool` | Optional: Whether to filter null rows after loading, by default True. |
 | `file_type` | `morpheus._lib.file_types.FileTypes` (enum) | Optional: Indicates file type to be loaded. Currently supported values at time of writing are: `FileTypes.Auto`, `FileTypes.CSV`, and `FileTypes.JSON`. Default value is `FileTypes.Auto` which will infer the type based on the file extension, set this value if using a custom extension |
 | `parser_kwargs` | `dict` or `None` | Optional: additional keyword arguments to be passed into the `DataFrame` parser, currently this is going to be either [`pandas.read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html) or [`pandas.read_json`](https://pandas.pydata.org/docs/reference/api/pandas.read_json.html) |
@@ -374,11 +374,20 @@ The `DFPSplitUsersStage` [examples/digital_fingerprinting/production/morpheus/df
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `include_generic` | `bool` | When `True` a `DFPMessageMeta` will be constructed for the generic user containing all records not excluded by the `skip_users` and `only_users` filters |
 | `include_individual` | `bool` | When `True` a `DFPMessageMeta` instance will be constructed for each user not excluded by the `skip_users` and `only_users` filters |
-| `skip_users` | `List[str]` or `None` | List of users to exclude, when `include_generic` is `True` excluded records will also be excluded from the generic user |
-| `only_users` | `List[str]` or `None` | Limit records to a specific list of users, when `include_generic` is `True` the generic user's records will also be limited to the users in this list |
+| `skip_users` | `List[str]` or `None` | List of users to exclude, when `include_generic` is `True` excluded records will also be excluded from the generic user. Mutually exclusive with `only_users`.  |
+| `only_users` | `List[str]` or `None` | Limit records to a specific list of users, when `include_generic` is `True` the generic user's records will also be limited to the users in this list. Mutually exclusive with `skip_users`. |
 
 #### DFPRollingWindowStage
-The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py) stage will trim incoming events within a specific size or time window as specified by the `min_history`, `min_increment` and `max_history` constructor arguments.
+The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py) stage performs several key pieces of functionality for DFP.
+1. This stage keeps a moving window of logs on a per user basis
+   * These logs are saved to disk to reduce memory requirements between logs from the same user
+1. It only emits logs when the window history requirements are met
+   * Until all of the window history requirements are met, no messages will be sent to the rest of the pipeline.
+   * See the below options for configuring the window history requirements
+1. It repeats the necessary logs to properly calculate log dependent features.
+   * To support all column feature types, incoming log messages can be combined with existing history and sent to downstream stages.
+   * For example, to calculate a feature that increments a counter for the number of logs a particular user has generated in a single day, we must have the user's log history for the past 24 hours. To support this, this stage will combine new logs with existing history into a single `DataFrame`.
+   * It is the responsibility of downstream stages to distinguish between new logs and existing history.
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
@@ -396,7 +405,7 @@ The `DFPPreprocessingStage` [examples/digital_fingerprinting/production/morpheus
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `input_schema` | `dfp.utils.column_info.DataFrameInputSchema` | Schema specifying columns to be included in the output `DataFrame` including computed columns |
+| `input_schema` | `DataFrameInputSchema` | Schema specifying columns to be included in the output `DataFrame` including computed columns |
 
 ## Training Pipeline
 ![Training PipelineOverview](img/dfp_training_overview.png)
@@ -413,7 +422,7 @@ The `DFPTraining` [examples/digital_fingerprinting/production/morpheus/dfp/stage
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `model_kwargs` | `dict` or `None` | Optional dictionary of keyword arguments to be used when constructing the model. | 
+| `model_kwargs` | `dict` or `None` | Optional dictionary of keyword arguments to be used when constructing the model.  See [`AutoEncoder`](https://github.com/nv-morpheus/dfencoder/blob/master/dfencoder/autoencoder.py) for information on the available options.|
 
 #### DFPMLFlowModelWriterStage
 The `DFPMLFlowModelWriterStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py) stage publishes trained models into MLflow, skipping any model which lacked sufficient training data (current required minimum is 300 log records).
@@ -452,7 +461,7 @@ For any user without an associated model in MLflow, the model for the generic us
 
 
 #### DFPPostprocessingStage
-The `DFPPostprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py) stage filters records contained in the `DataFrame` emits a new `dfp.messages.DFPMessageMeta` message containing all records with a z score greater than `z_score_threshold` or `None` if no records are greater than `z_score_threshold`.
+The `DFPPostprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py) stage filters the output from the inference stage for any anomalous messages. Logs which exceed the specified Z-Score will be passed onto the next stage.  All remaining logs which are below the threshold will be dropped.
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
