@@ -169,7 +169,7 @@ class IncrementColumn(DateTimeColumn):
 class DataFrameInputSchema:
     json_columns: typing.List[str] = dataclasses.field(default_factory=list)
     column_info: typing.List[ColumnInfo] = dataclasses.field(default_factory=list)
-    preserve_columns: re.Pattern = dataclasses.field(default_factory=list)
+    preserve_columns: typing.List[str] = dataclasses.field(default_factory=list)
     row_filter: typing.Callable[[pd.DataFrame], pd.DataFrame] = None
 
     def __post_init__(self):
