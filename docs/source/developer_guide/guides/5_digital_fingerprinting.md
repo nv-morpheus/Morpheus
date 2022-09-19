@@ -127,11 +127,18 @@ Note: For GPU Requirements see [README.md](/README.md#requirements)
 The reference architecture is composed of the following services:​
 | Service | Description |
 | ------- | ----------- |
-| [MLflow](https://mlflow.org/) | Provides a versioned model store​ |
-| [Jupyter Server](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html)​ | Necessary for testing and development of the pipelines​ |
+| mlflow | [MLflow](https://mlflow.org/) provides a versioned model store​ |
+| jupyter | [Jupyter Server](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html)​ necessary for testing and development of the pipelines​ |
 | Morpheus Training Pipeline​ | Trains the autoencoder models and uploads to MLFlow |
 | Morpheus Inference Pipeline​ | Downloads models from MLFlow for inferencing​ & Publishes anomalies |
 
+### Running via docker-compose
+#### Building the services
+From the root of the Morpheus repo run:
+```bash
+cd examples/digital_fingerprinting/production
+docker compose build
+```
 
 ## Morpheus Configuration
 ![Morpheus Configuration](img/dfp_deployment_configs.png)
