@@ -231,7 +231,36 @@ This stage will cache the resulting `DataFrame` in `cache_dir`, since we are cac
 Note: this caching is in addition to any caching which may have occurred when using the optional `filecache::` prefix.
 
 ### DataFrameInputSchema
-TODO: Document input schemas and `ColumnInfo` subclasses
+The `DataFrameInputSchema` ([examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py](/examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py)) class defines the schema specifying the columns to be included in the output `DataFrame`.  Within the DFP pipeline there are two stages where pre-processing is performed, the `DFPFileToDataFrameStage` stage and the `DFPPreprocessingStage`.  This decoupling of the pre-processing stages from the actual opperations needed to be performed allows for the actual schema to be user-defined in the pipeline and re-usability of the stages.  It is up to the user to define the fields which will appear in the `DataFrame`, any column in the input data that isn't specified in either `column_info` or `preserve_columns` constructor arguments will not appear in the output.   The exception to this are JSON fields, specified in the `json_columns` argument which defines json fields which are to be normalized.
+
+It is important to note that the fields defined in `json_columns` are normalized prior to the processing of the fields in `column_info`, allowing for processing to be performed on fields nested in json columns.  For example, say we had a JSON field named `event` containing a key named `timestamp` which in the JSON data appears as an ISO 8601 formatted date string, we could ensure it was converted to a datetime object to downstream stages with the following:
+```python
+from dfp.utils.column_info import DataFrameInputSchema
+from dfp.utils.column_info import DateTimeColumn
+```
+```python
+schema = DataFrameInputSchema(json_columns=['event'],
+                                column_info=[
+                                    DateTimeColumn(name=config.ae.timestamp_column_name,
+                                                   dtype=datetime,
+                                                   input_name='event.timestamp')
+                                ])
+```
+
+In the above examples three opperations were performed:
+1. The `event` JSON field was normalized, resulting in new fields prefixed with `event.` to be included in the output `DataFrame`.
+1. The newly created field `event.timestamp` is parsed into a datetime field.
+1. Since the DFP pipeline explicitly requires a timestamp field, we name this new column with the `config.ae.timestamp_column_name` config attribute ensuring it matches the pipeline configuration. When `name` and `input_name` are the same the old field is overwritten, and when they differ a new field is created.
+
+The `DFPFileToDataFrameStage` is executed first and is responsible for flattening potentially nested JSON data and performing any sort of data type conversions. The `DFPPreprocessingStage` is executed later after the `DFPSplitUsersStage` allowing for the possibility of per-user computed fields such as the `logcount` and `locincrement` fields mentioned previously. Both stages are performed after the `DFPFileBatcherStage` allowing for per time period (per-day by default) computed fields.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `json_columns` | `List[str]` | Optional list of json columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a json field will be flattened into a new column named `<field>.<key>` for example a json field named `user` containing a key named `id` will result in a new column named `user.id`. By default this is an empty `list`. |
+| `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific opperation to be performed upon a column these include renames, typye conversions and custom computations. By default this is an empty `list`. |
+| `preserve_columns` | `List[str]` or `str` | Optional regular expression string or list of regular expression strings that define columns in the input data which should be preserved in the output `DataFrame`. By default this is an empty `list`. |
+| `row_filter` | `function` or `None` | Optional function to be called after all other processing has been performed. This function receives the `DataFrame` as it's only argument returning a `DataFrame`. |
+
 
 ### Output Stages
 ![Output Stages](img/dfp_output_config.png)
