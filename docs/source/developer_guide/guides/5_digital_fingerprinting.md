@@ -410,6 +410,11 @@ After training the generic model, individual user models can be trained​.  Ind
 #### DFPTraining
 The `DFPTraining` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_training.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_training.py) trains a model for each incoming `DataFrame` and emits an instance of `morpheus.messages.multi_ae_message.MultiAEMessage` containing the trained model.
 
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `model_kwargs` | `dict` or `None` | Optional dictionary of keyword arguments to be used when constructing the model. | 
+
 #### DFPMLFlowModelWriterStage
 The `DFPMLFlowModelWriterStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py) stage publishes trained models into MLflow, skipping any model which lacked sufficient training data (current required minimum is 300 log records).
 
@@ -442,7 +447,8 @@ For any user without an associated model in MLflow, the model for the generic us
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id`. |
+| `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
+
 
 
 #### DFPPostprocessingStage
