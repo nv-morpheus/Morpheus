@@ -15,18 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<!--
-The Sphinx theme we are using applies an upper-case to all h4 headings. In this document we are uding H4 headings
-for our class names and did not want to lose any of our camel-casing. We dind't want to apply this change globally as
-we wanted to retain this in other documents, this it appears here as an in-line override.
--->
-<style>
-    h4
-    {
-        text-transform: none;
-    }
-</style>
-
 # 5. Digital Fingerprinting (DFP)
 
 ## Overview
@@ -116,6 +104,7 @@ DFP in Morpheus is accomplished via two independent pipelines: training and infe
 * Detected anomilies are published to an S3 bucket, directory or a Kafka topic.
 * Output can be integrated with a monitoring tool.
 
+
 ## Runtune Environment Setup
 ![Runtune Environment Setup](img/dfp_runtime_env.png)
 
@@ -153,6 +142,7 @@ The reference architecture is composed of the following services:​
 The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, i.e., the `MultiFileSource` can be configured to pull from S3 or from local files and can be replaced altogether with any other Morpheus input stage. similarly the S3 writer can be replaced with any Morpheus output stage.  Regardless of the inputs & outputs the core pipeline should renmain unchanged.  While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
 
 ### Morpheus Config
+
 For both inference and training pipeline the Morpheus config object should be constructed with the same values, and should look like:
 ```python
 import os
@@ -453,6 +443,7 @@ For any user without an associated model in MLflow, the model for the generic us
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id`. |
+
 
 #### DFPPostprocessingStage
 The `DFPPostprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py) stage filters records contained in the `DataFrame` emits a new `dfp.messages.DFPMessageMeta` message containing all records with a z score greater than `z_score_threshold` or `None` if no records are greater than `z_score_threshold`.
