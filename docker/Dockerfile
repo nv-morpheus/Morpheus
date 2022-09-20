@@ -156,6 +156,9 @@ COPY "./models" "./models"
 COPY "./scripts" "./scripts"
 COPY ["*.md", "LICENSE", "./"]
 
+# remedy for CVE-2015-20107
+RUN find / -name '*mailcap*.*py*' | xargs rm
+
 # Use morpheus by default
 CMD [ "morpheus" ]
 
