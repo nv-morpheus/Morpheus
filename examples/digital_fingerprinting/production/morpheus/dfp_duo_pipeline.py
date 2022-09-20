@@ -61,7 +61,8 @@ from morpheus.utils.logger import parse_log_level
 @click.option(
     "--train_users",
     type=click.Choice(["all", "generic", "individual", "none"], case_sensitive=False),
-    help="Indicates whether or not to train per user or a generic model for all users",
+    help=("Indicates whether or not to train per user or a generic model for all users. "
+          "Selecting none runs the inference pipeline."),
 )
 @click.option(
     "--skip_user",
