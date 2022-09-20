@@ -254,7 +254,7 @@ def run_pipeline(train_users,
             cache_dir=cache_dir))
 
     # Output is UserMessageMeta -- Cached frame set
-    pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema, only_new_batches=not is_training))
+    pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
 
     model_name_formatter = "DFP-duo-{user_id}"
     experiment_name_formatter = "dfp/duo/training/{reg_model_name}"
