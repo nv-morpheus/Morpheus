@@ -207,6 +207,21 @@ python dfp_azure_pipeline.py --help
 python dfp_duo_pipeline.py --help
 ```
 
+Both scripts are capable of running either a training or inference pipeline for their respective data sources. The command line options for both are the same:
+| Flag | Type | Description |
+| ---- | ---- | ----------- |
+| `--train_users` | One of: `all`, `generic`, `individual`, `none` | Indicates whether or not to train per user or a generic model for all users. Selecting `none` runs the inference pipeline. |
+| `--skip_user` | TEXT | User IDs to skip. Mutually exclusive with `only_user` |
+| `--only_user` | TEXT | Only users specified by this option will be included. Mutually exclusive with `skip_user` |
+| `--duration` | TEXT | The duration to run starting from now [default: 60d] |
+| `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
+| `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
+| `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
+| `-f`, `--input_file` | TEXT | List of files to process. Can specificy multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. See [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
+| `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
+| `--help` | | Show this message and exit.|
+
+
 ##### Optional MLflow Service
 Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
