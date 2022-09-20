@@ -156,7 +156,7 @@ The reference architecture is composed of the following services:​
 | ------- | ----------- |
 | mlflow | [MLflow](https://mlflow.org/) provides a versioned model store​ |
 | jupyter | [Jupyter Server](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html)​ necessary for testing and development of the pipelines​ |
-| morpheus_training | Used for executing both training and inference pipelines |
+| morpheus_pipeline | Used for executing both training and inference pipelines |
 
 ### Running via docker-compose
 #### Building the services
@@ -190,8 +190,25 @@ Copy and paste the url into a web browser. There are four notebooks included wit
 
 > **Note:** The auth token in the url is a one-time use token, and a new one is generated with each invocation.
 
+##### Morpheus Pipeline
+By default the `morpheus_pipeline` will run the training pipeline for Duo data, from the `examples/digital_fingerprinting/production` dir run:
+```bash
+docker compose up morpheus_pipeline
+```
+
+If instead you wish to run a different pipeline, from the `examples/digital_fingerprinting/production` dir run:
+```bash
+docker compose run morpheus_pipeline bash
+```
+
+From the prompt within the `morpheus_pipeline` container you can run either the `dfp_azure_pipeline.py` or `dfp_duo_pipeline.py` pipeline scripts.
+```bash
+python dfp_azure_pipeline.py --help
+python dfp_duo_pipeline.py --help
+```
+
 ##### Optional MLflow Service
-Starting either the `morpheus_training` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
+Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
