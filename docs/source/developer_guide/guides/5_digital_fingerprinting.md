@@ -29,6 +29,33 @@ The location of these logs could be either local to the machine running Morpheus
 
 Additional data sources and remote stores can easily be added using the Morpheus SDK, the key to applying DFP to a new data source is through the process of feature selection. Any data source can be fed into DFP after some preprocessing to get a feature vector per log/data point​.  Since DFP builds a targeted model for each entity (user/service/machine... etc.), it would work best if the chosen data source has a field that uniquely identifies the entity we’re trying to model.
 
+## DFP Examples
+The DFP workflow is provided as two separate examples: a simple, "starter" pipeline for new users and a complex, "production" pipeline for full scale deployments. While these two examples both peform the same general tasks, they do so in very different ways. The following is a breakdown of the differences between the two examples.
+
+### The "Starter" Example
+
+This example is designed to simplify the number of stages and components and provided a fully contained workflow in a single pipeline.
+
+Key Differences:
+ * A single pipeline which performs both training and inference
+ * Requires no external services
+ * Can be run from the Morpheus CLI
+
+This example is described in more detail in [`examples/digital_fingerprinting/starter/README.md`](/examples/digital_fingerprinting/starter/README.md)
+
+### The "Production" Example
+
+This example is designed to show what a full scale, production ready, DFP deployment in Morpheus would look like. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
+
+Key Differences:
+ * Multiple pipelines are specialized to perform either training or inference
+ * Requires setting up a model store to allow the training and inference pipelines to communicate
+ * Organized into a docker-compose deployment for easy startup
+ * Contains a Jupyter notebook service to ease development and debugging
+ * Can be deployed to Kubernetes using provided Helm charts
+ * Uses many customized stages to maximize performance.
+
+This example is described in more detail in [`examples/digital_fingerprinting/production/README.md`](/examples/digital_fingerprinting/production/README.md)
 
 ### DFP Features
 
@@ -121,7 +148,7 @@ DFP in Morpheus is built as an application of containerized services​ and can 
 * [Kubernetes](https://kubernetes.io/) cluster configured with GPU resources​
 * [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
 
-Note: For GPU Requirements see [README.md](/README.md#requirements)
+> **Note:**  For GPU Requirements see [README.md](/README.md#requirements)
 
 ### Services
 The reference architecture is composed of the following services:​
@@ -129,8 +156,7 @@ The reference architecture is composed of the following services:​
 | ------- | ----------- |
 | mlflow | [MLflow](https://mlflow.org/) provides a versioned model store​ |
 | jupyter | [Jupyter Server](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html)​ necessary for testing and development of the pipelines​ |
-| Morpheus Training Pipeline​ | Trains the autoencoder models and uploads to MLFlow |
-| Morpheus Inference Pipeline​ | Downloads models from MLFlow for inferencing​ & Publishes anomalies |
+| morpheus_training | Used for executing both training and inference pipelines |
 
 ### Running via docker-compose
 #### Building the services
@@ -139,6 +165,41 @@ From the root of the Morpheus repo run:
 cd examples/digital_fingerprinting/production
 docker compose build
 ```
+
+#### Running the services
+##### Jupyter Server
+From the `examples/digital_fingerprinting/production` dir run:
+```bash
+docker compose up jupyter
+```
+
+Once the build is complete and the service has started you will be prompted with a message that should look something like:
+```
+jupyter  |     To access the server, open this file in a browser:
+jupyter  |         file:///root/.local/share/jupyter/runtime/jpserver-7-open.html
+jupyter  |     Or copy and paste one of these URLs:
+jupyter  |         http://localhost:8888/lab?token=<token>
+jupyter  |      or http://127.0.0.1:8888/lab?token=<token>
+```
+
+Copy and paste the url into a web browser. There are four notebooks included with the DFP example:
+* dfp_azure_training.ipynb - Training pipeline for Azure Active Directory data
+* dfp_azure_inference.ipynb - Inference pipeline for Azure Active Directory data
+* dfp_duo_training.ipynb - Training pipeline for Duo Authentication
+* dfp_duo_inference.ipynb - Inference pipeline for Duo Authentication
+
+> **Note:** The auth token in the url is a one-time use token, and a new one is generated with each invocation.
+
+##### Optional MLflow Service
+Starting either the `morpheus_training` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
+
+From the `examples/digital_fingerprinting/production` dir run:
+```bash
+docker compose up mlflow
+```
+
+
+
 
 ## Morpheus Configuration
 ![Morpheus Configuration](img/dfp_deployment_configs.png)
@@ -182,7 +243,7 @@ Other attributes which might be needed:
 #### MultiFileSource
 The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py)) receives a path or list of paths (`filenames`), and will collectively be emitted into the pipeline as an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) object.  The paths may include wildcards `*` as well as urls (ex: `s3://path`) to remote storage providers such as S3, FTP, GCP, Azure, Databricks and others as defined by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files).  In addition to this paths can be cached locally by prefixing them with `filecache::` (ex: `filecache::s3://bucket-name/key-name`).
 
-Note: this stage does not actually download the data files, allowing the file list to be filtered and batched prior to being downloaded.
+> **Note:**  this stage does not actually download the data files, allowing the file list to be filtered and batched prior to being downloaded.
 
 | Argument | Type | Descirption |
 | -------- | ---- | ----------- |
@@ -217,7 +278,7 @@ pipeline.add_stage(
                         date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex)))
 ```
 
-Note: in cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
+> **Note:**  in cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
 
 #### DFPFileToDataFrameStage
 The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py)) stage receives a `list` of an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) and loads them into a single `DataFrame` which is then emitted into the pipeline.  When the parent stage is `DFPFileBatcherStage` each batch (typically one day) is concatenated into a single `DataFrame`, without this if the parent was `MultiFileSource` the entire dataset is loaded into a single `DataFrame`.  Because of this, it is important to chose a `period` argument for `DFPFileBatcherStage` small enough such that each batch can fit into memory.
@@ -235,7 +296,7 @@ This stage is able to download & load data files concurrently by multiple method
 
 This stage will cache the resulting `DataFrame` in `cache_dir`, since we are caching the `DataFrame`s and not the source files, a cache hit avoids the cost of parsing the incoming data. In the case of remote storage systems such as S3 this avoids both parsing and a download on a cache hit.  One consequence of this is that any change to the `schema` will require purging cached files in the `cache_dir` before those changes are visible.
 
-Note: this caching is in addition to any caching which may have occurred when using the optional `filecache::` prefix.
+> **Note:**  this caching is in addition to any caching which may have occurred when using the optional `filecache::` prefix.
 
 ### DataFrameInputSchema
 The `DataFrameInputSchema` ([examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py](/examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py)) class defines the schema specifying the columns to be included in the output `DataFrame`.  Within the DFP pipeline there are two stages where pre-processing is performed, the `DFPFileToDataFrameStage` stage and the `DFPPreprocessingStage`.  This decoupling of the pre-processing stages from the actual opperations needed to be performed allows for the actual schema to be user-defined in the pipeline and re-usability of the stages.  It is up to the user to define the fields which will appear in the `DataFrame`, any column in the input data that isn't specified in either `column_info` or `preserve_columns` constructor arguments will not appear in the output.   The exception to this are JSON fields, specified in the `json_columns` argument which defines json fields which are to be normalized.
@@ -404,7 +465,7 @@ The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus
 | `max_history` | `int`, `str` or `None` | When not `None`, include up to `max_history` records. When `max_history` is an int, then the last `max_history` records will be included. When `max_history` is a `str` it is assumed to represent a duration parsable by [`pandas.Timedelta`](https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html) and only those records within the window of [latest timestamp - `max_history`, latest timestamp] will be included. |
 | `cache_dir` | `str` | Optional path to cache directory, cached items will be stored in a subdirectory under `cache_dir` named `rolling-user-data` this directory, along with `cache_dir` will be created if it does not already exist. |
 
-Note: this stage computes a row hash for the first and last rows of the incoming `DataFrame` as such all data contained must be hashable, any non-hashable values such as `lists` should be dropped or conveted into hashable types in the `DFPFileToDataFrameStage`.
+> **Note:**  this stage computes a row hash for the first and last rows of the incoming `DataFrame` as such all data contained must be hashable, any non-hashable values such as `lists` should be dropped or conveted into hashable types in the `DFPFileToDataFrameStage`.
 
 #### DFPPreprocessingStage
 The `DFPPreprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_preprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_preprocessing_stage.py) stage, the actual logic of preprocessing is defined in the `input_schema` argument.  Since this stage occurrs in the pipeline after the `DFPFileBatcherStage` and `DFPSplitUsersStage` stages all records in the incoming `DataFrame` correspond to only a single user within a specific time period allowing for columns to be computer on a per-user per-time period basis such as the `logcount` and `locincrement` features mentioned above.  Making the type of processing performed in this stage different than those performed in the `DFPFileToDataFrameStage`.
@@ -441,7 +502,7 @@ The `DFPMLFlowModelWriterStage` [examples/digital_fingerprinting/production/morp
 | `experiment_name_formatter` | `str` | Optional format string to control the experiement name for models stored in MLfklow, default is `/dfp-models/{reg_model_name}`.  Currently available field names are: `user_id`, `user_md5` and `reg_model_name` which is the model name as defined by `model_name_formatter` once the field names have been applied. |
 | `databricks_permissions` | `dict` or `None` | Optional, when not `None` sets permissions needed when using a databricks hosted MLflow server |
 
-Note: If using a remote MLflow server, users will need to call [`mlflow.set_tracking_uri`](https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri) before starting the pipeline.
+> **Note:**  If using a remote MLflow server, users will need to call [`mlflow.set_tracking_uri`](https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri) before starting the pipeline.
 
 ## Inference Pipeline
 ![Inference Pipeline Overview](img/dfp_inference_overview.png)
