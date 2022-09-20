@@ -58,7 +58,7 @@ services:
     cap_add:
       - sys_nice
 
-  morpheus_training:
+  morpheus_pipeline:
     # restart: always
     build:
       context: ./
@@ -67,7 +67,7 @@ services:
       args:
         - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
     image: dfp_morpheus
-    container_name: morpheus_training
+    container_name: morpheus_pipeline
     networks:
       - frontend
       - backend
