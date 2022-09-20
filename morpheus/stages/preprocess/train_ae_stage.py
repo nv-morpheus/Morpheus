@@ -148,7 +148,7 @@ class TrainAEStage(MultiMessageStage):
     train_epochs : int, default = 25, min = 1
         The number of epochs to train user models for. Passed in as the `epoch` parameter to `AutoEncoder.fit` causes
         data to be trained in `train_epochs` batches.
-    min_train_rows : int, default = 300
+    train_min_history : int, default = 300
         Minimum number of rows to train user model.
     train_max_history : int, default = 1000, min = 1
         Maximum amount of rows that will be retained in history. As new data arrives, models will be retrained with a
@@ -159,7 +159,7 @@ class TrainAEStage(MultiMessageStage):
     sort_glob : bool, default = False, is_flag = True
         If true the list of files matching `input_glob` will be processed in sorted order.
     models_output_filename : pathlib.Path, default = None, writable = True
-        The location to write trained models to
+        The location to write trained models to.
     """
 
     def __init__(self,
