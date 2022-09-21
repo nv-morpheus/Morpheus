@@ -146,24 +146,12 @@ DFP in Morpheus is accomplished via two independent pipelines: training and infe
 * Detected anomalies are published to an S3 bucket, directory or a Kafka topic.
 * Output can be integrated with a monitoring tool.
 
-
 ## Runtime Environment Setup
 ![Runtime Environment Setup](img/dfp_runtime_env.png)
 
 DFP in Morpheus is built as an application of containerized services​ and can be run in two ways:
 1. Using docker-compose for testing and development​
 1. Using helm charts for production Kubernetes deployment​
-
-### System requirements for the DFP reference architecture:
-##### Running via docker-compose:
-* [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/) installed on the host machine​
-* Supported GPU with [nvidia-docker runtime​]((https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker))
-
-##### Running via Kubernetes​
-* [Kubernetes](https://kubernetes.io/) cluster configured with GPU resources​
-* [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
-
-> **Note:**  For GPU Requirements see [README.md](/README.md#requirements)
 
 ### Services
 The reference architecture is composed of the following services:​
@@ -173,19 +161,25 @@ The reference architecture is composed of the following services:​
 | jupyter | [Jupyter Server](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html)​ necessary for testing and development of the pipelines​ |
 | morpheus_pipeline | Used for executing both training and inference pipelines |
 
-### Running via docker-compose
+### Running via `docker-compose`
+#### System requirements
+* [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/) installed on the host machine​
+* Supported GPU with [nvidia-docker runtime​](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+
+> **Note:**  For GPU Requirements see [README.md](/README.md#requirements)
+
 #### Building the services
 From the root of the Morpheus repo run:
 ```bash
 cd examples/digital_fingerprinting/production
-docker compose build
+docker-compose build
 ```
 
 #### Running the services
 ##### Jupyter Server
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker compose up jupyter
+docker-compose up jupyter
 ```
 
 Once the build is complete and the service has started you will be prompted with a message that should look something like:
@@ -208,12 +202,12 @@ Copy and paste the url into a web browser. There are four notebooks included wit
 ##### Morpheus Pipeline
 By default the `morpheus_pipeline` will run the training pipeline for Duo data, from the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker compose up morpheus_pipeline
+docker-compose up morpheus_pipeline
 ```
 
 If instead you wish to run a different pipeline, from the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker compose run morpheus_pipeline bash
+docker-compose run morpheus_pipeline bash
 ```
 
 From the prompt within the `morpheus_pipeline` container you can run either the `dfp_azure_pipeline.py` or `dfp_duo_pipeline.py` pipeline scripts.
@@ -242,12 +236,15 @@ Starting either the `morpheus_pipeline` or the `jupyter` service, will start the
 
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
-docker compose up mlflow
+docker-compose up mlflow
 ```
 
 ### Running via Kubernetes​
-TODO
+#### System requirements
+* [Kubernetes](https://kubernetes.io/) cluster configured with GPU resources​
+* [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
 
+> **Note:**  For GPU Requirements see [README.md](/README.md#requirements)
 
 ## Morpheus Configuration
 ![Morpheus Configuration](img/dfp_deployment_configs.png)
