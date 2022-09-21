@@ -26,14 +26,14 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 Example:
 
 ```
-docker pull nvcr.io/nvidia/tritonserver:22.02-py3
+docker pull nvcr.io/nvidia/tritonserver:22.08-py3
 ```
 
 ##### Start Triton Inference Server container
 ```
 cd ${MORPHEUS_ROOT}/models
 
-docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:22.02-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model log-parsing-onnx
+docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model log-parsing-onnx
 ```
 
 ##### Verify Model Deployment
