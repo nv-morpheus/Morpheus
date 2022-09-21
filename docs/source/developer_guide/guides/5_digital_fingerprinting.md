@@ -55,7 +55,7 @@ Key Differences:
  * Can be deployed to Kubernetes using provided Helm charts
  * Uses many customized stages to maximize performance.
 
-This example is described in more detail in [`examples/digital_fingerprinting/production/README.md`](/examples/digital_fingerprinting/production/README.md)
+This example is described in [`examples/digital_fingerprinting/production/README.md`](/examples/digital_fingerprinting/production/README.md) as well as the rest of this document.
 
 ### DFP Features
 
