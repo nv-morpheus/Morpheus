@@ -39,10 +39,10 @@ Adding a new source for the DFP pipeline requires defining five critical pieces:
    * IP address of a client
    * Name of a service (ie. "DNS", "Customer DB", "SMTP")
 
-1. The timestamp column in the Morpheus configu attribute `ae.timestamp_column_name` and ensuring it is converted to a datetime column see [DateTimeColumn](#datetimecolumn).
-1. The model's features as a list of strings in the Morpheus config attribure `ae.feature_columns` which should all be available to the pipeline after the [`DFPPreprocessingStage`](#dfppreprocessingstage).
-1. A [`DataFrameInputSchema`](#dataframeinputschema) for the [`DFPFileToDataFrameStage`](#dfpfiletodataframestage) stage.
-1. A [`DataFrameInputSchema`](#dataframeinputschema) for the [`DFPPreprocessingStage`](#dfppreprocessingstage).
+1. The timestamp column in the Morpheus configu attribute `ae.timestamp_column_name` and ensuring it is converted to a datetime column see [`DateTimeColumn`](#date-time-column-datetimecolumn).
+1. The model's features as a list of strings in the Morpheus config attribure `ae.feature_columns` which should all be available to the pipeline after the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
+1. A [`DataFrameInputSchema`](#dataframe-input-schema-dataframeinputschema) for the [`DFPFileToDataFrameStage`](#file-to-dataframe-stage-dfpfiletodataframestage) stage.
+1. A [`DataFrameInputSchema`](#dataframe-input-schema-dataframeinputschema) for the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
 
 ## DFP Examples
 The DFP workflow is provided as two separate examples: a simple, "starter" pipeline for new users and a complex, "production" pipeline for full scale deployments. While these two examples both peform the same general tasks, they do so in very different ways. The following is a breakdown of the differences between the two examples.
@@ -285,10 +285,129 @@ Other attributes which might be needed:
 | `Config.ae.timestamp_column_name` |  `str` | `timestamp` | Column in the `DataFrame` containing the timestamp of the event |
 | `Config.ae.fallback_username` | `str` | `generic_user` | Name to use for the generic user model, shoudl nto match the name of any real users |
 
+### Schema Definition
+
+#### DataFrame Input Schema (`DataFrameInputSchema`)
+The `DataFrameInputSchema` ([examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py](/examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py)) class defines the schema specifying the columns to be included in the output `DataFrame`.  Within the DFP pipeline there are two stages where pre-processing is performed, the `DFPFileToDataFrameStage` stage and the `DFPPreprocessingStage`.  This decoupling of the pre-processing stages from the actual opperations needed to be performed allows for the actual schema to be user-defined in the pipeline and re-usability of the stages.  It is up to the user to define the fields which will appear in the `DataFrame`, any column in the input data that isn't specified in either `column_info` or `preserve_columns` constructor arguments will not appear in the output.   The exception to this are JSON fields, specified in the `json_columns` argument which defines json fields which are to be normalized.
+
+It is important to note that the fields defined in `json_columns` are normalized prior to the processing of the fields in `column_info`, allowing for processing to be performed on fields nested in json columns.  For example, say we had a JSON field named `event` containing a key named `timestamp` which in the JSON data appears as an ISO 8601 formatted date string, we could ensure it was converted to a datetime object to downstream stages with the following:
+```python
+from dfp.utils.column_info import DataFrameInputSchema
+from dfp.utils.column_info import DateTimeColumn
+```
+```python
+schema = DataFrameInputSchema(
+    json_columns=['event'],
+    column_info=[DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name='event.timestamp')])
+```
+
+In the above examples three opperations were performed:
+1. The `event` JSON field was normalized, resulting in new fields prefixed with `event.` to be included in the output `DataFrame`.
+1. The newly created field `event.timestamp` is parsed into a datetime field.
+1. Since the DFP pipeline explicitly requires a timestamp field, we name this new column with the `config.ae.timestamp_column_name` config attribute ensuring it matches the pipeline configuration. When `name` and `input_name` are the same the old field is overwritten, and when they differ a new field is created.
+
+The `DFPFileToDataFrameStage` is executed first and is responsible for flattening potentially nested JSON data and performing any sort of data type conversions. The `DFPPreprocessingStage` is executed later after the `DFPSplitUsersStage` allowing for the possibility of per-user computed fields such as the `logcount` and `locincrement` fields mentioned previously. Both stages are performed after the `DFPFileBatcherStage` allowing for per time period (per-day by default) computed fields.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `json_columns` | `List[str]` | Optional list of json columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a json field will be flattened into a new column named `<field>.<key>` for example a json field named `user` containing a key named `id` will result in a new column named `user.id`. By default this is an empty `list`. |
+| `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific opperation to be performed upon a column these include renames, typye conversions and custom computations. By default this is an empty `list`. |
+| `preserve_columns` | `List[str]` or `str` | Optional regular expression string or list of regular expression strings that define columns in the input data which should be preserved in the output `DataFrame`. By default this is an empty `list`. |
+| `row_filter` | `function` or `None` | Optional function to be called after all other processing has been performed. This function receives the `DataFrame` as it's only argument returning a `DataFrame`. |
+
+#### Column Info (`ColumnInfo`)
+Defines a single column and type-cast.
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+
+#### Custom Column (`CustomColumn`)
+Subclass of `ColumnInfo`, defines a column to be computed by a user-defined function `process_column_fn`.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `process_column_fn` | `function` | Function which receives the entire `DataFrame` as it's only input, returning a new [`pandas.Series`](https://pandas.pydata.org/docs/reference/api/pandas.Series.html) object to be stored in column `name`. |
+
+#### Rename Column (`RenameColumn`)
+Subclass of `ColumnInfo`, adds the ability to also perform a rename.
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `input_name` | `str` | Original column name |
+
+#### Boolean Column (`BoolColumn`)
+Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of 5 possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
+```python
+from dfp.utils.column_info import BoolColumn
+```
+```python
+field = BoolColumn(name="result",
+                   dtype=bool,
+                   input_name="result",
+                   true_values=["OK", "SUCCESS"],
+                   false_values=["DENIED", "CANCELED", "EXPIRED"])
+```
+
+We used strings in this example, however we also could have just as easily mapped integer status codes.  We also have the ability to map on to types other than boolean by providing custom values for true and false  (eg. `1`/`0`, `yes`/`no`) .
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Typically this should be `bool` however it could potentially be another type if `true_value` and `false_value` are specified. |
+| `input_name` | `str` | Original column name |
+| `true_value` | Any | Optional value to store for true values, should be of a type `dtype`. Defaults to `True`. |
+| `false_value` | Any | Optional value to store for false values, should be of a type `dtype`. Defaults to `False`. |
+| `true_values` | `List[str]` | List of string values to be interpreted as true. |
+| `false_values` | `List[str]` | List of string values to be interpreted as false. |
+
+#### Date-Time Column (`DateTimeColumn`)
+Subclass of `RenameColumn`, specific to casting UTC localized datetime values. When incoming values contain a time-zone offset string the values are converted to UTC, while values without a time-zone are assumed to be UTC.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `input_name` | `str` | Original column name |
+
+#### String-Join Column (`StringJoinColumn`)
+Subclass of `RenameColumn`, converts incoming `list` values to string by joining by `sep`.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `input_name` | `str` | Original column name |
+| `sep` | `str` | Separator string to use for the join |
+
+#### String-Cat Column (`StringCatColumn`)
+Subclass of `ColumnInfo`, concatinates values from multiple columns into a new string column separated by `sep`.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
+| `input_columns` | `List[str]` | List of columns to concatinate |
+| `sep` | `str` | Separator string |
+
+#### Increment Column (`IncrementColumn`)
+Subclass of `DateTimeColumn`, counts the unique occurrences of a value in `groupby_column` over a specific time window `period` based on dates in the `input_name` field.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `name` | `str` | Name of the destination column |
+| `dtype` | `str` or Python type | Should be `int` or other integer class |
+| `input_name` | `str` | Original column name containing timestamp values |
+| `groupby_column` | `str` | Column name to group by |
+| `period` | `str` | Optional time period to peform the calculation over, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). Defaults to `D` one day |
+
 ### Input Stages
 ![Input Stages](img/dfp_input_config.png)
 
-#### MultiFileSource
+#### Source Stage (`MultiFileSource`)
 The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/multi_file_source.py)) receives a path or list of paths (`filenames`), and will collectively be emitted into the pipeline as an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) object.  The paths may include wildcards `*` as well as urls (ex: `s3://path`) to remote storage providers such as S3, FTP, GCP, Azure, Databricks and others as defined by [fsspec](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files).  In addition to this paths can be cached locally by prefixing them with `filecache::` (ex: `filecache::s3://bucket-name/key-name`).
 
 > **Note:**  this stage does not actually download the data files, allowing the file list to be filtered and batched prior to being downloaded.
@@ -299,7 +418,7 @@ The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/
 | `filenames` | `List[str]` or `str` | Paths to source file to be read from |
 
 
-#### DFPFileBatcherStage
+#### File Batcher Stage (`DFPFileBatcherStage`)
 The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming `DataFrame` in batches of a time period (per day default).  This stage can potentially improve performance by combining multiple small files into a single batch.  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
 
 | Argument | Type | Descirption |
@@ -328,7 +447,7 @@ pipeline.add_stage(
 
 > **Note:**  in cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
 
-#### DFPFileToDataFrameStage
+#### File to DataFrame Stage (`DFPFileToDataFrameStage`)
 The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py)) stage receives a `list` of an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) and loads them into a single `DataFrame` which is then emitted into the pipeline.  When the parent stage is `DFPFileBatcherStage` each batch (typically one day) is concatenated into a single `DataFrame`, without this if the parent was `MultiFileSource` the entire dataset is loaded into a single `DataFrame`.  Because of this, it is important to chose a `period` argument for `DFPFileBatcherStage` small enough such that each batch can fit into memory.
 
 | Argument | Type | Descirption |
@@ -346,132 +465,21 @@ This stage will cache the resulting `DataFrame` in `cache_dir`, since we are cac
 
 > **Note:**  this caching is in addition to any caching which may have occurred when using the optional `filecache::` prefix.
 
-### DataFrameInputSchema
-The `DataFrameInputSchema` ([examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py](/examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py)) class defines the schema specifying the columns to be included in the output `DataFrame`.  Within the DFP pipeline there are two stages where pre-processing is performed, the `DFPFileToDataFrameStage` stage and the `DFPPreprocessingStage`.  This decoupling of the pre-processing stages from the actual opperations needed to be performed allows for the actual schema to be user-defined in the pipeline and re-usability of the stages.  It is up to the user to define the fields which will appear in the `DataFrame`, any column in the input data that isn't specified in either `column_info` or `preserve_columns` constructor arguments will not appear in the output.   The exception to this are JSON fields, specified in the `json_columns` argument which defines json fields which are to be normalized.
-
-It is important to note that the fields defined in `json_columns` are normalized prior to the processing of the fields in `column_info`, allowing for processing to be performed on fields nested in json columns.  For example, say we had a JSON field named `event` containing a key named `timestamp` which in the JSON data appears as an ISO 8601 formatted date string, we could ensure it was converted to a datetime object to downstream stages with the following:
-```python
-from dfp.utils.column_info import DataFrameInputSchema
-from dfp.utils.column_info import DateTimeColumn
-```
-```python
-schema = DataFrameInputSchema(
-    json_columns=['event'],
-    column_info=[DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name='event.timestamp')])
-```
-
-In the above examples three opperations were performed:
-1. The `event` JSON field was normalized, resulting in new fields prefixed with `event.` to be included in the output `DataFrame`.
-1. The newly created field `event.timestamp` is parsed into a datetime field.
-1. Since the DFP pipeline explicitly requires a timestamp field, we name this new column with the `config.ae.timestamp_column_name` config attribute ensuring it matches the pipeline configuration. When `name` and `input_name` are the same the old field is overwritten, and when they differ a new field is created.
-
-The `DFPFileToDataFrameStage` is executed first and is responsible for flattening potentially nested JSON data and performing any sort of data type conversions. The `DFPPreprocessingStage` is executed later after the `DFPSplitUsersStage` allowing for the possibility of per-user computed fields such as the `logcount` and `locincrement` fields mentioned previously. Both stages are performed after the `DFPFileBatcherStage` allowing for per time period (per-day by default) computed fields.
-
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `json_columns` | `List[str]` | Optional list of json columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a json field will be flattened into a new column named `<field>.<key>` for example a json field named `user` containing a key named `id` will result in a new column named `user.id`. By default this is an empty `list`. |
-| `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific opperation to be performed upon a column these include renames, typye conversions and custom computations. By default this is an empty `list`. |
-| `preserve_columns` | `List[str]` or `str` | Optional regular expression string or list of regular expression strings that define columns in the input data which should be preserved in the output `DataFrame`. By default this is an empty `list`. |
-| `row_filter` | `function` or `None` | Optional function to be called after all other processing has been performed. This function receives the `DataFrame` as it's only argument returning a `DataFrame`. |
-
-#### ColumnInfo Classes
-The `ColumnInfo` class and subclasses define a single column.
-
-##### ColumnInfo
-Defines a single column and type-cast.
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `name` | `str` | Name of the column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
-
-##### CustomColumn
-Defines a column to be computed by a user-defined function `process_column_fn`.
-
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `name` | `str` | Name of the column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
-| `process_column_fn` | `function` | Function which receives the entire `DataFrame` as it's only input, returning a new [`pandas.Series`](https://pandas.pydata.org/docs/reference/api/pandas.Series.html) object to be stored in column `name`. |
-
-##### RenameColumn
-Similar to `ColumnInfo` but adds the ability to also perform a rename.
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
-| `input_name` | `str` | Original column name |
-
-##### BoolColumn
-Subclass of `RenameColumn` adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of 5 possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
-```python
-from dfp.utils.column_info import BoolColumn
-```
-```python
-field = BoolColumn(name="result",
-                   dtype=bool,
-                   input_name="result",
-                   true_values=["OK", "SUCCESS"],
-                   false_values=["DENIED", "CANCELED", "EXPIRED"])
-```
-
-We used strings in this example, however we also could have just as easily mapped integer status codes.  We also have the ability to map on to types other than boolean by providing custom values for true and false  (eg. `1`/`0`, `yes`/`no`) .
-
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Typically this should be `bool` however it could potentially be another type if `true_value` and `false_value` are specified. |
-| `input_name` | `str` | Original column name |
-| `true_value` | Any | Optional value to store for true values, should be of a type `dtype`. Defaults to `True`. |
-| `false_value` | Any | Optional value to store for false values, should be of a type `dtype`. Defaults to `False`. |
-| `true_values` | `List[str]` | List of string values to be interpreted as true. |
-| `false_values` | `List[str]` | List of string values to be interpreted as false. |
-
-##### DateTimeColumn
-Subclass of `RenameColumn` specific to casting UTC localized datetime values. When incoming values contain a time-zone offset string the values are converted to UTC, while values without a time-zone are assumed to be UTC.
-
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
-| `input_name` | `str` | Original column name |
-
-##### StringJoinColumn
-Subclass of `RenameColumn`, converts incoming `list` values to string by joining by `sep`.
-
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
-| `input_name` | `str` | Original column name |
-| `sep` | `str` | Separator string to use for the join |
-
-##### StringCatColumn
-Concatinate values from multiple columns into a new string column separated by `sep`.
-
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
-| `input_columns` | `List[str]` | List of columns to concatinate |
-| `sep` | `str` | Separator string |
-
-##### IncrementColumn
-Subclass of `DateTimeColumn`, counts the unique occurrences of a value in `groupby_column` over a specific time window `period` based on dates in the `input_name` field.
-
-| Argument | Type | Descirption |
-| -------- | ---- | ----------- |
-| `name` | `str` | Name of the destination column |
-| `dtype` | `str` or Python type | Should be `int` or other integer class |
-| `input_name` | `str` | Original column name containing timestamp values |
-| `groupby_column` | `str` | Column name to group by |
-| `period` | `str` | Optional time period to peform the calculation over, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). Defaults to `D` one day |
-
 ### Output Stages
 ![Output Stages](img/dfp_output_config.png)
 
 For the inference pipeline any Morpheus output stage such as `morpheus.stages.output.write_to_file_stage.WriteToFileStage` and `morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage` could be used in addition to the `WriteToS3Stage` documented below.
 
-#### WriteToS3Stage
+#### Write to File Stage (`WriteToFileStage`)
+This final stage will write all received messages to a single output file in either CSV or JSON format.
+
+| Argument | Type | Descirption |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `filename` | `str` | The file to write anomalous log messages to. |
+| `overwrite` | `bool` | Optional, defaults to `False`. If the file specified in `filename` already exists, it will be overwritten if this option is set to `True` |
+
+#### Write to S3 Stage (`WriteToS3Stage`)
 The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py)) stage writes the resulting anomaly detections to S3.  The `WriteToS3Stage` decouples the S3 specifc operations from the Morpheus stage, and as such receives an `s3_writer` argument.
 
 | Argument | Type | Descirption |
@@ -482,7 +490,7 @@ The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/s
 ### Core Pipeline
 These stages are common to both the training & inference pipelines, unlike the input & output stages these are specific to the DFP pipeline and intended to be configured but not replacable.
 
-#### DFPSplitUsersStage
+#### Split Users Stage (`DFPSplitUsersStage`)
 The `DFPSplitUsersStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_split_users_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_split_users_stage.py) stage recieves an incoming `DataFrame` and emits a `list` of `DFPMessageMeta` where each `DFPMessageMeta` represents the records associated for a given user.  This allows for downstream stages to perform all nescesary opperations on a per user basis.
 
 | Argument | Type | Descirption |
@@ -493,7 +501,7 @@ The `DFPSplitUsersStage` [examples/digital_fingerprinting/production/morpheus/df
 | `skip_users` | `List[str]` or `None` | List of users to exclude, when `include_generic` is `True` excluded records will also be excluded from the generic user. Mutually exclusive with `only_users`.  |
 | `only_users` | `List[str]` or `None` | Limit records to a specific list of users, when `include_generic` is `True` the generic user's records will also be limited to the users in this list. Mutually exclusive with `skip_users`. |
 
-#### DFPRollingWindowStage
+#### Rolling Window Stage (`DFPRollingWindowStage`)
 The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_rolling_window_stage.py) stage performs several key pieces of functionality for DFP.
 1. This stage keeps a moving window of logs on a per user basis
    * These logs are saved to disk to reduce memory requirements between logs from the same user
@@ -515,7 +523,7 @@ The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus
 
 > **Note:**  this stage computes a row hash for the first and last rows of the incoming `DataFrame` as such all data contained must be hashable, any non-hashable values such as `lists` should be dropped or conveted into hashable types in the `DFPFileToDataFrameStage`.
 
-#### DFPPreprocessingStage
+#### Preprocessing Stage (`DFPPreprocessingStage`)
 The `DFPPreprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_preprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_preprocessing_stage.py) stage, the actual logic of preprocessing is defined in the `input_schema` argument.  Since this stage occurrs in the pipeline after the `DFPFileBatcherStage` and `DFPSplitUsersStage` stages all records in the incoming `DataFrame` correspond to only a single user within a specific time period allowing for columns to be computer on a per-user per-time period basis such as the `logcount` and `locincrement` features mentioned above.  Making the type of processing performed in this stage different than those performed in the `DFPFileToDataFrameStage`.
 
 | Argument | Type | Descirption |
@@ -532,7 +540,7 @@ After training the generic model, individual user models can be trained​.  Ind
 
 ### Training Stages
 
-#### DFPTraining
+#### Training Stage (`DFPTraining`)
 The `DFPTraining` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_training.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_training.py) trains a model for each incoming `DataFrame` and emits an instance of `morpheus.messages.multi_ae_message.MultiAEMessage` containing the trained model.
 
 | Argument | Type | Descirption |
@@ -540,7 +548,7 @@ The `DFPTraining` [examples/digital_fingerprinting/production/morpheus/dfp/stage
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `model_kwargs` | `dict` or `None` | Optional dictionary of keyword arguments to be used when constructing the model.  See [`AutoEncoder`](https://github.com/nv-morpheus/dfencoder/blob/master/dfencoder/autoencoder.py) for information on the available options.|
 
-#### DFPMLFlowModelWriterStage
+#### MLflow Model Writer Stage (`DFPMLFlowModelWriterStage`)
 The `DFPMLFlowModelWriterStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py) stage publishes trained models into MLflow, skipping any model which lacked sufficient training data (current required minimum is 300 log records).
 
 | Argument | Type | Descirption |
@@ -557,13 +565,13 @@ The `DFPMLFlowModelWriterStage` [examples/digital_fingerprinting/production/morp
 
 ### Inference Stages
 
-#### DFPInferenceStage
+#### Inference Stage (`DFPInferenceStage`)
 The `DFPInferenceStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_inference_stage.py) stage loads models from MLflow and performs inferences against those models.  This stage emits a message containing the original `DataFrame` along with new columns containing the z score (`mean_abs_z`), along with the name and version of the model that generated that score (`model_version`).  For each feature in the model three additional columns will also be added:
 * `<feature name>_loss` : The loss
 * `<feature name>_z_loss` : The loss z-score
 * `<feature name>_pred` : The predicted value
 
-For a hypothtetical feature named `result` the three added columns will be: `result_loss`, `result_z_loss`, `result_pred`.
+For a hypothetical feature named `result` the three added columns will be: `result_loss`, `result_z_loss`, `result_pred`.
 
 For performance models fetched from MLflow are cached locally, and are cached for up to 10 minutes allowing updated models to be routinely updated.  In addition to caching individual models the stage also maintains a cache of which models are available, so a newly trained user model published to MLflow won't be visible to an already running inference pipeline for up to 10 minutes.
 
@@ -576,7 +584,7 @@ For any user without an associated model in MLflow, the model for the generic us
 
 
 
-#### DFPPostprocessingStage
+#### Post Processing Stage (`DFPPostprocessingStage`)
 The `DFPPostprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py) stage filters the output from the inference stage for any anomalous messages. Logs which exceed the specified Z-Score will be passed onto the next stage.  All remaining logs which are below the threshold will be dropped.
 
 | Argument | Type | Descirption |
