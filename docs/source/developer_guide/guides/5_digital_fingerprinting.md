@@ -28,11 +28,18 @@ The data we will want to use for the training and inference will be any sensitiv
 The location of these logs could be either local to the machine running Morpheus, a shared filesystem like NFS or on a remote store such as [Amazon S3](https://aws.amazon.com/s3/).
 
 ### Defining a New Data Source
-Additional data sources and remote stores can easily be added using the Morpheus SDK, the key to applying DFP to a new data source is through the process of feature selection. Any data source can be fed into DFP after some preprocessing to get a feature vector per log/data point​.  Since DFP builds a targeted model for each entity (user/service/machine... etc.), it would work best if the chosen data source has a field that uniquely identifies the entity we’re trying to model.
+Additional data sources and remote stores can easily be added using the Morpheus SDK, the key to applying DFP to a new data source is through the process of feature selection. Any data source can be fed into DFP after some preprocessing to get a feature vector per log/data point​.  In order to build a targeted model for each entity (user/service/machine... etc.), the chosen data source needs a field that uniquely identifies the entity we’re trying to model.
 
 Adding a new source for the DFP pipeline requires defining five critical pieces:
-1. The user_id column in the Morpheus config attribute `ae.userid_column_name`. This can be any column which uniquely identifies the user, account or service being fingerprinted.
-1. The timestamp column in the Morpheus configu attribute `ae.timestamp_column_name` and ensuring it is conveted to a datetime column see [DateTimeColumn](#datetimecolumn).
+1. The user_id column in the Morpheus config attribute `ae.userid_column_name`. This can be any column which uniquely identifies the user, account or service being fingerprinted. Examples of possible user_ids could be:
+   * A username or fullname  (ie. "johndoe", "Jane Doe")
+   * User's LDAP ID number
+   * A user group (ie. "sales", "engineering")
+   * Hostname of a machine on the network
+   * IP address of a client
+   * Name of a service (ie. "DNS", "Customer DB", "SMTP")
+
+1. The timestamp column in the Morpheus configu attribute `ae.timestamp_column_name` and ensuring it is converted to a datetime column see [DateTimeColumn](#datetimecolumn).
 1. The model's features as a list of strings in the Morpheus config attribure `ae.feature_columns` which should all be available to the pipeline after the [`DFPPreprocessingStage`](#dfppreprocessingstage).
 1. A [`DataFrameInputSchema`](#dataframeinputschema) for the [`DFPFileToDataFrameStage`](#dfpfiletodataframestage) stage.
 1. A [`DataFrameInputSchema`](#dataframeinputschema) for the [`DFPPreprocessingStage`](#dfppreprocessingstage).
