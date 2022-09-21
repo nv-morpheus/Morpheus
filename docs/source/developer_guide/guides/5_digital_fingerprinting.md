@@ -203,7 +203,7 @@ Copy and paste the url into a web browser. There are four notebooks included wit
 * dfp_duo_training.ipynb - Training pipeline for Duo Authentication
 * dfp_duo_inference.ipynb - Inference pipeline for Duo Authentication
 
-> **Note:** The auth token in the url is a one-time use token, and a new one is generated with each invocation.
+> **Note:** The token in the url is a one-time use token, and a new one is generated with each invocation.
 
 ##### Morpheus Pipeline
 By default the `morpheus_pipeline` will run the training pipeline for Duo data, from the `examples/digital_fingerprinting/production` dir run:
