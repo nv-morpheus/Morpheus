@@ -39,17 +39,17 @@ Adding a new source for the DFP pipeline requires defining five critical pieces:
    * IP address of a client
    * Name of a service (ie. "DNS", "Customer DB", "SMTP")
 
-1. The timestamp column in the Morpheus configu attribute `ae.timestamp_column_name` and ensuring it is converted to a datetime column see [`DateTimeColumn`](#date-time-column-datetimecolumn).
-1. The model's features as a list of strings in the Morpheus config attribure `ae.feature_columns` which should all be available to the pipeline after the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
+1. The timestamp column in the Morpheus config attribute `ae.timestamp_column_name` and ensure it is converted to a datetime column see [`DateTimeColumn`](#date-time-column-datetimecolumn).
+1. The model's features as a list of strings in the Morpheus config attribute `ae.feature_columns` which should all be available to the pipeline after the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
 1. A [`DataFrameInputSchema`](#dataframe-input-schema-dataframeinputschema) for the [`DFPFileToDataFrameStage`](#file-to-dataframe-stage-dfpfiletodataframestage) stage.
 1. A [`DataFrameInputSchema`](#dataframe-input-schema-dataframeinputschema) for the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
 
 ## DFP Examples
-The DFP workflow is provided as two separate examples: a simple, "starter" pipeline for new users and a complex, "production" pipeline for full scale deployments. While these two examples both peform the same general tasks, they do so in very different ways. The following is a breakdown of the differences between the two examples.
+The DFP workflow is provided as two separate examples: a simple, "starter" pipeline for new users and a complex, "production" pipeline for full scale deployments. While these two examples both perform the same general tasks, they do so in very different ways. The following is a breakdown of the differences between the two examples.
 
 ### The "Starter" Example
 
-This example is designed to simplify the number of stages and components and provided a fully contained workflow in a single pipeline.
+This example is designed to simplify the number of stages and components and provide a fully contained workflow in a single pipeline.
 
 Key Differences:
  * A single pipeline which performs both training and inference
@@ -143,12 +143,12 @@ DFP in Morpheus is accomplished via two independent pipelines: training and infe
 * Sends detected anomalies to monitoring services
 
 #### Monitoring
-* Detected anomilies are published to an S3 bucket, directory or a Kafka topic.
+* Detected anomalies are published to an S3 bucket, directory or a Kafka topic.
 * Output can be integrated with a monitoring tool.
 
 
-## Runtune Environment Setup
-![Runtune Environment Setup](img/dfp_runtime_env.png)
+## Runtime Environment Setup
+![Runtime Environment Setup](img/dfp_runtime_env.png)
 
 DFP in Morpheus is built as an application of containerized services​ and can be run in two ways:
 1. Using docker-compose for testing and development​
@@ -232,9 +232,9 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
 | `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
 | `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
-| `-f`, `--input_file` | TEXT | List of files to process. Can specificy multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. See [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
+| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. See [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
 | `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
-| `--help` | | Show this message and exit.|
+| `--help` | | Show this message and exit. |
 
 
 ##### Optional MLflow Service
@@ -255,7 +255,7 @@ TODO
 ### Pipeline Structure Configuration
 ![Pipeline Structure Configuration](img/dfp_pipeline_structure.png)
 
-The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, i.e., the `MultiFileSource` can be configured to pull from S3 or from local files and can be replaced altogether with any other Morpheus input stage. similarly the S3 writer can be replaced with any Morpheus output stage.  Regardless of the inputs & outputs the core pipeline should renmain unchanged.  While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
+The stages in both the Training and Inference pipelines can be mixed and matched with little impact​, i.e., the `MultiFileSource` can be configured to pull from S3 or from local files and can be replaced altogether with any other Morpheus input stage.  Similarly the S3 writer can be replaced with any Morpheus output stage.  Regardless of the inputs & outputs the core pipeline should remain unchanged.  While stages in the core of the pipeline (inside the blue areas in the above diagram) perform common actions that should be configured not exchanged.
 
 ### Morpheus Config
 
@@ -283,7 +283,7 @@ Other attributes which might be needed:
 | --------- | ---- | ------- | ----------- |
 | `Config.ae.userid_column_name` | `str` | `userIdentityaccountId` | Column in the `DataFrame` containing the username or user ID |
 | `Config.ae.timestamp_column_name` |  `str` | `timestamp` | Column in the `DataFrame` containing the timestamp of the event |
-| `Config.ae.fallback_username` | `str` | `generic_user` | Name to use for the generic user model, shoudl nto match the name of any real users |
+| `Config.ae.fallback_username` | `str` | `generic_user` | Name to use for the generic user model, should not match the name of any real users |
 
 ### Schema Definition
 
@@ -308,7 +308,7 @@ In the above examples three opperations were performed:
 
 The `DFPFileToDataFrameStage` is executed first and is responsible for flattening potentially nested JSON data and performing any sort of data type conversions. The `DFPPreprocessingStage` is executed later after the `DFPSplitUsersStage` allowing for the possibility of per-user computed fields such as the `logcount` and `locincrement` fields mentioned previously. Both stages are performed after the `DFPFileBatcherStage` allowing for per time period (per-day by default) computed fields.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `json_columns` | `List[str]` | Optional list of json columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a json field will be flattened into a new column named `<field>.<key>` for example a json field named `user` containing a key named `id` will result in a new column named `user.id`. By default this is an empty `list`. |
 | `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific opperation to be performed upon a column these include renames, typye conversions and custom computations. By default this is an empty `list`. |
@@ -317,7 +317,7 @@ The `DFPFileToDataFrameStage` is executed first and is responsible for flattenin
 
 #### Column Info (`ColumnInfo`)
 Defines a single column and type-cast.
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the column |
 | `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
@@ -325,7 +325,7 @@ Defines a single column and type-cast.
 #### Custom Column (`CustomColumn`)
 Subclass of `ColumnInfo`, defines a column to be computed by a user-defined function `process_column_fn`.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the column |
 | `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
@@ -333,7 +333,7 @@ Subclass of `ColumnInfo`, defines a column to be computed by a user-defined func
 
 #### Rename Column (`RenameColumn`)
 Subclass of `ColumnInfo`, adds the ability to also perform a rename.
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
 | `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
@@ -354,7 +354,7 @@ field = BoolColumn(name="result",
 
 We used strings in this example, however we also could have just as easily mapped integer status codes.  We also have the ability to map on to types other than boolean by providing custom values for true and false  (eg. `1`/`0`, `yes`/`no`) .
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
 | `dtype` | `str` or Python type | Typically this should be `bool` however it could potentially be another type if `true_value` and `false_value` are specified. |
@@ -367,7 +367,7 @@ We used strings in this example, however we also could have just as easily mappe
 #### Date-Time Column (`DateTimeColumn`)
 Subclass of `RenameColumn`, specific to casting UTC localized datetime values. When incoming values contain a time-zone offset string the values are converted to UTC, while values without a time-zone are assumed to be UTC.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
 | `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
@@ -376,7 +376,7 @@ Subclass of `RenameColumn`, specific to casting UTC localized datetime values. W
 #### String-Join Column (`StringJoinColumn`)
 Subclass of `RenameColumn`, converts incoming `list` values to string by joining by `sep`.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
 | `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
@@ -386,7 +386,7 @@ Subclass of `RenameColumn`, converts incoming `list` values to string by joining
 #### String-Cat Column (`StringCatColumn`)
 Subclass of `ColumnInfo`, concatinates values from multiple columns into a new string column separated by `sep`.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
 | `dtype` | `str` or Python type | Any type string or Python class recognized by [Pandas](https://pandas.pydata.org/docs/user_guide/basics.html#dtypes) |
@@ -396,13 +396,13 @@ Subclass of `ColumnInfo`, concatinates values from multiple columns into a new s
 #### Increment Column (`IncrementColumn`)
 Subclass of `DateTimeColumn`, counts the unique occurrences of a value in `groupby_column` over a specific time window `period` based on dates in the `input_name` field.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `name` | `str` | Name of the destination column |
 | `dtype` | `str` or Python type | Should be `int` or other integer class |
 | `input_name` | `str` | Original column name containing timestamp values |
 | `groupby_column` | `str` | Column name to group by |
-| `period` | `str` | Optional time period to peform the calculation over, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). Defaults to `D` one day |
+| `period` | `str` | Optional time period to perform the calculation over, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). Defaults to `D` one day |
 
 ### Input Stages
 ![Input Stages](img/dfp_input_config.png)
@@ -412,7 +412,7 @@ The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/
 
 > **Note:**  this stage does not actually download the data files, allowing the file list to be filtered and batched prior to being downloaded.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `filenames` | `List[str]` or `str` | Paths to source file to be read from |
@@ -421,7 +421,7 @@ The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/
 #### File Batcher Stage (`DFPFileBatcherStage`)
 The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming `DataFrame` in batches of a time period (per day default).  This stage can potentially improve performance by combining multiple small files into a single batch.  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `date_conversion_func` | `function` | Function receives a single [fsspec.core.OpenFile](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFile) argument and returns a `datetime.datetime` object |
@@ -450,7 +450,7 @@ pipeline.add_stage(
 #### File to DataFrame Stage (`DFPFileToDataFrameStage`)
 The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py)) stage receives a `list` of an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) and loads them into a single `DataFrame` which is then emitted into the pipeline.  When the parent stage is `DFPFileBatcherStage` each batch (typically one day) is concatenated into a single `DataFrame`, without this if the parent was `MultiFileSource` the entire dataset is loaded into a single `DataFrame`.  Because of this, it is important to chose a `period` argument for `DFPFileBatcherStage` small enough such that each batch can fit into memory.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `schema` | `DataFrameInputSchema` | Schema specifying columns to load, along with any necessary renames and data type conversions  |
@@ -473,7 +473,7 @@ For the inference pipeline any Morpheus output stage such as `morpheus.stages.ou
 #### Write to File Stage (`WriteToFileStage`)
 This final stage will write all received messages to a single output file in either CSV or JSON format.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `filename` | `str` | The file to write anomalous log messages to. |
@@ -482,7 +482,7 @@ This final stage will write all received messages to a single output file in eit
 #### Write to S3 Stage (`WriteToS3Stage`)
 The `WriteToS3Stage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/write_to_s3_stage.py)) stage writes the resulting anomaly detections to S3.  The `WriteToS3Stage` decouples the S3 specifc operations from the Morpheus stage, and as such receives an `s3_writer` argument.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `s3_writer` | `function` | User defined function which receives an instance of a `morpheus.messages.message_meta.MessageMeta` and returns that same message instance. Any S3 specific configurations such as bucket name should be bound to the method. |
@@ -493,7 +493,7 @@ These stages are common to both the training & inference pipelines, unlike the i
 #### Split Users Stage (`DFPSplitUsersStage`)
 The `DFPSplitUsersStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_split_users_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_split_users_stage.py) stage recieves an incoming `DataFrame` and emits a `list` of `DFPMessageMeta` where each `DFPMessageMeta` represents the records associated for a given user.  This allows for downstream stages to perform all nescesary opperations on a per user basis.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `include_generic` | `bool` | When `True` a `DFPMessageMeta` will be constructed for the generic user containing all records not excluded by the `skip_users` and `only_users` filters |
@@ -513,7 +513,7 @@ The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus
    * For example, to calculate a feature that increments a counter for the number of logs a particular user has generated in a single day, we must have the user's log history for the past 24 hours. To support this, this stage will combine new logs with existing history into a single `DataFrame`.
    * It is the responsibility of downstream stages to distinguish between new logs and existing history.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `min_history` | `int` | Exclude users with less than `min_history` records, setting this to `1` effectively disables this feature |
@@ -526,7 +526,7 @@ The `DFPRollingWindowStage` [examples/digital_fingerprinting/production/morpheus
 #### Preprocessing Stage (`DFPPreprocessingStage`)
 The `DFPPreprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_preprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_preprocessing_stage.py) stage, the actual logic of preprocessing is defined in the `input_schema` argument.  Since this stage occurrs in the pipeline after the `DFPFileBatcherStage` and `DFPSplitUsersStage` stages all records in the incoming `DataFrame` correspond to only a single user within a specific time period allowing for columns to be computer on a per-user per-time period basis such as the `logcount` and `locincrement` features mentioned above.  Making the type of processing performed in this stage different than those performed in the `DFPFileToDataFrameStage`.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `input_schema` | `DataFrameInputSchema` | Schema specifying columns to be included in the output `DataFrame` including computed columns |
@@ -543,7 +543,7 @@ After training the generic model, individual user models can be trained​.  Ind
 #### Training Stage (`DFPTraining`)
 The `DFPTraining` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_training.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_training.py) trains a model for each incoming `DataFrame` and emits an instance of `morpheus.messages.multi_ae_message.MultiAEMessage` containing the trained model.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `model_kwargs` | `dict` or `None` | Optional dictionary of keyword arguments to be used when constructing the model.  See [`AutoEncoder`](https://github.com/nv-morpheus/dfencoder/blob/master/dfencoder/autoencoder.py) for information on the available options.|
@@ -551,7 +551,7 @@ The `DFPTraining` [examples/digital_fingerprinting/production/morpheus/dfp/stage
 #### MLflow Model Writer Stage (`DFPMLFlowModelWriterStage`)
 The `DFPMLFlowModelWriterStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py) stage publishes trained models into MLflow, skipping any model which lacked sufficient training data (current required minimum is 300 log records).
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `model_name_formatter` | `str` | Optional format string to control the name of models stored in MLflow, default is `dfp-{user_id}`. Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
@@ -577,7 +577,7 @@ For performance models fetched from MLflow are cached locally, and are cached fo
 
 For any user without an associated model in MLflow, the model for the generic user is used. The name of the generic user is defined in the `ae.fallback_username` attribute of the Morpheus config object defaults to `generic_user`.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
@@ -587,7 +587,7 @@ For any user without an associated model in MLflow, the model for the generic us
 #### Post Processing Stage (`DFPPostprocessingStage`)
 The `DFPPostprocessingStage` [examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py) stage filters the output from the inference stage for any anomalous messages. Logs which exceed the specified Z-Score will be passed onto the next stage.  All remaining logs which are below the threshold will be dropped.
 
-| Argument | Type | Descirption |
+| Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `z_score_threshold` | `float` | Optional, sets the threshold value above which values of `mean_abs_z` must be above in order to be considered  an anomily, default is 2.0 |
