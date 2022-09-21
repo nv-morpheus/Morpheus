@@ -25,7 +25,7 @@ To construct this digital fingerprint we will be training unsupervised behaviora
 ## Training Sources
 The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The [digital fingerprinting example](/examples/digital_fingerprinting/README.md) included in Morpheus ingests logs from [AWS CloudTrail](https://docs.aws.amazon.com/cloudtrail/index.html), [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins) and [Duo Authentication](https://help.duo.com/s/article/1023?language=en_US).
 
-The location of these logs could be either local to the machine running Morpheus, a shared filesystem like NFS or on a remote store such as [Amazon S3](https://aws.amazon.com/s3/).
+The location of these logs could be either local to the machine running Morpheus, a shared file system like NFS or on a remote store such as [Amazon S3](https://aws.amazon.com/s3/).
 
 ### Defining a New Data Source
 Additional data sources and remote stores can easily be added using the Morpheus SDK, the key to applying DFP to a new data source is through the process of feature selection. Any data source can be fed into DFP after some preprocessing to get a feature vector per log/data point​.  In order to build a targeted model for each entity (user/service/machine... etc.), the chosen data source needs a field that uniquely identifies the entity we’re trying to model.
@@ -311,7 +311,7 @@ The `DFPFileToDataFrameStage` is executed first and is responsible for flattenin
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `json_columns` | `List[str]` | Optional list of json columns in the incoming `DataFrame` to be normalized (currently using the [`pandas.json_normalize`](https://pandas.pydata.org/docs/reference/api/pandas.json_normalize.html) method). Each key in a json field will be flattened into a new column named `<field>.<key>` for example a json field named `user` containing a key named `id` will result in a new column named `user.id`. By default this is an empty `list`. |
-| `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific opperation to be performed upon a column. These include renames, type conversions, and custom computations. By default this is an empty `list`. |
+| `column_info` | `List[str]` | Optional list of `ColumnInfo` instances, each defining a specific operation to be performed upon a column. These include renames, type conversions, and custom computations. By default this is an empty `list`. |
 | `preserve_columns` | `List[str]` or `str` | Optional regular expression string or list of regular expression strings that define columns in the input data which should be preserved in the output `DataFrame`. By default this is an empty `list`. |
 | `row_filter` | `function` or `None` | Optional function to be called after all other processing has been performed. This function receives the `DataFrame` as its only argument returning a `DataFrame`. |
 
