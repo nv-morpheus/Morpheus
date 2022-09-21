@@ -23,7 +23,7 @@ Every account, user, service and machine has a digital fingerprint​, which rep
 To construct this digital fingerprint we will be training unsupervised behavioral models at various granularities, including a generic model for all users in the organization along with fine-grained models for each user to monitor their behavior. These models are continuously updated and retrained overtime​, and alerts are triggered when deviations from normality occur for any user​.
 
 ## Training Sources
-The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The [digital fingerprinting example](/examples/digital_fingerprinting/README.md) included in Morpheus ingests logs from [AWS CloudTrail](https://docs.aws.amazon.com/cloudtrail/index.html), [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins) and [Duo Authentication](https://help.duo.com/s/article/1023?language=en_US).
+The data we will want to use for the training and inference will be any sensitive system that the user interacts with, such as VPN, authentication and cloud services. The [digital fingerprinting example](/examples/digital_fingerprinting/README.md) included in Morpheus ingests logs from [AWS CloudTrail](https://docs.aws.amazon.com/cloudtrail/index.html), [Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-sign-ins) and [Duo Authentication](https://duo.com/docs/adminapi#authentication-logs).
 
 The location of these logs could be either local to the machine running Morpheus, a shared file system like NFS or on a remote store such as [Amazon S3](https://aws.amazon.com/s3/).
 
