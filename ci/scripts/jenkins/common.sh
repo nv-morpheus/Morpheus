@@ -82,16 +82,17 @@ function fetch_s3() {
     ENDPOINT=$1
     DESTINATION=$2
     if [[ "${USE_S3_CURL}" == "1" ]]; then
+        echo "using curl"
         curl -f "${DISPLAY_URL}${ENDPOINT}" -o "${DESTINATION}"
         FETCH_STATUS=$?
     else
+        echo "using s3"
         aws s3 cp --no-progress "${S3_URL}${ENDPOINT}" "${DESTINATION}"
         FETCH_STATUS=$?
     fi
 }
 
 function restore_conda_env() {
-
     gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
     fetch_s3 "${ARTIFACT_ENDPOINT}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
     fetch_s3 "${ARTIFACT_ENDPOINT}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
