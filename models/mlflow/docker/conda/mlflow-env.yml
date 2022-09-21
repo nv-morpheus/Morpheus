@@ -25,4 +25,4 @@ dependencies:
   - psycopg2<3
   - pip:
     - boto3
-    - mlflow
+    - mlflow<=1.28.0
