@@ -99,7 +99,7 @@ class LinearPipeline(_pipeline.Pipeline):
 
         self._linear_stages.append(stage)
 
-    def add_segment_boundary(self, data_type=None):
+    def add_segment_boundary(self, data_type=None, as_shared_pointer=False):
         if (len(self._linear_stages) == 0):
             raise RuntimeError("Cannot create a segment boundary, current segment is empty.")
 
@@ -109,7 +109,8 @@ class LinearPipeline(_pipeline.Pipeline):
         boundary_ingress = LinearBoundaryIngressStage(empty_config, boundary_port_id=self._current_segment_id,
                                                       data_type=data_type)
 
-        port_id_tuple = (self._current_segment_id, data_type, True) if data_type else self._current_segment_id
+        port_id_tuple = (
+        self._current_segment_id, data_type, as_shared_pointer) if data_type else self._current_segment_id
         self.add_stage(boundary_egress)
         super().add_egress(self._current_segment_id, port_id_tuple)
 

@@ -34,11 +34,14 @@
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pybind11/stl.h>          // IWYU pragma: keep
-#include <pysrf/utils.hpp>         // for pysrf::import
+#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pysrf/edge_adapter.hpp>
+#include <pysrf/node.hpp>
 #include <pysrf/port_builders.hpp>
+#include <pysrf/utils.hpp>         // for pysrf::import
 #include <srf/channel/status.hpp>  // for Status
 #include <srf/node/edge_connector.hpp>
+#include <srf/node/port_registry.hpp>
 
 #include <cstddef>
 #include <filesystem>
@@ -74,6 +77,25 @@ PYBIND11_MODULE(messages, m)
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
 
+    std::cerr << "[DEVIN DEBUG] Creating message port utilities" << std::endl;
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
+
+    std::cerr << "[DEVIN DEBUG] Creating data adapters" << std::endl;
+    srf::pysrf::EdgeAdapterUtil::register_data_adapters<std::shared_ptr<MessageMeta>>();
+    srf::pysrf::EdgeAdapterUtil::register_data_adapters<std::shared_ptr<MultiMessage>>();
+    srf::pysrf::EdgeAdapterUtil::register_data_adapters<std::shared_ptr<MultiInferenceMessage>>();
+    srf::pysrf::EdgeAdapterUtil::register_data_adapters<std::shared_ptr<MultiInferenceFILMessage>>();
+    srf::pysrf::EdgeAdapterUtil::register_data_adapters<std::shared_ptr<MultiInferenceNLPMessage>>();
+    srf::pysrf::EdgeAdapterUtil::register_data_adapters<std::shared_ptr<MultiResponseMessage>>();
+    srf::pysrf::EdgeAdapterUtil::register_data_adapters<std::shared_ptr<MultiResponseProbsMessage>>();
+
+    std::cerr << "[DEVIN DEBUG] Creating message edge connectors" << std::endl;
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
@@ -98,9 +120,6 @@ PYBIND11_MODULE(messages, m)
 
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
-
-    srf::pysrf::PortBuilderUtil::register_port_util<MessageMeta>();
-    srf::pysrf::PortBuilderUtil::register_port_util<MultiMessage>();
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
