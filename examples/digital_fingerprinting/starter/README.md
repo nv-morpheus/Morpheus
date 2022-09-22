@@ -77,9 +77,9 @@ Commands:
   buffer           (Deprecated) Buffer results
   delay            (Deprecated) Delay results for a certain duration
   filter           Filter message by a classification threshold
-  from-azure       Load messages from a Duo directory
+  from-azure       Source stage is used to load Azure Active Directory messages.
   from-cloudtrail  Load messages from a Cloudtrail directory
-  from-duo         Load messages from a Duo directory
+  from-duo         Source stage is used to load Duo Authentication messages.
   gen-viz          (Deprecated) Write out vizualization data frames
   inf-pytorch      Perform inference with PyTorch
   inf-triton       Perform inference with Triton
