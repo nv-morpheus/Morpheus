@@ -20,7 +20,7 @@ This is necessary to get the latest changes needed for DFP. From the root of the
 ### Build
 ```bash
 cd examples/digital_fingerprinting/production
-MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
+export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker-compose build
 ```
 
