@@ -41,6 +41,7 @@ services:
       target: jupyter
       args:
         - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
+    runtime: nvidia
     image: dfp_morpheus_jupyter
     container_name: jupyter
     ports:
@@ -68,6 +69,7 @@ services:
         - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
     image: dfp_morpheus
     container_name: morpheus_pipeline
+    runtime: nvidia
     networks:
       - frontend
       - backend
