@@ -15,6 +15,7 @@
 import functools
 import logging
 import os
+import re
 import typing
 from datetime import datetime
 from functools import partial
@@ -216,12 +217,14 @@ def run_pipeline(train_users,
 
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
+    file_date_regex = re.compile(r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
+                                r"T(?P<hour>\d{1,2})_(?P<minute>\d{1,2})_(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
     # Batch files into buckets by time. Use the default ISO date extractor from the filename
     pipeline.add_stage(
         DFPFileBatcherStage(config,
                             period="D",
                             sampling_rate_s=sample_rate_s,
-                            date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex)))
+                            date_conversion_func=functools.partial(date_extractor, filename_regex=file_date_regex)))
 
     # Output is S3 Buckets. Convert to DataFrames. This caches downloaded S3 data
     pipeline.add_stage(
