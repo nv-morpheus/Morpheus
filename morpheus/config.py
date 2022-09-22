@@ -121,9 +121,11 @@ class ConfigAutoEncoder(ConfigBase):
     """
     feature_columns: typing.List[str] = None
     userid_column_name: str = "userIdentityaccountId"
+    timestamp_column_name: str = "timestamp"
     userid_filter: str = None
     feature_scaler: AEFeatureScalar = AEFeatureScalar.STANDARD
     use_generic_model: bool = False
+    fallback_username: str = "generic_user"
 
 
 @dataclasses.dataclass

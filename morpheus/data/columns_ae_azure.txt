@@ -1,11 +1,9 @@
-locationcountryOrRegion
 appDisplayName
-locationcity
 clientAppUsed
-deviceDetaildisplayName
 deviceDetailbrowser
+deviceDetaildisplayName
 deviceDetailoperatingSystem
 statusfailureReason
-locincrement
 appincrement
+locincrement
 logcount

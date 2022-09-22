@@ -86,7 +86,7 @@ RUN source activate morpheus &&\
 
 # Set the entrypoint to use the entrypoint.sh script which sets the conda env
 COPY docker/entrypoint.sh ./docker/
-ENTRYPOINT [ "/opt/conda/bin/tini", "--", "docker/entrypoint.sh" ]
+ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
 
 # Reset the shell back to normal
 SHELL ["/bin/bash", "-c"]
@@ -127,6 +127,9 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     git config --global --add safe.directory "*" &&\
     MORPHEUS_ROOT=/workspace MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
+# sid_visualization is a submodule we need to init
+RUN git submodule update --init --recursive
+
 # ============ Stage: runtime ============
 # Setup container for runtime environment
 FROM conda_env as runtime
@@ -152,6 +155,9 @@ COPY "./examples" "./examples"
 COPY "./models" "./models"
 COPY "./scripts" "./scripts"
 COPY ["*.md", "LICENSE", "./"]
+
+# remedy for CVE-2015-20107
+RUN find / -name '*mailcap*.*py*' | xargs rm
 
 # Use morpheus by default
 CMD [ "morpheus" ]
