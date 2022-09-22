@@ -273,7 +273,7 @@ run the example.
 
 Train user models from files in `models/datasets/training-data/dfp-cloudtrail-*.csv` and saves user models to file. Pipeline then uses these models to run inference on Cloudtrail validation data in `models/datasets/validation-data/dfp-cloudtrail-*-input.csv`. Inference results are written to `cloudtrail-dfp-results.csv`.
 ```
-python ./examples/digital_fingerprinting/run_cloudtrail_dfp.py \
+python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
     --columns_file=morpheus/data/columns_ae_cloudtrail.txt \
     --input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
     --train_data_glob=models/datasets/training-data/dfp-*.csv \
@@ -283,7 +283,7 @@ python ./examples/digital_fingerprinting/run_cloudtrail_dfp.py \
 
 Here we load pre-trained user models from the file (`models/dfp-models/cloudtrail_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/dfp-cloudtrail-*-input.csv`. Inference results are written to `cloudtrail-dfp-results.csv`.
 ```
-python ./examples/digital_fingerprinting/run_cloudtrail_dfp.py \
+python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
     --columns_file=morpheus/data/columns_ae_cloudtrail.txt \
     --input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
     --pretrained_filename=models/dfp-models/cloudtrail_ae_user_models.pkl \
