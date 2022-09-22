@@ -25,4 +25,5 @@ dependencies:
   - psycopg2<3
   - pip:
     - boto3
-    - mlflow
+    - mlflow<1.29.0
+    - pymysql
