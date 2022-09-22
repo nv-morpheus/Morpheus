@@ -19,7 +19,6 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 set(CPM_SOURCE_CACHE "${CMAKE_SOURCE_DIR}/.cache/cpm")
 # Prevent cpm_init from trying to tell us where to put cpm.cmake
 include(get_cpm)
-rapids_cpm_init(OVERRIDE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/deps/rapids_cpm_package_overrides.json")
 
 # Cant use rapids_cpm_init() for now since the `rapids_cpm_download()` creates a
 # new scope when importing CPM. Manually do the other commands and import CPM on
@@ -84,7 +83,7 @@ endif()
 
 # libcudacxx -- get an explicit lubcudacxx build, matx tries to pull a tag that doesn't exist.
 # =========
-set(LIBCUDACXX_VERSION "1.6.0" CACHE STRING "Version of libcudacxx to use")
+set(LIBCUDACXX_VERSION "1.8.0" CACHE STRING "Version of libcudacxx to use")
 include(deps/Configure_libcudacxx)
 
 # matx
