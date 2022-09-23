@@ -16,7 +16,7 @@ This is necessary to get the latest changes needed for DFP. From the root of the
 ./docker/build_container_release.sh
 ```
 
-## Buildign and Running via `docker-compose`
+## Building and Running via `docker-compose`
 ### Build
 ```bash
 cd examples/digital_fingerprinting/production
@@ -24,7 +24,7 @@ export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker-compose build
 ```
 
-### Runing the services
+### Running the services
 #### Jupyter Server
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
