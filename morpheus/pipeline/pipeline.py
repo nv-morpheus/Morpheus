@@ -18,9 +18,9 @@ import os
 import signal
 import time
 import typing
-
 from collections import defaultdict
 from functools import partial
+
 import networkx
 import srf
 from tqdm import tqdm
@@ -64,11 +64,7 @@ class Pipeline():
         self._sources: typing.Set[SourceStage] = set()
 
         # Dictionary containing segment information for this pipeline
-        self._segments: typing.Dict = defaultdict(lambda: {
-            "nodes": set(),
-            "ingress_ports": [],
-            "egress_ports": []
-        })
+        self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
 
         self._exec_options = srf.Options()
         self._exec_options.topology.user_cpuset = "0-{}".format(c.num_threads - 1)
@@ -121,7 +117,9 @@ class Pipeline():
 
         segment_graph.add_node(node)
 
-    def add_edge(self, start: typing.Union[StreamWrapper, Sender], end: typing.Union[Stage, Receiver],
+    def add_edge(self,
+                 start: typing.Union[StreamWrapper, Sender],
+                 end: typing.Union[Stage, Receiver],
                  segment_id: str = "main"):
 
         if (isinstance(start, StreamWrapper)):
@@ -210,8 +208,7 @@ class Pipeline():
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
 
-            self._srf_pipeline.make_segment(segment_id,
-                                            [port_info["port_pair"] for port_info in segment_ingress_ports],
+            self._srf_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
                                             segment_inner_build)
 
@@ -429,7 +426,8 @@ class Pipeline():
                 gv_subgraph.edge(start_name, end_name, **edge_attrs)
 
             for egress_port in self._segments[segment_id]["egress_ports"]:
-                gv_graph.edge(egress_port["input_sender"], egress_port["output_receiver"],
+                gv_graph.edge(egress_port["input_sender"],
+                              egress_port["output_receiver"],
                               style="dashed",
                               label=f"Segment Port: {egress_port['port_pair'][0]}")
 

@@ -24,8 +24,8 @@ from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -37,8 +37,8 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
-from utils import calc_error_val
 from utils import TEST_DIRS
+from utils import calc_error_val
 
 # End-to-end test intended to imitate the ABP validation test -- Adapted to validate multi-segment
 # application
@@ -160,7 +160,7 @@ def test_abp_multi_segment_cpp(config, tmp_path):
 
     pipe.add_stage(PreprocessFILStage(config))
 
-    pipe.add_segment_boundary(MultiInferenceMessage) # Boundary 2
+    pipe.add_segment_boundary(MultiInferenceMessage)  # Boundary 2
 
     # We are feeding TritonInferenceStage the port to the grpc server because that is what the validation tests do
     # but the code under-the-hood replaces this with the port number of the http server

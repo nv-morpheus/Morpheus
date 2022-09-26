@@ -107,9 +107,11 @@ class LinearPipeline(_pipeline.Pipeline):
             raise RuntimeError("Cannot create a segment boundary, current segment is empty.")
 
         empty_config = Config()
-        boundary_egress = LinearBoundaryEgressStage(empty_config, boundary_port_id=self._current_segment_id,
+        boundary_egress = LinearBoundaryEgressStage(empty_config,
+                                                    boundary_port_id=self._current_segment_id,
                                                     data_type=data_type)
-        boundary_ingress = LinearBoundaryIngressStage(empty_config, boundary_port_id=self._current_segment_id,
+        boundary_ingress = LinearBoundaryIngressStage(empty_config,
+                                                      boundary_port_id=self._current_segment_id,
                                                       data_type=data_type)
 
         # TODO: update to use data_type once typeid is attached to registered objects out of band: https://github.com/nv-morpheus/SRF/issues/176
@@ -124,5 +126,8 @@ class LinearPipeline(_pipeline.Pipeline):
         self._linear_stages.append(boundary_ingress)
 
         super().add_node(boundary_ingress, self._current_segment_id)
-        super().add_segment_edge(boundary_egress, egress_segment_id, boundary_ingress, ingress_segment_id,
+        super().add_segment_edge(boundary_egress,
+                                 egress_segment_id,
+                                 boundary_ingress,
+                                 ingress_segment_id,
                                  port_id_tuple)
