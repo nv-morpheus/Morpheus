@@ -87,3 +87,8 @@ From the `examples/digital_fingerprinting/production` dir run:
 ```bash
 docker-compose up mlflow
 ```
+
+By default, a mlflow dashboard will be available at:
+```bash
+http://localhost:5000
+```
