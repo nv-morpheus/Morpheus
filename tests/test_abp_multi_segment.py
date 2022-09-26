@@ -101,9 +101,9 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
 
     pipe.add_segment_boundary(MultiMessage)  # Boundary 1
 
-    pipe.add_stage(PreprocessFILStage(config))  # Boundary 2
+    pipe.add_stage(PreprocessFILStage(config))
 
-    pipe.add_segment_boundary(MultiInferenceMessage)
+    pipe.add_segment_boundary(MultiInferenceMessage)  # Boundary 2
 
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))

@@ -79,7 +79,6 @@ class Pipeline():
 
         self.batch_size = c.pipeline_batch_size
 
-        # self._graph = networkx.DiGraph()
         self._segment_graphs = defaultdict(lambda: networkx.DiGraph())
 
         self._is_built = False
