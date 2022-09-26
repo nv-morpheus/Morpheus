@@ -40,7 +40,6 @@ from utils import calc_error_val
 # End-to-end test intended to imitate the DFP validation test
 
 
-@pytest.mark.xfail
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules(preprocess_ae_stage)
@@ -124,7 +123,6 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
     assert results.diff_rows == 0
 
 
-@pytest.mark.xfail
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules(preprocess_ae_stage)

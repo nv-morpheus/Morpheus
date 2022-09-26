@@ -39,11 +39,11 @@ class LinearPipeline(_pipeline.Pipeline):
 
         self._current_segment_id = ""
         self._next_segment_index = 0
-        self.increment_segment()
+        self.increment_segment_id()
 
         self._linear_stages: typing.List[_pipeline.StreamWrapper] = []
 
-    def increment_segment(self):
+    def increment_segment_id(self):
         self._linear_stages = []
         self._current_segment_id = f"linear_segment_{self._next_segment_index}"
         self._next_segment_index += 1
@@ -94,6 +94,9 @@ class LinearPipeline(_pipeline.Pipeline):
         assert isinstance(stage, _pipeline.SinglePortStage), ("Only `SinglePortStage` stages are accepted in "
                                                               "`add_stage()`")
 
+        # Add this stage to the segment graph
+        super().add_node(stage, self._current_segment_id)
+
         # Make an edge between the last node and this one
         super().add_edge(self._linear_stages[-1], stage, self._current_segment_id)
 
@@ -109,13 +112,17 @@ class LinearPipeline(_pipeline.Pipeline):
         boundary_ingress = LinearBoundaryIngressStage(empty_config, boundary_port_id=self._current_segment_id,
                                                       data_type=data_type)
 
-        port_id_tuple = (
-        self._current_segment_id, data_type, as_shared_pointer) if data_type else self._current_segment_id
-        self.add_stage(boundary_egress)
-        super().add_egress(self._current_segment_id, port_id_tuple)
+        # TODO: update to use data_type once typeid is attached to registered objects out of band: https://github.com/nv-morpheus/SRF/issues/176
+        port_id_tuple = (self._current_segment_id, object, False) if data_type else self._current_segment_id
 
-        self.increment_segment()
+        self.add_stage(boundary_egress)
+        egress_segment_id = self._current_segment_id
+
+        self.increment_segment_id()
+        ingress_segment_id = self._current_segment_id
+
         self._linear_stages.append(boundary_ingress)
 
         super().add_node(boundary_ingress, self._current_segment_id)
-        super().add_ingress(self._current_segment_id, port_id_tuple)
+        super().add_segment_edge(boundary_egress, egress_segment_id, boundary_ingress, ingress_segment_id,
+                                 port_id_tuple)
