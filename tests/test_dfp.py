@@ -292,7 +292,6 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
-    pipe.visualize("./dfp_multi_segment.svg")
 
     mock_ae.fit.assert_called_once()
     mock_ae.build_input_tensor.assert_called_once()
