@@ -43,6 +43,7 @@ from morpheus.stages.preprocess import train_ae_stage
 from utils import TEST_DIRS
 from utils import calc_error_val
 
+
 # End-to-end test intended to imitate the DFP validation test
 
 
@@ -210,6 +211,7 @@ def test_dfp_user123(mock_ae, config, tmp_path):
     results = calc_error_val(results_file_name)
     assert results.diff_rows == 0
 
+
 @pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.reload_modules(preprocess_ae_stage)
@@ -252,7 +254,7 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
 
     pipe = LinearPipeline(config)
     pipe.set_source(CloudTrailSourceStage(config, input_glob=input_glob, sort_glob=True))
-    pipe.add_segment_boundary(UserMessageMeta) # Boundary 1
+    pipe.add_segment_boundary(UserMessageMeta)  # Boundary 1
     pipe.add_stage(
         train_ae_stage.TrainAEStage(
             config,
@@ -260,13 +262,13 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
             source_stage_class="morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage",
             seed=42,
             sort_glob=True))
-    pipe.add_segment_boundary(MultiAEMessage) # Boundary 2
+    pipe.add_segment_boundary(MultiAEMessage)  # Boundary 2
     pipe.add_stage(preprocess_ae_stage.PreprocessAEStage(config))
-    pipe.add_segment_boundary(MultiInferenceMessage) # Boundary 3
+    pipe.add_segment_boundary(MultiInferenceMessage)  # Boundary 3
     pipe.add_stage(AutoEncoderInferenceStage(config))
-    pipe.add_segment_boundary(MultiResponseProbsMessage) # Boundary 4
+    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 4
     pipe.add_stage(AddScoresStage(config))
-    pipe.add_segment_boundary(MultiResponseProbsMessage) # Boundary 5
+    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 5
     pipe.add_stage(
         TimeSeriesStage(config,
                         resolution="1m",
@@ -275,7 +277,7 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
                         cold_end=False,
                         filter_percent=90.0,
                         zscore_threshold=8.0))
-    pipe.add_segment_boundary(MultiResponseProbsMessage) # Boundary 6
+    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 6
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(
         ValidationStage(config,
@@ -284,12 +286,13 @@ def test_dfp_user123_multi_segment(mock_ae, config, tmp_path):
                         index_col="_index_",
                         exclude=("event_dt", "zscore"),
                         rel_tol=0.1))
-    pipe.add_segment_boundary(MultiResponseProbsMessage) # Boundary 7
+    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 7
     pipe.add_stage(SerializeStage(config, include=[]))
-    pipe.add_segment_boundary(MessageMeta) # Boundary 9
+    pipe.add_segment_boundary(MessageMeta)  # Boundary 9
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
+    pipe.visualize("./dfp_multi_segment.svg")
 
     mock_ae.fit.assert_called_once()
     mock_ae.build_input_tensor.assert_called_once()

@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import os
 
 import numpy as np
@@ -21,29 +22,26 @@ import pytest
 
 from morpheus.io.deserializers import read_file_to_df
 from morpheus._lib.file_types import FileTypes
-from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
-from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 
-
-@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_serialize_pipe(tmp_path, config, output_type):
+# Adapted from fil_in_out_stage -- used for testing multi-segment error conditions
+def test_linear_boundary_stages(tmp_path, config, output_type='json'):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
-    pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(SerializeStage(config))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
-    pipe.run()
+    try:
+        pipe = LinearPipeline(config)
+        pipe.set_source(FileSourceStage(config, filename=input_file))
+        pipe.add_segment_boundary(MessageMeta)
+        pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+        pipe.run()
+        assert (False)
+    except Exception as e:
+        return
 
     assert os.path.exists(out_file)
 
@@ -61,20 +59,19 @@ def test_serialize_pipe(tmp_path, config, output_type):
     output_data = np.around(output_data, 2)
     assert output_data.tolist() == input_data.tolist()
 
-@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_serialize_multi_segment_pipe(tmp_path, config, output_type):
+def test_multi_segment_bad_data_type(tmp_path, config, output_type='json'):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
-    pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
-    pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(SerializeStage(config))
-    pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
-    pipe.run()
+    try:
+        pipe = LinearPipeline(config)
+        pipe.set_source(FileSourceStage(config, filename=input_file))
+        pipe.add_segment_boundary(int)
+        pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+        pipe.run()
+        assert (False)
+    except Exception as e:
+        return
 
     assert os.path.exists(out_file)
 
