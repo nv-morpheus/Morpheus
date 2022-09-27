@@ -89,7 +89,7 @@ from morpheus.utils.logger import parse_log_level
     "--duration",
     type=str,
     default="60d",
-    help="The duration to run starting from now",
+    help="The duration to run starting from start_time",
 )
 @click.option(
     "--cache_dir",
