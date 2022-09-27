@@ -92,3 +92,43 @@ By default, a mlflow dashboard will be available at:
 ```bash
 http://localhost:5000
 ```
+
+## Kubernetes deployment
+
+The Morpheus project also maintains Helm charts and container images for Kubernetes deployment of Morpheus and MLflow (both for serving and for the Triton plugin). These are located in the NVIDIA GPU Cloud (NGC) [public catalog](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
+
+### MLflow Helm chart
+
+MLflow for this production digital fingerprint use case can be installed from NGC using these same instructions for the [MLflow Triton Plugin from the Morpheus Quick Start Guide](../../../docs/source/morpheus_quickstart_guide.md#install-morpheus-mlflow-triton-plugin). The chart and image can be used for both the Triton plugin and also MLflow server.
+
+### Production DFP Helm chart
+
+The deployment of the [Morpheus SDK Client](../../../docs/source/morpheus_quickstart_guide.md#install-morpheus-sdk-client) is also done _almost_ the same way as what's specified in the Quick Start Guide. However, you would specify command arguments differently for this production DFP use case.
+
+#### Notebooks
+
+```
+helm install --set ngc.apiKey="$API_KEY",sdk.args="cd /workspace/examples/digital_fingerprinting/production/morpheus && jupyter-lab --ip='*' --no-browser --allow-root --ServerApp.allow_origin='*'" <sdk-release-name> morpheus-sdk-client/
+```
+
+Make note of the Jupyter token by examining the logs of the SDK pod:
+```
+kubectl logs sdk-cli-<sdk-release-name>
+```
+
+You should see something similar to this:
+
+```
+    Or copy and paste one of these URLs:
+        http://localhost:8888/lab?token=d16c904468fdf666c5030e18fb82f840e531178bf716e575
+     or http://127.0.0.1:8888/lab?token=d16c904468fdf666c5030e18fb82f840e531178bf716e575
+```
+
+Open your browser to the reachable address and NodePort exposed by the pod (default value of 30888) and use the generated token to login into the notebook.
+
+#### Unattended
+
+```
+helm install --set ngc.apiKey="$API_KEY",sdk.args="cd /workspace/examples/digital_fingerprinting/production/morpheus && ./launch.sh --train_users=generic --duration=1d" <sdk-release-name> morpheus-sdk-client/
+```
+
