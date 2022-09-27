@@ -107,20 +107,23 @@ class DFPFileBatcherStage(SinglePortStage):
         df["key"] = full_names
         df["objects"] = file_objs
 
-        # Now split by the batching settings
-        df_period = df["dfp_timestamp"].dt.to_period(self._period)
-
-        period_gb = df.groupby(df_period)
-
         output_batches = []
 
-        n_groups = len(period_gb)
-        for group in period_gb.groups:
-            period_df = period_gb.get_group(group)
+        if len(df) > 0:
+            # Now split by the batching settings
+            df_period = df["dfp_timestamp"].dt.to_period(self._period)
 
-            obj_list = fsspec.core.OpenFiles(period_df["objects"].to_list(), mode=file_objects.mode, fs=file_objects.fs)
+            period_gb = df.groupby(df_period)
 
-            output_batches.append((obj_list, n_groups))
+            n_groups = len(period_gb)
+            for group in period_gb.groups:
+                period_df = period_gb.get_group(group)
+
+                obj_list = fsspec.core.OpenFiles(period_df["objects"].to_list(),
+                                                 mode=file_objects.mode,
+                                                 fs=file_objects.fs)
+
+                output_batches.append((obj_list, n_groups))
 
         return output_batches
 
