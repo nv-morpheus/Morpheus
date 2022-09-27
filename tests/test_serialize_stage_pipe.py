@@ -22,9 +22,7 @@ import pytest
 from morpheus.io.deserializers import read_file_to_df
 from morpheus._lib.file_types import FileTypes
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -60,6 +58,7 @@ def test_serialize_pipe(tmp_path, config, output_type):
     # Somehow 0.7 ends up being 0.7000000000000001
     output_data = np.around(output_data, 2)
     assert output_data.tolist() == input_data.tolist()
+
 
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_serialize_multi_segment_pipe(tmp_path, config, output_type):

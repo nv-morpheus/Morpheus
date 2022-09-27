@@ -20,7 +20,6 @@ import numpy as np
 import pandas as pd
 
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline import LinearPipeline

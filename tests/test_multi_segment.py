@@ -18,7 +18,6 @@
 import os
 
 import numpy as np
-import pytest
 
 from morpheus.io.deserializers import read_file_to_df
 from morpheus._lib.file_types import FileTypes
@@ -27,6 +26,7 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from utils import TEST_DIRS
+
 
 # Adapted from fil_in_out_stage -- used for testing multi-segment error conditions
 def test_linear_boundary_stages(tmp_path, config, output_type='json'):
@@ -58,6 +58,7 @@ def test_linear_boundary_stages(tmp_path, config, output_type='json'):
     # Somehow 0.7 ends up being 0.7000000000000001
     output_data = np.around(output_data, 2)
     assert output_data.tolist() == input_data.tolist()
+
 
 def test_multi_segment_bad_data_type(tmp_path, config, output_type='json'):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")

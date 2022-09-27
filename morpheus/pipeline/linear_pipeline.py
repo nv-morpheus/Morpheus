@@ -114,7 +114,8 @@ class LinearPipeline(_pipeline.Pipeline):
                                                       boundary_port_id=self._current_segment_id,
                                                       data_type=data_type)
 
-        # TODO: update to use data_type once typeid is attached to registered objects out of band: https://github.com/nv-morpheus/SRF/issues/176
+        # TODO: update to use data_type once typeid is attached to registered objects out of band:
+        #  https://github.com/nv-morpheus/SRF/issues/176
         port_id_tuple = (self._current_segment_id, object, False) if data_type else self._current_segment_id
 
         self.add_stage(boundary_egress)

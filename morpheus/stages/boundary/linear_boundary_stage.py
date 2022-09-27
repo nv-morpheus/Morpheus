@@ -18,8 +18,8 @@ import typing
 import srf
 
 from morpheus.config import Config
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.single_output_source import SingleOutputSource
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
 
     @property
     def name(self) -> str:
-        return "linear_segment_boundary"
+        return "linear_segment_egress"
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -54,7 +54,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (self.output_type,)
+        return (self.output_type, )
 
     def supports_cpp_node(self):
         return False
@@ -95,7 +95,7 @@ class LinearBoundaryIngressStage(SingleOutputSource):
             Accepted input types.
 
         """
-        return (self.output_type,)
+        return (self.output_type, )
 
     def supports_cpp_node(self):
         return False

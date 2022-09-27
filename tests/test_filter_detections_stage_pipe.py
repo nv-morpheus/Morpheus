@@ -19,7 +19,6 @@ import os
 import numpy as np
 
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline import LinearPipeline
@@ -100,10 +99,10 @@ def test_filter_detections_stage_pipe_copy(config, tmp_path):
 def test_filter_detections_stage_pipe_slice(config, tmp_path):
     return _test_filter_detections_stage_pipe(config, tmp_path, False)
 
+
 def test_filter_detections_stage_multi_segment_pipe_copy(config, tmp_path):
     return _test_filter_detections_stage_pipe(config, tmp_path, True)
 
 
 def test_filter_detections_stage_multi_segment_pipe_slice(config, tmp_path):
     return _test_filter_detections_stage_pipe(config, tmp_path, False)
-

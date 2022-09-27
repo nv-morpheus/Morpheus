@@ -349,8 +349,8 @@ class Pipeline():
                 show_in_ports = has_ports(n, is_input=True)
                 show_out_ports = has_ports(n, is_input=False)
 
-                # Build the ports for the node. Only show ports if there are any (Would like to have this not show for one
-                # port, but the lines get all messed up)
+                # Build the ports for the node. Only show ports if there are any
+                # (Would like to have this not show for one port, but the lines get all messed up)
                 if (show_in_ports):
                     in_port_label = " {{ {} }} | ".format(" | ".join(
                         [f"<u{x.port_number}> input_port: {x.port_number}" for x in n.input_ports]))
