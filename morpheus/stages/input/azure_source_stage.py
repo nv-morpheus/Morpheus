@@ -17,11 +17,14 @@ import typing
 
 import pandas as pd
 
+from morpheus.cli import register_stage
+from morpheus.config import PipelineModes
 from morpheus.stages.input.autoencoder_source_stage import AutoencoderSourceStage
 
 logger = logging.getLogger(__name__)
 
 
+@register_stage("from-azure", modes=[PipelineModes.AE])
 class AzureSourceStage(AutoencoderSourceStage):
     """
     Load messages from an Azure directory. Adds the following derived features:
