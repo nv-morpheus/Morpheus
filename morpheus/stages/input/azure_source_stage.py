@@ -17,7 +17,7 @@ import typing
 
 import pandas as pd
 
-from morpheus.cli.register_stage import register_stage
+from morpheus.cli import register_stage
 from morpheus.config import PipelineModes
 from morpheus.stages.input.autoencoder_source_stage import AutoencoderSourceStage
 

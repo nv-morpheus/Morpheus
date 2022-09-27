@@ -103,7 +103,7 @@ class _UserModelManager(object):
             # logger='ipynb',
             verbose=False,
             optimizer='sgd',  # SGD optimizer is selected(Stochastic gradient descent)
-            scaler=self._feature_scaler.value,  # feature scaling method
+            scaler=self._feature_scaler,  # feature scaling method
             min_cats=1,  # cut off for minority categories
             progress_bar=False)
 

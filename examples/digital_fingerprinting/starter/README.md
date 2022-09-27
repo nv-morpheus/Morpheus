@@ -168,8 +168,14 @@ to-file --filename=./cloudtrail-dfp-detections.csv --overwrite
 
 ## Duo DFP Pipeline
 
-First, trains user models from files in `models/datasets/training-data/duo` and saves user models to file. Pipeline then uses these models to run inference
-on validation data in `models/datasets/validation-data/duo`. Inference results are written to `duo-detections.csv`.
+Download Duo training and inference data from S3:
+```
+./examples/digital_fingerprinting/fetch_example_data.py duo
+```
+Training data will be saved to `examples/digital_fingerprinting/starter/duo-training-data`, inference data to `examples/digital_fingerprinting/starter/duo-inference-data`.
+
+The following pipeline trains user models from trainng data downloaded above and saves user models to file. Pipeline then uses these models to run inference
+on downloaded inference data. Inference results are written to `duo-detections.csv`.
 ```
 morpheus --log_level=DEBUG \
 run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
@@ -178,14 +184,13 @@ pipeline-ae \
 --userid_column_name=username \
 --feature_scaler=standard \
 from-duo \
---input_glob=models/datasets/validation-data/duo/*.json \
+--input_glob=examples/data/dfp/duo-inference-data/*.json \
 --max_files=200 \
 monitor --description='Input rate' \
 train-ae \
---train_data_glob=models/datasets/training-data/duo/*.json \
+--train_data_glob=examples/data/dfp/duo-training-data/*.json \
 --source_stage_class=morpheus.stages.input.duo_source_stage.DuoSourceStage \
 --seed=42 \
---train_epochs=1 \
 --models_output_filename=models/dfp-models/duo_ae_user_models.pkl \
 preprocess \
 inf-pytorch \
@@ -204,7 +209,7 @@ pipeline-ae \
 --userid_column_name=username \
 --feature_scaler=standard \
 from-duo \
---input_glob=models/datasets/validation-data/duo/*.json \
+--input_glob=examples/data/dfp/duo-inference-data/*.json \
 --max_files=200 \
 monitor --description='Input rate' \
 train-ae \
@@ -219,8 +224,14 @@ to-file --filename=./duo-detections.csv --overwrite
 
 ## Azure DFP Pipeline
 
-First, trains user models from files in `models/datasets/training-data/azure` and saves user models to file. Pipeline then uses these models to run inference
-on validation data in `models/datasets/validation-data/azure`. Inference results are written to `azure-detections.csv`.
+Download Azure training and inference data from S3:
+```
+./examples/digital_fingerprinting/fetch_example_data.py azure
+```
+Training data will be saved to `examples/digital_fingerprinting/starter/azure-training-data`, inference data to `examples/digital_fingerprinting/starter/azure-inference-data`.
+
+The following pipeline trains user models from trainng data downloaded above and saves user models to file. Pipeline then uses these models to run inference
+on downloaded inference data. Inference results are written to `azure-detections.csv`.
 ```
 morpheus --log_level=DEBUG \
 run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
@@ -229,10 +240,10 @@ pipeline-ae \
 --userid_column_name=userPrincipalName \
 --feature_scaler=standard \
 from-azure \
---input_glob=models/datasets/validation-data/azure/*.json \
+--input_glob=examples/data/dfp/azure-inference-data/*.json \
 --max_files=200 \
 train-ae \
---train_data_glob=models/datasets/training-data/azure/*.json \
+--train_data_glob=examples/data/dfp/azure-training-data/*.json \
 --source_stage_class=morpheus.stages.input.azure_source_stage.AzureSourceStage \
 --seed=42 \
 --models_output_filename=models/dfp-models/azure_ae_user_models.pkl \
@@ -253,7 +264,7 @@ pipeline-ae \
 --userid_column_name=userPrincipalName \
 --feature_scaler=standard \
 from-azure \
---input_glob=models/datasets/validation-data/azure/*.json \
+--input_glob=examples/data/dfp/azure-inference-data/*.json \
 --max_files=200 \
 train-ae \
 --pretrained_filename=models/dfp-models/azure_ae_user_models.pkl \
@@ -273,7 +284,7 @@ run the example.
 
 Train user models from files in `models/datasets/training-data/dfp-cloudtrail-*.csv` and saves user models to file. Pipeline then uses these models to run inference on Cloudtrail validation data in `models/datasets/validation-data/dfp-cloudtrail-*-input.csv`. Inference results are written to `cloudtrail-dfp-results.csv`.
 ```
-python ./examples/digital_fingerprinting/run_cloudtrail_dfp.py \
+python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
     --columns_file=morpheus/data/columns_ae_cloudtrail.txt \
     --input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
     --train_data_glob=models/datasets/training-data/dfp-*.csv \
@@ -283,7 +294,7 @@ python ./examples/digital_fingerprinting/run_cloudtrail_dfp.py \
 
 Here we load pre-trained user models from the file (`models/dfp-models/cloudtrail_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/dfp-cloudtrail-*-input.csv`. Inference results are written to `cloudtrail-dfp-results.csv`.
 ```
-python ./examples/digital_fingerprinting/run_cloudtrail_dfp.py \
+python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
     --columns_file=morpheus/data/columns_ae_cloudtrail.txt \
     --input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
     --pretrained_filename=models/dfp-models/cloudtrail_ae_user_models.pkl \
