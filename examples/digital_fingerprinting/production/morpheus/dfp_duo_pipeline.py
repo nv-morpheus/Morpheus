@@ -18,6 +18,7 @@ import os
 import typing
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 from functools import partial
 
 import click
@@ -80,7 +81,8 @@ from morpheus.utils.logger import parse_log_level
 )
 @click.option(
     "--start_time",
-    type=click.DateTime(),
+    type=click.DateTime(
+        formats=['%Y-%m-%d', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S%z', '%Y-%m-%d %H:%M:%S%z']),
     default=None,
     help="The start of the time window, if undefined start_date will be `now()-duration`",
 )
@@ -144,9 +146,12 @@ def run_pipeline(train_users,
 
     duration = timedelta(seconds=pd.Timedelta(duration).total_seconds())
     if start_time is None:
-        end_time = datetime.now()
+        end_time = datetime.now(tz=timezone.utc)
         start_time = end_time - duration
     else:
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+
         end_time = start_time + duration
 
     # Enable the Morpheus logger
