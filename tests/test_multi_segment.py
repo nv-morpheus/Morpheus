@@ -66,8 +66,8 @@ def test_multi_segment_bad_data_type(tmp_path, config, output_type='json'):
         pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
         pipe.run()
         assert (False)
-    except:
-        return
+    except Exception as e:
+        return e
 
     assert os.path.exists(out_file)
 
