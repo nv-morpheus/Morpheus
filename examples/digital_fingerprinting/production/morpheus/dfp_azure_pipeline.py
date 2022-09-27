@@ -110,7 +110,7 @@ from morpheus.utils.logger import parse_log_level
 )
 @click.option('--tracking_uri',
               type=str,
-              default="http://localhost:5000",
+              default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],

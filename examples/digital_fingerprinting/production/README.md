@@ -16,7 +16,7 @@ This is necessary to get the latest changes needed for DFP. From the root of the
 ./docker/build_container_release.sh
 ```
 
-## Buildign and Running via `docker-compose`
+## Building and Running via `docker-compose`
 ### Build
 ```bash
 cd examples/digital_fingerprinting/production
@@ -24,7 +24,7 @@ export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
 docker-compose build
 ```
 
-### Runing the services
+### Running the services
 #### Jupyter Server
 From the `examples/digital_fingerprinting/production` dir run:
 ```bash
@@ -88,6 +88,11 @@ From the `examples/digital_fingerprinting/production` dir run:
 docker-compose up mlflow
 ```
 
+By default, a mlflow dashboard will be available at:
+```bash
+http://localhost:5000
+```
+
 ## Kubernetes deployment
 
 The Morpheus project also maintains Helm charts and container images for Kubernetes deployment of Morpheus and MLflow (both for serving and for the Triton plugin). These are located in the NVIDIA GPU Cloud (NGC) [public catalog](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
@@ -126,3 +131,4 @@ Open your browser to the reachable address and NodePort exposed by the pod (defa
 ```
 helm install --set ngc.apiKey="$API_KEY",sdk.args="cd /workspace/examples/digital_fingerprinting/production/morpheus && ./launch.sh --train_users=generic --duration=1d" <sdk-release-name> morpheus-sdk-client/
 ```
+
