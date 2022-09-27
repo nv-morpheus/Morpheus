@@ -29,7 +29,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class DFPFileBatcherStage(SinglePortStage):
 
-    def __init__(self, c: Config, date_conversion_func, period="D", sampling_rate_s=0):
+    def __init__(self, c: Config, date_conversion_func, period="D", sampling_rate_s=0, start_time=None, end_time=None):
         super().__init__(c)
 
         self._date_conversion_func = date_conversion_func
