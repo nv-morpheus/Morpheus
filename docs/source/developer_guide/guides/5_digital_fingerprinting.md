@@ -222,7 +222,8 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--train_users` | One of: `all`, `generic`, `individual`, `none` | Indicates whether or not to train per user or a generic model for all users. Selecting `none` runs the inference pipeline. |
 | `--skip_user` | TEXT | User IDs to skip. Mutually exclusive with `only_user` |
 | `--only_user` | TEXT | Only users specified by this option will be included. Mutually exclusive with `skip_user` |
-| `--duration` | TEXT | The duration to run starting from now [default: 60d] |
+| `--start_time` | TEXT | The start of the time window, if undefined start_date will be `now()-duration` |
+| `--duration` | TEXT | The duration to run starting from `start_time` [default: 60d] |
 | `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
 | `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
 | `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
@@ -416,7 +417,7 @@ The `MultiFileSource`([`examples/digital_fingerprinting/production/morpheus/dfp/
 
 
 #### File Batcher Stage (`DFPFileBatcherStage`)
-The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming `DataFrame` in batches of a time period (per day default).  This stage can potentially improve performance by combining multiple small files into a single batch.  This stage assumes that the date of the logs in S3 can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), the actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
+The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py`](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_batcher_stage.py)) groups data in the incoming `DataFrame` in batches of a time period (per day default), and optionally filtering incoming data to a specific time window.  This stage can potentially improve performance by combining multiple small files into a single batch.  This stage assumes that the date of the logs can be easily inferred such as encoding the creation time in the file name (e.g., `AUTH_LOG-2022-08-21T22.05.23Z.json`), or using the modification time as reported by the file system. The actual method for extracting the date is encoded in a user-supplied `date_conversion_func` function (more on this later).
 
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
@@ -424,8 +425,10 @@ The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus
 | `date_conversion_func` | `function` | Function receives a single [fsspec.core.OpenFile](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFile) argument and returns a `datetime.datetime` object |
 | `period` | `str` | Time period to group data by, value must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases) |
 | `sampling_rate_s` | `int` | Optional, default=`0`. When non-zero a subset of the incoming data files will be sampled, only including a file if the `datetime` returned by `date_conversion_func` is at least `sampling_rate_s` seconds greater than  the `datetime` of the previously included file |
+| `start_time` | `datetime` | Optional, default=`None`. When not None incoming data files will be filtered, excluding any files created prior to `start_time` |
+| `end_time` | `datetime` | Optional, default=`None`. When not None incoming data files will be filtered, excluding any files created after `end_time` |
 
-For situations where the creation date of the log file is encoded in the filename is desired, the `date_extractor` in the [`examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py`](/examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py) module can be used.  The `date_extractor` will need to have a regex pattern bound to it before being passed in as a parameter to `DFPFileBatcherStage`. The regex pattern will need to contain the following named groups: `year`, `month`, `day`, `hour`, `minute`, `second`, and optionally `microsecond`.
+For situations where the creation date of the log file is encoded in the filename, the `date_extractor` in the [`examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py`](/examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py) module can be used.  The `date_extractor` assumes that the timestamps are localized to UTC and will need to have a regex pattern bound to it before being passed in as a parameter to `DFPFileBatcherStage`. The regex pattern will need to contain the following named groups: `year`, `month`, `day`, `hour`, `minute`, `second`, and optionally `microsecond`.  In cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
 
 For input files containing an ISO 8601 formatted date string the `iso_date_regex` regex can be used ex:
 ```python
@@ -442,7 +445,7 @@ pipeline.add_stage(
                         date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex)))
 ```
 
-> **Note:**  in cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
+> **Note:**  If `date_conversion_func` returns time-zone aware timestamps, then `start_time` and `end_time` if not-None need to also be timezone aware datetime objects.
 
 #### File to DataFrame Stage (`DFPFileToDataFrameStage`)
 The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_file_to_df.py)) stage receives a `list` of an [fsspec.core.OpenFiles](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.core.OpenFiles) and loads them into a single `DataFrame` which is then emitted into the pipeline.  When the parent stage is `DFPFileBatcherStage` each batch (typically one day) is concatenated into a single `DataFrame`.  If the parent was `MultiFileSource` the entire dataset is loaded into a single `DataFrame`.  Because of this, it is important to choose a `period` argument for `DFPFileBatcherStage` small enough such that each batch can fit into memory.
