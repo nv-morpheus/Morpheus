@@ -19,12 +19,9 @@ import os
 import numpy as np
 import pytest
 
-from morpheus.io.deserializers import read_file_to_df
 from morpheus._lib.file_types import FileTypes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -76,6 +73,7 @@ def test_to_file_no_path(tmp_path, config):
     pipe.run()
 
     assert os.path.exists(tmp_path / out_file)
+
 
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_multi_segment_pipe(tmp_path, config, output_type):

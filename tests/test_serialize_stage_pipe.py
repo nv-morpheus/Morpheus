@@ -19,8 +19,8 @@ import os
 import numpy as np
 import pytest
 
-from morpheus.io.deserializers import read_file_to_df
 from morpheus._lib.file_types import FileTypes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline

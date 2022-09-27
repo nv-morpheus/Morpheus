@@ -24,8 +24,8 @@ from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
 from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
