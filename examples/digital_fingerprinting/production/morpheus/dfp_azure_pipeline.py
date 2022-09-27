@@ -17,10 +17,13 @@ import logging
 import os
 import typing
 from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from functools import partial
 
 import click
 import mlflow
+import pandas as pd
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
@@ -76,6 +79,13 @@ from morpheus.utils.logger import parse_log_level
     help="Only users specified by this option will be included. Mutually exclusive with skip_user",
 )
 @click.option(
+    "--start_time",
+    type=click.DateTime(
+        formats=['%Y-%m-%d', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S%z', '%Y-%m-%d %H:%M:%S%z']),
+    default=None,
+    help="The start of the time window, if undefined start_date will be `now()-duration`",
+)
+@click.option(
     "--duration",
     type=str,
     default="60d",
@@ -115,6 +125,7 @@ from morpheus.utils.logger import parse_log_level
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
+                 start_time: datetime,
                  duration,
                  cache_dir,
                  log_level,
@@ -132,6 +143,16 @@ def run_pipeline(train_users,
     skip_users = list(skip_user)
     only_users = list(only_user)
 
+    duration = timedelta(seconds=pd.Timedelta(duration).total_seconds())
+    if start_time is None:
+        end_time = datetime.now(tz=timezone.utc)
+        start_time = end_time - duration
+    else:
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+
+        end_time = start_time + duration
+
     # Enable the Morpheus logger
     configure_logging(log_level=log_level)
 
@@ -143,6 +164,7 @@ def run_pipeline(train_users,
     logger.info("Running training pipeline with the following options: ")
     logger.info("Train generic_user: %s", include_generic)
     logger.info("Skipping users: %s", skip_users)
+    logger.info("Start Time: %s", start_time)
     logger.info("Duration: %s", duration)
     logger.info("Cache Dir: %s", cache_dir)
 
@@ -223,7 +245,9 @@ def run_pipeline(train_users,
         DFPFileBatcherStage(config,
                             period="D",
                             sampling_rate_s=sample_rate_s,
-                            date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex)))
+                            date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex),
+                            start_time=start_time,
+                            end_time=end_time))
 
     # Output is S3 Buckets. Convert to DataFrames. This caches downloaded S3 data
     pipeline.add_stage(
