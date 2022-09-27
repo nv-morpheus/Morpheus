@@ -193,7 +193,7 @@ class Pipeline():
                     if (stage.can_build(check_ports=True)):
                         stage.build()
 
-            if (not all([x.is_built for x in segment_graph.nodes()])):
+            if (not all(x.is_built for x in segment_graph.nodes())):
                 raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
 
             # Finally, execute the link phase (only necessary for circular pipelines)
