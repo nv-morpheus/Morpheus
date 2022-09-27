@@ -14,4 +14,4 @@
 # limitations under the License.
 
 # Run the training forwarding any args
-python dfp_duo_pipeline.py "$@"
+python dfp_pipeline_duo.py "$@"
