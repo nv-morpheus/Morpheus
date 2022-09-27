@@ -204,6 +204,7 @@ class Pipeline():
 
         logger.info("====Building Pipeline====")
         for segment_id in self._segments.keys():
+            logger.info(f"====Building Segment: {segment_id}====")
             segment_ingress_ports = self._segments[segment_id]["ingress_ports"]
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
@@ -211,6 +212,7 @@ class Pipeline():
             self._srf_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
                                             segment_inner_build)
+            logger.info("====Building Segment Complete!====")
 
         logger.info("====Building Pipeline Complete!====")
         self._is_build_complete = True
