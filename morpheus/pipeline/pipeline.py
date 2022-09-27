@@ -180,7 +180,7 @@ class Pipeline():
             segment_graph = self._segment_graphs[segment_id]
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
-            # topo_sort provides a resonable approximation.
+            # topo_sort provides a reasonable approximation.
             for stage in networkx.topological_sort(segment_graph):
                 if (stage.can_build()):
                     stage.build(builder)
