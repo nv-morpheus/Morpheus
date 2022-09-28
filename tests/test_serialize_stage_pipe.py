@@ -21,6 +21,8 @@ import pytest
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -38,6 +40,38 @@ def test_serialize_pipe(tmp_path, config, output_type):
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    pipe.run()
+
+    assert os.path.exists(out_file)
+
+    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
+
+    if output_type == "csv":
+        # The output data will contain an additional id column that we will need to slice off
+        output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
+        output_data = output_data[:, 1:]
+    else:  # assume json
+        df = read_file_to_df(out_file, file_type=FileTypes.Auto)
+        output_data = df.values
+
+    # Somehow 0.7 ends up being 0.7000000000000001
+    output_data = np.around(output_data, 2)
+    assert output_data.tolist() == input_data.tolist()
+
+
+@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
+def test_serialize_multi_segment_pipe(tmp_path, config, output_type):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.add_segment_boundary(MessageMeta)
+    pipe.add_stage(DeserializeStage(config))
+    pipe.add_segment_boundary(MultiMessage)
+    pipe.add_stage(SerializeStage(config))
+    pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
