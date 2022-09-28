@@ -69,7 +69,7 @@ BUILD_DIR=build-docker ./scripts/compile.sh
 
 Install morpheus with an extra dependency:
 ```bash
-pip install -e . && pip install websockets
+pip install -e .
 ```
 
 Verify Morpheus is installed:
