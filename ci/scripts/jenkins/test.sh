@@ -87,7 +87,7 @@ cd ${MORPHEUS_ROOT}/tests
 
 set +e
 
-python -I -m pytest -v --run_slow --run_kafka \
+python -I -m pytest -v -s --run_slow --run_kafka \
        --junit-xml=${REPORTS_DIR}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \
