@@ -34,10 +34,14 @@
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pybind11/stl.h>          // IWYU pragma: keep
+#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pysrf/edge_adapter.hpp>
+#include <pysrf/node.hpp>
+#include <pysrf/port_builders.hpp>
 #include <pysrf/utils.hpp>         // for pysrf::import
 #include <srf/channel/status.hpp>  // for Status
 #include <srf/node/edge_connector.hpp>
+#include <srf/node/port_registry.hpp>
 
 #include <cstddef>
 #include <filesystem>
@@ -72,6 +76,14 @@ PYBIND11_MODULE(messages, m)
 
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
+
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
