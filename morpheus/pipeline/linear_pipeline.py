@@ -17,6 +17,8 @@ import typing
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
+from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryEgressStage
+from morpheus.stages.boundary.linear_boundary_stage import LinearBoundaryIngressStage
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,16 @@ class LinearPipeline(_pipeline.Pipeline):
     def __init__(self, c: Config):
         super().__init__(c)
 
+        self._current_segment_id = ""
+        self._next_segment_index = 0
+        self.increment_segment_id()
+
         self._linear_stages: typing.List[_pipeline.StreamWrapper] = []
+
+    def increment_segment_id(self):
+        self._linear_stages = []
+        self._current_segment_id = f"linear_segment_{self._next_segment_index}"
+        self._next_segment_index += 1
 
     def set_source(self, source: _pipeline.SourceStage):
         """
@@ -55,15 +66,14 @@ class LinearPipeline(_pipeline.Pipeline):
 
             self._sources.clear()
 
-        # Store the source in sources
-        self._sources.add(source)
-
         if (len(self._linear_stages) > 0):
+            # TODO(devin): This doesn't seem right, if we add another source, our underlying Pipeline could still have
+            # any number of dangling nodes.
             logger.warning("Clearing %d stages from pipeline", len(self._linear_stages))
             self._linear_stages.clear()
 
         # Need to store the source in the pipeline
-        super().add_node(source)
+        super().add_node(source, self._current_segment_id)
 
         # Store this as the first one in the linear stages. Must be index 0
         self._linear_stages.append(source)
@@ -84,7 +94,41 @@ class LinearPipeline(_pipeline.Pipeline):
         assert isinstance(stage, _pipeline.SinglePortStage), ("Only `SinglePortStage` stages are accepted in "
                                                               "`add_stage()`")
 
+        # Add this stage to the segment graph
+        super().add_node(stage, self._current_segment_id)
+
         # Make an edge between the last node and this one
-        self.add_edge(self._linear_stages[-1], stage)
+        super().add_edge(self._linear_stages[-1], stage, self._current_segment_id)
 
         self._linear_stages.append(stage)
+
+    def add_segment_boundary(self, data_type=None, as_shared_pointer=False):
+        if (len(self._linear_stages) == 0):
+            raise RuntimeError("Cannot create a segment boundary, current segment is empty.")
+
+        empty_config = Config()
+        boundary_egress = LinearBoundaryEgressStage(empty_config,
+                                                    boundary_port_id=self._current_segment_id,
+                                                    data_type=data_type)
+        boundary_ingress = LinearBoundaryIngressStage(empty_config,
+                                                      boundary_port_id=self._current_segment_id,
+                                                      data_type=data_type)
+
+        # TODO: update to use data_type once typeid is attached to registered objects out of band:
+        #  https://github.com/nv-morpheus/SRF/issues/176
+        port_id_tuple = (self._current_segment_id, object, False) if data_type else self._current_segment_id
+
+        self.add_stage(boundary_egress)
+        egress_segment_id = self._current_segment_id
+
+        self.increment_segment_id()
+        ingress_segment_id = self._current_segment_id
+
+        self._linear_stages.append(boundary_ingress)
+
+        super().add_node(boundary_ingress, self._current_segment_id)
+        super().add_segment_edge(boundary_egress,
+                                 egress_segment_id,
+                                 boundary_ingress,
+                                 ingress_segment_id,
+                                 port_id_tuple)
