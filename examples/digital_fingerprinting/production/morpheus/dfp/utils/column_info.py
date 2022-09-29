@@ -159,17 +159,17 @@ class IncrementColumn(DateTimeColumn):
     period: str = "D"
 
     def process_column(self, df: pd.DataFrame) -> pd.Series:
-        per_day = super().process_column(df).dt.to_period(self.period)
+        period = super().process_column(df).dt.to_period(self.period)
 
-        # Create the per-user, per-day log count
-        return df.groupby([self.groupby_column, per_day]).cumcount()
+        # Create the `groupby_column`, per-period log count
+        return df.groupby([self.groupby_column, period]).cumcount()
 
 
 @dataclasses.dataclass
 class DataFrameInputSchema:
     json_columns: typing.List[str] = dataclasses.field(default_factory=list)
     column_info: typing.List[ColumnInfo] = dataclasses.field(default_factory=list)
-    preserve_columns: re.Pattern = dataclasses.field(default_factory=list)
+    preserve_columns: typing.List[str] = dataclasses.field(default_factory=list)
     row_filter: typing.Callable[[pd.DataFrame], pd.DataFrame] = None
 
     def __post_init__(self):

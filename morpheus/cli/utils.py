@@ -162,6 +162,15 @@ def get_enum_map(enum_class: typing.Type):
     return enum_map
 
 
+def get_enum_inv_map(enum_class: typing.Type):
+
+    assert issubclass(enum_class, Enum), "Must pass a class that derives from Enum"
+
+    enum_map = {x.value: x.name for x in enum_class}
+
+    return enum_map
+
+
 def get_enum_values(enum_class: typing.Type):
 
     enum_map = get_enum_map(enum_class)
@@ -171,16 +180,16 @@ def get_enum_values(enum_class: typing.Type):
 
 def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: typing.Type, case_sensitive=True):
 
-    enum_map = get_enum_map(enum_class)
+    enum_map = get_enum_inv_map(enum_class)
 
     if case_sensitive:
-        result = enum_map[value]
+        enum_key = enum_map[value]
     else:
         # Make the keys lowercase
         enum_map = {key.lower(): value for key, value in enum_map.items()}
+        enum_key = enum_map[value.lower()]
 
-        result = enum_map[value.lower()]
-
+    result = enum_class[enum_key]
     return result
 
 

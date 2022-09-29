@@ -242,7 +242,6 @@ class DFPFileToDataFrameStage(SinglePortStage):
             return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")
-            self._get_or_create_dataframe_from_s3_batch(s3_object_batch)
             raise
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:

@@ -28,4 +28,4 @@ dependencies:
     - librdkafka
     - mlflow
     - papermill
-    - s3fs
+    - s3fs==2022.8.2
