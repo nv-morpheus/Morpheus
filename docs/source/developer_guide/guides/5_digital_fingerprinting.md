@@ -175,6 +175,13 @@ cd examples/digital_fingerprinting/production
 docker-compose build
 ```
 
+#### Donwloading the example datasets
+First we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script.  This will download the example data into the `examples/data/dfp` dir.
+```bash
+pip install s3fs
+python examples/digital_fingerprinting/fetch_example_data.py all
+```
+
 #### Running the services
 ##### Jupyter Server
 From the `examples/digital_fingerprinting/production` dir run:
@@ -210,6 +217,7 @@ If instead you wish to run a different pipeline, from the `examples/digital_fing
 docker-compose run morpheus_pipeline bash
 ```
 
+
 From the prompt within the `morpheus_pipeline` container you can run either the `dfp_azure_pipeline.py` or `dfp_duo_pipeline.py` pipeline scripts.
 ```bash
 python dfp_azure_pipeline.py --help
@@ -231,6 +239,28 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
 | `--help` | | Show this message and exit. |
 
+
+To run the DFP pipelines with the example datasets, within the container run:
+
+* Duo Training Pipeline
+```bash
+python dfp_duo_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/duo-training-data/*.json"
+```
+
+* Duo Inference Pipeline
+```bash
+python dfp_duo_pipeline.py --train_users=none --start_time="2022-08-30" --input_file="/workspace/examples/data/dfp/duo-inference-data/*.json"
+```
+
+* Azure Training Pipeline
+```bash
+python dfp_azure_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/azure-training-data/*.json"
+```
+
+* Azure Inference Pipeline
+```bash
+python dfp_azure_pipeline.py --train_users=none  --start_time="2022-08-30" --input_file="/workspace/examples/data/dfp/azure-inference-data/*.json"
+```
 
 ##### Optional MLflow Service
 Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
