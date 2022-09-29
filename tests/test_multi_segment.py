@@ -17,24 +17,24 @@
 import os
 
 import numpy as np
-import pytest
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.messages import MessageMeta
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from utils import TEST_DIRS
 
 
-@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_file_rw_pipe(tmp_path, config, output_type):
+# Adapted from fil_in_out_stage -- used for testing multi-segment error conditions
+def test_linear_boundary_stages(tmp_path, config, output_type='json'):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
+    pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
@@ -55,36 +55,19 @@ def test_file_rw_pipe(tmp_path, config, output_type):
     assert output_data.tolist() == input_data.tolist()
 
 
-@pytest.mark.use_python
-@pytest.mark.usefixtures("chdir_tmpdir")
-def test_to_file_no_path(tmp_path, config):
-    """
-    Test to ensure issue #48 is fixed
-    """
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = "test.csv"
-
-    assert os.path.realpath(os.curdir) == tmp_path.as_posix()
-
-    assert not os.path.exists(tmp_path / out_file)
-    pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
-    pipe.run()
-
-    assert os.path.exists(tmp_path / out_file)
-
-
-@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_file_rw_multi_segment_pipe(tmp_path, config, output_type):
+def test_multi_segment_bad_data_type(tmp_path, config, output_type='json'):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
-    pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file))
-    pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
-    pipe.run()
+    try:
+        pipe = LinearPipeline(config)
+        pipe.set_source(FileSourceStage(config, filename=input_file))
+        pipe.add_segment_boundary(int)
+        pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+        pipe.run()
+        assert (False)
+    except Exception as e:
+        return e
 
     assert os.path.exists(out_file)
 
