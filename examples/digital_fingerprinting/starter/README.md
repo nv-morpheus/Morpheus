@@ -139,6 +139,18 @@ The `PreprocessAEStage` is responsible for creating a Morpheus message that cont
 
 **Write stage** - `WriteToFileStage` writes input data with inference results to an output file path.
 
+## Download DFP Example Data from S3
+
+```
+pip install s3fs
+```
+
+```
+./examples/digital_fingerprinting/fetch_example_data.py all
+```
+
+Azure training data will be saved to `examples/data/dfp/azure-training-data`, inference data to `examples/data/dfp/azure-inference-data`.
+Duo training data will be saved to `examples/data/dfp/duo-training-data`, inference data to `examples/data/dfp/duo-inference-data`.
 
 ## CloudTrail DFP Pipeline
 
@@ -168,13 +180,7 @@ to-file --filename=./cloudtrail-dfp-detections.csv --overwrite
 
 ## Duo DFP Pipeline
 
-Download Duo training and inference data from S3:
-```
-./examples/digital_fingerprinting/fetch_example_data.py duo
-```
-Training data will be saved to `examples/digital_fingerprinting/starter/duo-training-data`, inference data to `examples/digital_fingerprinting/starter/duo-inference-data`.
-
-The following pipeline trains user models from trainng data downloaded above and saves user models to file. Pipeline then uses these models to run inference
+The following pipeline trains user models from downloaded training data and saves user models to file. Pipeline then uses these models to run inference
 on downloaded inference data. Inference results are written to `duo-detections.csv`.
 ```
 morpheus --log_level=DEBUG \
@@ -224,13 +230,7 @@ to-file --filename=./duo-detections.csv --overwrite
 
 ## Azure DFP Pipeline
 
-Download Azure training and inference data from S3:
-```
-./examples/digital_fingerprinting/fetch_example_data.py azure
-```
-Training data will be saved to `examples/digital_fingerprinting/starter/azure-training-data`, inference data to `examples/digital_fingerprinting/starter/azure-inference-data`.
-
-The following pipeline trains user models from trainng data downloaded above and saves user models to file. Pipeline then uses these models to run inference
+The following pipeline trains user models from downloaded training data and saves user models to file. Pipeline then uses these models to run inference
 on downloaded inference data. Inference results are written to `azure-detections.csv`.
 ```
 morpheus --log_level=DEBUG \
