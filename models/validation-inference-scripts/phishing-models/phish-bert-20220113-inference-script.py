@@ -15,9 +15,9 @@
 """
 Example Usage:
 python phish-bert-20220113-inference-script.py \
-    --validationdata phishing-email-validation-data.jsonlines \
-    --model phishing-bert-202111006.onnx \
-    --vocab bert-base-uncased-hash.txt \
+    --validationdata ../../datasets/validation-data/phishing-email-validation-data.jsonlines \
+    --model ../../phishing-models/phishing-bert-20211006.onnx \
+    --vocab ../../training-tuning-scripts/phishing-models/resources/bert-base-uncased-hash.txt \
     --output phishing-email-validation-output.jsonlines
 """
 

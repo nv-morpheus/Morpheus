@@ -15,8 +15,8 @@
 """
 Example Usage:
 python hammah-inference.py \
-    --validationdata hammah-user123-validation-data.csv \
-    --model hammah-user123-20211017-dill.pkl \
+    --validationdata ../../datasets/validation-data/hammah-user123-validation-data.csv \
+    --model ../../hammah-models/hammah-user123-20211017-dill.pkl \
     --output abp-validation-output.csv
 """
 
@@ -84,7 +84,7 @@ def infer(validationdata, model, output):
     X_val.sort_values('ae_anomaly_score', ascending=False).head(10)
     # since inference is done, add the original columns back so the output will be the same as the input format
     # X_val['ts_anomaly']=X_val_original['ts_anomaly']
-    df = cudf.read_csv("hammah-user123-validation-data.csv")
+    df = cudf.read_csv(validationdata)
     df = df.sort_values(by=['eventTime'])
     timearr = df.eventTime.to_array()
     START = stript(timearr[0])
