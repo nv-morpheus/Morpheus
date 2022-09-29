@@ -52,10 +52,13 @@ conda install dask==2022.7.0 distributed==2022.7.0
 ## Run Pipeline
 Launch the example using the following
 
+Input features for a short model can be taken from a sequence three of snapshots, such (1, 2, 3), or (2, 3, 4). The sliding window is a represents the number of subsequent snapshots that need to be taken into account when generating the input for a model. Sliding window for the medium model is `5` and for the long model it is `10`.
+
 ```bash
 cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 
 python run.py --server_url=localhost:8001 \
+              --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
               --conf_file=./config/ransomware_detection.yaml \
               --input_glob=${MORPHEUS_ROOT}/examples/data/appshield/*/snapshot-*/*.json \
