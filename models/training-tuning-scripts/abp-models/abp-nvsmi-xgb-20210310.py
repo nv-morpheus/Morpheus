@@ -14,8 +14,8 @@
 
 """
 Example Usage: 
-python run_abp_training.py \
-       --training-data /rapidsai-data/cyber/abp.json \
+python abp-nvsmi-xgb-20210310.py \
+       --training-data ../../datasets/training-data/abp-sample-nvsmi-training-data.json \
 
 """
 import argparse
