@@ -71,6 +71,7 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--train_users` | One of: `all`, `generic`, `individual`, `none` | Indicates whether or not to train per user or a generic model for all users. Selecting `none` runs the inference pipeline. |
 | `--skip_user` | TEXT | User IDs to skip. Mutually exclusive with `only_user` |
 | `--only_user` | TEXT | Only users specified by this option will be included. Mutually exclusive with `skip_user` |
+| `--start_time` | TEXT | The start of the time window, if undefined start_date will be `now()-duration` |
 | `--duration` | TEXT | The duration to run starting from now [default: 60d] |
 | `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
 | `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
@@ -131,4 +132,3 @@ Open your browser to the reachable address and NodePort exposed by the pod (defa
 ```
 helm install --set ngc.apiKey="$API_KEY",sdk.args="cd /workspace/examples/digital_fingerprinting/production/morpheus && ./launch.sh --train_users=generic --duration=1d" <sdk-release-name> morpheus-sdk-client/
 ```
-
