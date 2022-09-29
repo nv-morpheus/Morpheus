@@ -20,7 +20,7 @@ from datetime import timezone
 import fsspec
 
 iso_date_regex = re.compile(r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
-                            r"T(?P<hour>\d{1,2}):(?P<minute>\d{1,2}):(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
+                            r"T(?P<hour>\d{1,2})(:|_)(?P<minute>\d{1,2})(:|_)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
 
 
 def date_extractor(file_object: fsspec.core.OpenFile, filename_regex: re.Pattern):
