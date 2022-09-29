@@ -87,7 +87,7 @@ class SourceStage(_pipeline.StreamWrapper):
 
         self._source_stream = curr_source
 
-        # Now setup the output ports
+        # Now set up the output ports
         self._output_ports[0]._out_stream_pair = source_pair
 
         return [source_pair]
