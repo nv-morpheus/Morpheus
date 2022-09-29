@@ -118,7 +118,7 @@ def run_pipeline(debug,
         configure_logging(log_level=logging.INFO)
 
     snapshot_fea_length = 99
-    
+
     CppConfig.set_should_use_cpp(use_cpp)
 
     # Its necessary to get the global config object and configure it for FIL mode
