@@ -243,24 +243,24 @@ Both scripts are capable of running either a training or inference pipeline for 
 To run the DFP pipelines with the example datasets, within the container run:
 
 * Duo Training Pipeline
-```bash
-python dfp_duo_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/duo-training-data/*.json"
-```
+   ```bash
+   python dfp_duo_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/duo-training-data/*.json"
+   ```
 
 * Duo Inference Pipeline
-```bash
-python dfp_duo_pipeline.py --train_users=none --start_time="2022-08-30" --input_file="/workspace/examples/data/dfp/duo-inference-data/*.json"
-```
+   ```bash
+   python dfp_duo_pipeline.py --train_users=none --start_time="2022-08-30" --input_file="/workspace/examples/data/dfp/duo-inference-data/*.json"
+   ```
 
 * Azure Training Pipeline
-```bash
-python dfp_azure_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/azure-training-data/*.json"
-```
+   ```bash
+   python dfp_azure_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/azure-training-data/*.json"
+   ```
 
 * Azure Inference Pipeline
-```bash
-python dfp_azure_pipeline.py --train_users=none  --start_time="2022-08-30" --input_file="/workspace/examples/data/dfp/azure-inference-data/*.json"
-```
+   ```bash
+   python dfp_azure_pipeline.py --train_users=none  --start_time="2022-08-30" --input_file="/workspace/examples/data/dfp/azure-inference-data/*.json"
+   ```
 
 ##### Optional MLflow Service
 Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
