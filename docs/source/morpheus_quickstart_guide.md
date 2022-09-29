@@ -1092,6 +1092,7 @@ The Drop Null Attributes stage (dropna) requires the specification of a column n
 | ----- | ------- |
 | Azure DFP | userPrincipalName |
 | Duo DFP | username |
+| DFP Cloudtrail | userIdentitysessionContextsessionIssueruserName |
 | Email | data |
 | GNN | index, client_node, merchant_node |
 | Log Parsing | raw |
