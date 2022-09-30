@@ -47,7 +47,7 @@ jobs:
     runs-on: [self-hosted, linux, amd64, cpu4]
     timeout-minutes: 60
     container:
-      image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
+      image: rapidsai/ci:cuda11.5.1-base-ubuntu20.04-py3.8
     strategy:
       fail-fast: true
 
@@ -68,7 +68,7 @@ jobs:
     runs-on: [self-hosted, linux, amd64, cpu16]
     timeout-minutes: 240
     container:
-      image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
+      image: rapidsai/ci:cuda11.5.1-base-ubuntu20.04-py3.8
     strategy:
       fail-fast: true
 
@@ -89,7 +89,7 @@ jobs:
     runs-on: [self-hosted, linux, amd64, gpu-v100-495-1]
     timeout-minutes: 60
     container:
-      image: gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8
+      image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
     strategy:
@@ -112,7 +112,7 @@ jobs:
     runs-on: [self-hosted, linux, amd64, cpu4]
     timeout-minutes: 60
     container:
-      image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
+      image: rapidsai/ci:cuda11.5.1-base-ubuntu20.04-py3.8
     strategy:
       fail-fast: true
 
