@@ -34,8 +34,12 @@ logger = logging.getLogger(__name__)
 
 class AutoencoderSourceStage(SingleOutputSource):
     """
-    Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline
-    immediately. Useful for testing performance and accuracy of a pipeline.
+    All AutoEncoder source stages must extend this class and implement the `files_to_dfs_per_user` abstract method.
+    Feature columns can be managed by overriding the `derive_features` method. Otherwise, all columns from input
+    data pass through to next stage.
+
+    Extend this class to load messages from a files and dump contents into a DFP pipeline immediately. Useful for
+    testing performance and accuracy of a pipeline.
 
     Parameters
     ----------
