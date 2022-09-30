@@ -15,13 +15,13 @@
 # limitations under the License.
 
 function print_env_vars() {
-    gpuci_logger "Environ:"
+    rapids-logger "Environ:"
     env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN" | sort
 }
 
-gpuci_logger "Env Setup"
+rapids-logger "Env Setup"
 print_env_vars
-gpuci_logger "---------"
+rapids-logger "---------"
 mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
@@ -32,13 +32,13 @@ cd ${MORPHEUS_ROOT}
 # will be defined specifying the subset we are allowed to use.
 NUM_CORES=$(nproc)
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-${NUM_CORES}}
-gpuci_logger "Procs: ${NUM_CORES}"
+rapids-logger "Procs: ${NUM_CORES}"
 /usr/bin/lscpu
 
-gpuci_logger "Memory"
+rapids-logger "Memory"
 /usr/bin/free -g
 
-gpuci_logger "User Info"
+rapids-logger "User Info"
 id
 
 # For PRs, $GIT_BRANCH is like: pull-request/989
@@ -67,7 +67,7 @@ export FETCH_STATUS=0
 print_env_vars
 
 function fetch_base_branch() {
-    gpuci_logger "Retrieving base branch from GitHub API"
+    rapids-logger "Retrieving base branch from GitHub API"
     [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
     RESP=$(
     curl -s \
@@ -81,7 +81,7 @@ function fetch_base_branch() {
     # Change target is the branch name we are merging into but due to the weird way jenkins does
     # the checkout it isn't recognized by git without the origin/ prefix
     export CHANGE_TARGET="origin/${BASE_BRANCH}"
-    gpuci_logger "Base branch: ${BASE_BRANCH}"
+    rapids-logger "Base branch: ${BASE_BRANCH}"
 }
 
 function fetch_s3() {
@@ -98,25 +98,25 @@ function fetch_s3() {
 
 function restore_conda_env() {
 
-    gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
+    rapids-logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
     fetch_s3 "${ARTIFACT_ENDPOINT}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
     fetch_s3 "${ARTIFACT_ENDPOINT}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
 
-    gpuci_logger "Extracting"
+    rapids-logger "Extracting"
     mkdir -p /opt/conda/envs/morpheus
 
     # We are using the --no-same-owner flag since user id & group id's are inconsistent between nodes in our CI pool
     tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
     tar xf "${WORKSPACE_TMP}/wheel.tar.bz" --no-same-owner --directory ${MORPHEUS_ROOT}
 
-    gpuci_logger "Setting conda env"
+    rapids-logger "Setting conda env"
     conda activate morpheus
     conda-unpack
 }
 
 function show_conda_info() {
 
-    gpuci_logger "Check Conda info"
+    rapids-logger "Check Conda info"
     conda info
     conda config --show-sources
     conda list --show-channel-urls

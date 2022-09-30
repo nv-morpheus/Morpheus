@@ -18,51 +18,58 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-gpuci_logger "Creating conda env"
+apt -q -y update
+apt -q -y install libcublas-dev-11-5 \
+                  libcufft-dev-11-5 \
+                  libcurand-dev-11-5 \
+                  libcusolver-dev-11-5 \
+                  libnuma1
+
+rapids-logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
 conda config --env --add channels conda-forge
 conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
 mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 conda activate morpheus
 
-gpuci_logger "Installing CI dependencies"
+rapids-logger "Installing CI dependencies"
 mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
 conda deactivate && conda activate morpheus
 
-gpuci_logger "Final Conda Environment"
+rapids-logger "Final Conda Environment"
 show_conda_info
 
-gpuci_logger "Check versions"
+rapids-logger "Check versions"
 python3 --version
 gcc --version
 g++ --version
 cmake --version
 ninja --version
 
-gpuci_logger "Configuring cmake for Morpheus"
+rapids-logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
-gpuci_logger "Building Morpheus"
+rapids-logger "Building Morpheus"
 cmake --build build --parallel ${PARALLEL_LEVEL}
 
-gpuci_logger "sccache usage for morpheus build:"
+rapids-logger "sccache usage for morpheus build:"
 sccache --show-stats
 sccache --zero-stats &> /dev/null
 
-gpuci_logger "Installing Morpheus"
+rapids-logger "Installing Morpheus"
 cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
 pip install ${MORPHEUS_ROOT}/build/wheel
 
-gpuci_logger "sccache usage for building C++ examples:"
+rapids-logger "sccache usage for building C++ examples:"
 sccache --show-stats
 
-gpuci_logger "Archiving results"
+rapids-logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
 tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/wheel
 
-gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/wheel.tar.bz" "${ARTIFACT_URL}/wheel.tar.bz"
 
-gpuci_logger "Success"
+rapids-logger "Success"
 exit 0
