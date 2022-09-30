@@ -41,6 +41,12 @@ services:
       target: jupyter
       args:
         - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: [gpu]    
     image: dfp_morpheus_jupyter
     container_name: jupyter
     ports:
@@ -58,7 +64,7 @@ services:
     cap_add:
       - sys_nice
 
-  morpheus_training:
+  morpheus_pipeline:
     # restart: always
     build:
       context: ./
@@ -67,7 +73,13 @@ services:
       args:
         - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
     image: dfp_morpheus
-    container_name: morpheus_training
+    container_name: morpheus_pipeline
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: [gpu]
     networks:
       - frontend
       - backend

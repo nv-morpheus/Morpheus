@@ -69,7 +69,7 @@ class MultiFileSource(SingleOutputSource):
 
     def _generate_frames_fsspec(self):
 
-        files: fsspec.core.OpenFiles = fsspec.open_files(self._filenames, filecache={'cache_storage': './.cache/s3tmp'})
+        files: fsspec.core.OpenFiles = fsspec.open_files(self._filenames)
 
         if (len(files) == 0):
             raise RuntimeError(f"No files matched input strings: '{self._filenames}'. "

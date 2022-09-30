@@ -73,6 +73,10 @@ class PreprocessAEStage(PreprocessBaseStage):
         ----------
         x : morpheus.pipeline.preprocess.autoencoder.MultiAEMessage
             Input rows received from Deserialized stage.
+        fea_len : int
+            Number of input features.
+        feature_columns : typing.List[str]
+            List of feature columns.
 
         Returns
         -------
