@@ -58,6 +58,7 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+          fetch-depth: 0
 
       - name: Check
         shell: bash
@@ -90,6 +91,8 @@ jobs:
     timeout-minutes: 60
     container:
       image: gpuci/rapidsai:22.04-cuda11.5-devel-centos7-py3.8
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
     strategy:
       fail-fast: true
 
