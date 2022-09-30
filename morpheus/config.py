@@ -92,6 +92,13 @@ class ConfigOnnxToTRT(ConfigBase):
     max_workspace_size: int = 16000  # In MB
 
 
+class AEFeatureScalar(str, Enum):
+    """The available scaling options for the AutoEncoder class."""
+    NONE = "none"
+    STANDARD = "standard"
+    GAUSSRANK = "gauss_rank"
+
+
 @dataclasses.dataclass
 class ConfigAutoEncoder(ConfigBase):
     """
@@ -114,7 +121,11 @@ class ConfigAutoEncoder(ConfigBase):
     """
     feature_columns: typing.List[str] = None
     userid_column_name: str = "userIdentityaccountId"
+    timestamp_column_name: str = "timestamp"
     userid_filter: str = None
+    feature_scaler: AEFeatureScalar = AEFeatureScalar.STANDARD
+    use_generic_model: bool = False
+    fallback_username: str = "generic_user"
 
 
 @dataclasses.dataclass

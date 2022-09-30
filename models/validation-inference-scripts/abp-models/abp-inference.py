@@ -15,8 +15,8 @@
 """
 Example Usage:
 python abp-inference.py \
-    --validationdata abp-validation-data.jsonlines \
-    --model abp-nvsmi-xgb-20210310.bst \
+    --validationdata ../../datasets/validation-data/abp-validation-data.jsonlines \
+    --model ../../abp-models/abp-nvsmi-xgb-20210310.bst \
     --output abp-validation-output.jsonlines
 """
 

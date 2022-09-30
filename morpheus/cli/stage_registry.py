@@ -26,9 +26,10 @@ logger = logging.getLogger(__file__)
 
 @dataclasses.dataclass
 class StageInfo:
-    name: str
+    name: str  # The command Name
     modes: typing.List[PipelineModes]
-    build_command: typing.Callable[[], click.Command]
+    qualified_name: str  # The fully qualified name of the stage. Only used for comparison
+    build_command: typing.Callable[[], click.Command] = dataclasses.field(compare=False, repr=False)
 
     def __post_init__(self):
         # If modes is None or empty, then convert it to all modes
@@ -48,15 +49,12 @@ class StageInfo:
 @dataclasses.dataclass
 class LazyStageInfo(StageInfo):
 
-    qualified_name: str
     package_name: str
     class_name: str
 
     def __init__(self, name: str, stage_qualified_name: str, modes: typing.List[PipelineModes]):
 
-        super().__init__(name, modes, self._lazy_build)
-
-        self.qualified_name = stage_qualified_name
+        super().__init__(name=name, modes=modes, qualified_name=stage_qualified_name, build_command=self._lazy_build)
 
         # Break the module name up into the class and the package
         qual_name_split = stage_qualified_name.split(".")
@@ -75,7 +73,7 @@ class LazyStageInfo(StageInfo):
         stage_class = getattr(mod, self.class_name, None)
 
         if (stage_class is None):
-            raise RuntimeError("Could not import {} from {}".format(self.class_name, self.package_name))
+            raise RuntimeError(f"Could not import {self.class_name} from {self.package_name}")
 
         # Now get the stage info from the class (it must have been registered during the import)
         stage_class_info: StageInfo = getattr(stage_class, "_morpheus_registered_stage", None)
@@ -149,6 +147,23 @@ class StageRegistry:
         ]
 
         return stage_names
+
+    def _remove_stage_info(self, mode: PipelineModes, stage: StageInfo):
+
+        # Get the stages for the mode
+        mode_stages = self._get_stages_for_mode(mode)
+
+        if (stage.name not in mode_stages):
+            # TODO: Figure out if this is something that only the unittests encounter
+            logging.debug("The stage '{}' has already been added for mode: {}".format(stage.name, mode))
+
+        mode_stages.pop(stage.name)
+
+    def remove_stage_info(self, stage: StageInfo):
+
+        # Loop over all modes for the stage
+        for m in stage.modes:
+            self._remove_stage_info(m, stage)
 
 
 class GlobalStageRegistry:

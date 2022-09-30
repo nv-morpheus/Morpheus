@@ -18,8 +18,8 @@ Using a BERT model to parse raw logs into jsons.
 Example Usage:
 python log-parsing-inference.py \
     --inputdata ../../datasets/validation-data/log-parsing-validation-data-input.csv \
-    --modelfile ../../models/log-parsing-models/log-parsing-20220418.bin \
-    --configfile ../../models/log-parsing-models/log-parsing-config-20220418.bin \
+    --modelfile ../../log-parsing-models/log-parsing-20220418.bin \
+    --configfile ../../log-parsing-models/log-parsing-config-20220418.json \
     --vocabfile ../../training-tuning-scripts/log-parsing-models/resources/bert-base-cased-vocab.txt \
     --hashfile ../../training-tuning-scripts/log-parsing-models/resources/bert-base-cased-hash.txt \
     --outputfile parsed-output.jsonlines
@@ -51,17 +51,17 @@ class Cybert:
     This class provides methods for loading models, prediction, and postprocessing.
     """
 
-    def __init__(self):
+    def __init__(self, vocabfile, hashfile):
         """Initalize model, labels and tokenizer vocab."""
         self._model = None
         self._label_map = {}
-        resources_dir = "%s/resources" % os.path.dirname(os.path.realpath(__file__))
-        vocabpath = "%s/bert-base-cased-vocab.txt" % resources_dir
+        # resources_dir = "%s/resources" % os.path.dirname(os.path.realpath(__file__))
+        vocabpath = vocabfile
         self._vocab_lookup = {}
         with open(vocabpath) as f:
             for index, line in enumerate(f):
                 self._vocab_lookup[index] = line.split()[0]
-        self._hashpath = "%s/bert-base-cased-hash.txt" % resources_dir
+        self._hashpath = hashfile
 
         self.tokenizer = SubwordTokenizer(self._hashpath, do_lower_case=False)
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     parser.add_argument("--configfile", required=True, help="pretrained model config")
     parser.add_argument("--outputfile", required=True, help="output filename jsonlines")
     args = parser.parse_args()
-    log_parse = Cybert()
+    log_parse = Cybert(args.vocabfile, args.hashfile)
     log_parse.load_model(args.modelfile, args.configfile)
     logs_df = cudf.read_csv(args.inputdata)
     parsed_df, confidence_df = log_parse.inference(logs_df["raw"])

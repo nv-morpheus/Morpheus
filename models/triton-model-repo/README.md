@@ -27,7 +27,7 @@ To launch Triton with one of the models in `triton-model-repo`, this entire repo
 ### Load `sid-minibert-onnx` Model with Default Triton Image
 
 ```bash
-docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD:/models --name tritonserver nvcr.io/nvidia/tritonserver:21.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD:/models --name tritonserver nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
 
 ### Load `abp-nvsmi-xgb` Model with FIL Backend Triton
@@ -35,9 +35,6 @@ docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD:/model
 ```bash
 docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD:/models --name tritonserver triton_fil tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model abp-nvsmi-xgb
 ```
-
-Note: The FIL Backend Triton image was built with `docker build -t triton_fil -f ops/Dockerfile .`. Adjust the image name as necessary.
-
 
 ### Load `sid-minibert-trt` Model with Default Triton Image from Morpheus Repo
 
@@ -51,5 +48,5 @@ morpheus tools onnx-to-trt --input_model ../../sid-minibert-onnx/1/sid-minibert.
 Then launch Triton:
 
 ```bash
-docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/models:/models --name tritonserver nvcr.io/nvidia/tritonserver:21.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-trt
+docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/models:/models --name tritonserver nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-trt
 ```

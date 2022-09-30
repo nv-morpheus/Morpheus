@@ -21,6 +21,12 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 restore_conda_env
 pip install ${MORPHEUS_ROOT}/build/wheel
 
+gpuci_logger "Pulling LFS assets"
+cd ${MORPHEUS_ROOT}
+
+git lfs install
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
+
 cd ${MORPHEUS_ROOT}/docs
 gpuci_logger "Installing Documentation dependencies"
 pip install -r requirement.txt

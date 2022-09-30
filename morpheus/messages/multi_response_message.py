@@ -93,8 +93,13 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
 
 
 @dataclasses.dataclass
-class ResponseMemoryAE(ResponseMemoryProbs, cpp_class=None):
-    user_id: str = ""
+class ResponseMemoryAE(ResponseMemory, cpp_class=None):
+    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_output, set_output)
+    user_id = ""
+    explain_df = None
+
+    def __post_init__(self, probs):
+        self.probs = probs
 
 
 @dataclasses.dataclass
@@ -206,4 +211,4 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
     probability array. Helps ensure the proper outputs are set and eases debugging.
     """
 
-    user_id: str
+    user_id: str = None

@@ -44,6 +44,8 @@ rm -rf ${PYTEST_KAFKA_DIR}
 # Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
 # https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
 git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${PYTEST_KAFKA_DIR}
+# work-around for https://gitlab.com/karolinepauls/pytest-kafka/-/issues/10
+sed -i -e 's|3\.2\.0|3.2.3|g' ${PYTEST_KAFKA_DIR}/setup.py
 pushd ${PYTEST_KAFKA_DIR}
 python setup.py develop
 popd

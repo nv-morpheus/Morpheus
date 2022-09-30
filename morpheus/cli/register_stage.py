@@ -29,7 +29,9 @@ from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.stage_registry import StageInfo
 from morpheus.cli.utils import get_config_from_ctx
+from morpheus.cli.utils import get_enum_values
 from morpheus.cli.utils import get_pipeline_from_ctx
+from morpheus.cli.utils import parse_enum
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -164,7 +166,7 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
     doc_type_kwargs = get_doc_kwargs(doc_type)
 
     if (annotation == inspect.Parameter.empty):
-        raise RuntimeError("All types must be specified to auto register stage")
+        raise RuntimeError("All types must be specified to auto register stage.")
 
     if (issubtype(annotation, typing.List)):
         # For variable length array, use multiple=True
@@ -176,19 +178,10 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         options_kwargs["type"] = partial_pop_kwargs(click.Path, doc_type_kwargs)()
 
     elif (issubtype(annotation, Enum)):
-        enum_map = {x.name.lower(): x.value for x in annotation}
         case_sensitive = doc_type_kwargs.get('case_sensitive', True)
-        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(list(enum_map.values()))
+        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(get_enum_values(annotation))
 
-        def convert_to_enum(_: click.Context, _2: click.Parameter, value: str):
-            if case_sensitive:
-                result = annotation[value]
-            else:
-                result = enum_map[value.lower()]
-
-            return result
-
-        options_kwargs["callback"] = convert_to_enum
+        options_kwargs["callback"] = functools.partial(parse_enum, enum_class=annotation, case_sensitive=case_sensitive)
 
     elif (issubtype(annotation, int) and not issubtype(annotation, bool)):
         # Check if there are any range arguments. Otherwise use a normal int
@@ -267,42 +260,46 @@ def register_stage(command_name: str = None,
 
                 for p_name, p_value in class_init_sig.parameters.items():
 
-                    if (p_value.annotation == Config):
-                        config_param_name = p_name
-                        continue
-                    elif (p_name in ignore_args):
-                        assert p_value.default != inspect.Parameter.empty, (
-                            "Cannot ignore argument without default value")
-                        continue
-                    elif (p_value.kind == inspect.Parameter.VAR_POSITIONAL):
-                        continue
-                    elif (p_value.kind == inspect.Parameter.VAR_KEYWORD):
-                        continue
+                    try:
+                        if (p_value.annotation == Config):
+                            config_param_name = p_name
+                            continue
+                        elif (p_name in ignore_args):
+                            assert p_value.default != inspect.Parameter.empty, (
+                                "Cannot ignore argument without default value")
+                            continue
+                        elif (p_value.kind == inspect.Parameter.VAR_POSITIONAL):
+                            continue
+                        elif (p_value.kind == inspect.Parameter.VAR_KEYWORD):
+                            continue
 
-                    option_kwargs = {}
+                        option_kwargs = {}
 
-                    # See if we have some sort of documentation for this argument
-                    option_kwargs["help"] = get_param_doc(numpy_doc, p_name)
+                        # See if we have some sort of documentation for this argument
+                        option_kwargs["help"] = get_param_doc(numpy_doc, p_name)
 
-                    # Set the default value if not empty
-                    if p_value.default != inspect.Parameter.empty:
-                        option_kwargs["required"] = False
-                        option_kwargs["default"] = p_value.default
-                    else:
-                        option_kwargs["required"] = True
-                        option_kwargs["default"] = None
+                        # Set the default value if not empty
+                        if p_value.default != inspect.Parameter.empty:
+                            option_kwargs["required"] = False
+                            option_kwargs["default"] = p_value.default
+                        else:
+                            option_kwargs["required"] = True
+                            option_kwargs["default"] = None
 
-                    set_options_param_type(option_kwargs, p_value.annotation, get_param_type(numpy_doc, p_name))
+                        set_options_param_type(option_kwargs, p_value.annotation, get_param_type(numpy_doc, p_name))
 
-                    # Now overwrite with any user supplied values for this option
-                    option_kwargs.update(option_args.get(p_name, {}))
+                        # Now overwrite with any user supplied values for this option
+                        option_kwargs.update(option_args.get(p_name, {}))
 
-                    # Get the name settings
-                    click_option_name = compute_option_name(p_name, rename_options)
+                        # Get the name settings
+                        click_option_name = compute_option_name(p_name, rename_options)
 
-                    option = click.Option(click_option_name, **option_kwargs)
+                        option = click.Option(click_option_name, **option_kwargs)
 
-                    command_params.append(option)
+                        command_params.append(option)
+                    except Exception as ex:
+                        raise RuntimeError((f"Error auto registering CLI command '{command_name}' with "
+                                            f"class '{stage_class}' and parameter '{p_name}'. Error:")) from ex
 
                 if (config_param_name is None):
                     raise RuntimeError("All stages must take on argument of morpheus.Config. Ensure your stage "
@@ -345,7 +342,10 @@ def register_stage(command_name: str = None,
                 return command
 
             # Create the StageInfo
-            stage_info = StageInfo(name=command_name, modes=modes, build_command=build_command)
+            stage_info = StageInfo(name=command_name,
+                                   modes=modes,
+                                   qualified_name=get_full_qualname(stage_class),
+                                   build_command=build_command)
 
             # Save the stage information to be retrieved later
             stage_class._morpheus_registered_stage = stage_info
@@ -357,16 +357,19 @@ def register_stage(command_name: str = None,
                 registered_stage = GlobalStageRegistry.get().get_stage_info(command_name, m)
 
                 if (registered_stage is not None):
-                    # Verify its a lazy stage info with the same
-                    if (not isinstance(registered_stage, LazyStageInfo)):
-                        raise RuntimeError(
-                            ("Registering stage '{}' failed. Stage is already registered. Ensure `register_stage` is "
-                             "only executed once for each mode and name combination").format(
-                                 registered_stage.qualified_name))
 
-                    if (registered_stage.qualified_name != get_full_qualname(stage_class)):
-                        raise RuntimeError("Qualified name {} != {}".format(registered_stage.qualified_name,
-                                                                            get_full_qualname(stage_class)))
+                    # Check if we were previously lazy registered
+                    if (isinstance(registered_stage, LazyStageInfo)):
+                        # Only check the qualified name
+                        if (registered_stage.qualified_name != get_full_qualname(stage_class)):
+                            raise RuntimeError("Qualified name {} != {}".format(registered_stage.qualified_name,
+                                                                                get_full_qualname(stage_class)))
+                    elif (registered_stage != stage_info):
+                        raise RuntimeError(
+                            ("Registering stage '{}' failed. Stage is already registered with different options. "
+                             "Ensure `register_stage` is only executed once for each mode and name combination. "
+                             "If registered multiple times (i.e. on module reload), the registration must be identical"
+                             ).format(command_name))
 
                     existing_registrations.update(registered_stage.modes)
 

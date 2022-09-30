@@ -165,7 +165,7 @@ The Morpheus AI Engine consists of the following components:
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.08.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -207,7 +207,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following command to pull the Morpheus SDK Client chart on to your instance:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.08.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 #### Morpheus SDK Client in Sleep Mode
@@ -245,7 +245,7 @@ $ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 The Morpheus MLflow Triton Plugin is used to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort 30500. Follow the below steps to install the Morpheus MLflow Triton Plugin:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.08.tgz --username='$oauthtoken' --password=$API_KEY --untar
+$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
 $ helm install --set ngc.apiKey="$API_KEY" \
@@ -333,7 +333,7 @@ drwxr-xr-x 3 ubuntu ubuntu 4096 Apr 13 23:47 sid-minibert-onnx
 drwxr-xr-x 2 root   root   4096 Apr 21 17:09 abp-models
 drwxr-xr-x 4 root   root   4096 Apr 21 17:09 datasets
 drwxr-xr-x 4 root   root   4096 Apr 21 17:09 fraud-detection-models
-drwxr-xr-x 2 root   root   4096 Apr 21 17:09 hammah-models
+drwxr-xr-x 2 root   root   4096 Apr 21 17:09 dfp-models
 drwxr-xr-x 3 root   root   4096 Apr 21 17:10 mlflow
 drwxr-xr-x 2 root   root   4096 Apr 21 17:10 log-parsing-models
 drwxr-xr-x 2 root   root   4096 Apr 21 17:10 phishing-models
@@ -444,7 +444,7 @@ $ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 
 This section describes example workflows to run on Morpheus. Four sample pipelines are provided.
 
-1. AutoEncoder pipeline performing Human as Machine & Machine as Human (HAMMAH).
+1. AutoEncoder pipeline performing Digital Fingerprinting (DFP).
 2. NLP pipeline performing Phishing Detection (PD).
 3. NLP pipeline performing Sensitive Information Detection (SID).
 4. FIL pipeline performing Anomalous Behavior Profiling (ABP).
@@ -488,41 +488,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 
 ### Run AutoEncoder Digital Fingerprinting Pipeline
 The following AutoEncoder pipeline example shows how to train and validate the AutoEncoder model and write the inference results to a specified location. Digital fingerprinting has also been referred to as **HAMMAH (Human as Machine <> Machine as Human)**.
-These use cases are currently implemented to detect user behavior changes that indicate a change from a human to a machine or a machine to a human. The model is an ensemble of an autoencoder and fast fourier transform reconstruction.
-
-Filter userid *(role-g)* entries and train, validate and then inference:
-
-```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
-    --set sdk.args="morpheus --log_level=DEBUG run \
-    --num_threads=2 \
-    --edge_buffer_size=4 \
-    --pipeline_batch_size=1024 \
-    --model_max_batch_size=1024 \
-    --use_cpp=False \
-    pipeline-ae \
-      --userid_filter=role-g \
-      --userid_column_name=userIdentitysessionContextsessionIssueruserName \
-      from-cloudtrail --input_glob=/common/models/datasets/validation-data/hammah-*.csv \
-      train-ae --train_data_glob=/common/models/datasets/training-data/hammah-*.csv \
-        --seed 42 \
-      preprocess \
-      inf-pytorch \
-      add-scores \
-      timeseries --resolution=10m --zscore_threshold=8.0 \
-      monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
-      validate --val_file_name=/common/models/datasets/validation-data/hammah-role-g-validation-data.csv \
-        --results_file_name=/common/data/<YOUR_OUTPUT_DIR>/val_hammah-role-g-pytorch-results.json \
-        --index_col=_index_ \
-        --exclude event_dt \
-        --rel_tol=0.15 \
-        --overwrite \
-      serialize \
-      to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/val_hammah-role-g-pytorch.csv --overwrite" \
-    --namespace $NAMESPACE \
-    <YOUR_RELEASE_NAME> \
-    morpheus-sdk-client
-```
+These use cases are currently implemented to detect user behavior changes that indicate a change from a human to a machine or a machine to a human, thus leaving a "digital fingerprint". The model is an ensemble of an autoencoder and fast fourier transform reconstruction.
 
 Inference and training based on a userid (`user123`). The model is trained once and inference is conducted on the supplied input entries in the example pipeline below. The `--train_data_glob` parameter must be removed for continuous training.
 
@@ -533,12 +499,16 @@ $ helm install --set ngc.apiKey="$API_KEY" \
       --edge_buffer_size=4 \
       --pipeline_batch_size=1024 \
       --model_max_batch_size=1024 \
-      --use_cpp=True \
+      --use_cpp=False \
       pipeline-ae \
+        --columns_file=data/columns_ae_cloudtrail.txt \
         --userid_filter=user123 \
+        --feature_scaler=standard \
         --userid_column_name=userIdentitysessionContextsessionIssueruserName \
-        from-cloudtrail --input_glob=/common/models/datasets/validation-data/hammah-*.csv \
-        train-ae --train_data_glob=/common/models/datasets/training-data/hammah-*.csv \
+        from-cloudtrail --input_glob=/common/models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
+        --max_files=200 \
+        train-ae --train_data_glob=/common/models/datasets/training-data/dfp-cloudtrail-*.csv \
+        --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage \
           --seed 42 \
         preprocess \
         inf-pytorch \
@@ -546,11 +516,13 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         timeseries --resolution=1m --zscore_threshold=8.0 --hot_start \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
         serialize \
-        to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/val_hammah-user123-pytorch.csv --overwrite" \
+        to-file --filename=/common/data/<YOUR_OUTPUT_DIR>/cloudtrail-dfp-detections.csv --overwrite" \
     --namespace $NAMESPACE \
     <YOUR_RELEASE_NAME> \
     morpheus-sdk-client
 ```
+
+For more information on the Digital Fingerprint use cases, please refer to the starter example and a more production-ready example that can be found in the `examples` source directory.
 
 ### Run NLP Phishing Detection Pipeline
 
@@ -581,7 +553,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         deserialize \
         preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
-        inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8001 --force_convert_inputs=True \
+        inf-triton --model_name=phishing-bert-onnx --server_url=ai-engine:8000 --force_convert_inputs=True \
         monitor --description 'Inference Rate' --smoothing=0.001 --unit inf \
         add-class --label=pred --threshold=0.7 \
         serialize \
@@ -611,7 +583,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         deserialize \
         preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description 'Preprocess Rate' \
-        inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8001 \
+        inf-triton --force_convert_inputs=True --model_name=phishing-bert-onnx --server_url=ai-engine:8000 \
         monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
         add-class --label=pred --threshold=0.7 \
         serialize --exclude '^ts_' \
@@ -657,7 +629,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
         deserialize \
         preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
         monitor --description='Preprocessing rate' \
-        inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
+        inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8000 \
         monitor --description='Inference rate' --smoothing=0.001 --unit inf \
         add-class \
         serialize --exclude '^ts_' \
@@ -686,7 +658,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           deserialize \
           preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
           monitor --description='Preprocessing Rate' \
-          inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8001 \
+          inf-triton --force_convert_inputs=True --model_name=sid-minibert-onnx --server_url=ai-engine:8000 \
           monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
           add-class \
           serialize --exclude '^ts_' \
@@ -730,7 +702,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           deserialize \
           preprocess \
           monitor --description='Preprocessing Rate' \
-          inf-triton --model_name=abp-nvsmi-xgb --server_url=ai-engine:8001 --force_convert_inputs=True \
+          inf-triton --model_name=abp-nvsmi-xgb --server_url=ai-engine:8000 --force_convert_inputs=True \
           monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
           add-class \
           serialize --exclude '^nvidia_smi_log' --exclude '^ts_' \
@@ -755,7 +727,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
           deserialize \
           preprocess \
           monitor --description='Preprocessing Rate' \
-          inf-triton --model_name=abp-nvsmi-xgb --server_url=ai-engine:8001 --force_convert_inputs=True \
+          inf-triton --model_name=abp-nvsmi-xgb --server_url=ai-engine:8000 --force_convert_inputs=True \
           monitor --description='Inference Rate' --smoothing=0.001 --unit inf \
           add-class \
           serialize --exclude '^nvidia_smi_log' \ --exclude '^ts_' \
@@ -815,7 +787,7 @@ On your AWS EC2 G4 instance, follow the instructions in the linked document to i
 
 #### Prerequisites
 1.  NVIDIA-Certified System
-2.  NVIDIA Pascal GPU or newer
+2.  NVIDIA Pascal GPU or newer (Compute Capability >= 6.0)
 3.  Ubuntu 20.04 LTS or newer
 
 ### Installing Cloud Native Core Stack on NVIDIA Certified Systems
@@ -883,37 +855,31 @@ The Morpheus SDK client allows you to configure several supported pipelines and 
 Usage: morpheus run [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --num_threads INTEGER RANGE     Number of internal pipeline threads to use
-                                  [default: 4; x>=1]
+  --num_threads INTEGER RANGE     Number of internal pipeline threads to use  [default: 8; x>=1]
   --pipeline_batch_size INTEGER RANGE
-                                  Internal batch size for the pipeline. Can be
-                                  much larger than the model batch size. Also
-                                  used for Kafka consumers  [default: 256;
-                                  x>=1]
+                                  Internal batch size for the pipeline.
+                                  Can be much larger than the model batch size.
+                                  Also used for Kafka consumers  [default: 256; x>=1]
   --model_max_batch_size INTEGER RANGE
-                                  Max batch size to use for the model
-                                  [default: 8; x>=1]
+                                  Max batch size to use for the model  [default: 8; x>=1]
   --edge_buffer_size INTEGER RANGE
-                                  The size of buffered channels to use between
-                                  nodes in a pipeline. Larger values reduce
-                                  backpressure at the cost of memory. Smaller
-                                  values will push messages through the
-                                  pipeline quicker. Must be greater than 1 and
-                                  a power of 2 (i.e. 2, 4, 8, 16, etc.)
-                                  [default: 128; x>=2]
-  --use_cpp BOOLEAN               Whether or not to use C++ node and message
-                                  types or to prefer python. Only use as a
-                                  last resort if bugs are encountered
-                                  [default: True]
+                                  The size of buffered channels to use between nodes in a pipeline.
+                                  Larger values reduce backpressure at the cost of memory.
+                                  Smaller values will push messages through the pipeline quicker.
+                                  Must be greater than 1 and a power of 2 (i.e. 2, 4, 8, 16, etc.)  [default: 128; x>=2]
+  --use_cpp BOOLEAN               Whether or not to use C++ node and message types or to prefer python.
+                                  Only use as a last resort if bugs are encountered  [default: True]
   --help                          Show this message and exit.
 
 Commands:
-  pipeline-ae   Run the inference pipeline with an AutoEncoder model
-  pipeline-fil  Run the inference pipeline with a FIL model
-  pipeline-nlp  Run the inference pipeline with a NLP model
+  pipeline-ae     Run the inference pipeline with an AutoEncoder model
+  pipeline-fil    Run the inference pipeline with a FIL model
+  pipeline-nlp    Run the inference pipeline with a NLP model
+  pipeline-other  Run a custom inference pipeline without a specific model type
 ```
 
-Three different pipelines are currently supported, a pipeline running an NLP model, a pipeline running a FIL model, and a pipeline running an AutoEncoder model.
+Four different pipelines are currently supported: a pipeline running an NLP model, a pipeline running a FIL model, a pipeline running an AutoEncoder model, and a generic pipeline.
+For details of running `pipeline-other`, please refer to the GNN Fraud Detection use case in the `examples` source directory.
 
 
 The Morpheus SDK Client provides the commands below to run the NLP pipeline:
@@ -923,13 +889,10 @@ The Morpheus SDK Client provides the commands below to run the NLP pipeline:
 ```
 
 ```console
-Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-                                 [ARGS]...]...
+Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
-  Configure and run the pipeline. To configure the pipeline, list the stages
-  in the order that data should flow. The output of each stage will become the
-  input for the next stage. For example, to read, classify and write to a
-  file, the following stages could be used
+  Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The output of each stage will become the input for the
+  next stage. For example, to read, classify and write to a file, the following stages could be used
 
   pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
   --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
@@ -942,44 +905,39 @@ Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
 
 Options:
   --model_seq_length INTEGER RANGE
-                                  Limits the length of the sequence returned.
-                                  If tokenized string is shorter than
-                                  max_length, output will be padded with 0s.
-                                  If the tokenized string is longer than
-                                  max_length and do_truncate == False, there
-                                  will be multiple returned sequences
-                                  containing the overflowing token-ids.
-                                  Default value is 256  [default: 256; x>=1]
-  --labels_file FILE              Specifies a file to read labels from in
-                                  order to convert class IDs into labels. A
-                                  label file is a simple text file where each
-                                  line corresponds to a label  [default:
-                                  morpheus/data/labels_nlp.txt]
-  --viz_file FILE                 Save a visualization of the pipeline at the
-                                  specified location
+                                  Limits the length of the sequence returned. If tokenized string is shorter than max_length, output will be padded with 0s.
+                                  If the tokenized string is longer than max_length and do_truncate == False,
+                                  there will be multiple returned sequences containing the overflowing
+                                  token-ids. Default value is 256  [default: 256; x>=1]
+  --label TEXT                    Specify output labels.
+  --labels_file DATA FILE         Specifies a file to read labels from in order to convert class IDs into labels.
+                                  A label file is a simple text file where each line corresponds to a label.
+                                  Ignored when --label is specified  [default: data/labels_nlp.txt]
+  --viz_file FILE                 Save a visualization of the pipeline at the specified location
   --help                          Show this message and exit.
 
 Commands:
-  add-class     Add detected classifications to each message
-  add-scores    Add probability scores to each message
-  buffer        (Deprecated) Buffer results
-  delay         (Deprecated) Delay results for a certain duration
-  deserialize   Deserialize source data from JSON.
-  dropna        Drop null data entries from a DataFrame
-  filter        Filter message by a classification threshold
-  from-file     Load messages from a file
-  from-kafka    Load messages from a Kafka cluster
-  gen-viz       (Deprecated) Write out vizualization data frames
-  inf-identity  Perform a no-op inference for testing
-  inf-pytorch   Perform inference with PyTorch
-  inf-triton    Perform inference with Triton
-  mlflow-drift  Report model drift statistics to ML Flow
-  monitor       Display throughput numbers at a specific point in the pipeline
-  preprocess    Convert messages to tokens
-  serialize     Include & exclude columns from messages
-  to-file       Write all messages to a file
-  to-kafka      Write all messages to a Kafka cluster
-  validate      Validates pipeline output against an expected output
+  add-class     Add detected classifications to each message.
+  add-scores    Add probability scores to each message.
+  buffer        (Deprecated) Buffer results.
+  delay         (Deprecated) Delay results for a certain duration.
+  deserialize   Deserialize source data into Dataframes.
+  dropna        Drop null data entries from a DataFrame.
+  filter        Filter message by a classification threshold.
+  from-file     Load messages from a file.
+  from-kafka    Load messages from a Kafka cluster.
+  gen-viz       (Deprecated) Write out vizualization DataFrames.
+  inf-identity  Perform inference for testing that performs a no-op.
+  inf-pytorch   Perform inference with PyTorch.
+  inf-triton    Perform inference with Triton Inference Server.
+  mlflow-drift  Report model drift statistics to ML Flow.
+  monitor       Display throughput numbers at a specific point in the pipeline.
+  preprocess    Prepare NLP input DataFrames for inference.
+  serialize     Include & exclude columns from messages.
+  to-file       Write all messages to a file.
+  to-kafka      Write all messages to a Kafka cluster.
+  trigger       Buffer data until previous stage has completed.
+  validate      Validate pipeline output for testing.
 ```
 
 Morpheus SDK Client provides the commands below to run the FIL pipeline:
@@ -989,16 +947,13 @@ Morpheus SDK Client provides the commands below to run the FIL pipeline:
 ```
 
 ```console
-Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-                                 [ARGS]...]...
+Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
-  Configure and run the pipeline. To configure the pipeline, list the stages
-  in the order that data should flow. The output of each stage will become the
-  input for the next stage. For example, to read, classify and write to a
-  file, the following stages could be used
+  Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The output of each stage will become the input for the
+  next stage. For example, to read, classify and write to a file, the following stages could be used
 
   pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
-  --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
+  --server_url=localhost:8000 filter --threshold=0.5 to-file --filename=classifications.json
 
   Pipelines must follow a few rules:
   1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
@@ -1008,40 +963,37 @@ Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
 
 Options:
   --model_fea_length INTEGER RANGE
-                                  Number of features trained in the model
-                                  [default: 29; x>=1]
-  --labels_file FILE              Specifies a file to read labels from in
-                                  order to convert class IDs into labels. A
-                                  label file is a simple text file where each
-                                  line corresponds to a label. If unspecified,
-                                  only a single output label is created for
-                                  FIL
-  --columns_file FILE             Specifies a file to read column features.
-                                  [default: morpheus/data/columns_fil.txt]
-  --viz_file FILE                 Save a visualization of the pipeline at the
-                                  specified location
+                                  Number of features trained in the model  [default: 29; x>=1]
+  --label TEXT                    Specify output labels. Ignored when --labels_file is specified  [default: mining]
+  --labels_file DATA FILE         Specifies a file to read labels from in order to convert class IDs into labels. A label file is a simple text file where each line
+                                  corresponds to a label. If unspecified the value specified by the --label flag will be used.
+  --columns_file DATA FILE        Specifies a file to read column features.  [default: data/columns_fil.txt]
+  --viz_file FILE                 Save a visualization of the pipeline at the specified location
   --help                          Show this message and exit.
 
 Commands:
-  add-class     Add detected classifications to each message
-  add-scores    Add probability scores to each message
-  buffer        (Deprecated) Buffer results
-  delay         (Deprecated) Delay results for a certain duration
-  deserialize   Deserialize source data from JSON.
-  dropna        Drop null data entries from a DataFrame
-  filter        Filter message by a classification threshold
-  from-file     Load messages from a file
-  from-kafka    Load messages from a Kafka cluster
-  inf-identity  Perform a no-op inference for testing
-  inf-pytorch   Perform inference with PyTorch
-  inf-triton    Perform inference with Triton
-  mlflow-drift  Report model drift statistics to ML Flow
-  monitor       Display throughput numbers at a specific point in the pipeline
-  preprocess    Convert messages to tokens
-  serialize     Include & exclude columns from messages
-  to-file       Write all messages to a file
-  to-kafka      Write all messages to a Kafka cluster
-  validate      Validates pipeline output against an expected output
+  add-class       Add detected classifications to each message.
+  add-scores      Add probability scores to each message.
+  buffer          (Deprecated) Buffer results.
+  delay           (Deprecated) Delay results for a certain duration.
+  deserialize     Deserialize source data into Dataframes.
+  dropna          Drop null data entries from a DataFrame.
+  filter          Filter message by a classification threshold.
+  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a dataframe. It normalizes nested json messages and arranges them into a
+                  dataframe by snapshot and source(Determine which source generated the plugin messages).
+  from-file       Load messages from a file.
+  from-kafka      Load messages from a Kafka cluster.
+  inf-identity    Perform inference for testing that performs a no-op.
+  inf-pytorch     Perform inference with PyTorch.
+  inf-triton      Perform inference with Triton Inference Server.
+  mlflow-drift    Report model drift statistics to ML Flow.
+  monitor         Display throughput numbers at a specific point in the pipeline.
+  preprocess      Prepare FIL input DataFrames for inference.
+  serialize       Include & exclude columns from messages.
+  to-file         Write all messages to a file.
+  to-kafka        Write all messages to a Kafka cluster.
+  trigger         Buffer data until previous stage has completed.
+  validate        Validate pipeline output for testing.
 ```
 
 Morpheus SDK Client provides the commands below to run the AutoEncoder pipeline:
@@ -1051,16 +1003,13 @@ Morpheus SDK Client provides the commands below to run the AutoEncoder pipeline:
 ```
 
 ```console
-Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-                                [ARGS]...]...
+Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
-  Configure and run the pipeline. To configure the pipeline, list the stages
-  in the order that data should flow. The output of each stage will become the
-  input for the next stage. For example, to read, classify and write to a
-  file, the following stages could be used
+  Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The output of each stage will become the input for the
+  next stage. For example, to read, classify and write to a file, the following stages could be used
 
   pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
-  --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
+  --server_url=localhost:8000 filter --threshold=0.5 to-file --filename=classifications.json
 
   Pipelines must follow a few rules:
   1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
@@ -1069,41 +1018,40 @@ Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
   4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
 
 Options:
-  --columns_file FILE        [default: morpheus/data/columns_ae.txt]
-  --labels_file FILE         Specifies a file to read labels from in order to
-                             convert class IDs into labels. A label file is a
-                             simple text file where each line corresponds to a
-                             label. If unspecified, only a single output label
-                             is created for FIL
-  --userid_column_name TEXT  Which column to use as the User ID.  [default:
-                             userIdentityaccountId; required]
-  --userid_filter TEXT       Specifying this value will filter all incoming
-                             data to only use rows with matching User IDs.
-                             Which column is used for the User ID is specified
-                             by `userid_column_name`
-  --viz_file FILE            Save a visualization of the pipeline at the
-                             specified location
-  --help                     Show this message and exit.
+  --columns_file DATA FILE        [required]
+  --labels_file DATA FILE         Specifies a file to read labels from in order to convert class IDs into labels. A label file is a simple text file where each line
+                                  corresponds to a label. If unspecified, only a single output label is created for FIL
+  --userid_column_name TEXT       Which column to use as the User ID.  [default: userIdentityaccountId; required]
+  --userid_filter TEXT            Specifying this value will filter all incoming data to only use rows with matching User IDs. Which column is used for the User ID is
+                                  specified by `userid_column_name`
+  --feature_scaler [none|standard|gauss_rank]
+                                  Autoencoder feature scaler  [default: standard]
+  --use_generic_model             Whether to use a generic model when user does not have minimum number of training rows
+  --viz_file FILE                 Save a visualization of the pipeline at the specified location
+  --help                          Show this message and exit.
 
 Commands:
-  add-class        Add detected classifications to each message
-  add-scores       Add probability scores to each message
-  buffer           (Deprecated) Buffer results
-  delay            (Deprecated) Delay results for a certain duration
-  filter           Filter message by a classification threshold
-  from-cloudtrail  Load messages from a Cloudtrail directory
-  gen-viz          (Deprecated) Write out vizualization data frames
-  inf-pytorch      Perform inference with PyTorch
-  inf-triton       Perform inference with Triton
-  monitor          Display throughput numbers at a specific point in the
-                   pipeline
-  preprocess       Convert messages to tokens
-  serialize        Include & exclude columns from messages
+  add-class        Add detected classifications to each message.
+  add-scores       Add probability scores to each message.
+  buffer           (Deprecated) Buffer results.
+  delay            (Deprecated) Delay results for a certain duration.
+  filter           Filter message by a classification threshold.
+  from-azure       Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline immediately. Useful for testing performance
+                   and accuracy of a pipeline.
+  from-cloudtrail  Load messages from a Cloudtrail directory.
+  from-duo         Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline immediately. Useful for testing performance
+                   and accuracy of a pipeline.
+  inf-pytorch      Perform inference with PyTorch.
+  inf-triton       Perform inference with Triton Inference Server.
+  monitor          Display throughput numbers at a specific point in the pipeline.
+  preprocess       Prepare Autoencoder input DataFrames for inference.
+  serialize        Include & exclude columns from messages.
   timeseries       Perform time series anomaly detection and add prediction.
-  to-file          Write all messages to a file
-  to-kafka         Write all messages to a Kafka cluster
-  train-ae         Deserialize source data from JSON
-  validate         Validates pipeline output against an expected output
+  to-file          Write all messages to a file.
+  to-kafka         Write all messages to a Kafka cluster.
+  train-ae         Train an Autoencoder model on incoming data.
+  trigger          Buffer data until previous stage has completed.
+  validate         Validate pipeline output for testing.
 ```
 
 ## Appendix C
@@ -1137,6 +1085,20 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.
 
+### The dropna stage
+The Drop Null Attributes stage (dropna) requires the specification of a column name. This column will vary from use case (and its input data) to use case. These are the applicable columns for the pre-built pipelines provided by Morpheus.
+
+| Input | Columns |
+| ----- | ------- |
+| Azure DFP | userPrincipalName |
+| Duo DFP | username |
+| DFP Cloudtrail | userIdentitysessionContextsessionIssueruserName |
+| Email | data |
+| GNN | index, client_node, merchant_node |
+| Log Parsing | raw |
+| PCAP | data |
+| Ransomware | PID, Process, snapshot_id, timestamp, source |
+
 
 ## Known Issues
 
@@ -1146,9 +1108,9 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 
 
 
-[Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.08/examples
-[Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.08/CONTRIBUTING.md
-[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.08/docs/source/developer_guide/guides
+[Morpheus Pipeline Examples]: https://github.com/NVIDIA/Morpheus/tree/branch-22.09/examples
+[Morpheus Contribution]: https://github.com/NVIDIA/Morpheus/blob/branch-22.09/CONTRIBUTING.md
+[Morpheus Developer Guide]: https://github.com/NVIDIA/Morpheus/tree/branch-22.09/docs/source/developer_guide/guides
 [Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
 [NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
 [NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1

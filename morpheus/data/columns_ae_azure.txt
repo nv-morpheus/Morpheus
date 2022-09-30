@@ -1,0 +1,9 @@
+appDisplayName
+clientAppUsed
+deviceDetailbrowser
+deviceDetaildisplayName
+deviceDetailoperatingSystem
+statusfailureReason
+appincrement
+locincrement
+logcount
