@@ -18,6 +18,14 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
+apt -q -y update
+apt -q -y install libcublas-dev-11-5 \
+                  libcufft-dev-11-5 \
+                  libcurand-dev-11-5 \
+                  libcusolver-dev-11-5 \
+                  libnuma1 \
+                  nvidia-driver-495
+
 fetch_base_branch
 
 rapids-logger "Creating conda env"
