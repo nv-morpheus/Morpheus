@@ -58,8 +58,10 @@ FROM base as jupyter
 RUN source activate morpheus \
     && mamba install -y -c conda-forge \
         ipywidgets \
-        jupyterlab \
-        nb_conda_kernels
+        nb_conda_kernels \
+    && pip install jupyter_contrib_nbextensions==0.5.1 \
+    && jupyter contrib nbextension install --user \
+    && pip install jupyterlab_nvdashboard==0.7.0
 
 # Launch jupyter
 CMD ["jupyter-lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
