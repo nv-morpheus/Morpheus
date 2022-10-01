@@ -16,15 +16,45 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "cuda_utils")
 
 find_package(pybind11 REQUIRED)
 
+# Place the two cuda sources in their own target and disable IWYU for that target.
+add_library(cuda_utils_objs
+OBJECT
+      ${MORPHEUS_LIB_ROOT}/src/utilities/matx_util.cu
+      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cu
+)
+
+
+set_target_properties(
+  cuda_utils_objs
+    PROPERTIES
+      C_INCLUDE_WHAT_YOU_USE ""
+      CXX_INCLUDE_WHAT_YOU_USE ""
+      EXPORT_COMPILE_COMMANDS OFF
+)
+
+target_include_directories(cuda_utils_objs
+    PUBLIC
+      "${MORPHEUS_LIB_ROOT}/include"
+      cudf::cudf
+      matx::matx
+      srf::pysrf
+)
+
+target_link_libraries(cuda_utils_objs
+    PUBLIC
+      cudf::cudf
+      matx::matx
+      srf::pysrf
+)
+
 add_library(cuda_utils
     SHARED
+    $<TARGET_OBJECTS:cuda_utils_objs>
       ${MORPHEUS_LIB_ROOT}/src/objects/dev_mem_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/table_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/tensor_object.cpp
-      ${MORPHEUS_LIB_ROOT}/src/utilities/matx_util.cu
       ${MORPHEUS_LIB_ROOT}/src/utilities/tensor_util.cpp
       ${MORPHEUS_LIB_ROOT}/src/utilities/type_util_detail.cpp
-      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cu
 )
 
 target_include_directories(cuda_utils

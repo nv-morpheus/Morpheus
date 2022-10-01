@@ -18,6 +18,7 @@ import typing
 import srf
 from srf.core import operators as ops
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -25,8 +26,11 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+@register_stage("trigger")
 class TriggerStage(SinglePortStage):
     """
+    Buffer data until previous stage has completed.
+
     This stage will buffer all inputs until the source stage is complete. At that point all messages
     will be dumped into downstream stages. Useful for testing performance of one stage at a time.
 

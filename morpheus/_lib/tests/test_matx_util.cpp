@@ -17,17 +17,25 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
+#include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/type_util.hpp"
 #include "morpheus/utilities/type_util_detail.hpp"
 
+#include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
+#include <cudf/column/column.hpp>       // for column
+#include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table.hpp>
+#include <cudf/types.hpp>  // for data_type, size_type
 #include <gtest/gtest.h>
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
 #include <srf/cuda/common.hpp>
 
+#include <cstdint>  // for int64_t, int32_t, uint8_t
 #include <cstdlib>  // for std::getenv
 #include <filesystem>
+#include <memory>  // for shared_ptr, make_shared, unique_ptr
 #include <string>
 #include <vector>
 

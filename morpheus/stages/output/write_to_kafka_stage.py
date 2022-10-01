@@ -20,6 +20,7 @@ import confluent_kafka as ck
 import srf
 from srf.core import operators as ops
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
@@ -29,9 +30,10 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+@register_stage("to-kafka")
 class WriteToKafkaStage(SinglePortStage):
     """
-    Write messages to a Kafka cluster.
+    Write all messages to a Kafka cluster.
 
     Parameters
     ----------
@@ -44,10 +46,12 @@ class WriteToKafkaStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, bootstrap_servers: str, output_topic: str):
+    def __init__(self, c: Config, bootstrap_servers: str, output_topic: str, client_id: str = None):
         super().__init__(c)
 
         self._kafka_conf = {'bootstrap.servers': bootstrap_servers}
+        if client_id is not None:
+            self._kafka_conf['client.id'] = client_id
 
         self._output_topic = output_topic
         self._poll_time = 0.2

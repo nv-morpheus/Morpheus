@@ -51,7 +51,7 @@ Features
 Getting Started
 ---------------
 
-The best way to get started with Morpheus will vary depending on the goal of the user. These users fall into two large groups: those who want to use the pre-built pipelines exactly as they are with few modifications (see :ref:`using-ngc-container`) and those who want to use Morpheus as a framework for implementing their own end-to-end workflows (see :ref:`outside-of-a-container`).
+The best way to get started with Morpheus will vary depending on the goal of the user. These users fall into two large groups: those who want to use the pre-built pipelines exactly as they are with few modifications (see :ref:`using-ngc-container`) and those who want to use Morpheus as a framework for implementing their own end-to-end workflows (see `Build in a Conda Environment <https://github.com/nv-morpheus/Morpheus/blob/branch-22.08/CONTRIBUTING.md#build-in-a-conda-environment>`_).
 
 .. _using-ngc-container:
 
@@ -71,13 +71,13 @@ To get started, first pull the NGC container:
 
 .. code-block:: console
 
-   $ docker pull nvcr.io/nvidia/morpheus/morpheus:22.08-runtime
+   $ docker pull nvcr.io/nvidia/morpheus/morpheus:22.09-runtime
 
 Launch an interactive container to start using Morpheus:
 
 .. code-block:: console
 
-   $ docker run --rm -ti --net=host --gpus=all nvcr.io/nvidia/morpheus/morpheus:22.08-runtime bash
+   $ docker run --rm -ti --net=host --gpus=all nvcr.io/nvidia/morpheus/morpheus:22.09-runtime bash
    (morpheus) root@958a683a8a26:/workspace# morpheus --help
    Usage: morpheus [OPTIONS] COMMAND [ARGS]...Options:
      --debug / --no-debug            [default: False]

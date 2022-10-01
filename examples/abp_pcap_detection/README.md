@@ -23,7 +23,7 @@ To run this example, an instance of Triton Inference Server and a sample dataset
 
 ### Triton Inference Server
 ```bash
-docker pull nvcr.io/nvidia/tritonserver:22.02-py3
+docker pull nvcr.io/nvidia/tritonserver:22.08-py3
 ```
 
 ##### Deploy Triton Inference Server
@@ -35,7 +35,7 @@ Bind the provided `abp-pcap-xgb` directory to the docker container model repo at
 cd <MORPHEUS_ROOT>/examples/abp_pcap_detection
 
 # Launch the container
-docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/abp-pcap-xgb:/models/abp-pcap-xgb --name tritonserver nvcr.io/nvidia/tritonserver:22.02-py3 tritonserver --model-repository=/models --exit-on-error=false --model-control-mode=poll --repository-poll-secs=30
+docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/abp-pcap-xgb:/models/abp-pcap-xgb --name tritonserver nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models --exit-on-error=false --model-control-mode=poll --repository-poll-secs=30
 ```
 
 ##### Verify Model Deployment
@@ -95,3 +95,28 @@ python run.py \
 Note: Both Morpheus and Trinton Inference Server containers must have access to the same GPUs in order for this example to work.
 
 The pipeline will process the input `pcap_dump.jsonlines` sample data and write it to `pcap_out.jsonlines`.
+
+### CLI Example
+The above example is illustrative of using the Python API to build a custom Morpheus Pipeline.
+Alternately the Morpheus command line could have been used to accomplush the same goal by registering the `abp_pcap_preprocessing.py` module as a plugin.
+
+From the root of the Morpheus repo run:
+```bash
+morpheus --log_level INFO --plugin "examples/abp_pcap_detection/abp_pcap_preprocessing.py" \
+    run --use_cpp False --pipeline_batch_size 50000 --model_max_batch_size 40000 \
+    pipeline-fil --model_fea_length 13 --label=probs \
+    from-file --filename examples/data/abp_pcap_dump.jsonlines --filter_null False \
+    deserialize \
+    pcap-preprocess \
+    monitor --description "Preprocessing rate" \
+    inf-triton --model_name "abp-pcap-xgb" --server_url "localhost:8001" --force_convert_inputs=True \
+    monitor --description "Inference rate" --unit inf \
+    add-class --label=probs \
+    monitor --description "Add classification rate" --unit "add-class" \
+    serialize \
+    monitor --description "Serialize rate" --unit ser \
+    to-file --filename "pcap_out.jsonlines" --overwrite \
+    monitor --description "Write to file rate" --unit "to-file"
+```
+
+Note: Triton is still needed to be launched from the `examples/abp_pcap_detection` directory.

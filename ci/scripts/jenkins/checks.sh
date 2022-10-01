@@ -46,7 +46,7 @@ gpuci_logger "sccache usage for source build:"
 sccache --show-stats
 
 gpuci_logger "Runing C++ style checks"
-SKIP_IWYU=1 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
+${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
 
 gpuci_logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}

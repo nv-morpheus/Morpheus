@@ -16,6 +16,7 @@
  */
 
 #include "morpheus/objects/fiber_queue.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 

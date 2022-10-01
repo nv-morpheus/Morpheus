@@ -20,12 +20,13 @@
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
-#include <cudf/strings/replace.hpp>
 #include <cudf/table/table.hpp>
+#include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 
 #include <cstdlib>
 #include <filesystem>
+#include <memory>  // for unique_ptr
 #include <vector>
 
 TEST_CLASS(Masking);

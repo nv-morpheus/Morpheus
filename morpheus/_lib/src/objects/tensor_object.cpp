@@ -17,10 +17,6 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include "morpheus/utilities/tensor_util.hpp"
-
-#include <srf/utils/type_utils.hpp>  // for DataType
-
 #include <vector>
 
 namespace morpheus {
