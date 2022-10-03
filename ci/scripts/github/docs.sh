@@ -31,6 +31,8 @@ cd ${MORPHEUS_ROOT}/docs
 rapids-logger "Installing Documentation dependencies"
 pip install -r requirement.txt
 
+export CUDA_PATH=/usr/local/cuda/
+
 rapids-logger "Building docs"
 make -j ${PARALLEL_LEVEL} html
 
