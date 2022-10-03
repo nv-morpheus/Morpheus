@@ -57,9 +57,6 @@ rapids-logger "Installing Morpheus"
 cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
 pip install ${MORPHEUS_ROOT}/build/wheel
 
-rapids-logger "sccache usage for building C++ examples:"
-sccache --show-stats
-
 rapids-logger "Archiving results"
 mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} -n morpheus -o ${WORKSPACE_TMP}/conda_env.tar.gz
 tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/wheel
