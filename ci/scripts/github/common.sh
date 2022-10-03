@@ -87,6 +87,7 @@ function create_conda_env() {
 
     rapids-logger "Installing CI dependencies"
     mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
+    conda deactivate && conda activate morpheus
 
     show_conda_info
 }

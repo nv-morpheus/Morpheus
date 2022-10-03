@@ -32,6 +32,8 @@ g++ --version
 cmake --version
 ninja --version
 
+rapids-logger "Env at build time:"
+print_env_vars
 rapids-logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
     -DCCACHE_PROGRAM_PATH=$(which sccache) .
