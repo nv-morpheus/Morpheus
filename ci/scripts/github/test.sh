@@ -24,9 +24,6 @@ install_deb_deps
 # Restore the environment and then ensure we have the CI dependencies
 restore_conda_env
 
-rapids-logger "Installing CI dependencies"
-mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
-
 # Install the built Morpheus python package
 pip install ${MORPHEUS_ROOT}/build/wheel
 
@@ -40,14 +37,9 @@ npm install --silent -g camouflage-server
 mamba install -c conda-forge "openjdk=11.0.15"
 export PYTEST_KAFKA_DIR=${WORKSPACE_TMP}/pytest-kafka
 
-# Ensure we have a clean checkout
-rm -rf ${PYTEST_KAFKA_DIR}
-
 # Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
 # https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
 git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${PYTEST_KAFKA_DIR}
-# work-around for https://gitlab.com/karolinepauls/pytest-kafka/-/issues/10
-sed -i -e 's|3\.2\.0|3.2.3|g' ${PYTEST_KAFKA_DIR}/setup.py
 pushd ${PYTEST_KAFKA_DIR}
 python setup.py develop
 popd
