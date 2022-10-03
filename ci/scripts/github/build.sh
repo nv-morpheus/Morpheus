@@ -23,7 +23,8 @@ apt -q -y install libcublas-dev-11-5 \
                   libcufft-dev-11-5 \
                   libcurand-dev-11-5 \
                   libcusolver-dev-11-5 \
-                  libnuma1
+                  libnuma1 \
+                  libnvidia-ml1
 
 rapids-logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
