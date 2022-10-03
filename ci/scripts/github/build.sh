@@ -46,6 +46,7 @@ g++ --version
 cmake --version
 ninja --version
 
+export CUDA_PATH=/usr/local/cuda/
 rapids-logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
