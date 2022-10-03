@@ -41,6 +41,7 @@ rapids-logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 rapids-logger "Configuring cmake for Morpheus"
+export CUDA_PATH=/usr/local/cuda/
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 rapids-logger "Building targets that generate source code"
