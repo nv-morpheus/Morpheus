@@ -23,8 +23,7 @@ apt -q -y install libcublas-dev-11-5 \
                   libcufft-dev-11-5 \
                   libcurand-dev-11-5 \
                   libcusolver-dev-11-5 \
-                  libnuma1 \
-                  nvidia-driver-495
+                  libnuma1
 
 fetch_base_branch
 
