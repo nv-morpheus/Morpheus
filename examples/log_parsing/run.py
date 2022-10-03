@@ -23,7 +23,6 @@ from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general.buffer_stage import BufferStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -107,9 +106,6 @@ def run_pipeline(
 
     # Add a source stage
     pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False, repeat=1))
-
-    # Add a buffer stage
-    pipeline.add_stage(BufferStage(config))
 
     # Add a deserialize stage
     pipeline.add_stage(DeserializeStage(config))

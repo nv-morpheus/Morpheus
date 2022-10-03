@@ -94,7 +94,7 @@ Binary classification as anomalous or benign.
 ### References
 Chen, Guestrin (2016) XGBoost. A scalable tree boosting system. https://arxiv.org/abs/1603.02754
 
-## Humans-As-Machines-Machines-As-Humans Detection (HAMMAH)
+## Digital Fingerprinting (DFP)
 ### Model Overview
 This use case is currently implemented to detect changes in users' behavior that indicate a change from a human to a machine or a machine to a human. The model is an ensemble of an Autoencoder and fast Fourier transform reconstruction.
 ### Model Architecture
@@ -102,7 +102,7 @@ The model is an ensemble of an Autoencoder and a fast Fourier transform reconstr
 ### Training
 The Autoencoder is trained on a baseline benign period of user activity.
 ### How To Use This Model
-This model is one example of an Autoencoder trained from a baseline for benign activity from synthetic `user-123` and `role-g`. This model combined with validation data from Morpheus examples can be used to test the HAMMAH Morpheus pipeline. It has little utility outside of testing.
+This model is one example of an Autoencoder trained from a baseline for benign activity from synthetic `user-123` and `role-g`. This model combined with validation data from Morpheus examples can be used to test the DFP Morpheus pipeline. It has little utility outside of testing.
 ### Input
 aws-cloudtrail logs
 ### Output

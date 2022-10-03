@@ -20,6 +20,7 @@
 #include "morpheus/messages/memory/inference_memory_nlp.hpp"
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/messages/memory/response_memory_probs.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
@@ -27,18 +28,25 @@
 #include "morpheus/messages/multi_inference_nlp.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/data_table.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
-#include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pysrf/edge_adapter.hpp>
+#include <pysrf/node.hpp>
+#include <pysrf/port_builders.hpp>
+#include <pysrf/utils.hpp>         // for pysrf::import
+#include <srf/channel/status.hpp>  // for Status
 #include <srf/node/edge_connector.hpp>
+#include <srf/node/port_registry.hpp>
 
 #include <cstddef>
+#include <filesystem>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace morpheus {
@@ -68,6 +76,14 @@ PYBIND11_MODULE(messages, m)
 
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
+
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,

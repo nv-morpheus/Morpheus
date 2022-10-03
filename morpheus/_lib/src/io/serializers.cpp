@@ -19,20 +19,24 @@
 
 #include <cudf/io/csv.hpp>
 #include <cudf/io/data_sink.hpp>
+#include <cudf/io/types.hpp>  // for column_name_info, sink_info, table_metadata
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <rmm/mr/device/per_device_resource.hpp>
 
-#include <memory>
+#include <array>    // for array
+#include <cstddef>  // for size_t
 #include <numeric>
 #include <ostream>
-#include <sstream>
+#include <sstream>  // IWYU pragma: keep
+#include <vector>
+// IWYU pragma: no_include <unordered_map>
 
 namespace morpheus {
-
 namespace py = pybind11;
 using namespace py::literals;
 using namespace std::string_literals;
@@ -143,8 +147,8 @@ std::string df_to_json(const TableInfo& tbl, bool include_index_col)
 
 void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col)
 {
-    // Unlike df_to_csv, we use the ostream overload to call the string overload because there is no C++ implementation
-    // of to_json
+    // Unlike df_to_csv, we use the ostream overload to call the string overload because there is no C++
+    // implementation of to_json
     std::string output = df_to_json(tbl, include_index_col);
 
     // Now write the contents to the stream

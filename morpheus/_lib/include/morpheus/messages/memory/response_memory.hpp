@@ -18,13 +18,12 @@
 #pragma once
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 
-#include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>
 
+#include <cstddef>  // for size_t
 #include <string>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

@@ -17,17 +17,22 @@
 
 #pragma once
 
-#include "morpheus/io/serializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/file_types.hpp"
-#include "morpheus/utilities/string_util.hpp"
 
 #include <pysrf/node.hpp>
+#include <rxcpp/rx.hpp>
+#include <srf/channel/status.hpp>          // for Status
+#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <srf/segment/builder.hpp>
+#include <srf/segment/object.hpp>  // for Object
 
 #include <fstream>
+#include <functional>  // for function
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

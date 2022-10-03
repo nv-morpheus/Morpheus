@@ -100,7 +100,12 @@ def ae_pipeline(config: Config, input_glob, repeat, train_data_glob, output_file
     configure_logging(log_level=logging.INFO)
     pipeline = LinearPipeline(config)
     pipeline.set_source(CloudTrailSourceStage(config, input_glob=input_glob, max_files=200, repeat=repeat))
-    pipeline.add_stage(TrainAEStage(config, train_data_glob=train_data_glob, seed=42))
+    pipeline.add_stage(
+        TrainAEStage(config,
+                     train_data_glob=train_data_glob,
+                     source_stage_class="morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage",
+                     seed=42,
+                     sort_glob=True))
     pipeline.add_stage(PreprocessAEStage(config))
     pipeline.add_stage(AutoEncoderInferenceStage(config))
     pipeline.add_stage(AddScoresStage(config))
@@ -206,19 +211,19 @@ def test_cloudtrail_ae_e2e(benchmark, tmp_path):
     config.model_max_batch_size = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["model_max_batch_size"]
     config.feature_length = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["feature_length"]
     config.edge_buffer_size = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["edge_buffer_size"]
-    config.class_labels = ["ae_anomaly_score"]
+    config.class_labels = ["reconstruct_loss", "zscore"]
 
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentityaccountId"
     config.ae.userid_filter = "Account-123456789"
-    ae_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_ae.txt')
+    ae_cols_filepath = os.path.join(TEST_DIRS.data_dir, 'columns_ae_cloudtrail.txt')
     with open(ae_cols_filepath, "r") as lf:
         config.ae.feature_columns = [x.strip() for x in lf.readlines()]
     CppConfig.set_should_use_cpp(False)
 
     input_glob = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["glob_path"]
     repeat = E2E_TEST_CONFIGS["test_cloudtrail_ae_e2e"]["repeat"]
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "hammah-*.csv")
+    train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     output_filepath = os.path.join(tmp_path, "cloudtrail_ae_e2e_output.csv")
 
     benchmark(ae_pipeline, config, input_glob, repeat, train_data_glob, output_filepath)

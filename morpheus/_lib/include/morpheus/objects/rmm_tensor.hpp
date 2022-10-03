@@ -19,14 +19,12 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/type_util.hpp"
+#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
 
-#include <cudf/types.hpp>
 #include <rmm/device_buffer.hpp>
-#include <rmm/device_uvector.hpp>
 
-#include <cstdint>
+#include <cstddef>  // for size_t
 #include <memory>
-#include <string>
 #include <utility>  // for pair
 #include <vector>
 

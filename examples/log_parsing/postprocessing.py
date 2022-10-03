@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import pathlib
 import typing
 from collections import defaultdict
 
@@ -22,15 +23,30 @@ import srf
 
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+@register_stage("log-postprocess", modes=[PipelineModes.NLP])
 class LogParsingPostProcessingStage(SinglePortStage):
 
-    def __init__(self, c: Config, vocab_path: str, model_config_path: str):
+    def __init__(self, c: Config, vocab_path: pathlib.Path, model_config_path: pathlib.Path):
+        """
+        Post-processing stage for log parsing pipeline.
+
+        Parameters
+        ----------
+        c : `morpheus.config.Config`
+            The morpheus config
+        vocab_path : pathlib.Path, exists = True, dir_okay = False
+            Model vocab file to use for post-processing
+        model_config_path : pathlib.Path, exists = True, dir_okay = False
+            Model config file
+        """
         super().__init__(c)
 
         self._vocab_path = vocab_path

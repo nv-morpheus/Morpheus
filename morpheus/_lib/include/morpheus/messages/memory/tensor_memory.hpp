@@ -17,12 +17,12 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 
-#include <cudf/io/types.hpp>
-#include <pybind11/pytypes.h>
-
+#include <cstddef>  // for size_t
+#include <map>
 #include <string>
+#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {

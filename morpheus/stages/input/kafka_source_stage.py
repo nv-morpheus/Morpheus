@@ -15,6 +15,7 @@
 import logging
 import time
 import weakref
+from enum import Enum
 
 import pandas as pd
 import srf
@@ -23,7 +24,9 @@ from cudf_kafka._lib.kafka import KafkaDatasource
 import cudf
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
@@ -31,6 +34,14 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+class AutoOffsetReset(Enum):
+    """The supported offset options in Kafka"""
+    EARLIEST = "earliest"
+    LATEST = "latest"
+    NONE = "none"
+
+
+@register_stage("from-kafka", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class KafkaSourceStage(SingleOutputSource):
     """
     Load messages from a Kafka cluster.
@@ -40,34 +51,42 @@ class KafkaSourceStage(SingleOutputSource):
     c : `morpheus.config.Config`
         Pipeline configuration instance.
     bootstrap_servers : str
-        Kafka cluster bootstrap servers separated by a comma.
+        Comma-separated list of bootstrap servers. If using Kafka created via `docker-compose`, this can be set to
+        'auto' to automatically determine the cluster IPs and ports
     input_topic : str
         Input kafka topic.
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
     poll_interval : str
         Seconds that elapse between polling Kafka for new messages. Follows the pandas interval format.
-    disable_commit: bool, default = False
+    disable_commit : bool, default = False
         Enabling this option will skip committing messages as they are pulled off the server. This is only useful for
         debugging, allowing the user to process the same messages multiple times.
     disable_pre_filtering : bool, default = False
         Enabling this option will skip pre-filtering of json messages. This is only useful when inputs are known to be
         valid json.
-    auto_offset_reset : str, default = "latest"
+    auto_offset_reset : `AutoOffsetReset`, default = AutoOffsetReset.LATEST, case_sensitive = False
         Sets the value for the configuration option 'auto.offset.reset'. See the kafka documentation for more
         information on the effects of each value."
+    stop_after: int, default = 0
+        Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
     """
 
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topic: str = "test_pcap",
-                 group_id: str = "custreamz",
+                 input_topic: str,
+                 group_id: str = "morpheus",
+                 client_id: str = None,
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
-                 auto_offset_reset: str = "latest"):
+                 auto_offset_reset: AutoOffsetReset = "latest",
+                 stop_after: int = 0):
         super().__init__(c)
+
+        if isinstance(auto_offset_reset, AutoOffsetReset):
+            auto_offset_reset = auto_offset_reset.value
 
         self._consumer_conf = {
             'bootstrap.servers': bootstrap_servers,
@@ -75,6 +94,8 @@ class KafkaSourceStage(SingleOutputSource):
             'session.timeout.ms': "60000",
             "auto.offset.reset": auto_offset_reset
         }
+        if client_id is not None:
+            self._consumer_conf['client.id'] = client_id
 
         self._input_topic = input_topic
         self._poll_interval = poll_interval
@@ -82,6 +103,7 @@ class KafkaSourceStage(SingleOutputSource):
         self._max_concurrent = c.num_threads
         self._disable_commit = disable_commit
         self._disable_pre_filtering = disable_pre_filtering
+        self._stop_after = stop_after
         self._client = None
 
         # Flag to indicate whether or not we should stop
@@ -95,7 +117,6 @@ class KafkaSourceStage(SingleOutputSource):
         refresh_partitions = False
         max_batch_size = self._max_batch_size
         keys = False
-        engine = None
 
         self._consumer_params = consumer_params
         # Override the auto-commit config to enforce custom streamz checkpointing
@@ -110,7 +131,6 @@ class KafkaSourceStage(SingleOutputSource):
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
         self._max_batch_size = max_batch_size
         self._keys = keys
-        self._engine = engine
         self._started = False
 
     @property
@@ -140,19 +160,14 @@ class KafkaSourceStage(SingleOutputSource):
             # Now begin the script
             import confluent_kafka as ck
 
-            if self._engine == "cudf":  # pragma: no cover
-                from custreamz import kafka
-
-            if self._engine == "cudf":  # pragma: no cover
-                consumer = kafka.Consumer(consumer_params)
-            else:
-                consumer = ck.Consumer(consumer_params)
+            consumer = ck.Consumer(consumer_params)
 
             # weakref.finalize(self, lambda c=consumer: _close_consumer(c))
             tp = ck.TopicPartition(self._topic, 0, 0)
 
             attempts = 0
             max_attempts = 5
+            records_emitted = 0
 
             # Attempt to connect to the cluster. Try 5 times before giving up
             while attempts < max_attempts:
@@ -190,10 +205,7 @@ class KafkaSourceStage(SingleOutputSource):
 
                     kafka_cluster_metadata = consumer.list_topics(self._topic)
 
-                    if self._engine == "cudf":  # pragma: no cover
-                        npartitions = len(kafka_cluster_metadata[self._topic.encode('utf-8')])
-                    else:
-                        npartitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
+                    npartitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
 
                 positions = [0] * npartitions
 
@@ -217,10 +229,7 @@ class KafkaSourceStage(SingleOutputSource):
                     if self._refresh_partitions:
                         kafka_cluster_metadata = consumer.list_topics(self._topic)
 
-                        if self._engine == "cudf":  # pragma: no cover
-                            new_partitions = len(kafka_cluster_metadata[self._topic.encode('utf-8')])
-                        else:
-                            new_partitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
+                        new_partitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
 
                         if new_partitions > npartitions:
                             positions.extend([-1001] * (new_partitions - npartitions))
@@ -273,13 +282,20 @@ class KafkaSourceStage(SingleOutputSource):
 
                             # Push the message meta
                             yield meta
+
+                            records_emitted += meta.count
+                            if self._stop_after > 0 and records_emitted >= self._stop_after:
+                                raise StopIteration()
                     else:
                         time.sleep(self._poll_interval)
+            except StopIteration:
+                raise
             except Exception:
                 logger.exception(("Error occurred in `from-kafka` stage with broker '%s' while processing messages"),
                                  self._consumer_conf["bootstrap.servers"])
                 raise
-
+        except StopIteration:
+            pass
         finally:
             # Close the consumer and call on_completed
             if (consumer):
@@ -356,7 +372,8 @@ class KafkaSourceStage(SingleOutputSource):
                                               int(self._poll_interval * 1000),
                                               self._consumer_params,
                                               self._disable_commit,
-                                              self._disable_pre_filtering)
+                                              self._disable_pre_filtering,
+                                              self._stop_after)
 
             # Only use multiple progress engines with C++. The python implementation will duplicate messages with
             # multiple threads

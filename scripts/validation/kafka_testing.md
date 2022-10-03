@@ -171,7 +171,7 @@ For this test we are going to replace the from & to file stages from the ABP val
 1. In a new terminal launch Triton:
     ```bash
     docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v ${MORPHEUS_ROOT}/models:/models \
-        nvcr.io/nvidia/tritonserver:22.02-py3 \
+        nvcr.io/nvidia/tritonserver:22.08-py3 \
         tritonserver --model-repository=/models/triton-model-repo \
                      --exit-on-error=false \
                      --model-control-mode=explicit \
@@ -220,7 +220,7 @@ For this test we are going to replace the from & to file stages from the ABP val
 
 1. Stop the consumer in the first Kafka terminal, and stop Triton.
 
-## Hammah Validation Pipeline
+## DFP (Hammah) Validation Pipeline
 ### User123
 For this test we are going to replace to-file stage from the Hammah validation pipeline with the to-kafka stage using a topic named "morpheus-hammah-user123". Note: this pipeline requires a custom `UserMessageMeta` class which the from-kafka stage is currently unable to generate, for that reason the `CloudTrailSourceStage` remains in-place.
 
@@ -338,7 +338,7 @@ For this test we are going to replace the from & to file stages from the Phishin
 1. In a new terminal launch Triton:
     ```bash
     docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v ${MORPHEUS_ROOT}/models:/models \
-        nvcr.io/nvidia/tritonserver:22.02-py3 \
+        nvcr.io/nvidia/tritonserver:22.08-py3 \
         tritonserver --model-repository=/models/triton-model-repo \
                      --exit-on-error=false \
                      --model-control-mode=explicit \
@@ -411,7 +411,7 @@ Note: Due to the complexity of the input data and a limitation of the cudf reade
 1. In a new terminal launch Triton:
     ```bash
     docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v ${MORPHEUS_ROOT}/models:/models \
-        nvcr.io/nvidia/tritonserver:22.02-py3 \
+        nvcr.io/nvidia/tritonserver:22.08-py3 \
         tritonserver --model-repository=/models/triton-model-repo \
                      --exit-on-error=false \
                      --model-control-mode=explicit \

@@ -18,6 +18,8 @@ import os
 import signal
 import time
 import typing
+from collections import defaultdict
+from functools import partial
 
 import networkx
 import srf
@@ -55,8 +57,14 @@ class Pipeline():
 
         self._id_counter = 0
 
-        self._sources: typing.Set[SourceStage] = set()
+        # Complete set of nodes across segments in this pipeline
         self._stages: typing.Set[Stage] = set()
+
+        # Complete set of sources across segments in this pipeline
+        self._sources: typing.Set[SourceStage] = set()
+
+        # Dictionary containing segment information for this pipeline
+        self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
 
         self._exec_options = srf.Options()
         self._exec_options.topology.user_cpuset = "0-{}".format(c.num_threads - 1)
@@ -67,7 +75,7 @@ class Pipeline():
 
         self.batch_size = c.pipeline_batch_size
 
-        self._graph = networkx.DiGraph()
+        self._segment_graphs = defaultdict(lambda: networkx.DiGraph())
 
         self._is_built = False
         self._is_build_complete = False
@@ -88,23 +96,31 @@ class Pipeline():
 
         return x
 
-    def add_node(self, node: StreamWrapper):
+    def add_node(self, node: StreamWrapper, segment_id: str = "main"):
 
         assert node._pipeline is None or node._pipeline is self, "A stage can only be added to one pipeline at a time"
 
-        # Add to list of stages if its a stage, not a source
+        segment_nodes = self._segments[segment_id]["nodes"]
+        segment_graph = self._segment_graphs[segment_id]
+
+        # Add to list of stages if it's a stage, not a source
         if (isinstance(node, Stage)):
+            segment_nodes.add(node)
             self._stages.add(node)
         elif (isinstance(node, SourceStage)):
+            segment_nodes.add(node)
             self._sources.add(node)
         else:
             raise NotImplementedError("add_node() failed. Unknown node type: {}".format(type(node)))
 
         node._pipeline = self
 
-        self._graph.add_node(node)
+        segment_graph.add_node(node)
 
-    def add_edge(self, start: typing.Union[StreamWrapper, Sender], end: typing.Union[Stage, Receiver]):
+    def add_edge(self,
+                 start: typing.Union[StreamWrapper, Sender],
+                 end: typing.Union[Stage, Receiver],
+                 segment_id: str = "main"):
 
         if (isinstance(start, StreamWrapper)):
             start_port = start.output_ports[0]
@@ -116,21 +132,35 @@ class Pipeline():
         elif (isinstance(end, Receiver)):
             end_port = end
 
-        # Ensure both are added to this pipeline
-        self.add_node(start_port.parent)
-        self.add_node(end_port.parent)
-
         start_port._output_receivers.append(end_port)
         end_port._input_senders.append(start_port)
 
-        self._graph.add_edge(start_port.parent,
-                             end_port.parent,
-                             start_port_idx=start_port.port_number,
-                             end_port_idx=end_port.port_number)
+        segment_graph = self._segment_graphs[segment_id]
+        segment_graph.add_edge(start_port.parent,
+                               end_port.parent,
+                               start_port_idx=start_port.port_number,
+                               end_port_idx=end_port.port_number)
+
+    def add_segment_edge(self, egress_stage, egress_segment, ingress_stage, ingress_segment, port_pair):
+        egress_edges = self._segments[egress_segment]["egress_ports"]
+        egress_edges.append({
+            "port_pair": port_pair,
+            "input_sender": egress_stage.unique_name,
+            "output_receiver": ingress_stage.unique_name,
+            "receiver_segment": ingress_segment
+        })
+
+        ingress_edges = self._segments[ingress_segment]["ingress_ports"]
+        ingress_edges.append({
+            "port_pair": port_pair,
+            "input_sender": egress_stage.unique_name,
+            "sender_segment": egress_segment,
+            "output_receiver": ingress_stage.unique_name
+        })
 
     def build(self):
         """
-        This function sequentially activates all of the Morpheus pipeline stages passed by the users to execute a
+        This function sequentially activates all the Morpheus pipeline stages passed by the users to execute a
         pipeline. For the `Source` and all added `Stage` objects, `StreamWrapper.build` will be called sequentially to
         construct the pipeline.
 
@@ -146,43 +176,49 @@ class Pipeline():
 
         self._srf_pipeline = srf.Pipeline()
 
-        def inner_build(builder: srf.Builder):
-            logger.info("====Building Pipeline====")
+        def inner_build(builder: srf.Builder, segment_id: str):
+            segment_graph = self._segment_graphs[segment_id]
 
-            # Get the list of stages and source
-            source_and_stages: typing.List[StreamWrapper] = list(self._sources) + list(self._stages)
+            # This should be a BFS search from each source nodes; but, since we don't have source stage loops
+            # topo_sort provides a reasonable approximation.
+            for stage in networkx.topological_sort(segment_graph):
+                if (stage.can_build()):
+                    stage.build(builder)
 
-            # Now loop over stages
-            for s in source_and_stages:
-
-                if (s.can_build()):
-                    s.build(builder)
-
-            if (not all([x.is_built for x in source_and_stages])):
+            if (not all([x.is_built for x in segment_graph.nodes()])):
                 # raise NotImplementedError("Circular pipelines are not yet supported!")
-                logger.warning("Circular pipeline detected! Building with reduced constraints")
+                logger.warning("Cyclic pipeline graph detected! Building with reduced constraints")
 
-                for s in source_and_stages:
+                for stage in segment_graph.nodes():
+                    if (stage.can_build(check_ports=True)):
+                        stage.build()
 
-                    if (s.can_build(check_ports=True)):
-                        s.build()
-
-            if (not all([x.is_built for x in source_and_stages])):
+            if (not all(x.is_built for x in segment_graph.nodes())):
                 raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
 
             # Finally, execute the link phase (only necessary for circular pipelines)
-            for s in source_and_stages:
+            # for s in source_and_stages:
+            for stage in segment_graph.nodes():
+                for port in stage.input_ports:
+                    port.link()
 
-                for p in s.input_ports:
-                    p.link()
+        logger.info("====Building Pipeline====")
+        for segment_id in self._segments.keys():
+            logger.info(f"====Building Segment: {segment_id}====")
+            segment_ingress_ports = self._segments[segment_id]["ingress_ports"]
+            segment_egress_ports = self._segments[segment_id]["egress_ports"]
+            segment_inner_build = partial(inner_build, segment_id=segment_id)
 
-            logger.info("====Building Pipeline Complete!====")
-            self._is_build_complete = True
+            self._srf_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
+                                            [port_info["port_pair"] for port_info in segment_egress_ports],
+                                            segment_inner_build)
+            logger.info("====Building Segment Complete!====")
 
-            # Finally call _on_start
-            self._on_start()
+        logger.info("====Building Pipeline Complete!====")
+        self._is_build_complete = True
 
-        self._srf_pipeline.make_segment("main", inner_build)
+        # Finally call _on_start
+        self._on_start()
 
         self._srf_executor.register_pipeline(self._srf_pipeline)
 
@@ -226,7 +262,7 @@ class Pipeline():
         for s in list(self._stages):
             await s.join()
 
-    def build_and_start(self):
+    async def build_and_start(self):
 
         if (not self.is_built):
             try:
@@ -235,7 +271,15 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
+        await self.async_start()
+
         self.start()
+
+    async def async_start(self):
+
+        # Loop over all stages and call on_start if it exists
+        for s in self._stages:
+            await s.start_async()
 
     def _on_start(self):
 
@@ -272,6 +316,8 @@ class Pipeline():
         graph_attr.update(graph_kwargs)
 
         gv_graph = graphviz.Digraph(graph_attr=graph_attr)
+        gv_graph.attr(compound="true")
+        gv_subgraphs = {}
 
         # Need a little different functionality for left/right vs vertical
         is_lr = graph_kwargs.get("rankdir", None) == "LR"
@@ -292,90 +338,108 @@ class Pipeline():
                                "be fixed in a future release.")
 
         # Now build up the nodes
-        for n, attrs in typing.cast(typing.Mapping[StreamWrapper, dict], self._graph.nodes).items():
-            node_attrs = attrs.copy()
+        for idx, segment_id in enumerate(self._segments):
+            gv_subgraphs[segment_id] = graphviz.Digraph(f"cluster_{segment_id}")
+            gv_subgraph = gv_subgraphs[segment_id]
+            gv_subgraph.attr(label=segment_id)
+            for n, attrs in typing.cast(typing.Mapping[StreamWrapper, dict],
+                                        self._segment_graphs[segment_id].nodes).items():
+                node_attrs = attrs.copy()
 
-            label = ""
+                label = ""
 
-            show_in_ports = has_ports(n, is_input=True)
-            show_out_ports = has_ports(n, is_input=False)
+                show_in_ports = has_ports(n, is_input=True)
+                show_out_ports = has_ports(n, is_input=False)
 
-            # Build the ports for the node. Only show ports if there are any (Would like to have this not show for one
-            # port, but the lines get all messed up)
-            if (show_in_ports):
-                in_port_label = " {{ {} }} | ".format(" | ".join(
-                    [f"<u{x.port_number}> {x.port_number}" for x in n.input_ports]))
-                label += in_port_label
+                # Build the ports for the node. Only show ports if there are any
+                # (Would like to have this not show for one port, but the lines get all messed up)
+                if (show_in_ports):
+                    in_port_label = " {{ {} }} | ".format(" | ".join(
+                        [f"<u{x.port_number}> input_port: {x.port_number}" for x in n.input_ports]))
+                    label += in_port_label
 
-            label += n.unique_name
+                label += n.unique_name
 
-            if (show_out_ports):
-                out_port_label = " | {{ {} }}".format(" | ".join(
-                    [f"<d{x.port_number}> {x.port_number}" for x in n.output_ports]))
-                label += out_port_label
+                if (show_out_ports):
+                    out_port_label = " | {{ {} }}".format(" | ".join(
+                        [f"<d{x.port_number}> output_port: {x.port_number}" for x in n.output_ports]))
+                    label += out_port_label
 
-            if (show_in_ports or show_out_ports):
-                label = f"{{ {label} }}"
+                if (show_in_ports or show_out_ports):
+                    label = f"{{ {label} }}"
 
-            node_attrs.update({
-                "label": label,
-                "shape": "record",
-                "fillcolor": "white",
-            })
-            # TODO: Eventually allow nodes to have different attributes based on type
-            # node_attrs.update(n.get_graphviz_attrs())
-            gv_graph.node(n.unique_name, **node_attrs)
+                node_attrs.update({
+                    "label": label,
+                    "shape": "record",
+                    "fillcolor": "white",
+                })
+                # TODO: Eventually allow nodes to have different attributes based on type
+                # node_attrs.update(n.get_graphviz_attrs())
+                gv_subgraph.node(n.unique_name, **node_attrs)
 
         # Build up edges
-        for e, attrs in typing.cast(typing.Mapping[typing.Tuple[StreamWrapper, StreamWrapper], dict], self._graph.edges()).items():  # noqa: E501
+        for segment_id in self._segments:
+            gv_subgraph = gv_subgraphs[segment_id]
+            for e, attrs in typing.cast(typing.Mapping[typing.Tuple[StreamWrapper, StreamWrapper], dict],
+                                        self._segment_graphs[segment_id].edges()).items():  # noqa: E501
 
-            edge_attrs = {}
+                edge_attrs = {}
 
-            start_name = e[0].unique_name
+                start_name = e[0].unique_name
 
-            # Append the port if necessary
-            if (has_ports(e[0], is_input=False)):
-                start_name += f":d{attrs['start_port_idx']}"
-            else:
-                start_name += start_def_port
+                # Append the port if necessary
+                if (has_ports(e[0], is_input=False)):
+                    start_name += f":d{attrs['start_port_idx']}"
+                else:
+                    start_name += start_def_port
 
-            end_name = e[1].unique_name
+                end_name = e[1].unique_name
 
-            if (has_ports(e[1], is_input=True)):
-                end_name += f":u{attrs['end_port_idx']}"
-            else:
-                end_name += end_def_port
+                if (has_ports(e[1], is_input=True)):
+                    end_name += f":u{attrs['end_port_idx']}"
+                else:
+                    end_name += end_def_port
 
-            # Now we only want to show the type label in some scenarios:
-            # 1. If there is only one edge between two nodes, draw type in middle "label"
-            # 2. For port with an edge, only draw that port's type once (using index 0 of the senders/receivers)
-            start_port_idx = int(attrs['start_port_idx'])
-            end_port_idx = int(attrs['end_port_idx'])
+                # Now we only want to show the type label in some scenarios:
+                # 1. If there is only one edge between two nodes, draw type in middle "label"
+                # 2. For port with an edge, only draw that port's type once (using index 0 of the senders/receivers)
+                start_port_idx = int(attrs['start_port_idx'])
+                end_port_idx = int(attrs['end_port_idx'])
 
-            out_port = e[0].output_ports[start_port_idx]
-            in_port = e[1].input_ports[end_port_idx]
+                out_port = e[0].output_ports[start_port_idx]
+                in_port = e[1].input_ports[end_port_idx]
 
-            # Check for situation #1
-            if (len(in_port._input_senders) == 1 and len(out_port._output_receivers) == 1
-                    and (in_port.in_type == out_port.out_type)):
+                # Check for situation #1
+                if (len(in_port._input_senders) == 1 and len(out_port._output_receivers) == 1
+                        and (in_port.in_type == out_port.out_type)):
 
-                edge_attrs["label"] = pretty_print_type_name(in_port.in_type)
-            else:
-                rec_idx = out_port._output_receivers.index(in_port)
-                sen_idx = in_port._input_senders.index(out_port)
+                    edge_attrs["label"] = pretty_print_type_name(in_port.in_type)
+                else:
+                    rec_idx = out_port._output_receivers.index(in_port)
+                    sen_idx = in_port._input_senders.index(out_port)
 
-                # Add type labels if available
-                if (rec_idx == 0 and out_port.out_type is not None):
-                    edge_attrs["taillabel"] = pretty_print_type_name(out_port.out_type)
+                    # Add type labels if available
+                    if (rec_idx == 0 and out_port.out_type is not None):
+                        edge_attrs["taillabel"] = pretty_print_type_name(out_port.out_type)
 
-                if (sen_idx == 0 and in_port.in_type is not None):
-                    edge_attrs["headlabel"] = pretty_print_type_name(in_port.in_type)
+                    if (sen_idx == 0 and in_port.in_type is not None):
+                        edge_attrs["headlabel"] = pretty_print_type_name(in_port.in_type)
 
-            gv_graph.edge(start_name, end_name, **edge_attrs)
+                gv_subgraph.edge(start_name, end_name, **edge_attrs)
+
+            for egress_port in self._segments[segment_id]["egress_ports"]:
+                gv_graph.edge(egress_port["input_sender"],
+                              egress_port["output_receiver"],
+                              style="dashed",
+                              label=f"Segment Port: {egress_port['port_pair'][0]}")
+
+        for key, gv_subgraph in gv_subgraphs.items():
+            gv_graph.subgraph(gv_subgraph)
 
         file_format = os.path.splitext(filename)[-1].replace(".", "")
 
         viz_binary = gv_graph.pipe(format=file_format)
+        # print(gv_graph.source)
 
         # Ensure the output directory exists
         os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -417,7 +481,7 @@ class Pipeline():
             loop.add_signal_handler(s, term_signal)
 
         try:
-            self.build_and_start()
+            await self.build_and_start()
 
             # Wait for completion
             await self.join()

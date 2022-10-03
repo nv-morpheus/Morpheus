@@ -28,7 +28,6 @@
 
 #include <memory>
 #include <utility>
-#include <vector>
 
 namespace morpheus {
 /******* Component-private Classes *********************/

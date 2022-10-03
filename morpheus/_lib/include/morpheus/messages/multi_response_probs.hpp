@@ -21,14 +21,13 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_response.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
+#include <cstddef>  // for size_t
 #include <memory>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

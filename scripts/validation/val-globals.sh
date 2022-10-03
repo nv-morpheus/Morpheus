@@ -26,7 +26,7 @@ export e="\033[0;90m"
 export y="\033[0;33m"
 export x="\033[0m"
 
-export TRITON_IMAGE=${TRITON_IMAGE:-"nvcr.io/nvidia/tritonserver:22.06-py3"}
+export TRITON_IMAGE=${TRITON_IMAGE:-"nvcr.io/nvidia/tritonserver:22.08-py3"}
 
 # TRITON_GRPC_PORT is only used when TRITON_URL is undefined
 export TRITON_GRPC_PORT=${TRITON_GRPC_PORT:-"8001"}
