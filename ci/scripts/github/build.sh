@@ -22,9 +22,6 @@ install_deb_deps
 
 create_conda_env
 
-rapids-logger "Final Conda Environment"
-show_conda_info
-
 rapids-logger "Check versions"
 python3 --version
 gcc --version

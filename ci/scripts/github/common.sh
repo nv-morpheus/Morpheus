@@ -89,6 +89,7 @@ function create_conda_env() {
     mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
     conda deactivate && conda activate morpheus
 
+    rapids-logger "Final Conda Environment"
     show_conda_info
 }
 
