@@ -60,11 +60,19 @@ export SCCACHE_REGION="${AWS_DEFAULT_REGION}"
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
-export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_USE_CCACHE=ON"
+export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_BUILD_PYTHON_STUBS=OFF -DMORPHEUS_USE_CCACHE=ON"
 
 export FETCH_STATUS=0
 
 print_env_vars
+
+function install_deb_deps() {
+    apt -q -y update
+    apt -q -y install libcublas-dev-11-5 \
+                    libcufft-dev-11-5 \
+                    libcurand-dev-11-5 \
+                    libcusolver-dev-11-5
+}
 
 function fetch_base_branch() {
     rapids-logger "Retrieving base branch from GitHub API"

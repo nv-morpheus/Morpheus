@@ -18,11 +18,7 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-apt -q -y update
-apt -q -y install libcublas-dev-11-5 \
-                  libcufft-dev-11-5 \
-                  libcurand-dev-11-5 \
-                  libcusolver-dev-11-5
+install_deb_deps
 
 rapids-logger "Creating conda env"
 conda config --add pkgs_dirs /opt/conda/pkgs
@@ -48,8 +44,7 @@ ninja --version
 export CUDA_PATH=/usr/local/cuda/
 rapids-logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
-    -DCCACHE_PROGRAM_PATH=$(which sccache) \
-    -DMORPHEUS_BUILD_PYTHON_STUBS=OFF .
+    -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 rapids-logger "Building Morpheus"
 cmake --build build --parallel ${PARALLEL_LEVEL}
