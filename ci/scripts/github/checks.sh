@@ -22,17 +22,7 @@ install_deb_deps
 
 fetch_base_branch
 
-rapids-logger "Creating conda env"
-conda config --add pkgs_dirs /opt/conda/pkgs
-conda config --env --add channels conda-forge
-conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
-mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
-conda activate morpheus
-
-rapids-logger "Installing CI dependencies"
-mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
-
-show_conda_info
+create_conda_env
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
@@ -41,7 +31,6 @@ rapids-logger "Runing Python style checks"
 ${MORPHEUS_ROOT}/ci/scripts/python_checks.sh
 
 rapids-logger "Configuring cmake for Morpheus"
-export CUDA_PATH=/usr/local/cuda/
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 rapids-logger "Building targets that generate source code"

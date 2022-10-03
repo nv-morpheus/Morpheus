@@ -74,6 +74,23 @@ function install_deb_deps() {
                     libcusolver-dev-11-5
 }
 
+function create_conda_env() {
+    rapids-logger "Creating conda env"
+    conda config --add pkgs_dirs /opt/conda/pkgs
+    conda config --env --add channels conda-forge
+    conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
+    mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+
+    conda activate morpheus
+    mkdir -p ${CONDA_PREFIX}/etc/conda/activate.d
+    echo -e '#!/bin/sh\n\nexport CUDA_PATH=/usr/local/cuda/' > ${CONDA_PREFIX}/etc/conda/activate.d/env_vars.sh
+
+    rapids-logger "Installing CI dependencies"
+    mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
+
+    show_conda_info
+}
+
 function fetch_base_branch() {
     rapids-logger "Retrieving base branch from GitHub API"
     [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")

@@ -20,16 +20,7 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 install_deb_deps
 
-rapids-logger "Creating conda env"
-conda config --add pkgs_dirs /opt/conda/pkgs
-conda config --env --add channels conda-forge
-conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
-mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
-conda activate morpheus
-
-rapids-logger "Installing CI dependencies"
-mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
-conda deactivate && conda activate morpheus
+create_conda_env
 
 rapids-logger "Final Conda Environment"
 show_conda_info
@@ -41,7 +32,6 @@ g++ --version
 cmake --version
 ninja --version
 
-export CUDA_PATH=/usr/local/cuda/
 rapids-logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
     -DCCACHE_PROGRAM_PATH=$(which sccache) .
