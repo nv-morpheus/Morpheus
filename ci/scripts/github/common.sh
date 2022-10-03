@@ -71,7 +71,8 @@ function install_deb_deps() {
     apt -q -y install libcublas-dev-11-5 \
                     libcufft-dev-11-5 \
                     libcurand-dev-11-5 \
-                    libcusolver-dev-11-5
+                    libcusolver-dev-11-5 \
+                    libnuma1
 }
 
 function create_conda_env() {

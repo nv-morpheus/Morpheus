@@ -19,6 +19,8 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 /usr/bin/nvidia-smi
 
+install_deb_deps
+
 # Restore the environment and then ensure we have the CI dependencies
 restore_conda_env
 
