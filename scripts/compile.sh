@@ -27,6 +27,9 @@ cmake -B ${BUILD_DIR} -GNinja \
    -DMORPHEUS_PYTHON_INPLACE_BUILD=ON \
    -DMORPHEUS_USE_CCACHE=ON \
    -DMORPHEUS_USE_CONDA=${MORPHEUS_USE_CONDA:-"ON"} \
+   -DBOOST_ROOT=/home/charris/dev/boost_1_80_0/install \
+   -Ducx_ROOT=/home/charris/dev/ucx-1.12.1/install \
+   -Dsrf_ROOT=/home/charris/dev/cyberdev/srf/build \
    ${INSTALL_PREFIX:+"-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}"} \
    ${CMAKE_CONFIGURE_EXTRA_ARGS:-""} .
 
