@@ -32,6 +32,10 @@ rapids-logger "Installing Documentation dependencies"
 pip install -r requirement.txt
 
 rapids-logger "Building docs"
+
+# Work-around for dlopen failing on libcuda.so
+export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/compat:${LD_LIBRARY_PATH}
+
 make -j ${PARALLEL_LEVEL} html
 
 rapids-logger "Tarring the docs"
