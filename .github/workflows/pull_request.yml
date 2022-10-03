@@ -30,6 +30,7 @@ env:
   AWS_ACCESS_KEY_ID: "${{ secrets.GHA_AWS_ACCESS_KEY_ID }}"
   AWS_SECRET_ACCESS_KEY: "${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}"
   CHANGE_TARGET: "${{ github.base_ref }}"
+  CUDA_PATH: "/usr/local/cuda/"
   CUDA_VER: "11.5"
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
