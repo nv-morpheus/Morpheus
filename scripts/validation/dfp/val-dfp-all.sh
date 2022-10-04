@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,5 +23,5 @@ set -e +o pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # Call minibert first
-${SCRIPT_DIR}/val-hammah.sh "user123"
-${SCRIPT_DIR}/val-hammah.sh "role-g"
+${SCRIPT_DIR}/val-dfp.sh "user123"
+${SCRIPT_DIR}/val-dfp.sh "role-g"
