@@ -100,13 +100,12 @@ def test_dfp_roleg(config,
 
     assert len(output_df) == len(val_df)
 
-    results = compare_df(
-        val_df,
-        output_df,
-        replace_idx="_index_",
-        include_columns=["mean_abs_z", "max_abs_z", ".*_z_loss", ".*_loss", ".*_pred"],
-        rel_tol=0.15,
-        show_report=True)
+    results = compare_df(val_df,
+                         output_df,
+                         replace_idx="_index_",
+                         include_columns=["mean_abs_z", "max_abs_z", ".*_z_loss", ".*_loss", ".*_pred"],
+                         rel_tol=0.15,
+                         show_report=True)
 
     assert results['diff_rows'] == 0
 
@@ -165,12 +164,11 @@ def test_dfp_user123(config,
 
     assert len(output_df) == len(val_df)
 
-    results = compare_df(
-        val_df,
-        output_df,
-        replace_idx="_index_",
-        include_columns=["mean_abs_z", "max_abs_z", ".*_loss", ".*_z_loss"],
-        rel_tol=0.1,
-        show_report=True)
+    results = compare_df(val_df,
+                         output_df,
+                         replace_idx="_index_",
+                         include_columns=["mean_abs_z", "max_abs_z", ".*_loss", ".*_z_loss"],
+                         rel_tol=0.1,
+                         show_report=True)
 
     assert results['diff_rows'] == 0

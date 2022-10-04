@@ -56,7 +56,7 @@ class AutoEncoderInferenceStage(SinglePortStage):
         z_loss_cols = [x + "_z_loss" for x in self._feature_columns]
         abs_z_cols = ["max_abs_z", "mean_abs_z"]
         results_cols = pred_cols + loss_cols + z_loss_cols + abs_z_cols
-        results_df = pd.DataFrame(np.empty((len(data), (3*len(self._feature_columns) + 2)), dtype=object),
+        results_df = pd.DataFrame(np.empty((len(data), (3 * len(self._feature_columns) + 2)), dtype=object),
                                   columns=results_cols)
 
         output_message = MultiAEMessage(message.meta,

@@ -16,7 +16,6 @@
 
 import os
 
-import pandas as pd
 import pytest
 
 from morpheus.config import AEFeatureScalar
