@@ -28,7 +28,6 @@ function(find_and_configure_cudf version)
       CPM_ARGS
         GIT_REPOSITORY    https://github.com/rapidsai/cudf
         GIT_TAG           branch-${CUDF_VERSION}
-        DOWNLOAD_ONLY     TRUE # disable internal builds for now.
         SOURCE_SUBDIR     cpp
         PATCH_COMMAND     git checkout -- .
               COMMAND     git apply --whitespace=fix ${PROJECT_SOURCE_DIR}/cmake/deps/patches/cudf.patch
@@ -40,6 +39,12 @@ function(find_and_configure_cudf version)
                           CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE}
                           CUDF_CMAKE_CUDA_ARCHITECTURES NATIVE
   )
+
+  if (TARGET cudf::cudf)
+    message(FATAL_ERROR "cudf::cudf found")
+  else()
+    message(FATAL_ERROR "cudf::cudf not found")
+  endif()
 
 endfunction()
 

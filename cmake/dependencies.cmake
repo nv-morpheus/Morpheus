@@ -111,6 +111,8 @@ include(deps/Configure_srf)
 set(CUDF_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of cuDF to use")
 include(deps/Configure_cudf)
 
+include(deps/Configure_rapidjson)
+
 # Triton-client
 # =====
 set(TRITONCLIENT_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of TritonClient to use")
