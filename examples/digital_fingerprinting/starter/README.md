@@ -129,7 +129,7 @@ The following table shows mapping between the main Morpheus CLI commands and und
 | sort_glob             | If true the list of files matching `input_glob` will be processed in sorted order. Default is False.
 | models_output_filename| Can be used with `--train_data_glob` to save trained user models to file using provided file path. Models can be loaded later using `--pretrained_filename`.
 
-**Inference stage** - `AutoEncoderInferenceStage` Emits a message containing the original `DataFrame` along with new columns containing the z score (`mean_abs_z`), along with the name and version of the model that generated that score (`model_version`).  For each feature in the model three additional columns will also be added:
+**Inference stage** - `AutoEncoderInferenceStage` Emits a message containing the original `DataFrame` along with new columns containing the z score (`mean_abs_z`). For each feature in the model three additional columns will also be added:
 * `<feature name>_loss` : The loss
 * `<feature name>_z_loss` : The loss z-score
 * `<feature name>_pred` : The predicted value
