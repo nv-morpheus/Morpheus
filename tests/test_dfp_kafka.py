@@ -18,15 +18,11 @@ import logging
 import os
 import typing
 from io import StringIO
-from unittest import mock
 
-import numpy as np
 import pandas
-import pandas as pd
 import pytest
 
 from morpheus._lib.file_types import FileTypes
-from morpheus.cli import commands
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
@@ -36,10 +32,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.auto_encoder_inference_stage import AutoEncoderInferenceStage
 from morpheus.stages.input.cloud_trail_source_stage import CloudTrailSourceStage
 from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
-from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.stages.postprocess.timeseries_stage import TimeSeriesStage
-from morpheus.stages.preprocess import preprocess_ae_stage
 from morpheus.stages.preprocess import train_ae_stage
 from morpheus.utils.compare_df import compare_df
 from morpheus.utils.logger import configure_logging
@@ -125,7 +118,7 @@ def test_dfp_user123(config,
                      kafka_bootstrap_servers: str,
                      kafka_topics: typing.Tuple[str, str],
                      kafka_consumer: "KafkaConsumer"):
-    
+
     config.mode = PipelineModes.AE
     config.model_max_batch_size = 1024
     config.pipeline_batch_size = 1024

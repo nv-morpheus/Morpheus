@@ -14,26 +14,17 @@
 
 import typing
 
-import cupy as cp
 import numpy as np
 import pandas as pd
+import srf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiResponseAEMessage
-from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryAE
-from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
-from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.stages.inference.inference_stage import InferenceStage
-from morpheus.stages.inference.inference_stage import InferenceWorker
-from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
-
-from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.messages.multi_ae_message import MultiAEMessage
-import srf
+from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+
 
 @register_stage("inf-pytorch", modes=[PipelineModes.AE])
 class AutoEncoderInferenceStage(SinglePortStage):
