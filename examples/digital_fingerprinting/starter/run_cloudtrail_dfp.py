@@ -133,13 +133,13 @@ def run_pipeline(num_threads,
     # Add a inference stage
     pipeline.add_stage(AutoEncoderInferenceStage(config))
 
+    pipeline.add_stage(MonitorStage(config, description="Inference rate", unit="inf"))
+
     # Add serialize stage
     pipeline.add_stage(SerializeStage(config))
 
     # Add a write file stage
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
-
-    pipeline.add_stage(MonitorStage(config, description="Postprocessing rate"))
 
     # Run the pipeline
     pipeline.run()

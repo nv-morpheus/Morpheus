@@ -173,6 +173,7 @@ train-ae \
 --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage \
 --seed=42 \
 inf-pytorch \
+monitor --description='Inference rate' --unit inf \
 serialize \
 to-file --filename=./cloudtrail-dfp-detections.csv --overwrite
 ```
@@ -280,7 +281,7 @@ python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
     --input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
     --train_data_glob=models/datasets/training-data/dfp-*.csv \
     --models_output_filename=models/dfp-models/cloudtrail_ae_user_models.pkl \
-    --output_file models/datasets/validation-data/dfp-cloudtrail-user123-validation-data.csv
+    --output_file ./cloudtrail-dfp-results.csv
 ```
 
 Here we load pre-trained user models from the file (`models/dfp-models/cloudtrail_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/dfp-cloudtrail-*-input.csv`. Inference results are written to `cloudtrail-dfp-results.csv`.
