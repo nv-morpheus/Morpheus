@@ -115,7 +115,7 @@ The following table shows mapping between the main Morpheus CLI commands and und
 
 **Preprocessing stages**
 
-`TrainAEStage` can either train user models using data matching a provided `--train_data_glob` or load pre-trained models from file using `--pretrained_filename`. When using `--train_data_glob`, user models can be saved using the `--models_output_filename` option. The `--source_stage_class` must also be used with `--train_data_glob` so that the training stage knows how to read the training data. The autoencoder implementation from this [fork](https://github.com/efajardo-nv/dfencoder/tree/morpheus-22.08) is used for user model training. The following are the available CLI options for the `TrainAEStage` (train-ae):
+`TrainAEStage` can either train user models using data matching a provided `--train_data_glob` or load pre-trained models from file using `--pretrained_filename`. When using `--train_data_glob`, user models can be saved using the `--models_output_filename` option. The `--source_stage_class` must also be used with `--train_data_glob` so that the training stage knows how to read the training data. The autoencoder implementation from this [fork](https://github.com/nv-morpheus/dfencoder/tree/branch-22.09) is used for user model training. The following are the available CLI options for the `TrainAEStage` (train-ae):
 
 | Option                | Description
 | ----------------------| ---------------------------------------------------------
@@ -129,13 +129,14 @@ The following table shows mapping between the main Morpheus CLI commands and und
 | sort_glob             | If true the list of files matching `input_glob` will be processed in sorted order. Default is False.
 | models_output_filename| Can be used with `--train_data_glob` to save trained user models to file using provided file path. Models can be loaded later using `--pretrained_filename`.
 
-The `PreprocessAEStage` is responsible for creating a Morpheus message that contains everything needed by the inference stage. For DFP inference, this stage must pass a `MultiInferenceAEMessage` to the inference stage. Each message will correspond to a single user and include the input feature columns, the user's model and training data anomaly scores.
+**Inference stage** - `AutoEncoderInferenceStage` Emits a message containing the original `DataFrame` along with new columns containing the z score (`mean_abs_z`), along with the name and version of the model that generated that score (`model_version`).  For each feature in the model three additional columns will also be added:
+* `<feature name>_loss` : The loss
+* `<feature name>_z_loss` : The loss z-score
+* `<feature name>_pred` : The predicted value
 
-**Inference stage** - `AutoEncoderInferenceStage` calculates anomaly scores (i.e. reconstruction loss) and z-scores for each user input dataset.
+For a hypothetical feature named `result` the three added columns will be: `result_loss`, `result_z_loss`, `result_pred`.
 
-**Postprocessing stage** - The DFP pipeline uses the `AddScoresStage` for postprocessing to add anomaly scores and zscores from previous inference stage with matching labels.
-
-**Serialize stage** - `SerializeStage` is used to convert `MultiResponseProbsMessage` from previous stage to a `MessageMeta` to make it suitable for output (i.e. write to file or Kafka).
+**Serialize stage** - `SerializeStage` is used to convert `MultiAEMessage` from previous stage to a `MessageMeta` to make it suitable for output (i.e. write to file or Kafka).
 
 **Write stage** - `WriteToFileStage` writes input data with inference results to an output file path.
 
@@ -171,9 +172,7 @@ train-ae \
 --train_data_glob=models/datasets/training-data/dfp-cloudtrail-*.csv \
 --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage \
 --seed=42 \
-preprocess \
 inf-pytorch \
-add-scores \
 serialize \
 to-file --filename=./cloudtrail-dfp-detections.csv --overwrite
 ```
@@ -198,10 +197,8 @@ train-ae \
 --source_stage_class=morpheus.stages.input.duo_source_stage.DuoSourceStage \
 --seed=42 \
 --models_output_filename=models/dfp-models/duo_ae_user_models.pkl \
-preprocess \
 inf-pytorch \
 monitor --description='Inference rate' --unit inf \
-add-scores \
 serialize \
 to-file --filename=./duo-detections.csv --overwrite
 ```
@@ -220,10 +217,8 @@ from-duo \
 monitor --description='Input rate' \
 train-ae \
 --pretrained_filename=models/dfp-models/duo_ae_user_models.pkl \
-preprocess \
 inf-pytorch \
 monitor --description='Inference rate' --unit inf \
-add-scores \
 serialize \
 to-file --filename=./duo-detections.csv --overwrite
 ```
@@ -247,10 +242,8 @@ train-ae \
 --source_stage_class=morpheus.stages.input.azure_source_stage.AzureSourceStage \
 --seed=42 \
 --models_output_filename=models/dfp-models/azure_ae_user_models.pkl \
-preprocess \
 inf-pytorch \
 monitor --description='Inference rate' --unit inf \
-add-scores \
 serialize \
 to-file --filename=./azure-detections.csv --overwrite
 ```
@@ -268,10 +261,8 @@ from-azure \
 --max_files=200 \
 train-ae \
 --pretrained_filename=models/dfp-models/azure_ae_user_models.pkl \
-preprocess \
 inf-pytorch \
 monitor --description='Inference rate' --unit inf \
-add-scores \
 serialize \
 to-file --filename=./azure-detections.csv --overwrite
 ```
@@ -289,7 +280,7 @@ python ./examples/digital_fingerprinting/starter/run_cloudtrail_dfp.py \
     --input_glob=models/datasets/validation-data/dfp-cloudtrail-*-input.csv \
     --train_data_glob=models/datasets/training-data/dfp-*.csv \
     --models_output_filename=models/dfp-models/cloudtrail_ae_user_models.pkl \
-    --output_file ./cloudtrail-dfp-results.csv
+    --output_file models/datasets/validation-data/dfp-cloudtrail-user123-validation-data.csv
 ```
 
 Here we load pre-trained user models from the file (`models/dfp-models/cloudtrail_ae_user_models.pkl`) we created in the previous example. Pipeline then uses these models to run inference on validation data in `models/datasets/validation-data/dfp-cloudtrail-*-input.csv`. Inference results are written to `cloudtrail-dfp-results.csv`.

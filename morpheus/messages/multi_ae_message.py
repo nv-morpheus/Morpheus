@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 class MultiAEMessage(MultiMessage):
 
     model: AutoEncoder
-    # train_loss_scores: cp.ndarray
     train_scores_mean: float = 0.0
     train_scores_std: float = 1.0
 

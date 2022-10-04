@@ -125,12 +125,9 @@ function run_pipeline_hammah_user123(){
       pipeline-ae --columns_file="${MORPHEUS_ROOT}/morpheus/data/columns_ae_cloudtrail.txt" --userid_filter="user123" --userid_column_name="userIdentitysessionContextsessionIssueruserName" \
       from-cloudtrail --input_glob="${MORPHEUS_ROOT}/models/datasets/validation-data/dfp-cloudtrail-*-input.csv" \
       train-ae --train_data_glob="${MORPHEUS_ROOT}/models/datasets/training-data/dfp-cloudtrail-*.csv" --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage --seed 42 \
-      preprocess \
       ${INFERENCE_STAGE} \
-      add-scores \
-      timeseries --resolution=1m --zscore_threshold=8.0 --hot_start \
       monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
-      validate --val_file_name=${VAL_FILE} --results_file_name=${VAL_OUTPUT} --index_col="_index_" --exclude "event_dt" --rel_tol=0.1 --overwrite \
+      validate --val_file_name=${VAL_FILE} --results_file_name=${VAL_OUTPUT} --index_col="_index_" --include ".*_pred" --rel_tol=0.1 --overwrite \
       serialize \
       to-file --filename=${OUTPUT_FILE} --overwrite
 }
@@ -147,12 +144,9 @@ function run_pipeline_hammah_role-g(){
       pipeline-ae --columns_file="${MORPHEUS_ROOT}/morpheus/data/columns_ae_cloudtrail.txt" --userid_filter="role-g" --userid_column_name="userIdentitysessionContextsessionIssueruserName" \
       from-cloudtrail --input_glob="${MORPHEUS_ROOT}/models/datasets/validation-data/dfp-cloudtrail-*-input.csv" \
       train-ae --train_data_glob="${MORPHEUS_ROOT}/models/datasets/training-data/dfp-cloudtrail-*.csv" --source_stage_class=morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage  --seed 42 \
-      preprocess \
       ${INFERENCE_STAGE} \
-      add-scores \
-      timeseries --resolution=1m --zscore_threshold=8.0 --hot_start \
       monitor --description "Inference Rate" --smoothing=0.001 --unit inf \
-      validate --val_file_name=${VAL_FILE} --results_file_name=${VAL_OUTPUT} --index_col="_index_" --exclude "event_dt" --rel_tol=0.15 --overwrite \
+      validate --val_file_name=${VAL_FILE} --results_file_name=${VAL_OUTPUT} --index_col="_index_" --include "mean_abs_z" --include "max_abs_z" --include ".*_loss" --include ".*_z_loss" --include ".*_pred" --rel_tol=0.15 --overwrite \
       serialize \
       to-file --filename=${OUTPUT_FILE} --overwrite
 }

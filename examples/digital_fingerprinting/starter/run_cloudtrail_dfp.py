@@ -104,7 +104,7 @@ def run_pipeline(num_threads,
     config = Config()
     config.mode = PipelineModes.AE
     config.ae = ConfigAutoEncoder()
-    config.ae.userid_column_name = "userIdentityaccountId"
+    config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
     config.ae.feature_scaler = AEFeatureScalar.STANDARD
 
     with open(columns_file, "r") as lf:
@@ -113,7 +113,6 @@ def run_pipeline(num_threads,
     config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
-    config.class_labels = ["reconstruct_loss", "zscore"]
 
     # Create a pipeline object
     pipeline = LinearPipeline(config)
@@ -131,14 +130,8 @@ def run_pipeline(num_threads,
                      seed=42,
                      sort_glob=True))
 
-    # Add a preprocessing stage
-    pipeline.add_stage(PreprocessAEStage(config))
-
     # Add a inference stage
     pipeline.add_stage(AutoEncoderInferenceStage(config))
-
-    # Add anomaly scores and z-scores to each message
-    pipeline.add_stage(AddScoresStage(config))
 
     # Add serialize stage
     pipeline.add_stage(SerializeStage(config))

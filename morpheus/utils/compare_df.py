@@ -29,7 +29,7 @@ def filter_df(df: pd.DataFrame,
               replace_idx: str = None):
 
     if (include_columns is not None and len(include_columns) > 0):
-        include_columns = re.compile("({})".format("|".join(include_columns)))
+        include_columns_rgx = re.compile("({})".format("|".join(include_columns)))
 
     if exclude_columns is not None:
         exclude_columns = [re.compile(x) for x in exclude_columns]
@@ -43,7 +43,7 @@ def filter_df(df: pd.DataFrame,
     if (include_columns is None or len(include_columns) == 0):
         columns = list(df.columns)
     else:
-        columns = [y for y in list(df.columns) if include_columns.match(y)]
+        columns = [y for y in list(df.columns) if include_columns_rgx.match(y)]
 
     # Now remove by the ignore
     for test in exclude_columns:
@@ -84,6 +84,7 @@ def compare_df(df_a: pd.DataFrame,
         }
 
     """
+
     df_a_filtered = filter_df(df_a, include_columns, exclude_columns, replace_idx=replace_idx)
     df_b_filtered = filter_df(df_b, include_columns, exclude_columns, replace_idx=replace_idx)
 

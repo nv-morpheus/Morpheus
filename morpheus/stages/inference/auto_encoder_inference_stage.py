@@ -30,150 +30,60 @@ from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
-
-class _AutoEncoderInferenceWorker(InferenceWorker):
-
-    def __init__(self, inf_queue: ProducerConsumerQueue, c: Config):
-        super().__init__(inf_queue)
-
-        self._max_batch_size = c.model_max_batch_size
-        self._seq_length = c.feature_length
-
-        self._feature_columns = c.ae.feature_columns
-
-    def init(self):
-
-        pass
-
-    def build_output_message(self, x: MultiInferenceAEMessage) -> MultiResponseAEMessage:
-        """
-        Create initial inference response message with result values initialized to zero. Results will be
-        set in message as each inference batch is processed.
-
-        Parameters
-        ----------
-        x : `morpheus.pipeline.messages.MultiInferenceAEMessage`
-            Batch of autoencoder inference messages.
-
-        Returns
-        -------
-        `morpheus.pipeline.messagesMultiResponseAEMessage`
-            Response message with autoencoder results calculated from inference results.
-        """
-
-        dims = self.calc_output_dims(x)
-        output_dims = (x.mess_count, *dims[1:])
-
-        memory = ResponseMemoryAE(count=output_dims[0], probs=cp.zeros(output_dims))
-
-        # Override the default to return the response AE
-        output_message = MultiResponseAEMessage(meta=x.meta,
-                                                mess_offset=x.mess_offset,
-                                                mess_count=x.mess_count,
-                                                memory=memory,
-                                                offset=x.offset,
-                                                count=x.count,
-                                                user_id=x.user_id)
-
-        return output_message
-
-    def calc_output_dims(self, x: MultiInferenceAEMessage) -> typing.Tuple:
-
-        # reconstruction loss and zscore
-        return (x.count, 2)
-
-    def process(self, batch: MultiInferenceAEMessage, cb: typing.Callable[[ResponseMemory], None]):
-        """
-        This function processes inference batch by using batch's model to calculate anomaly scores
-        and adding results to response.
-
-        Parameters
-        ----------
-        batch : `morpheus.pipeline.messages.MultiInferenceMessage`
-            Batch of inference messages.
-        cb : typing.Callable[[`morpheus.pipeline.messages.ResponseMemory`], None]
-            Inference callback.
-
-        """
-        data = batch.get_meta(batch.meta.df.columns.intersection(self._feature_columns))
-
-        explain_cols = [x + "_z_loss" for x in self._feature_columns] + ["max_abs_z", "mean_abs_z"]
-        explain_df = pd.DataFrame(np.empty((batch.count, (len(self._feature_columns) + 2)), dtype=object),
-                                  columns=explain_cols)
-
-        if batch.model is not None:
-            rloss_scores = batch.model.get_anomaly_score(data)
-
-            results = batch.model.get_results(data, return_abs=True)
-            scaled_z_scores = [col for col in results.columns if col.endswith('_z_loss')]
-            scaled_z_scores.extend(['max_abs_z', 'mean_abs_z'])
-            scaledz_df = results[scaled_z_scores]
-            for col in scaledz_df.columns:
-                explain_df[col] = scaledz_df[col]
-
-            zscores = (rloss_scores - batch.train_scores_mean) / batch.train_scores_std
-            rloss_scores = rloss_scores.reshape((batch.count, 1))
-            zscores = np.absolute(zscores)
-            zscores = zscores.reshape((batch.count, 1))
-        else:
-            rloss_scores = np.empty((batch.count, 1))
-            rloss_scores[:] = np.NaN
-            zscores = np.empty((batch.count, 1))
-            zscores[:] = np.NaN
-
-        ae_scores = np.concatenate((rloss_scores, zscores), axis=1)
-
-        ae_scores = cp.asarray(ae_scores)
-
-        mem = ResponseMemoryAE(count=batch.count, probs=ae_scores)
-
-        mem.explain_df = explain_df
-
-        cb(mem)
-
+from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.messages.multi_ae_message import MultiAEMessage
+import srf
+from morpheus.pipeline.stream_pair import StreamPair
 
 @register_stage("inf-pytorch", modes=[PipelineModes.AE])
-class AutoEncoderInferenceStage(InferenceStage):
-    """
-    Perform inference with PyTorch.
-    """
+class AutoEncoderInferenceStage(SinglePortStage):
 
     def __init__(self, c: Config):
         super().__init__(c)
+        self._feature_columns = c.ae.feature_columns
 
-        self._config = c
+    @property
+    def name(self) -> str:
+        return "inference-ae"
 
-    def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
+    def supports_cpp_node(self):
+        return False
 
-        return _AutoEncoderInferenceWorker(inf_queue, self._config)
+    def accepted_types(self) -> typing.Tuple:
+        return (MultiAEMessage, )
 
-    @staticmethod
-    def _convert_one_response(memory: ResponseMemory, inf: MultiInferenceMessage, res: ResponseMemoryAE):
-        # Make sure we have a continuous list
-        # assert inf.mess_offset == saved_offset + saved_count
+    def on_data(self, message: MultiAEMessage):
+        if (not message or message.mess_count == 0):
+            return None
 
-        res.explain_df.index = range(inf.mess_offset, inf.mess_offset + inf.mess_count)
-        for col in res.explain_df.columns:
-            inf.set_meta(col, res.explain_df[col])
+        data = message.get_meta(message.meta.df.columns.intersection(self._feature_columns))
+        data = data.fillna("nan")
+        autoencoder = message.model
 
-        probs = memory.get_output("probs")
+        pred_cols = [x + "_pred" for x in self._feature_columns]
+        loss_cols = [x + "_loss" for x in self._feature_columns]
+        z_loss_cols = [x + "_z_loss" for x in self._feature_columns]
+        abs_z_cols = ["max_abs_z", "mean_abs_z"]
+        results_cols = pred_cols + loss_cols + z_loss_cols + abs_z_cols
+        results_df = pd.DataFrame(np.empty((len(data), (3*len(self._feature_columns) + 2)), dtype=object),
+                                  columns=results_cols)
 
-        # Two scenarios:
-        if (inf.mess_count == inf.count):
-            # In message and out message have same count. Just use probs as is
-            probs[inf.offset:inf.count + inf.offset, :] = res.probs
-        else:
-            assert inf.count == res.count
+        output_message = MultiAEMessage(message.meta,
+                                        mess_offset=message.mess_offset,
+                                        mess_count=message.mess_count,
+                                        model=autoencoder)
 
-            mess_ids = inf.seq_ids[:, 0].get().tolist()
+        if autoencoder is not None:
+            ae_results = autoencoder.get_results(data, return_abs=True)
+            for col in ae_results:
+                results_df[col] = ae_results[col]
 
-            # Out message has more reponses, so we have to do key based blending of probs
-            for i, idx in enumerate(mess_ids):
-                probs[idx, :] = cp.maximum(probs[idx, :], res.probs[i, :])
+        output_message.set_meta(list(results_df.columns), results_df)
 
-        return MultiResponseAEMessage(meta=inf.meta,
-                                      mess_offset=inf.mess_offset,
-                                      mess_count=inf.mess_count,
-                                      memory=memory,
-                                      offset=inf.offset,
-                                      count=inf.count)
+        return output_message
+
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+        node = builder.make_node(self.unique_name, self.on_data)
+        builder.make_edge(input_stream[0], node)
+
+        return node, MultiAEMessage

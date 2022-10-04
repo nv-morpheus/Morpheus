@@ -502,16 +502,10 @@ def pipeline_ae(ctx: click.Context, **kwargs):
     if ("columns_file" in kwargs and kwargs["columns_file"] is not None):
         config.ae.feature_columns = load_labels_file(kwargs["columns_file"])
         logger.debug("Loaded columns. Current columns: [%s]", str(config.ae.feature_columns))
-    else:
-        # Use a default single label
-        config.class_labels = ["reconstruct_loss", "zscore"]
 
     if ("labels_file" in kwargs and kwargs["labels_file"] is not None):
         config.class_labels = load_labels_file(kwargs["labels_file"])
         logger.debug("Loaded labels file. Current labels: [%s]", str(config.class_labels))
-    else:
-        # Use a default single label
-        config.class_labels = ["reconstruct_loss", "zscore"]
 
     if ("userid_filter" in kwargs):
         config.ae.userid_filter = kwargs["userid_filter"]
