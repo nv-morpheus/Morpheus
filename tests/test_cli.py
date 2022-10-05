@@ -174,13 +174,7 @@ class TestCLI:
             '--train_data_glob=train_glob*.csv',
             '--seed',
             '47',
-            'preprocess',
-            'inf-pytorch',
-            'add-scores',
-            'timeseries',
-            '--resolution=1m',
-            '--zscore_threshold=8.0',
-            '--hot_start'
+            'inf-pytorch'
         ] + MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS)
 
         obj = {}
@@ -193,7 +187,6 @@ class TestCLI:
         config = obj["config"]
         assert config.mode == PipelineModes.AE
         assert not CppConfig.get_should_use_cpp()
-        assert config.class_labels == ["reconstruct_loss", "zscore"]
         assert config.model_max_batch_size == 1024
         assert config.pipeline_batch_size == 1024
         assert config.num_threads == 12
@@ -210,8 +203,7 @@ class TestCLI:
 
         stages = callback_values['stages']
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
-        [cloud_trail, train_ae, process_ae, auto_enc, add_scores, time_series, monitor, validation, serialize,
-         to_file] = stages
+        [cloud_trail, train_ae, auto_enc, monitor, validation, serialize, to_file] = stages
 
         assert isinstance(cloud_trail, CloudTrailSourceStage)
         assert cloud_trail._watcher._input_glob == "input_glob*.csv"
@@ -220,14 +212,7 @@ class TestCLI:
         assert train_ae._train_data_glob == "train_glob*.csv"
         assert train_ae._seed == 47
 
-        assert isinstance(process_ae, PreprocessAEStage)
         assert isinstance(auto_enc, AutoEncoderInferenceStage)
-        assert isinstance(add_scores, AddScoresStage)
-
-        assert isinstance(time_series, TimeSeriesStage)
-        assert time_series._resolution == '1m'
-        assert time_series._zscore_threshold == 8.0
-        assert time_series._hot_start
 
         assert isinstance(monitor, MonitorStage)
         assert monitor._description == 'Unittest'
@@ -262,7 +247,6 @@ class TestCLI:
             '--userid_column_name=user_col',
             'from-cloudtrail',
             '--input_glob=input_glob*.csv',
-            'add-class',
             'unittest-conv-msg',
             'filter',
             'train-ae',
@@ -270,8 +254,7 @@ class TestCLI:
             '--seed',
             '47',
             'preprocess',
-            'inf-pytorch',
-            'add-scores'
+            'inf-pytorch'
         ] + INF_TRITON_ARGS + ['timeseries', '--resolution=1m', '--zscore_threshold=8.0', '--hot_start'] +
                 MONITOR_ARGS + VALIDATE_ARGS + ['serialize'] + TO_FILE_ARGS + TO_KAFKA_ARGS)
 
@@ -284,13 +267,11 @@ class TestCLI:
         # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
         [
             cloud_trail,
-            add_class,
             conv_msg,
             filter_stage,
             train_ae,
             process_ae,
             auto_enc,
-            add_scores,
             triton_inf,
             time_series,
             monitor,
@@ -303,7 +284,6 @@ class TestCLI:
         assert isinstance(cloud_trail, CloudTrailSourceStage)
         assert cloud_trail._watcher._input_glob == "input_glob*.csv"
 
-        assert isinstance(add_class, AddClassificationsStage)
         assert isinstance(conv_msg, ConvMsg)
         assert isinstance(filter_stage, FilterDetectionsStage)
 
@@ -313,7 +293,6 @@ class TestCLI:
 
         assert isinstance(process_ae, PreprocessAEStage)
         assert isinstance(auto_enc, AutoEncoderInferenceStage)
-        assert isinstance(add_scores, AddScoresStage)
 
         assert isinstance(triton_inf, TritonInferenceStage)
         assert triton_inf._kwargs['model_name'] == 'test-model'
