@@ -29,7 +29,7 @@ from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.utils.logging import configure_logging
+from morpheus.utils.logger import configure_logging
 from stages.create_features import CreateFeaturesRWStage
 from stages.preprocessing import PreprocessingRWStage
 
@@ -60,12 +60,6 @@ from stages.preprocessing import PreprocessingRWStage
     default=1024,
     type=click.IntRange(min=1),
     help="Max batch size to use for the model",
-)
-@click.option(
-    "--model_fea_length",
-    default=297,
-    type=click.IntRange(min=1),
-    help="Features length to use for the model",
 )
 @click.option(
     "--conf_file",
@@ -110,7 +104,6 @@ def run_pipeline(debug,
                  n_dask_workers,
                  threads_per_dask_worker,
                  model_max_batch_size,
-                 model_fea_length,
                  conf_file,
                  model_name,
                  server_url,
@@ -124,6 +117,8 @@ def run_pipeline(debug,
     else:
         configure_logging(log_level=logging.INFO)
 
+    snapshot_fea_length = 99
+
     CppConfig.set_should_use_cpp(use_cpp)
 
     # Its necessary to get the global config object and configure it for FIL mode
@@ -133,7 +128,7 @@ def run_pipeline(debug,
     # Below properties are specified by the command line
     config.num_threads = num_threads
     config.model_max_batch_size = model_max_batch_size
-    config.feature_length = model_fea_length
+    config.feature_length = snapshot_fea_length * sliding_window
     config.class_labels = ["pred", "score"]
 
     # Create a linear pipeline object

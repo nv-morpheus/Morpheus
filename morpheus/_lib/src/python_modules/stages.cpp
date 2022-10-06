@@ -15,20 +15,26 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/add_classification.hpp>
-#include <morpheus/stages/add_scores.hpp>
-#include <morpheus/stages/deserialization.hpp>
-#include <morpheus/stages/file_source.hpp>
-#include <morpheus/stages/filter_detection.hpp>
-#include <morpheus/stages/kafka_source.hpp>
-#include <morpheus/stages/preprocess_fil.hpp>
-#include <morpheus/stages/preprocess_nlp.hpp>
-#include <morpheus/stages/serialize.hpp>
-#include <morpheus/stages/triton_inference.hpp>
-#include <morpheus/stages/write_to_file.hpp>
-#include <morpheus/utilities/cudf_util.hpp>
+#include "morpheus/stages/add_classification.hpp"
+#include "morpheus/stages/add_scores.hpp"
+#include "morpheus/stages/deserialize.hpp"
+#include "morpheus/stages/file_source.hpp"
+#include "morpheus/stages/filter_detection.hpp"
+#include "morpheus/stages/kafka_source.hpp"
+#include "morpheus/stages/preprocess_fil.hpp"
+#include "morpheus/stages/preprocess_nlp.hpp"
+#include "morpheus/stages/serialize.hpp"
+#include "morpheus/stages/triton_inference.hpp"
+#include "morpheus/stages/write_to_file.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
+#include <pybind11/attr.h>      // for multiple_inheritance
+#include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
+#include <pybind11/pytypes.h>   // for dict, sequence
+#include <pysrf/utils.hpp>      // for pysrf::import
 #include <srf/segment/object.hpp>
+
+#include <memory>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -96,7 +102,8 @@ PYBIND11_MODULE(stages, m)
         .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("threshold"));
+             py::arg("threshold"),
+             py::arg("copy") = true);
 
     py::class_<srf::segment::Object<InferenceClientStage>,
                srf::segment::ObjectProperties,
@@ -124,7 +131,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("batch_timeout_ms"),
              py::arg("config"),
              py::arg("disable_commits")       = false,
-             py::arg("disable_pre_filtering") = false);
+             py::arg("disable_pre_filtering") = false,
+             py::arg("stop_after")            = 0);
 
     py::class_<srf::segment::Object<PreprocessFILStage>,
                srf::segment::ObjectProperties,
@@ -167,8 +175,9 @@ PYBIND11_MODULE(stages, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("filename"),
-             py::arg("mode")      = "w",
-             py::arg("file_type") = 0);  // Setting this to FileTypes::AUTO throws a conversion error at runtime
+             py::arg("mode")              = "w",
+             py::arg("file_type")         = 0,  // Setting this to FileTypes::AUTO throws a conversion error at runtime
+             py::arg("include_index_col") = true);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

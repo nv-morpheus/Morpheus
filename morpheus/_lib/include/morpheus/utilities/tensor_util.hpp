@@ -17,11 +17,13 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/objects/tensor_object.hpp"
 
+#include <algorithm>  // IWYU pragma: keep
 #include <iosfwd>  // for ostream
 #include <string>  // for string
 #include <vector>  // for vector
+// <algorithm> is needed for copy, min_element & transform
 
 namespace morpheus {
 
@@ -77,6 +79,27 @@ struct TensorUtils
      */
     static bool validate_shape_and_stride(const std::vector<TensorIndex>& shape,
                                           const std::vector<TensorIndex>& stride);
+
+    /**
+     * @brief Returns a stride expressed in terms of elements given a stride expressed either in terms of bytes or
+     * elements.
+     *
+     * @param stride
+     * @return shape_type
+     */
+    template <typename IndexT, typename SrcIndexT = IndexT>
+    static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride)
+    {
+        std::vector<IndexT> tensor_stride(stride.size());
+        auto min_stride     = std::min_element(stride.cbegin(), stride.cend());
+        auto min_stride_val = *min_stride;
+
+        std::transform(stride.cbegin(), stride.cend(), tensor_stride.begin(), [min_stride_val](const SrcIndexT s) {
+            return s / min_stride_val;
+        });
+
+        return tensor_stride;
+    }
 };
 
 }  // namespace morpheus

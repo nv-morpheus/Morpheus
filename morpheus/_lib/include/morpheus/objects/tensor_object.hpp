@@ -17,34 +17,29 @@
 
 #pragma once
 
-#include <morpheus/utilities/type_util_detail.hpp>
-
-#include <morpheus/utilities/string_util.hpp>
-
-#include <srf/cuda/common.hpp>
-#include <srf/memory/blob.hpp>
-#include <srf/memory/default_resources.hpp>
-#include <srf/memory/memory_kind.hpp>  // for memory_kind_type
+#include "morpheus/utilities/string_util.hpp"
+#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
 #include <rmm/device_uvector.hpp>
+#include <srf/cuda/common.hpp>
 
 #include <algorithm>
 #include <array>
 #include <cstddef>  // for size_t, byte
 #include <cstdint>
 #include <functional>
-#include <iterator>
-#include <memory>
-#include <numeric>
+#include <memory>   // for shared_ptr
+#include <numeric>  // IWYU pragma: keep
 #include <ostream>
 #include <stdexcept>  // for runtime_error
 #include <string>
-#include <utility>  // for exchange, move
+#include <utility>  // for exchange, move & pair
 #include <vector>
 // IWYU is confusing std::size_t with __gnu_cxx::size_t for some reason
 // when we define vector<size_t>
+// The <numeric> header is needed for transform_reduce but IWYU thinks we don't need it
 // IWYU pragma: no_include <ext/new_allocator.h>
 
 namespace morpheus {
@@ -116,9 +111,6 @@ enum class TensorStorageType
 };
 
 template <typename T>
-using HostContainer = std::vector<T, srf::memory::host_allocator<T>>;  // NOLINT(readability-identifier-naming)
-
-template <typename T>
 using DeviceContainer = rmm::device_uvector<T>;  // NOLINT(readability-identifier-naming)
 
 struct MemoryDescriptor
@@ -144,6 +136,9 @@ struct ITensorOperations
     virtual std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex>& dims) const = 0;
 
     virtual std::shared_ptr<ITensor> deep_copy() const = 0;
+
+    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+                                               TensorIndex num_rows) const = 0;
 
     virtual std::shared_ptr<ITensor> as_type(DataType dtype) const = 0;
 };
@@ -176,190 +171,6 @@ struct ITensor : public ITensorStorage, public ITensorOperations
             v[i] = this->stride(i);
         return v;
     }
-};
-
-#if 0
-template <typename Tensor>
-class TensorDescriptor
-{};
-
-template <typename T>
-class TensorDescriptor<HostArray<T>> : public IHostTensor
-{
-  public:
-    TensorDescriptor(HostArray<T>&& wrapped) : m_wrapped(std::move(wrapped)) {}
-    ~TensorDescriptor() override = default;
-
-    // itensor interface
-    void* data() final
-    {
-        return m_wrapped.data();
-    };
-    const void* data() const final
-    {
-        return m_wrapped.data();
-    }
-
-    std::size_t count() const final
-    {
-        return m_wrapped.size();
-    }
-    std::size_t bytes() const final
-    {
-        return m_wrapped.size() * sizeof(T);
-    };
-
-    RankType rank() const final
-    {
-        return m_wrapped.dimension();
-    }
-    DataType dtype() const final
-    {
-        return DataType::create<T>();
-    }
-
-    TensorStorageType storage_type() const final
-    {
-        return TensorStorageType::Host;
-    }
-
-    [[nodiscard]] HostArray<T> unwrap()
-    {
-        return std::move(m_wrapped);
-    }
-
-    std::size_t shape(std::size_t idx) const final
-    {
-        return m_wrapped.shape()[idx];
-    }
-
-    std::size_t stride(std::size_t idx) const final
-    {
-        return m_wrapped.strides()[idx];
-    }
-
-  private:
-    HostArray<T> m_wrapped;
-};
-
-template <typename T, RankType R>
-class TensorDescriptor<HostTensor<T, R>> : public IHostTensor
-{
-  public:
-    TensorDescriptor(HostTensor<T, R>&& wrapped) : m_wrapped(std::move(wrapped)) {}
-    ~TensorDescriptor() override = default;
-
-    // itensor interface
-    void* data() final
-    {
-        return m_wrapped.data();
-    };
-    const void* data() const final
-    {
-        return m_wrapped.data();
-    }
-
-    std::size_t count() const final
-    {
-        return m_wrapped.size();
-    }
-    std::size_t bytes() const final
-    {
-        return m_wrapped.size() * sizeof(T);
-    };
-
-    RankType rank() const final
-    {
-        return m_wrapped.dimension();
-    }
-    DataType dtype() const final
-    {
-        return DataType::create<T>();
-    }
-
-    TensorStorageType storage_type() const final
-    {
-        return TensorStorageType::Host;
-    }
-
-    [[nodiscard]] HostTensor<T, R> unwrap()
-    {
-        return std::move(m_wrapped);
-    }
-
-    std::size_t shape(std::size_t idx) const final
-    {
-        return m_wrapped.shape()[idx];
-    }
-
-    std::size_t stride(std::size_t idx) const final
-    {
-        return m_wrapped.strides()[idx];
-    }
-
-  protected:
-  private:
-    HostTensor<T, R> m_wrapped;
-};
-
-template <typename T>
-std::unique_ptr<IHostTensor> to_generic(HostArray<T>&& array)
-{
-    return std::make_unique<TensorDescriptor<HostArray<T>>>(std::move(array));
-}
-
-template <typename T, RankType R>
-std::unique_ptr<IHostTensor> to_generic(HostTensor<T, R>&& array)
-{
-    return std::make_unique<TensorDescriptor<HostTensor<T, R>>>(std::move(array));
-}
-
-template <typename T>
-[[nodiscard]] HostArray<T> to_host_array(std::unique_ptr<ITensor> generic)
-{
-    CHECK(generic->storage_type() == TensorStorageType::Host);
-    auto d = dynamic_cast<TensorDescriptor<HostArray<T>>*>(generic.get());
-    CHECK(d) << "error dynamically casting to descriptor; possible type mismatch";
-    return d->unwrap();
-}
-
-template <typename T, RankType R>
-[[nodiscard]] HostTensor<T, R> to_host_tensor(std::unique_ptr<ITensor> generic)
-{
-    CHECK(generic->storage_type() == TensorStorageType::Host);
-    auto d = dynamic_cast<TensorDescriptor<HostTensor<T, R>>*>(generic.get());
-    CHECK(d) << "error dynamically casting to descriptor; possible type mismatch";
-    return d->unwrap();
-}
-
-#endif
-
-class TensorView : public srf::memory::blob
-{
-  public:
-    TensorView() = delete;
-
-    TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape);
-    TensorView(srf::memory::blob bv, DataType dtype, std::vector<TensorIndex> shape, std::vector<TensorIndex> stride);
-
-    const DataType& dtype() const;
-
-    const std::vector<TensorIndex>& shape() const;
-
-    const std::vector<TensorIndex>& stride() const;
-
-    /**
-     * @brief Determines if the tensor layout is both contiguous and ordered.
-     *
-     * @note A tensor whose values are laid out in the storage starting from the rightmost
-     * dimension onward (that is, moving along rows for a 2D tensor) is defined as contiguous.
-     */
-    bool is_contiguous() const;
-
-  private:
-    DataType m_dtype;
-    std::vector<TensorIndex> m_shape;
-    std::vector<TensorIndex> m_stride;
 };
 
 struct TensorObject final
@@ -475,8 +286,10 @@ struct TensorObject final
         auto stride = this->get_stride();
         auto shape  = this->get_shape();
 
+        CHECK(shape.size() == N) << "Length of idx must match lengh of shape";
+
         CHECK(std::transform_reduce(
-            stride.begin(), stride.end(), std::begin(idx), 0, std::logical_and<>(), std::less<>()))
+            shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::greater<>()))
             << "Index is outsize of the bounds of the tensor. Index="
             << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
             << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
@@ -503,8 +316,10 @@ struct TensorObject final
         auto stride = this->get_stride();
         auto shape  = this->get_shape();
 
-        CHECK(std::transform_reduce(
-            stride.begin(), stride.end(), std::begin(idx), 0, std::logical_and<>(), std::less<>()))
+        CHECK(shape.size() == N) << "Length of idx must match lengh of shape";
+
+        CHECK(
+            std::transform_reduce(shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::less<>()))
             << "Index is outsize of the bounds of the tensor. Index="
             << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
             << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
@@ -594,6 +409,20 @@ struct TensorObject final
         }
 
         return TensorObject(m_tensor->as_type(dtype));
+    }
+
+    /**
+     * @brief Creates a deep copy of the rows specified in the exclusive ranges of vector<pair<start, stop>>
+     * of the stop row.
+     *
+     * @param selected_rows
+     * @param num_rows
+     * @return TensorObject
+     */
+    TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+                           TensorIndex num_rows) const
+    {
+        return TensorObject(m_tensor->copy_rows(selected_rows, num_rows));
     }
 
   protected:

@@ -21,20 +21,13 @@ More advanced users, or those who are interested in using the latest pre-release
 The following sections must be followed prior to building the Morpheus container or building Morpheus from source.
 
 #### Requirements
-- Pascal architecture or better
+- Pascal architecture GPU or better
 - NVIDIA driver `450.80.02` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+- [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `22.06` or higher
 - [Git LFS](https://git-lfs.github.com/)
 
-#### Git LFS
-
-The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
-
-If `Git LFS` is not installed before cloning the repository, the large files will not be pulled. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
-```bash
-git lfs install
-```
 
 #### Clone the Repository
 
@@ -44,10 +37,37 @@ git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
 
-**Note:** If the repository was cloned before `Git LFS` was installed, you can ensure you have downloaded the LFS files with the command:
+#### Git LFS
 
+The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned.
+
+The `scripts/fetch_data.py` script can be used to fetch the Morpheus pre-trained models, and other files required for running the training/validation scripts and example pipelines.
+
+Usage of the script is as follows:
 ```bash
-git lfs pull
+scripts/fetch_data.py fetch <dataset> [<dataset>...]
+```
+
+At time of writing the defined datasets are:
+* all - Metaset includes all others
+* examples - Data needed by scripts in the `examples` subdir
+* models - Morpheus models (largest dataset)
+* tests - Data used by unittests
+* validation - Subset of the models dataset needed by some unittests
+
+To download just the examples and models:
+```bash
+scripts/fetch_data.py fetch examples models
+```
+
+To download the data needed for unittests:
+```bash
+scripts/fetch_data.py fetch tests validation
+```
+
+If `Git LFS` is not installed the before cloning the repository, the `scripts/fetch_data.py` script will fail. If this is the case follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
+```bash
+git lfs install
 ```
 
 ### Build Morpheus Container
@@ -66,15 +86,31 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.06.00a` use the following:
+You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.09.00a` use the following:
 
 ```bash
-DOCKER_IMAGE_TAG="v22.06.00a-runtime" ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG="v22.09.00a-runtime" ./docker/run_container_release.sh
 ```
 
 ### Build from Source
 
 It's possible to build from source outside of a container. However, due to the large number of dependencies, this can be complex and is only necessary for developers. Instructions for developers and contributors can be found in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Launching Triton Server
+
+Many of the validation tests and example workflows require a Triton server to function.
+Use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
+
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
+	-v $PWD/models:/models \
+	nvcr.io/nvidia/tritonserver:22.08-py3 \
+	tritonserver --model-repository=/models/triton-model-repo \
+		--exit-on-error=false \
+		--log-info=true \
+		--strict-readiness=false
+```
+This will launch Triton using the default network ports (8000 for HTTP, 8001 for GRPC, and 8002 for metrics).
 
 ## Running Morpheus
 

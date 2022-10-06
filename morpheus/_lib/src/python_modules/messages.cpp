@@ -15,31 +15,38 @@
  * limitations under the License.
  */
 
-#include <morpheus/messages/memory/inference_memory.hpp>
-#include <morpheus/messages/memory/inference_memory_fil.hpp>
-#include <morpheus/messages/memory/inference_memory_nlp.hpp>
-#include <morpheus/messages/memory/response_memory.hpp>
-#include <morpheus/messages/memory/response_memory_probs.hpp>
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/messages/multi.hpp>
-#include <morpheus/messages/multi_inference.hpp>
-#include <morpheus/messages/multi_inference_fil.hpp>
-#include <morpheus/messages/multi_inference_nlp.hpp>
-#include <morpheus/messages/multi_response.hpp>
-#include <morpheus/messages/multi_response_probs.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/utilities/cudf_util.hpp>
+#include "morpheus/messages/memory/inference_memory.hpp"
+#include "morpheus/messages/memory/inference_memory_fil.hpp"
+#include "morpheus/messages/memory/inference_memory_nlp.hpp"
+#include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/response_memory_probs.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/messages/multi_inference_fil.hpp"
+#include "morpheus/messages/multi_inference_nlp.hpp"
+#include "morpheus/messages/multi_response.hpp"
+#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/objects/data_table.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
-#include <srf/node/edge_connector.hpp>
-
-#include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pysrf/edge_adapter.hpp>
+#include <pysrf/node.hpp>
+#include <pysrf/port_builders.hpp>
+#include <pysrf/utils.hpp>         // for pysrf::import
+#include <srf/channel/status.hpp>  // for Status
+#include <srf/node/edge_connector.hpp>
+#include <srf/node/port_registry.hpp>
 
 #include <cstddef>
+#include <filesystem>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace morpheus {
@@ -69,6 +76,14 @@ PYBIND11_MODULE(messages, m)
 
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
+
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseMessage>>();
+    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
     srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
@@ -120,7 +135,13 @@ PYBIND11_MODULE(messages, m)
                  &MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("set_meta", &MultiMessageInterfaceProxy::set_meta, py::return_value_policy::move)
-        .def("get_slice", &MultiMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal);
+        .def("get_slice", &MultiMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal)
+        .def("copy_ranges",
+             &MultiMessageInterfaceProxy::copy_ranges,
+             py::arg("ranges"),
+             py::arg("num_selected_rows") = py::none(),
+             py::return_value_policy::move)
+        .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
     py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
         .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count);
@@ -196,6 +217,9 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("memory", &MultiInferenceFILMessageInterfaceProxy::memory)
         .def_property_readonly("offset", &MultiInferenceFILMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
+
+    py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
+        .def_readonly("count", &TensorMemory::count);
 
     py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def_readonly("count", &ResponseMemory::count)

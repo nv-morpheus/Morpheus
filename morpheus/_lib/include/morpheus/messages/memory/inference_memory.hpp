@@ -17,28 +17,27 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/messages/memory/tensor_memory.hpp"
 
 #include <cstddef>
-#include <map>
 #include <string>
 
 namespace morpheus {
-
 /**
  * TODO(Documentation)
  */
-class InferenceMemory
+class InferenceMemory : public TensorMemory
 {
   public:
     InferenceMemory(size_t count);
-
-    std::size_t count{0};
-    std::map<std::string, TensorObject> inputs;
+    InferenceMemory(size_t count, tensor_map_t&& tensors);
 
     /**
-     * TODO(Documentation)
+     * @brief Checks if a tensor named `name` exists in `tensors`
+     *
+     * @param name
+     * @return true
+     * @return false
      */
     bool has_input(const std::string& name) const;
 };

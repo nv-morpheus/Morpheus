@@ -17,15 +17,22 @@
 
 #pragma once
 
-#include <morpheus/messages/multi.hpp>
+#include "morpheus/messages/meta.hpp"  // for MessageMeta
+#include "morpheus/messages/multi.hpp"
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 
 #include <pysrf/node.hpp>
+#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
+#include <srf/channel/status.hpp>          // for Status
+#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <srf/segment/builder.hpp>
+#include <srf/segment/object.hpp>  // for Object
 
-#include <fstream>
 #include <memory>
 #include <regex>
 #include <string>
+#include <vector>  // for vector
 
 namespace morpheus {
 /****** Component public implementations *******************/

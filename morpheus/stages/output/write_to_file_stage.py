@@ -24,6 +24,7 @@ import cudf
 import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.file_types import determine_file_type
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
@@ -31,8 +32,11 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+@register_stage("to-file", rename_options={"include_index_col": "--include-index-col"})
 class WriteToFileStage(SinglePortStage):
     """
+    Write all messages to a file.
+
     This class writes messages to a file. This class does not buffer or keep the file open between messages.
     It should not be used in production code.
 
@@ -42,14 +46,20 @@ class WriteToFileStage(SinglePortStage):
         Pipeline configuration instance.
     filename : str
         Name of the file to which the messages will be written.
-    overwrite : bool
+    overwrite : boolean, default = False, is_flag = True
         Overwrite file if exists. Will generate an error otherwise.
     file_type : `morpheus._lib.file_types.FileTypes`, optional
         File type of output (FileTypes.JSON, FileTypes.CSV, FileTypes.Auto), by default FileTypes.Auto.
-
+    include_index_col : bool, default = True
+        Write out the index as a column, by default True.
     """
 
-    def __init__(self, c: Config, filename: str, overwrite: bool, file_type: FileTypes = FileTypes.Auto):
+    def __init__(self,
+                 c: Config,
+                 filename: str,
+                 overwrite: bool = False,
+                 file_type: FileTypes = FileTypes.Auto,
+                 include_index_col: bool = True):
 
         super().__init__(c)
 
@@ -69,6 +79,7 @@ class WriteToFileStage(SinglePortStage):
             self._file_type = determine_file_type(self._output_file)
 
         self._is_first = True
+        self._include_index_col = include_index_col
 
     @property
     def name(self) -> str:
@@ -91,9 +102,11 @@ class WriteToFileStage(SinglePortStage):
 
     def _convert_to_strings(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
         if (self._file_type == FileTypes.JSON):
-            output_strs = serializers.df_to_json(df)
+            output_strs = serializers.df_to_json(df, include_index_col=self._include_index_col)
         elif (self._file_type == FileTypes.CSV):
-            output_strs = serializers.df_to_csv(df, include_header=self._is_first)
+            output_strs = serializers.df_to_csv(df,
+                                                include_header=self._is_first,
+                                                include_index_col=self._include_index_col)
             self._is_first = False
         else:
             raise NotImplementedError("Unknown file type: {}".format(self._file_type))
@@ -110,7 +123,12 @@ class WriteToFileStage(SinglePortStage):
 
         # Sink to file
         if (self._build_cpp_node()):
-            to_file = _stages.WriteToFileStage(builder, self.unique_name, self._output_file, "w", self._file_type)
+            to_file = _stages.WriteToFileStage(builder,
+                                               self.unique_name,
+                                               self._output_file,
+                                               "w",
+                                               self._file_type,
+                                               self._include_index_col)
         else:
 
             def node_fn(obs: srf.Observable, sub: srf.Subscriber):

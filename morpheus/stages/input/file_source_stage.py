@@ -13,15 +13,17 @@
 # limitations under the License.
 
 import logging
+import pathlib
 import typing
 
 import srf
 import typing_utils
 from srf.core import operators as ops
 
-import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
+from morpheus.cli import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -30,8 +32,13 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+@register_stage("from-file",
+                modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
+                ignore_args=["cudf_kwargs"])
 class FileSourceStage(SingleOutputSource):
     """
+    Load messages from a file.
+
     Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
     testing performance and accuracy of a pipeline.
 
@@ -39,20 +46,20 @@ class FileSourceStage(SingleOutputSource):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    filename : str
+    filename : pathlib.Path, exists = True, dir_okay = False
         Name of the file from which the messages will be read.
-    iterative: boolean
+    iterative : boolean, default = False, is_flag = True
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
     file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
-    repeat: int, default = 1
+    repeat : int, default = 1, min = 1
         Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-    filter_null: bool, default = True
+    filter_null : bool, default = True
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
-    cudf_kwargs: dict, default=None
+    cudf_kwargs : dict, default = None
         keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
         `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
         and with `file_type` == 'csv', this defaults to ``{}``.
@@ -60,7 +67,7 @@ class FileSourceStage(SingleOutputSource):
 
     def __init__(self,
                  c: Config,
-                 filename: str,
+                 filename: pathlib.Path,
                  iterative: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
@@ -99,6 +106,7 @@ class FileSourceStage(SingleOutputSource):
     def _build_source(self, builder: srf.Builder) -> StreamPair:
 
         if self._build_cpp_node():
+            import morpheus._lib.stages as _stages
             out_stream = _stages.FileSourceStage(builder, self.unique_name, self._filename, self._repeat_count)
         else:
             out_stream = builder.make_source(self.unique_name, self._generate_frames())

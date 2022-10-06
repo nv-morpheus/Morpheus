@@ -1,0 +1,13 @@
+# Ignore any Dockerfile
+Dockerfile
+
+# Ignore docker-compose files
+docker-compose.yml
+.env*
+
+# ML Flow files
+artifacts/
+mlflow.db
+
+# Ignore any S3 cache folders
+*.s3_cache

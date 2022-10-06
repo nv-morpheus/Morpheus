@@ -52,6 +52,13 @@ class Stage(_pipeline.StreamWrapper):
         """
         pass
 
+    async def start_async(self):
+        """
+        This function is called along with on_start during stage initialization. Allows stages to utilize the
+        asyncio loop if needed.
+        """
+        pass
+
     def _on_complete(self, stream):
 
         logger.info("Stage Complete: {}".format(self.name))

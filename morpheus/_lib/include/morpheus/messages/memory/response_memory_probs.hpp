@@ -17,18 +17,14 @@
 
 #pragma once
 
-#include <morpheus/messages/memory/response_memory.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
-#include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
-
 #include <pybind11/pytypes.h>
 
 #include <cstddef>
 #include <memory>
-#include <utility>
 
 namespace morpheus {
 /****** Component public implementations *******************/

@@ -27,7 +27,7 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 Example:
 
 ```
-docker pull nvcr.io/nvidia/tritonserver:22.02-py3
+docker pull nvcr.io/nvidia/tritonserver:22.08-py3
 ```
 
 ##### Start Triton Inference Server container
@@ -35,7 +35,7 @@ docker pull nvcr.io/nvidia/tritonserver:22.02-py3
 cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 
 # Run Triton in explicit mode
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:22.02-py3 \
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models/triton-model-repo nvcr.io/nvidia/tritonserver:22.08-py3 \
    tritonserver --model-repository=/models/triton-model-repo \
                 --exit-on-error=false \
                 --model-control-mode=explicit \
@@ -43,19 +43,22 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/model
 ```
 
 ## Requirements
-Prior to running the ransomware detection pipeline, additional requirements must be installed in to your conda environment.
+**Note**: Make sure `dask` and `distributed` are installed in your conda environment before running the ransomware detection pipeline. Run the installation command specified below if not.
 
 ```bash
-conda install dask==2022.5.2 distributed==2022.5.2
+conda install dask==2022.7.0 distributed==2022.7.0
 ```
 
 ## Run Pipeline
 Launch the example using the following
 
+Input features for a short model can be taken from every three snapshots sequence, such as (1, 2, 3), or (2, 3, 4). The sliding window represents the number of subsequent snapshots that need to be taken into consideration when generating the input for a model. Sliding window for the medium model is `5` and for the long model it is `10`.
+
 ```bash
 cd ${MORPHEUS_ROOT}/examples/ransomware_detection
 
-python run.py --server_url=<TRITON_SERVER:PORT> \
+python run.py --server_url=localhost:8001 \
+              --sliding_window=3 \
               --model_name=ransomw-model-short-rf \
               --conf_file=./config/ransomware_detection.yaml \
               --input_glob=${MORPHEUS_ROOT}/examples/data/appshield/*/snapshot-*/*.json \

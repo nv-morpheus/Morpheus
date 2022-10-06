@@ -15,17 +15,20 @@
  * limitations under the License.
  */
 
-#include <morpheus/objects/tensor.hpp>
+#include "morpheus/objects/tensor.hpp"
 
-#include <morpheus/objects/rmm_tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
-#include <morpheus/utilities/type_util.hpp>
+#include "morpheus/objects/rmm_tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
+#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToHost
 #include <rmm/device_buffer.hpp>
+#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
 
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>  // for move
 #include <vector>
 
 namespace morpheus {

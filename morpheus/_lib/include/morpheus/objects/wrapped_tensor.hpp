@@ -18,18 +18,9 @@
 
 #pragma once
 
-#include <morpheus/objects/tensor_object.hpp>
-
-#include <boost/fiber/buffered_channel.hpp>
-#include <boost/fiber/channel_op_status.hpp>
+#include "morpheus/objects/tensor_object.hpp"
 
 #include <pybind11/pytypes.h>
-
-#include <chrono>
-#include <memory>
-#include <stdexcept>
-#include <utility>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

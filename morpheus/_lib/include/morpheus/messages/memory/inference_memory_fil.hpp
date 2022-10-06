@@ -17,17 +17,13 @@
 
 #pragma once
 
-#include <morpheus/messages/memory/inference_memory.hpp>
-#include <morpheus/objects/python_data_table.hpp>
-#include <morpheus/objects/tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
+#include "morpheus/messages/memory/inference_memory.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
-#include <cudf/io/types.hpp>
-
-#include <pybind11/pybind11.h>
+#include <cudf/types.hpp>      // for size_type
+#include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>
-#include <filesystem>
 #include <memory>
 #include <string>
 

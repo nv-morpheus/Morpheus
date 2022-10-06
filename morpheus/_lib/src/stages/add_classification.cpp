@@ -15,14 +15,31 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/add_classification.hpp>
+#include "morpheus/stages/add_classification.hpp"
 
-#include <morpheus/utilities/matx_util.hpp>
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/utilities/type_util.hpp"         // for DType
+#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
 
+#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
+#include <glog/logging.h>
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>     // for device_buffer
+#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
+
+#include <algorithm>  // for min_element, transform
 #include <cstddef>
 #include <exception>
+#include <functional>  // for divides, bind, placeholders
 #include <memory>
-#include <mutex>
+#include <ostream>      // needed for logging
+#include <type_traits>  // for declval
+#include <utility>      // for move
+// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
+// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace morpheus {
 // Component public implementations

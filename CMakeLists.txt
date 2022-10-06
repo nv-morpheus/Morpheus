@@ -29,6 +29,7 @@ option(MORPHEUS_USE_CCACHE "Enable caching compilation results with ccache" OFF)
 option(MORPHEUS_USE_CLANG_TIDY "Enable running clang-tidy as part of the build process" OFF)
 option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcpkg.
   Note: This will disable vcpkg. All dependencies must be installed first in the conda environment" OFF)
+option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the build process" OFF)
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 
 set(MORPHEUS_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")
@@ -74,6 +75,9 @@ include(cmake/dependencies.cmake)
 # - Post dependencies setup --------
 include(cmake/setup_compiler.cmake)
 
+# Setup IWYU if enabled
+include(cmake/setup_iwyu.cmake)
+
 # To make it easier for CI to find output files, set the default executable suffix to .x if not set
 if("${CMAKE_EXECUTABLE_SUFFIX}" STREQUAL "")
   set(CMAKE_EXECUTABLE_SUFFIX ".x")
@@ -84,9 +88,17 @@ endif()
 ##### Morpheus Python Setup ######
 ##################################
 
+# Create a custom target to allow preparing for style checks
+add_custom_target(${PROJECT_NAME}_style_checks
+  COMMENT "Building dependencies for style checks"
+)
 
-# Include the main trtlab code
+# Include the main morpheus code
 add_subdirectory(morpheus)
+
+if(MORPHEUS_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
 
 # Get all of the python files to copy to the build directory
 file(GLOB_RECURSE MORPHEUS_PYTHON_FILES

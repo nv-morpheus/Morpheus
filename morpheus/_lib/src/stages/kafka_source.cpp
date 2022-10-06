@@ -15,37 +15,46 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/kafka_source.hpp>
+#include "morpheus/stages/kafka_source.hpp"
 
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/utilities/stage_util.hpp>
-#include <morpheus/utilities/string_util.hpp>
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/utilities/stage_util.hpp"
+#include "morpheus/utilities/string_util.hpp"
 
+#include <boost/fiber/operations.hpp>  // for sleep_for, yield
+#include <boost/fiber/recursive_mutex.hpp>
+#include <cudf/column/column.hpp>  // for column
+#include <cudf/io/json.hpp>
+#include <cudf/scalar/scalar.hpp>  // for string_scalar
+#include <cudf/strings/replace.hpp>
+#include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
+#include <cudf/table/table.hpp>                  // for table
+#include <glog/logging.h>
+#include <librdkafka/rdkafkacpp.h>
+#include <nlohmann/json.hpp>
 #include <pysrf/node.hpp>
 #include <srf/runnable/context.hpp>
 #include <srf/segment/builder.hpp>
+#include <srf/types.hpp>  // for SharedFuture
 
-#include <glog/logging.h>
-#include <http_client.h>
-#include <librdkafka/rdkafkacpp.h>
-#include <boost/fiber/recursive_mutex.hpp>
-#include <cudf/io/csv.hpp>
-#include <cudf/io/json.hpp>
-#include <cudf/strings/replace.hpp>
-#include <nlohmann/json.hpp>
-#include <nvtext/subword_tokenize.hpp>
-
+#include <algorithm>  // for find, min, transform
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <initializer_list>  // for initializer_list
+#include <iterator>          // for back_insert_iterator, back_inserter
 #include <memory>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
+// IWYU thinks we need atomic for vector.emplace_back of a unique_ptr
+// and __alloc_traits<>::value_type for vector assignments
+// IWYU pragma: no_include <atomic>
+// IWYU pragma: no_include <ext/alloc_traits.h>
 
 #define CHECK_KAFKA(command, expected, msg)                                                                    \
     {                                                                                                          \
@@ -61,6 +70,9 @@ namespace morpheus {
 // Component-private classes.
 // ************ KafkaSourceStage__UnsubscribedException**************//
 class KafkaSourceStage__UnsubscribedException : public std::exception
+{};
+
+class KafkaSourceStageStopAfter : public std::exception
 {};
 
 // ************ KafkaSourceStage__Rebalancer *************************//
@@ -85,7 +97,6 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
         // auto batch_timeout = std::chrono::milliseconds(m_parent.batch_timeout_ms());
         auto batch_timeout = std::chrono::milliseconds(m_batch_timeout_fn());
 
-        size_t msg_count = 0;
         std::vector<std::unique_ptr<RdKafka::Message>> messages;
 
         auto now       = std::chrono::high_resolution_clock::now();
@@ -121,7 +132,7 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
 
             // Update now
             now = std::chrono::high_resolution_clock::now();
-        } while (msg_count < m_max_batch_size_fn() && now < batch_end);
+        } while (messages.size() < m_max_batch_size_fn() && now < batch_end);
 
         return std::move(messages);
     }
@@ -244,19 +255,22 @@ KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
                                    int32_t batch_timeout_ms,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
-                                   bool disable_pre_filtering) :
+                                   bool disable_pre_filtering,
+                                   size_t stop_after) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topic(std::move(topic)),
   m_batch_timeout_ms(batch_timeout_ms),
   m_config(std::move(config)),
   m_disable_commit(disable_commit),
-  m_disable_pre_filtering(disable_pre_filtering)
+  m_disable_pre_filtering(disable_pre_filtering),
+  m_stop_after{stop_after}
 {}
 
 KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> sub) -> void {
+        size_t records_emitted = 0;
         // Build rebalancer
         KafkaSourceStage__Rebalancer rebalancer(
             [this]() { return this->batch_timeout_ms(); },
@@ -265,11 +279,15 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 auto &ctx = srf::runnable::Context::get_runtime_context();
                 return MORPHEUS_CONCAT_STR(ctx.info() << " " << str_to_display);
             },
-            [sub, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
+            [sub, &records_emitted, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
                 // If we are unsubscribed, throw an error to break the loops
                 if (!sub.is_subscribed())
                 {
                     throw KafkaSourceStage__UnsubscribedException();
+                }
+                else if (m_stop_after > 0 && records_emitted >= m_stop_after)
+                {
+                    throw KafkaSourceStageStopAfter();
                 }
 
                 if (message_batch.empty())
@@ -289,8 +307,9 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                     return false;
                 }
 
+                auto num_records = batch->count();
                 sub.on_next(std::move(batch));
-
+                records_emitted += num_records;
                 return m_requires_commit;
             });
 
@@ -318,6 +337,9 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 }
             }
 
+        } catch (KafkaSourceStageStopAfter)
+        {
+            DLOG(INFO) << "Completed after emitting " << records_emitted << " records";
         } catch (std::exception &ex)
         {
             LOG(ERROR) << "Exception in rebalance_loop. Msg: " << ex.what();
@@ -571,10 +593,11 @@ std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     int32_t batch_timeout_ms,
     std::map<std::string, std::string> config,
     bool disable_commits,
-    bool disable_pre_filtering)
+    bool disable_pre_filtering,
+    size_t stop_after)
 {
     auto stage = builder.construct_object<KafkaSourceStage>(
-        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering);
+        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering, stop_after);
 
     return stage;
 }

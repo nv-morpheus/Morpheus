@@ -15,29 +15,33 @@
  * limitations under the License.
  */
 
-#include <morpheus/stages/file_source.hpp>
+#include "morpheus/stages/file_source.hpp"
 
-#include <srf/segment/builder.hpp>
-
+#include <cudf/column/column.hpp>  // for column
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
+#include <cudf/scalar/scalar.hpp>  // for string_scalar
 #include <cudf/strings/replace.hpp>
+#include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
+#include <cudf/table/table.hpp>                  // for table
 #include <cudf/types.hpp>
-#include <nvtext/subword_tokenize.hpp>
-
 #include <glog/logging.h>
+#include <pybind11/cast.h>  // for object_api::operator()
 #include <pybind11/gil.h>
-#include <pybind11/pytypes.h>
-#include <nlohmann/json.hpp>
+#include <pybind11/pybind11.h>  // for str_attr_accessor
+#include <pybind11/pytypes.h>   // for pybind11::int_
+#include <srf/segment/builder.hpp>
 
-#include <cstddef>
+#include <algorithm>  // for find
+#include <cstddef>    // for size_t
 #include <filesystem>
-#include <functional>
 #include <memory>
-#include <mutex>
 #include <regex>
 #include <sstream>
+#include <stdexcept>  // for runtime_error
 #include <utility>
+// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
+// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace morpheus {
 // Component public implementations

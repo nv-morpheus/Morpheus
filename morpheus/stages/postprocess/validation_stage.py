@@ -16,7 +16,6 @@ import copy
 import json
 import logging
 import os
-import re
 import typing
 
 import pandas as pd
@@ -26,17 +25,22 @@ from srf.core import operators as ops
 import cudf
 
 from morpheus._lib.file_types import FileTypes
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils import compare_df
 
 logger = logging.getLogger(__name__)
 
 
+@register_stage("validate")
 class ValidationStage(MultiMessageStage):
     """
+    Validate pipeline output for testing.
+
     The validation stage can be used to combine all output data into a single dataframe and compare against a known good
     file.
 
@@ -48,7 +52,7 @@ class ValidationStage(MultiMessageStage):
         The comparison file.
     results_file_name : str
         Where to output a JSON containing the validation results.
-    overwrite : bool, optional
+    overwrite : boolean, default = False, is_flag = True
         Whether to overwrite the validation results if they exist, by default False.
     include : typing.List[str], optional
         Any columns to include. By default all columns are included.
@@ -100,8 +104,6 @@ class ValidationStage(MultiMessageStage):
                     "Cannot output validation results to '{}'. File exists and overwrite = False".format(
                         self._results_file_name))
 
-        self._val_df: pd.DataFrame = None
-
     @property
     def name(self) -> str:
         return "validation"
@@ -121,35 +123,10 @@ class ValidationStage(MultiMessageStage):
     def supports_cpp_node(self):
         return False
 
-    def _filter_df(self, df):
-        include_columns = None
-
-        if (self._include_columns is not None and len(self._include_columns) > 0):
-            include_columns = re.compile("({})".format("|".join(self._include_columns)))
-
-        exclude_columns = [re.compile(x) for x in self._exclude_columns]
-
-        # Filter out any known good/bad columns we dont want to compare
-        columns: typing.List[str] = []
-
-        # First build up list of included. If no include regex is specified, select all
-        if (include_columns is None):
-            columns = list(df.columns)
-        else:
-            columns = [y for y in list(df.columns) if include_columns.match(y)]
-
-        # Now remove by the ignore
-        for test in exclude_columns:
-            columns = [y for y in columns if not test.match(y)]
-
-        return df[columns]
-
     def _do_comparison(self, messages: typing.List[MultiMessage]):
 
         if (len(messages) == 0):
             return
-
-        import datacompy
 
         # Get all of the meta data and combine into a single frame
         all_meta = [x.get_meta() for x in messages]
@@ -159,68 +136,17 @@ class ValidationStage(MultiMessageStage):
 
         combined_df = pd.concat(all_meta)
 
-        results_df = self._filter_df(combined_df)
-
-        # if the index column is set, make that the index
-        if (self._index_col is not None):
-            results_df = results_df.set_index(self._index_col, drop=True)
-
-            if (self._index_col.startswith("_index_")):
-                results_df.index.name = str(results_df.index.name).replace("_index_", "", 1)
-
-        val_df = self._filter_df(read_file_to_df(self._val_file_name, FileTypes.Auto, df_type="pandas"))
-
-        # Now start the comparison
-        missing_columns = val_df.columns.difference(results_df.columns)
-        extra_columns = results_df.columns.difference(val_df.columns)
-        same_columns = val_df.columns.intersection(results_df.columns)
-
-        # Now get the results in the same order
-        results_df = results_df[same_columns]
-
-        comparison = datacompy.Compare(
-            val_df,
-            results_df,
-            on_index=True,
-            abs_tol=self._abs_tol,
-            rel_tol=self._rel_tol,
-            df1_name="val",
-            df2_name="res",
-            cast_column_names_lower=False,
-        )
-
-        total_rows = len(val_df)
-        diff_rows = len(val_df) - int(comparison.count_matching_rows())
-
-        if (comparison.matches()):
-            logger.info("Results match validation dataset")
-        else:
-            match_columns = comparison.intersect_rows[same_columns + "_match"]
-
-            mismatched_idx = match_columns[match_columns.apply(lambda r: not r.all(), axis=1)].index
-
-            merged = pd.concat([val_df, results_df], keys=["val", "res"]).swaplevel().sort_index()
-
-            mismatch_df = merged.loc[mismatched_idx]
-
-            logger.debug("Results do not match. Diff %d/%d (%f %%). First 10 mismatched rows:",
-                         diff_rows,
-                         total_rows,
-                         diff_rows / total_rows * 100.0)
-            logger.debug(mismatch_df[:20])
-
-        # Now build the output
-        output = {
-            "total_rows": total_rows,
-            "matching_rows": int(comparison.count_matching_rows()),
-            "diff_rows": diff_rows,
-            "matching_cols": list(same_columns),
-            "extra_cols": list(extra_columns),
-            "missing_cols": list(missing_columns),
-        }
+        val_df = read_file_to_df(self._val_file_name, FileTypes.Auto, df_type="pandas")
+        results = compare_df.compare_df(val_df,
+                                        combined_df,
+                                        self._include_columns,
+                                        self._exclude_columns,
+                                        replace_idx=self._index_col,
+                                        abs_tol=self._abs_tol,
+                                        rel_tol=self._rel_tol)
 
         with open(self._results_file_name, "w") as f:
-            json.dump(output, f, indent=2, sort_keys=True)
+            json.dump(results, f, indent=2, sort_keys=True)
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 

@@ -137,6 +137,16 @@ h4
 	text-transform: uppercase;
 }
 
+h3 code
+{
+	text-transform: none;
+}
+
+h4 code
+{
+	text-transform: none;
+}
+
 /* Paragraph Formatting */
 
 p
@@ -218,7 +228,7 @@ html.writer-html5 .rst-content table.docutils th>p
 
 /* cell text */
 html.writer-html5 .rst-content table.docutils td>p,
-html.writer-html5 .rst-content table.docutils th>p 
+html.writer-html5 .rst-content table.docutils th>p
 {
     font-size: var(--body-font-size);
     line-height: var(--body-line-height);
@@ -230,7 +240,7 @@ html.writer-html5 .rst-content table.docutils th>p
 .rst-content table.field-list td p:first-child,
 .wy-table th p:first-child,
 .rst-content table.docutils th p:first-child,
-.rst-content table.field-list th p:first-child 
+.rst-content table.field-list th p:first-child
 {
     margin-top: 0px;
 }
@@ -241,7 +251,7 @@ html.writer-html5 .rst-content table.docutils th>p
 .rst-content table.field-list td p:last-child,
 .wy-table th p:last-child,
 .rst-content table.docutils th p:last-child,
-.rst-content table.field-list th p:last-child 
+.rst-content table.field-list th p:last-child
 {
     margin-bottom: 0px;
 }

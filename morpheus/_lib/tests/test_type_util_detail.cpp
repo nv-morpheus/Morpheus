@@ -17,11 +17,14 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
-#include <morpheus/utilities/type_util_detail.hpp>
+#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <gtest/gtest.h>  // for EXPECT_EQ
 
 #include <vector>
+// work-around for known iwyu issue
+// https://github.com/include-what-you-use/include-what-you-use/issues/908
+// IWYU pragma: no_include <algorithm>
 
 TEST_CLASS(TypeUtils);
 

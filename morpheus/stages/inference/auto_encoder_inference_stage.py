@@ -15,12 +15,17 @@
 import typing
 
 import cupy as cp
+import numpy as np
+import pandas as pd
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseAEMessage
 from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import ResponseMemoryAE
 from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
+from morpheus.messages.multi_inference_message import MultiInferenceMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -56,9 +61,10 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
             Response message with autoencoder results calculated from inference results.
         """
 
-        output_dims = self.calc_output_dims(x)
+        dims = self.calc_output_dims(x)
+        output_dims = (x.mess_count, *dims[1:])
 
-        memory = ResponseMemoryProbs(count=x.count, probs=cp.zeros(output_dims))
+        memory = ResponseMemoryAE(count=output_dims[0], probs=cp.zeros(output_dims))
 
         # Override the default to return the response AE
         output_message = MultiResponseAEMessage(meta=x.meta,
@@ -68,12 +74,13 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
                                                 offset=x.offset,
                                                 count=x.count,
                                                 user_id=x.user_id)
+
         return output_message
 
     def calc_output_dims(self, x: MultiInferenceAEMessage) -> typing.Tuple:
 
-        # We only want one score
-        return (x.count, 1)
+        # reconstruction loss and zscore
+        return (x.count, 2)
 
     def process(self, batch: MultiInferenceAEMessage, cb: typing.Callable[[ResponseMemory], None]):
         """
@@ -82,7 +89,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
 
         Parameters
         ----------
-        batch : `morpheus.pipeline.messagesMultiInferenceMessage`
+        batch : `morpheus.pipeline.messages.MultiInferenceMessage`
             Batch of inference messages.
         cb : typing.Callable[[`morpheus.pipeline.messages.ResponseMemory`], None]
             Inference callback.
@@ -90,21 +97,45 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
         """
         data = batch.get_meta(batch.meta.df.columns.intersection(self._feature_columns))
 
-        net_loss = batch.model.get_anomaly_score(data)
-        ae_scores = cp.asarray(net_loss)
-        ae_scores = ae_scores.reshape((batch.count, 1))
+        explain_cols = [x + "_z_loss" for x in self._feature_columns] + ["max_abs_z", "mean_abs_z"]
+        explain_df = pd.DataFrame(np.empty((batch.count, (len(self._feature_columns) + 2)), dtype=object),
+                                  columns=explain_cols)
 
-        mem = ResponseMemoryProbs(
-            count=batch.count,
-            probs=ae_scores,  # For now, only support one output
-        )
+        if batch.model is not None:
+            rloss_scores = batch.model.get_anomaly_score(data)
+
+            results = batch.model.get_results(data, return_abs=True)
+            scaled_z_scores = [col for col in results.columns if col.endswith('_z_loss')]
+            scaled_z_scores.extend(['max_abs_z', 'mean_abs_z'])
+            scaledz_df = results[scaled_z_scores]
+            for col in scaledz_df.columns:
+                explain_df[col] = scaledz_df[col]
+
+            zscores = (rloss_scores - batch.train_scores_mean) / batch.train_scores_std
+            rloss_scores = rloss_scores.reshape((batch.count, 1))
+            zscores = np.absolute(zscores)
+            zscores = zscores.reshape((batch.count, 1))
+        else:
+            rloss_scores = np.empty((batch.count, 1))
+            rloss_scores[:] = np.NaN
+            zscores = np.empty((batch.count, 1))
+            zscores[:] = np.NaN
+
+        ae_scores = np.concatenate((rloss_scores, zscores), axis=1)
+
+        ae_scores = cp.asarray(ae_scores)
+
+        mem = ResponseMemoryAE(count=batch.count, probs=ae_scores)
+
+        mem.explain_df = explain_df
 
         cb(mem)
 
 
+@register_stage("inf-pytorch", modes=[PipelineModes.AE])
 class AutoEncoderInferenceStage(InferenceStage):
     """
-    Inference stage for the AE pipeline.
+    Perform inference with PyTorch.
     """
 
     def __init__(self, c: Config):
@@ -115,3 +146,34 @@ class AutoEncoderInferenceStage(InferenceStage):
     def _get_inference_worker(self, inf_queue: ProducerConsumerQueue) -> InferenceWorker:
 
         return _AutoEncoderInferenceWorker(inf_queue, self._config)
+
+    @staticmethod
+    def _convert_one_response(memory: ResponseMemory, inf: MultiInferenceMessage, res: ResponseMemoryAE):
+        # Make sure we have a continuous list
+        # assert inf.mess_offset == saved_offset + saved_count
+
+        res.explain_df.index = range(inf.mess_offset, inf.mess_offset + inf.mess_count)
+        for col in res.explain_df.columns:
+            inf.set_meta(col, res.explain_df[col])
+
+        probs = memory.get_output("probs")
+
+        # Two scenarios:
+        if (inf.mess_count == inf.count):
+            # In message and out message have same count. Just use probs as is
+            probs[inf.offset:inf.count + inf.offset, :] = res.probs
+        else:
+            assert inf.count == res.count
+
+            mess_ids = inf.seq_ids[:, 0].get().tolist()
+
+            # Out message has more reponses, so we have to do key based blending of probs
+            for i, idx in enumerate(mess_ids):
+                probs[idx, :] = cp.maximum(probs[idx, :], res.probs[i, :])
+
+        return MultiResponseAEMessage(meta=inf.meta,
+                                      mess_offset=inf.mess_offset,
+                                      mess_count=inf.mess_count,
+                                      memory=memory,
+                                      offset=inf.offset,
+                                      count=inf.count)

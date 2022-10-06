@@ -17,21 +17,12 @@
 
 #pragma once
 
-#include <morpheus/objects/rmm_tensor.hpp>
-#include <morpheus/objects/tensor_object.hpp>
-#include <morpheus/utilities/matx_util.hpp>
-#include <morpheus/utilities/type_util.hpp>
-
-#include <pysrf/node.hpp>
-
-#include <cudf/types.hpp>
+#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <rmm/device_buffer.hpp>
-#include <rmm/device_uvector.hpp>
 
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
-
+#include <cstddef>  // for size_t
 #include <cstdint>
 #include <memory>
 #include <string>

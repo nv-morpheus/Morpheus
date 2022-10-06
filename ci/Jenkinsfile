@@ -7,8 +7,9 @@ pipeline {
     }
     environment {
         PYTHON_VER = '3.8'
-        RAPIDS_VER = '22.06'
+        RAPIDS_VER = '22.08'
         CUDA_VER = '11.5'
+        USE_SCCACHE = '1'
         HOME = "${WORKSPACE}"
         BUILD_TYPE = sh(returnStdout: true, script: 'rapids-build-type')
     }
@@ -36,7 +37,15 @@ pipeline {
                             externalDelete: 'sudo rm -rf %s'
                         )
                         checkout scm
-                        sh "${WORKSPACE}/ci/scripts/jenkins/checks.sh"
+                        withCredentials([[
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: "aws-s3-gpuci",
+                            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                        ]])
+                        {
+                            sh "${WORKSPACE}/ci/scripts/jenkins/checks.sh"
+                        }
                     }
                 }
                 stage('Build:linux:x86_64:gcc') {
@@ -44,7 +53,6 @@ pipeline {
                         timeout(time: 4, unit: 'HOURS')
                     }
                     environment {
-                        USE_SCCACHE = '1'
                         HOME = "${WORKSPACE}"
                     }
                     agent {

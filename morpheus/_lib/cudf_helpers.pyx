@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cudf import DataFrame
-from cudf import Series
+import cudf
 
 from libcpp.memory cimport make_shared
 from libcpp.memory cimport make_unique
@@ -67,7 +66,7 @@ cdef public api:
 
         data, index = data_from_unique_ptr(move(table.tbl), column_names=column_names, index_names=index_names)
 
-        return DataFrame._from_data(data, index)
+        return cudf.DataFrame._from_data(data, index)
 
     object make_table_from_table_info(TableInfo info, object owner):
 
@@ -79,7 +78,7 @@ cdef public api:
 
         data, index = data_from_table_view(info.get_view(), owner, column_names=column_names, index_names=index_names)
 
-        return DataFrame._from_data(data, index)
+        return cudf.DataFrame._from_data(data, index)
 
     TableInfo make_table_info_from_table(object table, shared_ptr[const IDataTable] parent):
 

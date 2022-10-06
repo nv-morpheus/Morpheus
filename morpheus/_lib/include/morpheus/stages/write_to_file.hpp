@@ -17,17 +17,22 @@
 
 #pragma once
 
-#include <morpheus/io/serializers.hpp>
-#include <morpheus/messages/meta.hpp>
-#include <morpheus/objects/file_types.hpp>
-#include <morpheus/utilities/string_util.hpp>
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/objects/file_types.hpp"
 
 #include <pysrf/node.hpp>
+#include <rxcpp/rx.hpp>
+#include <srf/channel/status.hpp>          // for Status
+#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <srf/segment/builder.hpp>
+#include <srf/segment/object.hpp>  // for Object
 
 #include <fstream>
+#include <functional>  // for function
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -49,7 +54,8 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
      */
     WriteToFileStage(const std::string &filename,
                      std::ios::openmode mode = std::ios::out,
-                     FileTypes file_type     = FileTypes::Auto);
+                     FileTypes file_type     = FileTypes::Auto,
+                     bool include_index_col  = true);
 
   private:
     /**
@@ -64,6 +70,7 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
     subscribe_fn_t build_operator();
 
     bool m_is_first;
+    bool m_include_index_col;
     std::ofstream m_fstream;
     std::function<void(sink_type_t &)> m_write_func;
 };
@@ -81,7 +88,8 @@ struct WriteToFileStageInterfaceProxy
                                                                         const std::string &name,
                                                                         const std::string &filename,
                                                                         const std::string &mode = "w",
-                                                                        FileTypes file_type     = FileTypes::Auto);
+                                                                        FileTypes file_type     = FileTypes::Auto,
+                                                                        bool include_index_col  = true);
 };
 
 #pragma GCC visibility pop

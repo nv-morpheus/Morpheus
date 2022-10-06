@@ -21,7 +21,9 @@ import srf
 from srf.core import operators as ops
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
@@ -30,8 +32,11 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+@register_stage("deserialize", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class DeserializeStage(MultiMessageStage):
     """
+    Deserialize source data into Dataframes.
+
     This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. This
     should be one of the first stages after the `Source` object.
 

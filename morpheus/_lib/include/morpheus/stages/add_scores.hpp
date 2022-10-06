@@ -17,13 +17,21 @@
 
 #pragma once
 
-#include <morpheus/messages/multi_response_probs.hpp>
+#include "morpheus/messages/multi_response_probs.hpp"
 
 #include <pysrf/node.hpp>
+#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
+#include <srf/channel/status.hpp>          // for Status
+#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <srf/segment/builder.hpp>
+#include <srf/segment/object.hpp>  // for Object
 
+#include <cstddef>  // for size_t
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

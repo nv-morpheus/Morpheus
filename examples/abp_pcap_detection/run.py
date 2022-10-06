@@ -18,8 +18,8 @@ import os
 import click
 from abp_pcap_preprocessing import AbpPcapPreprocessingStage
 
-from morpheus.cli import FILE_TYPE_NAMES
-from morpheus.cli import str_to_file_type
+from morpheus.cli.commands import FILE_TYPE_NAMES
+from morpheus.cli.utils import str_to_file_type
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
@@ -31,7 +31,7 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.utils.logging import configure_logging
+from morpheus.utils.logger import configure_logging
 
 
 @click.command()
@@ -174,6 +174,7 @@ def run_pipeline(
 
     # Add a monitor stage
     pipeline.add_stage(MonitorStage(config, description="Write to file rate", unit="to-file"))
+
     # Build the pipeline here to see types in the vizualization
     pipeline.build()
 

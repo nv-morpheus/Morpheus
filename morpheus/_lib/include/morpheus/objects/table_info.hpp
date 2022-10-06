@@ -17,10 +17,13 @@
 
 #pragma once
 
-#include <morpheus/objects/data_table.hpp>
-#include <morpheus/utilities/type_util_detail.hpp>
+#include "morpheus/objects/data_table.hpp"
+#include "morpheus/utilities/type_util_detail.hpp"
 
+#include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table_view.hpp>
+#include <cudf/types.hpp>      // for size_type
+#include <pybind11/pytypes.h>  // for object
 
 #include <memory>
 #include <string>
@@ -74,9 +77,11 @@ struct TableInfo
     cudf::size_type num_rows() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Returns the underlying cuDF DataFrame as a python object
+     *
+     * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default.
      */
-    pybind11::object as_py_object() const;
+    pybind11::object __attribute__((visibility("default"))) as_py_object() const;
 
     /**
      * TODO(Documentation)
@@ -104,4 +109,5 @@ struct TableInfo
     std::vector<std::string> m_column_names;
     std::vector<std::string> m_index_names;
 };
+
 }  // namespace morpheus

@@ -17,16 +17,20 @@ import typing
 
 import srf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.logging import deprecated_stage_warning
+from morpheus.utils.logger import deprecated_stage_warning
 
 logger = logging.getLogger(__name__)
 
 
+@register_stage("buffer", command_args={"deprecated": True})
 class BufferStage(SinglePortStage):
     """
+    Buffer results.
+
     The input messages are buffered by this stage class for faster access to downstream stages. Allows
     upstream stages to run faster than downstream stages.
 
