@@ -56,6 +56,8 @@ class KafkaSourceStage(SingleOutputSource):
         Input kafka topic.
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
+    client_id : str, default = None
+        An optional identifier of the consumer.
     poll_interval : str
         Seconds that elapse between polling Kafka for new messages. Follows the pandas interval format.
     disable_commit : bool, default = False
@@ -76,12 +78,16 @@ class KafkaSourceStage(SingleOutputSource):
                  bootstrap_servers: str,
                  input_topic: str = "test_pcap",
                  group_id: str = "morpheus",
+                 client_id: str = None,
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
                  auto_offset_reset: AutoOffsetReset = "latest",
                  stop_after: int = 0):
         super().__init__(c)
+
+        if isinstance(auto_offset_reset, AutoOffsetReset):
+            auto_offset_reset = auto_offset_reset.value
 
         self._consumer_params = {
             'bootstrap.servers': bootstrap_servers,
@@ -91,7 +97,7 @@ class KafkaSourceStage(SingleOutputSource):
             'enable.auto.commit': 'false'
         }
         if client_id is not None:
-            self._consumer_conf['client.id'] = client_id
+            self._consumer_params['client.id'] = client_id
 
         self._topic = input_topic
         self._max_batch_size = c.pipeline_batch_size
