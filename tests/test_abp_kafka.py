@@ -134,7 +134,6 @@ def test_abp_no_cpp(mock_triton_client,
     val_df = read_file_to_df(val_file_name, file_type=FileTypes.Auto, df_type='pandas')
 
     output_buf = StringIO()
-    kafka_consumer.seek_to_beginning()
     for rec in kafka_consumer:
         output_buf.write("{}\n".format(rec.value.decode("utf-8")))
 
