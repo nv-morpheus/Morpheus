@@ -94,7 +94,7 @@ class KafkaSourceStage(SingleOutputSource):
             'group.id': group_id,
             'session.timeout.ms': "60000",
             "auto.offset.reset": auto_offset_reset,
-            'enable.auto.commit': 'false'
+            'enable.auto.commit': str(disable_commit).lower()
         }
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
@@ -192,6 +192,6 @@ class KafkaSourceStage(SingleOutputSource):
             # multiple threads
             source.launch_options.pe_count = self._max_concurrent
         else:
-            source = builder.make_source(self.unique_name, self._source_generator())
+            source = builder.make_source(self.unique_name, self._source_generator)
 
         return source, MessageMeta
