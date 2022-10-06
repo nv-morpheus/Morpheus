@@ -136,6 +136,8 @@ class KafkaSourceStage(SingleOutputSource):
             consumer = ck.Consumer(self._consumer_params)
             consumer.subscribe([self._topic])
 
+            records_emitted = 0
+
             while not self._stop_requested:
                 msg = consumer.poll(timeout=1.0)
                 if msg is None:
@@ -156,7 +158,12 @@ class KafkaSourceStage(SingleOutputSource):
                                 consumer.commit(message=msg)
 
                         if df is not None:
+                            num_records = len(df)
                             yield MessageMeta(df)
+                            records_emitted += num_records
+
+                            if self._stop_after > 0 and records_emitted >= self._stop_after:
+                                self._stop_requested = True
 
                 elif msg_error == ck.KafkaError._PARTITION_EOF:
                     time.sleep(self._poll_interval)
