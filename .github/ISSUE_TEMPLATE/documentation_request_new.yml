@@ -1,0 +1,47 @@
+name: Documentation - New Documentation Request
+description: Request additions to Morpheus documentation
+title: "[DOC]: "
+labels: ["doc"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to improve our documentation!
+
+  - type: dropdown
+    id: criticality
+    attributes:
+      label: How would you describe the priority of this documentation request
+      options:
+        - Critical (currently preventing usage)
+        - High
+        - Medium
+        - Low (would be nice)
+    validations:
+      required: true
+
+  - type: textarea
+    id: inaccuracy
+    attributes:
+      label: Describe the future/missing documentation
+      placeholder: A code snippet mentions function foo(args) but I cannot find any documentation on it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: search_locs
+    attributes:
+      label: Where have you looked?
+      placeholder: |
+       https://github.com/nv-morpheus/Morpheus/blob/main/docs/README.md and
+       https://github.com/nv-morpheus/Morpheus/blob/main/README.md
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/nv-morpheus/Morpheus/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

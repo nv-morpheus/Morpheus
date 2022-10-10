@@ -1,0 +1,53 @@
+name: Documentation - Correction/Update Request
+description: Request corrections or updates to existing documentation
+title: "[DOC]: "
+labels: ["doc"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to improve our documentation!
+
+  - type: dropdown
+    id: criticality
+    attributes:
+      label: How would you describe the priority of this documentation request
+      options:
+        - Critical (currently preventing usage)
+        - High
+        - Medium
+        - Low (would be nice)
+    validations:
+      required: true
+
+  - type: input
+    id: correction_location
+    attributes:
+      label: Please provide a link or source to the relevant docs
+      placeholder: "ex: https://github.com/nv-morpheus/Morpheus/blob/main/README.md"
+    validations:
+      required: true
+
+  - type: textarea
+    id: inaccuracy
+    attributes:
+      label: Describe the issues in the documentation
+      placeholder: The documents say to use foo.func(args) however an AttributeError is thrown
+    validations:
+      required: true
+
+  - type: textarea
+    id: correction
+    attributes:
+      label: (Optional) Propose a correction
+      placeholder: foo.func() was deprecated, replace documentation with foo.new_func()
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/nv-morpheus/Morpheus/blob/main/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
