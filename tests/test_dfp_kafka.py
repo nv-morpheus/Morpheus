@@ -68,7 +68,7 @@ def test_dfp_roleg(config,
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "dfp-cloudtrail-*.csv")
+    train_data_glob = os.path.join(TEST_DIRS.tests_data_dir, "dfp-cloudtrail-*-training-data.csv")
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-role-g-validation-data-output.csv')
 
     pipe = LinearPipeline(config)
@@ -132,7 +132,7 @@ def test_dfp_user123(config,
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "dfp-cloudtrail-*.csv")
+    train_data_glob = os.path.join(TEST_DIRS.tests_data_dir, "dfp-cloudtrail-*-training-data.csv")
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-user123-validation-data-output.csv')
 
     pipe = LinearPipeline(config)

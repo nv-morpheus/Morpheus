@@ -56,7 +56,7 @@ def test_dfp_roleg(config, tmp_path):
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "dfp-cloudtrail-*.csv")
+    train_data_glob = os.path.join(TEST_DIRS.tests_data_dir, "dfp-cloudtrail-*.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-role-g-validation-data-output.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')
@@ -107,7 +107,7 @@ def test_dfp_user123(config, tmp_path):
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "dfp-cloudtrail-*.csv")
+    train_data_glob = os.path.join(TEST_DIRS.tests_data_dir, "dfp-cloudtrail-*-training-data.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-user123-validation-data-output.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')
@@ -156,7 +156,7 @@ def test_dfp_user123_multi_segment(config, tmp_path):
         config.ae.feature_columns = [x.strip() for x in fh.readlines()]
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
-    train_data_glob = os.path.join(TEST_DIRS.training_data_dir, "dfp-cloudtrail-*.csv")
+    train_data_glob = os.path.join(TEST_DIRS.tests_data_dir, "dfp-cloudtrail-*-training-data.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-user123-validation-data-output.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')
