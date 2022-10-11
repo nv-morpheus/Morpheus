@@ -18,66 +18,43 @@ limitations under the License.
 # Morpheus Quickstart Guide
 
 ## Table of Contents
-- [Morpheus Quickstart Guide](#morpheus-quickstart-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Introduction](#introduction)
-  - [Overview](#overview)
-    - [Features](#features)
-  - [Setup](#setup)
-    - [Prerequisites](#prerequisites)
-    - [Set up NGC API Key and Install NGC Registry CLI](#set-up-ngc-api-key-and-install-ngc-registry-cli)
-    - [Create Namespace for Morpheus](#create-namespace-for-morpheus)
-    - [Install Morpheus AI Engine](#install-morpheus-ai-engine)
-    - [Install Morpheus SDK Client](#install-morpheus-sdk-client)
-      - [Morpheus SDK Client in Sleep Mode](#morpheus-sdk-client-in-sleep-mode)
-    - [Models for MLflow Plugin Deployment](#models-for-mlflow-plugin-deployment)
-    - [Install Morpheus MLflow Triton Plugin](#install-morpheus-mlflow-triton-plugin)
-    - [Model Deployment](#model-deployment)
-    - [Verify Model Deployment](#verify-model-deployment)
-    - [Create Kafka Topics](#create-kafka-topics)
-  - [Example Workflows](#example-workflows)
-    - [Run AutoEncoder Digital Fingerprinting Pipeline](#run-autoencoder-digital-fingerprinting-pipeline)
-    - [Run NLP Phishing Detection Pipeline](#run-nlp-phishing-detection-pipeline)
-    - [Run NLP Sensitive Information Detection Pipeline](#run-nlp-sensitive-information-detection-pipeline)
-    - [Run FIL Anomalous Behavior Profiling Pipeline](#run-fil-anomalous-behavior-profiling-pipeline)
-    - [Verify Running Pipeline](#verify-running-pipeline)
-  - [Appendix A](#appendix-a)
-    - [Prerequisites and Installation for AWS](#prerequisites-and-installation-for-aws)
-      - [Prerequisites](#prerequisites-1)
-      - [Install Cloud Native Core Stack for AWS](#install-cloud-native-core-stack-for-aws)
-    - [Prerequisites and Installation for Ubuntu](#prerequisites-and-installation-for-ubuntu)
-      - [Prerequisites](#prerequisites-2)
-    - [Installing Cloud Native Core Stack on NVIDIA Certified Systems](#installing-cloud-native-core-stack-on-nvidia-certified-systems)
-  - [Appendix B](#appendix-b)
-    - [Kafka Topic Commands](#kafka-topic-commands)
-    - [Using Morpheus SDK Client to Run Pipelines](#using-morpheus-sdk-client-to-run-pipelines)
-  - [Appendix C](#appendix-c)
-    - [Additional Documentation](#additional-documentation)
-    - [Troubleshooting](#troubleshooting)
-      - [Common Problems](#common-problems)
-
--   [Example Workflows](#example-workflows)
-    -   [Run AutoEncoder Digital Fingerprinting Pipeline](#run-autoencoder-digital-fingerprinting-pipeline)
-    -   [Run NLP Phishing Detection Pipeline](#run-nlp-phishing-detection-pipeline)
-    -   [Run NLP Sensitive Information Detection Pipeline](#run-nlp-sensitive-information-detection-pipeline)
-    -   [Run FIL Anomalous Behavior Profiling Pipeline](#run-fil-anomalous-behavior-profiling-pipeline)
-    -   [Verify Running Pipeline](#verify-running-pipeline)
-
--   [Appendix A](#appendix-a)
-    -   [Prerequisites and Installation for AWS](#prerequisites-and-installation-for-aws)
-        -   [Prerequisites](#prerequisites-1)
-        -   [Install Cloud Native Core Stack for AWS](#install-cloud-native-core-stack-for-aws)
-    -   [Prerequisites and Installation for Ubuntu](#prerequisites-and-installation-for-ubuntu)
-        -   [Prerequisites](#prerequisites-2)
-        -   [Installing Cloud Native Core Stack on NVIDIA Certified Systems](#installing-cloud-native-core-stack-on-nvidia-certified-systems)
-
--   [Appendix B](#appendix-b)
-    -   [Kafka Topic Commands](#kafka-topic-commands)
-    -   [Using Morpheus SDK Client to Run Pipelines](#using-morpheus-sdk-client-to-run-pipelines)
-
--   [Appendix C](#appendix-c)
-    -   [Additional Documentation](#additional-documentation)
--   [Troubleshooting](#troubleshooting)
+- [Introduction](#introduction)
+- [Overview](#overview)
+  - [Features](#features)
+- [Setup](#setup)
+  - [Prerequisites](#prerequisites)
+  - [Set up NGC API Key and Install NGC Registry CLI](#set-up-ngc-api-key-and-install-ngc-registry-cli)
+  - [Create Namespace for Morpheus](#create-namespace-for-morpheus)
+  - [Install Morpheus AI Engine](#install-morpheus-ai-engine)
+  - [Install Morpheus SDK Client](#install-morpheus-sdk-client)
+    - [Morpheus SDK Client in Sleep Mode](#morpheus-sdk-client-in-sleep-mode)
+  - [Models for MLflow Plugin Deployment](#models-for-mlflow-plugin-deployment)
+  - [Install Morpheus MLflow Triton Plugin](#install-morpheus-mlflow-triton-plugin)
+  - [Model Deployment](#model-deployment)
+  - [Verify Model Deployment](#verify-model-deployment)
+  - [Create Kafka Topics](#create-kafka-topics)
+- [Example Workflows](#example-workflows)
+  - [Run AutoEncoder Digital Fingerprinting Pipeline](#run-autoencoder-digital-fingerprinting-pipeline)
+  - [Run NLP Phishing Detection Pipeline](#run-nlp-phishing-detection-pipeline)
+  - [Run NLP Sensitive Information Detection Pipeline](#run-nlp-sensitive-information-detection-pipeline)
+  - [Run FIL Anomalous Behavior Profiling Pipeline](#run-fil-anomalous-behavior-profiling-pipeline)
+  - [Verify Running Pipeline](#verify-running-pipeline)
+- [Appendix A](#appendix-a)
+  - [Prerequisites and Installation for AWS](#prerequisites-and-installation-for-aws)
+    - [Prerequisites](#prerequisites-1)
+    - [Install Cloud Native Core Stack for AWS](#install-cloud-native-core-stack-for-aws)
+  - [Prerequisites and Installation for Ubuntu](#prerequisites-and-installation-for-ubuntu)
+    - [Prerequisites](#prerequisites-2)
+  - [Installing Cloud Native Core Stack on NVIDIA Certified Systems](#installing-cloud-native-core-stack-on-nvidia-certified-systems)
+- [Appendix B](#appendix-b)
+  - [Kafka Topic Commands](#kafka-topic-commands)
+  - [Using Morpheus SDK Client to Run Pipelines](#using-morpheus-sdk-client-to-run-pipelines)
+- [Appendix C](#appendix-c)
+  - [Additional Documentation](#additional-documentation)
+  - [Troubleshooting](#troubleshooting)
+    - [Common Problems](#common-problems)
+  - [The dropna stage](#the-dropna-stage)
+- [Known Issues](#known-issues)
 
 
 ## Introduction
@@ -141,7 +118,7 @@ First, you will need to set up your NGC API Key to access all the Morpheus compo
 Once you’ve created your API key, create an environment variable containing your API key for use by the commands used further in this document:
 
 ```bash
-$ export API_KEY="<NGC_API_KEY>"
+export API_KEY="<NGC_API_KEY>"
 ```
 
 Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide].
@@ -151,8 +128,8 @@ Next, install and configure the NGC Registry CLI on your system using the linked
 Next, create a namespace and an environment variable for the namespace to organize the Kubernetes cluster deployed via the Cloud Native Core Stack and logically separate Morpheus related deployments from other projects using the following command:
 
 ```bash
-$ export NAMESPACE="<YOUR_NAMESPACE>"
-$ kubectl create namespace ${NAMESPACE}
+export NAMESPACE="<YOUR_NAMESPACE>"
+kubectl create namespace ${NAMESPACE}
 ```
 
 ### Install Morpheus AI Engine
@@ -165,10 +142,10 @@ The Morpheus AI Engine consists of the following components:
 Follow the below steps to install Morpheus AI Engine:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-ai-engine-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
              --namespace $NAMESPACE \
              <YOUR_RELEASE_NAME> \
              morpheus-ai-engine
@@ -177,7 +154,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 After the installation, you can verify that the Kubernetes pods are running successfully using the following command:
 
 ```bash
-$ kubectl -n $NAMESPACE get all
+kubectl -n $NAMESPACE get all
 ```
 
 Output:
@@ -207,14 +184,14 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 Run the following command to pull the Morpheus SDK Client chart on to your instance:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 
 #### Morpheus SDK Client in Sleep Mode
 Install the Morpheus SDK client pod in sleep mode to copy its sample datasets and models from the container to a shared location that other pods can access. If no `sdk.args` is supplied, the default value `/bin/sleep infinity` from the chart is used in the following command.
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
                --namespace $NAMESPACE \
                helper \
                morpheus-sdk-client
@@ -223,7 +200,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Check the status of the pod to make sure it's up and running.
 
 ```bash
-$ kubectl -n $NAMESPACE get all | grep sdk-cli-helper
+kubectl -n $NAMESPACE get all | grep sdk-cli-helper
 ```
 
 Output:
@@ -237,7 +214,7 @@ pod/sdk-cli-helper           1/1     Running   0               41s
 Connect to the **sdk-cli-helper** container and copy the models to `/common`, which is mapped to `/opt/morpheus/common` on the host and where MLflow will have access to model files.
 
 ```bash
-$ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
+kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 ```
 
 ### Install Morpheus MLflow Triton Plugin
@@ -245,10 +222,10 @@ $ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 The Morpheus MLflow Triton Plugin is used to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort 30500. Follow the below steps to install the Morpheus MLflow Triton Plugin:
 
 ```bash
-$ helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
+helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
 ```
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
              --namespace $NAMESPACE \
              <YOUR_RELEASE_NAME> \
              morpheus-mlflow
@@ -263,7 +240,7 @@ Error: Service "mlflow" is invalid: spec.ports[0].nodePort: Invalid value: 30500
 After the installation, you can verify that the MLflow pod is running successfully using the following command:
 
 ```bash
-$ kubectl -n $NAMESPACE get all | grep  pod/mlflow
+kubectl -n $NAMESPACE get all | grep  pod/mlflow
 ```
 
 Output:
@@ -275,7 +252,7 @@ pod/mlflow-6d98        1/1     Running   0          39s
 Attach to the MLfLow pod to publish models to the MLflow server and then deploy it onto Morpheus AI Engine:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
+kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
 ```
 
 ```console
@@ -407,7 +384,7 @@ Exit from the container
 Run the following command to verify that the models were successfully deployed on the AI Engine:
 
 ```bash
-$ kubectl -n $NAMESPACE logs deploy/ai-engine
+kubectl -n $NAMESPACE logs deploy/ai-engine
 ```
 
 Output:
@@ -426,13 +403,13 @@ We will need to create Kafka topics for input and output data to run some of the
 Check if any Kafka topics exist already. If any exist, you can either delete the previous topics or re-use them.
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh --list  --zookeeper zookeeper:2181
+kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh --list  --zookeeper zookeeper:2181
 ```
 
 Run the following command twice, once to create an input topic, and again to create an output topic, making sure that the input topic and output topic have different names:
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
+kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --create \
       --bootstrap-server broker:9092 \
       --replication-factor 1 \
@@ -454,7 +431,7 @@ Multiple command options are given for each pipeline, with varying data input/ou
 We recommend only deploying one pipeline at a time. To remove previously deployed pipelines, run the following command:
 
 ```bash
-$ helm delete -n $NAMESPACE <YOUR_RELEASE_NAME>
+helm delete -n $NAMESPACE <YOUR_RELEASE_NAME>
 ```
 
 To publish messages to a Kafka topic, we need to copy datasets to locations where they can be accessed from the host.
@@ -478,7 +455,7 @@ Refer to the Using Morpheus SDK Client to Run Pipelines section of the Appendix 
 For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
                --set sdk.args="<REPLACE_RUN_PIPELINE_COMMAND_HERE>" \
                --namespace $NAMESPACE \
                <YOUR_RELEASE_NAME> \
@@ -493,7 +470,7 @@ These use cases are currently implemented to detect user behavior changes that i
 Inference and training based on a userid (`user123`). The model is trained once and inference is conducted on the supplied input entries in the example pipeline below. The `--train_data_glob` parameter must be removed for continuous training.
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
       --num_threads=2 \
       --edge_buffer_size=4 \
@@ -538,7 +515,7 @@ The following Phishing Detection pipeline examples use a pre-trained NLP model t
 Pipeline example to read data from a file, run inference using a `phishing-bert-onnx` model, and write inference results to the specified output file:
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
       --num_threads=2 \
       --edge_buffer_size=4 \
@@ -568,7 +545,7 @@ When the pipeline runs successfully, an output file `phishing-bert-onnx-output.j
 Pipeline example to read messages from an input Kafka topic, run inference using a   `phishing-bert-onnx`  model, and write the results of the inference to an output Kafka topic:
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
       --num_threads=2 \
       --edge_buffer_size=4 \
@@ -596,7 +573,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Make sure you create input and output Kafka topics before you start the pipeline. After the pipeline has been started, load the individual corresponding data files from the downloaded sample into the selected input topic using the command below:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
+kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: /opt/morpheus/common/data/email.jsonlines>
@@ -615,7 +592,7 @@ The following Sensitive Information Detection pipeline examples use a pre-traine
 Pipeline example to read data from a file, run inference using a `sid-minibert-onnx` model, and write inference results to the specified output file:
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
       --num_threads=3 \
       --edge_buffer_size=4 \
@@ -644,7 +621,7 @@ When the pipeline runs successfully, an output file *sid-minibert-onnx-output.js
 Pipeline example to read messages from an input Kafka topic, run inference using a *sid-minibert-onnx* model, and write the results of the inference to an output Kafka topic:
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
         --num_threads=3 \
         --edge_buffer_size=4 \
@@ -671,7 +648,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Make sure you create input and output Kafka topics before you start the pipeline. After the pipeline has been started, load the individual corresponding data files from the downloaded sample into the selected input topic using the command below:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
+kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/examples/data/pcap_dump.jsonlines>
@@ -689,7 +666,7 @@ The following Anomalous Behavior Profiling pipeline examples use a pre-trained F
 Pipeline example to read data from a file, run inference using an `abp-nvsmi-xgb` model, and write inference results to the specified output file.
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
         --num_threads=3 \
         --edge_buffer_size=4 \
@@ -715,7 +692,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Pipeline example to read messages from an input Kafka topic, run inference using an `abp-nvsmi-xgb` model, and write the results of the inference to an output Kafka topic:
 
 ```bash
-$ helm install --set ngc.apiKey="$API_KEY" \
+helm install --set ngc.apiKey="$API_KEY" \
     --set sdk.args="morpheus --log_level=DEBUG run \
         --num_threads=3 \
         --pipeline_batch_size=1024 \
@@ -740,7 +717,7 @@ $ helm install --set ngc.apiKey="$API_KEY" \
 Make sure you create input and output Kafka topics before you start the pipeline. After the pipeline has been started, load the individual corresponding data files from the downloaded sample into the selected input topic using the command below:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
+kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_INPUT_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/examples/data/nvsmi.jsonlines>
@@ -752,7 +729,7 @@ $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-produc
 Once you’ve deployed the SDK client to run a pipeline, you can check the status of the pod using the following command:
 
 ```bash
-$ kubectl -n $NAMESPACE get pods sdk-cli-<RELEASE_NAME>
+kubectl -n $NAMESPACE get pods sdk-cli-<RELEASE_NAME>
 NAME                       READY   STATUS    RESTARTS   AGE
 sdk-cli-6c9575f648-gfdd2   1/1     Running   0          3m23s
 ```
@@ -800,14 +777,14 @@ On your NVIDIA-Certified System, follow the instructions in the linked document 
 List available Kafka topics.
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
+kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --list  --zookeeper zookeeper:2181
 ```
 
 Create a partitioned Kafka topic with a single replication factor.
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
+kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --create \
       --bootstrap-server broker:9092 \
       --replication-factor 1 \
@@ -818,7 +795,7 @@ $ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 Load data from a file to Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
+kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer.sh \
        --broker-list broker:9092 \
        --topic <YOUR_KAFKA_TOPIC> < \
        <YOUR_INPUT_DATA_FILE>
@@ -830,7 +807,7 @@ $ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-produc
 Consume messages from Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker  -c broker -- kafka-console-consumer.sh \
+kubectl -n $NAMESPACE exec deploy/broker  -c broker -- kafka-console-consumer.sh \
        --bootstrap-server broker:9092 \
        --topic <YOUR_KAFKA_TOPIC> \
        --group <YOUR_CONSUMER_GROUP_ID>
@@ -839,7 +816,7 @@ $ kubectl -n $NAMESPACE exec deploy/broker  -c broker -- kafka-console-consumer.
 Delete Kafka topic:
 
 ```bash
-$ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
+kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --delete --zookeeper zookeeper:2181 \
       --topic <YOUR_KAFKA_TOPIC>
 ```
