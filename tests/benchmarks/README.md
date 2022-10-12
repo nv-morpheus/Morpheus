@@ -76,7 +76,7 @@ pip install -e /workspace
 
 Fetch input data for benchmarks:
 ```
-./scripts/fetch_data fetch validation
+./scripts/fetch_data.py fetch validation
 ```
 
 
@@ -111,7 +111,11 @@ The `-s` option allows outputs of pipeline execution to be displayed so you can 
 
 The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because the models deployed to Triton are configured to convert from ONNX to TensorRT on first use. Since the conversion can take a considerable amount of time, we don't want to include it in the measurements.
 
-`<test-workflow>` is the name of the test to run benchmarks on. This can be `test_sid_nlp_e2e`, `test_abp_fil_e2e`, `test_phishing_nlp_e2e` or `test_cloudtrail_ae_e2e`.
+`<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
+- `test_sid_nlp_e2e`
+- `test_abp_fil_e2e`
+- `test_phishing_nlp_e2e`
+- `test_cloudtrail_ae_e2e`
 
 For example, to run E2E benchmarks on the SID NLP workflow:
 ```
