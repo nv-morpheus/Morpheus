@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import sys
 import time
 from enum import Enum
 
@@ -128,6 +129,8 @@ class KafkaSourceStage(SingleOutputSource):
         return super().stop()
 
     def _source_generator(self):
+        # TODO : Needs to batch records until _stop_requested, _PARTITION_EOF or batch size has been hit
+
         # Each invocation of this function makes a new thread so recreate the producers
 
         # Set some initial values
@@ -137,6 +140,7 @@ class KafkaSourceStage(SingleOutputSource):
             consumer.subscribe([self._topic])
 
             records_emitted = 0
+            num_messages = 0
 
             while not self._stop_requested:
                 msg = consumer.poll(timeout=1.0)
@@ -161,6 +165,7 @@ class KafkaSourceStage(SingleOutputSource):
                             num_records = len(df)
                             yield MessageMeta(df)
                             records_emitted += num_records
+                            num_messages += 1
 
                             if self._stop_after > 0 and records_emitted >= self._stop_after:
                                 self._stop_requested = True
@@ -169,6 +174,10 @@ class KafkaSourceStage(SingleOutputSource):
                     time.sleep(self._poll_interval)
                 else:
                     raise ck.KafkaException(msg_error)
+
+            print("******** completed after {} records in {} messages".format(records_emitted, num_messages),
+                  flush=True,
+                  file=sys.stderr)
 
         finally:
             # Close the consumer and call on_completed
