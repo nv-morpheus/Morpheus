@@ -1,5 +1,5 @@
 name: Feature Request Form
-description: Request new or improved functionality
+description: Request new or improved functionality or changes to existing functionality
 title: "[FEA]: "
 labels: ["feature request"]
 
@@ -12,10 +12,11 @@ body:
   - type: dropdown
     id: new_or_improvement
     attributes:
-      label: Is this a new feature, or an improvement?
+      label: Is this a new feature, an improvement, or a change to existing functionality?
       options:
         - New Feature
         - Improvement
+        - Change
     validations:
       required: true
 
@@ -75,5 +76,5 @@ body:
       options:
         - label: I agree to follow this project's Code of Conduct
           required: true
-        - label: I have searched the [open issues](https://github.com/nv-morpheus/morpheus/issues) and have found no duplicates for this feature request
+        - label: I have searched the [open feature requests](https://github.com/nv-morpheus/Morpheus/issues?q=is%3Aopen+is%3Aissue+label%3A%22feature+request%22%2Cimprovement%2Cenhancement) and have found no duplicates for this feature request
           required: true
