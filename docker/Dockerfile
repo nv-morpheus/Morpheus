@@ -50,6 +50,12 @@ RUN apt-get update &&\
         build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs git-lfs \
     && rm -rf /var/lib/apt/lists/*
 
+# install doca dependencies from local deb packages
+COPY docker/deb ./docker/deb/
+RUN dpkg -i ./docker/deb/*.deb ; exit 0
+# RUN apt-get install ./docker/deb/*.deb
+RUN apt-get update && apt-get install -y -f
+
 # Enables "source activate conda"
 SHELL ["/bin/bash", "-c"]
 

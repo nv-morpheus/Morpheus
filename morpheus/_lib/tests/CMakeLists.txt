@@ -21,6 +21,7 @@ add_executable(test_libmorpheus
   test_main.cpp
   test_matx_util.cpp
   test_morpheus.cpp
+  test_doca.cpp
   test_multi_slices.cpp
   test_tensor.cpp
   test_type_util_detail.cpp
@@ -28,11 +29,19 @@ add_executable(test_libmorpheus
 
 target_link_libraries(test_libmorpheus
   PRIVATE
+    morpheus
     cuda_utils
     srf::pysrf
     GTest::gtest
     matx::matx
     pybind11::embed
+)
+
+target_include_directories(test_libmorpheus
+    PUBLIC
+      /opt/mellanox/doca/include/
+      /opt/mellanox/dpdk/include/dpdk
+      /opt/mellanox/dpdk/include/x86_64-linux-gnu/dpdk
 )
 
 add_test(

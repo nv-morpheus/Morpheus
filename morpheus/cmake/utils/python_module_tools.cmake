@@ -205,6 +205,7 @@ macro(add_python_module MODULE_NAME)
 
     add_custom_command(
       OUTPUT  ${pybind11_stub_file}
+      
       COMMAND ${Python3_EXECUTABLE} -m pybind11_stubgen ${TARGET_NAME} --no-setup-py --log-level WARN -o ./ --root-module-suffix \"\"
       DEPENDS ${TARGET_NAME} all_python_targets
       COMMENT "Building stub for python module ${TARGET_NAME}..."

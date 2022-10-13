@@ -17,6 +17,12 @@ message(STATUS "Adding library: morpheus")
 add_library(morpheus
     # Keep these sorted!
     ${MORPHEUS_LIB_ROOT}/src/io/serializers.cpp
+    ${MORPHEUS_LIB_ROOT}/src/doca/doca_context.cpp
+    ${MORPHEUS_LIB_ROOT}/src/doca/dpdk_utils.c
+    ${MORPHEUS_LIB_ROOT}/src/doca/flows.c
+    ${MORPHEUS_LIB_ROOT}/src/doca/gpu_init.c
+    ${MORPHEUS_LIB_ROOT}/src/doca/offload_rules.c
+    ${MORPHEUS_LIB_ROOT}/src/doca/utils.c
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory_fil.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory_nlp.cpp
@@ -61,11 +67,41 @@ target_link_libraries(morpheus
       ${cudf_helpers_target}
       TritonClient::httpclient_static
       RDKAFKA::RDKAFKA
+      -L/opt/mellanox/dpdk/lib/x86_64-linux-gnu/
+      -L/opt/mellanox/doca/lib/x86_64-linux-gnu/
+    #   -L/home/charris/dev/doca-testing/doca/install/lib/x86_64-linux-gnu
+    #   -L/home/charris/dev/doca-testing/dpdk-doca-gpu/install/lib/x86_64-linux-gnu
+      libdoca_argp.so
+      libdoca_common.so
+      libdoca_gpu.so
+      libdoca_flow.so
+      librte_bus_auxiliary.so
+      librte_bus_pci.so
+      librte_bus_vdev.so
+      librte_common_mlx5.so
+      librte_eal.so
+      librte_ethdev.so
+      librte_gpudev.so
+      librte_hash.so
+      librte_ip_frag.so
+      librte_kvargs.so
+      librte_mbuf.so
+      librte_mempool.so
+      librte_meter.so
+      librte_net_mlx5.so
+      librte_net.so
+      librte_pci.so
+      librte_rcu.so
+      librte_ring.so
+      librte_telemetry.so
 )
 
 target_include_directories(morpheus
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      /opt/mellanox/doca/include/
+      /opt/mellanox/dpdk/include/dpdk
+      /opt/mellanox/dpdk/include/x86_64-linux-gnu/dpdk
 )
 
 set_target_properties(morpheus PROPERTIES CXX_VISIBILITY_PRESET hidden)
