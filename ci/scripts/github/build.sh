@@ -18,9 +18,7 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-install_deb_deps
-
-create_conda_env
+update_conda_env
 
 rapids-logger "Check versions"
 python3 --version
@@ -51,7 +49,7 @@ mamba pack --quiet --force --ignore-missing-files --n-threads ${PARALLEL_LEVEL} 
 tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/wheel
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
+#aws s3 cp --no-progress "${WORKSPACE_TMP}/conda_env.tar.gz" "${ARTIFACT_URL}/conda_env.tar.gz"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/wheel.tar.bz" "${ARTIFACT_URL}/wheel.tar.bz"
 
 rapids-logger "Success"
