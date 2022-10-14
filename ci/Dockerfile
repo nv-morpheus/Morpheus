@@ -74,8 +74,8 @@ RUN npm install -g camouflage-server && \
 # Install pytest-kafka
 # Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
 # https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
-RUN git clone https://gitlab.com/karolinepauls/pytest-kafka.git /tmp/pytest-kafka && \
-    cd /tmp/pytest-kafka && \
+RUN git clone https://gitlab.com/karolinepauls/pytest-kafka.git /opt/pytest-kafka && \
+    cd /opt/pytest-kafka && \
+    source activate morpheus && \
     python setup.py develop && \
-    cd - && \
-    rm -rf /tmp/pytest-kafka
+    cd -
