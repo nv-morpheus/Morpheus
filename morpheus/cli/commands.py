@@ -452,6 +452,11 @@ def pipeline_fil(ctx: click.Context, **kwargs):
               default=None,
               help=("Specifying this value will filter all incoming data to only use rows with matching User IDs. "
                     "Which column is used for the User ID is specified by `userid_column_name`"))
+@click.option('--timestamp_column_name',
+              type=str,
+              default=None,
+              required=True,
+              help=("Which column to use for timestamp."))
 @click.option('--feature_scaler',
               type=click.Choice(get_enum_values(AEFeatureScalar), case_sensitive=False),
               default=AEFeatureScalar.STANDARD.value,
@@ -496,6 +501,7 @@ def pipeline_ae(ctx: click.Context, **kwargs):
 
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = kwargs["userid_column_name"]
+    config.ae.timestamp_column_name = kwargs["timestamp_column_name"]
     config.ae.feature_scaler = kwargs["feature_scaler"]
     config.ae.use_generic_model = kwargs["use_generic_model"]
 
@@ -629,9 +635,9 @@ add_command("add-scores", "morpheus.stages.postprocess.add_scores_stage.AddScore
 add_command("buffer", "morpheus.stages.general.buffer_stage.BufferStage", modes=ALL)
 add_command("delay", "morpheus.stages.general.delay_stage.DelayStage", modes=ALL)
 add_command("deserialize", "morpheus.stages.preprocess.deserialize_stage.DeserializeStage", modes=NOT_AE)
+add_command("dfp-viz-postproc", "morpheus.stages.postprocess.dfp_viz_postproc.DFPVizPostprocStage", modes=AE_ONLY)
 add_command("dropna", "morpheus.stages.preprocess.drop_null_stage.DropNullStage", modes=NOT_AE)
 add_command("filter", "morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage", modes=ALL)
-add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
 add_command("from-appshield", "morpheus.stages.input.appshield_source_stage.AppShieldSourceStage", modes=FIL_ONLY)
 add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
 add_command("from-cloudtrail", "morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage", modes=AE_ONLY)
