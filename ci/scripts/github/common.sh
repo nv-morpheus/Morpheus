@@ -77,7 +77,7 @@ function install_deb_deps() {
 
 function update_conda_env() {
     rapids-logger "Checking for updates to conda env"
-    mamba env update -n morpheus -q --file ${CONDA_ENV_YML}
+    mamba env update -n morpheus -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
     conda deactivate
     conda activate morpheus
 }
