@@ -22,7 +22,6 @@ update_conda_env
 
 fetch_base_branch
 
-
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}
 

@@ -68,7 +68,8 @@ RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n morpheus -q --file 
     rm /tmp/cuda11.5_dev.yml /tmp/requirements.txt
 
 # Install camouflage needed for unittests to mock a triton server
-RUN npm install -g camouflage-server
+RUN npm install -g camouflage-server && \
+    npm cache clean --force
 
 # Install pytest-kafka
 # Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
