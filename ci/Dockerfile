@@ -63,7 +63,6 @@ COPY ./docker/conda/environments/requirements.txt /tmp
 
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n morpheus -q --file /tmp/cuda11.5_dev.yml && \
     sed -i "s/conda activate base/conda activate morpheus/g" ~/.bashrc && \
-    echo -e '#!/bin/sh\n\nexport CUDA_PATH=/usr/local/cuda\nexport LD_LIBRARY_PATH=/usr/local/cuda-11.5/compat:${LD_LIBRARY_PATH}' > /opt/conda/envs/morpheus/etc/conda/activate.d/env_vars.sh && \
     conda clean -afy && \
     rm /tmp/cuda11.5_dev.yml /tmp/requirements.txt
 

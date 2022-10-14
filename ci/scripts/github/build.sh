@@ -19,6 +19,7 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
+set_stub_vars
 
 rapids-logger "Check versions"
 python3 --version

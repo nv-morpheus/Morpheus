@@ -19,6 +19,7 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
+set_stub_vars
 
 aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
 
