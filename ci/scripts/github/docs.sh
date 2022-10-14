@@ -20,6 +20,10 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
 
+aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
+
+tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
+
 pip install ${MORPHEUS_ROOT}/build/wheel
 
 rapids-logger "Pulling LFS assets"
@@ -35,7 +39,7 @@ pip install -r requirement.txt
 rapids-logger "Building docs"
 
 # Work-around for dlopen failing on libcuda.so
-#export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/compat:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/compat:${LD_LIBRARY_PATH}
 
 make -j ${PARALLEL_LEVEL} html
 

@@ -27,8 +27,6 @@ g++ --version
 cmake --version
 ninja --version
 
-rapids-logger "Env at build time:"
-print_env_vars
 rapids-logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
     -DCCACHE_PROGRAM_PATH=$(which sccache) .
@@ -41,7 +39,6 @@ sccache --show-stats
 
 rapids-logger "Installing Morpheus"
 cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
-#pip install ${MORPHEUS_ROOT}/build/wheel
 
 rapids-logger "Archiving results"
 tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/wheel

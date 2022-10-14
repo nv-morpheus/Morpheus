@@ -21,16 +21,14 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
 
+aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
+
+tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
+
 # Install the built Morpheus python package
 pip install ${MORPHEUS_ROOT}/build/wheel
 
 CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/wheel -name "*.x"))
-
-
-# Kafka tests need Java, since this stage is the only one that needs it, installing it here rather than adding it to
-# the ci.yaml file
-#mamba install -c conda-forge "openjdk=11.0.15"
-
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
