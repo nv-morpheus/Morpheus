@@ -21,7 +21,7 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 install_deb_deps
 
 create_conda_env
-set_stub_vars
+#set_stub_vars
 
 rapids-logger "Check versions"
 python3 --version
