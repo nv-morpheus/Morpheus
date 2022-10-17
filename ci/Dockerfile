@@ -36,18 +36,17 @@ RUN apt-get update && \
         clang-format-12 \
         clang-tidy-12 \
         git-lfs \
-        libclang-12-dev \
         libcublas-dev-11-5 \
         libcufft-dev-11-5 \
         libcurand-dev-11-5 \
         libcusolver-dev-11-5 \
         libnuma1 \
         libnvidia-compute-495 \
-        llvm-12-dev \
         openjdk-11-jdk \
         nodejs \
-        npm \
-    && rm -rf /var/lib/apt/lists/* && \
+        npm && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/* && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 121 \
         --slave /usr/bin/clang-apply-replacements clang-apply-replacements /usr/bin/clang-apply-replacements-12 \
         --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-12 \
