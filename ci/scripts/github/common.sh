@@ -91,7 +91,6 @@ function create_conda_env() {
 
     conda activate morpheus
     mkdir -p ${CONDA_PREFIX}/etc/conda/activate.d
-    echo -e '#!/bin/sh\n\nexport CUDA_PATH=/usr/local/cuda/' > ${CONDA_PREFIX}/etc/conda/activate.d/env_vars.sh
 
     rapids-logger "Installing CI dependencies"
     mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
