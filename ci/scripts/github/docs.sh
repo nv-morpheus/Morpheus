@@ -19,6 +19,7 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
 restore_conda_env
+set_stub_vars
 pip install ${MORPHEUS_ROOT}/build/wheel
 
 rapids-logger "Pulling LFS assets"
@@ -32,9 +33,6 @@ rapids-logger "Installing Documentation dependencies"
 pip install -r requirement.txt
 
 rapids-logger "Building docs"
-
-# Work-around for dlopen failing on libcuda.so
-export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/compat:${LD_LIBRARY_PATH}
 
 make -j ${PARALLEL_LEVEL} html
 
