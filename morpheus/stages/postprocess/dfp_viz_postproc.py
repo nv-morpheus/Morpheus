@@ -102,9 +102,6 @@ class DFPVizPostprocStage(SinglePortStage):
 
     def _postprocess(self, x: MultiAEMessage):
 
-        def normalize(x):
-            return (x - x.min()) / (x.max() - x.min())
-
         viz_pdf = pd.DataFrame()
         viz_pdf["user"] = x.get_meta(self._user_column_name)
         viz_pdf["time"] = x.get_meta(self._timestamp_column)
@@ -112,13 +109,11 @@ class DFPVizPostprocStage(SinglePortStage):
         viz_pdf["period"] = datetimes.dt.to_period(self._period)
 
         log_mean = x.get_meta("mean_abs_z").apply(np.log1p)
-        viz_pdf["anomalyScore"] = normalize(log_mean)
-        viz_pdf["anomalyScore_mean"] = viz_pdf["anomalyScore"].mean()
+        viz_pdf["anomalyScore"] = log_mean
 
         for f in self._feature_columns:
             log_f_loss = x.get_meta(f + "_z_loss").apply(np.log1p)
-            viz_pdf[f + "_score"] =  normalize(log_f_loss)
-            viz_pdf[f + "_score_mean"] = viz_pdf[f + "_score"].mean()
+            viz_pdf[f + "_score"] =  log_f_loss
 
         return MessageMeta(df=viz_pdf)
 
