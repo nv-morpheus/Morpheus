@@ -72,7 +72,8 @@ function install_deb_deps() {
                     libcufft-dev-11-5 \
                     libcurand-dev-11-5 \
                     libcusolver-dev-11-5 \
-                    libnuma1
+                    libnuma1 \
+                    libnvidia-compute-495
 }
 
 function set_stub_vars() {
