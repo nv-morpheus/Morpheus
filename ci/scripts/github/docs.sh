@@ -17,9 +17,10 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
+install_deb_deps
+install_build_deps
 
 restore_conda_env
-set_stub_vars
 pip install ${MORPHEUS_ROOT}/build/wheel
 
 rapids-logger "Pulling LFS assets"

@@ -79,12 +79,6 @@ function install_build_deps() {
                     libnvidia-compute-495
 }
 
-function set_stub_vars() {
-    export CUDA_PATH=/usr/local/cuda
-    export LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VER}/compat:${LD_LIBRARY_PATH}
-}
-
-
 function create_conda_env() {
     rapids-logger "Creating conda env"
     conda config --add pkgs_dirs /opt/conda/pkgs
