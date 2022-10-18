@@ -22,7 +22,6 @@ install_deb_deps
 install_build_deps
 
 create_conda_env
-#set_stub_vars
 
 rapids-logger "Check versions"
 python3 --version
