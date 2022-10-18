@@ -17,6 +17,7 @@
 
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
+#include "morpheus/stages/doca_source.hpp"
 #include "morpheus/stages/deserialize.hpp"
 #include "morpheus/stages/file_source.hpp"
 #include "morpheus/stages/filter_detection.hpp"
@@ -85,6 +86,13 @@ PYBIND11_MODULE(stages, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("batch_size"));
+
+    py::class_<srf::segment::Object<DocaSourceStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<DocaSourceStage>>>(m, "DocaSourceStage", py::multiple_inheritance())
+        .def(py::init<>(&DocaSourceStageInterfaceProxy::init),
+             py::arg("builder"),
+             py::arg("name"));
 
     py::class_<srf::segment::Object<FileSourceStage>,
                srf::segment::ObjectProperties,

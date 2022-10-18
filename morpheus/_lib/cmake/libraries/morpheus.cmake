@@ -44,6 +44,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/objects/tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_classification.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_scores.cpp
+    ${MORPHEUS_LIB_ROOT}/src/stages/doca_source.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/deserialize.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/file_source.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/filter_detection.cpp
