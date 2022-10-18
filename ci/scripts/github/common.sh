@@ -68,11 +68,14 @@ print_env_vars
 
 function install_deb_deps() {
     apt -q -y update
+    apt -q -y install libnuma1
+}
+
+function install_build_deps() {
     apt -q -y install libcublas-dev-11-5 \
                     libcufft-dev-11-5 \
                     libcurand-dev-11-5 \
                     libcusolver-dev-11-5 \
-                    libnuma1 \
                     libnvidia-compute-495
 }
 
