@@ -30,16 +30,16 @@
 #include <doca_gpu.h>
 #include <doca_flow.h>
 
-// std::shared_ptr<morpheus::doca::doca_context> _context;
+std::shared_ptr<morpheus::doca::doca_context> _context;
 
 class TestDoca : public ::testing::Test
 {
 protected:
   void SetUp() override {
-    // // const std::lock_guard<std::mutex> lock(g_i_mutex);
-    // if (_context == nullptr) {
-    //   _context = std::make_shared<morpheus::doca::doca_context>("b5:00.0", "b6:00.0"); 
-    // }
+    // const std::lock_guard<std::mutex> lock(g_i_mutex);
+    if (_context == nullptr) {
+      _context = std::make_shared<morpheus::doca::doca_context>("a3:00.0", "a6:00.0");
+    }
   }
 };
 

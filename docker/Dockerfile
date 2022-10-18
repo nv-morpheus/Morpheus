@@ -51,17 +51,17 @@ RUN apt-get update &&\
     && rm -rf /var/lib/apt/lists/*
 
 # install doca dependencies from local deb packages
-COPY docker/deb ./docker/deb/
-# RUN mkdir -p ./docker/deb
-# COPY docker/deb/doca-host-repo-ubuntu2004_1.5.0-0.0.9.1.5.0036.1.5.8.0.2.3.0_amd64.deb ./docker/deb/doca-host-repo.deb
-# RUN wget -O ./docker/deb/mlnx-dpdk.deb \
-#     https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/mlnx-dpdk_20.11.0-6.1.2_amd64.deb
-# RUN wget -O ./docker/deb/mlnx-dpdk-dev.deb \
-#     https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/mlnx-dpdk-dev_20.11.0-6.1.2_amd64.deb
-# RUN wget -O ./docker/deb/doca-libs.deb \
-#     https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/doca-libs_1.5.0042-1_amd64.deb
-# RUN wget -O ./docker/deb/libdoca-libs-dev \
-#     https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/libdoca-libs-dev_1.5.0042-1_amd64.deb
+# COPY docker/deb ./docker/deb/
+RUN mkdir -p ./docker/deb
+COPY docker/deb/doca-host-repo-ubuntu2004_1.5.0-0.0.9.1.5.0036.1.5.8.0.2.3.0_amd64.deb ./docker/deb/doca-host-repo.deb
+RUN wget -O ./docker/deb/mlnx-dpdk.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/mlnx-dpdk_20.11.0-6.1.2_amd64.deb
+RUN wget -O ./docker/deb/mlnx-dpdk-dev.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/mlnx-dpdk-dev_20.11.0-6.1.2_amd64.deb
+RUN wget -O ./docker/deb/doca-libs.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/doca-libs_1.5.0042-1_amd64.deb
+RUN wget -O ./docker/deb/libdoca-libs-dev.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/libdoca-libs-dev_1.5.0042-1_amd64.deb
 
 RUN dpkg -i ./docker/deb/*.deb ; exit 0
 # RUN apt-get install ./docker/deb/*.deb
@@ -123,6 +123,8 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"} &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_dev.yml &&\
+    # Required by DOCA
+    conda install -y -c pdrops libbsd &&\
     # Remove channel_alias to use the normal channel in the container
     conda config --env --remove-key channel_alias &&\
     # Clean and activate
