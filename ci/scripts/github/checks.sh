@@ -19,6 +19,7 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
 install_deb_deps
+install_build_deps
 
 fetch_base_branch
 
