@@ -90,7 +90,6 @@ function create_conda_env() {
     mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
 
     conda activate morpheus
-    mkdir -p ${CONDA_PREFIX}/etc/conda/activate.d
 
     rapids-logger "Installing CI dependencies"
     mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
