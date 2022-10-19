@@ -108,12 +108,10 @@ class DFPVizPostprocStage(SinglePortStage):
         datetimes = pd.to_datetime(viz_pdf["time"], errors='coerce')
         viz_pdf["period"] = datetimes.dt.to_period(self._period)
 
-        log_mean = x.get_meta("mean_abs_z").apply(np.log1p)
-        viz_pdf["anomalyScore"] = log_mean
-
         for f in self._feature_columns:
-            log_f_loss = x.get_meta(f + "_z_loss").apply(np.log1p)
-            viz_pdf[f + "_score"] =  log_f_loss
+            viz_pdf[f + "_score"] =  x.get_meta(f + "_z_loss")
+
+        viz_pdf["anomalyScore"] = x.get_meta("mean_abs_z")
 
         return MessageMeta(df=viz_pdf)
 
