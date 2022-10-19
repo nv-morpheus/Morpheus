@@ -42,7 +42,7 @@ cmake --version
 ninja --version
 
 gpuci_logger "Configuring cmake for Morpheus"
-cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
+cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON .
 
 gpuci_logger "Building Morpheus"
 cmake --build build -j --parallel ${PARALLEL_LEVEL}
