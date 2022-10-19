@@ -90,54 +90,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     };
 }
 
-// cudf::io::table_with_metadata DocaSourceStage::load_table()
-// {
-//     auto file_path = std::filesystem::path(m_filename);
-
-//     if (file_path.extension() == ".json" || file_path.extension() == ".jsonlines")
-//     {
-//         // First, load the file into json
-//         auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{m_filename}).lines(true);
-
-//         auto tbl = cudf::io::read_json(options.build());
-
-//         auto found = std::find(tbl.metadata.column_names.begin(), tbl.metadata.column_names.end(), "data");
-
-//         if (found == tbl.metadata.column_names.end())
-//             return tbl;
-
-//         // Super ugly but cudf cant handle newlines and add extra escapes. So we need to convert
-//         // \\n -> \n
-//         // \\/ -> \/
-//         auto columns = tbl.tbl->release();
-
-//         size_t idx = found - tbl.metadata.column_names.begin();
-
-//         auto updated_data = cudf::strings::replace(
-//             cudf::strings_column_view{columns[idx]->view()}, cudf::string_scalar("\\n"), cudf::string_scalar("\n"));
-
-//         updated_data = cudf::strings::replace(
-//             cudf::strings_column_view{updated_data->view()}, cudf::string_scalar("\\/"), cudf::string_scalar("/"));
-
-//         columns[idx] = std::move(updated_data);
-
-//         tbl.tbl = std::move(std::make_unique<cudf::table>(std::move(columns)));
-
-//         return tbl;
-//     }
-//     else if (file_path.extension() == ".csv")
-//     {
-//         auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{m_filename});
-
-//         return cudf::io::read_csv(options.build());
-//     }
-//     else
-//     {
-//         LOG(FATAL) << "Unknown extension for file: " << m_filename;
-//         throw std::runtime_error("Unknown extension");
-//     }
-// }
-
 // ************ DocaSourceStageInterfaceProxy ************ //
 std::shared_ptr<srf::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceProxy::init(
     srf::segment::Builder &builder, const std::string &name)
