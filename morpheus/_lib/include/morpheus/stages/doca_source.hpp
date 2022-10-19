@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "morpheus/messages/meta.hpp"
+#include <morpheus/doca/doca_context.hpp>
+#include <morpheus/messages/meta.hpp>
 
 #include <cudf/io/types.hpp>  // for table_with_metadata
 #include <pysrf/node.hpp>
@@ -49,10 +50,8 @@ class DocaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
 
   private:
     subscriber_fn_t build();
-    /**
-     * TODO(Documentation)
-     */
-    cudf::io::table_with_metadata load_table();
+
+    std::shared_ptr<morpheus::doca::doca_context> _context;
 };
 
 /****** DocaSourceStageInterfaceProxy***********************/

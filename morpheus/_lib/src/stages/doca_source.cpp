@@ -32,6 +32,8 @@
 #include <pybind11/pytypes.h>   // for pybind11::int_
 #include <srf/segment/builder.hpp>
 
+#include <rmm/device_uvector.hpp>
+
 #include <algorithm>  // for find
 #include <cstddef>    // for size_t
 #include <filesystem>
@@ -48,75 +50,39 @@ namespace morpheus {
 // ************ DocaSourceStage ************* //
 DocaSourceStage::DocaSourceStage() :
   PythonSource(build())
-{}
+{
+  _context = std::make_shared<morpheus::doca::doca_context>("a3:00.0", "a6:00.0");
+}
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        // auto data_table = this->load_table();
 
-        // // Using 0 will default to creating a new range index
-        // int index_col_count = 0;
+        auto stream = cudf::default_stream_value;
+        auto values = rmm::device_uvector<int32_t>(1000000, stream);
 
-        // // Check if we have a first column with INT64 data type
-        // if (data_table.metadata.column_names.size() >= 1 &&
-        //     data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
-        // {
-        //     std::regex index_regex(R"((unnamed: 0|id))",
-        //                            std::regex_constants::ECMAScript | std::regex_constants::icase);
+        // thrust::uninitialized_fill(thrust::cuda::par.on(stream.value()), values.begin(), values.end(), int32_t{0});
 
-        //     // Get the column name
-        //     auto col_name = data_table.metadata.column_names[0];
-
-        //     // Check it against some common terms
-        //     if (std::regex_search(col_name, index_regex))
-        //     {
-        //         // Also, if its the hideous 'Unnamed: 0', then just use an empty string
-        //         if (col_name == "Unnamed: 0")
-        //         {
-        //             data_table.metadata.column_names[0] = "";
-        //         }
-
-        //         index_col_count = 1;
-        //     }
-        // }
-
-        // // Next, create the message metadata. This gets reused for repeats
-        // auto meta = MessageMeta::create_from_cpp(std::move(data_table), index_col_count);
-
-        // // Always push at least 1
-        // output.on_next(meta);
-
-        // for (cudf::size_type repeat_idx = 1; repeat_idx < m_repeat; ++repeat_idx)
-        // {
-        //     // Clone the previous meta object
-        //     {
-        //         pybind11::gil_scoped_acquire gil;
-
-        //         // Use the copy function
-        //         auto df = meta->get_py_table().attr("copy")();
-
-        //         pybind11::int_ df_len = pybind11::len(df);
-
-        //         pybind11::object index = df.attr("index");
-
-        //         df.attr("index") = index + df_len;
-
-        //         meta = MessageMeta::create_from_python(std::move(df));
-        //     }
-
-        //     output.on_next(meta);
-        // }
+        auto values_size = values.size();
+        auto my_column   = std::make_unique<cudf::column>(
+          cudf::data_type{cudf::type_to_id<int32_t>()},
+          values_size,
+          values.release());
 
         auto my_columns          = std::vector<std::unique_ptr<cudf::column>>();
+
+        my_columns.push_back(std::move(my_column));
+
         // auto my_table            = std::make_unique<cudf::table>(std::move(my_columns));
         auto metadata            = cudf::io::table_metadata();
+
+        metadata.column_names.push_back("index");
         
         auto my_table_w_metadata = cudf::io::table_with_metadata{
           std::make_unique<cudf::table>(std::move(my_columns)),
           std::move(metadata)
         };
-        auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 0);
+        auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
 
         output.on_next(meta);
 
