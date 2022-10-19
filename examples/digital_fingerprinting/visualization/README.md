@@ -71,7 +71,7 @@ dfp-viz-postproc \
 --prefix=dfp-viz-azure-
 ```
 
-Run the following to generate input files for Azure DFP visualization:
+Run the following to generate input files for Duo DFP visualization:
 ```
 morpheus --log_level=DEBUG \
 run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
