@@ -103,6 +103,7 @@ def run_pipeline(num_threads,
     config.mode = PipelineModes.AE
     config.ae = ConfigAutoEncoder()
     config.ae.userid_column_name = "userIdentitysessionContextsessionIssueruserName"
+    config.ae.timestamp_column_name = "eventTime"
     config.ae.feature_scaler = AEFeatureScalar.STANDARD
 
     with open(columns_file, "r") as lf:

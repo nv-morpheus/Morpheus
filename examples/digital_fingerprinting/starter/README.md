@@ -163,6 +163,7 @@ run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use
 pipeline-ae \
 --columns_file=morpheus/data/columns_ae_cloudtrail.txt \
 --userid_column_name=userIdentitysessionContextsessionIssueruserName \
+--timestamp_column_name=eventTime \
 --userid_filter=user123 \
 --feature_scaler=standard \
 from-cloudtrail \
@@ -188,6 +189,7 @@ run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use
 pipeline-ae \
 --columns_file=morpheus/data/columns_ae_duo.txt \
 --userid_column_name=username \
+--timestamp_column_name=time \
 --feature_scaler=standard \
 from-duo \
 --input_glob=examples/data/dfp/duo-inference-data/*.json \
@@ -211,6 +213,7 @@ run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use
 pipeline-ae \
 --columns_file=morpheus/data/columns_ae_duo.txt \
 --userid_column_name=username \
+--timestamp_column_name=time \
 --feature_scaler=standard \
 from-duo \
 --input_glob=examples/data/dfp/duo-inference-data/*.json \
@@ -234,6 +237,7 @@ run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use
 pipeline-ae \
 --columns_file=morpheus/data/columns_ae_azure.txt \
 --userid_column_name=userPrincipalName \
+--timestamp_column_name=createdDateTime \
 --feature_scaler=standard \
 from-azure \
 --input_glob=examples/data/dfp/azure-inference-data/*.json \
@@ -256,6 +260,7 @@ run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use
 pipeline-ae \
 --columns_file=morpheus/data/columns_ae_azure.txt \
 --userid_column_name=userPrincipalName \
+--timestamp_column_name=createdDateTime \
 --feature_scaler=standard \
 from-azure \
 --input_glob=examples/data/dfp/azure-inference-data/*.json \
