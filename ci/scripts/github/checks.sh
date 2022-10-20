@@ -19,7 +19,6 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
 update_conda_env
-set_stub_vars
 
 fetch_base_branch
 
