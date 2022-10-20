@@ -16,6 +16,8 @@
 # limitations under the License.
 
 # Note this is the Dockerfile for the CI runner not for morpheus itself
+# Build from the root of the morpheus repo with:
+# docker build --network=host -t morpheus/ci:latest -f ci/runner/Dockerfile .
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci"
@@ -27,19 +29,24 @@ ARG PYTHON_VER=3.8
 # Configure the base docker img
 FROM ${FROM_IMAGE}:cuda${CUDA_VER}-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
+ARG PROJ_NAME=morpheus
+ARG CUDA_SHORT_VER=11.5
+ARG CUDA_PKG_VER=11-5
+ARG CLANG_VER=12
+
 SHELL ["/bin/bash",  "-c"]
 
 # OS deps
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt-get install --no-install-recommends -y \
-        clang-format-12 \
-        clang-tidy-12 \
+        clang-format-${CLANG_VER} \
+        clang-tidy-${CLANG_VER} \
         git-lfs \
-        libcublas-dev-11-5 \
-        libcufft-dev-11-5 \
-        libcurand-dev-11-5 \
-        libcusolver-dev-11-5 \
+        libcublas-dev-${CUDA_PKG_VER} \
+        libcufft-dev-${CUDA_PKG_VER} \
+        libcurand-dev-${CUDA_PKG_VER} \
+        libcusolver-dev-${CUDA_PKG_VER} \
         libnuma1 \
         libnvidia-compute-495 \
         openjdk-11-jdk \
@@ -47,23 +54,23 @@ RUN apt-get update && \
         npm && \
     apt clean && \
     rm -rf /var/lib/apt/lists/* && \
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 121 \
-        --slave /usr/bin/clang-apply-replacements clang-apply-replacements /usr/bin/clang-apply-replacements-12 \
-        --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-12 \
-        --slave /usr/bin/clang-format-diff clang-format-diff /usr/bin/clang-format-diff-12 \
-        --slave /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-12 \
-        --slave /usr/bin/clang-tidy-diff.py clang-tidy-diff.py /usr/bin/clang-tidy-diff-12.py \
-        --slave /usr/bin/clang++ clang++ /usr/bin/clang++-12 \
-        --slave /usr/bin/git-clang-format git-clang-format /usr/bin/git-clang-format-12
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VER} 121 \
+        --slave /usr/bin/clang-apply-replacements clang-apply-replacements /usr/bin/clang-apply-replacements-${CLANG_VER} \
+        --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-${CLANG_VER} \
+        --slave /usr/bin/clang-format-diff clang-format-diff /usr/bin/clang-format-diff-${CLANG_VER} \
+        --slave /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-${CLANG_VER} \
+        --slave /usr/bin/clang-tidy-diff.py clang-tidy-diff.py /usr/bin/clang-tidy-diff-${CLANG_VER}.py \
+        --slave /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VER} \
+        --slave /usr/bin/git-clang-format git-clang-format /usr/bin/git-clang-format-${CLANG_VER}
 
 # Create conda environment
-COPY ./docker/conda/environments/cuda11.5_dev.yml /tmp
+COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_dev.yml /tmp
 COPY ./docker/conda/environments/requirements.txt /tmp
 
-RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n morpheus -q --file /tmp/cuda11.5_dev.yml && \
-    sed -i "s/conda activate base/conda activate morpheus/g" ~/.bashrc && \
+RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/cuda${CUDA_SHORT_VER}_dev.yml && \
+    sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
     conda clean -afy && \
-    rm /tmp/cuda11.5_dev.yml /tmp/requirements.txt
+    rm /tmp/cuda${CUDA_SHORT_VER}_dev.yml /tmp/requirements.txt
 
 # Install camouflage needed for unittests to mock a triton server
 RUN npm install -g camouflage-server && \
@@ -74,6 +81,6 @@ RUN npm install -g camouflage-server && \
 # https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
 RUN git clone https://gitlab.com/karolinepauls/pytest-kafka.git /opt/pytest-kafka && \
     cd /opt/pytest-kafka && \
-    source activate morpheus && \
+    source activate ${PROJ_NAME} && \
     python setup.py develop && \
     cd -
