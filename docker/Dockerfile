@@ -62,6 +62,10 @@ RUN wget -O ./docker/deb/doca-libs.deb \
     https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/doca-libs_1.5.0042-1_amd64.deb
 RUN wget -O ./docker/deb/libdoca-libs-dev.deb \
     https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/libdoca-libs-dev_1.5.0042-1_amd64.deb
+RUN wget -O ./docker/deb/doca-apps.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/doca-apps_1.5.0042-1_amd64.deb
+RUN wget -O ./docker/deb/doca-apps-dev.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/doca-apps-dev_1.5.0042-1_amd64.deb
 
 RUN dpkg -i ./docker/deb/*.deb ; exit 0
 # RUN apt-get install ./docker/deb/*.deb

@@ -51,7 +51,7 @@ namespace morpheus {
 DocaSourceStage::DocaSourceStage() :
   PythonSource(build())
 {
-  _context = std::make_shared<morpheus::doca::doca_context>("a3:00.0", "a6:00.0");
+  _context = std::make_shared<morpheus::doca::doca_context>("63:00.0", "66:00.0");
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()

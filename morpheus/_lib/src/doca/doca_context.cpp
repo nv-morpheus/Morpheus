@@ -12,6 +12,9 @@
 namespace morpheus::doca
 {
 
+static uint32_t *cpu_exit_condition;
+static uint32_t *gpu_exit_condition;
+
 doca_context::doca_context(std::string nic_addr, std::string gpu_addr)
 {
     char* nic_addr_c = new char[nic_addr.size() + 1];
@@ -69,6 +72,12 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr)
     if (gpu_attack_dpdk_ret != DOCA_SUCCESS) {
       throw std::runtime_error("DOCA to DPDK attach failed, error=" + std::to_string(gpu_attack_dpdk_ret));
     }
+
+    auto ret = doca_gpu_mem_alloc(_gpu, sizeof(uint32_t), MEM_ALIGN_SZ, DOCA_GPU_MEM_CPU_GPU, (void **)&gpu_exit_condition, (void **)&cpu_exit_condition);
+    if (ret != DOCA_SUCCESS) {
+      throw std::runtime_error("DOCA memalloc failed, error=" + std::to_string(gpu_attack_dpdk_ret));
+    }
+    memset(cpu_exit_condition, 0, app_cfg_queue_num * sizeof(uint32_t));
 
     delete[] nic_addr_c;
     delete[] gpu_addr_c;
