@@ -35,9 +35,6 @@ env:
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
-  PYTHON_VER: "3.8"
-  RAPIDS_VER: "22.06"
-  USE_SCCACHE: "1"
   WORKSPACE: "${{ github.workspace }}/morpheus"
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"
 
