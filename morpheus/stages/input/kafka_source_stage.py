@@ -16,6 +16,7 @@ import logging
 import sys
 import time
 from enum import Enum
+from io import StringIO
 
 import confluent_kafka as ck
 import pandas as pd
@@ -132,16 +133,20 @@ class KafkaSourceStage(SingleOutputSource):
         return super().stop()
 
     def _process_batch(self, consumer, batch):
+        message_meta = None
         if len(batch):
-            payloads = []
+            buffer = StringIO()
+
             for msg in batch:
                 payload = msg.value()
                 if payload is not None:
-                    payloads.append(payload)
+                    buffer.write(payload.decode("utf-8"))
+                    buffer.write("\n")
 
             df = None
             try:
-                df = cudf.io.read_json(payloads, lines=True)
+                buffer.seek(0)
+                df = cudf.io.read_json(buffer, engine='cudf', lines=True, orient='records')
             except Exception as e:
                 logger.error("Error parsing payload into a dataframe : {}".format(e))
             finally:
@@ -151,14 +156,16 @@ class KafkaSourceStage(SingleOutputSource):
 
             if df is not None:
                 num_records = len(df)
-                yield MessageMeta(df)
+                message_meta = MessageMeta(df)
                 self._records_emitted += num_records
                 self._num_messages += 1
 
                 if self._stop_after > 0 and self._records_emitted >= self._stop_after:
                     self._stop_requested = True
 
-        batch.clear()
+            batch.clear()
+
+        return message_meta
 
     def _source_generator(self):
         # TODO : Needs to batch records until _stop_requested, _PARTITION_EOF or batch size has been hit
@@ -174,31 +181,38 @@ class KafkaSourceStage(SingleOutputSource):
             batch = []
 
             while not self._stop_requested:
+                do_process_batch = False
+                do_sleep = False
+
                 msg = consumer.poll(timeout=1.0)
                 if msg is None:
-                    self._process_batch(consumer, batch)
+                    do_process_batch = True
+                    do_sleep = True
 
-                    if not self._stop_requested:
-                        time.sleep(self._poll_interval)
-                    continue
-
-                msg_error = msg.error()
-                if msg_error is None:
-                    batch.append(msg)
-                    if len(batch) == self._max_batch_size:
-                        self._process_batch(consumer, batch)
-
-                elif msg_error == ck.KafkaError._PARTITION_EOF:
-                    self._process_batch(consumer, batch)
-                    if not self._stop_requested:
-                        time.sleep(self._poll_interval)
                 else:
-                    raise ck.KafkaException(msg_error)
+                    msg_error = msg.error()
+                    if msg_error is None:
+                        batch.append(msg)
+                        if len(batch) == self._max_batch_size:
+                            do_process_batch = True
 
-            print("******** completed after {} records in {} messages".format(self._records_emitted,
-                                                                              self._num_messages),
-                  flush=True,
-                  file=sys.stderr)
+                    elif msg_error == ck.KafkaError._PARTITION_EOF:
+                        do_process_batch = True
+                        do_sleep = True
+                    else:
+                        raise ck.KafkaException(msg_error)
+
+                if do_process_batch:
+                    message_meta = self._process_batch(consumer, batch)
+                    if message_meta is not None:
+                        yield message_meta
+
+                if do_sleep and not self._stop_requested:
+                    time.sleep(self._poll_interval)
+
+            message_meta = self._process_batch(consumer, batch)
+            if message_meta is not None:
+                yield message_meta
 
         finally:
             # Close the consumer and call on_completed
