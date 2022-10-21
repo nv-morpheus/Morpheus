@@ -20,7 +20,7 @@ Containers](http://docs.nvidia.com/deeplearning/dgx/preparing-containers/index.h
 Pull the image using the following command.
 
 ```
-$ docker pull nvcr.io/nvidia/tritonserver:<xx.yy>-py3
+docker pull nvcr.io/nvidia/tritonserver:<xx.yy>-py3
 ```
 
 Where \<xx.yy\> is the version of Triton that you want to pull.
