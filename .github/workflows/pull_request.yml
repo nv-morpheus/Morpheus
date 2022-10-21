@@ -65,7 +65,7 @@ jobs:
   build:
     name: Build
     runs-on: [self-hosted, linux, amd64, cpu16]
-    timeout-minutes: 240
+    timeout-minutes: 60
     container:
       image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
     strategy:
