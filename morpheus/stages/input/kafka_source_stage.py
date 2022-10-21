@@ -114,6 +114,9 @@ class KafkaSourceStage(SingleOutputSource):
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
         self._started = False
 
+        self._records_emitted = 0
+        self._num_messages = 0
+
     @property
     def name(self) -> str:
         return "from-kafka"
@@ -128,6 +131,35 @@ class KafkaSourceStage(SingleOutputSource):
 
         return super().stop()
 
+    def _process_batch(self, consumer, batch):
+        if len(batch):
+            payloads = []
+            for msg in batch:
+                payload = msg.value()
+                if payload is not None:
+                    payloads.append(payload)
+
+            df = None
+            try:
+                df = cudf.io.read_json(payloads, lines=True)
+            except Exception as e:
+                logger.error("Error parsing payload into a dataframe : {}".format(e))
+            finally:
+                if (not self._disable_commit):
+                    for msg in batch:
+                        consumer.commit(message=msg)
+
+            if df is not None:
+                num_records = len(df)
+                yield MessageMeta(df)
+                self._records_emitted += num_records
+                self._num_messages += 1
+
+                if self._stop_after > 0 and self._records_emitted >= self._stop_after:
+                    self._stop_requested = True
+
+        batch.clear()
+
     def _source_generator(self):
         # TODO : Needs to batch records until _stop_requested, _PARTITION_EOF or batch size has been hit
 
@@ -139,43 +171,32 @@ class KafkaSourceStage(SingleOutputSource):
             consumer = ck.Consumer(self._consumer_params)
             consumer.subscribe([self._topic])
 
-            records_emitted = 0
-            num_messages = 0
+            batch = []
 
             while not self._stop_requested:
                 msg = consumer.poll(timeout=1.0)
                 if msg is None:
-                    time.sleep(self._poll_interval)
+                    self._process_batch(consumer, batch)
+
+                    if not self._stop_requested:
+                        time.sleep(self._poll_interval)
                     continue
 
                 msg_error = msg.error()
                 if msg_error is None:
-                    payload = msg.value()
-                    if payload is not None:
-                        df = None
-                        try:
-                            df = cudf.io.read_json(payload, lines=True)
-                        except Exception as e:
-                            logger.error("Error parsing payload into a dataframe : {}".format(e))
-                        finally:
-                            if (not self._disable_commit):
-                                consumer.commit(message=msg)
-
-                        if df is not None:
-                            num_records = len(df)
-                            yield MessageMeta(df)
-                            records_emitted += num_records
-                            num_messages += 1
-
-                            if self._stop_after > 0 and records_emitted >= self._stop_after:
-                                self._stop_requested = True
+                    batch.append(msg)
+                    if len(batch) == self._max_batch_size:
+                        self._process_batch(consumer, batch)
 
                 elif msg_error == ck.KafkaError._PARTITION_EOF:
-                    time.sleep(self._poll_interval)
+                    self._process_batch(consumer, batch)
+                    if not self._stop_requested:
+                        time.sleep(self._poll_interval)
                 else:
                     raise ck.KafkaException(msg_error)
 
-            print("******** completed after {} records in {} messages".format(records_emitted, num_messages),
+            print("******** completed after {} records in {} messages".format(self._records_emitted,
+                                                                              self._num_messages),
                   flush=True,
                   file=sys.stderr)
 
