@@ -19,7 +19,9 @@ from functools import partial
 import cupy as cp
 import srf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages import InferenceMemoryAE
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
@@ -30,9 +32,10 @@ from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 logger = logging.getLogger(__name__)
 
 
+@register_stage("preprocess", modes=[PipelineModes.AE])
 class PreprocessAEStage(PreprocessBaseStage):
     """
-    Autoencoder usecases are preprocessed with this stage class.
+    Prepare Autoencoder input DataFrames for inference.
 
     Parameters
     ----------
@@ -70,6 +73,10 @@ class PreprocessAEStage(PreprocessBaseStage):
         ----------
         x : morpheus.pipeline.preprocess.autoencoder.MultiAEMessage
             Input rows received from Deserialized stage.
+        fea_len : int
+            Number of input features.
+        feature_columns : typing.List[str]
+            List of feature columns.
 
         Returns
         -------
@@ -80,12 +87,20 @@ class PreprocessAEStage(PreprocessBaseStage):
 
         meta_df = x.get_meta(x.meta.df.columns.intersection(feature_columns))
         autoencoder = x.model
+        scores_mean = x.train_scores_mean
+        scores_std = x.train_scores_std
+        count = len(meta_df.index)
+        mess_count = count
+        input = cp.zeros(meta_df.shape, dtype=cp.float32)
 
-        data = autoencoder.prepare_df(meta_df)
-        input = autoencoder.build_input_tensor(data)
-        input = cp.asarray(input.detach())
+        memory = None
 
-        count = input.shape[0]
+        if autoencoder is not None:
+            data = autoencoder.prepare_df(meta_df)
+            input = autoencoder.build_input_tensor(data)
+            input = cp.asarray(input.detach())
+            count = input.shape[0]
+            mess_count = x.mess_count
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
         seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
@@ -95,11 +110,13 @@ class PreprocessAEStage(PreprocessBaseStage):
 
         infer_message = MultiInferenceAEMessage(meta=x.meta,
                                                 mess_offset=x.mess_offset,
-                                                mess_count=x.mess_count,
+                                                mess_count=mess_count,
                                                 memory=memory,
                                                 offset=0,
-                                                count=memory.count,
-                                                model=autoencoder)
+                                                count=count,
+                                                model=autoencoder,
+                                                train_scores_mean=scores_mean,
+                                                train_scores_std=scores_std)
 
         return infer_message
 

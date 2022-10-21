@@ -20,6 +20,7 @@ import srf
 from srf.core import operators as ops
 
 import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -28,8 +29,11 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
+@register_stage("filter")
 class FilterDetectionsStage(SinglePortStage):
     """
+    Filter message by a classification threshold.
+
     The FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
     criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
     equal to `threshold`.

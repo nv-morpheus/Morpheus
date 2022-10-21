@@ -1,0 +1,109 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+version: '3.3'
+
+services:
+
+  mlflow:
+    restart: always
+    build: ./mlflow
+    image: mlflow_server
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    networks:
+      - frontend
+      - backend
+    command: mlflow server --gunicorn-opts "--log-level debug" --backend-store-uri sqlite:////opt/mlflow/dbdata/mlflow.db --serve-artifacts --artifacts-destination /opt/mlflow/artifacts --host 0.0.0.0
+    volumes:
+      - db_data:/opt/mlflow/dbdata
+      - mlflow_data:/opt/mlflow/artifacts
+
+  jupyter:
+    restart: always
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      target: jupyter
+      args:
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: [gpu]    
+    image: dfp_morpheus_jupyter
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    networks:
+      - frontend
+      - backend
+    command: jupyter-lab --no-browser --allow-root --ip='*'
+    volumes:
+      - ../../..:/workspace
+    depends_on:
+      - mlflow
+    profiles:
+      - dev
+    cap_add:
+      - sys_nice
+
+  morpheus_pipeline:
+    # restart: always
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      target: runtime
+      args:
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
+    image: dfp_morpheus
+    container_name: morpheus_pipeline
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: [gpu]
+    networks:
+      - frontend
+      - backend
+    environment:
+      # Colorize the terminal in the container if possible
+      TERM: "${TERM:-}"
+      DFP_CACHE_DIR: "/workspace/.cache/dfp"
+      DFP_TRACKING_URI: "http://mlflow:5000"
+    command: ./launch.sh --train_users=generic --duration=1d
+    volumes:
+      - ../../..:/workspace
+    depends_on:
+      - mlflow
+    profiles:
+      - training
+    cap_add:
+      - sys_nice
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+volumes:
+  db_data:
+  mlflow_data:

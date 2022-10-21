@@ -18,15 +18,16 @@
 #include "morpheus/messages/memory/response_memory_probs.hpp"
 
 #include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
 #include <cstddef>
+#include <map>  // this->tensors is a map
 #include <memory>
+#include <stdexcept>  // for runtime_error
 #include <utility>
 
 namespace morpheus {

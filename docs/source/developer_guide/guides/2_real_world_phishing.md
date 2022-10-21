@@ -39,7 +39,7 @@ Next, we will update our `on_data` method to perform the actual work.
 We grab a reference to the incoming message's `df` attribute. It is important to note that `message` is a reference, and any changes made to it or its members (such as `df`) will be performed in place on the existing message instance.
 
 ```python
-def on_data(self, message: MessageMeta):
+def on_data(self, message: MessageMeta) -> MessageMeta:
     # Get the DataFrame from the incoming message
     df = message.df
 
@@ -62,12 +62,18 @@ def on_data(self, message: MessageMeta):
 If mutating the data frame is undesirable, we could make a call to the data frame's [copy](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.DataFrame.copy.html#cudf.DataFrame.copy) method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. Our updated `on_data` method would look like this (changing the first and last lines of the method):
 
 ```python
-def on_data(self, message: MessageMeta):
+def on_data(self, message: MessageMeta) -> MessageMeta:
     # Take a copy of the DataFrame from the incoming message
     df = message.df.copy(True)
     ...
     # Construct and return a new message containing our DataFrame
     return MessageMeta(df=df)
+```
+
+Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
+```python
+@register_stage("recipient-features", modes=[PipelineModes.NLP])
+class RecipientFeaturesStage(SinglePortStage):
 ```
 
 
@@ -80,20 +86,29 @@ import typing
 
 import srf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
+@register_stage("recipient-features", modes=[PipelineModes.NLP])
 class RecipientFeaturesStage(SinglePortStage):
+    """
+    Pre-processing stage which counts the number of recipients in an email's metadata.
+    """
+
     @property
     def name(self) -> str:
         return "recipient-features"
 
     def accepted_types(self) -> typing.Tuple:
-        return (MessageMeta,)
+        return (MessageMeta, )
 
-    def on_data(self, message: MessageMeta):
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    def on_data(self, message: MessageMeta) -> MessageMeta:
         # Get the DataFrame from the incoming message
         df = message.df
 
@@ -103,10 +118,8 @@ class RecipientFeaturesStage(SinglePortStage):
         df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
         # Attach features to string data
-        df['data'] = (df['to_count'].astype(str) + '[SEP]' +
-                      df['bcc_count'].astype(str) + '[SEP]' +
-                      df['cc_count'].astype(str) + '[SEP]' +
-                      df['total_recipients'].astype(str) + '[SEP]' +
+        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
+                      df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
                       df['Message'])
 
         # Return the message for the next stage
@@ -120,27 +133,6 @@ class RecipientFeaturesStage(SinglePortStage):
 ```
 
 ### Testing the Preprocessing Stage
-
-To test our new stage, we will modify the pipeline from the previous guide by replacing the pass through stage with our new one.
-To do this, just update these lines from the previous guide:
-
-```python
-# Add our own stage
-pipeline.add_stage(PassThruStage(config))
-
-# Add monitor to record the performance of our new stage
-pipeline.add_stage(MonitorStage(config))
-```
-
-To:
-
-```python
-# Add our own stage
-pipeline.add_stage(RecipientFeaturesStage(config))
-
-# Add monitor to record the performance of our new stage
-pipeline.add_stage(MonitorStage(config))
-```
 
 ## Predicting Fraudulent Emails with Accelerated Machine Learning
 
@@ -157,7 +149,7 @@ Note: This step assumes you have both [Docker](https://docs.docker.com/engine/in
 From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
 
 ```shell
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.02-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --log-info=true
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --log-info=true
 ```
 
 Once we have Triton running, we can verify that it is healthy using [curl](https://curl.se/). The `/v2/health/live` endpoint should return a 200 status code:
@@ -192,15 +184,22 @@ Let's set up the paths for our input and output files. For simplicity, we assume
 import os
 
 import morpheus
+from morpheus.utils.logger import configure_logging
 
-root_dir = os.environ['MORPHEUS_ROOT']
-out_dir = os.environ.get('OUT_DIR', '/tmp')
 
-labels_file = os.path.join(morpheus.DATA_DIR, 'labels_phishing.txt')
-vocab_file = os.path.join(morpheus.DATA_DIR, 'bert-base-uncased-hash.txt')
+def run_pipeline():
+    # Enable the default logger
+    configure_logging(log_level=logging.INFO)
 
-input_file = os.path.join(root_dir, 'examples/data/email_with_addresses.jsonlines')
-results_file = os.path.join(out_dir, 'detections.jsonlines')
+    triton_url = os.environ.get('TRITON_URL', 'localhost:8001')
+    root_dir = os.environ['MORPHEUS_ROOT']
+    out_dir = os.environ.get('OUT_DIR', '/tmp')
+
+    labels_file = os.path.join(morpheus.DATA_DIR, 'labels_phishing.txt')
+    vocab_file = os.path.join(morpheus.DATA_DIR, 'bert-base-uncased-hash.txt')
+
+    input_file = os.path.join(root_dir, 'examples/data/email_with_addresses.jsonlines')
+    results_file = os.path.join(out_dir, 'detections.jsonlines')
 ```
 
 To start, we will need to instantiate and set a few members of the `Config` class. This object is used for configuration options that are global to the pipeline as a whole. We will provide this object to each stage along with stage-specific configuration parameters.
@@ -306,6 +305,7 @@ from morpheus.utils.logger import configure_logging
 
 from recipient_features_stage import RecipientFeaturesStage
 
+
 def run_pipeline():
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
@@ -345,12 +345,11 @@ def run_pipeline():
 
     # Tokenize the input
     pipeline.add_stage(
-        PreprocessNLPStage(
-            config,
-            vocab_hash_file=vocab_file,
-            truncation=True,
-            do_lower_case=True,
-            add_special_tokens=False))
+        PreprocessNLPStage(config,
+                           vocab_hash_file=vocab_file,
+                           truncation=True,
+                           do_lower_case=True,
+                           add_special_tokens=False))
 
     # Add a inference stage
     pipeline.add_stage(
@@ -374,8 +373,27 @@ def run_pipeline():
     # Run the pipeline
     pipeline.run()
 
+
 if __name__ == "__main__":
     run_pipeline()
+```
+
+### Alternate Morpheus CLI example
+The above pipeline could also be constructed using the Morpheus CLI.
+
+From the root of the Morpheus repo run:
+```bash
+morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phishing/recipient_features_stage.py \
+  run pipeline-nlp --labels_file=data/labels_phishing.txt --model_seq_length=128 \
+  from-file --filename=examples/data/email_with_addresses.jsonlines \
+  recipient-features \
+  deserialize \
+  preprocess --vocab_hash_file=data/bert-base-uncased-hash.txt --truncation=true --do_lower_case=true --add_special_tokens=false \
+  inf-triton --model_name=phishing-bert-onnx --server_url=localhost:8001 --force_convert_inputs=true \
+  monitor --description="Inference Rate" --smoothing=0.001 --unit=inf \
+  filter --threshold=0.9 \
+  serialize \
+  to-file --filename=/tmp/detections.jsonlines --overwrite
 ```
 
 ## Stage Constructors
@@ -384,13 +402,25 @@ In our previous examples, we didn't define a constructor for the Python classes 
 
 Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started.
 
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented propperly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
 
 ```python
+from morpheus.config import Config
+
+@register_stage("recipient-features", modes=[PipelineModes.NLP])
 class RecipientFeaturesStage(SinglePortStage):
-    def __init__(self,
-                 config: Config,
-                 sep_token: str='[SEP]'):
+    """
+    Pre-processing stage which counts the number of recipients in an email's metadata.
+
+    Parameters
+    ----------
+    config : morpheus.config.Config
+        Pipeline configuration instance.
+    sep_token : str
+        Bert separator toeken.
+    """
+
+    def __init__(self, config: Config, sep_token: str = '[SEP]'):
         super().__init__(config)
         if config.mode != PipelineModes.NLP:
             raise RuntimeError("RecipientFeaturesStage must be used in a pipeline configured for NLP")
@@ -401,9 +431,24 @@ class RecipientFeaturesStage(SinglePortStage):
             raise ValueError("sep_token cannot be an empty string")
 ```
 
+If we were to make the above changes, we can view the resulting help string with:
+```bash
+morpheus --plugin examples/developer_guide/2_1_real_world_phishing/recipient_features_stage.py run pipeline-nlp recipient-features --help
+```
+```
+Configuring Pipeline via CLI
+Usage: morpheus run pipeline-nlp recipient-features [OPTIONS]
+
+  Pre-processing stage which counts the number of recipients in an email's metadata.
+
+Options:
+  --sep_token TEXT  Bert separator toeken.  [default: [SEP]]
+  --help            Show this message and exit.
+```
+
 ## Defining a New Source Stage
 
-Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource`. Second, the required methods are just the `name` property method and the `_build_source` method.
+Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource`. Second, the required methods are the `name` property method and the `_build_source` and `supports_cpp_node` methods.
 
 In this example, we will create a source that reads messages from a [RabbitMQ](https://www.rabbitmq.com/) queue using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python. For simplicity, we will assume that authentication is not required for our RabbitMQ exchange and that the body of the RabbitMQ messages will be JSON formatted. Both authentication and support for other formats could be easily added later.
 
@@ -415,18 +460,18 @@ def _build_source(self, builder: srf.Builder) -> StreamPair:
     return node, MessageMeta
 ```
 
-The `source_generator` method is where most of the RabbitMQ-specific code exists. Source node methods receive an instance of `srf.Subscriber` as their first argument. When we have a message that we wish to emit into the pipeline, we call the `srf.Subscriber.on_next` method.
+The `source_generator` method is where most of the RabbitMQ-specific code exists. When we have a message that we wish to emit into the pipeline, we simply `yield` it.
 
 ```python
-def source_generator(self, subscriber: srf.Subscriber):
+def source_generator(self):
     try:
-        while subscriber.is_subscribed():
+        while not self._stop_requested:
             (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
             if method_frame is not None:
                 try:
                     buffer = StringIO(body.decode("utf-8"))
                     df = cudf.io.read_json(buffer, orient='records', lines=True)
-                    subscriber.on_next(MessageMeta(df=df))
+                    yield MessageMeta(df=df)
                 except Exception as ex:
                     logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
                 finally:
@@ -441,21 +486,21 @@ def source_generator(self, subscriber: srf.Subscriber):
 
 Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed.
 
-Note also that we acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message (via `on_next`) or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have called `on_next` but before calling `basic_ack`).
+Note also that we acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
 
 ### The Completed Source Stage
 
 ```python
 import logging
 import time
-from datetime import timedelta
 from io import StringIO
 
-import srf
-import pika
-
 import cudf
+import pandas as pd
+import pika
+import srf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -463,6 +508,8 @@ from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
+
+@register_stage("from-rabbitmq")
 class RabbitMQSourceStage(SingleOutputSource):
     """
     Source stage used to load messages from a RabbitMQ queue.
@@ -479,55 +526,58 @@ class RabbitMQSourceStage(SingleOutputSource):
         RabbitMQ exchange type; defaults to `fanout`.
     queue_name : str
         Name of the queue to listen to. If left blank, RabbitMQ will generate a random queue name bound to the exchange.
-    poll_interval : timedelta
-        Amount of time  between polling RabbitMQ for new messages; defaults to 100ms
+    poll_interval : str
+        Amount of time  between polling RabbitMQ for new messages
     """
+
     def __init__(self,
                  config: Config,
                  host: str,
                  exchange: str,
-                 exchange_type: str='fanout',
-                 queue_name: str='',
-                 poll_interval: timedelta=None):
+                 exchange_type: str = 'fanout',
+                 queue_name: str = '',
+                 poll_interval: str = '100millis'):
         super().__init__(config)
-        self._connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=host))
+        self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
 
         self._channel = self._connection.channel()
-        self._channel.exchange_declare(
-            exchange=exchange, exchange_type=exchange_type)
+        self._channel.exchange_declare(exchange=exchange, exchange_type=exchange_type)
 
-        result = self._channel.queue_declare(
-            queue=queue_name, exclusive=True)
+        result = self._channel.queue_declare(queue=queue_name, exclusive=True)
 
         # When queue_name='' we will receive a randomly generated queue name
         self._queue_name = result.method.queue
 
-        self._channel.queue_bind(
-            exchange=exchange, queue=self._queue_name)
+        self._channel.queue_bind(exchange=exchange, queue=self._queue_name)
 
-        if poll_interval is not None:
-            self._poll_interval = poll_interval
-        else:
-            self._poll_interval = timedelta(milliseconds=100)
+        self._poll_interval = pd.Timedelta(poll_interval)
+
+        # Flag to indicate whether or not we should stop
+        self._stop_requested = False
 
     @property
     def name(self) -> str:
         return "from-rabbitmq"
 
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    def stop(self):
+        # Indicate we need to stop
+        self._stop_requested = True
+
+        return super().stop()
+
     def _build_source(self, builder: srf.Builder) -> StreamPair:
         node = builder.make_source(self.unique_name, self.source_generator)
         return node, MessageMeta
 
-    def source_generator(self, subscriber: srf.Subscriber):
+    def source_generator(self):
         try:
-            while subscriber.is_subscribed():
+            while not self._stop_requested:
                 (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
-                    try:
-                        buffer = StringIO(body.decode("utf-8"))
-                        df = cudf.io.read_json(buffer, orient='records', lines=True)
-                        subscriber.on_next(MessageMeta(df=df))
+                    try:pip install -r examples/developer_guide/2_2_rabbitmq/requirements.txt
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
                     finally:
@@ -549,6 +599,7 @@ Recall that in the previous section we wrote a `RabbitMQSourceStage`. We will no
 The code for our sink will look similar to other stages with a few changes. First, we will subclass `SinglePortStage`:
 
 ```python
+@register_stage("to-rabbitmq")
 class WriteToRabbitMQStage(SinglePortStage):
 ```
 
@@ -595,11 +646,10 @@ import logging
 import typing
 from io import StringIO
 
-import srf
 import pika
+import srf
 
-import cudf
-
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -607,6 +657,8 @@ from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
 
+
+@register_stage("to-rabbitmq")
 class WriteToRabbitMQStage(SinglePortStage):
     """
     Source stage used to load messages from a RabbitMQ queue.
@@ -624,23 +676,16 @@ class WriteToRabbitMQStage(SinglePortStage):
     routing_key : str
         RabbitMQ routing key if needed.
     """
-    def __init__(self,
-                 config: Config,
-                 host: str,
-                 exchange: str,
-                 exchange_type: str='fanout',
-                 routing_key: str=''):
+
+    def __init__(self, config: Config, host: str, exchange: str, exchange_type: str = 'fanout', routing_key: str = ''):
         super().__init__(config)
-        self._connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=host))
+        self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
 
         self._exchange = exchange
         self._routing_key = routing_key
 
         self._channel = self._connection.channel()
-        self._channel.exchange_declare(
-            exchange=self._exchange, exchange_type=exchange_type)
-
+        self._channel.exchange_declare(exchange=self._exchange, exchange_type=exchange_type)
 
     @property
     def name(self) -> str:
@@ -649,12 +694,15 @@ class WriteToRabbitMQStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MessageMeta, )
 
+    def supports_cpp_node(self) -> bool:
+        return False
+
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
         builder.make_edge(input_stream[0], node)
         return input_stream
 
-    def on_data(self, message: MessageMeta):
+    def on_data(self, message: MessageMeta) -> MessageMeta:
         df = message.df
         buffer = StringIO()
         df.to_json(buffer, orient='records', lines=True)
@@ -669,3 +717,6 @@ class WriteToRabbitMQStage(SinglePortStage):
     def on_complete(self):
         self._connection.close()
 ```
+
+## Note
+For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages see [examples/developer_guide/2_2_rabbitmq/README.md](../../../../examples/developer_guide/2_2_rabbitmq/README.md)

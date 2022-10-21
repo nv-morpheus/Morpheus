@@ -18,7 +18,7 @@
 #include "test_morpheus.hpp"
 
 #include <cudf/io/csv.hpp>
-#include <cudf/table/table.hpp>
+#include <cudf/table/table.hpp>  // IWYU pragma: keep
 
 cudf::io::table_with_metadata load_table_from_csv(std::string filename)
 {

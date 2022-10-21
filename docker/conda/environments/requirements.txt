@@ -3,17 +3,9 @@
 --find-links https://download.pytorch.org/whl/cu113/torch_stable.html
 
 ####### Pip-only runtime dependencies (keep sorted!) #######
-click>=8
-configargparse
-datacompy
-docker
-git+https://github.com/efajardo-nv/dfencoder.git@nv-updates#egg=dfencoder
-grpcio-channelz
-networkx
+# Packages listed here should also be listed in setup.py
+git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder
 nvidia-pyindex
-pybind11-stubgen==0.10.5
 torch==1.10.2+cu113
-tqdm
-tritonclient[all]
-typing-utils
-watchdog==2.1.8
+tritonclient[all]==2.17.*
+websockets

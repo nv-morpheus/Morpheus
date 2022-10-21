@@ -18,9 +18,9 @@
 #include "morpheus/messages/multi_response.hpp"
 
 #include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory::tensor_map_t
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 
@@ -30,6 +30,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <ostream>  // needed for logging
 #include <string>
 #include <utility>
 
@@ -96,9 +97,9 @@ void MultiResponseMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_mess
     sliced_message->offset = start;
     sliced_message->count  = stop - start;
 
-    // Currently our output lengths should always match mess_count, and even if they didn't we wouldn't have any way to
-    // associate rows in the output with rows in the dataframe. Note on the input side we have the seq_ids array to
-    // but we don't have any equivelant for the output.
+    // Currently our output lengths should always match mess_count, and even if they didn't we wouldn't have any way
+    // to associate rows in the output with rows in the dataframe. Note on the input side we have the seq_ids array
+    // to but we don't have any equivelant for the output.
     DCHECK(this->count == this->mess_count)
         << "Number of rows in response output does not match number of messages in DF";
 

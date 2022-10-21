@@ -40,13 +40,13 @@ gpuci_logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DCCACHE_PROGRAM_PATH=$(which sccache) .
 
 gpuci_logger "Building targets that generate source code"
-cmake --build build --target style_checks --parallel ${PARALLEL_LEVEL}
+cmake --build build --target morpheus_style_checks --parallel ${PARALLEL_LEVEL}
 
 gpuci_logger "sccache usage for source build:"
 sccache --show-stats
 
 gpuci_logger "Runing C++ style checks"
-SKIP_IWYU=1 ${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
+${MORPHEUS_ROOT}/ci/scripts/cpp_checks.sh
 
 gpuci_logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}

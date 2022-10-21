@@ -41,7 +41,7 @@ function(find_and_configure_srf version)
                       "SRF_PYTHON_INPLACE_BUILD OFF"
                       "SRF_PYTHON_PERFORM_INSTALL ON"
                       "SRF_PYTHON_BUILD_STUBS ${MORPHEUS_BUILD_PYTHON_STUBS}"
-                      "RMM_VERSION ${RAPIDS_VERSION}"
+                      "RMM_VERSION ${MORPHEUS_RAPIDS_VERSION}"
   )
 
 endfunction()

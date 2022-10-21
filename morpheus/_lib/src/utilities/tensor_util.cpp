@@ -20,7 +20,6 @@
 #include <glog/logging.h>              // for DCHECK_EQ
 #include <srf/utils/sort_indexes.hpp>  // for sort_indexes
 
-#include <algorithm>  // for copy
 // clang-format off
 // prevent from moving this into the third-party section
 #include <experimental/iterator>  // for make_ostream_joiner

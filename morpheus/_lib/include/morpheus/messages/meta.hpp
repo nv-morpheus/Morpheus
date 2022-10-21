@@ -17,11 +17,14 @@
 
 #pragma once
 
+#include "morpheus/objects/data_table.hpp"  // for IDataTable
 #include "morpheus/objects/table_info.hpp"
 
 #include <cudf/io/types.hpp>
-#include <pybind11/pybind11.h>
+#include <cudf/types.hpp>  // for size_type
+#include <pybind11/pytypes.h>
 
+#include <cstddef>  // for size_t
 #include <memory>
 #include <string>
 

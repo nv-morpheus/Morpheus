@@ -24,6 +24,7 @@ from tqdm import tqdm
 
 import cudf
 
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -122,8 +123,11 @@ class MorpheusTqdm(tqdm):
         self.is_running = False
 
 
+@register_stage("monitor", ignore_args=["determine_count_fn"])
 class MonitorStage(SinglePortStage):
     """
+    Display throughput numbers at a specific point in the pipeline.
+
     Monitor stage used to monitor stage performance metrics using Tqdm. Each Monitor Stage will represent one
     line in the console window showing throughput statistics. Can be set up to show an instantaneous
     throughput or average input.
@@ -132,7 +136,7 @@ class MonitorStage(SinglePortStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    description : str
+    description : str, default = "Progress"
         Name to show for this Monitor Stage in the console window.
     smoothing : float
         Smoothing parameter to determine how much the throughput should be averaged. 0 = Instantaneous, 1 =
@@ -140,7 +144,9 @@ class MonitorStage(SinglePortStage):
     unit : str
         Units to show in the rate value.
     delayed_start : bool
-        Delay start of progress bar.
+        When delayed_start is enabled, the progress bar will not be shown until the first message is received.
+        Otherwise, the progress bar is shown on pipeline startup and will begin timing immediately. In large pipelines,
+        this option may be desired to give a more accurate timing.
     determine_count_fn : typing.Callable[[typing.Any], int]
         Custom function for determining the count in a message. Gets called for each message. Allows for
         correct counting of batched and sliced messages.
@@ -152,7 +158,7 @@ class MonitorStage(SinglePortStage):
                  c: Config,
                  description: str = "Progress",
                  smoothing: float = 0.05,
-                 unit="messages",
+                 unit: str = "messages",
                  delayed_start: bool = False,
                  determine_count_fn: typing.Callable[[typing.Any], int] = None):
         super().__init__(c)

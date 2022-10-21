@@ -15,18 +15,29 @@
  * limitations under the License.
  */
 
-#include "morpheus/stages/filter_detection.hpp"
+#include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
+#include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
+#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
+#include "morpheus/utilities/tensor_util.hpp"       // for TensorUtils::get_element_stride
+#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
 
-#include <glog/logging.h>  // for CHECK
+#include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
+#include <glog/logging.h>            // for CHECK
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>     // for device_buffer
+#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
 
 #include <cstddef>
+#include <cstdint>  // for uint8_t
 #include <exception>
 #include <memory>
-#include <ostream>  // needed for glog
-#include <utility>  // for pair
+#include <ostream>      // needed for glog
+#include <type_traits>  // for declval (indirectly via templates)
+#include <utility>      // for pair
+// IWYU thinks we need ext/new_allocator.h for size_t for some reason
+// IWYU pragma: no_include <ext/new_allocator.h>
 
 namespace morpheus {
 

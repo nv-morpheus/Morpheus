@@ -69,19 +69,20 @@ def compare_df(df_a: pd.DataFrame,
                abs_tol: float = 0.001,
                rel_tol: float = 0.005,
                dfa_name: str = "val",
-               dfb_name: str = "res"):
+               dfb_name: str = "res",
+               show_report: bool = False):
     """
-    Compares two pandas Dataframe, returning a comparison summary as a dict in the form of:
-    ```
-    {
-        "total_rows": <int>,
-        "matching_rows": <int>,
-        "diff_rows": <int>,
-        "matching_cols": <[str]>,
-        "extra_cols": extra_cols: <[str]>,
-        "missing_cols": missing_cols: <[str]>,
-    }
-    ```
+    Compares two pandas Dataframe, returning a comparison summary as a dict in the form of::
+
+        {
+            "total_rows": <int>,
+            "matching_rows": <int>,
+            "diff_rows": <int>,
+            "matching_cols": <[str]>,
+            "extra_cols": extra_cols: <[str]>,
+            "missing_cols": missing_cols: <[str]>,
+        }
+
     """
     df_a_filtered = filter_df(df_a, include_columns, exclude_columns, replace_idx=replace_idx)
     df_b_filtered = filter_df(df_b, include_columns, exclude_columns, replace_idx=replace_idx)
@@ -123,6 +124,8 @@ def compare_df(df_a: pd.DataFrame,
                          total_rows,
                          diff_rows / total_rows * 100.0)
             logger.debug(mismatch_df[:20])
+            if show_report:
+                logger.debug(comparison.report())
         else:
             logger.info("Results match validation dataset")
 
