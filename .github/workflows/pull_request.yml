@@ -89,6 +89,7 @@ jobs:
     timeout-minutes: 60
     container:
       image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
+      options: --cap-add=sys_nice
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
         PARALLEL_LEVEL: '10'
