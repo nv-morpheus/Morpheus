@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import sys
 import time
 from enum import Enum
 from io import StringIO
