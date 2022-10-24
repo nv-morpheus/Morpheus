@@ -256,7 +256,8 @@ KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
-                                   size_t stop_after) :
+                                   size_t stop_after,
+                                   bool async_commits) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topic(std::move(topic)),
@@ -264,7 +265,8 @@ KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
   m_config(std::move(config)),
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering),
-  m_stop_after{stop_after}
+  m_stop_after{stop_after},
+  m_async_commits(async_commits)
 {}
 
 KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
@@ -333,7 +335,14 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 
                 if (should_commit)
                 {
-                    CHECK_KAFKA(consumer->commitAsync(), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
+                    if (m_async_commits)
+                    {
+                        CHECK_KAFKA(consumer->commitAsync(), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
+                    }
+                    else
+                    {
+                        CHECK_KAFKA(consumer->commitSync(), RdKafka::ERR_NO_ERROR, "Error during commit");
+                    }
                 }
             }
 
@@ -594,10 +603,18 @@ std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     std::map<std::string, std::string> config,
     bool disable_commits,
     bool disable_pre_filtering,
-    size_t stop_after)
+    size_t stop_after,
+    bool async_commits)
 {
-    auto stage = builder.construct_object<KafkaSourceStage>(
-        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering, stop_after);
+    auto stage = builder.construct_object<KafkaSourceStage>(name,
+                                                            max_batch_size,
+                                                            topic,
+                                                            batch_timeout_ms,
+                                                            config,
+                                                            disable_commits,
+                                                            disable_pre_filtering,
+                                                            stop_after,
+                                                            async_commits);
 
     return stage;
 }

@@ -72,6 +72,8 @@ class KafkaSourceStage(SingleOutputSource):
         information on the effects of each value."
     stop_after: int, default = 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
+    async_commits: bool, default = True
+        Enable commits to be performed asynchronously. Ignored if `disable_commit` is `True`.
     """
 
     def __init__(self,
@@ -84,7 +86,8 @@ class KafkaSourceStage(SingleOutputSource):
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
                  auto_offset_reset: AutoOffsetReset = "latest",
-                 stop_after: int = 0):
+                 stop_after: int = 0,
+                 async_commits: bool = True):
         super().__init__(c)
 
         if isinstance(auto_offset_reset, AutoOffsetReset):
@@ -94,8 +97,7 @@ class KafkaSourceStage(SingleOutputSource):
             'bootstrap.servers': bootstrap_servers,
             'group.id': group_id,
             'session.timeout.ms': "60000",
-            "auto.offset.reset": auto_offset_reset,
-            'enable.auto.commit': str(disable_commit).lower()
+            "auto.offset.reset": auto_offset_reset
         }
         if client_id is not None:
             self._consumer_params['client.id'] = client_id
@@ -106,6 +108,7 @@ class KafkaSourceStage(SingleOutputSource):
         self._disable_commit = disable_commit
         self._disable_pre_filtering = disable_pre_filtering
         self._stop_after = stop_after
+        self._async_commits = async_commits
         self._client = None
 
         # Flag to indicate whether or not we should stop
@@ -151,7 +154,7 @@ class KafkaSourceStage(SingleOutputSource):
             finally:
                 if (not self._disable_commit):
                     for msg in batch:
-                        consumer.commit(message=msg)
+                        consumer.commit(message=msg, asynchronous=self._async_commits)
 
             if df is not None:
                 num_records = len(df)
@@ -229,7 +232,8 @@ class KafkaSourceStage(SingleOutputSource):
                                               self._consumer_params,
                                               self._disable_commit,
                                               self._disable_pre_filtering,
-                                              self._stop_after)
+                                              self._stop_after,
+                                              self._async_commits)
 
             # Only use multiple progress engines with C++. The python implementation will duplicate messages with
             # multiple threads
