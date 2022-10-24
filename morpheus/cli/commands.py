@@ -434,8 +434,9 @@ def pipeline_fil(ctx: click.Context, **kwargs):
              pipeline_mode=PipelineModes.AE)
 @click.option('--columns_file',
               required=True,
+              default="data/columns_ae.txt",
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
-              help=(""))
+              help=("Specifies a file to read column features."))
 @click.option('--labels_file',
               default=None,
               type=MorpheusRelativePath(dir_okay=False, exists=True, file_okay=True, resolve_path=True),
