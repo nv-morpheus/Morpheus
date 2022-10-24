@@ -51,43 +51,48 @@ namespace morpheus {
 DocaSourceStage::DocaSourceStage() :
   PythonSource(build())
 {
-  _context = std::make_shared<morpheus::doca::doca_context>("63:00.0", "66:00.0");
+  _context              = std::make_shared<morpheus::doca::doca_context>("63:00.0", "66:00.0");
+  _rxq                  = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
+  _rxpipe               = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
+  _semaphore_collection = std::make_shared<morpheus::doca::doca_semaphore_collection>(_context, 1024);
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 {
-    return [this](rxcpp::subscriber<source_type_t> output) {
+  return [this](rxcpp::subscriber<source_type_t> output) {
 
-        auto stream = cudf::default_stream_value;
-        auto values = rmm::device_uvector<int32_t>(1000000, stream);
+    // TODO: create doca Rx queues
 
-        // thrust::uninitialized_fill(thrust::cuda::par.on(stream.value()), values.begin(), values.end(), int32_t{0});
+    // TODO: launch doca Rx kernel
 
-        auto values_size = values.size();
-        auto my_column   = std::make_unique<cudf::column>(
-          cudf::data_type{cudf::type_to_id<int32_t>()},
-          values_size,
-          values.release());
+    auto stream = cudf::default_stream_value;
+    auto values = rmm::device_uvector<int32_t>(1000000, stream);
 
-        auto my_columns          = std::vector<std::unique_ptr<cudf::column>>();
+    auto values_size = values.size();
+    auto my_column   = std::make_unique<cudf::column>(
+      cudf::data_type{cudf::type_to_id<int32_t>()},
+      values_size,
+      values.release());
 
-        my_columns.push_back(std::move(my_column));
+    auto my_columns          = std::vector<std::unique_ptr<cudf::column>>();
 
-        // auto my_table            = std::make_unique<cudf::table>(std::move(my_columns));
-        auto metadata            = cudf::io::table_metadata();
+    my_columns.push_back(std::move(my_column));
 
-        metadata.column_names.push_back("index");
-        
-        auto my_table_w_metadata = cudf::io::table_with_metadata{
-          std::make_unique<cudf::table>(std::move(my_columns)),
-          std::move(metadata)
-        };
-        auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
+    // auto my_table            = std::make_unique<cudf::table>(std::move(my_columns));
+    auto metadata            = cudf::io::table_metadata();
 
-        output.on_next(meta);
-
-        output.on_completed();
+    metadata.column_names.push_back("index");
+    
+    auto my_table_w_metadata = cudf::io::table_with_metadata{
+      std::make_unique<cudf::table>(std::move(my_columns)),
+      std::move(metadata)
     };
+    auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
+
+    output.on_next(meta);
+
+    output.on_completed();
+  };
 }
 
 // ************ DocaSourceStageInterfaceProxy ************ //
