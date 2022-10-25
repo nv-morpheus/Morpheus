@@ -16,29 +16,32 @@
 
 set -e
 
-source ${WORKSPACE}/ci/scripts/jenkins/common.sh
+source ${WORKSPACE}/ci/scripts/github/common.sh
+install_deb_deps
+install_build_deps
 
 restore_conda_env
 pip install ${MORPHEUS_ROOT}/build/wheel
 
-gpuci_logger "Pulling LFS assets"
+rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
 
 cd ${MORPHEUS_ROOT}/docs
-gpuci_logger "Installing Documentation dependencies"
+rapids-logger "Installing Documentation dependencies"
 pip install -r requirement.txt
 
-gpuci_logger "Building docs"
+rapids-logger "Building docs"
+
 make -j ${PARALLEL_LEVEL} html
 
-gpuci_logger "Tarring the docs"
+rapids-logger "Tarring the docs"
 tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/html
 
-gpuci_logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
+rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/docs.tar.bz" "${ARTIFACT_URL}/docs.tar.bz"
 
-gpuci_logger "Success"
+rapids-logger "Success"
 exit 0
