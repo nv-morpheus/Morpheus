@@ -70,7 +70,7 @@ dependencies:
     - protobuf=3.20
     - pybind11-stubgen=0.10.5
     - pydot
-    - pytest
+    - pytest=7.1
     - pytest-benchmark
     - pytest-cov
     - python-graphviz
