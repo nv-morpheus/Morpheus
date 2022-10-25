@@ -16,6 +16,7 @@
  */
 
 #include "morpheus/stages/doca_source.hpp"
+#include "morpheus/stages/doca_source_kernels.hpp"
 
 #include <cudf/column/column.hpp>  // for column
 #include <cudf/io/csv.hpp>
@@ -42,6 +43,7 @@
 #include <sstream>
 #include <stdexcept>  // for runtime_error
 #include <utility>
+#include <iostream>
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
 
@@ -51,10 +53,10 @@ namespace morpheus {
 DocaSourceStage::DocaSourceStage() :
   PythonSource(build())
 {
-  _context              = std::make_shared<morpheus::doca::doca_context>("63:00.0", "66:00.0");
-  _rxq                  = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
-  _rxpipe               = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
-  _semaphore_collection = std::make_shared<morpheus::doca::doca_semaphore_collection>(_context, 1024);
+  _context   = std::make_shared<morpheus::doca::doca_context>("63:00.0", "66:00.0");
+  _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
+  _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
+  _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 1024);
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
@@ -64,6 +66,31 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     // TODO: create doca Rx queues
 
     // TODO: launch doca Rx kernel
+
+    std::cout << "launching kernel" << std::endl;
+
+    cudaStream_t my_stream;
+
+    auto stream_create_res = cudaStreamCreateWithFlags(&my_stream, cudaStreamNonBlocking);
+		if (stream_create_res != cudaSuccess) {
+			return;
+		}
+
+    doca_receive_persistent(
+      _rxq->rxq_info_gpu(),
+      _semaphore->in_gpu(),
+      _semaphore->size(),
+      my_stream
+    );
+
+    cudaStreamSynchronize(my_stream);
+    cudaDeviceSynchronize();
+    auto cuda_error = cudaGetLastError();
+    cudaStreamDestroy(my_stream);
+
+    if (cuda_error != cudaSuccess) {
+      return;
+    }
 
     auto stream = cudf::default_stream_value;
     auto values = rmm::device_uvector<int32_t>(1000000, stream);

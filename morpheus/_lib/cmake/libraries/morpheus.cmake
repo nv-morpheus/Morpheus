@@ -45,6 +45,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/stages/add_classification.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_scores.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/doca_source.cpp
+    ${MORPHEUS_LIB_ROOT}/src/stages/doca_source_kernels.cu
     ${MORPHEUS_LIB_ROOT}/src/stages/deserialize.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/file_source.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/filter_detection.cpp
@@ -75,6 +76,7 @@ target_link_libraries(morpheus
       libdoca_argp.so
       libdoca_common.so
       libdoca_gpu.so
+      libdoca_gpu_device.so
       libdoca_flow.so
       librte_bus_auxiliary.so
       librte_bus_pci.so
@@ -106,6 +108,7 @@ target_include_directories(morpheus
 )
 
 set_target_properties(morpheus PROPERTIES CXX_VISIBILITY_PRESET hidden)
+# set_target_properties(morpheus PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 message(STATUS " Install dest: (morpheus) ${MORPHEUS_LIB_INSTALL_DIR}")
 install(

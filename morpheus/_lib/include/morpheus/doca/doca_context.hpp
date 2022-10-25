@@ -58,10 +58,11 @@ struct doca_rx_pipe
     ~doca_rx_pipe();
 };
 
-struct doca_semaphore_collection
+struct doca_semaphore
 {
   private:
     std::shared_ptr<doca_context> _context;
+    uint16_t _size;
     doca_gpu_semaphore* _semaphore;
     doca_gpu_semaphore_in* _semaphore_in_gpu;
     doca_gpu_semaphore_in* _semaphore_in_cpu;
@@ -69,8 +70,11 @@ struct doca_semaphore_collection
     doca_gpu_semaphore_in* _semaphore_info_cpu;
 
   public:
-    doca_semaphore_collection(std::shared_ptr<doca_context> context, uint16_t size);
-    ~doca_semaphore_collection();
+    doca_semaphore(std::shared_ptr<doca_context> context, uint16_t size);
+    ~doca_semaphore();
+
+    doca_gpu_semaphore_in* in_gpu();
+    uint16_t size();
 };
 
 #pragma GCC visibility pop

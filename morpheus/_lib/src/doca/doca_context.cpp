@@ -32,8 +32,6 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
 
     char a_flag[] = "-a";
     argv.push_back(a_flag);
-    argv.push_back(nic_addr_c);
-    argv.push_back(a_flag);
     argv.push_back(gpu_addr_c);
 
     char l_flag[] = "-l";
@@ -178,11 +176,12 @@ doca_rx_pipe::~doca_rx_pipe()
   // doca_flow_destroy_pipe(_context->nic_port(), _pipe);
 }
 
-doca_semaphore_collection::doca_semaphore_collection(
+doca_semaphore::doca_semaphore(
   std::shared_ptr<doca_context> context,
   uint16_t size
 ):
-  _context(context)
+  _context(context),
+  _size(size)
 {
   auto create_ret = doca_gpu_semaphore_create(
     _context->gpu(),
@@ -224,9 +223,20 @@ doca_semaphore_collection::doca_semaphore_collection(
   }
 }
 
-doca_semaphore_collection::~doca_semaphore_collection()
+doca_semaphore::~doca_semaphore()
 {
   // can't destroy semaphore... ?
+}
+
+
+doca_gpu_semaphore_in* doca_semaphore::in_gpu()
+{
+  return _semaphore_in_gpu;
+}
+
+uint16_t doca_semaphore::size()
+{
+  return _size;
 }
 
 }

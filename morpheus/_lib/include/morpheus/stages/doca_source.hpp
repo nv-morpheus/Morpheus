@@ -54,7 +54,7 @@ class DocaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
     std::shared_ptr<morpheus::doca::doca_context> _context;
     std::shared_ptr<morpheus::doca::doca_rx_queue> _rxq;
     std::shared_ptr<morpheus::doca::doca_rx_pipe> _rxpipe;
-    std::shared_ptr<morpheus::doca::doca_semaphore_collection> _semaphore_collection;
+    std::shared_ptr<morpheus::doca::doca_semaphore> _semaphore;
 };
 
 /****** DocaSourceStageInterfaceProxy***********************/

@@ -42,12 +42,14 @@ ARG TENSORRT_VERSION=8.2.1.3
 # Capture argument used for FROM
 ARG CUDA_VER
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install dependencies to build
 RUN apt-get update &&\
     apt-get upgrade -y &&\
     curl -sL https://deb.nodesource.com/setup_16.x | bash - &&\
     apt-get install --no-install-recommends -y \
-        build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs git-lfs \
+        build-essential pkg-config curl unzip tar zip openssh-client bc jq git-lfs wget \
     && rm -rf /var/lib/apt/lists/*
 
 # install doca dependencies from local deb packages
@@ -77,6 +79,12 @@ SHELL ["/bin/bash", "-c"]
 # All code will be under /workspace
 WORKDIR /workspace
 
+COPY --from=condaforge/mambaforge:latest /opt/conda /opt/conda
+
+ENV PATH="${PATH}:/opt/conda/bin"
+
+# RUN export PATH=/opt/conda/bin:$PATH
+
 # Install mamba to speed the solve up
 RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
@@ -105,9 +113,14 @@ RUN source activate morpheus &&\
     conda config --env --add channels nvidia &&\
     conda config --env --add channels rapidsai
 
+# Add Tini
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
 # Set the entrypoint to use the entrypoint.sh script which sets the conda env
 COPY docker/entrypoint.sh ./docker/
-ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
+ENTRYPOINT [ "/tini", "--", "/workspace/docker/entrypoint.sh" ]
 
 # Reset the shell back to normal
 SHELL ["/bin/bash", "-c"]
@@ -127,12 +140,18 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"} &&\
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_dev.yml &&\
-    # Required by DOCA
-    conda install -y -c pdrops libbsd &&\
     # Remove channel_alias to use the normal channel in the container
     conda config --env --remove-key channel_alias &&\
     # Clean and activate
     conda clean -afy
+
+# Required by DOCA
+RUN conda install -n morpheus -y -c pdrops libbsd
+
+# install GDRCopy Library
+RUN git clone --depth 1 --branch v2.3 https://github.com/NVIDIA/gdrcopy.git /var/tmp/gdrcopy && \
+    cd /var/tmp/gdrcopy && \
+    make prefix=/usr lib lib_install
 
 # ============ Stage: conda_bld_morpheus ============
 # Now build the morpheus conda package
@@ -193,6 +212,38 @@ CMD [ "morpheus" ]
 FROM conda_env_dev as development
 # Copy the source
 # COPY . ./
+
+# Install node
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/include/node /usr/local/include/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+# Install yarn
+COPY --from=node /opt/yarn-v*/bin/* /usr/local/bin/
+COPY --from=node /opt/yarn-v*/lib/* /usr/local/lib/
+# Copy entrypoint
+COPY --from=node /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# Install npm
+RUN bash -c 'echo -e "\
+fund=false\n\
+audit=false\n\
+save-prefix=\n\
+--omit=optional\n\
+save-exact=true\n\
+package-lock=false\n\
+update-notifier=false\n\
+scripts-prepend-node-path=true\n\
+registry=https://registry.npmjs.org/\n\
+" | tee /root/.npmrc >/dev/null' \
+ && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
+ && ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+ # Smoke tests
+ && echo "node version: $(node --version)" \
+ && echo " npm version: $(npm --version)" \
+ && echo "yarn version: $(yarn --version)"
+
+# ENV PATH="${PATH}:/usr/local/bin"
 
 # Install camouflage needed for unittests to mock a triton server
 RUN npm install -g camouflage-server
