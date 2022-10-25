@@ -35,21 +35,14 @@ mamba env update -f ${MORPHEUS_ROOT}/docs/conda_docs.yml
 rapids-logger "Configuring for docs"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_BUILD_DOCS=ON .
 
-rapids-logger "Building C++ docs"
+rapids-logger "Building docs"
 cmake --build build --target morpheus_docs
 
-rapids-logger "Building Python docs"
-cd ${MORPHEUS_ROOT}/docs
-make -j ${PARALLEL_LEVEL} html
-
-rapids-logger "Tarring the docs"
-tar cfj "${WORKSPACE_TMP}/py_docs.tar.bz" build/html
-cd ${MORPHEUS_ROOT}
-tar cfj "${WORKSPACE_TMP}/cpp_docs.tar.bz" build/docs/html
+rapids-logger "Archiving the docs"
+tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/docs/html
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/py_docs.tar.bz" "${ARTIFACT_URL}/py_docs.tar.bz"
-aws s3 cp --no-progress "${WORKSPACE_TMP}/cpp_docs.tar.bz" "${ARTIFACT_URL}/cpp_docs.tar.bz"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/docs.tar.bz" "${ARTIFACT_URL}/docs.tar.bz"
 
 rapids-logger "Success"
 exit 0
