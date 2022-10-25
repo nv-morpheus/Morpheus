@@ -172,7 +172,7 @@ FROM conda_env_dev as development
 # COPY . ./
 
 # Install camouflage needed for unittests to mock a triton server
-RUN npm install -g camouflage-server
+RUN npm install -g camouflage-server@0.9
 
 # Setup git to allow other users to access /workspace. Requires git 2.35.3 or
 # greater. See https://marc.info/?l=git&m=164989570902912&w=2. Only enable for
