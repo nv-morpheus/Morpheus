@@ -30,6 +30,7 @@
 import importlib
 import os
 import sys
+import textwrap
 
 import packaging
 
@@ -72,10 +73,11 @@ version = f"{version_obj.major:02d}.{version_obj.minor:02d}"
 # ones.
 extensions = [
     'breathe',
-    "IPython.sphinxext.ipython_console_highlighting",
-    "IPython.sphinxext.ipython_directive",
+    'exhale',
+    'IPython.sphinxext.ipython_console_highlighting',
+    'IPython.sphinxext.ipython_directive',
     'myst_parser',
-    "nbsphinx",
+    'nbsphinx',
     'numpydoc',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -87,6 +89,39 @@ extensions = [
 
 # Breathe Configuration
 breathe_default_project = "morpheus"
+
+# This will be set when invoked by cmake
+build_dir = os.environ.get('BUILD_DIR', './')
+doxygen_tmp_dir = os.path.join(build_dir, "_doxygen/xml")
+breathe_projects = {"morpheus": doxygen_tmp_dir}
+
+exhale_args = {
+    "containmentFolder":
+        "./_lib",
+    "rootFileName":
+        "index.rst",
+    "doxygenStripFromPath":
+        "../../",
+    "rootFileTitle":
+        "C++ API",
+    "createTreeView":
+        True,
+    "exhaleExecutesDoxygen":
+        True,
+    "exhaleDoxygenStdin":
+        textwrap.dedent('''
+        INPUT = ../../morpheus/_lib
+        FILE_PATTERNS = *.c *.cc *.cpp *.h *.hpp *.cu *.cuh *.md
+        EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/*
+        SOURCE_BROWSER = YES
+        EXTENSION_MAPPING = cu=C++ cuh=C++
+        BRIEF_MEMBER_DESC = YES
+        HIDE_UNDOC_MEMBERS = NO
+        HAVE_DOT = YES
+        DOT_IMAGE_FORMAT = svg
+        INTERACTIVE_SVG = YES
+    ''')
+}
 
 # Include Python objects as they appear in source files
 # Default: alphabetically ('alphabetical')

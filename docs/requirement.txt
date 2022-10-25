@@ -14,6 +14,7 @@
 # limitations under the License.
 
 breathe==4.34.0
+exhale==0.3.6
 ipython
 myst-parser==0.17.2
 nbsphinx
