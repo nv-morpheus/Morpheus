@@ -2,4 +2,5 @@ C++ API Reference
 =================
 
 .. doxygenindex::
-   :outline:
+   :project: morpheus
+   :allow-dot-graphs:

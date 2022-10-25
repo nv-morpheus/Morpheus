@@ -25,5 +25,3 @@ This page contains the list of project's modules.
    :recursive:
 
    morpheus
-
-   lib
