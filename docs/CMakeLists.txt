@@ -19,7 +19,7 @@ find_package(Doxygen REQUIRED dot doxygen)
 find_package(Sphinx REQUIRED)
 
 set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/source)
-set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR})
+set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/html)
 
 add_custom_target(${PROJECT_NAME}_docs ALL
                   COMMAND
