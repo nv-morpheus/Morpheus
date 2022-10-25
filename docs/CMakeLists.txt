@@ -16,11 +16,13 @@
 list(APPEND CMAKE_MESSAGE_CONTEXT "docs")
 
 find_package(Doxygen REQUIRED dot doxygen)
+find_package(Sphinx REQUIRED)
 
-set(DOXYGEN_GENERATE_HTML YES)
+set(DOXYGEN_GENERATE_HTML NO)
 set(DOXYGEN_GENERATE_MAN NO)
 set(DOXYGEN_GENERATE_LATEX NO)
 set(DOXYGEN_GENERATE_MAN NO)
+set(DOXYGEN_GENERATE_XML YES)
 set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
 set(DOXYGEN_EXTRACT_ALL YES)
 set(DOXYGEN_RECURSIVE YES)
@@ -35,18 +37,25 @@ set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "README.md")
 set(DOXYGEN_HAVE_DOT YES)
 set(DOXYGEN_DOT_IMAGE_FORMAT "svg")
 set(DOXYGEN_INTERACTIVE_SVG YES)
+set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
+set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/xml/index.xml)
 
 doxygen_add_docs(
-    ${PROJECT_NAME}_docs
+    ${PROJECT_NAME}_doxygen_docs
     "morpheus/_lib"
-    "LICENSE"
-    "README.md"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     COMMENT "Generate html documentation"
 )
 
+set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/source)
+set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR})
 
-# Add the binary dir before including quickstart
-list(PREPEND CMAKE_PREFIX_PATH "${PROJECT_BINARY_DIR}")
+add_custom_target(${PROJECT_NAME}_docs ALL
+                  COMMAND
+                  ${SPHINX_EXECUTABLE} -b html
+                  -Dbreathe_projects.morpheus=${DOXYGEN_OUTPUT_DIRECTORY}/xml ${SPHINX_SOURCE} ${SPHINX_BUILD}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                  COMMENT "Generating documentation with Sphinx"
+                  DEPENDS ${PROJECT_NAME}_doxygen_docs)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

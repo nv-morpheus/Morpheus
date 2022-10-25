@@ -124,6 +124,7 @@ See :doc:`basics/overview` for more information on using the CLI.
    developer_guide/architecture
    developer_guide/guides
    api
+   lib
 
 .. toctree::
    :maxdepth: 20

@@ -71,6 +71,7 @@ version = f"{version_obj.major:02d}.{version_obj.minor:02d}"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'breathe',
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
     'myst_parser',
@@ -82,6 +83,9 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.linkcode',
 ]
+
+# Breathe Configuration
+breathe_default_project = "morpheus"
 
 # Include Python objects as they appear in source files
 # Default: alphabetically ('alphabetical')

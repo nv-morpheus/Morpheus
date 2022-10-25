@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+breathe==4.34.0
 ipython
 myst-parser==0.17.2
 nbsphinx
