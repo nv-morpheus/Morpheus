@@ -30,7 +30,7 @@ pip install ${MORPHEUS_ROOT}/build/wheel
 CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/wheel -name "*.x"))
 
 rapids-logger "Installing test dependencies"
-npm install --silent -g camouflage-server
+npm install --silent -g camouflage-server@0.9.0
 
 # Kafka tests need Java, since this stage is the only one that needs it, installing it here rather than adding it to
 # the ci.yaml file
