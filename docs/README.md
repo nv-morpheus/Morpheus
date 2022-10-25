@@ -25,18 +25,9 @@ From the roof of the morpheus repo:
 mamba env update -f docs/conda_docs.yml
 ```
 
-## To build C++ API documentation run:
+## To build the documentation run:
 ```
 cmake -B build -DMORPHEUS_BUILD_DOCS=ON .
 cmake --build build --target morpheus_docs
 ```
 Outputs to `build/docs/html`
-
-## To build Python documentation run:
-```bash
-cd docs
-make html
-```
-
-
-Outputs to `docs/build/html/index.html`
