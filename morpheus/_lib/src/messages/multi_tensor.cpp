@@ -75,9 +75,9 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
 
     // If we have more inference rows than message rows, we need to use the seq_ids to figure out the slicing. This
     // will be slow and should be avoided at all costs
-    if (this->count != this->mess_count && this->memory->has_input("seq_ids"))
+    if (this->count != this->mess_count && this->memory->has_tensor("seq_ids"))
     {
-        auto seq_ids = this->get_input("seq_ids");
+        auto seq_ids = this->get_tensor("seq_ids");
 
         // Determine the new start and stop before passing onto the base
         start = seq_ids.read_element<int32_t>({(TensorIndex)start, 0});

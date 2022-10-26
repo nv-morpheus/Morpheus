@@ -69,9 +69,6 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     const void set_tensor(const std::string &name, const TensorObject &value);
 
   protected:
-    /**
-     * TODO(Documentation)
-     */
     void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
 
     void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,

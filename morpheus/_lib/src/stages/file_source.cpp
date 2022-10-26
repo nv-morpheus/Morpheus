@@ -17,6 +17,8 @@
 
 #include "morpheus/stages/file_source.hpp"
 
+#include "morpheus/io/deserializers.hpp"
+
 #include <cudf/column/column.hpp>  // for column
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
@@ -55,35 +57,11 @@ FileSourceStage::FileSourceStage(std::string filename, int repeat) :
 FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        auto data_table = this->load_table();
-
-        // Using 0 will default to creating a new range index
-        int index_col_count = 0;
-
-        // Check if we have a first column with INT64 data type
-        if (data_table.metadata.column_names.size() >= 1 &&
-            data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
-        {
-            std::regex index_regex(R"((unnamed: 0|id))",
-                                   std::regex_constants::ECMAScript | std::regex_constants::icase);
-
-            // Get the column name
-            auto col_name = data_table.metadata.column_names[0];
-
-            // Check it against some common terms
-            if (std::regex_search(col_name, index_regex))
-            {
-                // Also, if its the hideous 'Unnamed: 0', then just use an empty string
-                if (col_name == "Unnamed: 0")
-                {
-                    data_table.metadata.column_names[0] = "";
-                }
-
-                index_col_count = 1;
-            }
-        }
+        auto data_table     = load_table_from_file(m_filename);
+        int index_col_count = get_index_col_count(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
+        // When index_col_count is 0 this will cause a new range index to be created
         auto meta = MessageMeta::create_from_cpp(std::move(data_table), index_col_count);
 
         // Always push at least 1
@@ -112,54 +90,6 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 
         output.on_completed();
     };
-}
-
-cudf::io::table_with_metadata FileSourceStage::load_table()
-{
-    auto file_path = std::filesystem::path(m_filename);
-
-    if (file_path.extension() == ".json" || file_path.extension() == ".jsonlines")
-    {
-        // First, load the file into json
-        auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{m_filename}).lines(true);
-
-        auto tbl = cudf::io::read_json(options.build());
-
-        auto found = std::find(tbl.metadata.column_names.begin(), tbl.metadata.column_names.end(), "data");
-
-        if (found == tbl.metadata.column_names.end())
-            return tbl;
-
-        // Super ugly but cudf cant handle newlines and add extra escapes. So we need to convert
-        // \\n -> \n
-        // \\/ -> \/
-        auto columns = tbl.tbl->release();
-
-        size_t idx = found - tbl.metadata.column_names.begin();
-
-        auto updated_data = cudf::strings::replace(
-            cudf::strings_column_view{columns[idx]->view()}, cudf::string_scalar("\\n"), cudf::string_scalar("\n"));
-
-        updated_data = cudf::strings::replace(
-            cudf::strings_column_view{updated_data->view()}, cudf::string_scalar("\\/"), cudf::string_scalar("/"));
-
-        columns[idx] = std::move(updated_data);
-
-        tbl.tbl = std::move(std::make_unique<cudf::table>(std::move(columns)));
-
-        return tbl;
-    }
-    else if (file_path.extension() == ".csv")
-    {
-        auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{m_filename});
-
-        return cudf::io::read_csv(options.build());
-    }
-    else
-    {
-        LOG(FATAL) << "Unknown extension for file: " << m_filename;
-        throw std::runtime_error("Unknown extension");
-    }
 }
 
 // ************ FileSourceStageInterfaceProxy ************ //
