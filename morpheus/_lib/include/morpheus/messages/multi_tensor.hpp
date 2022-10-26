@@ -61,6 +61,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     /**
      * Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist.
      */
+    TensorObject get_tensor(const std::string &name);
     const TensorObject get_tensor(const std::string &name) const;
 
     /**
@@ -77,6 +78,8 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
 
     std::shared_ptr<morpheus::TensorMemory> copy_input_ranges(
         const std::vector<std::pair<std::size_t, std::size_t>> &ranges, std::size_t num_selected_rows) const;
+    
+    TensorObject get_tensor_impl(const std::string &name) const;
 };
 
 #pragma GCC visibility pop

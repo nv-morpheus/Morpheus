@@ -184,7 +184,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     // Iterate on the model inputs in case the model takes less than what tensors are available
                     std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>>
                         saved_inputs = foreach_map(m_model_inputs, [this, &mini_batch_input](auto const &model_input) {
-                            DCHECK(mini_batch_input->memory->has_input(model_input.mapped_name))
+                            DCHECK(mini_batch_input->memory->has_tensor(model_input.mapped_name))
                                 << "Model input '" << model_input.mapped_name << "' not found in InferenceMemory";
 
                             auto const &inp_tensor = mini_batch_input->get_input(model_input.mapped_name);

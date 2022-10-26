@@ -67,7 +67,7 @@ std::shared_ptr<MultiResponseProbsMessage> MultiResponseProbsMessageInterfacePro
 std::shared_ptr<morpheus::ResponseMemory> MultiResponseProbsMessageInterfaceProxy::memory(
     MultiResponseProbsMessage &self)
 {
-    return self.memory;
+    return DCHECK_NOTNULL(std::dynamic_pointer_cast<morpheus::ResponseMemory>(self.memory));
 }
 
 std::size_t MultiResponseProbsMessageInterfaceProxy::offset(MultiResponseProbsMessage &self)

@@ -42,6 +42,16 @@ MultiTensorMessage::MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> me
 
 const TensorObject MultiTensorMessage::get_tensor(const std::string &name) const
 {
+    return get_tensor_impl(name);
+}
+
+TensorObject MultiTensorMessage::get_tensor(const std::string &name)
+{
+    return get_tensor_impl(name);
+}
+
+TensorObject MultiTensorMessage::get_tensor_impl(const std::string &name) const
+{
     CHECK(this->memory->has_tensor(name)) << "Cound not find tensor: " << name;
 
     // check if we are getting the entire input
@@ -52,7 +62,7 @@ const TensorObject MultiTensorMessage::get_tensor(const std::string &name) const
 
     // TODO(MDD): This really needs to return the slice of the tensor
     return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
-                                             {static_cast<cudf::size_type>(this->offset + this->count), -1});
+                                             {static_cast<cudf::size_type>(this->offset + this->count), -1});   
 }
 
 const void MultiTensorMessage::set_tensor(const std::string &name, const TensorObject &value)

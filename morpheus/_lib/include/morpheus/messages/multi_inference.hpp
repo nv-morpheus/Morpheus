@@ -20,6 +20,7 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
@@ -38,7 +39,7 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiMessage>
+class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiTensorMessage>
 {
   public:
     MultiInferenceMessage(const MultiInferenceMessage &other) = default;
@@ -47,34 +48,14 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
                           std::size_t mess_count,
                           std::shared_ptr<morpheus::InferenceMemory> memory,
                           std::size_t offset,
-                          std::size_t count);
+                          std::size_t count) : DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count) {};
 
-    std::shared_ptr<morpheus::InferenceMemory> memory;
-    std::size_t offset{0};
-    std::size_t count{0};
+    const TensorObject get_input(const std::string &name) const {return get_tensor(name);};
 
     /**
      * TODO(Documentation)
      */
-    const TensorObject get_input(const std::string &name) const;
-
-    /**
-     * TODO(Documentation)
-     */
-    const void set_input(const std::string &name, const TensorObject &value);
-
-  protected:
-    /**
-     * TODO(Documentation)
-     */
-    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
-
-    void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<size_t, size_t>> &ranges,
-                          size_t num_selected_rows) const override;
-
-    std::shared_ptr<InferenceMemory> copy_input_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
-                                                       size_t num_selected_rows) const;
+    const void set_input(const std::string &name, const TensorObject &value) {set_tensor(name, value);};
 };
 
 /****** MultiInferenceMessageInterfaceProxy****************/
