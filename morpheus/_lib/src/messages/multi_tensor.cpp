@@ -65,7 +65,7 @@ TensorObject MultiTensorMessage::get_tensor_impl(const std::string &name) const
                                              {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
-const void MultiTensorMessage::set_tensor(const std::string &name, const TensorObject &value)
+void MultiTensorMessage::set_tensor(const std::string &name, const TensorObject &value)
 {
     // Get the input slice first
     auto slice = this->get_tensor(name);
