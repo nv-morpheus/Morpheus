@@ -113,7 +113,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 // When our tensor lengths are longer than our dataframe we will need to use the seq_ids
                 // array to lookup how the values should map back into the dataframe
                 const bool needs_seq_ids = x->mess_count != x->count;
-                auto reponse_memory      = std::make_shared<ResponseMemory>(x->mess_count);
+                ResponseMemory reponse_memory(x->mess_count);
 
                 // Create the output memory blocks
                 for (auto &model_output : m_model_outputs)
@@ -128,14 +128,14 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     auto output_buffer = std::make_shared<rmm::device_buffer>(
                         elem_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
 
-                    reponse_memory->tensors[model_output.mapped_name] = Tensor::create(
+                    reponse_memory.tensors[model_output.mapped_name] = Tensor::create(
                         std::move(output_buffer), model_output.datatype, total_shape, std::vector<TensorIndex>{}, 0);
                 }
 
                 // This will be the final output of all mini-batches
-                auto response_mem_probs = std::make_shared<ResponseMemoryProbs>(std::move(*reponse_memory));
+                auto response_mem_probs = std::make_shared<ResponseMemoryProbs>(std::move(reponse_memory));
                 auto response = std::make_shared<MultiResponseProbsMessage>(
-                    x->meta, x->mess_offset, x->mess_count, std::move(response_mem_probs), 0, reponse_memory->count);
+                    x->meta, x->mess_offset, x->mess_count, std::move(response_mem_probs), 0, response_mem_probs->count);
 
                 std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
                 if (needs_seq_ids)
