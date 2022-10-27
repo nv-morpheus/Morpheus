@@ -20,13 +20,16 @@ from unittest import mock
 import numpy as np
 import pytest
 
+from morpheus._lib.file_types import FileTypes
 from morpheus.config import PipelineModes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
@@ -37,6 +40,15 @@ from utils import calc_error_val
 # End-to-end test intended to imitate the Sid validation test
 FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
+
+
+def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
+    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
+    for field_name in field_names:
+        class_field = f"{class_prefix}{field_name}"
+        score_field = f"{score_prefix}{field_name}"
+        above_thresh = df[score_field] > threshold
+        assert all(above_thresh == df[class_field])
 
 
 @pytest.mark.slow
@@ -110,6 +122,7 @@ def test_minibert_no_cpp(mock_triton_client, config, tmp_path):
         TritonInferenceStage(config, model_name='sid-minibert-onnx', server_url='fake:001', force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config, threshold=0.5, prefix="si_"))
+    pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
     pipe.add_stage(SerializeStage(config))
@@ -117,6 +130,8 @@ def test_minibert_no_cpp(mock_triton_client, config, tmp_path):
 
     pipe.run()
     results = calc_error_val(results_file_name)
+
+    compare_class_to_scores(out_file, config.class_labels, 'si_', 'score_', threshold=0.5)
     assert results.diff_rows == 1333
 
 
@@ -158,12 +173,14 @@ def _run_minibert_cpp(config, tmp_path, model_name, truncated):
         TritonInferenceStage(config, model_name=model_name, server_url='localhost:8001', force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config, threshold=0.5, prefix="si_"))
+    pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
+    compare_class_to_scores(out_file, config.class_labels, 'si_', 'score_', threshold=0.5)
     return calc_error_val(results_file_name)
 
 
