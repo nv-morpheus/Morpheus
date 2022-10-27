@@ -1,7 +1,22 @@
+This document walks through manual testing of the Kafka functionality in Morpheus. There are also several automated tests which are run as part of the CI process. To run the tests locally first install `pytest-kafka` with:
+```bash
+mamba install -c conda-forge "openjdk=11.0.15"
+mkdir -p ${MORPHEUS_ROOT}/.cache
+git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${MORPHEUS_ROOT}/.cache/pytest-kafka
+cd ${MORPHEUS_ROOT}/.cache/pytest-kafka
+python setup.py develop
+cd ${MORPHEUS_ROOT}
+```
+
+Then run the Kafka tests with:
+```bash
+pytest --run_slow --run_kafka
+```
+
 ## Pre-reqs
 1. Launch Kafka using instructions from the [Quick Launch Kafka Cluster](../../CONTRIBUTING.md#quick-launch-kafka-cluster) section of [CONTRIBUTING.md](../../CONTRIBUTING.md) following steps 1-6.
 
-1. The testing steps below will require four seperate terminal windows. Each will need to have the `KAFKA_ADVERTISED_HOST_NAME`, `BROKER_LIST` and `MORPHEUS_ROOT` environment variables set. In the example below both morpheus and kafka-docker repositories have been checked out into the `~work` directory, replace these paths with the location of your checkouts.
+1. The testing steps below will require four separate terminal windows. Each will need to have the `KAFKA_ADVERTISED_HOST_NAME`, `BROKER_LIST` and `MORPHEUS_ROOT` environment variables set. In the example below both morpheus and kafka-docker repositories have been checked out into the `~work` directory, replacing these paths with the location of your checkouts.
     ```bash
     export MORPHEUS_ROOT=~/work/morpheus
     export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
@@ -38,7 +53,6 @@ ulimit -n 4096
     ```bash
     $KAFKA_HOME/bin/kafka-topics.sh --create --topic=morpheus-src-copy-test  --partitions 1 --bootstrap-server `broker-list.sh`
     ```
-    Keep this shell & container open you will need it in later steps.
 
 1. From the Morpheus terminal launch a pipeline to listen to Kafka:
     ```bash
@@ -58,9 +72,9 @@ ulimit -n 4096
         --topic=morpheus-src-copy-test --broker-list=`broker-list.sh` -
     ```
 
-1. Return to the Morpheus terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Cntrl-C.
+1. Return to the Morpheus terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Ctrl-C.
 
-1. If successful the output file `.tmp/morpheus-src-copy-test.csv` should be identicle to `tests/tests_data/filter_probs.csv`. Verify:
+1. If successful the output file `.tmp/morpheus-src-copy-test.csv` should be identical to `tests/tests_data/filter_probs.csv`. Verify:
     ```bash
     diff -q --ignore-all-space ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.csv ${MORPHEUS_ROOT}/.tmp/morpheus-src-copy-test.csv
     ```
@@ -89,7 +103,7 @@ ulimit -n 4096
         --topic=morpheus-src-copy-test-p --broker-list=`broker-list.sh` -
     ```
 
-1. Return to the Morpheus terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Cntrl-C.
+1. Return to the Morpheus terminal, and once the monitor stage has recorded: `read: 20 messages` shut down the pipeline with Ctrl-C.
 
 1. If successful the output file `.tmp/morpheus-src-copy-test-p.csv` should contain the same records as those in `tests/tests_data/filter_probs.csv` however they are most likely out of order. To verify the output we will compare the sorted outputs:
     ```bash
@@ -127,7 +141,7 @@ ulimit -n 4096
     ```bash
     diff -q --ignore-all-space <(cat ${MORPHEUS_ROOT}/.tmp/morpheus-sink-copy-test.jsonlines | jq --sort-keys) <(cat ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.jsonlines | jq --sort-keys)
     ```
-    Note the usage of `jq --sort-keys` which will reformat the json outut, sorting the keys, this ensures that `{"a": 5, "b": 6}` and `{"b": 6,   "a": 5}` are considered equivelant.
+    Note the usage of `jq --sort-keys` which will reformat the json output, sorting the keys, this ensures that `{"a": 5, "b": 6}` and `{"b": 6,   "a": 5}` are considered equivalent.
 
 1. Stop the consumer in the first Kafka terminal.
 
@@ -160,7 +174,7 @@ ulimit -n 4096
     ```bash
     diff -q --ignore-all-space <(sort ${MORPHEUS_ROOT}/.tmp/morpheus-sink-copy-test-p.jsonlines | jq --sort-keys) <(sort ${MORPHEUS_ROOT}/tests/tests_data/filter_probs.jsonlines | jq --sort-keys)
     ```
-    Note due to the multiple partitions the consumer most likely receieved records out of order, so we are comparing the sorted output of both files.
+    Note due to the multiple partitions the consumer most likely received records out of order, so we are comparing the sorted output of both files.
 
 1. Stop the consumer in the first Kafka terminal.
 
@@ -212,7 +226,7 @@ For this test we are going to replace the from & to file stages from the ABP val
     ```
     This command should execute quickly writing `1242` records and should complete in less than 5 seconds.
 
-1. Return to the Morpheus terminal. Once the `Kafka Write` monitor has reported that `1242` messages has been written shutdown Morpheus with Cntrl-C. We can check the number of lines in the outut file:
+1. Return to the Morpheus terminal. Once the `Kafka Write` monitor reports that `1242` messages have been written, shutdown Morpheus with Ctrl-C. We can check the number of lines in the output file:
     ```bash
     wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_abp-nvsmi-xgb.jsonlines
     ```
@@ -227,7 +241,7 @@ For this test we are going to replace the from & to file stages from the ABP val
 
 ## DFP (Hammah) Validation Pipeline
 ### User123
-For this test we are going to replace to-file stage from the Hammah validation pipeline with the to-kafka stage using a topic named "morpheus-hammah-user123". Note: this pipeline requires a custom `UserMessageMeta` class which the from-kafka stage is currently unable to generate, for that reason the `CloudTrailSourceStage` remains in-place.
+For this test we are going to replace the `to-file` stage from the Hammah validation pipeline with the `to-kafka` stage using a topic named "morpheus-hammah-user123". Note: this pipeline requires a custom `UserMessageMeta` class which the `from-kafka` stage is currently unable to generate, for that reason the `CloudTrailSourceStage` remains in-place.
 
 1. From the first Kafka terminal create the `morpheus-hammah-user123` topic, and launch a consumer listening to it:
     ```bash
@@ -260,7 +274,7 @@ For this test we are going to replace to-file stage from the Hammah validation p
     wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-user123-pytorch.jsonlines
     ```
 
-1. Once all `847` rows have been written, return to the first Kafka terminal and stop the consumer with Cntrl-C.
+1. Once all `847` rows have been written, return to the first Kafka terminal and stop the consumer with Ctrl-C.
 
 1. Verify the output with, expect to see `38` unmatched rows:
     ```bash
@@ -271,7 +285,7 @@ For this test we are going to replace to-file stage from the Hammah validation p
     ```
 
 ### Role-g
-Similar to the Hammah User123 test, we are going to replace to-file stage from the Hammah validation pipeline with the to-kafka stage using a topic named "morpheus-hammah-role-g".
+Similar to the Hammah User123 test, we are going to replace the `to-file` stage from the Hammah validation pipeline with the `to-kafka` stage using a topic named "morpheus-hammah-role-g".
 
 1. From the first Kafka terminal create the `morpheus-hammah-role-g` topic, and launch a consumer listening to it:
     ```bash
@@ -304,7 +318,7 @@ Similar to the Hammah User123 test, we are going to replace to-file stage from t
     wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_hammah-role-g-pytorch.jsonlines
     ```
 
-1. Once all `314` rows have been written, return to the first Kafka terminal and stop the consumer with Cntrl-C.
+1. Once all `314` rows have been written, return to the first Kafka terminal and stop the consumer with Ctrl-C.
 
 1. Verify the output with, all rows should match:
     ```bash
@@ -360,12 +374,12 @@ For this test we are going to replace the from & to file stages from the Phishin
     ```
     This command should execute quickly writing `1010` records and should complete in less than 5 seconds.
 
-1. Return to the Morpheus terminal. The pipeline will take anywhere from 2 to 5 minutes to complete. Once the `Kafka Write` monitor has reported that `1010` messages has been written shutdown Morpheus with Cntrl-C. We can check the number of lines in the outut file:
+1. Return to the Morpheus terminal. The pipeline will take anywhere from 2 to 5 minutes to complete. Once the `Kafka Write` monitor has reported that `1010` messages have been written, shutdown Morpheus with Ctrl-C. We can check the number of lines in the output file:
     ```bash
     wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_phishing.jsonlines
     ```
 
-1. Once all `1010` rows have been written, return to the first Kafka terminal and stop the consumer with Cntrl-C.
+1. Once all `1010` rows have been written, return to the first Kafka terminal and stop the consumer with Ctrl-C.
 
 1. Verify the output with, expect to see `43` un-matched rows:
     ```bash
@@ -413,12 +427,12 @@ Note: Due to the complexity of the input data and a limitation of the cudf reade
         monitor --description "Kafka Write"
     ```
 
-1. The pipeline will take aproximately 2 minutes to complete. We can check the number of lines in the outut file:
+1. The pipeline will take approximately 2 minutes to complete. We can check the number of lines in the output file:
     ```bash
     wc -l ${MORPHEUS_ROOT}/.tmp/val_kafka_sid.jsonlines
     ```
 
-1. Once all `2000` rows have been written, return to the first Kafka terminal and stop the consumer with Cntrl-C.
+1. Once all `2000` rows have been written, return to the first Kafka terminal and stop the consumer with Ctrl-C.
 
 1. Verify the output with, expect to see `25` un-matched rows:
     ```bash
