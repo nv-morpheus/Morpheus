@@ -48,14 +48,38 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
                           std::size_t mess_count,
                           std::shared_ptr<morpheus::InferenceMemory> memory,
                           std::size_t offset,
-                          std::size_t count) : DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count) {};
-
-    const TensorObject get_input(const std::string &name) const {return get_tensor(name);};
+                          std::size_t count) :
+      DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count){};
 
     /**
-     * TODO(Documentation)
+     * @brief Return the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
-    const void set_input(const std::string &name, const TensorObject &value) {set_tensor(name, value);};
+    const TensorObject get_input(const std::string &name) const
+    {
+        return get_tensor(name);
+    };
+
+    /**
+     * @brief Return the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return TensorObject
+     */
+    TensorObject get_input(const std::string &name)
+    {
+        return get_tensor(name);
+    };
+
+    /**
+     * Update the value of ain input tensor. The tensor must already exist, otherwise this will halt on a fatal error.
+     */
+    void set_input(const std::string &name, const TensorObject &value)
+    {
+        set_tensor(name, value);
+    };
 };
 
 /****** MultiInferenceMessageInterfaceProxy****************/

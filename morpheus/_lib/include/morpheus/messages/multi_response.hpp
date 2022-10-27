@@ -48,22 +48,42 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
                          std::size_t mess_count,
                          std::shared_ptr<ResponseMemory> memory,
                          std::size_t offset,
-                         std::size_t count) : DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count) {};
+                         std::size_t count) :
+      DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count){};
 
     /**
-     * TODO(Documentation)
+     * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
-    TensorObject get_output(const std::string &name) {return get_tensor(name);};
+    const TensorObject get_output(const std::string &name) const
+    {
+        return get_tensor(name);
+    };
 
     /**
-     * TODO(Documentation)
+     * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return TensorObject
      */
-    const TensorObject get_output(const std::string &name) const {return get_tensor(name);};
+    TensorObject get_output(const std::string &name)
+    {
+        return get_tensor(name);
+    };
 
     /**
-     * TODO(Documentation)
+     * @brief Update the value of a given output tensor. The tensor must already exist, otherwise this will halt on a
+     * fatal error.
+     *
+     * @param name
+     * @param value
      */
-    const void set_output(const std::string &name, const TensorObject &value) {set_tensor(name, value);};
+    void set_output(const std::string &name, const TensorObject &value)
+    {
+        set_tensor(name, value);
+    };
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/

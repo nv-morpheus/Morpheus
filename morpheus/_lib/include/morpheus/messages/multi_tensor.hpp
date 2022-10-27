@@ -59,15 +59,29 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     std::size_t count{0};
 
     /**
-     * Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
-    TensorObject get_tensor(const std::string &name);
     const TensorObject get_tensor(const std::string &name) const;
 
     /**
-     * Update the value of a given tensor. The tensor must already exist, otherwise this will halt on a fatal error.
+     * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return TensorObject
      */
-    const void set_tensor(const std::string &name, const TensorObject &value);
+    TensorObject get_tensor(const std::string &name);
+
+    /**
+     * @brief Update the value of a given tensor. The tensor must already exist, otherwise this will halt on a fatal
+     * error.
+     *
+     * @param name
+     * @param value
+     */
+    void set_tensor(const std::string &name, const TensorObject &value);
 
   protected:
     void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
@@ -78,7 +92,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
 
     std::shared_ptr<morpheus::TensorMemory> copy_input_ranges(
         const std::vector<std::pair<std::size_t, std::size_t>> &ranges, std::size_t num_selected_rows) const;
-    
+
     TensorObject get_tensor_impl(const std::string &name) const;
 };
 

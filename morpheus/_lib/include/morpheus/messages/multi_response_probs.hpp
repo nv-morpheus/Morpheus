@@ -48,12 +48,16 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
                               size_t count);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the `probs` (probabilities) output tensor
+     *
+     * @return const TensorObject
      */
     const TensorObject get_probs() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Update the `probs` output tensor. Will halt on a fatal error if the `probs` output tensor does not exist.
+     *
+     * @param probs
      */
     void set_probs(const TensorObject &probs);
 };
