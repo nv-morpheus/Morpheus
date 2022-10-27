@@ -71,6 +71,7 @@ dependencies:
     - pybind11-stubgen=0.10.5
     - pydot
     - pytest
+    - pytest-benchmark>=4.0
     - pytest-cov
     - python-graphviz
     - python=3.8
