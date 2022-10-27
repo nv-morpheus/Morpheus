@@ -1,4 +1,8 @@
 ## Pre-reqs
+1. Ensure that we have enough file descriptors:
+    ```bash
+    ulimit -n 1048576
+    ```
 1. Launch Kafka using instructions from the [Quick Launch Kafka Cluster](../../CONTRIBUTING.md#quick-launch-kafka-cluster) section of [CONTRIBUTING.md](../../CONTRIBUTING.md)
 1. Populate an environment variable `BROKER_LIST` with the IP:Ports of the nodes in the Kafka cluster. Ensure this environment variable is set in all of the terminals where Morpheus is executed:
     ```bash
