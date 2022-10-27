@@ -14,29 +14,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-gpuci_logger "Env Setup"
+function print_env_vars() {
+    rapids-logger "Environ:"
+    env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN" | sort
+}
+
+rapids-logger "Env Setup"
+print_env_vars
+rapids-logger "---------"
+mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
+cd ${MORPHEUS_ROOT}
 
 # For non-gpu hosts nproc will correctly report the number of cores we are able to use
 # On a GPU host however nproc will report the total number of cores and PARALLEL_LEVEL
 # will be defined specifying the subset we are allowed to use.
 NUM_CORES=$(nproc)
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-${NUM_CORES}}
-gpuci_logger "Procs: ${NUM_CORES}"
+rapids-logger "Procs: ${NUM_CORES}"
 /usr/bin/lscpu
 
-gpuci_logger "Memory"
+rapids-logger "Memory"
 /usr/bin/free -g
 
-gpuci_logger "User Info"
+rapids-logger "User Info"
 id
 
-gpuci_logger "Retrieving base branch from GitHub API"
 # For PRs, $GIT_BRANCH is like: pull-request/989
-REPO_NAME=$(basename "${GIT_URL}" .git)
-ORG_NAME=$(basename "$(dirname "${GIT_URL}")")
-PR_NUM="${GIT_BRANCH##*/}"
+REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
+ORG_NAME="${GITHUB_REPOSITORY_OWNER}"
+PR_NUM="${GITHUB_REF_NAME##*/}"
 
 # S3 vars
 export S3_URL="s3://rapids-downloads/ci/morpheus"
@@ -48,25 +56,54 @@ export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}/pull-request/${PR_NUM}/${GIT_COMMIT}
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
 export SCCACHE_BUCKET=rapids-sccache
-export SCCACHE_REGION=us-west-2
+export SCCACHE_REGION="${AWS_DEFAULT_REGION}"
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
-export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_USE_CCACHE=ON"
+export CMAKE_BUILD_ALL_FEATURES="-DCMAKE_MESSAGE_CONTEXT_SHOW=ON -DMORPHEUS_BUILD_BENCHMARKS=ON -DMORPHEUS_BUILD_EXAMPLES=ON -DMORPHEUS_BUILD_TESTS=ON -DMORPHEUS_USE_CONDA=ON -DMORPHEUS_PYTHON_INPLACE_BUILD=OFF -DMORPHEUS_BUILD_PYTHON_STUBS=ON -DMORPHEUS_USE_CCACHE=ON"
 
 export FETCH_STATUS=0
 
-gpuci_logger "Environ:"
-env | sort
+print_env_vars
+
+function install_deb_deps() {
+    apt -q -y update
+    apt -q -y install libnuma1
+}
+
+function install_build_deps() {
+    apt -q -y install libcublas-dev-11-5 \
+                    libcufft-dev-11-5 \
+                    libcurand-dev-11-5 \
+                    libcusolver-dev-11-5 \
+                    libnvidia-compute-495
+}
+
+function create_conda_env() {
+    rapids-logger "Creating conda env"
+    conda config --add pkgs_dirs /opt/conda/pkgs
+    conda config --env --add channels conda-forge
+    conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
+    mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+
+    conda activate morpheus
+
+    rapids-logger "Installing CI dependencies"
+    mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
+    conda deactivate && conda activate morpheus
+
+    rapids-logger "Final Conda Environment"
+    show_conda_info
+}
 
 function fetch_base_branch() {
-    gpuci_logger "Retrieving base branch from GitHub API"
+    rapids-logger "Retrieving base branch from GitHub API"
     [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
     RESP=$(
     curl -s \
         -H "Accept: application/vnd.github.v3+json" \
         "${CURL_HEADERS[@]}" \
-        "https://api.github.com/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
+        "${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
     )
 
     BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
@@ -74,9 +111,8 @@ function fetch_base_branch() {
     # Change target is the branch name we are merging into but due to the weird way jenkins does
     # the checkout it isn't recognized by git without the origin/ prefix
     export CHANGE_TARGET="origin/${BASE_BRANCH}"
-    gpuci_logger "Base branch: ${BASE_BRANCH}"
+    rapids-logger "Base branch: ${BASE_BRANCH}"
 }
-
 
 function fetch_s3() {
     ENDPOINT=$1
@@ -92,25 +128,25 @@ function fetch_s3() {
 
 function restore_conda_env() {
 
-    gpuci_logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
+    rapids-logger "Downloading build artifacts from ${DISPLAY_ARTIFACT_URL}"
     fetch_s3 "${ARTIFACT_ENDPOINT}/conda_env.tar.gz" "${WORKSPACE_TMP}/conda_env.tar.gz"
     fetch_s3 "${ARTIFACT_ENDPOINT}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
 
-    gpuci_logger "Extracting"
+    rapids-logger "Extracting"
     mkdir -p /opt/conda/envs/morpheus
 
     # We are using the --no-same-owner flag since user id & group id's are inconsistent between nodes in our CI pool
     tar xf "${WORKSPACE_TMP}/conda_env.tar.gz" --no-same-owner --directory /opt/conda/envs/morpheus
     tar xf "${WORKSPACE_TMP}/wheel.tar.bz" --no-same-owner --directory ${MORPHEUS_ROOT}
 
-    gpuci_logger "Setting conda env"
+    rapids-logger "Setting conda env"
     conda activate morpheus
     conda-unpack
 }
 
 function show_conda_info() {
 
-    gpuci_logger "Check Conda info"
+    rapids-logger "Check Conda info"
     conda info
     conda config --show-sources
     conda list --show-channel-urls
