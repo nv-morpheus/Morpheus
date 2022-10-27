@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
@@ -36,6 +37,7 @@ class ResponseMemoryProbs : public ResponseMemory
 {
   public:
     ResponseMemoryProbs(size_t count, TensorObject probs);
+    ResponseMemoryProbs(ResponseMemory&& other);
 
     /**
      * TODO(Documentation)
