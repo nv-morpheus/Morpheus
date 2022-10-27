@@ -17,9 +17,9 @@
 
 #include "morpheus/stages/triton_inference.hpp"
 
-#include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
-#include "morpheus/messages/memory/response_memory_probs.hpp"   // for ResponseMemoryProbs
-#include "morpheus/messages/memory/tensor_memory.hpp"     // for TensorMemory::tensor_map_t
+#include "morpheus/messages/memory/inference_memory.hpp"       // for InferenceMemory
+#include "morpheus/messages/memory/response_memory_probs.hpp"  // for ResponseMemoryProbs
+#include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory::tensor_map_t
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/tensor.hpp"
@@ -134,8 +134,12 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                 // This will be the final output of all mini-batches
                 auto response_mem_probs = std::make_shared<ResponseMemoryProbs>(std::move(reponse_memory));
-                auto response = std::make_shared<MultiResponseProbsMessage>(
-                    x->meta, x->mess_offset, x->mess_count, std::move(response_mem_probs), 0, response_mem_probs->count);
+                auto response           = std::make_shared<MultiResponseProbsMessage>(x->meta,
+                                                                            x->mess_offset,
+                                                                            x->mess_count,
+                                                                            std::move(response_mem_probs),
+                                                                            0,
+                                                                            response_mem_probs->count);
 
                 std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
                 if (needs_seq_ids)
