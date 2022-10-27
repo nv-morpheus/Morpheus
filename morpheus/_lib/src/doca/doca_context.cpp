@@ -32,6 +32,8 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
 
     char a_flag[] = "-a";
     argv.push_back(a_flag);
+    argv.push_back(nic_addr_c);
+    argv.push_back(a_flag);
     argv.push_back(gpu_addr_c);
 
     char l_flag[] = "-l";
@@ -102,16 +104,6 @@ doca_flow_port* doca_context::flow_port()
   return _flow_port;
 }
 
-doca_gpu_rxq_info* doca_rx_queue::rxq_info_cpu()
-{
-  return _rxq_info_cpu;
-}
-
-doca_gpu_rxq_info* doca_rx_queue::rxq_info_gpu()
-{
-  return _rxq_info_gpu;
-}
-
 doca_rx_queue::doca_rx_queue(std::shared_ptr<doca_context> context):
   _context(context),
   _rxq_info_gpu(nullptr),
@@ -123,7 +115,7 @@ doca_rx_queue::doca_rx_queue(std::shared_ptr<doca_context> context):
     // desc_n,
     8192,
     // (app_cfg.receive_mode == RECEIVE_CPU ? DOCA_GPU_COMM_CPU : DOCA_GPU_COMM_GPU),
-    DOCA_GPU_COMM_CPU,
+    DOCA_GPU_COMM_GPU,
     // ((app_cfg.processing == PROCESSING_INFERENCE_HTTP) ? MAX_PKT_HTTP_PAYLOAD : MAX_PKT_PAYLOAD),
     MAX_PKT_PAYLOAD,
     // stride_num,
@@ -145,6 +137,16 @@ doca_rx_queue::~doca_rx_queue()
   if (ret != DOCA_SUCCESS) {
     LOG(WARNING) << "doca_gpu_rxq_destroy returned " << ret;
   }
+}
+
+doca_gpu_rxq_info* doca_rx_queue::rxq_info_cpu()
+{
+  return _rxq_info_cpu;
+}
+
+doca_gpu_rxq_info* doca_rx_queue::rxq_info_gpu()
+{
+  return _rxq_info_gpu;
 }
 
 doca_rx_pipe::doca_rx_pipe(

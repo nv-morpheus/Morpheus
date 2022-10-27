@@ -108,7 +108,7 @@ target_include_directories(morpheus
 )
 
 set_target_properties(morpheus PROPERTIES CXX_VISIBILITY_PRESET hidden)
-# set_target_properties(morpheus PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(morpheus PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 message(STATUS " Install dest: (morpheus) ${MORPHEUS_LIB_INSTALL_DIR}")
 install(

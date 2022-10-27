@@ -22,8 +22,10 @@ DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 # Build args
-FROM_IMAGE=${FROM_IMAGE:-"gpuci/miniforge-cuda"}
-CUDA_VER=${CUDA_VER:-11.5}
+# FROM_IMAGE=${FROM_IMAGE:-"gpuci/miniforge-cuda"}
+# CUDA_VER=${CUDA_VER:-11.5}
+FROM_IMAGE=${FROM_IMAGE:-"nvidia/cuda"}
+CUDA_VER=${CUDA_VER:-11.7.0}
 LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
 LINUX_VER=${LINUX_VER:-20.04}
 RAPIDS_VER=${RAPIDS_VER:-22.08}
@@ -59,4 +61,4 @@ echo ""
 echo "   COMMAND: docker buildx build ${DOCKER_ARGS} -f docker/Dockerfile ."
 echo "   Note: add '--progress plain' to DOCKER_ARGS to show all container build output"
 
-docker buildx build ${DOCKER_ARGS} -f docker/Dockerfile .
+docker build ${DOCKER_ARGS} -f docker/Dockerfile .

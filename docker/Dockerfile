@@ -55,7 +55,9 @@ RUN apt-get update &&\
 # install doca dependencies from local deb packages
 # COPY docker/deb ./docker/deb/
 RUN mkdir -p ./docker/deb
-COPY docker/deb/doca-host-repo-ubuntu2004_1.5.0-0.0.9.1.5.0036.1.5.8.0.2.3.0_amd64.deb ./docker/deb/doca-host-repo.deb
+RUN wget -O ./docker/deb/doca-host-repo.deb \
+    http://dev-l-vrt-096.mtl.labs.mlnx/auto/sw/release/doca/doca-repo-x86/doca-repo-1.5.0/doca-repo-1.5.0-0.1.1/doca-host-repo-ubuntu2004_1.5.0-0.1.1.1.5.0038.1.5.8.0.3.3.0_amd64.deb
+# COPY docker/deb/doca-host-repo-ubuntu2004_1.5.0-0.1.1.1.5.0038.1.5.8.0.3.3.0_amd64.deb ./docker/deb/doca-host-repo.deb
 RUN wget -O ./docker/deb/mlnx-dpdk.deb \
     https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/6108086/doca-gpu/mlnx-dpdk_20.11.0-6.1.2_amd64.deb
 RUN wget -O ./docker/deb/mlnx-dpdk-dev.deb \

@@ -53,7 +53,7 @@ namespace morpheus {
 DocaSourceStage::DocaSourceStage() :
   PythonSource(build())
 {
-  _context   = std::make_shared<morpheus::doca::doca_context>("63:00.0", "66:00.0");
+  _context   = std::make_shared<morpheus::doca::doca_context>("b5:00.0", "b6:00.0");
   _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
   _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
   _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 1024);
@@ -63,10 +63,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 {
   return [this](rxcpp::subscriber<source_type_t> output) {
 
-    // TODO: create doca Rx queues
-
-    // TODO: launch doca Rx kernel
-
     std::cout << "launching kernel" << std::endl;
 
     cudaStream_t my_stream;
@@ -75,6 +71,16 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 		if (stream_create_res != cudaSuccess) {
 			return;
 		}
+
+    if (_rxq->rxq_info_gpu() == nullptr) {
+      std::cout << "_rxq->rxq_info_gpu() == null" << std::endl;
+    }
+
+    if (_semaphore->in_gpu() == nullptr) {
+      std::cout << "_semaphore->in_gpu() == null" << std::endl;
+    }
+
+    std::cout << "_semaphore->size(): " << _semaphore->size() << std::endl;
 
     doca_receive_persistent(
       _rxq->rxq_info_gpu(),
@@ -89,6 +95,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     cudaStreamDestroy(my_stream);
 
     if (cuda_error != cudaSuccess) {
+      std::cout << "cuda error: " << cudaGetErrorString(cuda_error) << std::endl;
       return;
     }
 
