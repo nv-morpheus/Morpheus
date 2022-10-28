@@ -18,6 +18,7 @@ import json
 import os
 import time
 
+import cupy as cp
 import srf
 
 import morpheus
@@ -57,11 +58,13 @@ class ConvMsg(SinglePortStage):
 
     Setting `expected_data_file` to the path of a cav/json file will cause the probs array to be read from file.
     Setting `expected_data_file` to `None` causes the probs array to be a copy of the incoming dataframe.
+    Setting `order` specifies probs to be in either column or row major
     """
 
-    def __init__(self, c: Config, expected_data_file: str = None):
+    def __init__(self, c: Config, expected_data_file: str = None, order: str = 'K'):
         super().__init__(c)
         self._expected_data_file = expected_data_file
+        self._order = order
 
     @property
     def name(self):
@@ -79,7 +82,7 @@ class ConvMsg(SinglePortStage):
         else:
             df = m.meta.df
 
-        probs = df.values
+        probs = cp.array(df.values, copy=True, order=self._order)
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
         return MultiResponseProbsMessage(m.meta, 0, len(probs), memory, 0, len(probs))
 

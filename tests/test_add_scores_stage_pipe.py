@@ -18,6 +18,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -32,7 +33,8 @@ from utils import TEST_DIRS
 from utils import ConvMsg
 
 
-def test_add_scores_stage_pipe(config, tmp_path):
+@pytest.mark.parametrize('order', ['F', 'C'])
+def test_add_scores_stage_pipe(config, tmp_path, order):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
@@ -41,7 +43,7 @@ def test_add_scores_stage_pipe(config, tmp_path):
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config))
+    pipe.add_stage(ConvMsg(config, order=order))
     pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
