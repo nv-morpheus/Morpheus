@@ -130,7 +130,7 @@ def run_pipeline(
 
     # # Add the graph construction stage
     # pipeline.add_stage(FraudGraphConstructionStage(config, training_file))
-    pipeline.add_stage(MonitorStage(config, description="Doca Source Rate"))
+    # pipeline.add_stage(MonitorStage(config, description="Doca Source Rate"))
 
     # # add sage inference stage
     # pipeline.add_stage(GraphSAGEStage(config, model_hinsage_file))
