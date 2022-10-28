@@ -34,8 +34,10 @@ from utils import ConvMsg
 
 
 @pytest.mark.parametrize('order', ['F', 'C'])
-def test_add_scores_stage_pipe(config, tmp_path, order):
+@pytest.mark.parametrize('pipeline_batch_size', [10, 20, 256, 1024])
+def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
+    config.pipeline_batch_size = pipeline_batch_size
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
