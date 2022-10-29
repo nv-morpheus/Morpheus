@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/type_util.hpp"
 #include "morpheus/utilities/type_util_detail.hpp"  // for TypeId, DataType
 
@@ -28,6 +29,7 @@
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
+#include <cudf/utilities/type_dispatcher.hpp>
 #include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
@@ -41,6 +43,40 @@
 #include <utility>
 #include <vector>
 // IWYU pragma: no_include <unordered_map>
+
+namespace {
+
+struct DispatchedCopy
+{
+    template <typename T, std::enable_if_t<!cudf::is_rep_layout_compatible<T>()> * = nullptr>
+    void operator()(const cudf::column_view &cv, const morpheus::TensorObject &tensor, std::size_t row_stride)
+    {
+        throw std::invalid_argument("Unsupported conversion");
+    }
+
+    template <typename T, std::enable_if_t<cudf::is_rep_layout_compatible<T>()> * = nullptr>
+    void operator()(const cudf::column_view &cv, const morpheus::TensorObject &tensor, std::size_t row_stride)
+    {
+        if (row_stride == 1)
+        {
+            // column major just use cudaMemcpy
+            SRF_CHECK_CUDA(
+                cudaMemcpy(const_cast<T *>(cv.data<T>()), tensor.data(), tensor.bytes(), cudaMemcpyDeviceToDevice));
+        }
+        else
+        {
+            const auto item_size = tensor.dtype().item_size();
+            SRF_CHECK_CUDA(cudaMemcpy2D(const_cast<T *>(cv.data<T>()),
+                                        item_size,
+                                        tensor.data(),
+                                        row_stride * item_size,
+                                        item_size,
+                                        cv.size(),
+                                        cudaMemcpyDeviceToDevice));
+        }
+    }
+};
+}  // namespace
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -142,25 +178,7 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
         CHECK(tensors[i].count() == cv.size() && (table_type == tensor_type || (table_type == cudf::type_id::BOOL8 &&
                                                                                 tensor_type == cudf::type_id::UINT8)));
 
-        if (row_stride == 1)
-        {
-            // column major just use cudaMemcpy
-            SRF_CHECK_CUDA(cudaMemcpy(const_cast<uint8_t *>(cv.data<uint8_t>()),
-                                      tensors[i].data(),
-                                      tensors[i].bytes(),
-                                      cudaMemcpyDeviceToDevice));
-        }
-        else
-        {
-            const auto item_size = tensors[i].dtype().item_size();
-            SRF_CHECK_CUDA(cudaMemcpy2D(const_cast<uint8_t *>(cv.data<uint8_t>()),
-                                        item_size,
-                                        tensors[i].data(),
-                                        row_stride * item_size,
-                                        item_size,
-                                        cv.size(),
-                                        cudaMemcpyDeviceToDevice));
-        }
+        cudf::type_dispatcher(cv.type(), DispatchedCopy{}, cv, tensors[i], row_stride);
     }
 }
 
