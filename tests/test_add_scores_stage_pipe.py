@@ -33,9 +33,11 @@ from utils import TEST_DIRS
 from utils import ConvMsg
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('order', ['F', 'C'])
-@pytest.mark.parametrize('pipeline_batch_size', [10, 20, 256, 1024])
-def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size):
+@pytest.mark.parametrize('pipeline_batch_size', [32, 256, 1024])
+@pytest.mark.parametrize('repeat', [1, 10, 100])
+def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size, repeat):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.pipeline_batch_size = pipeline_batch_size
 
@@ -43,7 +45,7 @@ def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size):
     out_file = os.path.join(tmp_path, 'results.csv')
 
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False, repeat=repeat))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, order=order))
     pipe.add_stage(AddScoresStage(config))
@@ -53,7 +55,7 @@ def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size):
 
     assert os.path.exists(out_file)
 
-    expected = np.loadtxt(input_file, delimiter=",", skiprows=1)
+    expected = np.concatenate([np.loadtxt(input_file, delimiter=",", skiprows=1) for _ in range(repeat)])
 
     # The output data will contain an additional id column that we will need to slice off
     # also somehow 0.7 ends up being 0.7000000000000001
