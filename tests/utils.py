@@ -141,3 +141,17 @@ def write_file_to_kafka(bootstrap_servers: str,
     time.sleep(1)
 
     return num_records
+
+
+def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
+    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
+    for field_name in field_names:
+        class_field = f"{class_prefix}{field_name}"
+        score_field = f"{score_prefix}{field_name}"
+        above_thresh = df[score_field] > threshold
+
+        df[class_field].to_csv(f"/tmp/class_field_{field_name}.csv")
+        df[score_field].to_csv(f"/tmp/score_field_vals_{field_name}.csv")
+        above_thresh.to_csv(f"/tmp/score_field_{field_name}.csv")
+
+        assert all(above_thresh == df[class_field]), f"Mismatch on {field_name}"

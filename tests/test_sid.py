@@ -36,19 +36,11 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from utils import TEST_DIRS
 from utils import calc_error_val
+from utils import compare_class_to_scores
 
 # End-to-end test intended to imitate the Sid validation test
 FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
-
-
-def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
-    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
-    for field_name in field_names:
-        class_field = f"{class_prefix}{field_name}"
-        score_field = f"{score_prefix}{field_name}"
-        above_thresh = df[score_field] > threshold
-        assert all(above_thresh == df[class_field])
 
 
 @pytest.mark.slow
