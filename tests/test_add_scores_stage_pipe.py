@@ -15,11 +15,15 @@
 # limitations under the License.
 
 import os
+import time
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from morpheus._lib.file_types import FileTypes
+from morpheus.io.deserializers import read_file_to_df
+from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
@@ -31,31 +35,53 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
+from utils import get_column_names_from_file
+
+
+def _extend_data(input_file, output_file, repeat_count):
+    df = read_file_to_df(input_file, FileTypes.Auto, df_type='pandas')
+    data = pd.concat([df for _ in range(repeat_count)])
+    with open(output_file, 'w') as fh:
+        output_strs = df_to_csv(data, include_header=True, include_index_col=False)
+        # Remove any trailing whitespace
+        if (len(output_strs[-1].strip()) == 0):
+            output_strs = output_strs[:-1]
+        fh.writelines(output_strs)
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize('order', ['F', 'C'])
-@pytest.mark.parametrize('pipeline_batch_size', [32, 256, 1024])
+@pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
 @pytest.mark.parametrize('repeat', [1, 10, 100])
 def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size, repeat):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.pipeline_batch_size = pipeline_batch_size
+    config.num_threads = 1
 
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
 
+    input_cols = get_column_names_from_file(src_file)
+    if repeat > 1:
+        input_file = os.path.join(tmp_path, 'input.csv')
+        _extend_data(src_file, input_file, repeat)
+    else:
+        input_file = src_file
+
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False, repeat=repeat))
+    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, order=order))
+    pipe.add_stage(ConvMsg(config, order=order, columns=input_cols))
     pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
+    # There seems to be some sort of race between the sync to the output file when cpp=True and repeat=100
+    time.sleep(1)
     assert os.path.exists(out_file)
 
-    expected = np.concatenate([np.loadtxt(input_file, delimiter=",", skiprows=1) for _ in range(repeat)])
+    expected = np.loadtxt(input_file, delimiter=",", skiprows=1)
 
     # The output data will contain an additional id column that we will need to slice off
     # also somehow 0.7 ends up being 0.7000000000000001
@@ -79,7 +105,7 @@ def test_add_scores_stage_multi_segment_pipe(config, tmp_path):
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(ConvMsg(config))
+    pipe.add_stage(ConvMsg(config, columns=get_column_names_from_file(input_file)))
     pipe.add_segment_boundary(MultiResponseProbsMessage)
     pipe.add_stage(AddScoresStage(config))
     pipe.add_segment_boundary(MultiResponseProbsMessage)

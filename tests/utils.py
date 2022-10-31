@@ -17,6 +17,7 @@ import collections
 import json
 import os
 import time
+import traceback
 
 import cupy as cp
 import srf
@@ -61,9 +62,10 @@ class ConvMsg(SinglePortStage):
     Setting `order` specifies probs to be in either column or row major
     """
 
-    def __init__(self, c: Config, expected_data_file: str = None, order: str = 'K'):
+    def __init__(self, c: Config, expected_data_file: str = None, columns=None, order: str = 'K'):
         super().__init__(c)
         self._expected_data_file = expected_data_file
+        self._columns = columns
         self._order = order
 
     @property
@@ -80,7 +82,7 @@ class ConvMsg(SinglePortStage):
         if self._expected_data_file is not None:
             df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
         else:
-            df = m.get_meta()
+            df = m.get_meta(self._columns)
 
         probs = cp.array(df.values, copy=True, order=self._order)
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
@@ -155,3 +157,8 @@ def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, 
         above_thresh.to_csv(f"/tmp/score_field_{field_name}.csv")
 
         assert all(above_thresh == df[class_field]), f"Mismatch on {field_name}"
+
+
+def get_column_names_from_file(file_name):
+    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
+    return list(df.columns)
