@@ -29,7 +29,6 @@
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
-#include <cudf/utilities/type_dispatcher.hpp>
 #include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
@@ -43,40 +42,6 @@
 #include <utility>
 #include <vector>
 // IWYU pragma: no_include <unordered_map>
-
-namespace {
-
-struct DispatchedCopy
-{
-    template <typename T, std::enable_if_t<!cudf::is_rep_layout_compatible<T>()> * = nullptr>
-    void operator()(const cudf::column_view &cv, const morpheus::TensorObject &tensor, std::size_t row_stride)
-    {
-        throw std::invalid_argument("Unsupported conversion");
-    }
-
-    template <typename T, std::enable_if_t<cudf::is_rep_layout_compatible<T>()> * = nullptr>
-    void operator()(const cudf::column_view &cv, const morpheus::TensorObject &tensor, std::size_t row_stride)
-    {
-        if (row_stride == 1)
-        {
-            // column major just use cudaMemcpy
-            SRF_CHECK_CUDA(
-                cudaMemcpy(const_cast<T *>(cv.data<T>()), tensor.data(), tensor.bytes(), cudaMemcpyDeviceToDevice));
-        }
-        else
-        {
-            const auto item_size = tensor.dtype().item_size();
-            SRF_CHECK_CUDA(cudaMemcpy2D(const_cast<T *>(cv.data<T>()),
-                                        item_size,
-                                        tensor.data(),
-                                        row_stride * item_size,
-                                        item_size,
-                                        cv.size(),
-                                        cudaMemcpyDeviceToDevice));
-        }
-    }
-};
-}  // namespace
 
 namespace morpheus {
 /****** Component public implementations *******************/
