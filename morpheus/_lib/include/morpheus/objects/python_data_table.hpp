@@ -39,10 +39,10 @@ struct PyDataTable : public IDataTable
      */
     cudf::size_type count() const override;
 
-    /**
-     * TODO(Documentation)
-     */
-    TableInfo get_info() const override;
+    // /**
+    //  * TODO(Documentation)
+    //  */
+    // TableInfo get_info() const override;
 
     /**
      * TODO(Documentation)
@@ -50,6 +50,8 @@ struct PyDataTable : public IDataTable
     const pybind11::object &get_py_object() const override;
 
   private:
+    TableInfoData get_table_data() const override;
+
     pybind11::object m_py_table;
 };
 }  // namespace morpheus

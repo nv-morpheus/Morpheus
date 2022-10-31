@@ -50,6 +50,7 @@ target_link_libraries(cuda_utils_objs
 add_library(cuda_utils
     SHARED
     $<TARGET_OBJECTS:cuda_utils_objs>
+      ${MORPHEUS_LIB_ROOT}/src/objects/data_table.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/dev_mem_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/table_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/tensor_object.cpp

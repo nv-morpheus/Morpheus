@@ -58,6 +58,11 @@ class MessageMeta
     /**
      * TODO(Documentation)
      */
+    MutableTableInfo get_mutable_info() const;
+
+    /**
+     * TODO(Documentation)
+     */
     static std::shared_ptr<MessageMeta> create_from_python(pybind11::object&& data_table);
 
     /**

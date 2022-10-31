@@ -20,8 +20,13 @@
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
+#include <shared_mutex>
+
 namespace morpheus {
-class TableInfo;
+
+struct TableInfoData;
+struct TableInfo;
+struct MutableTableInfo;
 
 /****** Component public implementations *******************/
 /****** IDataTable******************************************/
@@ -42,11 +47,26 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
     /**
      * TODO(Documentation)
      */
-    virtual TableInfo get_info() const = 0;
+    TableInfo get_info() const;
 
     /**
      * TODO(Documentation)
      */
-    virtual const pybind11::object &get_py_object() const = 0;
+    MutableTableInfo get_mutable_info() const;
+
+    /**
+     * TODO(Documentation)
+     */
+    virtual const pybind11::object& get_py_object() const = 0;
+
+  private:
+    virtual TableInfoData get_table_data() const = 0;
+
+    // std::shared_mutex& get_mutex() const;
+
+    mutable std::shared_mutex m_mutex{};
+
+    // friend TableInfo;
+    // friend MutableTableInfo;
 };
 }  // namespace morpheus

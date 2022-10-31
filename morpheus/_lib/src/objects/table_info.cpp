@@ -32,59 +32,66 @@
 #include <cstddef>    // for size_t
 #include <iterator>   // for back_insert_iterator, back_inserter
 #include <memory>
+#include <shared_mutex>
 #include <stdexcept>
 #include <utility>
 // IWYU pragma: no_include <pybind11/cast.h>
 
 namespace morpheus {
-/****** Component public implementations *******************/
-/****** TableInfo****************************************/
-TableInfo::TableInfo(std::shared_ptr<const IDataTable> parent,
-                     cudf::table_view view,
-                     std::vector<std::string> index_names,
-                     std::vector<std::string> column_names) :
-  m_parent(std::move(parent)),
-  m_table_view(std::move(view)),
-  m_index_names(std::move(index_names)),
-  m_column_names(std::move(column_names))
+
+TableInfoData::TableInfoData(cudf::table_view view,
+                             std::vector<std::string> indices,
+                             std::vector<std::string> columns) :
+  table_view(std::move(view)),
+  index_names(std::move(indices)),
+  column_names(std::move(columns))
 {}
 
-const pybind11::object &TableInfo::get_parent_table() const
+/****** Component public implementations *******************/
+/****** TableInfoBase****************************************/
+TableInfoBase::TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfoData data) :
+  m_parent(std::move(parent)),
+  m_table_view(std::move(data.table_view)),
+  m_index_names(std::move(data.index_names)),
+  m_column_names(std::move(data.column_names))
+{}
+
+const pybind11::object &TableInfoBase::get_parent_table() const
 {
     return m_parent->get_py_object();
 }
 
-const cudf::table_view &TableInfo::get_view() const
+const cudf::table_view &TableInfoBase::get_view() const
 {
     return m_table_view;
 }
 
-std::vector<std::string> TableInfo::get_index_names() const
+std::vector<std::string> TableInfoBase::get_index_names() const
 {
     return m_index_names;
 }
 
-std::vector<std::string> TableInfo::get_column_names() const
+std::vector<std::string> TableInfoBase::get_column_names() const
 {
     return m_column_names;
 }
 
-cudf::size_type TableInfo::num_indices() const
+cudf::size_type TableInfoBase::num_indices() const
 {
     return this->get_index_names().size();
 }
 
-cudf::size_type TableInfo::num_columns() const
+cudf::size_type TableInfoBase::num_columns() const
 {
     return this->get_column_names().size();
 }
 
-cudf::size_type TableInfo::num_rows() const
+cudf::size_type TableInfoBase::num_rows() const
 {
     return this->m_table_view.num_rows();
 }
 
-pybind11::object TableInfo::as_py_object() const
+pybind11::object TableInfoBase::as_py_object() const
 {
     const auto offset = m_table_view.column(0).offset();
     const auto stop   = offset + this->num_rows();
@@ -99,52 +106,7 @@ pybind11::object TableInfo::as_py_object() const
     }
 }
 
-void TableInfo::insert_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types)
-{
-    CHECK(column_names.size() == column_types.size());
-    const auto num_existing_cols = m_column_names.size();
-    const auto num_rows          = m_table_view.num_rows();
-
-    // TODO figure out how to do this without the gil
-    {
-        namespace py = pybind11;
-        pybind11::gil_scoped_acquire gil;
-        pybind11::object cupy_zeros = pybind11::module_::import("cupy").attr("zeros");
-
-        auto table = get_parent_table();
-
-        for (std::size_t i = 0; i < column_names.size(); ++i)
-        {
-            auto empty_array = cupy_zeros(num_rows, DataType(column_types[i]).type_str());
-            table.attr("insert")(num_existing_cols + i, column_names[i], empty_array);
-            m_column_names.push_back(column_names[i]);
-        }
-    }
-}
-
-void TableInfo::insert_missing_columns(const std::vector<std::string> &column_names,
-                                       const std::vector<TypeId> &column_types)
-{
-    CHECK(column_names.size() == column_types.size());
-
-    std::vector<std::string> missing_names;
-    std::vector<TypeId> missing_types;
-    for (std::size_t i = 0; i < column_names.size(); ++i)
-    {
-        if (std::find(m_column_names.begin(), m_column_names.end(), column_names[i]) == m_column_names.end())
-        {
-            missing_names.push_back(column_names[i]);
-            missing_types.push_back(column_types[i]);
-        }
-    }
-
-    if (!missing_names.empty())
-    {
-        insert_columns(missing_names, missing_types);
-    }
-}
-
-const cudf::column_view &TableInfo::get_column(cudf::size_type idx) const
+const cudf::column_view &TableInfoBase::get_column(cudf::size_type idx) const
 {
     if (idx < 0 || idx >= this->m_table_view.num_columns())
     {
@@ -187,6 +149,56 @@ TableInfo TableInfo::get_slice(cudf::size_type start, cudf::size_type stop, std:
 
     auto slice_cols = slice_rows.select(col_indices);
 
-    return TableInfo(m_parent, slice_cols, m_index_names, new_column_names);
+    // Create a new Table info, (cloning the shared_lock)
+    return TableInfo(m_parent,
+                     std::shared_lock<std::shared_mutex>(*m_lock.mutex()),
+                     TableInfoData{slice_cols, m_index_names, new_column_names});
 }
+
+void MutableTableInfo::insert_columns(const std::vector<std::string> &column_names,
+                                      const std::vector<TypeId> &column_types)
+{
+    CHECK(column_names.size() == column_types.size());
+    const auto num_existing_cols = m_column_names.size();
+    const auto num_rows          = m_table_view.num_rows();
+
+    // TODO figure out how to do this without the gil
+    {
+        namespace py = pybind11;
+        pybind11::gil_scoped_acquire gil;
+        pybind11::object cupy_zeros = pybind11::module_::import("cupy").attr("zeros");
+
+        auto table = get_parent_table();
+
+        for (std::size_t i = 0; i < column_names.size(); ++i)
+        {
+            auto empty_array = cupy_zeros(num_rows, DataType(column_types[i]).type_str());
+            table.attr("insert")(num_existing_cols + i, column_names[i], empty_array);
+            m_column_names.push_back(column_names[i]);
+        }
+    }
+}
+
+void MutableTableInfo::insert_missing_columns(const std::vector<std::string> &column_names,
+                                              const std::vector<TypeId> &column_types)
+{
+    CHECK(column_names.size() == column_types.size());
+
+    std::vector<std::string> missing_names;
+    std::vector<TypeId> missing_types;
+    for (std::size_t i = 0; i < column_names.size(); ++i)
+    {
+        if (std::find(m_column_names.begin(), m_column_names.end(), column_names[i]) == m_column_names.end())
+        {
+            missing_names.push_back(column_names[i]);
+            missing_types.push_back(column_types[i]);
+        }
+    }
+
+    if (!missing_names.empty())
+    {
+        insert_columns(missing_names, missing_types);
+    }
+}
+
 }  // namespace morpheus

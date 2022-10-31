@@ -26,21 +26,27 @@
 #include <pybind11/pytypes.h>  // for object
 
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <vector>
 
 namespace morpheus {
+
+struct TableInfoData
+{
+    TableInfoData() = default;
+    TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns);
+
+    cudf::table_view table_view;
+    std::vector<std::string> index_names;
+    std::vector<std::string> column_names;
+};
+
 /****** Component public implementations *******************/
 /****** TableInfo******************************************/
-struct TableInfo
+struct TableInfoBase
 {
-    TableInfo() = default;
-
-    TableInfo(std::shared_ptr<const IDataTable> parent,
-              cudf::table_view view,
-              std::vector<std::string> index_names,
-              std::vector<std::string> column_names);
-
     /**
      * TODO(Documentation)
      */
@@ -86,17 +92,27 @@ struct TableInfo
     /**
      * TODO(Documentation)
      */
-    void insert_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
-
-    /**
-     * TODO(Documentation)
-     */
-    void insert_missing_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
-
-    /**
-     * TODO(Documentation)
-     */
     const cudf::column_view &get_column(cudf::size_type idx) const;
+
+  protected:
+    TableInfoBase() = default;
+
+    TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfoData data);
+
+    std::shared_ptr<const IDataTable> m_parent;
+    cudf::table_view m_table_view;
+    std::vector<std::string> m_column_names;
+    std::vector<std::string> m_index_names;
+};
+
+struct TableInfo : public TableInfoBase
+{
+  public:
+    TableInfo() = default;
+    TableInfo(std::shared_ptr<const IDataTable> parent, std::shared_lock<std::shared_mutex> lock, TableInfoData data) :
+      TableInfoBase(parent, std::move(data)),
+      m_lock(std::move(lock))
+    {}
 
     /**
      * TODO(Documentation)
@@ -104,10 +120,29 @@ struct TableInfo
     TableInfo get_slice(cudf::size_type start, cudf::size_type stop, std::vector<std::string> column_names = {}) const;
 
   private:
-    std::shared_ptr<const IDataTable> m_parent;
-    cudf::table_view m_table_view;
-    std::vector<std::string> m_column_names;
-    std::vector<std::string> m_index_names;
+    std::shared_lock<std::shared_mutex> m_lock;
 };
 
+struct MutableTableInfo : public TableInfoBase
+{
+  public:
+    MutableTableInfo(std::shared_ptr<const IDataTable> parent,
+                     std::unique_lock<std::shared_mutex> lock,
+                     TableInfoData data) :
+      TableInfoBase(parent, std::move(data)),
+      m_lock(std::move(lock))
+    {}
+    /**
+     * TODO(Documentation)
+     */
+    void insert_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
+
+    /**
+     * TODO(Documentation)
+     */
+    void insert_missing_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
+
+  private:
+    std::unique_lock<std::shared_mutex> m_lock;
+};
 }  // namespace morpheus

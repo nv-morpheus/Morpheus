@@ -106,6 +106,11 @@ TableInfo MessageMeta::get_info() const
     return this->m_data->get_info();
 }
 
+MutableTableInfo MessageMeta::get_mutable_info() const
+{
+    return this->m_data->get_mutable_info();
+}
+
 std::shared_ptr<MessageMeta> MessageMeta::create_from_python(pybind11::object &&data_table)
 {
     auto data = std::make_unique<PyDataTable>(std::move(data_table));
