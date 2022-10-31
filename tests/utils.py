@@ -20,6 +20,7 @@ import time
 import typing
 
 import cupy as cp
+import pandas as pd
 import srf
 
 import morpheus
@@ -27,6 +28,7 @@ from morpheus._lib.file_types import FileTypes
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
@@ -166,3 +168,14 @@ def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, 
 def get_column_names_from_file(file_name):
     df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
     return list(df.columns)
+
+
+def extend_data(input_file, output_file, repeat_count):
+    df = read_file_to_df(input_file, FileTypes.Auto, df_type='pandas')
+    data = pd.concat([df for _ in range(repeat_count)])
+    with open(output_file, 'w') as fh:
+        output_strs = df_to_csv(data, include_header=True, include_index_col=False)
+        # Remove any trailing whitespace
+        if (len(output_strs[-1].strip()) == 0):
+            output_strs = output_strs[:-1]
+        fh.writelines(output_strs)

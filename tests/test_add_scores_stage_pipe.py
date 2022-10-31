@@ -35,18 +35,8 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
+from utils import extend_data
 from utils import get_column_names_from_file
-
-
-def _extend_data(input_file, output_file, repeat_count):
-    df = read_file_to_df(input_file, FileTypes.Auto, df_type='pandas')
-    data = pd.concat([df for _ in range(repeat_count)])
-    with open(output_file, 'w') as fh:
-        output_strs = df_to_csv(data, include_header=True, include_index_col=False)
-        # Remove any trailing whitespace
-        if (len(output_strs[-1].strip()) == 0):
-            output_strs = output_strs[:-1]
-        fh.writelines(output_strs)
 
 
 @pytest.mark.slow
@@ -56,7 +46,6 @@ def _extend_data(input_file, output_file, repeat_count):
 def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size, repeat):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.pipeline_batch_size = pipeline_batch_size
-    config.num_threads = 1
 
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
@@ -64,7 +53,7 @@ def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size, rep
     input_cols = get_column_names_from_file(src_file)
     if repeat > 1:
         input_file = os.path.join(tmp_path, 'input.csv')
-        _extend_data(src_file, input_file, repeat)
+        extend_data(src_file, input_file, repeat)
     else:
         input_file = src_file
 
