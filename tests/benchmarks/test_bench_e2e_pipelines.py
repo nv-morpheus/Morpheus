@@ -17,6 +17,8 @@ import json
 import logging
 import os
 
+import pytest
+
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import ConfigFIL
@@ -125,6 +127,7 @@ def ae_pipeline(config: Config, input_glob, repeat, train_data_glob, output_file
     pipeline.run()
 
 
+@pytest.mark.slow
 def test_sid_nlp_e2e(benchmark, tmp_path):
 
     config = Config()
@@ -157,6 +160,7 @@ def test_sid_nlp_e2e(benchmark, tmp_path):
     benchmark(nlp_pipeline, config, input_filepath, repeat, vocab_filepath, output_filepath, model_name)
 
 
+@pytest.mark.slow
 def test_abp_fil_e2e(benchmark, tmp_path):
 
     config = Config()
@@ -181,6 +185,7 @@ def test_abp_fil_e2e(benchmark, tmp_path):
     benchmark(fil_pipeline, config, input_filepath, repeat, output_filepath, model_name)
 
 
+@pytest.mark.slow
 def test_phishing_nlp_e2e(benchmark, tmp_path):
 
     config = Config()
@@ -202,6 +207,7 @@ def test_phishing_nlp_e2e(benchmark, tmp_path):
     benchmark(nlp_pipeline, config, input_filepath, repeat, vocab_filepath, output_filepath, model_name)
 
 
+@pytest.mark.slow
 def test_cloudtrail_ae_e2e(benchmark, tmp_path):
 
     config = Config()
