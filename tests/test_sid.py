@@ -20,9 +20,7 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from morpheus._lib.file_types import FileTypes
 from morpheus.config import PipelineModes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
