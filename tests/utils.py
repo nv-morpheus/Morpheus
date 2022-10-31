@@ -82,7 +82,10 @@ class ConvMsg(SinglePortStage):
         if self._expected_data_file is not None:
             df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
         else:
-            df = m.get_meta(self._columns)
+            if self._columns is not None:
+                df = m.get_meta(self._columns)
+            else:
+                df = m.get_meta()
 
         probs = cp.array(df.values, copy=True, order=self._order)
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
