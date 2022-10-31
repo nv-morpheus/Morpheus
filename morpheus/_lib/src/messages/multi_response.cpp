@@ -37,6 +37,21 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 
+const TensorObject MultiResponseMessage::get_output(const std::string &name) const
+{
+    return get_tensor(name);
+}
+
+TensorObject MultiResponseMessage::get_output(const std::string &name)
+{
+    return get_tensor(name);
+}
+
+void MultiResponseMessage::set_output(const std::string &name, const TensorObject &value)
+{
+    set_tensor(name, value);
+}
+
 /****** MultiResponseMessageInterfaceProxy *************************/
 std::shared_ptr<MultiResponseMessage> MultiResponseMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
                                                                                cudf::size_type mess_offset,

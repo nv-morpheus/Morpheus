@@ -57,10 +57,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param name
      * @return const TensorObject
      */
-    const TensorObject get_input(const std::string &name) const
-    {
-        return get_tensor(name);
-    };
+    const TensorObject get_input(const std::string &name) const;
 
     /**
      * @brief Return the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.
@@ -68,18 +65,12 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param name
      * @return TensorObject
      */
-    TensorObject get_input(const std::string &name)
-    {
-        return get_tensor(name);
-    };
+    TensorObject get_input(const std::string &name);
 
     /**
      * Update the value of ain input tensor. The tensor must already exist, otherwise this will halt on a fatal error.
      */
-    void set_input(const std::string &name, const TensorObject &value)
-    {
-        set_tensor(name, value);
-    };
+    void set_input(const std::string &name, const TensorObject &value);
 };
 
 /****** MultiInferenceMessageInterfaceProxy****************/

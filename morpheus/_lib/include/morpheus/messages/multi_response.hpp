@@ -57,10 +57,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param name
      * @return const TensorObject
      */
-    const TensorObject get_output(const std::string &name) const
-    {
-        return get_tensor(name);
-    };
+    const TensorObject get_output(const std::string &name) const;
 
     /**
      * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
@@ -68,10 +65,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param name
      * @return TensorObject
      */
-    TensorObject get_output(const std::string &name)
-    {
-        return get_tensor(name);
-    };
+    TensorObject get_output(const std::string &name);
 
     /**
      * @brief Update the value of a given output tensor. The tensor must already exist, otherwise this will halt on a
@@ -80,10 +74,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param name
      * @param value
      */
-    void set_output(const std::string &name, const TensorObject &value)
-    {
-        set_tensor(name, value);
-    };
+    void set_output(const std::string &name, const TensorObject &value);
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/

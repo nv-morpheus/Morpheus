@@ -36,6 +36,20 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** <MultiInferenceMessage>****************************************/
+const TensorObject MultiInferenceMessage::get_input(const std::string &name) const
+{
+    return get_tensor(name);
+}
+
+TensorObject MultiInferenceMessage::get_input(const std::string &name)
+{
+    return get_tensor(name);
+}
+
+void MultiInferenceMessage::set_input(const std::string &name, const TensorObject &value)
+{
+    set_tensor(name, value);
+}
 
 /****** <MultiInferenceMessage>InterfaceProxy *************************/
 std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::init(
