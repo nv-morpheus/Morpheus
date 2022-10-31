@@ -17,7 +17,7 @@ import collections
 import json
 import os
 import time
-import traceback
+import typing
 
 import cupy as cp
 import srf
@@ -59,10 +59,11 @@ class ConvMsg(SinglePortStage):
 
     Setting `expected_data_file` to the path of a cav/json file will cause the probs array to be read from file.
     Setting `expected_data_file` to `None` causes the probs array to be a copy of the incoming dataframe.
+    Setting `columns` restricts the columns copied into probs to just the ones specified.
     Setting `order` specifies probs to be in either column or row major
     """
 
-    def __init__(self, c: Config, expected_data_file: str = None, columns=None, order: str = 'K'):
+    def __init__(self, c: Config, expected_data_file: str = None, columns: typing.List[str] = None, order: str = 'K'):
         super().__init__(c)
         self._expected_data_file = expected_data_file
         self._columns = columns
