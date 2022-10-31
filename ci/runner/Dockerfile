@@ -40,8 +40,6 @@ SHELL ["/bin/bash",  "-c"]
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt-get install --no-install-recommends -y \
-        clang-format-${CLANG_VER} \
-        clang-tidy-${CLANG_VER} \
         git-lfs \
         libcublas-dev-${CUDA_PKG_VER} \
         libcufft-dev-${CUDA_PKG_VER} \
@@ -53,15 +51,7 @@ RUN apt-get update && \
         nodejs \
         npm && \
     apt clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VER} 121 \
-        --slave /usr/bin/clang-apply-replacements clang-apply-replacements /usr/bin/clang-apply-replacements-${CLANG_VER} \
-        --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-${CLANG_VER} \
-        --slave /usr/bin/clang-format-diff clang-format-diff /usr/bin/clang-format-diff-${CLANG_VER} \
-        --slave /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-${CLANG_VER} \
-        --slave /usr/bin/clang-tidy-diff.py clang-tidy-diff.py /usr/bin/clang-tidy-diff-${CLANG_VER}.py \
-        --slave /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VER} \
-        --slave /usr/bin/git-clang-format git-clang-format /usr/bin/git-clang-format-${CLANG_VER}
+    rm -rf /var/lib/apt/lists/*
 
 # Create conda environment
 COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_dev.yml /tmp
