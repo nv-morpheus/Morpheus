@@ -32,6 +32,7 @@
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
 #include <srf/segment/builder.hpp>
+#include <cuda/atomic>
 
 #include <rmm/device_uvector.hpp>
 
@@ -56,74 +57,110 @@ DocaSourceStage::DocaSourceStage() :
   _context   = std::make_shared<morpheus::doca::doca_context>("b5:00.0", "b6:00.0");
   _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
   _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
-  _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 1024);
+  _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 8);
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 {
   return [this](rxcpp::subscriber<source_type_t> output) {
 
-    std::cout << "launching kernel" << std::endl;
+    cudaStream_t receiving_stream;
+    cudaStream_t processing_stream;
+    cudaStreamCreateWithFlags(&receiving_stream, cudaStreamNonBlocking);
+    cudaStreamCreateWithFlags(&processing_stream, cudaStreamNonBlocking);
 
-    cudaStream_t my_stream;
+    auto exit_flag = rmm::device_scalar<cuda::atomic<bool>>{false, receiving_stream};
 
-    auto stream_create_res = cudaStreamCreateWithFlags(&my_stream, cudaStreamNonBlocking);
-		if (stream_create_res != cudaSuccess) {
-			return;
-		}
-
-    if (_rxq->rxq_info_gpu() == nullptr) {
-      std::cout << "_rxq->rxq_info_gpu() == null" << std::endl;
-    }
-
-    if (_semaphore->in_gpu() == nullptr) {
-      std::cout << "_semaphore->in_gpu() == null" << std::endl;
-    }
-
-    std::cout << "_semaphore->size(): " << _semaphore->size() << std::endl;
-
-    doca_receive_persistent(
+    doca_packet_receive_persistent_kernel(
       _rxq->rxq_info_gpu(),
       _semaphore->in_gpu(),
       _semaphore->size(),
-      my_stream
+      exit_flag.data(),
+      receiving_stream
     );
 
-    cudaStreamSynchronize(my_stream);
-    cudaDeviceSynchronize();
-    auto cuda_error = cudaGetLastError();
-    cudaStreamDestroy(my_stream);
+    auto packet_count_d  = rmm::device_scalar<uint32_t>(0, receiving_stream);
+    auto packets_size_d  = rmm::device_scalar<uint32_t>(0, receiving_stream);
+    auto sem_idx_begin_d = rmm::device_scalar<uint32_t>(0, receiving_stream);
+    auto sem_idx_end_d   = rmm::device_scalar<uint32_t>(0, receiving_stream);
 
+    while (output.is_subscribed())
+    {
+      cudaStreamSynchronize(processing_stream);
+
+      doca_packet_count_kernel(
+        _rxq->rxq_info_gpu(),
+        _semaphore->in_gpu(),
+        _semaphore->size(),
+        sem_idx_begin_d.data(),
+        sem_idx_end_d.data(),
+        packet_count_d.data(),
+        packets_size_d.data(),
+        exit_flag.data(),
+        processing_stream
+      );
+
+      cudaStreamSynchronize(processing_stream);
+
+      auto packet_count = packet_count_d.value(processing_stream);
+
+      printf("host: num packets received: %d\n", packet_count);
+
+      // allocate stuff
+
+      doca_packet_gather_kernel(
+        _rxq->rxq_info_gpu(),
+        _semaphore->in_gpu(),
+        _semaphore->size(),
+        sem_idx_begin_d.data(),
+        sem_idx_end_d.data(),
+        packet_count_d.data(),
+        packets_size_d.data(),
+        exit_flag.data(),
+        processing_stream
+      );
+    }
+
+    auto flag = cuda::atomic<bool>(true);
+    exit_flag.set_value_async(flag, processing_stream);
+
+    cudaStreamSynchronize(processing_stream);
+    cudaStreamSynchronize(receiving_stream);
+    cudaStreamDestroy(receiving_stream);
+
+    auto cuda_error = cudaGetLastError();
     if (cuda_error != cudaSuccess) {
       std::cout << "cuda error: " << cudaGetErrorString(cuda_error) << std::endl;
       return;
     }
 
-    auto stream = cudf::default_stream_value;
-    auto values = rmm::device_uvector<int32_t>(1000000, stream);
+    {
+      auto stream = cudf::default_stream_value;
+      auto values = rmm::device_uvector<int32_t>(1000000, stream);
 
-    auto values_size = values.size();
-    auto my_column   = std::make_unique<cudf::column>(
-      cudf::data_type{cudf::type_to_id<int32_t>()},
-      values_size,
-      values.release());
+      auto values_size = values.size();
+      auto my_column   = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int32_t>()},
+        values_size,
+        values.release());
 
-    auto my_columns          = std::vector<std::unique_ptr<cudf::column>>();
+      auto my_columns          = std::vector<std::unique_ptr<cudf::column>>();
 
-    my_columns.push_back(std::move(my_column));
+      my_columns.push_back(std::move(my_column));
 
-    // auto my_table            = std::make_unique<cudf::table>(std::move(my_columns));
-    auto metadata            = cudf::io::table_metadata();
+      // auto my_table            = std::make_unique<cudf::table>(std::move(my_columns));
+      auto metadata            = cudf::io::table_metadata();
 
-    metadata.column_names.push_back("index");
-    
-    auto my_table_w_metadata = cudf::io::table_with_metadata{
-      std::make_unique<cudf::table>(std::move(my_columns)),
-      std::move(metadata)
-    };
-    auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
+      metadata.column_names.push_back("index");
 
-    output.on_next(meta);
+      auto my_table_w_metadata = cudf::io::table_with_metadata{
+        std::make_unique<cudf::table>(std::move(my_columns)),
+        std::move(metadata)
+      };
+      auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
+
+      output.on_next(meta);
+    }
 
     output.on_completed();
   };
