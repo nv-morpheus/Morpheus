@@ -42,10 +42,6 @@ RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
         git-lfs \
-        libcublas-dev-${CUDA_PKG_VER} \
-        libcufft-dev-${CUDA_PKG_VER} \
-        libcurand-dev-${CUDA_PKG_VER} \
-        libcusolver-dev-${CUDA_PKG_VER} \
         libnuma1 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
@@ -65,7 +61,12 @@ FROM base as driver
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-    apt install --no-install-recommends -y libnvidia-compute-495 && \
+    apt install --no-install-recommends -y \
+    libcublas-dev-${CUDA_PKG_VER} \
+    libcufft-dev-${CUDA_PKG_VER} \
+    libcurand-dev-${CUDA_PKG_VER} \
+    libcusolver-dev-${CUDA_PKG_VER} \
+    libnvidia-compute-495 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
