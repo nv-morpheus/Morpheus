@@ -73,10 +73,6 @@ function update_conda_env() {
     conda activate morpheus
 }
 
-function set_stub_vars() {
-    export CUDA_PATH=/usr/local/cuda
-    export LD_LIBRARY_PATH=/usr/local/cuda-11.5/compat:${LD_LIBRARY_PATH}
-}
 
 function fetch_base_branch() {
     rapids-logger "Retrieving base branch from GitHub API"
