@@ -49,6 +49,7 @@ PreprocessNLPStage::PreprocessNLPStage(std::string vocab_hash_file,
                                        bool truncation,
                                        bool do_lower_case,
                                        bool add_special_token,
+                                       std::string column,
                                        int stride) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_vocab_hash_file(std::move(vocab_hash_file)),
@@ -56,6 +57,7 @@ PreprocessNLPStage::PreprocessNLPStage(std::string vocab_hash_file,
   m_truncation(truncation),
   m_do_lower_case(do_lower_case),
   m_add_special_token(add_special_token),
+  m_column(std::move(column)),
   m_stride(stride)
 {}
 
@@ -74,7 +76,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, stride](sink_type_t x) {
                 // Convert to string view
-                auto string_col = cudf::strings_column_view{x->get_meta("data").get_column(0)};
+                auto string_col = cudf::strings_column_view{x->get_meta(this->m_column).get_column(0)};
 
                 // Create the hashed vocab
                 thread_local std::unique_ptr<nvtext::hashed_vocabulary> vocab =
@@ -144,10 +146,11 @@ std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInte
     bool truncation,
     bool do_lower_case,
     bool add_special_token,
+    const::string column,
     int stride)
 {
     auto stage = builder.construct_object<PreprocessNLPStage>(
-        name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride);
+        name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, column, stride);
 
     return stage;
 }

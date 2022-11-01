@@ -63,6 +63,8 @@ class PreprocessNLPStage(PreprocessBaseStage):
         overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is equal to stride
         there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will be repeated on
         the second sequence and so on until the entire sentence is encoded.
+    column : str
+        Name of the column containing the data that needs to be preprocessed.
 
     """
 
@@ -72,9 +74,11 @@ class PreprocessNLPStage(PreprocessBaseStage):
                  truncation: bool = False,
                  do_lower_case: bool = False,
                  add_special_tokens: bool = False,
-                 stride: int = -1):
+                 stride: int = -1,
+                 column: str = "data"):
         super().__init__(c)
 
+        self._column = column
         self._seq_length = c.feature_length
         self._vocab_hash_file = vocab_hash_file
 
@@ -106,7 +110,8 @@ class PreprocessNLPStage(PreprocessBaseStage):
                           seq_len: int,
                           stride: int,
                           truncation: bool,
-                          add_special_tokens: bool) -> MultiInferenceNLPMessage:
+                          add_special_tokens: bool,
+                          column: str) -> MultiInferenceNLPMessage:
         """
         For NLP category usecases, this function performs pre-processing.
 
@@ -134,6 +139,8 @@ class PreprocessNLPStage(PreprocessBaseStage):
             than generated tokens.
         add_special_tokens : bool
             Whether or not to encode the sequences with the special tokens of the BERT classification model.
+        column : str
+            Name of the column containing the data that needs to be preprocessed.
 
         Returns
         -------
@@ -141,7 +148,7 @@ class PreprocessNLPStage(PreprocessBaseStage):
             NLP inference message.
 
         """
-        text_ser = cudf.Series(x.get_meta("data"))
+        text_ser = cudf.Series(x.get_meta(column))
 
         tokenized = tokenize_text_series(vocab_hash_file=vocab_hash_file,
                                          do_lower_case=do_lower_case,
@@ -175,7 +182,8 @@ class PreprocessNLPStage(PreprocessBaseStage):
                        stride=self._stride,
                        seq_len=self._seq_length,
                        truncation=self._truncation,
-                       add_special_tokens=self._add_special_tokens)
+                       add_special_tokens=self._add_special_tokens,
+                       column=self._column)
 
     def _get_preprocess_node(self, builder: srf.Builder):
         return _stages.PreprocessNLPStage(builder,
@@ -185,4 +193,5 @@ class PreprocessNLPStage(PreprocessBaseStage):
                                           self._truncation,
                                           self._do_lower_case,
                                           self._add_special_tokens,
+                                          self._column,
                                           self._stride)
