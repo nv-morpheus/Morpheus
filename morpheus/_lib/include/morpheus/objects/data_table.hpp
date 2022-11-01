@@ -27,6 +27,7 @@ namespace morpheus {
 struct TableInfoData;
 struct TableInfo;
 struct MutableTableInfo;
+class PyObjectLocked;
 
 /****** Component public implementations *******************/
 /****** IDataTable******************************************/
@@ -60,9 +61,9 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
     virtual const pybind11::object& get_py_object() const = 0;
 
   private:
-    virtual TableInfoData get_table_data() const = 0;
+    // virtual PyObjectLocked get_df() const;
 
-    // std::shared_mutex& get_mutex() const;
+    virtual TableInfoData get_table_data() const = 0;
 
     mutable std::shared_mutex m_mutex{};
 

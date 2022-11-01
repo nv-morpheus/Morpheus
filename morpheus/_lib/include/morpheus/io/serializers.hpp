@@ -30,8 +30,10 @@ void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_head
 
 // Note the include_index_col is currently being ignored in both versions of `df_to_json` due to a known issue in
 // Pandas: https://github.com/pandas-dev/pandas/issues/37600
-std::string df_to_json(const TableInfo& tbl, bool include_index_col = true);
+// Requires MutableTableInfo since there is no C++ implementation of the JSON writer
+std::string df_to_json(MutableTableInfo& tbl, bool include_index_col = true);
 
-void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col = true);
+// Requires MutableTableInfo since there is no C++ implementation of the JSON writer
+void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col = true);
 
 }  // namespace morpheus

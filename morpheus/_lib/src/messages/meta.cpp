@@ -91,10 +91,10 @@ struct MessageMetaImpl {
 
 /****** Component public implementations *******************/
 /****** MessageMeta ****************************************/
-pybind11::object MessageMeta::get_py_table() const
-{
-    return m_data->get_py_object();
-}
+// pybind11::object MessageMeta::get_py_table() const
+// {
+//     return m_data->get_py_object();
+// }
 
 size_t MessageMeta::count() const
 {
@@ -162,15 +162,35 @@ cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta &self)
 
 pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta &self)
 {
-    // // Get the column and convert to cudf
-    // auto py_table_struct = make_table_from_view_and_meta(self.m_pydf;.tbl->view(),
-    // self.m_pydf;.metadata); py::object py_table  =
-    // py::reinterpret_steal<py::object>((PyObject*)py_table_struct);
-
-    // // py_col.inc_ref();
+    // Release any GIL
+    pybind11::gil_scoped_release no_gil;
 
     // return py_table;
-    return self.get_py_table();
+    return self.get_info().copy_to_py_object();
+}
+
+void MessageMetaInterfaceProxy::set_data_frame(MessageMeta &self, const pybind11::object &new_df)
+{
+    // Release any GIL
+    pybind11::gil_scoped_release no_gil;
+
+    auto mutable_info = self.get_mutable_info();
+
+    LOG(FATAL) << "Not implemented yet";
+
+    // mutable_info.py_obj() = new_df;
+
+    // pybind11::object obj = mutable_info.py_obj();
+
+    // // // Get the column and convert to cudf
+    // // auto py_table_struct = make_table_from_view_and_meta(self.m_pydf;.tbl->view(),
+    // // self.m_pydf;.metadata); py::object py_table  =
+    // // py::reinterpret_steal<py::object>((PyObject*)py_table_struct);
+
+    // // // py_col.inc_ref();
+
+    // // return py_table;
+    // return self.get_py_table();
 }
 
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::string &filename)

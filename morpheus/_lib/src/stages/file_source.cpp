@@ -96,7 +96,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
                 pybind11::gil_scoped_acquire gil;
 
                 // Use the copy function
-                auto df = meta->get_py_table().attr("copy")();
+                auto df = meta->get_info().copy_to_py_object();
 
                 pybind11::int_ df_len = pybind11::len(df);
 

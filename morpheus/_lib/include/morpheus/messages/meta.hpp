@@ -40,10 +40,10 @@ namespace morpheus {
 class MessageMeta
 {
   public:
-    /**
-     * TODO(Documentation)
-     */
-    pybind11::object get_py_table() const;
+    // /**
+    //  * TODO(Documentation)
+    //  */
+    // pybind11::object get_py_table() const;
 
     /**
      * TODO(Documentation)
@@ -53,12 +53,12 @@ class MessageMeta
     /**
      * TODO(Documentation)
      */
-    TableInfo get_info() const;
+    virtual TableInfo get_info() const;
 
     /**
      * TODO(Documentation)
      */
-    MutableTableInfo get_mutable_info() const;
+    virtual MutableTableInfo get_mutable_info() const;
 
     /**
      * TODO(Documentation)
@@ -71,7 +71,7 @@ class MessageMeta
     static std::shared_ptr<MessageMeta> create_from_cpp(cudf::io::table_with_metadata&& data_table,
                                                         int index_col_count = 0);
 
-  private:
+  protected:
     MessageMeta(std::shared_ptr<IDataTable> data);
 
     /**
@@ -80,6 +80,35 @@ class MessageMeta
     static pybind11::object cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count = 0);
 
     std::shared_ptr<IDataTable> m_data;
+};
+
+/**
+ * @brief Operates similarly to MessageMeta, except it applies a filter on the columns. Used by Serialization to filter
+ * columns without copying the entire DataFrame
+ *
+ */
+class SlicedMessageMeta : public MessageMeta
+{
+  public:
+    SlicedMessageMeta(std::shared_ptr<MessageMeta> other, std::vector<std::string> columns);
+
+    /**
+     * TODO(Documentation)
+     */
+    virtual TableInfo get_info() const
+    {
+        auto base_info = MessageMeta::get_info();
+
+        return base_info.get_slice(0, this->count(), m_column_names);
+    }
+
+    /**
+     * TODO(Documentation)
+     */
+    virtual MutableTableInfo get_mutable_info() const;
+
+  private:
+    std::vector<std::string> m_column_names;
 };
 
 /****** MessageMetaInterfaceProxy**************************/
@@ -107,6 +136,8 @@ struct MessageMetaInterfaceProxy
      * TODO(Documentation)
      */
     static pybind11::object get_data_frame(MessageMeta& self);
+
+    static void set_data_frame(MessageMeta& self, const pybind11::object& new_df);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

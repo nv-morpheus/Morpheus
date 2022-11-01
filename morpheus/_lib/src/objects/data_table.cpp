@@ -19,6 +19,8 @@
 
 #include "morpheus/objects/table_info.hpp"
 
+#include <glog/logging.h>
+
 #include <mutex>
 #include <shared_mutex>
 
@@ -29,6 +31,9 @@ namespace morpheus {
  */
 TableInfo IDataTable::get_info() const
 {
+    CHECK_EQ(PyGILState_Check(), 0)
+        << "Cannot hold the Python GIL when accessing `get_info()`. Please release it first or deadlocks may occur.";
+
     // Get a shared lock while we get the table info (prevents mutation)
     std::shared_lock lock(m_mutex);
 
@@ -44,6 +49,9 @@ TableInfo IDataTable::get_info() const
  */
 MutableTableInfo IDataTable::get_mutable_info() const
 {
+    CHECK_EQ(PyGILState_Check(), 0) << "Cannot hold the Python GIL when accessing `get_mutable_info()`. Please release "
+                                       "it first or deadlocks may occur.";
+
     // Get a unique lock while we get the table info (prevents mutation)
     std::unique_lock lock(m_mutex);
 

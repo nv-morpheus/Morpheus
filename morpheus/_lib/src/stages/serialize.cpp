@@ -111,7 +111,8 @@ SerializeStage::subscribe_fn_t SerializeStage::build_operator()
                 std::shared_ptr<MessageMeta> meta;
                 {
                     pybind11::gil_scoped_acquire gil;
-                    meta = MessageMeta::create_from_python(std::move(table_info.as_py_object()));
+                    // meta = MessageMeta::create_from_python(std::move(table_info.as_py_object()));
+                    CHECK(false) << "Not implemented yet";
                 }
                 output.on_next(std::move(meta));
             },

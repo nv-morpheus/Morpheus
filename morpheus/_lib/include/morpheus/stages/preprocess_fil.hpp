@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/data_table.hpp"
 
 #include <pysrf/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
@@ -55,6 +56,8 @@ class PreprocessFILStage
      * TODO(Documentation)
      */
     subscribe_fn_t build_operator();
+
+    TableInfo fix_bad_columns(sink_type_t x);
 
     std::vector<std::string> m_fea_cols;
     std::string m_vocab_file;

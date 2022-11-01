@@ -22,7 +22,8 @@
 
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table_view.hpp>
-#include <cudf/types.hpp>      // for size_type
+#include <cudf/types.hpp>  // for size_type
+#include <glog/logging.h>
 #include <pybind11/pytypes.h>  // for object
 
 #include <memory>
@@ -47,10 +48,10 @@ struct TableInfoData
 /****** TableInfo******************************************/
 struct TableInfoBase
 {
-    /**
-     * TODO(Documentation)
-     */
-    const pybind11::object &get_parent_table() const;
+    // /**
+    //  * TODO(Documentation)
+    //  */
+    // const pybind11::object &get_parent_table() const;
 
     /**
      * TODO(Documentation)
@@ -83,11 +84,11 @@ struct TableInfoBase
     cudf::size_type num_rows() const;
 
     /**
-     * @brief Returns the underlying cuDF DataFrame as a python object
+     * @brief Returns a copy of the underlying cuDF DataFrame as a python object
      *
      * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default.
      */
-    pybind11::object __attribute__((visibility("default"))) as_py_object() const;
+    pybind11::object __attribute__((visibility("default"))) copy_to_py_object() const;
 
     /**
      * TODO(Documentation)
@@ -123,6 +124,24 @@ struct TableInfo : public TableInfoBase
     std::shared_lock<std::shared_mutex> m_lock;
 };
 
+// class PyObjectLocked : public pybind11::object
+// {
+//   public:
+//     // // Returns const ref. Used by object_api. Should not be used directly. Requires the GIL
+//     // operator const pybind11::handle &() const &;
+
+//     // // Necessary to implement the object_api interface
+//     // PyObject *ptr() const;
+//     PyObjectLocked(pybind11::object &&obj);
+//     PyObjectLocked(const PyObjectLocked &other) = delete;
+
+//     PyObjectLocked &operator=(const PyObjectLocked &other) = delete;
+
+//     PyObjectLocked &operator=(const pybind11::object &obj);
+
+//     operator pybind11::object() const & = delete;
+// };
+
 struct MutableTableInfo : public TableInfoBase
 {
   public:
@@ -132,6 +151,15 @@ struct MutableTableInfo : public TableInfoBase
       TableInfoBase(parent, std::move(data)),
       m_lock(std::move(lock))
     {}
+
+    ~MutableTableInfo()
+    {
+        if (m_checked_out_ref_count >= 0)
+        {
+            LOG(FATAL) << "Checked out python object was not returned before MutableTableInfo went out of scope";
+        }
+    }
+
     /**
      * TODO(Documentation)
      */
@@ -142,7 +170,35 @@ struct MutableTableInfo : public TableInfoBase
      */
     void insert_missing_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
 
+    // PyObjectLocked py_obj() const{
+    //     pybind11::object obj;
+
+    //     obj.ref_count()
+    // }
+
+    pybind11::object checkout_obj()
+    {
+        // Get a copy increasing the ref count
+        pybind11::object checked_out_obj = m_parent->get_py_object();
+
+        m_checked_out_ref_count = checked_out_obj.ref_count();
+
+        return checked_out_obj;
+    }
+
+    void return_obj(pybind11::object &&obj)
+    {
+        CHECK_EQ(obj.ref_count(), m_checked_out_ref_count) << "Checked out object returned with different ref_count(). "
+                                                              "Must not store copies of the checked out object";
+
+        // m_parent->get_py_object() = std::move(obj);
+
+        m_checked_out_ref_count = -1;
+    }
+
   private:
     std::unique_lock<std::shared_mutex> m_lock;
+
+    mutable int m_checked_out_ref_count{-1};
 };
 }  // namespace morpheus

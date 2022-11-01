@@ -56,10 +56,10 @@ TableInfoBase::TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfo
   m_column_names(std::move(data.column_names))
 {}
 
-const pybind11::object &TableInfoBase::get_parent_table() const
-{
-    return m_parent->get_py_object();
-}
+// const pybind11::object &TableInfoBase::get_parent_table() const
+// {
+//     return m_parent->get_py_object();
+// }
 
 const cudf::table_view &TableInfoBase::get_view() const
 {
@@ -91,7 +91,7 @@ cudf::size_type TableInfoBase::num_rows() const
     return this->m_table_view.num_rows();
 }
 
-pybind11::object TableInfoBase::as_py_object() const
+pybind11::object TableInfoBase::copy_to_py_object() const
 {
     const auto offset = m_table_view.column(0).offset();
     const auto stop   = offset + this->num_rows();
@@ -100,9 +100,16 @@ pybind11::object TableInfoBase::as_py_object() const
         namespace py = pybind11;
         py::gil_scoped_acquire gil;
 
-        auto df          = this->get_parent_table();
+        auto df = m_parent->get_py_object();
+
+        // Compute the DF slice in python
         auto index_slice = py::slice(py::int_(offset), py::int_(stop), py::none());
-        return df.attr("loc")[py::make_tuple(df.attr("index")[index_slice], m_column_names)];
+
+        auto py_slice = df.attr("loc")[py::make_tuple(df.attr("index")[index_slice], m_column_names)];
+
+        auto copied_df = py_slice.attr("copy")();
+
+        return copied_df;
     }
 }
 
@@ -168,7 +175,7 @@ void MutableTableInfo::insert_columns(const std::vector<std::string> &column_nam
         pybind11::gil_scoped_acquire gil;
         pybind11::object cupy_zeros = pybind11::module_::import("cupy").attr("zeros");
 
-        auto table = get_parent_table();
+        auto table = m_parent->get_py_object();
 
         for (std::size_t i = 0; i < column_names.size(); ++i)
         {

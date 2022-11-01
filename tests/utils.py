@@ -179,3 +179,27 @@ def extend_data(input_file, output_file, repeat_count):
         if (len(output_strs[-1].strip()) == 0):
             output_strs = output_strs[:-1]
         fh.writelines(output_strs)
+
+
+def assert_file_exists_with_timeout(filename: str, timeout_sec: float):
+    """
+    Asserts a file exists, but will wait up to `timeout_sec` before attempting the assert. Useful for files that may not
+    be created early. Better than adding `time.sleep()`
+
+    Parameters
+    ----------
+    filename : str
+        File to assert that it exists
+    timeout_sec : float
+        Maximum time to wait, in seconds
+    """
+
+    start_epoch = time.time()
+
+    # Continually check until the timeout. Exit early if possible
+    while ((time.time() - start_epoch) < timeout_sec):
+        if (os.path.exists(filename)):
+            break
+
+    # Finally assert
+    assert os.path.exists(filename)

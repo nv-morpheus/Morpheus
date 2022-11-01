@@ -15,15 +15,11 @@
 # limitations under the License.
 
 import os
-import time
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from morpheus._lib.file_types import FileTypes
-from morpheus.io.deserializers import read_file_to_df
-from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
@@ -35,6 +31,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
+from utils import assert_file_exists_with_timeout
 from utils import extend_data
 from utils import get_column_names_from_file
 
@@ -67,8 +64,7 @@ def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size, rep
     pipe.run()
 
     # There seems to be some sort of race between the sync to the output file when cpp=True and repeat=100
-    time.sleep(1)
-    assert os.path.exists(out_file)
+    assert_file_exists_with_timeout(out_file, 1.0)
 
     expected = np.loadtxt(input_file, delimiter=",", skiprows=1)
 
@@ -103,7 +99,7 @@ def test_add_scores_stage_multi_segment_pipe(config, tmp_path):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_file_exists_with_timeout(out_file, 1.0)
 
     expected = np.loadtxt(input_file, delimiter=",", skiprows=1)
 
