@@ -17,6 +17,7 @@
 import os
 
 import numpy as np
+import pytest
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -29,18 +30,29 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
+from utils import extend_data
+from utils import get_column_names_from_file
 
 
-def _test_filter_detections_stage_pipe(config, tmp_path, copy=True):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+def _test_filter_detections_stage_pipe(config, tmp_path, copy=True, order='K', pipeline_batch_size=256, repeat=1):
+    config.pipeline_batch_size = pipeline_batch_size
+
+    src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
+
+    input_cols = get_column_names_from_file(src_file)
+    if repeat > 1:
+        input_file = os.path.join(tmp_path, 'input.csv')
+        extend_data(src_file, input_file, repeat)
+    else:
+        input_file = src_file
 
     threshold = 0.75
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config))
+    pipe.add_stage(ConvMsg(config, order=order, columns=input_cols))
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
@@ -59,7 +71,7 @@ def _test_filter_detections_stage_pipe(config, tmp_path, copy=True):
     assert output_data.tolist() == expected.tolist()
 
 
-def test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True):
+def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
 
@@ -92,17 +104,25 @@ def test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True)
     assert output_data.tolist() == expected.tolist()
 
 
-def test_filter_detections_stage_pipe_copy(config, tmp_path):
-    return _test_filter_detections_stage_pipe(config, tmp_path, True)
+@pytest.mark.slow
+@pytest.mark.parametrize('order', ['F', 'C'])
+@pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
+@pytest.mark.parametrize('repeat', [1, 10, 100])
+def test_filter_detections_stage_pipe_copy(config, tmp_path, order, pipeline_batch_size, repeat):
+    return _test_filter_detections_stage_pipe(config, tmp_path, True, order, pipeline_batch_size, repeat)
 
 
-def test_filter_detections_stage_pipe_slice(config, tmp_path):
-    return _test_filter_detections_stage_pipe(config, tmp_path, False)
+@pytest.mark.slow
+@pytest.mark.parametrize('order', ['F', 'C'])
+@pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
+@pytest.mark.parametrize('repeat', [1, 10, 100])
+def test_filter_detections_stage_pipe_slice(config, tmp_path, order, pipeline_batch_size, repeat):
+    return _test_filter_detections_stage_pipe(config, tmp_path, False, order, pipeline_batch_size, repeat)
 
 
 def test_filter_detections_stage_multi_segment_pipe_copy(config, tmp_path):
-    return _test_filter_detections_stage_pipe(config, tmp_path, True)
+    return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, True)
 
 
 def test_filter_detections_stage_multi_segment_pipe_slice(config, tmp_path):
-    return _test_filter_detections_stage_pipe(config, tmp_path, False)
+    return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, False)
