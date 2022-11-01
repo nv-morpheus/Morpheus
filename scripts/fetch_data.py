@@ -108,7 +108,7 @@ def parse_args():
     argparser = argparse.ArgumentParser("Fetches data not included in the repository by default")
     subparsers = argparser.add_subparsers(title='Subcommands',
                                           description='valid subcommands',
-                                          #required=True,
+                                          required=True,
                                           dest='subcommand')
 
     fetch_parser = subparsers.add_parser('fetch', help='Fetch datasets')
