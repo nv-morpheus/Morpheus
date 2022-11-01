@@ -19,10 +19,7 @@ on:
   push:
     branches:
       - 'pull-request/**'
-<<<<<<< HEAD
-=======
       - 'branch-*'
->>>>>>> 13fef7a8f670ef61d72720f58f52758ca3f53716
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
@@ -45,22 +42,15 @@ env:
 
 jobs:
   check:
-<<<<<<< HEAD
-=======
     if: ${{ startsWith(github.ref_name, 'pull-request/') }}
->>>>>>> 13fef7a8f670ef61d72720f58f52758ca3f53716
     name: Check
     runs-on: [self-hosted, linux, amd64, cpu4]
     timeout-minutes: 60
     container:
-<<<<<<< HEAD
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
       image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
-=======
-      image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
->>>>>>> 13fef7a8f670ef61d72720f58f52758ca3f53716
     strategy:
       fail-fast: true
 
@@ -79,18 +69,12 @@ jobs:
   build:
     name: Build
     runs-on: [self-hosted, linux, amd64, cpu16]
-<<<<<<< HEAD
-    timeout-minutes: 240
+    timeout-minutes: 60
     container:
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
       image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
-=======
-    timeout-minutes: 60
-    container:
-      image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
->>>>>>> 13fef7a8f670ef61d72720f58f52758ca3f53716
     strategy:
       fail-fast: true
 
