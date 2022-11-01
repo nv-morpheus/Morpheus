@@ -48,7 +48,7 @@ jobs:
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
-      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-20221031
+      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
     strategy:
       fail-fast: true
 
@@ -72,7 +72,7 @@ jobs:
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
-      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-20221031
+      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
     strategy:
       fail-fast: true
 
@@ -96,7 +96,7 @@ jobs:
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
-      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-20221031
+      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-20221101
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
         PARALLEL_LEVEL: '10'
@@ -123,7 +123,7 @@ jobs:
       credentials:
         username: '$oauthtoken'
         password: ${{ secrets.NGC_API_KEY }}
-      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-20221031
+      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
     strategy:
       fail-fast: true
 

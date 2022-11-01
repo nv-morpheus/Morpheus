@@ -17,7 +17,8 @@
 
 # Note this is the Dockerfile for the CI runner not for morpheus itself
 # Build from the root of the morpheus repo with:
-# docker build --network=host -t morpheus/ci:latest -f ci/runner/Dockerfile .
+# DOCKER_BUILDKIT=1 docker build --network=host --target test -t morpheus/ci:test-latest -f ci/runner/Dockerfile .
+# DOCKER_BUILDKIT=1 docker build --network=host --target driver -t morpheus/ci:driver-latest -f ci/runner/Dockerfile .
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci"
@@ -37,19 +38,15 @@ ARG CLANG_VER=12
 SHELL ["/bin/bash",  "-c"]
 
 # OS deps
-RUN apt-get update && \
+RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-    apt-get install --no-install-recommends -y \
+    apt install --no-install-recommends -y \
         git-lfs \
         libcublas-dev-${CUDA_PKG_VER} \
         libcufft-dev-${CUDA_PKG_VER} \
         libcurand-dev-${CUDA_PKG_VER} \
         libcusolver-dev-${CUDA_PKG_VER} \
-        libnuma1 \
-        libnvidia-compute-495 \
-        openjdk-11-jdk \
-        nodejs \
-        npm && \
+        libnuma1 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -62,8 +59,31 @@ RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --f
     conda clean -afy && \
     rm /tmp/cuda${CUDA_SHORT_VER}_dev.yml /tmp/requirements.txt
 
+
+# ============ driver ==================
+FROM base as driver
+
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt install --no-install-recommends -y libnvidia-compute-495 && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
+# ============ test ==================
+FROM base as test
+
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt install --no-install-recommends -y \
+        nodejs \
+        npm \
+        openjdk-11-jdk && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install camouflage needed for unittests to mock a triton server
-RUN npm install -g camouflage-server && \
+RUN npm install -g camouflage-server@0.9 && \
     npm cache clean --force
 
 # Install pytest-kafka
@@ -72,5 +92,4 @@ RUN npm install -g camouflage-server && \
 RUN git clone https://gitlab.com/karolinepauls/pytest-kafka.git /opt/pytest-kafka && \
     cd /opt/pytest-kafka && \
     source activate ${PROJ_NAME} && \
-    python setup.py develop && \
-    cd -
+    python setup.py develop
