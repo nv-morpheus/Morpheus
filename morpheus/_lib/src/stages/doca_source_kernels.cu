@@ -141,10 +141,12 @@ __global__ void _doca_packet_count_kernel(
 
   // ===== WAIT FOR READY SEM ===================================================================
 
-  if (threadIdx.x == 0)
-  {
-    bool first_pass = true;
+  bool first_pass = true;
 
+  bool should_count_next_sem = true;
+
+  while (*exit_flag == false)
+  {
     while (*exit_flag == false)
     {
       auto ret = doca_gpu_device_semaphore_get_value(
@@ -163,51 +165,65 @@ __global__ void _doca_packet_count_kernel(
         break;
       }
 
-      if (first_pass) {
+      if (sem_status == DOCA_GPU_SEM_STATUS_HOLD) {
+        should_count_next_sem = false;
+        break;
+      }
+
+      if (threadIdx.x == 0 and first_pass) {
         first_pass = false;
         printf("kernel count: waiting on sem %d to become ready\n", sem_idx);
       }
     }
 
-    if (not first_pass) {
-      printf("kernel count: sem %d became ready\n", sem_idx);
+    __syncthreads();
+
+    if (not should_count_next_sem)
+    {
+      break;
     }
+
+    if (threadIdx.x == 0 and not first_pass) {
+      printf("kernel count: counting sem %d\n", sem_idx);
+    }
+
+    __syncthreads();
+
+    // ===== COUNT PACKETS IN SEM =================================================================
+
+    if (threadIdx.x == 0)
+    {
+      *packet_count_out += packet_count;
+      *packets_size_out = 0;
+    }
+
+    __syncthreads();
+
+    for (auto packet_idx = 0; packet_idx < packet_count; packet_idx++)
+    {
+      // compute total packet payload size
+      // atomicAdd(packets_size_out, packet_payload_length)
+    }
+
+    __syncthreads();
+
+    if (threadIdx.x == 0) {
+      printf("kernel count: setting sem %d to held\n", sem_idx);
+      doca_gpu_device_semaphore_update_status(
+        sem_in + sem_idx,
+        DOCA_GPU_SEM_STATUS_HOLD
+      );
+    }
+
+    __threadfence();
+
+    sem_idx = (sem_idx + 1) % sem_count;
   }
-
-  __syncthreads();
-
-  if (threadIdx.x == 0) {
-    printf("kernel count: setting sem %d to held\n", sem_idx);
-    doca_gpu_device_semaphore_update_status(
-      sem_in + sem_idx,
-      DOCA_GPU_SEM_STATUS_HOLD
-    );
-  }
-
-  __threadfence();
-
-  // ===== COUNT PACKETS IN SEM =================================================================
-
-  if (threadIdx.x == 0)
-  {
-    *packet_count_out = packet_count;
-    *packets_size_out = 0;
-  }
-
-  __syncthreads();
-
-  for (auto packet_idx = 0; packet_idx < packet_count; packet_idx++)
-  {
-    // compute total packet payload size
-    // atomicAdd(packets_size_out, packet_payload_length)
-  }
-
-  __syncthreads();
 
   if(threadIdx.x == 0)
   {
-    printf("kernel count: %d packets counted for sem %d with total payload size %d\n", *packet_count_out, *sem_idx_begin, *packets_size_out);
-    *sem_idx_end = (sem_idx + 1) % sem_count;
+    *sem_idx_end = sem_idx;
+    printf("kernel count: %d packets counted for sems [%d, %d) with total payload size %d\n", *packet_count_out, *sem_idx_begin, *sem_idx_end, *packets_size_out);
   }
 
   if (threadIdx.x == 0) {
@@ -241,52 +257,62 @@ __global__ void _doca_packet_gather_kernel(
 
   // ===== WAIT FOR HELD SEM ======================================================================
 
+  // don't need to wait because we know which sems to process.
+  // rule 1: sem at sem_idx_begin must be processed, because we wouldn't be here if there weren't at least one sem to process.
+  // rule 2: all sems up to sem_idx_end (exclusive) must be processed.
+  // rule 3: if sem_idx_begin == sem_idx_end, sem_idx_begin still gets processed due to rule 1.
+
+  __shared__ bool should_gather_next_sem;
+
   if (threadIdx.x == 0)
   {
-    bool first_pass = true;
-
-    while (*exit_flag == false)
-    {
-      auto ret = doca_gpu_device_semaphore_get_value(
-        sem_in + sem_idx,
-        &sem_status,
-        &packet_count,
-        &packet_address
-      );
-
-      if (ret != DOCA_SUCCESS) {
-        *exit_flag = true;
-        break;
-      }
-
-      if (sem_status == DOCA_GPU_SEM_STATUS_HOLD) {
-        break;
-      }
-
-      if (first_pass) {
-        first_pass = false;
-        printf("kernel gather: waiting on sem %d to become held\n", sem_idx);
-      }
-    }
+    should_gather_next_sem = true;
   }
 
   __syncthreads();
 
-  // ===== GATHER PACKETS FROM HELD SEM ===========================================================
-
-  *sem_idx_begin = *sem_idx_end;
-
-  // ===== FREE SEM ===============================================================================
-
-  if (threadIdx.x == 0)
+  while (*exit_flag == false and should_gather_next_sem)
   {
-    printf("kernel gather: setting sem %d to free\n", sem_idx);
-    doca_gpu_device_semaphore_update_status(
+    // get sem info
+    auto ret = doca_gpu_device_semaphore_get_value(
       sem_in + sem_idx,
-      DOCA_GPU_SEM_STATUS_FREE
+      &sem_status,
+      &packet_count,
+      &packet_address
     );
+
+    if (ret != DOCA_SUCCESS)
+    {
+      *exit_flag = true;
+      continue;
+    }
+
+    __syncthreads();
+
+    // copy packets to dataframe
+
+    // release sem
+
+    if (threadIdx.x == 0)
+    {
+      printf("kernel gather: setting sem %d to free\n", sem_idx);
+      doca_gpu_device_semaphore_update_status(
+        sem_in + sem_idx,
+        DOCA_GPU_SEM_STATUS_FREE
+      );
+    }
+
+    __syncthreads();
+
+    // determine if the next sem should be processed
+
+    sem_idx = (sem_idx + 1) % sem_count;
+
+    if (sem_idx == *sem_idx_end)
+    {
+      should_gather_next_sem = false;
+    }
   }
-  __threadfence();
 
   if (threadIdx.x == 0) {
     printf("kernel gather: done\n");
