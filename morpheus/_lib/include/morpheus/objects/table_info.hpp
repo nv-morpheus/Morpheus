@@ -39,6 +39,12 @@ struct TableInfoData
     TableInfoData() = default;
     TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns);
 
+    TableInfoData get_slice(std::vector<std::string> column_names = {}) const;
+
+    TableInfoData get_slice(cudf::size_type start,
+                            cudf::size_type stop,
+                            std::vector<std::string> column_names = {}) const;
+
     cudf::table_view table_view;
     std::vector<std::string> index_names;
     std::vector<std::string> column_names;
@@ -46,7 +52,7 @@ struct TableInfoData
 
 /****** Component public implementations *******************/
 /****** TableInfo******************************************/
-struct TableInfoBase
+struct __attribute__((visibility("default"))) TableInfoBase
 {
     // /**
     //  * TODO(Documentation)
@@ -88,7 +94,7 @@ struct TableInfoBase
      *
      * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default.
      */
-    pybind11::object __attribute__((visibility("default"))) copy_to_py_object() const;
+    pybind11::object copy_to_py_object() const;
 
     /**
      * TODO(Documentation)
@@ -100,13 +106,20 @@ struct TableInfoBase
 
     TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfoData data);
 
+    const std::shared_ptr<const IDataTable> &get_parent() const;
+    TableInfoData &get_data();
+    const TableInfoData &get_data() const;
+
+  private:
     std::shared_ptr<const IDataTable> m_parent;
-    cudf::table_view m_table_view;
-    std::vector<std::string> m_column_names;
-    std::vector<std::string> m_index_names;
+    TableInfoData m_data;
+
+    // cudf::table_view m_table_view;
+    // std::vector<std::string> m_column_names;
+    // std::vector<std::string> m_index_names;
 };
 
-struct TableInfo : public TableInfoBase
+struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
 {
   public:
     TableInfo() = default;
@@ -142,7 +155,7 @@ struct TableInfo : public TableInfoBase
 //     operator pybind11::object() const & = delete;
 // };
 
-struct MutableTableInfo : public TableInfoBase
+struct __attribute__((visibility("default"))) MutableTableInfo : public TableInfoBase
 {
   public:
     MutableTableInfo(std::shared_ptr<const IDataTable> parent,
@@ -176,29 +189,14 @@ struct MutableTableInfo : public TableInfoBase
     //     obj.ref_count()
     // }
 
-    pybind11::object checkout_obj()
-    {
-        // Get a copy increasing the ref count
-        pybind11::object checked_out_obj = m_parent->get_py_object();
+    pybind11::object checkout_obj();
 
-        m_checked_out_ref_count = checked_out_obj.ref_count();
-
-        return checked_out_obj;
-    }
-
-    void return_obj(pybind11::object &&obj)
-    {
-        CHECK_EQ(obj.ref_count(), m_checked_out_ref_count) << "Checked out object returned with different ref_count(). "
-                                                              "Must not store copies of the checked out object";
-
-        // m_parent->get_py_object() = std::move(obj);
-
-        m_checked_out_ref_count = -1;
-    }
+    void return_obj(pybind11::object &&obj);
 
   private:
     std::unique_lock<std::shared_mutex> m_lock;
 
     mutable int m_checked_out_ref_count{-1};
 };
+
 }  // namespace morpheus

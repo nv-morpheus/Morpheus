@@ -90,24 +90,24 @@ class MessageMeta
 class SlicedMessageMeta : public MessageMeta
 {
   public:
-    SlicedMessageMeta(std::shared_ptr<MessageMeta> other, std::vector<std::string> columns);
+    SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
+                      cudf::size_type start            = 0,
+                      cudf::size_type stop             = -1,
+                      std::vector<std::string> columns = {});
 
     /**
      * TODO(Documentation)
      */
-    virtual TableInfo get_info() const
-    {
-        auto base_info = MessageMeta::get_info();
-
-        return base_info.get_slice(0, this->count(), m_column_names);
-    }
+    TableInfo get_info() const override;
 
     /**
      * TODO(Documentation)
      */
-    virtual MutableTableInfo get_mutable_info() const;
+    MutableTableInfo get_mutable_info() const override;
 
   private:
+    cudf::size_type m_start{0};
+    cudf::size_type m_stop{-1};
     std::vector<std::string> m_column_names;
 };
 

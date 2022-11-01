@@ -62,7 +62,7 @@ class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessag
 
     bool exclude_column(const std::string &column) const;
 
-    TableInfo get_meta(sink_type_t &msg);
+    std::shared_ptr<SlicedMessageMeta> get_meta(sink_type_t &msg);
 
     subscribe_fn_t build_operator();
 

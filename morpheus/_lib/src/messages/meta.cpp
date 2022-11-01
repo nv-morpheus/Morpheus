@@ -200,4 +200,25 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::stri
 
     return MessageMeta::create_from_cpp(std::move(df_with_meta));
 }
+
+SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
+                                     cudf::size_type start,
+                                     cudf::size_type stop,
+                                     std::vector<std::string> columns) :
+  MessageMeta(*other),
+  m_start(start),
+  m_stop(stop),
+  m_column_names(std::move(columns))
+{}
+
+TableInfo SlicedMessageMeta::get_info() const
+{
+    return this->m_data->get_info(m_start, m_stop, m_column_names);
+}
+
+MutableTableInfo SlicedMessageMeta::get_mutable_info() const
+{
+    return this->m_data->get_mutable_info(m_start, m_stop, m_column_names);
+}
+
 }  // namespace morpheus

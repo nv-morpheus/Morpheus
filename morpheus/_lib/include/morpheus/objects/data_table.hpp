@@ -45,15 +45,17 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
      */
     virtual cudf::size_type count() const = 0;
 
-    /**
-     * TODO(Documentation)
-     */
-    TableInfo get_info() const;
+    TableInfo get_info(std::vector<std::string> column_names) const;
 
-    /**
-     * TODO(Documentation)
-     */
-    MutableTableInfo get_mutable_info() const;
+    TableInfo get_info(cudf::size_type start                 = 0,
+                       cudf::size_type stop                  = -1,
+                       std::vector<std::string> column_names = {}) const;
+
+    MutableTableInfo get_mutable_info(std::vector<std::string> column_names) const;
+
+    MutableTableInfo get_mutable_info(cudf::size_type start                 = 0,
+                                      cudf::size_type stop                  = -1,
+                                      std::vector<std::string> column_names = {}) const;
 
     /**
      * TODO(Documentation)
