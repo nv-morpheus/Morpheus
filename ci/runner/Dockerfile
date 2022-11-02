@@ -15,25 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Note this is the Dockerfile for the CI runner not for morpheus itself
-# Build from the root of the morpheus repo with:
-# DOCKER_BUILDKIT=1 docker build --network=host --target test -t morpheus/ci:test-latest -f ci/runner/Dockerfile .
-# DOCKER_BUILDKIT=1 docker build --network=host --target driver -t morpheus/ci:driver-latest -f ci/runner/Dockerfile .
-
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci"
+ARG CUDA_PKG_VER=11-5
+ARG CUDA_SHORT_VER=11.5
 ARG CUDA_VER=11.5.1
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
+ARG PROJ_NAME=morpheus
 ARG PYTHON_VER=3.8
 
 # Configure the base docker img
 FROM ${FROM_IMAGE}:cuda${CUDA_VER}-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
-ARG PROJ_NAME=morpheus
-ARG CUDA_SHORT_VER=11.5
-ARG CUDA_PKG_VER=11-5
-ARG CLANG_VER=12
+ARG PROJ_NAME
+ARG CUDA_SHORT_VER
 
 SHELL ["/bin/bash",  "-c"]
 
@@ -46,7 +42,7 @@ RUN apt update && \
     rm -rf /var/lib/apt/lists/*
 
 # Create conda environment
-COPY ./docker/conda/environments/* /tmp/conda
+COPY ./docker/conda/environments/* /tmp/conda/
 
 RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_dev.yml && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
@@ -56,6 +52,8 @@ RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --f
 
 # ============ driver ==================
 FROM base as driver
+
+ARG CUDA_PKG_VER
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
@@ -71,6 +69,8 @@ RUN apt update && \
 
 # ============ test ==================
 FROM base as test
+
+ARG PROJ_NAME
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
