@@ -37,7 +37,7 @@ class ResponseMemoryProbs : public ResponseMemory
 {
   public:
     ResponseMemoryProbs(size_t count, TensorObject probs);
-    ResponseMemoryProbs(ResponseMemory &&other);
+    ResponseMemoryProbs(size_t count, tensor_map_t &&tensors);
 
     /**
      * @brief Return the tensor named 'probs', throws a `std::runtime_error` if it does not exist.
