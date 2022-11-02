@@ -14,35 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
-import typing
 from unittest import mock
 
 import numpy as np
 import pytest
-import srf
 
-from morpheus.config import Config
-from morpheus.config import ConfigFIL
-from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
-from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.pipeline import LinearPipeline
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from utils import TEST_DIRS
 from utils import calc_error_val
@@ -51,55 +39,6 @@ from utils import compare_class_to_scores
 # End-to-end test intended to imitate the Sid validation test
 FEATURE_LENGTH = 256
 MODEL_MAX_BATCH_SIZE = 32
-
-
-class LambdaMapStage(SinglePortStage):
-    """
-    This class writes messages to an s3 bucket.
-
-    Parameters
-    ----------
-    c : `morpheus.config.Config`
-        Pipeline configuration instance.
-    bucket: strWE
-        Name of the s3 bucket to write to.
-
-    """
-
-    def __init__(self, c: Config, s3_writer):
-        super().__init__(c)
-
-        self._s3_writer = s3_writer
-
-    @property
-    def name(self) -> str:
-        return "to-s3-bucket"
-
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Returns accepted input types for this stage.
-
-        Returns
-        -------
-        typing.Tuple(`morpheus.messages.message_meta.MessageMeta`, )
-            Accepted input types.
-
-        """
-        return (typing.Any, )
-
-    def supports_cpp_node(self):
-        return False
-
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        stream = input_stream[0]
-
-        node = builder.make_node(self.unique_name, self._s3_writer)
-        builder.make_edge(stream, node)
-
-        stream = node
-
-        # Return input unchanged to allow passthrough
-        return stream, input_stream[1]
 
 
 @pytest.mark.slow
@@ -249,81 +188,3 @@ def test_minibert_cpp_truncated(config, tmp_path):
 def test_minibert_cpp(config, tmp_path):
     results = _run_minibert_cpp(config, tmp_path, 'sid-minibert-onnx-no-trunc', False)
     assert results.diff_rows == 18
-
-
-@pytest.mark.slow
-@pytest.mark.use_cpp
-def test_drift(config):
-
-    root_dir = "/home/mdemoret/Repos/morpheus/data/deloitte/lm-morph"
-
-    num_threads = 6
-    pipeline_batch_size = 524288
-    model_max_batch_size = 524288
-    model_seq_length = 6
-    column_headers_file = os.path.join(root_dir, "data/column_headers.txt")
-    input_file = os.path.join(root_dir, "data/test/test_lm.csv")
-    model_name = "drift-onnx"
-    server_url = "localhost:8001"
-    output_file = os.path.join(root_dir, "output_filter_cpp.csv")
-
-    # CppConfig.set_should_use_cpp(False)
-
-    config = Config()
-    config.log_level = logging.DEBUG
-    config.fil = ConfigFIL()
-    config.mode = PipelineModes.FIL
-    config.num_threads = num_threads
-    config.pipeline_batch_size = pipeline_batch_size
-    config.model_max_batch_size = model_max_batch_size
-    config.feature_length = model_seq_length
-    config.class_labels = ["score"]
-
-    with open(column_headers_file, "r") as lf:
-        config.fil.feature_columns = [x.strip() for x in lf.readlines()]
-        print("Loaded columns. Current columns: ", str(config.fil.feature_columns))
-
-    # Create a pipeline object
-    pipeline = LinearPipeline(config)
-
-    # Add a source stage
-    pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False, repeat=1))
-    pipeline.add_stage(MonitorStage(config, description="File source rate"))
-
-    # Add a deserialize and pre-process stage
-    pipeline.add_stage(DeserializeStage(config))
-    pipeline.add_stage(PreprocessFILStage(config))
-    pipeline.add_stage(MonitorStage(config, description="Pre-process rate"))
-
-    pipeline.add_stage(
-        TritonInferenceStage(config,
-                             model_name=model_name,
-                             server_url=server_url,
-                             force_convert_inputs=True,
-                             use_shared_memory=False))
-    pipeline.add_stage(MonitorStage(config, description="Inference rate", unit="inf"))
-
-    # pipeline.add_stage(TriggerStage(config))
-
-    pipeline.add_stage(AddScoresStage(config))
-
-    pipeline.add_stage(FilterDetectionsStage(config, threshold=0.5, copy=True))
-    # # pipeline.add_stage(MonitorStage(config, description="Filter rate"))
-
-    # def post_scores(x: MultiResponseProbsMessage):
-    #     # Do stuff
-    #     scores = x.get_meta("score")
-
-    #     print("got scores")
-
-    #     return x
-
-    # pipeline.add_stage(LambdaMapStage(config, post_scores))
-
-    # pipeline.add_stage(TriggerStage(config))
-
-    pipeline.add_stage(SerializeStage(config))
-    pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
-
-    # Run the pipeline
-    pipeline.run()
