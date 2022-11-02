@@ -25,7 +25,7 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from utils import TEST_DIRS
+from utils import TEST_DIRS, assert_file_exists_with_timeout
 
 
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
