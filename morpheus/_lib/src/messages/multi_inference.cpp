@@ -75,7 +75,8 @@ std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::init
 
 std::shared_ptr<morpheus::InferenceMemory> MultiInferenceMessageInterfaceProxy::memory(MultiInferenceMessage &self)
 {
-    return DCHECK_NOTNULL(std::dynamic_pointer_cast<morpheus::InferenceMemory>(self.memory));
+    DCHECK(std::dynamic_pointer_cast<morpheus::InferenceMemory>(self.memory) != nullptr);
+    return std::static_pointer_cast<morpheus::InferenceMemory>(self.memory);
 }
 
 std::size_t MultiInferenceMessageInterfaceProxy::offset(MultiInferenceMessage &self)
