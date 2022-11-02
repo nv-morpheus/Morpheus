@@ -1,0 +1,152 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        default: 'us-west-2'
+        type: string
+      run_check:
+        required: true
+        type: boolean
+      container:
+        required: true
+        type: string
+      test_container:
+        required: true
+        type: string
+    secrets:
+      GHA_AWS_ACCESS_KEY_ID:
+        required: true
+      GHA_AWS_SECRET_ACCESS_KEY:
+        required: true
+      NGC_API_KEY:
+        required: true
+
+env:
+  AWS_DEFAULT_REGION:  ${{ inputs.aws_region }}
+  AWS_ACCESS_KEY_ID: "${{ secrets.GHA_AWS_ACCESS_KEY_ID }}"
+  AWS_SECRET_ACCESS_KEY: "${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}"
+  CHANGE_TARGET: "${{ github.base_ref }}"
+  CUDA_PATH: "/usr/local/cuda/"
+  CUDA_VER: "11.5"
+  GH_TOKEN: "${{ github.token }}"
+  GIT_COMMIT: "${{ github.sha }}"
+  MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
+  WORKSPACE: "${{ github.workspace }}/morpheus"
+  WORKSPACE_TMP: "${{ github.workspace }}/tmp"
+
+
+jobs:
+  check:
+    if: ${{ inputs.run_check }}
+    name: Check
+    runs-on: [self-hosted, linux, amd64, cpu4]
+    timeout-minutes: 60
+    container:
+      credentials:
+        username: '$oauthtoken'
+        password: ${{ secrets.NGC_API_KEY }}
+      image: ${{ inputs.container }}
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+          fetch-depth: 0
+
+      - name: Check
+        shell: bash
+        run: ./morpheus/ci/scripts/github/checks.sh
+
+  build:
+    name: Build
+    runs-on: [self-hosted, linux, amd64, cpu16]
+    timeout-minutes: 60
+    container:
+      credentials:
+        username: '$oauthtoken'
+        password: ${{ secrets.NGC_API_KEY }}
+      image: ${{ inputs.container }}
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+
+      - name: Build:linux:x86_64:gcc
+        shell: bash
+        run: ./morpheus/ci/scripts/github/build.sh
+
+  test:
+    name: Test
+    needs: [build]
+    runs-on: [self-hosted, linux, amd64, gpu-v100-495-1]
+    timeout-minutes: 60
+    container:
+      credentials:
+        username: '$oauthtoken'
+        password: ${{ secrets.NGC_API_KEY }}
+      image: ${{ inputs.test_container }}
+      options: --cap-add=sys_nice
+      env:
+        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
+        PARALLEL_LEVEL: '10'
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+
+      - name: Test:linux:x86_64:gcc
+        shell: bash
+        run: ./morpheus/ci/scripts/github/test.sh
+
+  documentation:
+    name: Documentation
+    needs: [build]
+    runs-on: [self-hosted, linux, amd64, cpu4]
+    timeout-minutes: 60
+    container:
+      credentials:
+        username: '$oauthtoken'
+        password: ${{ secrets.NGC_API_KEY }}
+      image: ${{ inputs.container }}
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+          path: 'morpheus'
+
+      - name: build_docs
+        shell: bash
+        run: ./morpheus/ci/scripts/github/docs.sh

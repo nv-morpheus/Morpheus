@@ -26,117 +26,14 @@ concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 
-env:
-  AWS_DEFAULT_REGION: us-west-2
-  AWS_ACCESS_KEY_ID: "${{ secrets.GHA_AWS_ACCESS_KEY_ID }}"
-  AWS_SECRET_ACCESS_KEY: "${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}"
-  CHANGE_TARGET: "${{ github.base_ref }}"
-  CUDA_PATH: "/usr/local/cuda/"
-  CUDA_VER: "11.5"
-  GH_TOKEN: "${{ github.token }}"
-  GIT_COMMIT: "${{ github.sha }}"
-  MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"
-  WORKSPACE: "${{ github.workspace }}/morpheus"
-  WORKSPACE_TMP: "${{ github.workspace }}/tmp"
-
-
 jobs:
-  check:
-    if: ${{ startsWith(github.ref_name, 'pull-request/') }}
-    name: Check
-    runs-on: [self-hosted, linux, amd64, cpu4]
-    timeout-minutes: 60
-    container:
-      credentials:
-        username: '$oauthtoken'
-        password: ${{ secrets.NGC_API_KEY }}
-      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
-    strategy:
-      fail-fast: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: false
-          path: 'morpheus'
-          fetch-depth: 0
-
-      - name: Check
-        shell: bash
-        run: ./morpheus/ci/scripts/github/checks.sh
-
-  build:
-    name: Build
-    runs-on: [self-hosted, linux, amd64, cpu16]
-    timeout-minutes: 60
-    container:
-      credentials:
-        username: '$oauthtoken'
-        password: ${{ secrets.NGC_API_KEY }}
-      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
-    strategy:
-      fail-fast: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: false
-          path: 'morpheus'
-
-      - name: Build:linux:x86_64:gcc
-        shell: bash
-        run: ./morpheus/ci/scripts/github/build.sh
-
-  test:
-    name: Test
-    needs: [build]
-    runs-on: [self-hosted, linux, amd64, gpu-v100-495-1]
-    timeout-minutes: 60
-    container:
-      credentials:
-        username: '$oauthtoken'
-        password: ${{ secrets.NGC_API_KEY }}
-      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-20221101
-      options: --cap-add=sys_nice
-      env:
-        NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
-        PARALLEL_LEVEL: '10'
-    strategy:
-      fail-fast: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: false
-          path: 'morpheus'
-
-      - name: Test:linux:x86_64:gcc
-        shell: bash
-        run: ./morpheus/ci/scripts/github/test.sh
-
-  documentation:
-    name: Documentation
-    needs: [build]
-    runs-on: [self-hosted, linux, amd64, cpu4]
-    timeout-minutes: 60
-    container:
-      credentials:
-        username: '$oauthtoken'
-        password: ${{ secrets.NGC_API_KEY }}
-      image: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
-    strategy:
-      fail-fast: true
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          lfs: false
-          path: 'morpheus'
-
-      - name: build_docs
-        shell: bash
-        run: ./morpheus/ci/scripts/github/docs.sh
+  ci_pipe:
+    uses: ./.github/workflows/ci_pipe.yml@main
+    with:
+      run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-20221101
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-20221101
+    secrets:
+      GHA_AWS_ACCESS_KEY_ID: ${{ secrets.GHA_AWS_ACCESS_KEY_ID }}
+      GHA_AWS_SECRET_ACCESS_KEY: ${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}
+      NGC_API_KEY: ${{ secrets.NGC_API_KEY }}
