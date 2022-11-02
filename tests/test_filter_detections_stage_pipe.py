@@ -28,8 +28,9 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS, assert_file_exists_with_timeout
+from utils import TEST_DIRS
 from utils import ConvMsg
+from utils import assert_file_exists_with_timeout
 from utils import extend_data
 from utils import get_column_names_from_file
 

@@ -24,7 +24,8 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from utils import TEST_DIRS, assert_file_exists_with_timeout
+from utils import TEST_DIRS
+from utils import assert_file_exists_with_timeout
 
 
 # Adapted from fil_in_out_stage -- used for testing multi-segment error conditions

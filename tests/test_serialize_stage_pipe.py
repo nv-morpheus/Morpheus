@@ -28,7 +28,8 @@ from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS, assert_file_exists_with_timeout
+from utils import TEST_DIRS
+from utils import assert_file_exists_with_timeout
 
 
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])

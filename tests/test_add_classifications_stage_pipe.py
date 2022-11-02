@@ -28,8 +28,9 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS, assert_file_exists_with_timeout
+from utils import TEST_DIRS
 from utils import ConvMsg
+from utils import assert_file_exists_with_timeout
 
 
 def test_add_classifications_stage_pipe(config, tmp_path):
