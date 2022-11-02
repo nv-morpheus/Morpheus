@@ -36,8 +36,6 @@ from cudf._lib.utils cimport table_view_from_table
 
 cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
 
-    cdef cppclass IDataTable:
-        IDataTable()
 
     cdef cppclass TableInfoData:
         TableInfoData()
@@ -49,20 +47,6 @@ cdef extern from "morpheus/objects/table_info.hpp" namespace "morpheus" nogil:
         vector[string] index_names
         vector[string] column_names
 
-    # cdef cppclass TableInfo:
-    #     TableInfo()
-    #     TableInfo(shared_ptr[const IDataTable] parent,
-    #               table_view view,
-    #               vector[string] index_names,
-    #               vector[string] column_names)
-
-    #     table_view get_view() const
-    #     vector[string] get_index_names()
-    #     vector[string] get_column_names() const
-
-    #     int num_indices() const
-    #     int num_columns() const
-    #     int num_rows() const
 
 cdef public api:
     object make_table_from_table_with_metadata(table_with_metadata table, int index_col_count):
@@ -78,47 +62,6 @@ cdef public api:
 
         return cudf.DataFrame._from_data(data, index)
 
-    # object make_table_from_table_info(TableInfo info, object owner):
-
-    #     i_names = info.get_index_names()
-    #     c_names = info.get_column_names()
-
-    #     index_names = [x.decode() for x in i_names]
-    #     column_names = [x.decode() for x in c_names]
-
-    #     data, index = data_from_table_view(info.get_view(), owner, column_names=column_names, index_names=index_names)
-
-    #     return cudf.DataFrame._from_data(data, index)
-
-    # TableInfo make_table_info_from_table(object table, shared_ptr[const IDataTable] parent):
-
-    #     cdef vector[string] temp_col_names = get_column_names(table, True)
-
-    #     cdef table_view input_table_view = table_view_from_table(table, ignore_index=False)
-    #     cdef vector[string] index_names
-    #     cdef vector[string] column_names
-
-    #     # cuDF does a weird check where if there is only one name in both index and columns, and that column is empty or
-    #     # None, then change it to '""'. Not sure what this is used for
-    #     check_empty_name = get_column_names(table, True).size() == 1
-
-    #     for name in table._index.names:
-    #         if (check_empty_name and name in (None, '')):
-    #             name = '""'
-    #         elif (name is None):
-    #             name = ""
-
-    #         index_names.push_back(str.encode(name))
-
-    #     for name in table._column_names:
-    #         if (check_empty_name and name in (None, '')):
-    #             name = '""'
-    #         elif (name is None):
-    #             name = ""
-
-    #         column_names.push_back(str.encode(name))
-
-    #     return TableInfo(parent, input_table_view, index_names, column_names)
 
     TableInfoData make_table_info_data_from_table(object table):
 

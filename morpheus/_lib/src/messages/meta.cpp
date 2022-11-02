@@ -91,10 +91,6 @@ struct MessageMetaImpl {
 
 /****** Component public implementations *******************/
 /****** MessageMeta ****************************************/
-// pybind11::object MessageMeta::get_py_table() const
-// {
-//     return m_data->get_py_object();
-// }
 
 size_t MessageMeta::count() const
 {

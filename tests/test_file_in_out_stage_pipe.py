@@ -38,7 +38,7 @@ def test_file_rw_pipe(tmp_path, config, output_type):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_file_exists_with_timeout(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
 
@@ -66,13 +66,13 @@ def test_to_file_no_path(tmp_path, config):
 
     assert os.path.realpath(os.curdir) == tmp_path.as_posix()
 
-    assert not os.path.exists(tmp_path / out_file)
+    assert_file_exists_with_timeout(tmp_path / out_file)
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(tmp_path / out_file)
+    assert_file_exists_with_timeout(tmp_path / out_file)
 
 
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
@@ -86,7 +86,7 @@ def test_file_rw_multi_segment_pipe(tmp_path, config, output_type):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_file_exists_with_timeout(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
 

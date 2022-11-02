@@ -68,9 +68,4 @@ MutableTableInfo IDataTable::get_mutable_info(cudf::size_type start,
     return {this->shared_from_this(), std::move(lock), std::move(table_info_data)};
 }
 
-// std::shared_mutex &IDataTable::get_mutex() const
-// {
-//     return m_mutex;
-// }
-
 }  // namespace morpheus

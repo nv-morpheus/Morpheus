@@ -125,11 +125,6 @@ TableInfoBase::TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfo
   m_data(std::move(data))
 {}
 
-// const pybind11::object &TableInfoBase::get_parent_table() const
-// {
-//     return m_parent->get_py_object();
-// }
-
 const cudf::table_view &TableInfoBase::get_view() const
 {
     return m_data.table_view;
@@ -207,12 +202,34 @@ const TableInfoData &TableInfoBase::get_data() const
     return m_data;
 }
 
+TableInfo::TableInfo(std::shared_ptr<const IDataTable> parent,
+                     std::shared_lock<std::shared_mutex> lock,
+                     TableInfoData data) :
+  TableInfoBase(parent, std::move(data)),
+  m_lock(std::move(lock))
+{}
+
 TableInfo TableInfo::get_slice(cudf::size_type start, cudf::size_type stop, std::vector<std::string> column_names) const
 {
     // Create a new Table info, (cloning the shared_lock)
     return {this->get_parent(),
             std::shared_lock<std::shared_mutex>(*m_lock.mutex()),
             this->get_data().get_slice(start, stop, column_names)};
+}
+
+MutableTableInfo::MutableTableInfo(std::shared_ptr<const IDataTable> parent,
+                                   std::unique_lock<std::shared_mutex> lock,
+                                   TableInfoData data) :
+  TableInfoBase(parent, std::move(data)),
+  m_lock(std::move(lock))
+{}
+
+MutableTableInfo::~MutableTableInfo()
+{
+    if (m_checked_out_ref_count >= 0)
+    {
+        LOG(FATAL) << "Checked out python object was not returned before MutableTableInfo went out of scope";
+    }
 }
 
 void MutableTableInfo::insert_columns(const std::vector<std::string> &column_names,

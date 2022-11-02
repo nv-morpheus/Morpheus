@@ -39,11 +39,6 @@ struct PyDataTable : public IDataTable
      */
     cudf::size_type count() const override;
 
-    // /**
-    //  * TODO(Documentation)
-    //  */
-    // TableInfo get_info() const override;
-
     /**
      * TODO(Documentation)
      */

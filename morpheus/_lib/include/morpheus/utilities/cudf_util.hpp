@@ -41,8 +41,6 @@ void load_cudf_helpers();
  * translation unit for the pybind module declaration.
  */
 pybind11::object proxy_table_from_table_with_metadata(cudf::io::table_with_metadata &&, int);
-// TableInfo proxy_table_info_from_table(pybind11::object table, std::shared_ptr<morpheus::IDataTable const>
-// idata_table);
 TableInfoData proxy_table_info_data_from_table(pybind11::object table);
 
 /**

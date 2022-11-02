@@ -40,11 +40,6 @@ namespace morpheus {
 class MessageMeta
 {
   public:
-    // /**
-    //  * TODO(Documentation)
-    //  */
-    // pybind11::object get_py_table() const;
-
     /**
      * TODO(Documentation)
      */
@@ -83,8 +78,8 @@ class MessageMeta
 };
 
 /**
- * @brief Operates similarly to MessageMeta, except it applies a filter on the columns. Used by Serialization to filter
- * columns without copying the entire DataFrame
+ * @brief Operates similarly to MessageMeta, except it applies a filter on the columns and rows. Used by Serialization
+ * to filter columns without copying the entire DataFrame
  *
  */
 class SlicedMessageMeta : public MessageMeta
@@ -95,14 +90,8 @@ class SlicedMessageMeta : public MessageMeta
                       cudf::size_type stop             = -1,
                       std::vector<std::string> columns = {});
 
-    /**
-     * TODO(Documentation)
-     */
     TableInfo get_info() const override;
 
-    /**
-     * TODO(Documentation)
-     */
     MutableTableInfo get_mutable_info() const override;
 
   private:
@@ -133,10 +122,19 @@ struct MessageMetaInterfaceProxy
     static cudf::size_type count(MessageMeta& self);
 
     /**
-     * TODO(Documentation)
+     * @brief Get a copy of the data frame object as a python object
+     *
+     * @param self The MessageMeta instance
+     * @return pybind11::object A `DataFrame` object
      */
     static pybind11::object get_data_frame(MessageMeta& self);
 
+    /**
+     * @brief Set a new python `DataFrame` object to the internal `IDataTable`
+     *
+     * @param self The MessageMeta instance
+     * @param new_df A `DataFrame` object in python
+     */
     static void set_data_frame(MessageMeta& self, const pybind11::object& new_df);
 };
 #pragma GCC visibility pop

@@ -51,7 +51,7 @@ def test_add_classifications_stage_pipe(config, tmp_path):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_file_exists_with_timeout(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
     expected = (input_data > threshold)
@@ -90,7 +90,7 @@ def test_add_classifications_stage_multi_segment_pipe(config, tmp_path):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_file_exists_with_timeout(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
     expected = (input_data > threshold)

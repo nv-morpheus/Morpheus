@@ -19,7 +19,6 @@
 
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/objects/data_table.hpp"
 
 #include <pysrf/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
@@ -34,6 +33,8 @@
 #include <vector>
 
 namespace morpheus {
+struct TableInfo;
+
 /****** Component public implementations *******************/
 /****** PreprocessFILStage**********************************/
 /**

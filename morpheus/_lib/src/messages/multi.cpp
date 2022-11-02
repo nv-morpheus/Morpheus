@@ -29,7 +29,6 @@
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
-#include <cudf/utilities/type_dispatcher.hpp>
 #include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
@@ -45,40 +44,6 @@
 #include <utility>
 #include <vector>
 // IWYU pragma: no_include <unordered_map>
-
-namespace {
-
-struct DispatchedCopy
-{
-    template <typename T, std::enable_if_t<!cudf::is_rep_layout_compatible<T>()> * = nullptr>
-    void operator()(const cudf::column_view &cv, const morpheus::TensorObject &tensor, std::size_t row_stride)
-    {
-        throw std::invalid_argument("Unsupported conversion");
-    }
-
-    template <typename T, std::enable_if_t<cudf::is_rep_layout_compatible<T>()> * = nullptr>
-    void operator()(const cudf::column_view &cv, const morpheus::TensorObject &tensor, std::size_t row_stride)
-    {
-        if (row_stride == 1)
-        {
-            // column major just use cudaMemcpy
-            SRF_CHECK_CUDA(
-                cudaMemcpy(const_cast<T *>(cv.data<T>()), tensor.data(), tensor.bytes(), cudaMemcpyDeviceToDevice));
-        }
-        else
-        {
-            const auto item_size = tensor.dtype().item_size();
-            SRF_CHECK_CUDA(cudaMemcpy2D(const_cast<T *>(cv.data<T>()),
-                                        item_size,
-                                        tensor.data(),
-                                        row_stride * item_size,
-                                        item_size,
-                                        cv.size(),
-                                        cudaMemcpyDeviceToDevice));
-        }
-    }
-};
-}  // namespace
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -308,8 +273,6 @@ pybind11::object MultiMessageInterfaceProxy::get_meta_list(MultiMessage &self, p
 
 void MultiMessageInterfaceProxy::set_meta(MultiMessage &self, pybind11::object columns, pybind11::object value)
 {
-    // self.set_meta("", )
-
     // Need to release the GIL before calling `get_meta()`
     pybind11::gil_scoped_release no_gil;
 

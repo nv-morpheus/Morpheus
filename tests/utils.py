@@ -181,7 +181,7 @@ def extend_data(input_file, output_file, repeat_count):
         fh.writelines(output_strs)
 
 
-def assert_file_exists_with_timeout(filename: str, timeout_sec: float):
+def assert_file_exists_with_timeout(filename: str, timeout_sec: float = 1.0):
     """
     Asserts a file exists, but will wait up to `timeout_sec` before attempting the assert. Useful for files that may not
     be created early. Better than adding `time.sleep()`
@@ -190,7 +190,7 @@ def assert_file_exists_with_timeout(filename: str, timeout_sec: float):
     ----------
     filename : str
         File to assert that it exists
-    timeout_sec : float
+    timeout_sec : float, default = 1.0
         Maximum time to wait, in seconds
     """
 

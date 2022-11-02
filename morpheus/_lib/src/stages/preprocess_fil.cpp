@@ -18,7 +18,8 @@
 #include "morpheus/stages/preprocess_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
-#include "morpheus/messages/meta.hpp"         // for MessageMeta
+#include "morpheus/messages/meta.hpp"  // for MessageMeta
+#include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/table_info.hpp"    // for TableInfo
 #include "morpheus/objects/tensor.hpp"

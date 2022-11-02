@@ -34,6 +34,11 @@
 
 namespace morpheus {
 
+/**
+ * @brief Simple structure which provides a general method for holding a cudf:table_view together with index and column
+ * names. Also provides slicing mechanics.
+ *
+ */
 struct TableInfoData
 {
     TableInfoData() = default;
@@ -54,11 +59,6 @@ struct TableInfoData
 /****** TableInfo******************************************/
 struct __attribute__((visibility("default"))) TableInfoBase
 {
-    // /**
-    //  * TODO(Documentation)
-    //  */
-    // const pybind11::object &get_parent_table() const;
-
     /**
      * TODO(Documentation)
      */
@@ -107,26 +107,20 @@ struct __attribute__((visibility("default"))) TableInfoBase
     TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfoData data);
 
     const std::shared_ptr<const IDataTable> &get_parent() const;
+
     TableInfoData &get_data();
     const TableInfoData &get_data() const;
 
   private:
     std::shared_ptr<const IDataTable> m_parent;
     TableInfoData m_data;
-
-    // cudf::table_view m_table_view;
-    // std::vector<std::string> m_column_names;
-    // std::vector<std::string> m_index_names;
 };
 
 struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
 {
   public:
     TableInfo() = default;
-    TableInfo(std::shared_ptr<const IDataTable> parent, std::shared_lock<std::shared_mutex> lock, TableInfoData data) :
-      TableInfoBase(parent, std::move(data)),
-      m_lock(std::move(lock))
-    {}
+    TableInfo(std::shared_ptr<const IDataTable> parent, std::shared_lock<std::shared_mutex> lock, TableInfoData data);
 
     /**
      * TODO(Documentation)
@@ -134,44 +128,18 @@ struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
     TableInfo get_slice(cudf::size_type start, cudf::size_type stop, std::vector<std::string> column_names = {}) const;
 
   private:
+    // We use a shared_lock to allow multiple `TableInfo` to be in use at the same time.
     std::shared_lock<std::shared_mutex> m_lock;
 };
-
-// class PyObjectLocked : public pybind11::object
-// {
-//   public:
-//     // // Returns const ref. Used by object_api. Should not be used directly. Requires the GIL
-//     // operator const pybind11::handle &() const &;
-
-//     // // Necessary to implement the object_api interface
-//     // PyObject *ptr() const;
-//     PyObjectLocked(pybind11::object &&obj);
-//     PyObjectLocked(const PyObjectLocked &other) = delete;
-
-//     PyObjectLocked &operator=(const PyObjectLocked &other) = delete;
-
-//     PyObjectLocked &operator=(const pybind11::object &obj);
-
-//     operator pybind11::object() const & = delete;
-// };
 
 struct __attribute__((visibility("default"))) MutableTableInfo : public TableInfoBase
 {
   public:
     MutableTableInfo(std::shared_ptr<const IDataTable> parent,
                      std::unique_lock<std::shared_mutex> lock,
-                     TableInfoData data) :
-      TableInfoBase(parent, std::move(data)),
-      m_lock(std::move(lock))
-    {}
+                     TableInfoData data);
 
-    ~MutableTableInfo()
-    {
-        if (m_checked_out_ref_count >= 0)
-        {
-            LOG(FATAL) << "Checked out python object was not returned before MutableTableInfo went out of scope";
-        }
-    }
+    ~MutableTableInfo();
 
     /**
      * TODO(Documentation)
@@ -183,17 +151,25 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
      */
     void insert_missing_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
 
-    // PyObjectLocked py_obj() const{
-    //     pybind11::object obj;
-
-    //     obj.ref_count()
-    // }
-
+    /**
+     * @brief Allows the python object to be "checked out" which gives exclusive access to the python object during the
+     * lifetime of `MutableTableInfo`. Use this method when it is necessary to make changes to the python object using
+     * the python API. The python object must be returned via `return_obj` before `MutableTableInfo` goes out of scope.
+     *
+     * @return pybind11::object
+     */
     pybind11::object checkout_obj();
 
+    /**
+     * @brief Returns the checked out python object from `checkout_obj`. Each call to `checkout_obj` needs a
+     * coresponding `return_obj` call.
+     *
+     * @param obj
+     */
     void return_obj(pybind11::object &&obj);
 
   private:
+    // We use a unique_lock here to enforce exclusive access
     std::unique_lock<std::shared_mutex> m_lock;
 
     mutable int m_checked_out_ref_count{-1};

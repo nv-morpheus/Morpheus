@@ -54,7 +54,7 @@ def test_kafka_source_stage_pipe(tmp_path, config, kafka_bootstrap_servers: str,
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_file_exists_with_timeout(out_file)
 
     input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
     output_data = read_file_to_df(out_file, file_type=FileTypes.Auto).values
