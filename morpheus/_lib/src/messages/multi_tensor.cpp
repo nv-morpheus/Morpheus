@@ -77,7 +77,8 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
                                         std::size_t start,
                                         std::size_t stop) const
 {
-    auto sliced_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiTensorMessage>(new_message));
+    DCHECK(std::dynamic_pointer_cast<MultiTensorMessage>(new_message) != nullptr);
+    auto sliced_message = std::static_pointer_cast<MultiTensorMessage>(new_message);
 
     sliced_message->offset = start;
     sliced_message->count  = stop - start;
@@ -101,7 +102,8 @@ void MultiTensorMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_mess
                                           const std::vector<std::pair<size_t, size_t>> &ranges,
                                           size_t num_selected_rows) const
 {
-    auto copied_message = DCHECK_NOTNULL(std::dynamic_pointer_cast<MultiTensorMessage>(new_message));
+    DCHECK(std::dynamic_pointer_cast<MultiTensorMessage>(new_message) != nullptr);
+    auto copied_message = std::static_pointer_cast<MultiTensorMessage>(new_message);
     DerivedMultiMessage::copy_ranges_impl(copied_message, ranges, num_selected_rows);
 
     copied_message->offset = 0;
