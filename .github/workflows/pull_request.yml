@@ -32,7 +32,7 @@ jobs:
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-221102
-      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-20221102
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-221102
     secrets:
       GHA_AWS_ACCESS_KEY_ID: ${{ secrets.GHA_AWS_ACCESS_KEY_ID }}
       GHA_AWS_SECRET_ACCESS_KEY: ${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}
