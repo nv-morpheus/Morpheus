@@ -13,27 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-loglevel: info
-cpus: 1
-monitoring:
-  port: 5555
-ssl:
-  cert: "./certs/server.cert"
-  key: "./certs/server.key"
-  root_cert: "./certs/root.cert"
-protocols:
-  http:
-    enable: true
-    mocks_dir: "./mocks"
-    port: 8000
-  grpc:
-    enable: false
-    host: localhost
-    port: 8001
-    mocks_dir: "./grpc/mocks"
-    protos_dir: "./grpc/protos"
-    grpc_tls: false
-injection:
-  enable: true
-validation:
-  enable: false
+name: Add new issue/PR to project
+
+on:
+  issues:
+    types:
+      - opened
+
+  pull_request_target:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue or PR to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.3.0
+        with:
+          project-url: https://github.com/orgs/nv-morpheus/projects/1
+          github-token: ${{ github.token }}
