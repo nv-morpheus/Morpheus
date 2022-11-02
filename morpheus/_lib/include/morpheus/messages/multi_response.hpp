@@ -48,8 +48,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
                          std::size_t mess_count,
                          std::shared_ptr<ResponseMemory> memory,
                          std::size_t offset,
-                         std::size_t count) :
-      DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count){};
+                         std::size_t count);
 
     /**
      * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.

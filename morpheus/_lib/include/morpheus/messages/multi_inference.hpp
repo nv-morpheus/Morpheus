@@ -48,8 +48,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
                           std::size_t mess_count,
                           std::shared_ptr<morpheus::InferenceMemory> memory,
                           std::size_t offset,
-                          std::size_t count) :
-      DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count){};
+                          std::size_t count);
 
     /**
      * @brief Return the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.

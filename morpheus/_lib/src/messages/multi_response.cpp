@@ -36,6 +36,14 @@
 
 namespace morpheus {
 /****** Component public implementations *******************/
+MultiResponseMessage::MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
+                                           std::size_t mess_offset,
+                                           std::size_t mess_count,
+                                           std::shared_ptr<ResponseMemory> memory,
+                                           std::size_t offset,
+                                           std::size_t count) :
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
+{}
 
 const TensorObject MultiResponseMessage::get_output(const std::string &name) const
 {

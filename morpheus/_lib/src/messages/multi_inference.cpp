@@ -36,6 +36,15 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** <MultiInferenceMessage>****************************************/
+MultiInferenceMessage::MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+                                             std::size_t mess_offset,
+                                             std::size_t mess_count,
+                                             std::shared_ptr<morpheus::InferenceMemory> memory,
+                                             std::size_t offset,
+                                             std::size_t count) :
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
+{}
+
 const TensorObject MultiInferenceMessage::get_input(const std::string &name) const
 {
     return get_tensor(name);

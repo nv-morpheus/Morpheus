@@ -29,6 +29,8 @@
 #include <vector>
 
 namespace morpheus {
+#pragma GCC visibility push(default)
+
 /****** MultiTensorMessage*******************************/
 /**
  * Base class for MultiInferenceMessage & MultiResponseMessage
@@ -42,7 +44,6 @@ namespace morpheus {
  * they are all of the same length and that element N in each tensor refers
  * to the same record.
  */
-#pragma GCC visibility push(default)
 class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiMessage>
 {
   public:
