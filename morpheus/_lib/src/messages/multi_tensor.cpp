@@ -60,7 +60,6 @@ TensorObject MultiTensorMessage::get_tensor_impl(const std::string &name) const
         return this->memory->tensors[name];
     }
 
-    // TODO(MDD): This really needs to return the slice of the tensor
     return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
                                              {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
