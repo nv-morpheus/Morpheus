@@ -41,19 +41,17 @@ SHELL ["/bin/bash",  "-c"]
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        git-lfs \
         libnuma1 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Create conda environment
-COPY ./docker/conda/environments/cuda${CUDA_SHORT_VER}_dev.yml /tmp
-COPY ./docker/conda/environments/requirements.txt /tmp
+COPY ./docker/conda/environments/* /tmp/conda
 
-RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/cuda${CUDA_SHORT_VER}_dev.yml && \
+RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env create -n ${PROJ_NAME} -q --file /tmp/conda/cuda${CUDA_SHORT_VER}_dev.yml && \
     sed -i "s/conda activate base/conda activate ${PROJ_NAME}/g" ~/.bashrc && \
     conda clean -afy && \
-    rm /tmp/cuda${CUDA_SHORT_VER}_dev.yml /tmp/requirements.txt
+    rm -rf /tmp/conda
 
 
 # ============ driver ==================
