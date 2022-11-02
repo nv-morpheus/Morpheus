@@ -14,6 +14,7 @@
 # limitations under the License.
 
 name: Build pull request
+run-name: Build pull request
 
 on:
   push:
