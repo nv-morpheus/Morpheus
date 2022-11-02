@@ -105,7 +105,8 @@ def test_minibert_no_cpp(mock_triton_client, config, tmp_path):
                            vocab_hash_file=vocab_file_name,
                            truncation=True,
                            do_lower_case=True,
-                           add_special_tokens=False))
+                           add_special_tokens=False,
+                           column="data"))
     pipe.add_stage(
         TritonInferenceStage(config, model_name='sid-minibert-onnx', server_url='fake:001', force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
@@ -153,7 +154,8 @@ def _run_minibert_cpp(config, tmp_path, model_name, truncated):
                            vocab_hash_file=vocab_file_name,
                            truncation=truncated,
                            do_lower_case=True,
-                           add_special_tokens=False))
+                           add_special_tokens=False,
+                           column="data"))
     pipe.add_stage(
         TritonInferenceStage(config, model_name=model_name, server_url='localhost:8001', force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
