@@ -33,6 +33,7 @@
 #include <pybind11/pytypes.h>   // for pybind11::int_
 #include <srf/segment/builder.hpp>
 #include <cuda/atomic>
+#include <cuda/std/chrono>
 
 #include <rmm/device_uvector.hpp>
 
@@ -57,7 +58,7 @@ DocaSourceStage::DocaSourceStage() :
   _context   = std::make_shared<morpheus::doca::doca_context>("b5:00.0", "b6:00.0");
   _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
   _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
-  _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 8);
+  _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 32);
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
@@ -94,6 +95,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         _semaphore->size(),
         sem_idx_begin_d.data(),
         sem_idx_end_d.data(),
+        cuda::std::chrono::duration<int64_t>(1),
+        2048,
         packet_count_d.data(),
         packets_size_d.data(),
         exit_flag.data(),

@@ -4,6 +4,8 @@
 #include <doca_gpu_device.cuh>
 #include <stdio.h>
 #include <cuda/atomic>
+#include <cuda/std/chrono>
+
 
 __global__ void _doca_packet_receive_persistent_kernel(
   doca_gpu_rxq_info*                              rxq_info,
@@ -114,14 +116,16 @@ __global__ void _doca_packet_receive_persistent_kernel(
 }
 
 __global__ void _doca_packet_count_kernel(
-  doca_gpu_rxq_info*                              rxq_info,
-  doca_gpu_semaphore_in*                          sem_in,
-  uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx_begin,
-  uint32_t*                                       sem_idx_end,
-  uint32_t*                                       packet_count_out,
-  uint32_t*                                       packets_size_out,
-  cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag
+  doca_gpu_rxq_info*                                rxq_info,
+  doca_gpu_semaphore_in*                            sem_in,
+  uint32_t                                          sem_count,
+  uint32_t*                                         sem_idx_begin,
+  uint32_t*                                         sem_idx_end,
+  cuda::std::chrono::duration<int64_t>              debounce_max,
+  uint32_t                                          packet_count_max,
+  uint32_t*                                         packet_count_out,
+  uint32_t*                                         packets_size_out,
+  cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag
 )
 {
   if (threadIdx.x == 0) {
@@ -147,6 +151,8 @@ __global__ void _doca_packet_count_kernel(
 
   while (*exit_flag == false)
   {
+    auto now_at_start_of_pass = cuda::std::chrono::system_clock::now();
+
     while (*exit_flag == false)
     {
       auto ret = doca_gpu_device_semaphore_get_value(
@@ -158,7 +164,7 @@ __global__ void _doca_packet_count_kernel(
 
       if (ret != DOCA_SUCCESS) {
         *exit_flag = true;
-        break;
+        return;
       }
 
       if (sem_status == DOCA_GPU_SEM_STATUS_READY) {
@@ -171,12 +177,32 @@ __global__ void _doca_packet_count_kernel(
       }
 
       if (threadIdx.x == 0 and first_pass) {
-        first_pass = false;
         printf("kernel count: waiting on sem %d to become ready\n", sem_idx);
       }
+      
+      
+      if (*packet_count_out > 0)
+      {
+        auto now = cuda::std::chrono::system_clock::now();
+        
+        if (now - now_at_start_of_pass > debounce_max)
+        {
+          should_count_next_sem = false;
+          if (threadIdx.x == 0){
+            printf("kernel count: timeout while waiting on sem %d to become ready\n", sem_idx);
+          }
+          break;
+        }
+      }
+
+      first_pass = false;
     }
 
     __syncthreads();
+
+    if (*packet_count_out > 0 and *packet_count_out + packet_count > packet_count_max) {
+      should_count_next_sem = false;
+    }
 
     if (not should_count_next_sem)
     {
@@ -314,6 +340,8 @@ __global__ void _doca_packet_gather_kernel(
     }
   }
 
+  *sem_idx_begin = *sem_idx_end;
+
   if (threadIdx.x == 0) {
     printf("kernel gather: done\n");
   }
@@ -336,15 +364,17 @@ void doca_packet_receive_persistent_kernel(
 }
 
 void doca_packet_count_kernel(
-  doca_gpu_rxq_info*                              rxq_info,
-  doca_gpu_semaphore_in*                          sem_in,
-  uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx_begin,
-  uint32_t*                                       sem_idx_end,
-  uint32_t*                                       packet_count,
-  uint32_t*                                       packets_size,
-  cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
-  cudaStream_t                                    stream
+  doca_gpu_rxq_info*                                rxq_info,
+  doca_gpu_semaphore_in*                            sem_in,
+  uint32_t                                          sem_count,
+  uint32_t*                                         sem_idx_begin,
+  uint32_t*                                         sem_idx_end,
+  cuda::std::chrono::duration<int64_t>              debounce_max,
+  uint32_t                                          packet_count_max,
+  uint32_t*                                         packet_count,
+  uint32_t*                                         packets_size,
+  cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag,
+  cudaStream_t                                      stream
 )
 {
   _doca_packet_count_kernel<<<1, 512, 0, stream>>>(
@@ -353,6 +383,8 @@ void doca_packet_count_kernel(
     sem_count,
     sem_idx_begin,
     sem_idx_end,
+    debounce_max,
+    packet_count_max,
     packet_count,
     packets_size,
     exit_flag
