@@ -74,6 +74,11 @@ The pipeline uses `DFPVizPostprocStage` to perform post-processing on DFP infere
 --output_prefix            Prefix for output files.
 ```
 
+Set `PYTHONPATH` to allow import of production DFP Morpheus stages:
+```
+export PYTHONPATH=/workspace/examples/digital_fingerprinting/production/morpheus
+```
+
 ### Azure
 
 ```

@@ -15,7 +15,6 @@
 import functools
 import logging
 import os
-import sys
 import typing
 from datetime import datetime
 from datetime import timedelta
@@ -25,20 +24,6 @@ from functools import partial
 import click
 import mlflow
 import pandas as pd
-
-from morpheus._lib.file_types import FileTypes
-from morpheus.cli.utils import get_package_relative_file
-from morpheus.cli.utils import load_labels_file
-from morpheus.config import Config
-from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
-from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.utils.logger import configure_logging
-from morpheus.utils.logger import get_log_levels
-from morpheus.utils.logger import parse_log_level
-
-sys.path.append("../production/morpheus")
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
@@ -59,6 +44,18 @@ from dfp.utils.column_info import StringCatColumn
 from dfp.utils.column_info import create_increment_col
 from dfp.utils.file_utils import date_extractor
 from dfp.utils.file_utils import iso_date_regex
+
+from morpheus._lib.file_types import FileTypes
+from morpheus.cli.utils import get_package_relative_file
+from morpheus.cli.utils import load_labels_file
+from morpheus.config import Config
+from morpheus.config import ConfigAutoEncoder
+from morpheus.config import CppConfig
+from morpheus.pipeline import LinearPipeline
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.utils.logger import configure_logging
+from morpheus.utils.logger import get_log_levels
+from morpheus.utils.logger import parse_log_level
 
 
 @click.command()
