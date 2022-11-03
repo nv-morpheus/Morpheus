@@ -37,35 +37,23 @@ from morpheus.io import serializers
 logger = logging.getLogger(__name__)
 
 
-@register_stage("dfp-viz-postproc", modes=[PipelineModes.AE])
 class DFPVizPostprocStage(SinglePortStage):
 
     def __init__(self,
                  c: Config,
                  period: str = "D",
-                 overwrite: bool = True,
                  output_dir: str = ".",
-                 prefix: str = "dfp-viz-"):
+                 output_prefix: str = "dfp-viz-"):
         super().__init__(c)
 
         self._user_column_name = c.ae.userid_column_name
         self._timestamp_column = c.ae.timestamp_column_name
         self._feature_columns = c.ae.feature_columns
         self._period = period
-        self._overwrite = overwrite
         self._file_type = FileTypes.CSV
         self._output_dir = output_dir
-        self._prefix = prefix
+        self._output_prefix = output_prefix
         self._output_filenames = []
-
-        if (self._overwrite):
-            output_glob = os.path.join(self._output_dir, self._prefix + "*")
-            fileList = glob.glob(output_glob)
-            for filePath in fileList:
-                try:
-                    os.remove(filePath)
-                except:
-                    print("Error while deleting file : ", filePath)
 
     @property
     def name(self) -> str:
@@ -130,7 +118,7 @@ class DFPVizPostprocStage(SinglePortStage):
                 for period in unique_periods:
                     period_df = message_meta.df[message_meta.df["period"] == period]
                     period_df = period_df.drop(["period"], axis=1)
-                    output_file = os.path.join(self._output_dir, self._prefix + str(period) + ".csv")
+                    output_file = os.path.join(self._output_dir, self._output_prefix + str(period) + ".csv")
                     
                     is_first = False
                     if output_file not in self._output_filenames:

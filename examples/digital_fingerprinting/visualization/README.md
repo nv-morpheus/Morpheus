@@ -16,82 +16,114 @@
 
 # Digital Fingerprinting (DFP) Visualization Pipeline
 
-We show here how to set up and run the DFP pipeline on Azure and Duo log data to generate input files for the DFP visualization UI.
+We show here how to set up and run the Production DFP pipeline on Azure and Duo log data to generate input files for the DFP visualization UI. You can find more information about the Production DFP pipeline in this [README](../production/README.md) and the [DFP Developer Guide](../../../docs/source/developer_guide/guides/5_digital_fingerprinting.md).
 
-## Environment Setup
+## Prerequisites
 
-Follow the instructions [here](https://github.com/nv-morpheus/Morpheus/blob/branch-22.09/CONTRIBUTING.md) to set up your development environment in either a Docker container or conda environment.
+To run the demo you will need the following:
+- Docker
+- `docker-compose` (Tested with version 1.29)
+
+## Build the Morpheus container
+This is necessary to get the latest changes needed for DFP. From the root of the Morpheus repo:
+```bash
+./docker/build_container_release.sh
+```
+
+## Building Services via `docker-compose`
+
+```bash
+cd examples/digital_fingerprinting/production
+export MORPHEUS_CONTAINER_VERSION="$(git describe --tags --abbrev=0)-runtime"
+docker-compose build
+```
+
+## Start Morpheus Pipeline Container
+
+From the `examples/digital_fingerprinting/production` directory run:
+```bash
+docker-compose run morpheus_pipeline bash
+```
+
+Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
+
+By default, a mlflow dashboard will be available at:
+```bash
+http://localhost:5000
+```
 
 
 ## Download DFP Example Data from S3
 
-```
-pip install s3fs
-```
+Run the following in your `morpheus_pipeline` container to download example data from S3:
 
 ```
-./examples/digital_fingerprinting/fetch_example_data.py all
+/workspace/examples/digital_fingerprinting/fetch_example_data.py all
 ```
 
-Azure training data will be saved to `examples/data/dfp/azure-training-data`, inference data to `examples/data/dfp/azure-inference-data`.
-Duo training data will be saved to `examples/data/dfp/duo-training-data`, inference data to `examples/data/dfp/duo-inference-data`.
+Azure training data will be saved to `/workspace/examples/data/dfp/azure-training-data`, inference data to `/workspace/examples/data/dfp/azure-inference-data`.
+Duo training data will be saved to `/workspace/examples/data/dfp/duo-training-data`, inference data to `/workspace/examples/data/dfp/duo-inference-data`.
 
 ## Running pipeline for DFP Visualization
 
-The pipeline uses `dfp-viz-postproc` CLI command to perform post-processing on DFP inference output. The inference output is converted to input format expected by the DFP Visualization and saves to multiple files based on specified time period. Time period to group data by must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). The default period is one day (D). The output files will be named by appending period to prefix (e.g. `dfp-viz-2022-08-30.csv`). These are the available options for `dfp-viz-postproc`:
+The pipeline uses `DFPVizPostprocStage` to perform post-processing on DFP inference output. The inference output is converted to input format expected by the DFP Visualization and saves to multiple files based on specified time period. Time period to group data by must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). The default period is one day (D). The output files will be named by appending period to prefix (e.g. `dfp-viz-2022-08-30.csv`). These are the available options used for `DFPVizPostprocStage`:
 
 ```
---period                   Time period to group and save data by. [default: `D`]
---overwrite                Overwrite output files if they exist. [default: True]
+--period                   Time period to batch input data and save output files by. [default: `D`]
 --output_dir               Directory to which the output files will be written. [default: current directory]
---prefix                   Prefix for output files. [default: dfp-viz-]
+--output_prefix            Prefix for output files.
 ```
 
-Run the following to generate input files for Azure DFP visualization:
+### Azure
+
 ```
-morpheus --log_level=DEBUG \
-run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
-pipeline-ae \
---columns_file=morpheus/data/columns_ae_azure.txt \
---userid_column_name=userPrincipalName \
---timestamp_column_name=createdDateTime \
---feature_scaler=standard \
---use_generic_model \
-from-azure \
---input_glob=examples/data/dfp/azure-inference-data/*.json \
---max_files=200 \
-train-ae \
---train_data_glob=examples/data/dfp/azure-training-data/*.json \
---source_stage_class=morpheus.stages.input.azure_source_stage.AzureSourceStage \
---seed=42 \
-inf-pytorch \
-monitor --description='Inference rate' --unit inf \
-dfp-viz-postproc \
---period=D \
---prefix=dfp-viz-azure-
+cd /workspace/examples/digital_fingerprinting/visualization
 ```
 
-Run the following to generate input files for Duo DFP visualization:
+Train DFP user models using Azure log files in `/workspace/examples/data/dfp/azure-training-data` and save them to MLflow.
 ```
-morpheus --log_level=DEBUG \
-run --num_threads=1 --pipeline_batch_size=1024 --model_max_batch_size=1024 --use_cpp=False \
-pipeline-ae \
---columns_file=morpheus/data/columns_ae_duo.txt \
---userid_column_name=username \
---timestamp_column_name=time \
---feature_scaler=standard \
---use_generic_model \
-from-duo \
---input_glob=examples/data/dfp/duo-inference-data/*.json \
---max_files=200 \
-monitor --description='Input rate' \
-train-ae \
---train_data_glob=examples/data/dfp/duo-training-data/*.json \
---source_stage_class=morpheus.stages.input.duo_source_stage.DuoSourceStage \
---seed=42 \
-inf-pytorch \
-monitor --description='Inference rate' --unit inf \
-dfp-viz-postproc \
---period=D \
---prefix=dfp-viz-duo-
+python dfp_viz_azure_pipeline.py \
+    --train_users=all \
+    --log_level=debug \
+    --start_time=2022-08-01 \
+    --input_file=/workspace/examples/data/dfp/azure-training-data/AZUREAD_2022-08-*.json
 ```
+**Note:** Since models are persisted to a Docker volume, the above command only needs to be run once even if the `mlflow` service is restarted.
+
+Run inference with DFP viz postprocessing using Azure log files in `/workspace/examples/data/dfp/azure-inference-data` to generate input files for Azure DFP visualization:
+```
+python dfp_viz_azure_pipeline.py \
+    --train_users=none \
+    --log_level=debug \
+    --start_time=2022-08-30 \
+    --input_file=/workspace/examples/data/dfp/azure-inference-data/AZUREAD_2022-08-*.json
+```
+
+When pipeline run completes, you should now see `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` in your current directory. These files can be used as input to the DFP Viz UI.
+
+### Duo
+
+```
+cd /workspace/examples/digital_fingerprinting/visualization
+```
+
+Train DFP user models using Duo log files in `/workspace/examples/data/dfp/duo-training-data` and save them to MLflow.
+```
+python dfp_viz_duo_pipeline.py \
+    --train_users=all \
+    --log_level=debug \
+    --start_time=2022-08-01 \
+    --input_file=/workspace/examples/data/dfp/duo-training-data/DUO_2022-08-*.json
+```
+**Note:** Since models are persisted to a Docker volume, the above command only needs to be run once even if the `mlflow` service is restarted.
+
+Run inference with DFP viz postprocessing using Duo log files in `/workspace/examples/data/dfp/duo-inference-data` to generate input files for Duo DFP visualization:
+```
+python dfp_viz_duo_pipeline.py \
+    --train_users=none \
+    --log_level=debug \
+    --start_time=2022-08-30 \
+    --input_file=/workspace/examples/data/dfp/duo-inference-data/DUO_2022-08-*.json
+```
+
+When pipeline run completes, you should now see `dfp-viz-duo-2022-08-30.csv` and `dfp-viz-duo-2022-08-31.csv` in your current directory. These files can be used as input to the DFP Viz UI.
