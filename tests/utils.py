@@ -17,7 +17,10 @@ import collections
 import json
 import os
 import time
+import typing
 
+import cupy as cp
+import pandas as pd
 import srf
 
 import morpheus
@@ -25,6 +28,7 @@ from morpheus._lib.file_types import FileTypes
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
@@ -57,11 +61,15 @@ class ConvMsg(SinglePortStage):
 
     Setting `expected_data_file` to the path of a cav/json file will cause the probs array to be read from file.
     Setting `expected_data_file` to `None` causes the probs array to be a copy of the incoming dataframe.
+    Setting `columns` restricts the columns copied into probs to just the ones specified.
+    Setting `order` specifies probs to be in either column or row major
     """
 
-    def __init__(self, c: Config, expected_data_file: str = None):
+    def __init__(self, c: Config, expected_data_file: str = None, columns: typing.List[str] = None, order: str = 'K'):
         super().__init__(c)
         self._expected_data_file = expected_data_file
+        self._columns = columns
+        self._order = order
 
     @property
     def name(self):
@@ -77,11 +85,14 @@ class ConvMsg(SinglePortStage):
         if self._expected_data_file is not None:
             df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
         else:
-            df = m.meta.df
+            if self._columns is not None:
+                df = m.get_meta(self._columns)
+            else:
+                df = m.get_meta()
 
-        probs = df.values
+        probs = cp.array(df.values, copy=True, order=self._order)
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
-        return MultiResponseProbsMessage(m.meta, 0, len(probs), memory, 0, len(probs))
+        return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
 
     def _build_single(self, builder: srf.Builder, input_stream):
         stream = builder.make_node(self.unique_name, self._conv_message)
@@ -138,3 +149,33 @@ def write_file_to_kafka(bootstrap_servers: str,
     time.sleep(1)
 
     return num_records
+
+
+def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
+    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
+    for field_name in field_names:
+        class_field = f"{class_prefix}{field_name}"
+        score_field = f"{score_prefix}{field_name}"
+        above_thresh = df[score_field] > threshold
+
+        df[class_field].to_csv(f"/tmp/class_field_{field_name}.csv")
+        df[score_field].to_csv(f"/tmp/score_field_vals_{field_name}.csv")
+        above_thresh.to_csv(f"/tmp/score_field_{field_name}.csv")
+
+        assert all(above_thresh == df[class_field]), f"Mismatch on {field_name}"
+
+
+def get_column_names_from_file(file_name):
+    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
+    return list(df.columns)
+
+
+def extend_data(input_file, output_file, repeat_count):
+    df = read_file_to_df(input_file, FileTypes.Auto, df_type='pandas')
+    data = pd.concat([df for _ in range(repeat_count)])
+    with open(output_file, 'w') as fh:
+        output_strs = df_to_csv(data, include_header=True, include_index_col=False)
+        # Remove any trailing whitespace
+        if (len(output_strs[-1].strip()) == 0):
+            output_strs = output_strs[:-1]
+        fh.writelines(output_strs)
