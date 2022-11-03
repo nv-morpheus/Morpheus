@@ -314,7 +314,7 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=5):
 
 def _set_pdeathsig(sig=signal.SIGTERM):
     """
-    Helper function to ensure once parent process exits, its childrent processes will automatically die
+    Helper function to ensure once parent process exits, its child processes will automatically die
     """
 
     def prctl_fn():
