@@ -38,7 +38,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
     boundary_port_id : `str`
         String indicating the name of the egress port associated with the LinearBoundaryEgressStage; allowing it to be
         paired with the corresponding ingress port.
-    data_type : `python data type instance`
+    data_type : `typing.Type`
         Data type that this Stage will accept and then output to its egress port.
 
     Example
