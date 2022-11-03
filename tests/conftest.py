@@ -296,9 +296,9 @@ def wait_for_camouflage(host="localhost", port=8000, timeout=5):
                 if (r.json()['message'] == 'I am alive.'):
                     return True
                 else:
-                    warnings.warn(
-                        "Camoflage returned status 200 but had incorrect response JSON. Continuing to wait. Response JSON:\n{}"
-                        .format(r.json()))
+                    warnings.warn(("Camoflage returned status 200 but had incorrect response JSON. "
+                                   "Continuing to wait. Response JSON:\n%s"),
+                                  r.json())
 
         except Exception:
             pass
