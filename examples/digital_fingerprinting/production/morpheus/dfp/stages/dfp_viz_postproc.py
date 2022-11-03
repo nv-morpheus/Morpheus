@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2022, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,37 +13,27 @@
 # limitations under the License.
 
 import logging
-import typing
 import os
-import glob
+import typing
 
-import numpy as np
 import pandas as pd
 import srf
 import srf.core.operators as ops
 
-import morpheus._lib.stages as _stages
 from morpheus._lib.file_types import FileTypes
-from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.io import serializers
+from morpheus.messages import MessageMeta
 from morpheus.messages import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.config import PipelineModes
-from morpheus.messages import MessageMeta
-
-from morpheus.io import serializers
 
 logger = logging.getLogger(__name__)
 
 
 class DFPVizPostprocStage(SinglePortStage):
 
-    def __init__(self,
-                 c: Config,
-                 period: str = "D",
-                 output_dir: str = ".",
-                 output_prefix: str = "dfp-viz-"):
+    def __init__(self, c: Config, period: str = "D", output_dir: str = ".", output_prefix: str = "dfp-viz-"):
         super().__init__(c)
 
         self._user_column_name = c.ae.userid_column_name
@@ -97,7 +87,7 @@ class DFPVizPostprocStage(SinglePortStage):
         viz_pdf["period"] = datetimes.dt.to_period(self._period)
 
         for f in self._feature_columns:
-            viz_pdf[f + "_score"] =  x.get_meta(f + "_z_loss")
+            viz_pdf[f + "_score"] = x.get_meta(f + "_z_loss")
 
         viz_pdf["anomalyScore"] = x.get_meta("mean_abs_z")
 
@@ -119,7 +109,7 @@ class DFPVizPostprocStage(SinglePortStage):
                     period_df = message_meta.df[message_meta.df["period"] == period]
                     period_df = period_df.drop(["period"], axis=1)
                     output_file = os.path.join(self._output_dir, self._output_prefix + str(period) + ".csv")
-                    
+
                     is_first = False
                     if output_file not in self._output_filenames:
                         self._output_filenames.append(output_file)
