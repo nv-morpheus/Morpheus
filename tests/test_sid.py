@@ -36,7 +36,6 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from utils import TEST_DIRS
 from utils import calc_error_val
-from utils import compare_class_to_scores
 
 # End-to-end test intended to imitate the Sid validation test
 FEATURE_LENGTH = 256
@@ -109,8 +108,6 @@ def _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_nam
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
-
-    compare_class_to_scores(out_file, config.class_labels, 'si_', 'score_', threshold=0.5)
 
     return calc_error_val(results_file_name)
 
