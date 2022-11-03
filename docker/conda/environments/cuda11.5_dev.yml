@@ -73,6 +73,7 @@ dependencies:
     - pytest
     - pytest-benchmark>=4.0
     - pytest-cov
+    - python-confluent-kafka=1.7.0
     - python-graphviz
     - python=3.8
     - rapidjson=1.1.0
