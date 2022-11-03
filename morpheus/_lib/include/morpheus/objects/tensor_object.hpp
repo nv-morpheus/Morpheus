@@ -101,6 +101,7 @@ void validate_stride(const std::vector<IndexT>& shape, std::vector<IndexT>& stri
         ttl *= shape.at(i);
     }
 }
+
 }  // namespace detail
 
 enum class TensorStorageType
