@@ -88,7 +88,7 @@ struct PreprocessNLPStageInterfaceProxy
                                                                           bool truncation,
                                                                           bool do_lower_case,
                                                                           bool add_special_token,
-                                                                          const std::string column,
+                                                                          const std::string &column,
                                                                           int stride = -1);
 };
 #pragma GCC visibility pop

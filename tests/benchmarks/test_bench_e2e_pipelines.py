@@ -58,8 +58,7 @@ def nlp_pipeline(config: Config, input_file, repeat, vocab_hash_file, output_fil
                            vocab_hash_file=vocab_hash_file,
                            truncation=True,
                            do_lower_case=True,
-                           add_special_tokens=False,
-                           column="data"))
+                           add_special_tokens=False))
     pipeline.add_stage(
         TritonInferenceStage(config,
                              model_name=model_name,

@@ -146,7 +146,7 @@ std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInte
     bool truncation,
     bool do_lower_case,
     bool add_special_token,
-    const std::string column,
+    const std::string &column,
     int stride)
 {
     auto stage = builder.construct_object<PreprocessNLPStage>(

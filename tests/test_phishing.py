@@ -94,8 +94,7 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
                            vocab_hash_file=vocab_file_name,
                            truncation=True,
                            do_lower_case=True,
-                           add_special_tokens=False,
-                           column="data"))
+                           add_special_tokens=False))
     pipe.add_stage(
         TritonInferenceStage(config, model_name='phishing-bert-onnx', server_url='test:0000',
                              force_convert_inputs=True))
@@ -136,8 +135,7 @@ def test_email_cpp(config, tmp_path):
                            vocab_hash_file=vocab_file_name,
                            truncation=True,
                            do_lower_case=True,
-                           add_special_tokens=False,
-                           column="data"))
+                           add_special_tokens=False))
     pipe.add_stage(
         TritonInferenceStage(config,
                              model_name='phishing-bert-onnx',
