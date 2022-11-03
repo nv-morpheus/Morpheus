@@ -20,6 +20,7 @@ DOCKER_REGISTRY_SERVER=${DOCKER_REGISTRY_SERVER:-"nvcr.io"}
 DOCKER_REGISTRY_PATH=${DOCKER_REGISTRY_PATH:-"/ea-nvidia-morpheus/morpheus"}
 DOCKER_TAG_PREFIX=${DOCKER_TAG_PREFIX:-"morpheus-ci"}
 DOCKER_TAG_POSTFIX=${DOCKER_TAG_POSTFIX:-"$(date +'%y%m%d')"}
+DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 SKIP_BUILD=${SKIP_BUILD:-""}
 SKIP_PUSH=${SKIP_PUSH:-""}
@@ -34,7 +35,7 @@ if [[ "${SKIP_BUILD}" == "" ]]; then
     for build_target in ${DOCKER_TARGET[@]}; do
         FULL_NAME=$(get_image_full_name)
         echo "Building target \"${build_target}\" as ${FULL_NAME}";
-        docker build --network=host --target ${build_target} -t ${FULL_NAME} -f ci/runner/Dockerfile .
+        docker build --network=host ${DOCKER_EXTRA_ARGS} --target ${build_target} -t ${FULL_NAME} -f ci/runner/Dockerfile .
     done
 fi
 
