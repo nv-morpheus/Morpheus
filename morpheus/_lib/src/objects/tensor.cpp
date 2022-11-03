@@ -79,6 +79,10 @@ TensorObject Tensor::create(std::shared_ptr<rmm::device_buffer> buffer,
 {
     auto md = nullptr;
 
+    if (!strides.empty())
+    {
+        detail::set_element_stride(strides);
+    }
     auto tensor = std::make_shared<RMMTensor>(buffer, offset, dtype, shape, strides);
 
     return TensorObject(md, tensor);

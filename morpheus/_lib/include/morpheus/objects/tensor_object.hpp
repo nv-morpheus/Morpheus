@@ -102,6 +102,23 @@ void validate_stride(const std::vector<IndexT>& shape, std::vector<IndexT>& stri
     }
 }
 
+/**
+ * @brief Depending on the input the stride is given in bytes or elements. This method ensures stride is given in
+ * elements.
+ *
+ * @param stride
+ */
+template <typename IndexT>
+void set_element_stride(std::vector<IndexT>& stride)
+{
+    auto min_stride = std::min_element(stride.cbegin(), stride.cend());
+
+    std::transform(stride.cbegin(),
+                   stride.cend(),
+                   stride.begin(),
+                   std::bind(std::divides<>(), std::placeholders::_1, *min_stride));
+}
+
 }  // namespace detail
 
 enum class TensorStorageType
