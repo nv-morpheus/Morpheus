@@ -80,14 +80,14 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       receiving_stream
     );
 
-    auto packet_count_d  = rmm::device_scalar<uint32_t>(0, receiving_stream);
-    auto packets_size_d  = rmm::device_scalar<uint32_t>(0, receiving_stream);
-    auto sem_idx_begin_d = rmm::device_scalar<uint32_t>(0, receiving_stream);
-    auto sem_idx_end_d   = rmm::device_scalar<uint32_t>(0, receiving_stream);
+    auto packet_count_d  = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto packets_size_d  = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto sem_idx_begin_d = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto sem_idx_end_d   = rmm::device_scalar<uint32_t>(0, processing_stream);
 
     while (output.is_subscribed())
     {
-      cudaStreamSynchronize(processing_stream);
+      // count stuff
 
       doca_packet_count_kernel(
         _rxq->rxq_info_gpu(),
@@ -103,13 +103,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         processing_stream
       );
 
-      cudaStreamSynchronize(processing_stream);
+      // allocate stuff
 
       auto packet_count = packet_count_d.value(processing_stream);
+      // auto src_ip_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
+      // auto dst_ip_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
 
-      printf("host: num packets received: %d\n", packet_count);
-
-      // allocate stuff
+      // gather stuff
 
       doca_packet_gather_kernel(
         _rxq->rxq_info_gpu(),
@@ -119,9 +119,44 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         sem_idx_end_d.data(),
         packet_count_d.data(),
         packets_size_d.data(),
+        nullptr, // src_ip_out_d.data(),
+        nullptr, // dst_ip_out_d.data(),
         exit_flag.data(),
         processing_stream
       );
+
+      // emit dataframes
+
+      // auto src_ip_out_d_size = src_ip_out_d.size();
+      // auto src_ip_out_d_col  = std::make_unique<cudf::column>(
+      //   cudf::data_type{cudf::type_to_id<int32_t>()},
+      //   src_ip_out_d_size,
+      //   src_ip_out_d.release());
+
+      // auto dst_ip_out_d_size = dst_ip_out_d.size();
+      // auto dst_ip_out_d_col  = std::make_unique<cudf::column>(
+      //   cudf::data_type{cudf::type_to_id<int32_t>()},
+      //   dst_ip_out_d_size,
+      //   dst_ip_out_d.release());
+
+      // auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
+
+      // my_columns.push_back(std::move(src_ip_out_d_col));
+      // my_columns.push_back(std::move(dst_ip_out_d_col));
+
+      // auto metadata = cudf::io::table_metadata();
+
+      // metadata.column_names.push_back("src_ip");
+      // metadata.column_names.push_back("dst_ip");
+
+      // auto my_table_w_metadata = cudf::io::table_with_metadata{
+      //   std::make_unique<cudf::table>(std::move(my_columns)),
+      //   std::move(metadata)
+      // };
+
+      // auto meta = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
+
+      // output.on_next(std::move(meta));
     }
 
     auto flag = cuda::atomic<bool>(true);
@@ -138,31 +173,31 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     }
 
     {
-      auto stream = cudf::default_stream_value;
-      auto values = rmm::device_uvector<int32_t>(1000000, stream);
+      // auto stream = cudf::default_stream_value;
+      // auto values = rmm::device_uvector<int32_t>(1000000, stream);
 
-      auto values_size = values.size();
-      auto my_column   = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<int32_t>()},
-        values_size,
-        values.release());
+      // auto values_size = values.size();
+      // auto my_column   = std::make_unique<cudf::column>(
+      //   cudf::data_type{cudf::type_to_id<int32_t>()},
+      //   values_size,
+      //   values.release());
 
-      auto my_columns          = std::vector<std::unique_ptr<cudf::column>>();
+      // auto my_columns          = std::vector<std::unique_ptr<cudf::column>>();
 
-      my_columns.push_back(std::move(my_column));
+      // my_columns.push_back(std::move(my_column));
 
-      // auto my_table            = std::make_unique<cudf::table>(std::move(my_columns));
-      auto metadata            = cudf::io::table_metadata();
+      // // auto my_table            = std::make_unique<cudf::table>(std::move(my_columns));
+      // auto metadata            = cudf::io::table_metadata();
 
-      metadata.column_names.push_back("index");
+      // metadata.column_names.push_back("index");
 
-      auto my_table_w_metadata = cudf::io::table_with_metadata{
-        std::make_unique<cudf::table>(std::move(my_columns)),
-        std::move(metadata)
-      };
-      auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
+      // auto my_table_w_metadata = cudf::io::table_with_metadata{
+      //   std::make_unique<cudf::table>(std::move(my_columns)),
+      //   std::move(metadata)
+      // };
+      // auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
 
-      output.on_next(meta);
+      // output.on_next(meta);
     }
 
     output.on_completed();

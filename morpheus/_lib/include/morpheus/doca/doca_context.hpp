@@ -77,18 +77,6 @@ struct doca_semaphore
     uint16_t size();
 };
 
-// template<typename T>
-// struct doca_memmap_scalar
-// {
-//   private:
-//    T* gpu_ptr;
-//    T* cpu_ptr;
-
-//   public:
-//     doca_memmap_scalar(T initial_value);
-//     ~doca_memmap_scalar();
-// };
-
 #pragma GCC visibility pop
 
 }

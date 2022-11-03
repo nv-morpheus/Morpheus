@@ -54,7 +54,7 @@ __global__ void _doca_packet_receive_persistent_kernel(
 
         if (first_pass) {
           first_pass = false;
-          printf("kernel receive: waiting on sem %d to become free\n", sem_idx);
+          // printf("kernel receive: waiting on sem %d to become free\n", sem_idx);
         }
       }
     }
@@ -79,7 +79,7 @@ __global__ void _doca_packet_receive_persistent_kernel(
     __syncthreads();
 
     if (ret != DOCA_SUCCESS) {
-      printf("kernel receive: setting sem %d to error\n", sem_idx);
+      // printf("kernel receive: setting sem %d to error\n", sem_idx);
       doca_gpu_device_semaphore_update(
         &(sem_in[sem_idx]),
         DOCA_GPU_SEM_STATUS_ERROR,
@@ -97,7 +97,7 @@ __global__ void _doca_packet_receive_persistent_kernel(
     }
 
     if (threadIdx.x == 0) {
-      printf("kernel receive: setting sem %d to ready\n", sem_idx);
+      // printf("kernel receive: setting sem %d to ready\n", sem_idx);
       doca_gpu_device_semaphore_update_status(
         sem_in + sem_idx,
         DOCA_GPU_SEM_STATUS_READY
@@ -106,7 +106,7 @@ __global__ void _doca_packet_receive_persistent_kernel(
     __threadfence();
 
     if (threadIdx.x == 0) {
-      printf("kernel receive: %d packet(s) received for sem %d on thread %d\n", packet_count, sem_idx, threadIdx.x);
+      // printf("kernel receive: %d packet(s) received for sem %d\n", packet_count, sem_idx);
     }
 
     sem_idx = (sem_idx + 1) % sem_count;
@@ -179,12 +179,12 @@ __global__ void _doca_packet_count_kernel(
       if (threadIdx.x == 0 and first_pass) {
         printf("kernel count: waiting on sem %d to become ready\n", sem_idx);
       }
-      
-      
+
+
       if (*packet_count_out > 0)
       {
         auto now = cuda::std::chrono::system_clock::now();
-        
+
         if (now - now_at_start_of_pass > debounce_max)
         {
           should_count_next_sem = false;
@@ -217,18 +217,20 @@ __global__ void _doca_packet_count_kernel(
 
     // ===== COUNT PACKETS IN SEM =================================================================
 
-    if (threadIdx.x == 0)
-    {
-      *packet_count_out += packet_count;
-      *packets_size_out = 0;
-    }
-
-    __syncthreads();
-
     for (auto packet_idx = 0; packet_idx < packet_count; packet_idx++)
     {
       // compute total packet payload size
       // atomicAdd(packets_size_out, packet_payload_length)
+    }
+
+    __syncthreads();
+
+    if (threadIdx.x == 0)
+    {
+      *packet_count_out += packet_count;
+
+      // TODO: compute packet payload size
+      *packets_size_out = 0;
     }
 
     __syncthreads();
@@ -252,7 +254,8 @@ __global__ void _doca_packet_count_kernel(
     printf("kernel count: %d packets counted for sems [%d, %d) with total payload size %d\n", *packet_count_out, *sem_idx_begin, *sem_idx_end, *packets_size_out);
   }
 
-  if (threadIdx.x == 0) {
+  if (threadIdx.x == 0)
+  {
     printf("kernel count: done\n");
   }
 
@@ -267,6 +270,8 @@ __global__ void _doca_packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count_out,
   uint32_t*                                       packets_size_out,
+  uint32_t*                                       src_ip_out,
+  uint32_t*                                       dst_ip_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag
 )
 {
@@ -290,9 +295,12 @@ __global__ void _doca_packet_gather_kernel(
 
   __shared__ bool should_gather_next_sem;
 
+  __shared__ uint32_t packet_offset;
+
   if (threadIdx.x == 0)
   {
     should_gather_next_sem = true;
+    packet_offset = 0;
   }
 
   __syncthreads();
@@ -317,15 +325,90 @@ __global__ void _doca_packet_gather_kernel(
 
     // copy packets to dataframe
 
+    __shared__ uint32_t stride_start_idx;
+
+    if (threadIdx.x == 0) {
+			stride_start_idx = doca_gpu_device_comm_buf_get_stride_idx(
+        &(rxq_info->comm_buf),
+        packet_address
+      );
+    }
+
+    __syncthreads();
+
+    for (auto packet_idx = threadIdx.x; packet_idx < packet_count; packet_idx += blockDim.x)
+    {
+      uint8_t *packet = doca_gpu_device_comm_buf_get_stride_addr(
+        &(rxq_info->comm_buf),
+        stride_start_idx + packet_idx
+      );
+
+      rte_ether_hdr* packet_l2;
+      rte_ipv4_hdr*  packet_l3;
+      rte_tcp_hdr*   packet_l4;
+      uint8_t*       packet_payload;
+
+      get_packet_tcp_headers(
+        packet,
+        &packet_l2,
+        &packet_l3,
+        &packet_l4,
+        &packet_payload
+      );
+
+      auto total_length = BYTE_SWAP16(packet_l3->total_length);
+
+      // mac address printing works
+      auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
+      auto dst_mac = packet_l2->d_addr.addr_bytes; // 6 bytes
+
+      // if (threadIdx.x == 0)
+      // {
+      //   printf(
+      //     "= mac: %02x:%02x:%02x:%02x:%02x:%02x / %02x:%02x:%02x:%02x:%02x:%02x\n",
+      //     src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5],
+      //     dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]
+      //   );
+      // }
+
+      // ip address printing works
+      auto src_address  = packet_l3->src_addr;
+      auto dst_address  = packet_l3->dst_addr;
+      auto src_port     = BYTE_SWAP16(packet_l4->src_port);
+      auto dst_port     = BYTE_SWAP16(packet_l4->dst_port);
+
+      auto src_address_ptr = reinterpret_cast<uint8_t*>(&src_address);
+      auto dst_address_ptr = reinterpret_cast<uint8_t*>(&dst_address);
+
+      // if (threadIdx.x == 0)
+      // {
+      //   printf(
+      //     "= ip: %d.%d.%d.%d:%d / %d.%d.%d.%d:%d \n",
+      //     src_address_ptr[0], src_address_ptr[1], src_address_ptr[2], src_address_ptr[3],
+      //     src_port,
+      //     dst_address_ptr[0], dst_address_ptr[1], dst_address_ptr[2], dst_address_ptr[3],
+      //     dst_port
+      //   );
+      // }
+
+      // src_ip_out[packet_offset + packet_idx] = src_address;
+      // dst_ip_out[packet_offset + packet_idx] = dst_address;
+    }
+
+    __syncthreads();
+
     // release sem
 
     if (threadIdx.x == 0)
     {
       printf("kernel gather: setting sem %d to free\n", sem_idx);
+
       doca_gpu_device_semaphore_update_status(
         sem_in + sem_idx,
         DOCA_GPU_SEM_STATUS_FREE
       );
+
+      packet_offset += packet_count;
     }
 
     __syncthreads();
@@ -345,6 +428,8 @@ __global__ void _doca_packet_gather_kernel(
   if (threadIdx.x == 0) {
     printf("kernel gather: done\n");
   }
+
+  __syncthreads();
 }
 
 void doca_packet_receive_persistent_kernel(
@@ -400,6 +485,8 @@ void doca_packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
   uint32_t*                                       packets_size,
+  uint32_t*                                       src_ip_out,
+  uint32_t*                                       dst_ip_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 )
@@ -412,6 +499,8 @@ void doca_packet_gather_kernel(
     sem_idx_end,
     packet_count,
     packets_size,
+    src_ip_out,
+    dst_ip_out,
     exit_flag
   );
 }
