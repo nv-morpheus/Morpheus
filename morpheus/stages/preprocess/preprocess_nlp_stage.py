@@ -193,5 +193,5 @@ class PreprocessNLPStage(PreprocessBaseStage):
                                           self._truncation,
                                           self._do_lower_case,
                                           self._add_special_tokens,
-                                          self._column,
-                                          self._stride)
+                                          self._stride,
+                                          self._column)

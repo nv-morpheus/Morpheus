@@ -155,8 +155,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("truncation"),
              py::arg("do_lower_case"),
              py::arg("add_special_token"),
-             py::arg("column"),
-             py::arg("stride"));
+             py::arg("stride"),
+             py::arg("column"));
 
     py::class_<srf::segment::Object<SerializeStage>,
                srf::segment::ObjectProperties,

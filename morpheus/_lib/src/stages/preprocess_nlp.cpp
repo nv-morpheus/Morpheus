@@ -49,16 +49,16 @@ PreprocessNLPStage::PreprocessNLPStage(std::string vocab_hash_file,
                                        bool truncation,
                                        bool do_lower_case,
                                        bool add_special_token,
-                                       std::string column,
-                                       int stride) :
+                                       int stride,
+                                       std::string column) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_vocab_hash_file(std::move(vocab_hash_file)),
   m_sequence_length(sequence_length),
   m_truncation(truncation),
   m_do_lower_case(do_lower_case),
   m_add_special_token(add_special_token),
-  m_column(std::move(column)),
-  m_stride(stride)
+  m_stride(stride),
+  m_column(std::move(column))
 {}
 
 PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
@@ -146,11 +146,11 @@ std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInte
     bool truncation,
     bool do_lower_case,
     bool add_special_token,
-    const std::string &column,
-    int stride)
+    int stride,
+    std::string column)
 {
     auto stage = builder.construct_object<PreprocessNLPStage>(
-        name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, column, stride);
+        name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);
 
     return stage;
 }
