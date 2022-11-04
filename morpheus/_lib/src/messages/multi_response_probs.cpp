@@ -68,6 +68,7 @@ std::shared_ptr<morpheus::ResponseMemoryProbs> MultiResponseProbsMessageInterfac
     MultiResponseProbsMessage &self)
 {
     DCHECK(std::dynamic_pointer_cast<morpheus::ResponseMemoryProbs>(self.memory) != nullptr);
+
     return std::static_pointer_cast<morpheus::ResponseMemoryProbs>(self.memory);
 }
 
