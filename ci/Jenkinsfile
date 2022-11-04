@@ -95,7 +95,7 @@ pipeline {
                         }
                     }
                     environment {
-                        HOME = "${WORKSPACE}"
+                        HOME = "${WORKSPACE_TMP}"
                         PARALLEL_LEVEL = '10'
                     }
                     steps {
@@ -126,7 +126,7 @@ pipeline {
                         }
                     }
                     environment {
-                        HOME = "${WORKSPACE}"
+                        HOME = "${WORKSPACE_TMP}"
                         MORPHEUS_NO_CPP = '1'
                     }
                     steps {
