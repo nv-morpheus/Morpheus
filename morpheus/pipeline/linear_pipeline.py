@@ -115,19 +115,18 @@ class LinearPipeline(_pipeline.Pipeline):
 
         Example
         -------
-            # Create a config and pipeline \n
+            # Create a config and pipeline
             config = Config()
             pipe = LinearPipeline(config)
 
-            # Add a source in Segment #1 \n
+            # Add a source in Segment #1
             pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
 
-            # Add a segment boundary \n
+            # Add a segment boundary
             # [Current Segment] - [Egress Boundary] ---- [Ingress Boundary] - [Next Segment]
-
             pipe.add_segment_boundary(MessageMeta)
 
-            # Add a sink in Segment #2\n
+            # Add a sink in Segment #2
             pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
             pipe.run()
