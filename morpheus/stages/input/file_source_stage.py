@@ -145,7 +145,7 @@ class FileSourceStage(SingleOutputSource):
 
         count = 0
 
-        for _ in range(self._repeat_count):
+        for itr in range(self._repeat_count):
 
             x = MessageMeta(df)
 
@@ -154,7 +154,7 @@ class FileSourceStage(SingleOutputSource):
             count += 1
 
             # If we are looping, copy and shift the index
-            if (self._repeat_count > 0):
+            if (itr + 1 < self._repeat_count):
                 prev_df = df
                 df = prev_df.copy()
 
