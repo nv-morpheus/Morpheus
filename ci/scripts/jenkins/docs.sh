@@ -25,7 +25,12 @@ gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 gpuci_logger "1"
+set +e
+la -latr
+gpuci_logger "1.1"
 git lfs install
+gpuci_logger "1.2"
+set -e
 gpuci_logger "2"
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
 gpuci_logger "3"
