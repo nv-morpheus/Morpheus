@@ -18,6 +18,17 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
+gpuci_logger "1"
+set +e
+la -latr
+gpuci_logger "1.1"
+git lfs install
+gpuci_logger "1.2"
+set -e
+gpuci_logger "2"
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
+gpuci_logger "3"
+
 fetch_base_branch
 
 gpuci_logger "Creating conda env"
