@@ -364,16 +364,16 @@ def _camouflage_is_running():
 
         logging.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
-        if startup_timeout > 0:
-            if not wait_for_camouflage(timeout=startup_timeout):
+        if not wait_for_camouflage(timeout=startup_timeout):
 
-                if popen.poll() is not None:
-                    raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
-                        popen.poll(), os.path.join(root_dir, 'camouflage.log')))
+            if popen.poll() is not None:
+                raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
+                    popen.poll(), os.path.join(root_dir, 'camouflage.log')))
 
-                raise RuntimeError("Failed to launch camouflage server")
+            raise RuntimeError("Failed to launch camouflage server")
 
-        yield is_running
+        # Must have been started by this point
+        yield True
 
         logging.info("Killing pid {}".format(popen.pid))
 

@@ -3,14 +3,29 @@ Content-Type: application/json
 
 {{#code}}
 (()=>{
-    if(!this.counter) {
-        this.counter=0;
-    }
 
-    logger.log(`Resetting counter from ${this.counter} to 0`);
+    // Create a new shared state object.
+    let counters = new Map();
 
-    // Just reset the counter value to 0
-    this.counter=0;
+    // Save it on the Handlebars object since that is shared by all functions
+    this.Handlebars._nv_morpheus = {
+        counters: counters,
+        get_and_increment: (method_name) => {
+            if (!counters.has(method_name)){
+                counters.set(method_name, 0);
+            }
+
+            // Get the current value
+            const curr_counter = counters.get(method_name) + 1;
+
+            // Set the incremented value
+            counters.set(method_name, curr_counter);
+
+            return curr_counter;
+        }
+    };
+
+    logger.info(`Resetting the counter object.`);
 
     return {
         status: 200,
