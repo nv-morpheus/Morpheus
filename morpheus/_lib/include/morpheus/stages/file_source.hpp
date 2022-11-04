@@ -49,10 +49,6 @@ class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
 
   private:
     subscriber_fn_t build();
-    /**
-     * TODO(Documentation)
-     */
-    cudf::io::table_with_metadata load_table();
 
     std::string m_filename;
     int m_repeat{1};

@@ -16,6 +16,7 @@ message(STATUS "Adding library: morpheus")
 
 add_library(morpheus
     # Keep these sorted!
+    ${MORPHEUS_LIB_ROOT}/src/io/deserializers.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/serializers.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory_fil.cpp
@@ -30,6 +31,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_inference_nlp.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_response.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_response_probs.cpp
+    ${MORPHEUS_LIB_ROOT}/src/messages/multi_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/fiber_queue.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/file_types.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/wrapped_tensor.cpp
