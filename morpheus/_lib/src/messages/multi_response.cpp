@@ -75,6 +75,7 @@ std::shared_ptr<MultiResponseMessage> MultiResponseMessageInterfaceProxy::init(s
 std::shared_ptr<morpheus::ResponseMemory> MultiResponseMessageInterfaceProxy::memory(MultiResponseMessage &self)
 {
     DCHECK(std::dynamic_pointer_cast<morpheus::ResponseMemory>(self.memory) != nullptr);
+
     return std::static_pointer_cast<morpheus::ResponseMemory>(self.memory);
 }
 
