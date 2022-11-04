@@ -66,35 +66,13 @@ export FETCH_STATUS=0
 
 print_env_vars
 
-function install_deb_deps() {
-    apt -q -y update
-    apt -q -y install libnuma1
-}
-
-function install_build_deps() {
-    apt -q -y install libcublas-dev-11-5 \
-                    libcufft-dev-11-5 \
-                    libcurand-dev-11-5 \
-                    libcusolver-dev-11-5 \
-                    libnvidia-compute-495
-}
-
-function create_conda_env() {
-    rapids-logger "Creating conda env"
-    conda config --add pkgs_dirs /opt/conda/pkgs
-    conda config --env --add channels conda-forge
-    conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
-    mamba env create -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
-
+function update_conda_env() {
+    rapids-logger "Checking for updates to conda env"
+    rapids-mamba-retry env update -n morpheus -q --file ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_dev.yml
+    conda deactivate
     conda activate morpheus
-
-    rapids-logger "Installing CI dependencies"
-    mamba env update -q -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
-    conda deactivate && conda activate morpheus
-
-    rapids-logger "Final Conda Environment"
-    show_conda_info
 }
+
 
 function fetch_base_branch() {
     rapids-logger "Retrieving base branch from GitHub API"

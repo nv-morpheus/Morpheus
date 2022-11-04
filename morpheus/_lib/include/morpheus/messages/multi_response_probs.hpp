@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/response_memory_probs.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_response.hpp"
@@ -43,17 +43,21 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
     MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                               size_t mess_offset,
                               size_t mess_count,
-                              std::shared_ptr<morpheus::ResponseMemory> memory,
+                              std::shared_ptr<morpheus::ResponseMemoryProbs> memory,
                               size_t offset,
                               size_t count);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the `probs` (probabilities) output tensor
+     *
+     * @return const TensorObject
      */
     const TensorObject get_probs() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Update the `probs` output tensor. Will halt on a fatal error if the `probs` output tensor does not exist.
+     *
+     * @param probs
      */
     void set_probs(const TensorObject &probs);
 };
@@ -67,14 +71,14 @@ struct MultiResponseProbsMessageInterfaceProxy
     static std::shared_ptr<MultiResponseProbsMessage> init(std::shared_ptr<MessageMeta> meta,
                                                            cudf::size_type mess_offset,
                                                            cudf::size_type mess_count,
-                                                           std::shared_ptr<ResponseMemory> memory,
+                                                           std::shared_ptr<ResponseMemoryProbs> memory,
                                                            cudf::size_type offset,
                                                            cudf::size_type count);
 
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<morpheus::ResponseMemory> memory(MultiResponseProbsMessage &self);
+    static std::shared_ptr<morpheus::ResponseMemoryProbs> memory(MultiResponseProbsMessage &self);
 
     /**
      * TODO(Documentation)
