@@ -65,28 +65,29 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 {
   return [this](rxcpp::subscriber<source_type_t> output) {
 
-    cudaStream_t receiving_stream;
     cudaStream_t processing_stream;
-    cudaStreamCreateWithFlags(&receiving_stream, cudaStreamNonBlocking);
     cudaStreamCreateWithFlags(&processing_stream, cudaStreamNonBlocking);
 
-    auto exit_flag = rmm::device_scalar<cuda::atomic<bool>>{false, receiving_stream};
-
-    doca_packet_receive_persistent_kernel(
-      _rxq->rxq_info_gpu(),
-      _semaphore->in_gpu(),
-      _semaphore->size(),
-      exit_flag.data(),
-      receiving_stream
-    );
-
-    auto packet_count_d  = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto packets_size_d  = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto sem_idx_begin_d = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto sem_idx_end_d   = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto exit_flag          = rmm::device_scalar<cuda::atomic<bool>>{false, processing_stream};
+    auto packet_count_d     = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto packets_size_d     = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto sem_idx_begin_d    = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto sem_idx_end_d      = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto sem_recieve_idx    = rmm::device_scalar<uint32_t>(0, processing_stream);
 
     while (output.is_subscribed())
     {
+      // receive stuff
+
+      doca_packet_receive_kernel(
+        _rxq->rxq_info_gpu(),
+        _semaphore->in_gpu(),
+        _semaphore->size(),
+        sem_recieve_idx.data(),
+        exit_flag.data(),
+        processing_stream
+      );
+
       // count stuff
 
       doca_packet_count_kernel(
@@ -106,8 +107,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       // allocate stuff
 
       auto packet_count = packet_count_d.value(processing_stream);
-      // auto src_ip_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
-      // auto dst_ip_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
+      auto src_ip_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
+      auto dst_ip_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
 
       // gather stuff
 
@@ -119,52 +120,56 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         sem_idx_end_d.data(),
         packet_count_d.data(),
         packets_size_d.data(),
-        nullptr, // src_ip_out_d.data(),
-        nullptr, // dst_ip_out_d.data(),
+        src_ip_out_d.data(),
+        dst_ip_out_d.data(),
         exit_flag.data(),
         processing_stream
       );
 
       // emit dataframes
 
-      // auto src_ip_out_d_size = src_ip_out_d.size();
-      // auto src_ip_out_d_col  = std::make_unique<cudf::column>(
-      //   cudf::data_type{cudf::type_to_id<int32_t>()},
-      //   src_ip_out_d_size,
-      //   src_ip_out_d.release());
+      auto src_ip_out_d_size = src_ip_out_d.size();
+      auto src_ip_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<uint32_t>()},
+        src_ip_out_d_size,
+        src_ip_out_d.release());
 
-      // auto dst_ip_out_d_size = dst_ip_out_d.size();
-      // auto dst_ip_out_d_col  = std::make_unique<cudf::column>(
-      //   cudf::data_type{cudf::type_to_id<int32_t>()},
-      //   dst_ip_out_d_size,
-      //   dst_ip_out_d.release());
+      auto dst_ip_out_d_size = dst_ip_out_d.size();
+      auto dst_ip_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<uint32_t>()},
+        dst_ip_out_d_size,
+        dst_ip_out_d.release());
 
-      // auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
+      auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
 
-      // my_columns.push_back(std::move(src_ip_out_d_col));
-      // my_columns.push_back(std::move(dst_ip_out_d_col));
+      my_columns.push_back(std::move(src_ip_out_d_col));
+      my_columns.push_back(std::move(dst_ip_out_d_col));
 
-      // auto metadata = cudf::io::table_metadata();
+      auto metadata = cudf::io::table_metadata();
 
-      // metadata.column_names.push_back("src_ip");
-      // metadata.column_names.push_back("dst_ip");
+      metadata.column_names.push_back("src_ip");
+      metadata.column_names.push_back("dst_ip");
 
-      // auto my_table_w_metadata = cudf::io::table_with_metadata{
-      //   std::make_unique<cudf::table>(std::move(my_columns)),
-      //   std::move(metadata)
-      // };
+      auto my_table_w_metadata = cudf::io::table_with_metadata{
+        std::make_unique<cudf::table>(std::move(my_columns)),
+        std::move(metadata)
+      };
 
-      // auto meta = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
+      auto meta = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 0);
 
-      // output.on_next(std::move(meta));
+      output.on_next(std::move(meta));
     }
 
-    auto flag = cuda::atomic<bool>(true);
-    exit_flag.set_value_async(flag, processing_stream);
+    cudaStream_t kill_stream;
+    cudaStreamCreateWithFlags(&kill_stream, cudaStreamNonBlocking);
 
+    auto flag = cuda::atomic<bool>(true);
+    exit_flag.set_value_async(flag, kill_stream);
+
+    cudaStreamSynchronize(kill_stream);
+    cudaStreamDestroy(kill_stream);
     cudaStreamSynchronize(processing_stream);
-    cudaStreamSynchronize(receiving_stream);
-    cudaStreamDestroy(receiving_stream);
+    cudaStreamDestroy(processing_stream);
 
     auto cuda_error = cudaGetLastError();
     if (cuda_error != cudaSuccess) {
