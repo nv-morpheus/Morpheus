@@ -26,7 +26,7 @@ cd ${MORPHEUS_ROOT}
 
 gpuci_logger "1"
 set +e
-la -latr
+ls -latr
 gpuci_logger "1.1"
 git lfs install
 gpuci_logger "1.2"

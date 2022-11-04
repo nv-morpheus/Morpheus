@@ -18,9 +18,14 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
+gpuci_logger "Installing CI dependencies"
+mamba env update -q -n morpheus -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda${CUDA_VER}_ci.yml
+conda deactivate && conda activate morpheus
+
+
 gpuci_logger "1"
 set +e
-la -latr
+ls -latr
 gpuci_logger "1.1"
 git lfs install
 gpuci_logger "1.2"
