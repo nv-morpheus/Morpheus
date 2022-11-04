@@ -1,0 +1,35 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{{#code}}
+(()=>{
+
+    // Create a new shared state object.
+    let counters = new Map();
+
+    // Save it on the Handlebars object since that is shared by all functions
+    this.Handlebars._nv_morpheus = {
+        counters: counters,
+        get_and_increment: (method_name) => {
+            if (!counters.has(method_name)){
+                counters.set(method_name, 0);
+            }
+
+            // Get the current value
+            const curr_counter = counters.get(method_name) + 1;
+
+            // Set the incremented value
+            counters.set(method_name, curr_counter);
+
+            return curr_counter;
+        }
+    };
+
+    logger.info(`Resetting the counter object.`);
+
+    return {
+        status: 200,
+        body: `{}`
+    };
+})();
+{{/code}}
