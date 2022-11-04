@@ -56,8 +56,11 @@ git config --global --add safe.directory ${MORPHEUS_ROOT}
 gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
+gpuci_logger "1"
 git lfs install
+gpuci_logger "2"
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
+gpuci_logger "3"
 
 # List missing files
 gpuci_logger "Listing missing files"

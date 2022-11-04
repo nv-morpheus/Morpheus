@@ -24,8 +24,11 @@ pip install ${MORPHEUS_ROOT}/build/wheel
 gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
+gpuci_logger "1"
 git lfs install
+gpuci_logger "2"
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
+gpuci_logger "3"
 
 cd ${MORPHEUS_ROOT}/docs
 gpuci_logger "Installing Documentation dependencies"
