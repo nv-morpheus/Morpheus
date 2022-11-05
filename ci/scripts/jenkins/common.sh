@@ -18,6 +18,8 @@ gpuci_logger "Env Setup"
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 export HOME=${WORKSPACE_TMP}
+export XDG_CONFIG_HOME="${WORKSPACE_TMP}/tmp"
+mkdir -p ${XDG_CONFIG_HOME}
 
 # For non-gpu hosts nproc will correctly report the number of cores we are able to use
 # On a GPU host however nproc will report the total number of cores and PARALLEL_LEVEL
