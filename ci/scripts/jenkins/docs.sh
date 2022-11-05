@@ -25,6 +25,7 @@ gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 git lfs install
+git lfs update --force
 
 set -e
 
