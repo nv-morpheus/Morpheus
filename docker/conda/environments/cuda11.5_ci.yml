@@ -22,7 +22,7 @@ dependencies:
     - clangdev=14 # Needed for IWYU to actually compile the code
     - conda-pack=0.7
     - git-lfs=3.2
-    - git>=2.35.3 # Needed for wildcards on safe.directory
+    - git=2.35.3 # Needed for wildcards on safe.directory
     - include-what-you-use=0.18
     - pip
     - pkg-config=0.29
