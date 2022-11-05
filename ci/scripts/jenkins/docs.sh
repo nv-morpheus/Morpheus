@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+
 
 source ${WORKSPACE}/ci/scripts/jenkins/common.sh
 
@@ -25,6 +25,9 @@ gpuci_logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 git lfs install
+
+set -e
+
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
 
 cd ${MORPHEUS_ROOT}/docs
