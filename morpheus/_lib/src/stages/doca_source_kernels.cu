@@ -294,8 +294,8 @@ __global__ void _doca_packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count_out,
   uint32_t*                                       packets_size_out,
-  uint32_t*                                       src_ip_out,
-  uint32_t*                                       dst_ip_out,
+  int64_t*                                        src_ip_out,
+  int64_t*                                        dst_ip_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag
 )
 {
@@ -415,8 +415,20 @@ __global__ void _doca_packet_gather_kernel(
         );
       }
 
-      src_ip_out[packet_offset + packet_idx] = src_address;
-      dst_ip_out[packet_offset + packet_idx] = dst_address;
+      // reverse the bytes so int64->ip string kernel works properly.
+
+      auto src_address_rev = (src_address & 0x000000ff) << 24
+                           | (src_address & 0x0000ff00) << 8
+                           | (src_address & 0x00ff0000) >> 8
+                           | (src_address & 0xff000000) >> 24;
+
+      auto dst_address_rev = (dst_address & 0x000000ff) << 24
+                           | (dst_address & 0x0000ff00) << 8
+                           | (dst_address & 0x00ff0000) >> 8
+                           | (dst_address & 0xff000000) >> 24;
+
+      src_ip_out[packet_offset + packet_idx] = src_address_rev;
+      dst_ip_out[packet_offset + packet_idx] = dst_address_rev;
     }
 
     __syncthreads();
@@ -511,8 +523,8 @@ void doca_packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
   uint32_t*                                       packets_size,
-  uint32_t*                                       src_ip_out,
-  uint32_t*                                       dst_ip_out,
+  int64_t*                                        src_ip_out,
+  int64_t*                                        dst_ip_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 )

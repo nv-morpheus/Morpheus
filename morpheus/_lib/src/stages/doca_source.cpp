@@ -26,6 +26,7 @@
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
 #include <cudf/table/table.hpp>                  // for table
 #include <cudf/types.hpp>
+#include <cudf/strings/convert/convert_ipv4.hpp>
 #include <glog/logging.h>
 #include <pybind11/cast.h>  // for object_api::operator()
 #include <pybind11/gil.h>
@@ -107,8 +108,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       // allocate stuff
 
       auto packet_count = packet_count_d.value(processing_stream);
-      auto src_ip_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
-      auto dst_ip_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
+      auto src_ip_out_d = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto dst_ip_out_d = rmm::device_uvector<int64_t>(packet_count, processing_stream);
 
       // gather stuff
 
@@ -128,22 +129,26 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       // emit dataframes
 
+      cudaStreamSynchronize(processing_stream);
+
       auto src_ip_out_d_size = src_ip_out_d.size();
       auto src_ip_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<uint32_t>()},
+        cudf::data_type{cudf::type_to_id<int64_t>()},
         src_ip_out_d_size,
         src_ip_out_d.release());
+      auto src_ip_out_str_col = cudf::strings::integers_to_ipv4(src_ip_out_d_col->view());
 
       auto dst_ip_out_d_size = dst_ip_out_d.size();
       auto dst_ip_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<uint32_t>()},
+        cudf::data_type{cudf::type_to_id<int64_t>()},
         dst_ip_out_d_size,
         dst_ip_out_d.release());
+      auto dst_ip_out_str_col = cudf::strings::integers_to_ipv4(dst_ip_out_d_col->view());
 
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
 
-      my_columns.push_back(std::move(src_ip_out_d_col));
-      my_columns.push_back(std::move(dst_ip_out_d_col));
+      my_columns.push_back(std::move(src_ip_out_str_col));
+      my_columns.push_back(std::move(dst_ip_out_str_col));
 
       auto metadata = cudf::io::table_metadata();
 
@@ -156,6 +161,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       };
 
       auto meta = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 0);
+
+      cudaStreamSynchronize(cudf::default_stream_value);
 
       output.on_next(std::move(meta));
     }

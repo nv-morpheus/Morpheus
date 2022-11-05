@@ -35,8 +35,8 @@ void doca_packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
   uint32_t*                                       packets_size,
-  uint32_t*                                       src_ip_out,
-  uint32_t*                                       dst_ip_out,
+  int64_t*                                        dst_ip_out,
+  int64_t*                                        src_ip_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 );
