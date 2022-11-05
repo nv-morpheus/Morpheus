@@ -58,6 +58,7 @@ cd ${MORPHEUS_ROOT}
 
 set +e
 git lfs install
+git lfs update --force
 set -e
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
 
