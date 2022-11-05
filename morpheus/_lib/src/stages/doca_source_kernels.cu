@@ -145,8 +145,6 @@ __global__ void _doca_packet_count_kernel(
   uint32_t                                          sem_count,
   uint32_t*                                         sem_idx_begin,
   uint32_t*                                         sem_idx_end,
-  cuda::std::chrono::duration<int64_t>              debounce_max,
-  uint32_t                                          packet_count_max,
   uint32_t*                                         packet_count_out,
   uint32_t*                                         packets_size_out,
   cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag
@@ -175,8 +173,6 @@ __global__ void _doca_packet_count_kernel(
 
   while (*exit_flag == false)
   {
-    auto now_at_start_of_pass = cuda::std::chrono::system_clock::now();
-
     while (*exit_flag == false)
     {
       auto ret = doca_gpu_device_semaphore_get_value(
@@ -204,29 +200,10 @@ __global__ void _doca_packet_count_kernel(
         printf("kernel count: waiting on sem %d to become ready\n", sem_idx);
       }
 
-
-      if (*packet_count_out > 0)
-      {
-        auto now = cuda::std::chrono::system_clock::now();
-
-        if (now - now_at_start_of_pass > debounce_max)
-        {
-          should_count_next_sem = false;
-          if (threadIdx.x == 0){
-            printf("kernel count: timeout while waiting on sem %d to become ready\n", sem_idx);
-          }
-          break;
-        }
-      }
-
       first_pass = false;
     }
 
     __syncthreads();
-
-    if (*packet_count_out > 0 and *packet_count_out + packet_count > packet_count_max) {
-      should_count_next_sem = false;
-    }
 
     if (not should_count_next_sem)
     {
@@ -317,19 +294,16 @@ __global__ void _doca_packet_gather_kernel(
   // rule 2: all sems up to sem_idx_end (exclusive) must be processed.
   // rule 3: if sem_idx_begin == sem_idx_end, sem_idx_begin still gets processed due to rule 1.
 
-  __shared__ bool should_gather_next_sem;
-
   __shared__ uint32_t packet_offset;
 
   if (threadIdx.x == 0)
   {
-    should_gather_next_sem = true;
     packet_offset = 0;
   }
 
   __syncthreads();
 
-  while (*exit_flag == false and should_gather_next_sem)
+  while (*exit_flag == false)
   {
     // get sem info
     auto ret = doca_gpu_device_semaphore_get_value(
@@ -455,7 +429,7 @@ __global__ void _doca_packet_gather_kernel(
 
     if (sem_idx == *sem_idx_end)
     {
-      should_gather_next_sem = false;
+      break;
     }
   }
 
@@ -492,8 +466,6 @@ void doca_packet_count_kernel(
   uint32_t                                          sem_count,
   uint32_t*                                         sem_idx_begin,
   uint32_t*                                         sem_idx_end,
-  cuda::std::chrono::duration<int64_t>              debounce_max,
-  uint32_t                                          packet_count_max,
   uint32_t*                                         packet_count,
   uint32_t*                                         packets_size,
   cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag,
@@ -506,8 +478,6 @@ void doca_packet_count_kernel(
     sem_count,
     sem_idx_begin,
     sem_idx_end,
-    debounce_max,
-    packet_count_max,
     packet_count,
     packets_size,
     exit_flag
