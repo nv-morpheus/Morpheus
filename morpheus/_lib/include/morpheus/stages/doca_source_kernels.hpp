@@ -7,9 +7,11 @@ void doca_packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
   uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx,
-  // cuda::std::chrono::duration<int64_t>              debounce_max,
-  // uint32_t                                          packet_count_max,
+  uint32_t*                                       sem_idx_begin,
+  uint32_t*                                       sem_idx_end,
+  uint32_t*                                       packet_count,
+  uint32_t                                        packet_count_threshold,
+  cuda::std::chrono::duration<double>             debounce_threshold,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 );

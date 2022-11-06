@@ -55,49 +55,11 @@ from morpheus.utils.logger import configure_logging
     type=click.IntRange(min=1),
     help="Features length to use for the model",
 )
-# @click.option(
-#     "--input_file",
-#     type=click.Path(exists=True, readable=True),
-#     default="validation.csv",
-#     required=True,
-#     help="Input data filepath",
-# )
-# @click.option(
-#     "--training_file",
-#     type=click.Path(exists=True, readable=True),
-#     default="training.csv",
-#     required=True,
-#     help="Training data filepath",
-# )
-# @click.option(
-#     "--model-hinsage-file",
-#     type=click.Path(exists=True, readable=True),
-#     default="model/hinsage-model.pt",
-#     required=True,
-#     help="Trained hinsage model filepath",
-# )
-# @click.option(
-#     "--model-xgb-file",
-#     type=click.Path(exists=True, readable=True),
-#     default="model/xgb-model.pt",
-#     required=True,
-#     help="Trained xgb model filepath",
-# )
-# @click.option(
-#     "--output_file",
-#     default="output.csv",
-#     help="The path to the file where the inference output will be saved.",
-# )
 def run_pipeline(
     num_threads,
     pipeline_batch_size,
     model_max_batch_size,
     model_fea_length,
-    # input_file,
-    # training_file,
-    # model_hinsage_file,
-    # model_xgb_file,
-    # output_file,
 ):
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
@@ -142,10 +104,10 @@ def run_pipeline(
 
     # # Convert the probabilities to serialized JSON strings using the custom serialization stage
     # pipeline.add_stage(SerializeStage(config))
-    # pipeline.add_stage(MonitorStage(config, description="Serialize rate"))
+    pipeline.add_stage(MonitorStage(config, description="Serialize rate"))
 
     # # # Write the file to the output
-    pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
+    # pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

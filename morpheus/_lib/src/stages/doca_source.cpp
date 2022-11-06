@@ -59,7 +59,7 @@ DocaSourceStage::DocaSourceStage() :
   _context   = std::make_shared<morpheus::doca::doca_context>("b5:00.0", "b6:00.0");
   _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
   _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
-  _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 32);
+  _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 1024);
 }
 
 DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
@@ -74,7 +74,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     auto packets_size_d     = rmm::device_scalar<uint32_t>(0, processing_stream);
     auto sem_idx_begin_d    = rmm::device_scalar<uint32_t>(0, processing_stream);
     auto sem_idx_end_d      = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto sem_recieve_idx    = rmm::device_scalar<uint32_t>(0, processing_stream);
 
     while (output.is_subscribed())
     {
@@ -84,12 +83,26 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         _rxq->rxq_info_gpu(),
         _semaphore->in_gpu(),
         _semaphore->size(),
-        sem_recieve_idx.data(),
+        sem_idx_begin_d.data(),
+        sem_idx_end_d.data(),
+        packet_count_d.data(),
+        2048,
+        cuda::std::chrono::duration<double>(1),
         exit_flag.data(),
         processing_stream
       );
 
       // count stuff
+      auto packet_count = packet_count_d.value(processing_stream);
+      auto sem_idx_begin = sem_idx_begin_d.value(processing_stream);
+      auto sem_idx_end = sem_idx_end_d.value(processing_stream);
+
+      // printf("host: packets(%d) begin(%d) end(%d)\n", packet_count, sem_idx_begin, sem_idx_end);
+
+      if (packet_count == 0 and sem_idx_begin == sem_idx_end)
+      {
+        continue;
+      }
 
       doca_packet_count_kernel(
         _rxq->rxq_info_gpu(),
@@ -97,8 +110,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         _semaphore->size(),
         sem_idx_begin_d.data(),
         sem_idx_end_d.data(),
-        // cuda::std::chrono::duration<int64_t>(1),
-        // 2048,
         packet_count_d.data(),
         packets_size_d.data(),
         exit_flag.data(),
@@ -107,7 +118,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       // allocate stuff
 
-      auto packet_count = packet_count_d.value(processing_stream);
       auto src_ip_out_d = rmm::device_uvector<int64_t>(packet_count, processing_stream);
       auto dst_ip_out_d = rmm::device_uvector<int64_t>(packet_count, processing_stream);
 

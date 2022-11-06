@@ -11,39 +11,55 @@ __global__ void _doca_packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
   uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx,
+  uint32_t*                                       sem_idx_begin,
+  uint32_t*                                       sem_idx_end,
+  uint32_t*                                       packet_count_out,
+  uint32_t                                        packet_count_threshold,
+  cuda::std::chrono::duration<double>             debounce_threshold,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag
 )
 {
-  if (threadIdx.x == 0) {
-    printf("kernel receive: started\n");
-  }
+  // if (threadIdx.x == 0) {
+  //   printf("kernel receive: started\n");
+  // }
 
-  uint16_t const packet_count_rx_max = 2048;
-  uint64_t const timeout_ns = 50000000; // 5ms
+  uint16_t const packet_count_rx_max = 512;
+  uint64_t const timeout_ns = 5000000; // 5ms
 
 	__shared__ uint32_t packet_count;
 
 	uintptr_t packet_address;
 
+  if (threadIdx.x == 0){
+    *packet_count_out = 0;
+  }
+
   __syncthreads();
+
+  uint32_t sem_idx = *sem_idx_begin;
+
+  auto debounce_checkpoint = cuda::std::chrono::system_clock::now();
 
   while (*exit_flag == false)
   {
     // ===== WAIT FOR FREE SEM ====================================================================
 
     __shared__ doca_gpu_semaphore_status sem_status;
-    __shared__ bool found_ready;
+    __shared__ bool should_stop_receiving;
+
+    if (*packet_count_out > packet_count_threshold) {
+      break;
+    }
 
     if (threadIdx.x == 0)
     {
-      found_ready = false;
+      should_stop_receiving = false;
       bool first_pass = true;
 
       while (*exit_flag == false)
       {
         auto ret = doca_gpu_device_semaphore_get_value(
-          sem_in + *sem_idx,
+          sem_in + sem_idx,
           &sem_status,
           nullptr,
           nullptr
@@ -51,7 +67,7 @@ __global__ void _doca_packet_receive_kernel(
 
         if (ret != DOCA_SUCCESS) {
           *exit_flag == true;
-          continue;
+          break;
         }
 
         if (sem_status == DOCA_GPU_SEM_STATUS_FREE) {
@@ -60,22 +76,26 @@ __global__ void _doca_packet_receive_kernel(
 
         if (sem_status == DOCA_GPU_SEM_STATUS_READY)
         {
-          found_ready = true;
+          should_stop_receiving = true;
           break;
         }
 
         if (first_pass) {
           first_pass = false;
-          printf("kernel receive: waiting on sem %d to become free\n", *sem_idx);
+          // printf("kernel receive: waiting on sem %d to become free\n", sem_idx);
         }
       }
     }
     
     __syncthreads();
 
-    if (found_ready)
+    if (should_stop_receiving)
     {
-      return;
+      if (threadIdx.x == 0){
+        // printf("kernel receive: found sem %d to be ready when expected free.\n", sem_idx);
+      }
+
+      break;
     }
 
     // ===== RECEIVE TO FREE SEM ==================================================================
@@ -86,7 +106,7 @@ __global__ void _doca_packet_receive_kernel(
       rxq_info,
       packet_count_rx_max,
       timeout_ns,
-      sem_in + *sem_idx,
+      sem_in + sem_idx,
       true,
       &packet_count,
       &packet_address
@@ -96,9 +116,9 @@ __global__ void _doca_packet_receive_kernel(
     __syncthreads();
 
     if (ret != DOCA_SUCCESS) {
-      printf("kernel receive: setting sem %d to error\n", *sem_idx);
+      // printf("kernel receive: setting sem %d to error\n", sem_idx);
       doca_gpu_device_semaphore_update(
-        sem_in + *sem_idx,
+        sem_in + sem_idx,
         DOCA_GPU_SEM_STATUS_ERROR,
         packet_count,
         packet_address
@@ -110,33 +130,54 @@ __global__ void _doca_packet_receive_kernel(
 
     if (packet_count <= 0)
     {
+      auto now = cuda::std::chrono::system_clock::now();
+
+      if (now - debounce_checkpoint > debounce_threshold)
+      {
+        // if (threadIdx.x == 0)
+        // {
+        //   printf("kernel receive: timeout while waiting on sem %d to receive packets\n", sem_idx);
+        // }
+        break;
+      }
+
       continue;
     }
 
+    debounce_checkpoint = cuda::std::chrono::system_clock::now();
+
     if (threadIdx.x == 0) {
-      printf("kernel receive: setting sem %d to ready\n", *sem_idx);
+      // printf("kernel receive: setting sem %d to ready\n", sem_idx);
       doca_gpu_device_semaphore_update_status(
-        sem_in + *sem_idx,
+        sem_in + sem_idx,
         DOCA_GPU_SEM_STATUS_READY
       );
     }
     __threadfence();
-
+    
     if (threadIdx.x == 0) {
-      printf("kernel receive: %d packet(s) received for sem %d\n", packet_count, *sem_idx);
+      *packet_count_out = *packet_count_out + packet_count;
+      // printf("kernel receive: %d packet(s) received for sem %d\n", packet_count, sem_idx);
     }
     
-    if (threadIdx.x == 0)
-    {
-      *sem_idx = (*sem_idx + 1) % sem_count;
+    sem_idx = (sem_idx + 1) % sem_count;
+
+    if (sem_idx == *sem_idx_end) {
+      break;
     }
 
     __syncthreads();
   }
 
-  if (threadIdx.x == 0) {
-    printf("kernel receive: end\n");
+  if (threadIdx.x == 0)
+  {
+    *sem_idx_end = sem_idx;
   }
+
+  // if (threadIdx.x == 0)
+  // {
+  //   printf("kernel receive: end\n");
+  // }
 }
 
 __global__ void _doca_packet_count_kernel(
@@ -150,9 +191,9 @@ __global__ void _doca_packet_count_kernel(
   cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag
 )
 {
-  if (threadIdx.x == 0) {
-    printf("kernel count: started\n");
-  }
+  // if (threadIdx.x == 0) {
+  //   printf("kernel count: started\n");
+  // }
 
   *packet_count_out = 0;
 
@@ -169,49 +210,26 @@ __global__ void _doca_packet_count_kernel(
 
   bool first_pass = true;
 
-  bool should_count_next_sem = true;
-
   while (*exit_flag == false)
   {
-    while (*exit_flag == false)
+    // get sem info
+    auto ret = doca_gpu_device_semaphore_get_value(
+      sem_in + sem_idx,
+      &sem_status,
+      &packet_count,
+      &packet_address
+    );
+
+    if (ret != DOCA_SUCCESS)
     {
-      auto ret = doca_gpu_device_semaphore_get_value(
-        sem_in + sem_idx,
-        &sem_status,
-        &packet_count,
-        &packet_address
-      );
-
-      if (ret != DOCA_SUCCESS) {
-        *exit_flag = true;
-        return;
-      }
-
-      if (sem_status == DOCA_GPU_SEM_STATUS_READY) {
-        break;
-      }
-
-      if (sem_status == DOCA_GPU_SEM_STATUS_HOLD) {
-        should_count_next_sem = false;
-        break;
-      }
-
-      if (threadIdx.x == 0 and first_pass) {
-        printf("kernel count: waiting on sem %d to become ready\n", sem_idx);
-      }
-
-      first_pass = false;
+      *exit_flag = true;
+      continue;
     }
 
     __syncthreads();
 
-    if (not should_count_next_sem)
-    {
-      break;
-    }
-
     if (threadIdx.x == 0 and not first_pass) {
-      printf("kernel count: counting sem %d\n", sem_idx);
+      // printf("kernel count: counting sem %d\n", sem_idx);
     }
 
     __syncthreads();
@@ -237,7 +255,7 @@ __global__ void _doca_packet_count_kernel(
     __syncthreads();
 
     if (threadIdx.x == 0) {
-      printf("kernel count: setting sem %d to held\n", sem_idx);
+      // printf("kernel count: setting sem %d to held\n", sem_idx);
       doca_gpu_device_semaphore_update_status(
         sem_in + sem_idx,
         DOCA_GPU_SEM_STATUS_HOLD
@@ -245,20 +263,28 @@ __global__ void _doca_packet_count_kernel(
     }
 
     __threadfence();
+    __syncthreads();
+
+    // determine if the next sem should be processed
 
     sem_idx = (sem_idx + 1) % sem_count;
-  }
 
-  if(threadIdx.x == 0)
-  {
-    *sem_idx_end = sem_idx;
-    printf("kernel count: %d packets counted for sems [%d, %d) with total payload size %d\n", *packet_count_out, *sem_idx_begin, *sem_idx_end, *packets_size_out);
+    if (sem_idx == *sem_idx_end)
+    {
+      break;
+    }
   }
 
   if (threadIdx.x == 0)
   {
-    printf("kernel count: done\n");
+    *sem_idx_end = sem_idx;
+    // printf("kernel count: %d packets counted for sems [%d, %d) with total payload size %d\n", *packet_count_out, *sem_idx_begin, *sem_idx_end, *packets_size_out);
   }
+
+  // if (threadIdx.x == 0)
+  // {
+  //   printf("kernel count: done\n");
+  // }
 
   __syncthreads();
 }
@@ -276,9 +302,9 @@ __global__ void _doca_packet_gather_kernel(
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag
 )
 {
-  if (threadIdx.x == 0) {
-    printf("kernel gather: started\n");
-  }
+  // if (threadIdx.x == 0) {
+  //   printf("kernel gather: started\n");
+  // }
 
   __shared__ doca_gpu_semaphore_status sem_status;
 	__shared__ uint32_t  packet_count;
@@ -360,14 +386,14 @@ __global__ void _doca_packet_gather_kernel(
       auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
       auto dst_mac = packet_l2->d_addr.addr_bytes; // 6 bytes
 
-      if (threadIdx.x == 0)
-      {
-        printf(
-          "= mac: %02x:%02x:%02x:%02x:%02x:%02x / %02x:%02x:%02x:%02x:%02x:%02x\n",
-          src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5],
-          dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]
-        );
-      }
+      // if (threadIdx.x == 0)
+      // {
+      //   printf(
+      //     "= mac: %02x:%02x:%02x:%02x:%02x:%02x / %02x:%02x:%02x:%02x:%02x:%02x\n",
+      //     src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5],
+      //     dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]
+      //   );
+      // }
 
       // ip address printing works
       auto src_address  = packet_l3->src_addr;
@@ -378,16 +404,16 @@ __global__ void _doca_packet_gather_kernel(
       auto src_address_ptr = reinterpret_cast<uint8_t*>(&src_address);
       auto dst_address_ptr = reinterpret_cast<uint8_t*>(&dst_address);
 
-      if (threadIdx.x == 0)
-      {
-        printf(
-          "= ip: %d.%d.%d.%d:%d / %d.%d.%d.%d:%d \n",
-          src_address_ptr[0], src_address_ptr[1], src_address_ptr[2], src_address_ptr[3],
-          src_port,
-          dst_address_ptr[0], dst_address_ptr[1], dst_address_ptr[2], dst_address_ptr[3],
-          dst_port
-        );
-      }
+      // if (threadIdx.x == 0)
+      // {
+      //   printf(
+      //     "= ip: %d.%d.%d.%d:%d / %d.%d.%d.%d:%d \n",
+      //     src_address_ptr[0], src_address_ptr[1], src_address_ptr[2], src_address_ptr[3],
+      //     src_port,
+      //     dst_address_ptr[0], dst_address_ptr[1], dst_address_ptr[2], dst_address_ptr[3],
+      //     dst_port
+      //   );
+      // }
 
       // reverse the bytes so int64->ip string kernel works properly.
 
@@ -411,7 +437,7 @@ __global__ void _doca_packet_gather_kernel(
 
     if (threadIdx.x == 0)
     {
-      printf("kernel gather: setting sem %d to free\n", sem_idx);
+      // printf("kernel gather: setting sem %d to free\n", sem_idx);
 
       doca_gpu_device_semaphore_update_status(
         sem_in + sem_idx,
@@ -435,9 +461,9 @@ __global__ void _doca_packet_gather_kernel(
 
   *sem_idx_begin = *sem_idx_end;
 
-  if (threadIdx.x == 0) {
-    printf("kernel gather: done\n");
-  }
+  // if (threadIdx.x == 0) {
+  //   printf("kernel gather: done\n");
+  // }
 
   __syncthreads();
 }
@@ -446,7 +472,11 @@ void doca_packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
   uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx,
+  uint32_t*                                       sem_idx_begin,
+  uint32_t*                                       sem_idx_end,
+  uint32_t*                                       packet_count,
+  uint32_t                                        packet_count_threshold,
+  cuda::std::chrono::duration<double>             debounce_threshold,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 )
@@ -455,7 +485,11 @@ void doca_packet_receive_kernel(
     rxq_info,
     sem_in,
     sem_count,
-    sem_idx,
+    sem_idx_begin,
+    sem_idx_end,
+    packet_count,
+    packet_count_threshold,
+    debounce_threshold,
     exit_flag
   );
 }
