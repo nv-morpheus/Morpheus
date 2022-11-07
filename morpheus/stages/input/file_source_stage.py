@@ -143,19 +143,13 @@ class FileSourceStage(SingleOutputSource):
             df_type="cudf",
         )
 
-        count = 0
-
-        for itr in range(self._repeat_count):
+        df_copy = None
+        for count in range(self._repeat_count):
+            if (count + 1 < self._repeat_count):
+                # If we are looping, copy and shift the index
+                df_copy = df.copy(deep=True)
+                df_copy.index += len(df_copy)
 
             x = MessageMeta(df)
-
+            df = df_copy
             yield x
-
-            count += 1
-
-            # If we are looping, copy and shift the index
-            if (itr + 1 < self._repeat_count):
-                prev_df = df
-                df = prev_df.copy()
-
-                df.index += len(df)
