@@ -41,6 +41,7 @@ class TensorMemory
 
     TensorMemory(size_t count);
     TensorMemory(size_t count, tensor_map_t &&tensors);
+    virtual ~TensorMemory() = default;
 
     size_t count{0};
     tensor_map_t tensors;
