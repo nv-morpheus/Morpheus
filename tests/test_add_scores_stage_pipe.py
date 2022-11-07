@@ -80,14 +80,16 @@ def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size, rep
     assert output_np.tolist() == expected.tolist()
 
 
-def test_add_scores_stage_multi_segment_pipe(config, tmp_path):
+@pytest.mark.parametrize('repeat', [1, 2, 5])
+def test_add_scores_stage_multi_segment_pipe(config, tmp_path, repeat):
+    # Intentionally using FileSourceStage's repeat argument as this triggers a bug in #443
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
 
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False, repeat=repeat))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
@@ -102,7 +104,8 @@ def test_add_scores_stage_multi_segment_pipe(config, tmp_path):
 
     assert os.path.exists(out_file)
 
-    expected = np.loadtxt(input_file, delimiter=",", skiprows=1)
+    expected_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
+    expected = np.concatenate([expected_data for _ in range(repeat)])
 
     # The output data will contain an additional id column that we will need to slice off
     # also somehow 0.7 ends up being 0.7000000000000001
