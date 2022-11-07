@@ -96,6 +96,13 @@ def pytest_addoption(parser: pytest.Parser):
         help="Run kafka tests that would otherwise be skipped",
     )
 
+    parser.addoption(
+        "--run_benchmark",
+        action="store_true",
+        dest="run_benchmark",
+        help="Run benchmark tests that would otherwise be skipped",
+    )
+
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):
     """
