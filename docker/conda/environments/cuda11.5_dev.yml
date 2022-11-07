@@ -46,6 +46,7 @@ dependencies:
     - gcc_linux-64=9.4
     - gflags=2.2
     - git>=2.35.3 # Needed for wildcards on safe.directory
+    - git-lfs=3.2
     - glog=0.6
     - gmock=1.10
     - gputil

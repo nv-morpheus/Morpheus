@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
@@ -36,14 +37,19 @@ class ResponseMemoryProbs : public ResponseMemory
 {
   public:
     ResponseMemoryProbs(size_t count, TensorObject probs);
+    ResponseMemoryProbs(size_t count, tensor_map_t &&tensors);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the tensor named 'probs', throws a `std::runtime_error` if it does not exist.
+     *
+     * @return const TensorObject&
      */
     const TensorObject &get_probs() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Update the tensor named 'probs'
+     *
+     * @param probs
      */
     void set_probs(TensorObject probs);
 };

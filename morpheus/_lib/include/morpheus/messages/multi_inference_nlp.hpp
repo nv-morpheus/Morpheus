@@ -46,32 +46,47 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
                              std::size_t count);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'input_ids' tensor, throws a `std::runtime_error` if it does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
     const TensorObject get_input_ids() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'input_ids'.
+     *
+     * @param input_ids
      */
     void set_input_ids(const TensorObject& input_ids);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'input_mask' tensor, throws a `std::runtime_error` if it does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
     const TensorObject get_input_mask() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'input_mask'.
+     *
+     * @param input_mask
      */
     void set_input_mask(const TensorObject& input_mask);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'seq_ids' tensor, throws a `std::runtime_error` if it does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
     const TensorObject get_seq_ids() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'seq_ids'.
+     *
+     * @param seq_ids
      */
     void set_seq_ids(const TensorObject& seq_ids);
 };

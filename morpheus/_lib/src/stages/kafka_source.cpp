@@ -17,6 +17,7 @@
 
 #include "morpheus/stages/kafka_source.hpp"
 
+#include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
@@ -528,31 +529,7 @@ cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string &bu
     auto options =
         cudf::io::json_reader_options::builder(cudf::io::source_info(buffer.c_str(), buffer.size())).lines(true);
 
-    auto tbl = cudf::io::read_json(options.build());
-
-    auto found = std::find(tbl.metadata.column_names.begin(), tbl.metadata.column_names.end(), "data");
-
-    if (found == tbl.metadata.column_names.end())
-        return tbl;
-
-    // Super ugly but cudf cant handle newlines and add extra escapes. So we need to convert
-    // \\n -> \n
-    // \\/ -> \/
-    auto columns = tbl.tbl->release();
-
-    size_t idx = found - tbl.metadata.column_names.begin();
-
-    auto updated_data = cudf::strings::replace(
-        cudf::strings_column_view{columns[idx]->view()}, cudf::string_scalar("\\n"), cudf::string_scalar("\n"));
-
-    updated_data = cudf::strings::replace(
-        cudf::strings_column_view{updated_data->view()}, cudf::string_scalar("\\/"), cudf::string_scalar("/"));
-
-    columns[idx] = std::move(updated_data);
-
-    tbl.tbl = std::move(std::make_unique<cudf::table>(std::move(columns)));
-
-    return tbl;
+    return load_json_table(options.build());
 }
 
 template <bool EnableFilter>

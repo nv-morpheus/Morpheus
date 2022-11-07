@@ -17,10 +17,13 @@
 set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
-install_deb_deps
-install_build_deps
 
-restore_conda_env
+update_conda_env
+
+aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
+
+tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
+
 pip install ${MORPHEUS_ROOT}/build/wheel
 
 rapids-logger "Pulling LFS assets"
