@@ -11,6 +11,7 @@ build-backend = "setuptools.build_meta"
 # These show up when querying `pytest --markers`
 [tool.pytest.ini_options]
 markers = [
+   "benchmark: Benchmarks",
    "slow: Slow tests",
    "kafka: Tests that require a running instance of kafka",
    "use_cpp: Test support C++ nodes and objects",

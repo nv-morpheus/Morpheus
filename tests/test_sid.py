@@ -27,12 +27,14 @@ from morpheus.stages.inference.triton_inference_stage import TritonInferenceStag
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.postprocess.validation_stage import ValidationStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_nlp_stage import PreprocessNLPStage
 from utils import TEST_DIRS
 from utils import calc_error_val
+from utils import compare_class_to_scores
 
 # End-to-end test intended to imitate the Sid validation test
 FEATURE_LENGTH = 256
@@ -110,6 +112,7 @@ def test_minibert_no_cpp(mock_triton_client, config, tmp_path):
         TritonInferenceStage(config, model_name='sid-minibert-onnx', server_url='fake:001', force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config, threshold=0.5, prefix="si_"))
+    pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
     pipe.add_stage(SerializeStage(config))
@@ -117,6 +120,8 @@ def test_minibert_no_cpp(mock_triton_client, config, tmp_path):
 
     pipe.run()
     results = calc_error_val(results_file_name)
+
+    compare_class_to_scores(out_file, config.class_labels, 'si_', 'score_', threshold=0.5)
     assert results.diff_rows == 1333
 
 
@@ -158,12 +163,14 @@ def _run_minibert_cpp(config, tmp_path, model_name, truncated):
         TritonInferenceStage(config, model_name=model_name, server_url='localhost:8001', force_convert_inputs=True))
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config, threshold=0.5, prefix="si_"))
+    pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     pipe.run()
+    compare_class_to_scores(out_file, config.class_labels, 'si_', 'score_', threshold=0.5)
     return calc_error_val(results_file_name)
 
 

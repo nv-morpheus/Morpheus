@@ -19,30 +19,16 @@ set -e
 source ${WORKSPACE}/ci/scripts/github/common.sh
 /usr/bin/nvidia-smi
 
-install_deb_deps
+update_conda_env
 
-# Restore the environment and then ensure we have the CI dependencies
-restore_conda_env
+aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
+
+tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
 # Install the built Morpheus python package
 pip install ${MORPHEUS_ROOT}/build/wheel
 
 CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/wheel -name "*.x"))
-
-rapids-logger "Installing test dependencies"
-npm install --silent -g camouflage-server@0.9
-
-# Kafka tests need Java, since this stage is the only one that needs it, installing it here rather than adding it to
-# the ci.yaml file
-mamba install -c conda-forge "openjdk=11.0.15"
-export PYTEST_KAFKA_DIR=${WORKSPACE_TMP}/pytest-kafka
-
-# Installing pytest-kafka from source instead of conda/pip as the setup.py includes helper methods for downloading Kafka
-# https://gitlab.com/karolinepauls/pytest-kafka/-/issues/9
-git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${PYTEST_KAFKA_DIR}
-pushd ${PYTEST_KAFKA_DIR}
-python setup.py develop
-popd
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
