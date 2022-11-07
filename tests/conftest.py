@@ -96,6 +96,13 @@ def pytest_addoption(parser: pytest.Parser):
         help="Run kafka tests that would otherwise be skipped",
     )
 
+    parser.addoption(
+        "--run_benchmark",
+        action="store_true",
+        dest="run_benchmark",
+        help="Run benchmark tests that would otherwise be skipped",
+    )
+
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):
     """
@@ -132,6 +139,10 @@ def pytest_runtest_setup(item):
     if (not item.config.getoption("--run_kafka")):
         if (item.get_closest_marker("kafka") is not None):
             pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
+
+    if (not item.config.getoption("--run_benchmark")):
+        if (item.get_closest_marker("benchmark") is not None):
+            pytest.skip("Skipping benchmark tests by default. Use --run_benchmark to enable")
 
 
 def pytest_collection_modifyitems(config, items):
