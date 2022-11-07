@@ -26,6 +26,8 @@ namespace morpheus {
 /**
  * TODO(Documentation)
  */
+
+#pragma GCC visibility push(default)
 class InferenceMemory : public TensorMemory
 {
   public:
@@ -43,7 +45,6 @@ class InferenceMemory : public TensorMemory
 };
 
 /****** InferenceMemoryInterfaceProxy *************************/
-#pragma GCC visibility push(default)
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */

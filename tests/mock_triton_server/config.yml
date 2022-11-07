@@ -35,3 +35,5 @@ protocols:
     grpc_tls: false
 injection:
   enable: true
+validation:
+  enable: false

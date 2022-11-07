@@ -18,12 +18,9 @@ set -e
 
 source ${WORKSPACE}/ci/scripts/github/common.sh
 
-install_deb_deps
-install_build_deps
+update_conda_env
 
 fetch_base_branch
-
-create_conda_env
 
 rapids-logger "Checking copyright headers"
 python ${MORPHEUS_ROOT}/ci/scripts/copyright.py --verify-apache-v2 --git-diff-commits ${CHANGE_TARGET} ${GIT_COMMIT}

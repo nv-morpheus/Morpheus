@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,17 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Morpheus dependencies only needed during a CI build
-name: morpheus
-channels:
-    - conda-forge
-dependencies:
-    - clangdev=14 # Needed for IWYU to actually compile the code
-    - conda-pack=0.7
-    - git-lfs=3.2
-    - include-what-you-use=0.18
-    - pip
-    - pkg-config=0.29
-    - sccache=0.3
-    - pip:
-      - yapf==0.32
+name: Add new issue/PR to project
+
+on:
+  issues:
+    types:
+      - opened
+
+  pull_request_target:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue or PR to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.3.0
+        with:
+          project-url: https://github.com/orgs/nv-morpheus/projects/1
+          github-token: ${{ github.token }}
