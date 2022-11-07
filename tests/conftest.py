@@ -140,6 +140,10 @@ def pytest_runtest_setup(item):
         if (item.get_closest_marker("kafka") is not None):
             pytest.skip("Skipping Kafka tests by default. Use --run_kafka to enable")
 
+    if (not item.config.getoption("--run_benchmark")):
+        if (item.get_closest_marker("benchmark") is not None):
+            pytest.skip("Skipping benchmark tests by default. Use --run_benchmark to enable")
+
 
 def pytest_collection_modifyitems(config, items):
     """
