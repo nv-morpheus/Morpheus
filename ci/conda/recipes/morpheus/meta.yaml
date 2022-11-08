@@ -51,7 +51,7 @@ outputs:
         - {{ compiler("c") }}
         - {{ compiler("cxx") }}
         - {{ compiler("cuda") }}
-        - cmake 3.22
+        - cmake >=3.23.1
         - ccache
         - ninja
       host:
