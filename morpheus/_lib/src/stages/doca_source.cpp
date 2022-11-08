@@ -79,7 +79,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     {
       // receive stuff
 
-      doca_packet_receive_kernel(
+      morpheus::doca::packet_receive_kernel(
         _rxq->rxq_info_gpu(),
         _semaphore->in_gpu(),
         _semaphore->size(),
@@ -104,7 +104,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         continue;
       }
 
-      doca_packet_count_kernel(
+      morpheus::doca::packet_count_kernel(
         _rxq->rxq_info_gpu(),
         _semaphore->in_gpu(),
         _semaphore->size(),
@@ -118,12 +118,16 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       // allocate stuff
 
-      auto src_ip_out_d = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto dst_ip_out_d = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto src_mac_out_d  = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto dst_mac_out_d  = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto src_ip_out_d   = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto dst_ip_out_d   = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto src_port_out_d = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
+      auto dst_port_out_d = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
 
       // gather stuff
 
-      doca_packet_gather_kernel(
+      morpheus::doca::packet_gather_kernel(
         _rxq->rxq_info_gpu(),
         _semaphore->in_gpu(),
         _semaphore->size(),
@@ -131,8 +135,12 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         sem_idx_end_d.data(),
         packet_count_d.data(),
         packets_size_d.data(),
+        src_mac_out_d.data(),
+        dst_mac_out_d.data(),
         src_ip_out_d.data(),
         dst_ip_out_d.data(),
+        src_port_out_d.data(),
+        dst_port_out_d.data(),
         exit_flag.data(),
         processing_stream
       );
@@ -141,6 +149,23 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       cudaStreamSynchronize(processing_stream);
 
+      // src_mac
+      auto src_mac_out_d_size = src_mac_out_d.size();
+      auto src_mac_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int64_t>()},
+        src_mac_out_d_size,
+        src_mac_out_d.release());
+      // auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
+
+      // dst_mac
+      auto dst_mac_out_d_size = dst_mac_out_d.size();
+      auto dst_mac_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int64_t>()},
+        dst_mac_out_d_size,
+        dst_mac_out_d.release());
+      // auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
+
+      // src ip
       auto src_ip_out_d_size = src_ip_out_d.size();
       auto src_ip_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int64_t>()},
@@ -148,6 +173,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         src_ip_out_d.release());
       auto src_ip_out_str_col = cudf::strings::integers_to_ipv4(src_ip_out_d_col->view());
 
+      // dst ip
       auto dst_ip_out_d_size = dst_ip_out_d.size();
       auto dst_ip_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int64_t>()},
@@ -155,15 +181,33 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         dst_ip_out_d.release());
       auto dst_ip_out_str_col = cudf::strings::integers_to_ipv4(dst_ip_out_d_col->view());
 
+      // src post
+      auto src_port_out_d_size = src_port_out_d.size();
+      auto src_port_out_d_col = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<uint16_t>()},
+        src_port_out_d_size,
+        src_port_out_d.release());
+
+      // dst port
+      auto dst_port_out_d_size = dst_port_out_d.size();
+      auto dst_port_out_d_col = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<uint16_t>()},
+        dst_port_out_d_size,
+        dst_port_out_d.release());
+
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
 
       my_columns.push_back(std::move(src_ip_out_str_col));
       my_columns.push_back(std::move(dst_ip_out_str_col));
+      my_columns.push_back(std::move(src_port_out_d_col));
+      my_columns.push_back(std::move(dst_port_out_d_col));
 
       auto metadata = cudf::io::table_metadata();
 
       metadata.column_names.push_back("src_ip");
       metadata.column_names.push_back("dst_ip");
+      metadata.column_names.push_back("src_port");
+      metadata.column_names.push_back("dst_port");
 
       auto my_table_w_metadata = cudf::io::table_with_metadata{
         std::make_unique<cudf::table>(std::move(my_columns)),
