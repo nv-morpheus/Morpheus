@@ -455,7 +455,7 @@ __global__ void _packet_gather_kernel(
       auto packet_out_idx = packet_offset + packet_idx;
 
       src_mac_out[packet_out_idx] = mac_bytes_to_int64(src_mac);
-      dst_mac_out[packet_out_idx] = mac_bytes_to_int64(src_mac);
+      dst_mac_out[packet_out_idx] = mac_bytes_to_int64(dst_mac);
 
       // ip address printing works
       auto src_address  = packet_l3->src_addr;

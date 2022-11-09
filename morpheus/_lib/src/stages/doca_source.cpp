@@ -206,23 +206,23 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
 
-      my_columns.push_back(std::move(packet_length_out_d_col));
       my_columns.push_back(std::move(src_mac_out_str_col));
       my_columns.push_back(std::move(dst_mac_out_str_col));
       my_columns.push_back(std::move(src_ip_out_str_col));
       my_columns.push_back(std::move(dst_ip_out_str_col));
       my_columns.push_back(std::move(src_port_out_d_col));
       my_columns.push_back(std::move(dst_port_out_d_col));
+      my_columns.push_back(std::move(packet_length_out_d_col));
 
       auto metadata = cudf::io::table_metadata();
 
-      metadata.column_names.push_back("packet_length");
       metadata.column_names.push_back("src_mac");
       metadata.column_names.push_back("dst_mac");
       metadata.column_names.push_back("src_ip");
       metadata.column_names.push_back("dst_ip");
       metadata.column_names.push_back("src_port");
       metadata.column_names.push_back("dst_port");
+      metadata.column_names.push_back("packet_length");
 
       auto my_table_w_metadata = cudf::io::table_with_metadata{
         std::make_unique<cudf::table>(std::move(my_columns)),
