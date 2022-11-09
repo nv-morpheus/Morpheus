@@ -50,6 +50,7 @@ void packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
   uint32_t*                                       packets_size,
+  uint32_t*                                       packet_length_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
   int64_t*                                        src_ip_out,

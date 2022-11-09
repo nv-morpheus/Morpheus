@@ -351,6 +351,7 @@ __global__ void _packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count_out,
   uint32_t*                                       packets_size_out,
+  uint32_t*                                       packet_length_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
   int64_t*                                        src_ip_out,
@@ -389,6 +390,11 @@ __global__ void _packet_gather_kernel(
 
   while (*exit_flag == false)
   {
+    if (threadIdx.x == 0)
+    {
+      DOCA_GPU_VOLATILE(packet_count) = 0;
+    }
+
     // get sem info
     auto ret = doca_gpu_device_semaphore_get_value(
       sem_in + sem_idx,
@@ -440,14 +446,16 @@ __global__ void _packet_gather_kernel(
 
       auto total_length = BYTE_SWAP16(packet_l3->total_length);
 
+      packet_length_out[total_length] = total_length;
+
       // mac address printing works
       auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
       auto dst_mac = packet_l2->d_addr.addr_bytes; // 6 bytes
 
-      auto packet_idx_abs = packet_offset + packet_idx;
+      auto packet_out_idx = packet_offset + packet_idx;
 
-      src_mac_out[packet_offset + packet_idx] = mac_bytes_to_int64(src_mac);
-      dst_mac_out[packet_offset + packet_idx] = mac_bytes_to_int64(src_mac);
+      src_mac_out[packet_out_idx] = mac_bytes_to_int64(src_mac);
+      dst_mac_out[packet_out_idx] = mac_bytes_to_int64(src_mac);
 
       // ip address printing works
       auto src_address  = packet_l3->src_addr;
@@ -467,11 +475,11 @@ __global__ void _packet_gather_kernel(
                            | (dst_address & 0x00ff0000) >> 8
                            | (dst_address & 0xff000000) >> 24;
 
-      src_ip_out[packet_offset + packet_idx] = src_address_rev;
-      dst_ip_out[packet_offset + packet_idx] = dst_address_rev;
+      src_ip_out[packet_out_idx] = src_address_rev;
+      dst_ip_out[packet_out_idx] = dst_address_rev;
 
-      src_port_out[packet_offset + packet_idx] = src_port;
-      dst_port_out[packet_offset + packet_idx] = dst_port;
+      src_port_out[packet_out_idx] = src_port;
+      dst_port_out[packet_out_idx] = dst_port;
     }
 
     __syncthreads();
@@ -640,6 +648,7 @@ void packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
   uint32_t*                                       packets_size,
+  uint32_t*                                       packet_length_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
   int64_t*                                        src_ip_out,
@@ -658,6 +667,7 @@ void packet_gather_kernel(
     sem_idx_end,
     packet_count,
     packets_size,
+    packet_length_out,
     src_mac_out,
     dst_mac_out,
     src_ip_out,

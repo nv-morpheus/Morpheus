@@ -118,12 +118,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       // allocate stuff
 
-      auto src_mac_out_d  = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto dst_mac_out_d  = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto src_ip_out_d   = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto dst_ip_out_d   = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto src_port_out_d = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
-      auto dst_port_out_d = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
+      auto packet_length_out_d  = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
+      auto src_mac_out_d        = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto dst_mac_out_d        = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto src_ip_out_d         = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto dst_ip_out_d         = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto src_port_out_d       = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
+      auto dst_port_out_d       = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
 
       // gather stuff
 
@@ -135,6 +136,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         sem_idx_end_d.data(),
         packet_count_d.data(),
         packets_size_d.data(),
+        packet_length_out_d.data(),
         src_mac_out_d.data(),
         dst_mac_out_d.data(),
         src_ip_out_d.data(),
@@ -148,6 +150,13 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       // emit dataframes
 
       cudaStreamSynchronize(processing_stream);
+
+      // packet_length
+      auto packet_length_out_d_size = packet_length_out_d.size();
+      auto packet_length_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<uint32_t>()},
+        packet_length_out_d_size,
+        packet_length_out_d.release());
 
       // src_mac
       auto src_mac_out_d_size = src_mac_out_d.size();
@@ -197,6 +206,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
 
+      my_columns.push_back(std::move(packet_length_out_d_col));
       my_columns.push_back(std::move(src_mac_out_str_col));
       my_columns.push_back(std::move(dst_mac_out_str_col));
       my_columns.push_back(std::move(src_ip_out_str_col));
@@ -206,6 +216,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       auto metadata = cudf::io::table_metadata();
 
+      metadata.column_names.push_back("packet_length");
       metadata.column_names.push_back("src_mac");
       metadata.column_names.push_back("dst_mac");
       metadata.column_names.push_back("src_ip");
