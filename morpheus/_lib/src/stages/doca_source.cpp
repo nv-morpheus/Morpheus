@@ -155,7 +155,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudf::data_type{cudf::type_to_id<int64_t>()},
         src_mac_out_d_size,
         src_mac_out_d.release());
-      // auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
+      auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
 
       // dst_mac
       auto dst_mac_out_d_size = dst_mac_out_d.size();
@@ -163,7 +163,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudf::data_type{cudf::type_to_id<int64_t>()},
         dst_mac_out_d_size,
         dst_mac_out_d.release());
-      // auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
+      auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(dst_mac_out_d_col->view());
 
       // src ip
       auto src_ip_out_d_size = src_ip_out_d.size();
@@ -197,6 +197,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
 
+      my_columns.push_back(std::move(src_mac_out_str_col));
+      my_columns.push_back(std::move(dst_mac_out_str_col));
       my_columns.push_back(std::move(src_ip_out_str_col));
       my_columns.push_back(std::move(dst_ip_out_str_col));
       my_columns.push_back(std::move(src_port_out_d_col));
@@ -204,6 +206,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       auto metadata = cudf::io::table_metadata();
 
+      metadata.column_names.push_back("src_mac");
+      metadata.column_names.push_back("dst_mac");
       metadata.column_names.push_back("src_ip");
       metadata.column_names.push_back("dst_ip");
       metadata.column_names.push_back("src_port");

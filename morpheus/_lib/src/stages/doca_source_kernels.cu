@@ -2,9 +2,17 @@
 
 #include "morpheus/doca/common.h"
 #include <doca_gpu_device.cuh>
-#include <stdio.h>
+#include <cudf/column/column.hpp>
+#include <cudf/column/column_view.hpp>
+#include <cudf/strings/detail/utilities.cuh>
+#include <cudf/strings/detail/utilities.hpp>
+#include <cudf/column/column_factories.hpp>
+#include <cudf/column/column_device_view.cuh>
 #include <cuda/atomic>
 #include <cuda/std/chrono>
+#include <memory>
+#include <stdio.h>
+#include <thrust/iterator/constant_iterator.h>
 
 __device__ char to_hex_16(uint8_t value)
 {
@@ -505,6 +513,73 @@ __global__ void _packet_gather_kernel(
 
 namespace morpheus {
 namespace doca {
+
+namespace {
+
+struct integers_to_mac_fn {
+  cudf::column_device_view const d_column;
+  int32_t const* d_offsets;
+  char* d_chars;
+
+  __device__ void operator()(cudf::size_type idx)
+  {
+    int64_t mac_address = d_column.element<int64_t>(idx);
+    char* out_ptr       = d_chars + d_offsets[idx];
+    
+    mac_int64_to_chars(mac_address, out_ptr);
+  }
+};
+
+}
+
+std::unique_ptr<cudf::column> integers_to_mac(
+  cudf::column_view const& integers,
+  rmm::cuda_stream_view stream,
+  rmm::mr::device_memory_resource* mr
+)
+{
+  CUDF_EXPECTS(integers.type().id() == cudf::type_id::INT64, "Input column must be type_id::INT64 type");
+  CUDF_EXPECTS(integers.null_count() == 0, "integers_to_mac does not support null values.");
+
+  cudf::size_type strings_count = integers.size();
+
+  if (strings_count == 0)
+  {
+    return cudf::make_empty_column(cudf::type_id::STRING);
+  }
+
+  auto offsets_transformer_itr = thrust::constant_iterator<int32_t>(17);
+  auto offsets_column = cudf::strings::detail::make_offsets_child_column(
+    offsets_transformer_itr,
+    offsets_transformer_itr + strings_count,
+    stream,
+    mr
+  );
+
+  auto d_offsets = offsets_column->view().data<int32_t>();
+
+  auto column   = cudf::column_device_view::create(integers, stream);
+  auto d_column = *column;
+
+  auto const bytes =
+    cudf::detail::get_value<int32_t>(offsets_column->view(), strings_count, stream);
+
+  auto chars_column = cudf::strings::detail::create_chars_child_column(bytes, stream, mr);
+  auto d_chars      = chars_column->mutable_view().data<char>();
+
+  thrust::for_each_n(
+    rmm::exec_policy(stream),
+    thrust::make_counting_iterator<cudf::size_type>(0),
+    strings_count,
+    integers_to_mac_fn{d_column, d_offsets, d_chars}
+  );
+
+  return cudf::make_strings_column(strings_count,
+    std::move(offsets_column),
+    std::move(chars_column),
+    0,
+    {});
+}
 
 void packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
