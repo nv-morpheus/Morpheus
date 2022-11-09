@@ -1,3 +1,9 @@
+# Morpheus 22.09.01 (9 Nov 2022)
+
+## 🐛 Bug Fixes
+
+- 426 bug msg keyerror data ([#428](https://github.com/nv-morpheus/Morpheus/pull/428)) [@bsuryadevara](https://github.com/bsuryadevara)
+
 # Morpheus 22.09.00 (30 Sep 2022)
 
 ## 🚨 Breaking Changes
