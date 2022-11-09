@@ -16,6 +16,7 @@ import logging
 import typing
 from collections import namedtuple
 from datetime import datetime
+from operator import itemgetter
 
 import fsspec
 import pandas as pd
@@ -73,7 +74,7 @@ class DFPFileBatcherStage(SinglePortStage):
             ts_and_files.append(TimestampFileObj(ts, file_object))
 
         # sort the incoming data by date
-        ts_and_files.sort()
+        ts_and_files.sort(key=itemgetter(0))
 
         # Create a dataframe with the incoming metadata
         if ((len(ts_and_files) > 1) and (self._sampling_rate_s > 0)):
