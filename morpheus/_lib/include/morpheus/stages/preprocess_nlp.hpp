@@ -54,7 +54,8 @@ class PreprocessNLPStage
                        bool truncation,
                        bool do_lower_case,
                        bool add_special_token,
-                       int stride = -1);
+                       int stride         = -1,
+                       std::string column = "data");
 
   private:
     /**
@@ -63,6 +64,7 @@ class PreprocessNLPStage
     subscribe_fn_t build_operator();
 
     std::string m_vocab_hash_file;
+    std::string m_column;
     uint32_t m_sequence_length;
     bool m_truncation;
     bool m_do_lower_case;
@@ -86,7 +88,8 @@ struct PreprocessNLPStageInterfaceProxy
                                                                           bool truncation,
                                                                           bool do_lower_case,
                                                                           bool add_special_token,
-                                                                          int stride = -1);
+                                                                          int stride         = -1,
+                                                                          std::string column = "data");
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
