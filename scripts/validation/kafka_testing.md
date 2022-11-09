@@ -1,6 +1,7 @@
-This document walks through manual testing of the Kafka functionality in Morpheus. There are also several automated tests which are run as part of the CI process. To run the tests locally first install `pytest-kafka` with:
+This document walks through manual testing of the Kafka functionality in Morpheus. There are also several automated tests which are run as part of the CI process. To run the tests locally we will need to install a few dependencies needed for the tests:
 ```bash
 mamba install -c conda-forge "openjdk=11.0.15"
+npm install -g camouflage-server@0.9
 mkdir -p ${MORPHEUS_ROOT}/.cache
 git clone https://gitlab.com/karolinepauls/pytest-kafka.git ${MORPHEUS_ROOT}/.cache/pytest-kafka
 cd ${MORPHEUS_ROOT}/.cache/pytest-kafka
