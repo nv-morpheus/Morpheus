@@ -19,6 +19,10 @@ pytest --run_slow --run_kafka
     ```bash
     mkdir -p ${MORPHEUS_ROOT}/.tmp
     ```
+1. To help validate the data we will be using the `jq` command, if this is not already installed on your system it can be installed with:
+    ```bash
+    mamba install -c conda-forge jq
+    ```
 1. Launch Kafka using instructions from the [Quick Launch Kafka Cluster](../../CONTRIBUTING.md#quick-launch-kafka-cluster) section of [CONTRIBUTING.md](../../CONTRIBUTING.md) following steps 1-6.
 
 1. The testing steps below will require two separate terminal windows. Each will need to have the `KAFKA_ADVERTISED_HOST_NAME`, `BROKER_LIST` and `MORPHEUS_ROOT` environment variables set. In the example below both morpheus and kafka-docker repositories have been checked out into the `~work` directory, replacing these paths with the location of your checkouts.
