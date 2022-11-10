@@ -20,6 +20,7 @@
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
@@ -38,7 +39,7 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, MultiMessage>
+class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, MultiTensorMessage>
 {
   public:
     MultiResponseMessage(const MultiResponseMessage &other) = default;
@@ -49,37 +50,30 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
                          std::size_t offset,
                          std::size_t count);
 
-    std::shared_ptr<ResponseMemory> memory;
-    std::size_t offset{0};
-    std::size_t count{0};
-
     /**
-     * TODO(Documentation)
-     */
-    TensorObject get_output(const std::string &name);
-
-    /**
-     * TODO(Documentation)
+     * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
     const TensorObject get_output(const std::string &name) const;
 
     /**
-     * TODO(Documentation)
+     * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return TensorObject
      */
-    const void set_output(const std::string &name, const TensorObject &value);
+    TensorObject get_output(const std::string &name);
 
-  protected:
     /**
-     * TODO(Documentation)
+     * @brief Update the value of a given output tensor. The tensor must already exist, otherwise this will halt on a
+     * fatal error.
+     *
+     * @param name
+     * @param value
      */
-    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
-
-    void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<size_t, size_t>> &ranges,
-                          size_t num_selected_rows) const override;
-
-    std::shared_ptr<ResponseMemory> copy_output_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
-                                                       size_t num_selected_rows) const;
+    void set_output(const std::string &name, const TensorObject &value);
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/

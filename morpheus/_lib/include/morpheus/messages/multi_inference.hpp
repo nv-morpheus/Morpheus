@@ -20,6 +20,7 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
@@ -38,7 +39,7 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiMessage>
+class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiTensorMessage>
 {
   public:
     MultiInferenceMessage(const MultiInferenceMessage &other) = default;
@@ -49,32 +50,26 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
                           std::size_t offset,
                           std::size_t count);
 
-    std::shared_ptr<morpheus::InferenceMemory> memory;
-    std::size_t offset{0};
-    std::size_t count{0};
-
     /**
-     * TODO(Documentation)
+     * @brief Return the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
     const TensorObject get_input(const std::string &name) const;
 
     /**
-     * TODO(Documentation)
+     * @brief Return the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.
+     *
+     * @param name
+     * @return TensorObject
      */
-    const void set_input(const std::string &name, const TensorObject &value);
+    TensorObject get_input(const std::string &name);
 
-  protected:
     /**
-     * TODO(Documentation)
+     * Update the value of ain input tensor. The tensor must already exist, otherwise this will halt on a fatal error.
      */
-    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
-
-    void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<size_t, size_t>> &ranges,
-                          size_t num_selected_rows) const override;
-
-    std::shared_ptr<InferenceMemory> copy_input_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
-                                                       size_t num_selected_rows) const;
+    void set_input(const std::string &name, const TensorObject &value);
 };
 
 /****** MultiInferenceMessageInterfaceProxy****************/
