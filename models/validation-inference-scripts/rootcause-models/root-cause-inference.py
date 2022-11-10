@@ -16,7 +16,7 @@
 """
 Example Usage:
 python \
-Root-Cause-Predictive-Maintenance-Sequence-Classifier-FineTuning.py \
+root-cause-inference.py \
     --validationdata ../../datasets/validation-data\
     /rootcause-validation-data.jsonlines \
     --model ../../rootcause-models/rootcause.onnx \
