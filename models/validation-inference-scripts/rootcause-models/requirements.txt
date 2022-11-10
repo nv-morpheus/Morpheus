@@ -1,0 +1,7 @@
+cudf==0+untagged.1.g788bddd
+cupy==9.1.0
+numpy==1.23.4
+onnxruntime==1.13.1
+scipy==1.6.0
+torch==1.7.1
+
