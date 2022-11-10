@@ -16,10 +16,10 @@
 """
 Example Usage:
 python \
-Root-Cause-Predictive-Maintenance-Sequence-Classifier-FineTuning.py \
+root-cause-inference.py \
     --validationdata ../../datasets/validation-data\
-    /Rootcause-validation-data.jsonlines \
-    --model ../../rootcause-models/Rootcause.onnx \
+    /rootcause-validation-data.jsonlines \
+    --model ../../rootcause-models/rootcause.onnx \
     --vocab ../../training-tuning-scripts/rootcause-models\
     /resources/bert-base-uncased-hash.txt \
     --output rootcause-validation-output.jsonlines
