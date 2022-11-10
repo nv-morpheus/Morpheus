@@ -42,7 +42,7 @@ docker-compose build
 
 From the `examples/digital_fingerprinting/production` directory run:
 ```bash
-docker-compose run morpheus_pipeline bash
+docker-compose run -p 3000:3000 morpheus_pipeline bash
 ```
 
 Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
@@ -64,7 +64,7 @@ Run the following in your `morpheus_pipeline` container to download example data
 Azure training data will be saved to `/workspace/examples/data/dfp/azure-training-data`, inference data to `/workspace/examples/data/dfp/azure-inference-data`.
 Duo training data will be saved to `/workspace/examples/data/dfp/duo-training-data`, inference data to `/workspace/examples/data/dfp/duo-inference-data`.
 
-## Running pipeline for DFP Visualization
+## Running pipeline to generate input for DFP Visualization
 
 The pipeline uses `DFPVizPostprocStage` to perform post-processing on DFP inference output. The inference output is converted to input format expected by the DFP Visualization and saves to multiple files based on specified time period. Time period to group data by must be [one of pandas' offset strings](https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases). The default period is one day (D). The output files will be named by appending period to prefix (e.g. `dfp-viz-2022-08-30.csv`). These are the available options used for `DFPVizPostprocStage`:
 
@@ -101,7 +101,8 @@ python dfp_viz_azure_pipeline.py \
     --train_users=none \
     --log_level=debug \
     --start_time=2022-08-30 \
-    --input_file=/workspace/examples/data/dfp/azure-inference-data/AZUREAD_2022-08-*.json
+    --input_file=/workspace/examples/data/dfp/azure-inference-data/AZUREAD_2022-08-*.json \
+    --output_dir=./azure-dfp-output
 ```
 
 When pipeline run completes, you should now see `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` in your current directory. These files can be used as input to the DFP Viz UI.
@@ -118,7 +119,8 @@ python dfp_viz_duo_pipeline.py \
     --train_users=all \
     --log_level=debug \
     --start_time=2022-08-01 \
-    --input_file=/workspace/examples/data/dfp/duo-training-data/DUO_2022-08-*.json
+    --input_file=/workspace/examples/data/dfp/duo-training-data/DUO_2022-08-*.json \
+    --output_dir=./duo-dfp-output
 ```
 **Note:** Since models are persisted to a Docker volume, the above command only needs to be run once even if the `mlflow` service is restarted.
 
@@ -132,3 +134,35 @@ python dfp_viz_duo_pipeline.py \
 ```
 
 When pipeline run completes, you should now see `dfp-viz-duo-2022-08-30.csv` and `dfp-viz-duo-2022-08-31.csv` in your current directory. These files can be used as input to the DFP Viz UI.
+
+## Install DFP Visualization App
+
+
+### Clone `morpheus-visualizations` repo:
+```
+git clone https://github.com/nv-morpheus/morpheus-visualizations.git /opt/morpheus-visualizations
+```
+
+### Install dependencies
+```
+cd /opt/morpheus-visualizations/morpheus-DFP
+```
+```
+corepack enable
+```
+```
+yarn
+```
+
+### Configure `dataset_path`
+Open the `.env` file, and set `dataset_path` to directory where input files will be read from. For this example, we'll set it to directory that contains our Azure DFP output file:
+```
+dataset_path=/workspace/examples/digital_fingerprinting/visualization/azure-dfp-output
+```
+
+### Start server
+```
+yarn dev
+```
+
+The DFP Visualization app can now be accessed via web browser at http://localhost:3000.
