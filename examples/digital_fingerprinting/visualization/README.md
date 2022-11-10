@@ -105,7 +105,7 @@ python dfp_viz_azure_pipeline.py \
     --output_dir=./azure-dfp-output
 ```
 
-When pipeline run completes, you should now see `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` in your current directory. These files can be used as input to the DFP Viz UI.
+When pipeline run completes, you should now see `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` in the `azure-dfp-output` directory. These files can be used as input to the DFP Viz UI.
 
 ### Duo
 
@@ -119,8 +119,7 @@ python dfp_viz_duo_pipeline.py \
     --train_users=all \
     --log_level=debug \
     --start_time=2022-08-01 \
-    --input_file=/workspace/examples/data/dfp/duo-training-data/DUO_2022-08-*.json \
-    --output_dir=./duo-dfp-output
+    --input_file=/workspace/examples/data/dfp/duo-training-data/DUO_2022-08-*.json
 ```
 **Note:** Since models are persisted to a Docker volume, the above command only needs to be run once even if the `mlflow` service is restarted.
 
@@ -130,10 +129,11 @@ python dfp_viz_duo_pipeline.py \
     --train_users=none \
     --log_level=debug \
     --start_time=2022-08-30 \
-    --input_file=/workspace/examples/data/dfp/duo-inference-data/DUO_2022-08-*.json
+    --input_file=/workspace/examples/data/dfp/duo-inference-data/DUO_2022-08-*.json \
+    --output_dir=./duo-dfp-output
 ```
 
-When pipeline run completes, you should now see `dfp-viz-duo-2022-08-30.csv` and `dfp-viz-duo-2022-08-31.csv` in your current directory. These files can be used as input to the DFP Viz UI.
+When pipeline run completes, you should now see `dfp-viz-duo-2022-08-30.csv` and `dfp-viz-duo-2022-08-31.csv` in the  `duo-dfp-output` directory. These files can be used as input to the DFP Viz UI.
 
 ## Install DFP Visualization App
 
@@ -155,7 +155,7 @@ yarn
 ```
 
 ### Configure `dataset_path`
-Open the `.env` file, and set `dataset_path` to directory where input files will be read from. For this example, we'll set it to directory that contains our Azure DFP output file:
+Open the `.env` file and set `dataset_path` to directory where input files will be read from. For this example, we'll set it to directory that contains our Azure DFP output files:
 ```
 dataset_path=/workspace/examples/digital_fingerprinting/visualization/azure-dfp-output
 ```
