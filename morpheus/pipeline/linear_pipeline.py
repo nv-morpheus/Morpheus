@@ -103,6 +103,34 @@ class LinearPipeline(_pipeline.Pipeline):
         self._linear_stages.append(stage)
 
     def add_segment_boundary(self, data_type=None, as_shared_pointer=False):
+        """
+        Parameters
+        ----------
+        data_type : `data_type`
+            data type that will be passed across the segment boundary, defaults to a general python object
+            if 'data_type' has no registered edge adapters.
+
+        as_shared_pointer : `boolean`
+            Whether the data type will be wrapped in a shared pointer.
+
+        Example
+        -------
+            # Create a config and pipeline
+            config = Config()
+            pipe = LinearPipeline(config)
+
+            # Add a source in Segment #1
+            pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
+
+            # Add a segment boundary
+            # [Current Segment] - [Egress Boundary] ---- [Ingress Boundary] - [Next Segment]
+            pipe.add_segment_boundary(MessageMeta)
+
+            # Add a sink in Segment #2
+            pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+
+            pipe.run()
+        """
         if (len(self._linear_stages) == 0):
             raise RuntimeError("Cannot create a segment boundary, current segment is empty.")
 
