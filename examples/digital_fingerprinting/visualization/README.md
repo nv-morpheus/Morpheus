@@ -159,4 +159,4 @@ yarn dev
 
 The DFP Visualization app can now be accessed via web browser at http://localhost:3000.
 
-<img src="./img/screenshot.png" width=75% height=75%>
+<img src="./img/screenshot.png">
