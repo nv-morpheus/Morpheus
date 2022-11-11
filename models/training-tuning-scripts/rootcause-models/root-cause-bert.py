@@ -34,7 +34,7 @@ def train(trainingdata, unseenerrors):
     """This function splits the data and appends the new errors
     to test set. After running the training it prints the
     evaluation scores."""
-    
+
     # setting a random seed
 
     random_seed = 42
