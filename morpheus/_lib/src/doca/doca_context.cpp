@@ -64,7 +64,7 @@ static doca_error_t get_dpdk_port_id_doca_dev(struct doca_dev *dev_input, uint16
 }
 
 doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
-  _max_queue_count(4)
+  _max_queue_count(1)
 {
     char* nic_addr_c = new char[nic_addr.size() + 1];
     char* gpu_addr_c = new char[gpu_addr.size() + 1];
@@ -120,7 +120,7 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
     auto eal_ret = rte_eal_init(argv.size(), argv.data());
     if (eal_ret < 0) {
       throw std::runtime_error(
-        "EAL initialization failed: " + std::to_string(eal_ret)
+        "DPDK initialization failed: " + std::to_string(eal_ret)
       );
     }
 
@@ -151,7 +151,7 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
     auto dpdk_config = [](){
       application_dpdk_config dpdk_config;
       dpdk_config.port_config.nb_ports = 1;
-      dpdk_config.port_config.nb_queues = 0;
+      dpdk_config.port_config.nb_queues = 1;
       dpdk_config.port_config.nb_hairpin_q = 0;
       dpdk_config.reserve_main_thread = true;
       return dpdk_config;

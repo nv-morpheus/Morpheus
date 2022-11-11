@@ -446,13 +446,13 @@ __global__ void _packet_gather_kernel(
 
       auto total_length = BYTE_SWAP16(packet_l3->total_length);
 
-      packet_length_out[total_length] = total_length;
+      auto packet_out_idx = packet_offset + packet_idx;
+
+      packet_length_out[packet_out_idx] = total_length;
 
       // mac address printing works
       auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
       auto dst_mac = packet_l2->d_addr.addr_bytes; // 6 bytes
-
-      auto packet_out_idx = packet_offset + packet_idx;
 
       src_mac_out[packet_out_idx] = mac_bytes_to_int64(src_mac);
       dst_mac_out[packet_out_idx] = mac_bytes_to_int64(dst_mac);

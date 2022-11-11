@@ -329,7 +329,7 @@ allocate_mempool(const uint32_t total_nb_mbufs, struct rte_mempool **mbuf_pool)
 	*mbuf_pool = rte_pktmbuf_pool_create("MBUF_POOL", total_nb_mbufs, MBUF_CACHE_SIZE, 0,
 					    RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
 	if (*mbuf_pool == NULL) {
-		DOCA_LOG_ERR("Cannot allocate mbuf pool: %s", rte_strerror(rte_errno));
+		DOCA_LOG_ERR("Cannot allocate mbuf pool (%d, %d): %s", total_nb_mbufs, rte_socket_id(), rte_strerror(rte_errno));
 		return DOCA_ERROR_DRIVER;
 	}
 	return DOCA_SUCCESS;

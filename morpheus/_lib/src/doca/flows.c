@@ -12,6 +12,7 @@
  */
 
 #include "morpheus/doca/common.h"
+// #include <
 
 DOCA_LOG_REGISTER(GPU_FLOWS);
 
@@ -33,7 +34,19 @@ init_doca_flow(uint8_t port_id, uint8_t rxq_num, struct application_dpdk_config 
 	 * DPDK should be initialized before DOCA Flow.
 	 * Default RSS is not applied to external DPDK RxQs
 	 */
-	dpdk_queues_and_ports_init(dpdk_config);
+	// dpdk_queues_and_ports_init(dpdk_config);
+
+    struct rte_eth_dev_info dev_info = {0};
+    rte_eth_dev_info_get(port_id, &dev_info);
+    struct rte_eth_conf eth_conf = {0};
+    auto ret_0 = rte_eth_dev_configure(port_id, 1, 0, &eth_conf);
+    rte_eth_dev_set_mtu(port_id, 8192);
+
+    struct rte_mempool* mp = rte_pktmbuf_pool_create("TEST", 8192, 0, 0, 2048, rte_eth_dev_socket_id(port_id));
+    auto ret_1 = rte_eth_rx_queue_setup(port_id, 0, 2048, rte_eth_dev_socket_id(port_id), NULL, mp);
+
+    rte_eth_dev_start(port_id);
+
 
 	/* Initialize doca flow framework */
 	rxq_flow_cfg.queues = rxq_num;
