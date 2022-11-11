@@ -16,14 +16,14 @@
 """
 Example Usage:
 python abp-nvsmi-xgb-20210310.py \
-       --training-data \
+       --trainingdata \
        ../../datasets/training-data/abp-sample-nvsmi-training-data.json \
 """
 
 import argparse
 import xgboost as xgb
 import cudf
-from cuml.preprocessing.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
 
 
 def preprocess(trainingdata):
