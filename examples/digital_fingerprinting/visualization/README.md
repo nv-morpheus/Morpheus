@@ -14,7 +14,7 @@
 # limitations under the License.
 -->
 
-# Digital Fingerprinting (DFP) Visualization Pipeline
+# Digital Fingerprinting (DFP) Visualization Example
 
 We show here how to set up and run the Production DFP pipeline on Azure and Duo log data to generate input files for the DFP visualization UI. You can find more information about the Production DFP pipeline in this [README](../production/README.md) and the [DFP Developer Guide](../../../docs/source/developer_guide/guides/5_digital_fingerprinting.md).
 
@@ -109,11 +109,7 @@ When pipeline run completes, you should now see `dfp-viz-azure-2022-08-30.csv` a
 
 ### Duo
 
-```
-cd /workspace/examples/digital_fingerprinting/visualization
-```
-
-Train DFP user models using Duo log files in `/workspace/examples/data/dfp/duo-training-data` and save them to MLflow.
+Train:
 ```
 python dfp_viz_duo_pipeline.py \
     --train_users=all \
@@ -121,9 +117,7 @@ python dfp_viz_duo_pipeline.py \
     --start_time=2022-08-01 \
     --input_file=/workspace/examples/data/dfp/duo-training-data/DUO_2022-08-*.json
 ```
-**Note:** Since models are persisted to a Docker volume, the above command only needs to be run once even if the `mlflow` service is restarted.
-
-Run inference with DFP viz postprocessing using Duo log files in `/workspace/examples/data/dfp/duo-inference-data` to generate input files for Duo DFP visualization:
+Inference:
 ```
 python dfp_viz_duo_pipeline.py \
     --train_users=none \
@@ -132,8 +126,6 @@ python dfp_viz_duo_pipeline.py \
     --input_file=/workspace/examples/data/dfp/duo-inference-data/DUO_2022-08-*.json \
     --output_dir=./duo-dfp-output
 ```
-
-When pipeline run completes, you should now see `dfp-viz-duo-2022-08-30.csv` and `dfp-viz-duo-2022-08-31.csv` in the  `duo-dfp-output` directory. These files can be used as input to the DFP Viz UI.
 
 ## Install DFP Visualization App
 
@@ -166,3 +158,5 @@ yarn dev
 ```
 
 The DFP Visualization app can now be accessed via web browser at http://localhost:3000.
+
+<img src="./img/screenshot.png" width=75% height=75%>
