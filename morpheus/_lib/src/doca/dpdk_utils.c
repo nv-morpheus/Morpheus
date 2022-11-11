@@ -18,7 +18,6 @@
 #include <doca_log.h>
 
 #include "morpheus/doca/dpdk_utils.h"
-#include "morpheus/doca/utils.h"
 
 #ifdef GPU_SUPPORT
 #include "morpheus/doca/gpu_init.h"
@@ -36,64 +35,102 @@ DOCA_LOG_REGISTER(NUTILS);
 	addr[8],  addr[9], addr[10], addr[11], addr[12], addr[13], addr[14], addr[15]
 #endif
 
-
-static int
+/*
+ * Bind port to all the peer ports
+ *
+ * @port_id [in]: port ID
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
 bind_hairpin_queues(uint16_t port_id)
 {
-	/* Configure the Rx and Tx hairpin queues for the selected port. */
-	int ret = 0, peer_port, peer_ports_len;
+	/* Configure the Rx and Tx hairpin queues for the selected port */
+	int result = 0, peer_port, peer_ports_len;
 	uint16_t peer_ports[RTE_MAX_ETHPORTS];
 
 	/* bind current Tx to all peer Rx */
 	peer_ports_len = rte_eth_hairpin_get_peer_ports(port_id, peer_ports, RTE_MAX_ETHPORTS, 1);
-	if (peer_ports_len < 0)
-		return peer_ports_len;
+	if (peer_ports_len < 0) {
+		DOCA_LOG_ERR("Failed to get hairpin peer Rx ports of port %d, (%d)", port_id, peer_ports_len);
+		return DOCA_ERROR_DRIVER;
+	}
 	for (peer_port = 0; peer_port < peer_ports_len; peer_port++) {
-		ret = rte_eth_hairpin_bind(port_id, peer_ports[peer_port]);
-		if (ret < 0)
-			return ret;
+		result = rte_eth_hairpin_bind(port_id, peer_ports[peer_port]);
+		if (result < 0) {
+			DOCA_LOG_ERR("Failed to bind hairpin queues (%d)", result);
+			return DOCA_ERROR_DRIVER;
+		}
 	}
 	/* bind all peer Tx to current Rx */
 	peer_ports_len = rte_eth_hairpin_get_peer_ports(port_id, peer_ports, RTE_MAX_ETHPORTS, 0);
-	if (peer_ports_len < 0)
-		return peer_ports_len;
-	for (peer_port = 0; peer_port < peer_ports_len; peer_port++) {
-		ret = rte_eth_hairpin_bind(peer_ports[peer_port], port_id);
-		if (ret < 0)
-			return ret;
+	if (peer_ports_len < 0) {
+		DOCA_LOG_ERR("Failed to get hairpin peer Tx ports of port %d, (%d)", port_id, peer_ports_len);
+		return DOCA_ERROR_DRIVER;
 	}
-	return ret;
+
+	for (peer_port = 0; peer_port < peer_ports_len; peer_port++) {
+		result = rte_eth_hairpin_bind(peer_ports[peer_port], port_id);
+		if (result < 0) {
+			DOCA_LOG_ERR("Failed to bind hairpin queues (%d)", result);
+			return DOCA_ERROR_DRIVER;
+		}
+	}
+	return DOCA_SUCCESS;
 }
 
-static int
+/*
+ * Unbind port from all its peer ports
+ *
+ * @port_id [in]: port ID
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
 unbind_hairpin_queues(uint16_t port_id)
 {
-	/* Configure the Rx and Tx hairpin queues for the selected port. */
-	int ret = 0, peer_port, peer_ports_len;
+	/* Configure the Rx and Tx hairpin queues for the selected port */
+	int result = 0, peer_port, peer_ports_len;
 	uint16_t peer_ports[RTE_MAX_ETHPORTS];
 
 	/* unbind current Tx from all peer Rx */
 	peer_ports_len = rte_eth_hairpin_get_peer_ports(port_id, peer_ports, RTE_MAX_ETHPORTS, 1);
-	if (peer_ports_len < 0)
-		return peer_ports_len;
+	if (peer_ports_len < 0) {
+		DOCA_LOG_ERR("Failed to get hairpin peer Tx ports of port %d, (%d)", port_id, peer_ports_len);
+		return DOCA_ERROR_DRIVER;
+	}
+
 	for (peer_port = 0; peer_port < peer_ports_len; peer_port++) {
-		ret = rte_eth_hairpin_unbind(port_id, peer_ports[peer_port]);
-		if (ret < 0)
-			return ret;
+		result = rte_eth_hairpin_unbind(port_id, peer_ports[peer_port]);
+		if (result < 0) {
+			DOCA_LOG_ERR("Failed to bind hairpin queues (%d)", result);
+			return DOCA_ERROR_DRIVER;
+		}
 	}
 	/* unbind all peer Tx from current Rx */
 	peer_ports_len = rte_eth_hairpin_get_peer_ports(port_id, peer_ports, RTE_MAX_ETHPORTS, 0);
-	if (peer_ports_len < 0)
-		return peer_ports_len;
-	for (peer_port = 0; peer_port < peer_ports_len; peer_port++) {
-		ret = rte_eth_hairpin_unbind(peer_ports[peer_port], port_id);
-		if (ret < 0)
-			return ret;
+	if (peer_ports_len < 0) {
+		DOCA_LOG_ERR("Failed to get hairpin peer Tx ports of port %d, (%d)", port_id, peer_ports_len);
+		return DOCA_ERROR_DRIVER;
 	}
-	return ret;
+	for (peer_port = 0; peer_port < peer_ports_len; peer_port++) {
+		result = rte_eth_hairpin_unbind(peer_ports[peer_port], port_id);
+		if (result < 0) {
+			DOCA_LOG_ERR("Failed to bind hairpin queues (%d)", result);
+			return DOCA_ERROR_DRIVER;
+		}
+	}
+	return DOCA_SUCCESS;
 }
 
-static int
+/*
+ * Set up all hairpin queues
+ *
+ * @port_id [in]: port ID
+ * @peer_port_id [in]: peer port ID
+ * @reserved_hairpin_q_list [in]: list of hairpin queues index
+ * @hairpin_queue_len [in]: length of reserved_hairpin_q_list
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
 setup_hairpin_queues(uint16_t port_id, uint16_t peer_port_id, uint16_t *reserved_hairpin_q_list, int hairpin_queue_len)
 {
 	/* Port:
@@ -102,7 +139,7 @@ setup_hairpin_queues(uint16_t port_id, uint16_t peer_port_id, uint16_t *reserved
 	 *	2. TX hairpin queue rte_eth_tx_hairpin_queue_setup
 	 */
 
-	int ret = 0, hairpin_q;
+	int result = 0, hairpin_q;
 	uint16_t nb_tx_rx_desc = 2048;
 	uint32_t manual = 1;
 	uint32_t tx_exp = 1;
@@ -116,33 +153,87 @@ setup_hairpin_queues(uint16_t port_id, uint16_t peer_port_id, uint16_t *reserved
 	for (hairpin_q = 0; hairpin_q < hairpin_queue_len; hairpin_q++) {
 		// TX
 		hairpin_conf.peers[0].queue = reserved_hairpin_q_list[hairpin_q];
-		ret = rte_eth_tx_hairpin_queue_setup(port_id, reserved_hairpin_q_list[hairpin_q], nb_tx_rx_desc,
+		result = rte_eth_tx_hairpin_queue_setup(port_id, reserved_hairpin_q_list[hairpin_q], nb_tx_rx_desc,
 						     &hairpin_conf);
-		if (ret != 0)
-			return ret;
+		if (result < 0) {
+			DOCA_LOG_ERR("Failed to setup hairpin queues (%d)", result);
+			return DOCA_ERROR_DRIVER;
+		}
+
 		// RX
 		hairpin_conf.peers[0].queue = reserved_hairpin_q_list[hairpin_q];
-		ret = rte_eth_rx_hairpin_queue_setup(port_id, reserved_hairpin_q_list[hairpin_q], nb_tx_rx_desc,
+		result = rte_eth_rx_hairpin_queue_setup(port_id, reserved_hairpin_q_list[hairpin_q], nb_tx_rx_desc,
 						     &hairpin_conf);
-		if (ret != 0)
-			return ret;
+		if (result < 0) {
+			DOCA_LOG_ERR("Failed to setup hairpin queues (%d)", result);
+			return DOCA_ERROR_DRIVER;
+		}
 	}
-	return ret;
+	return DOCA_SUCCESS;
 }
 
+/*
+ * Unbind hairpin queues from all ports
+ *
+ * @nb_ports [in]: number of ports
+ */
 static void
+disable_hairpin_queues(uint16_t nb_ports)
+{
+	doca_error_t result;
+	uint16_t port_id;
+
+	for (port_id = 0; port_id < nb_ports; port_id++) {
+		if (!rte_eth_dev_is_valid_port(port_id))
+			continue;
+		result = unbind_hairpin_queues(port_id);
+		if (result != DOCA_SUCCESS)
+			DOCA_LOG_ERR("Disabling hairpin queues failed: err=%d, port=%u", result, port_id);
+	}
+}
+
+/*
+ * Bind hairpin queues to all ports
+ *
+ * @nb_ports [in]: number of ports
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
 enable_hairpin_queues(uint8_t nb_ports)
 {
-	uint8_t port_id;
+	uint16_t port_id;
+	uint16_t n = 0;
+	doca_error_t result;
 
-	for (port_id = 0; port_id < nb_ports; port_id++)
-		if (bind_hairpin_queues(port_id) != 0)
-			APP_EXIT("Hairpin bind failed on port=%u", port_id);
+	for (port_id = 0; port_id < RTE_MAX_ETHPORTS; port_id++) {
+		if (!rte_eth_dev_is_valid_port(port_id))
+			/* the device ID  might not be contiguous */
+			continue;
+		result = bind_hairpin_queues(port_id);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Hairpin bind failed on port=%u", port_id);
+			disable_hairpin_queues(port_id);
+			return result;
+		}
+		if (++n >= nb_ports)
+			break;
+	}
+	return DOCA_SUCCESS;
 }
 
+/*
+ * Update rss action
+ *
+ * @queue_list [in]: queue indices to use
+ * @nb_queues [in]: number of queues
+ * @rss_conf [in]: rte_eth_rss_conf struct
+ * @hash_func [in]: RSS hash function to apply
+ * @level [in]: packet encapsulation level RSS hash types apply to
+ * @action_rss [out]: updated rte_flow_action_rss struct
+ */
 static void
-update_flow_action_rss(struct rte_flow_action_rss *action_rss, const uint16_t *queue_list, uint8_t nb_queues,
-		       const struct rte_eth_rss_conf *rss_conf, enum rte_eth_hash_function hash_func, uint32_t level)
+update_flow_action_rss(const uint16_t *queue_list, uint8_t nb_queues, const struct rte_eth_rss_conf *rss_conf,
+		       enum rte_eth_hash_function hash_func, uint32_t level, struct rte_flow_action_rss *action_rss)
 {
 	action_rss->queue_num = nb_queues;
 	action_rss->queue = queue_list;
@@ -153,9 +244,16 @@ update_flow_action_rss(struct rte_flow_action_rss *action_rss, const uint16_t *q
 	action_rss->level = level;
 }
 
-static void
+/*
+ * Initialize DPDK SFT offload rule
+ *
+ * @app_dpdk_config [in]: application DPDK configuration values
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
 dpdk_sft_init(const struct application_dpdk_config *app_dpdk_config)
 {
+	doca_error_t result;
 	int ret = 0;
 	uint8_t port_id = 0;
 	uint8_t queue_index;
@@ -184,44 +282,104 @@ dpdk_sft_init(const struct application_dpdk_config *app_dpdk_config)
 	};
 
 	ret = rte_sft_init(&sft_config, &sft_error);
-	if (ret < 0)
-		APP_EXIT("SFT init failed");
+	if (ret < 0) {
+		DOCA_LOG_ERR("SFT init failed, ret=%d", ret);
+		return DOCA_ERROR_DRIVER;
+	}
 
 	ret = rte_eth_dev_rss_hash_conf_get(port_id, &rss_conf);
-	if (ret != 0)
-		APP_EXIT("Get port RSS configuration failed, ret=%d", ret);
+	if (ret < 0) {
+		DOCA_LOG_ERR("Get port RSS configuration failed, ret=%d", ret);
+		ret = rte_sft_fini(&sft_error);
+		if (ret < 0)
+			DOCA_LOG_ERR("SFT fini failed, error=%d", ret);
+		return DOCA_ERROR_DRIVER;
+	}
 
 	for (queue_index = 0; queue_index < nb_queues; queue_index++)
 		queue_list[queue_index] = queue_index;
 	if (sft_config.ipfrag_enable)
 		rss_conf.rss_hf = ETH_RSS_IP;
-	update_flow_action_rss(&action_rss, queue_list, nb_queues, &rss_conf, RTE_ETH_HASH_FUNCTION_DEFAULT, level);
+	update_flow_action_rss(queue_list, nb_queues, &rss_conf, RTE_ETH_HASH_FUNCTION_DEFAULT, level, &action_rss);
 
 	for (queue_index = 0; queue_index < nb_hairpin_q; queue_index++)
 		hairpin_queue_list[queue_index] = nb_queues + queue_index;
-	update_flow_action_rss(&action_rss_hairpin, hairpin_queue_list, nb_hairpin_q, &rss_conf,
-			       RTE_ETH_HASH_FUNCTION_DEFAULT, level);
+	update_flow_action_rss(hairpin_queue_list, nb_hairpin_q, &rss_conf,
+			       RTE_ETH_HASH_FUNCTION_DEFAULT, level, &action_rss_hairpin);
 
-	create_rules_sft_offload(app_dpdk_config, &action_rss, &action_rss_hairpin);
+	result = create_rules_sft_offload(app_dpdk_config, &action_rss, &action_rss_hairpin);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create SFT offload rule");
+		return result;
+	}
 
+	return DOCA_SUCCESS;
 }
 
-static struct rte_mempool *
-allocate_mempool(const uint32_t total_nb_mbufs)
+/*
+ * Creates a new mempool in memory to hold the mbufs
+ *
+ * @total_nb_mbufs [in]: the number of elements in the mbuf pool
+ * @mbuf_pool [out]: the allocated pool
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+allocate_mempool(const uint32_t total_nb_mbufs, struct rte_mempool **mbuf_pool)
 {
-	struct rte_mempool *mbuf_pool;
-	/* Creates a new mempool in memory to hold the mbufs */
-	mbuf_pool = rte_pktmbuf_pool_create("MBUF_POOL", total_nb_mbufs, MBUF_CACHE_SIZE, 0,
+	*mbuf_pool = rte_pktmbuf_pool_create("MBUF_POOL", total_nb_mbufs, MBUF_CACHE_SIZE, 0,
 					    RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
-	if (mbuf_pool == NULL)
-		APP_EXIT("Cannot allocate mbuf pool");
-	return mbuf_pool;
+	if (*mbuf_pool == NULL) {
+		DOCA_LOG_ERR("Cannot allocate mbuf pool: %s", rte_strerror(rte_errno));
+		return DOCA_ERROR_DRIVER;
+	}
+	return DOCA_SUCCESS;
 }
 
-static int
+#ifdef GPU_SUPPORT
+/*
+ * Unmap GPU resources
+ *
+ * @app_dpdk_config [in]: application DPDK configuration values
+ */
+static void
+dpdk_gpu_unmap(struct application_dpdk_config *app_dpdk_config)
+{
+	int result = 0;
+	uint16_t port_id;
+	uint16_t n;
+
+	for (port_id = 0, n = 0; port_id < RTE_MAX_ETHPORTS; port_id++) {
+		if (!rte_eth_dev_is_valid_port(port_id))
+			continue;
+		struct rte_eth_dev_info dev_info;
+		struct rte_pktmbuf_extmem *ext_mem = &app_dpdk_config->pipe.ext_mem;
+
+		result = rte_eth_dev_info_get(port_id, &dev_info);
+		if (result != 0)
+			DOCA_LOG_ERR("Failed getting device (port %u) info, error=%s", port_id, strerror(-result));
+
+		result = rte_dev_dma_unmap(dev_info.device, ext_mem->buf_ptr, ext_mem->buf_iova, ext_mem->buf_len);
+		if (result != 0)
+			DOCA_LOG_ERR("Could not DMA unmap EXT memory");
+		if (++n >= app_dpdk_config->port_config.nb_ports)
+			break;
+	}
+}
+#endif
+
+/*
+ * Initialize all the port resources
+ *
+ * @mbuf_pool [in]: packet mbuf pool
+ * @port [in]: the port ID
+ * @app_config [in]: application DPDK configuration values
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
 port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct application_dpdk_config *app_config)
 {
-	int ret;
+	doca_error_t result;
+	int ret = 0;
 	int symmetric_hash_key_length = RSS_KEY_LEN;
 	const uint16_t nb_hairpin_queues = app_config->port_config.nb_hairpin_q;
 	const uint16_t rx_rings = app_config->port_config.nb_queues;
@@ -254,11 +412,11 @@ port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct application_dpdk_c
 	};
 	struct rte_eth_conf port_conf = port_conf_default;
 
-	if (!rte_eth_dev_is_valid_port(port))
-		APP_EXIT("Invalid port");
 	ret = rte_eth_dev_info_get(port, &dev_info);
-	if (ret != 0)
-		APP_EXIT("Failed getting device (port %u) info, error=%s", port, strerror(-ret));
+	if (ret < 0) {
+		DOCA_LOG_ERR("Failed getting device (port %u) info, error=%s", port, strerror(-ret));
+		return DOCA_ERROR_DRIVER;
+	}
 	port_conf.rxmode.mq_mode = rss_support ? ETH_MQ_RX_RSS : ETH_MQ_RX_NONE;
 
 #ifdef GPU_SUPPORT
@@ -268,14 +426,18 @@ port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct application_dpdk_c
 		/* Mapped the memory region to the devices (ports) */
 		DOCA_LOG_DBG("GPU Support, DMA map to GPU");
 		ret = rte_dev_dma_map(dev_info.device, ext_mem->buf_ptr, ext_mem->buf_iova, ext_mem->buf_len);
-		if (ret)
-			APP_EXIT("Could not DMA map EXT memory\n");
+		if (ret < 0) {
+			DOCA_LOG_ERR("Could not DMA map EXT memory - (%d)", ret);
+			return DOCA_ERROR_DRIVER;
+		}
 	}
 #endif
 	/* Configure the Ethernet device */
 	ret = rte_eth_dev_configure(port, rx_rings + nb_hairpin_queues, tx_rings + nb_hairpin_queues, &port_conf);
-	if (ret != 0)
-		return ret;
+	if (ret < 0) {
+		DOCA_LOG_ERR("Failed to configure the ethernet device - (%d)", ret);
+		return DOCA_ERROR_DRIVER;
+	}
 	if (port_conf_default.rx_adv_conf.rss_conf.rss_hf != port_conf.rx_adv_conf.rss_conf.rss_hf) {
 		DOCA_LOG_DBG("Port %u modified RSS hash function based on hardware support, requested:%#" PRIx64
 			     " configured:%#" PRIx64 "",
@@ -285,47 +447,60 @@ port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct application_dpdk_c
 
 	/* Enable RX in promiscuous mode for the Ethernet device */
 	ret = rte_eth_promiscuous_enable(port);
-	if (ret != 0)
-		return ret;
+	if (ret < 0) {
+		DOCA_LOG_ERR("Failed to Enable RX in promiscuous mode - (%d)", ret);
+		return DOCA_ERROR_DRIVER;
+	}
 
 	/* Allocate and set up RX queues according to number of cores per Ethernet port */
 	for (q = 0; q < rx_rings; q++) {
 		ret = rte_eth_rx_queue_setup(port, q, RX_RING_SIZE, rte_eth_dev_socket_id(port), NULL, mbuf_pool);
-		if (ret < 0)
-			return ret;
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to set up RX queues - (%d)", ret);
+			return DOCA_ERROR_DRIVER;
+		}
 	}
 
 	/* Allocate and set up TX queues according to number of cores per Ethernet port */
 	for (q = 0; q < tx_rings; q++) {
 		ret = rte_eth_tx_queue_setup(port, q, TX_RING_SIZE, rte_eth_dev_socket_id(port), NULL);
-		if (ret < 0)
-			return ret;
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to set up TX queues - (%d)", ret);
+			return DOCA_ERROR_DRIVER;
+		}
 	}
 
 	/* Enabled hairpin queue before port start */
 	if (nb_hairpin_queues) {
 		for (queue_index = 0; queue_index < nb_hairpin_queues; queue_index++)
 			rss_queue_list[queue_index] = app_config->port_config.nb_queues + queue_index;
-		ret = setup_hairpin_queues(port, port ^ 1, rss_queue_list, nb_hairpin_queues);
-		if (ret != 0)
-			APP_EXIT("Cannot hairpin port %" PRIu8 ", ret=%d", port, ret);
+		if (rte_eth_dev_is_valid_port(port ^ 1))
+			result = setup_hairpin_queues(port, port ^ 1, rss_queue_list, nb_hairpin_queues);
+		else
+			result = setup_hairpin_queues(port, port, rss_queue_list, nb_hairpin_queues);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Cannot hairpin port %" PRIu8 ", ret=%d", port, result);
+			return result;
+		}
 	}
 
 	/* Set isolated mode (true or false) before port start */
 	ret = rte_flow_isolate(port, isolated, &error);
-	if (ret) {
-		DOCA_LOG_DBG("Port %u could not be set isolated mode to %s (%s)",
+	if (ret < 0) {
+		DOCA_LOG_ERR("Port %u could not be set isolated mode to %s (%s)",
 			     port, isolated ? "true" : "false", error.message);
-		return ret;
+		return DOCA_ERROR_DRIVER;
 	}
 	if (isolated)
-		DOCA_LOG_INFO("Ingress traffic on port %u is in isolated mode\n",
+		DOCA_LOG_INFO("Ingress traffic on port %u is in isolated mode",
 			      port);
 
 	/* Start the Ethernet port */
 	ret = rte_eth_dev_start(port);
-	if (ret < 0)
-		return ret;
+	if (ret < 0) {
+		DOCA_LOG_ERR("Cannot start port %" PRIu8 ", ret=%d", port, ret);
+		return DOCA_ERROR_DRIVER;
+	}
 
 	/* Display the port MAC address */
 	rte_eth_macaddr_get(port, &addr);
@@ -341,56 +516,114 @@ port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct application_dpdk_c
 		DOCA_LOG_WARN("Port %u is on remote NUMA node to polling thread", port);
 		DOCA_LOG_WARN("\tPerformance will not be optimal.");
 	}
-	return ret;
+	return DOCA_SUCCESS;
 }
 
-static int
+/*
+ * Destroy all DPDK ports
+ *
+ * @app_dpdk_config [in]: application DPDK configuration values
+ * @nb_ports [in]: number of ports to destroy
+ */
+static void
+dpdk_ports_fini(struct application_dpdk_config *app_dpdk_config, uint16_t nb_ports)
+{
+	int result;
+	uint16_t port_id;
+	uint16_t n;
+
+	for (port_id = 0, n = 0; port_id < nb_ports; port_id++) {
+		if (!rte_eth_dev_is_valid_port(port_id))
+			continue;
+		result = rte_eth_dev_stop(port_id);
+		if (result != 0)
+			DOCA_LOG_ERR("rte_eth_dev_stop(): err=%d, port=%u", result, port_id);
+
+		result = rte_eth_dev_close(port_id);
+		if (result != 0)
+			DOCA_LOG_ERR("rte_eth_dev_close(): err=%d, port=%u", result, port_id);
+		if (++n >= app_dpdk_config->port_config.nb_ports)
+			break;
+	}
+}
+
+/*
+ * Initialize all DPDK ports
+ *
+ * @app_config [in]: application DPDK configuration values
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
 dpdk_ports_init(struct application_dpdk_config *app_config)
 {
+	doca_error_t result;
 	int ret;
-	uint8_t port_id;
-	const uint8_t nb_ports = app_config->port_config.nb_ports;
+	uint16_t port_id;
+	uint16_t n;
+	const uint16_t nb_ports = app_config->port_config.nb_ports;
 	const uint32_t total_nb_mbufs = app_config->port_config.nb_queues * nb_ports * NUM_MBUFS;
 	struct rte_mempool *mbuf_pool;
 
 	/* Initialize mbufs mempool */
 #ifdef GPU_SUPPORT
 	if (app_config->pipe.gpu_support)
-		mbuf_pool = allocate_mempool_gpu(&app_config->pipe, total_nb_mbufs);
+		result = allocate_mempool_gpu(total_nb_mbufs, &app_config->pipe, &mbuf_pool);
 	else
-		mbuf_pool = allocate_mempool(total_nb_mbufs);
+		result = allocate_mempool(total_nb_mbufs, &mbuf_pool);
 #else
-	mbuf_pool = allocate_mempool(total_nb_mbufs);
+	result = allocate_mempool(total_nb_mbufs, &mbuf_pool);
 #endif
+	if (result != DOCA_SUCCESS)
+		return result;
+
 	/* Needed by SFT to mark packets */
 	ret = rte_flow_dynf_metadata_register();
-	if (ret < 0)
-		APP_EXIT("Metadata register failed");
+	if (ret < 0) {
+		DOCA_LOG_ERR("Metadata register failed, ret=%d", ret);
+		return DOCA_ERROR_DRIVER;
+	}
 
-	for (port_id = 0; port_id < nb_ports; port_id++)
-		if (port_init(mbuf_pool, port_id, app_config) != 0)
-			APP_EXIT("Cannot init port %" PRIu8, port_id);
-	return ret;
+	for (port_id = 0, n = 0; port_id < RTE_MAX_ETHPORTS; port_id++) {
+		if (!rte_eth_dev_is_valid_port(port_id))
+			continue;
+		result = port_init(mbuf_pool, port_id, app_config);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Cannot init port %" PRIu8, port_id);
+			dpdk_ports_fini(app_config, port_id);
+#ifdef GPU_SUPPORT
+			if (app_config->pipe.gpu_support)
+				dpdk_gpu_unmap(app_config);
+#endif
+			return result;
+		}
+		if (++n >= nb_ports)
+			break;
+	}
+	return DOCA_SUCCESS;
 }
 
-void
+doca_error_t
 dpdk_queues_and_ports_init(struct application_dpdk_config *app_dpdk_config)
 {
+	doca_error_t result;
 	int ret = 0;
 
 	/* Check that DPDK enabled the required ports to send/receive on */
 	ret = rte_eth_dev_count_avail();
-	if (app_dpdk_config->port_config.nb_ports > 0 && ret != app_dpdk_config->port_config.nb_ports)
-		APP_EXIT("Application will only function with %u ports, num_of_ports=%d",
+	if (app_dpdk_config->port_config.nb_ports > 0 && ret < app_dpdk_config->port_config.nb_ports) {
+		DOCA_LOG_ERR("Application will only function with %u ports, num_of_ports=%d",
 			 app_dpdk_config->port_config.nb_ports, ret);
+		return DOCA_ERROR_DRIVER;
+	}
 
 	/* Check for available logical cores */
 	ret = rte_lcore_count();
-	if (app_dpdk_config->port_config.nb_queues > 0 && ret < app_dpdk_config->port_config.nb_queues)
-		APP_EXIT("At least %u cores are needed for the application to run, available_cores=%d",
+	if (app_dpdk_config->port_config.nb_queues > 0 && ret < app_dpdk_config->port_config.nb_queues) {
+		DOCA_LOG_ERR("At least %u cores are needed for the application to run, available_cores=%d",
 			 app_dpdk_config->port_config.nb_queues, ret);
-	else
-		app_dpdk_config->port_config.nb_queues = ret;
+		return DOCA_ERROR_DRIVER;
+	}
+	app_dpdk_config->port_config.nb_queues = ret;
 
 	if (app_dpdk_config->reserve_main_thread)
 		app_dpdk_config->port_config.nb_queues -= 1;
@@ -402,22 +635,49 @@ dpdk_queues_and_ports_init(struct application_dpdk_config *app_dpdk_config)
 	}
 #endif
 
-	if (app_dpdk_config->port_config.nb_ports > 0 && dpdk_ports_init(app_dpdk_config) != 0)
-		APP_EXIT("Ports allocation failed");
+	if (app_dpdk_config->port_config.nb_ports > 0) {
+		result = dpdk_ports_init(app_dpdk_config);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Ports allocation failed");
+			goto gpu_cleanup;
+		}
+	}
 
 	/* Enable hairpin queues */
-	if (app_dpdk_config->port_config.nb_hairpin_q > 0)
-		enable_hairpin_queues(app_dpdk_config->port_config.nb_ports);
+	if (app_dpdk_config->port_config.nb_hairpin_q > 0) {
+		result = enable_hairpin_queues(app_dpdk_config->port_config.nb_ports);
+		if (result != DOCA_SUCCESS)
+			goto ports_cleanup;
+	}
 
-	if (app_dpdk_config->sft_config.enable)
-		dpdk_sft_init(app_dpdk_config);
+	if (app_dpdk_config->sft_config.enable) {
+		result = dpdk_sft_init(app_dpdk_config);
+		if (result != DOCA_SUCCESS)
+			goto hairpin_queues_cleanup;
+	}
+
+	return DOCA_SUCCESS;
+
+hairpin_queues_cleanup:
+	disable_hairpin_queues(RTE_MAX_ETHPORTS);
+ports_cleanup:
+	dpdk_ports_fini(app_dpdk_config, RTE_MAX_ETHPORTS);
+#ifdef GPU_SUPPORT
+	if (app_dpdk_config->pipe.gpu_support)
+		dpdk_gpu_unmap(app_dpdk_config);
+#endif
+gpu_cleanup:
+#ifdef GPU_SUPPORT
+	if (app_dpdk_config->pipe.gpu_support)
+		gpu_fini(&(app_dpdk_config->pipe));
+#endif
+	return result;
 }
 
 void
 dpdk_queues_and_ports_fini(struct application_dpdk_config *app_dpdk_config)
 {
-	int ret = 0;
-	uint16_t port_id;
+	int result = 0;
 	struct rte_sft_error sft_error;
 #ifdef GPU_SUPPORT
 	if (app_dpdk_config->pipe.gpu_support) {
@@ -428,41 +688,28 @@ dpdk_queues_and_ports_fini(struct application_dpdk_config *app_dpdk_config)
 
 	if (app_dpdk_config->sft_config.enable) {
 		print_offload_rules_counter();
-		ret = rte_sft_fini(&sft_error);
-		if (ret < 0)
-			DOCA_LOG_ERR("SFT fini failed, error=%d", ret);
+		result = rte_sft_fini(&sft_error);
+		if (result < 0)
+			DOCA_LOG_ERR("SFT fini failed, error=%d", result);
 	}
 
-	for (port_id = 0; port_id < app_dpdk_config->port_config.nb_ports; port_id++) {
-	#ifdef GPU_SUPPORT
-		if (app_dpdk_config->pipe.gpu_support) {
-			struct rte_eth_dev_info dev_info;
-			struct rte_pktmbuf_extmem *ext_mem = &app_dpdk_config->pipe.ext_mem;
+#ifdef GPU_SUPPORT
+	if (app_dpdk_config->pipe.gpu_support)
+		dpdk_gpu_unmap(app_dpdk_config);
+#endif
 
-			ret = rte_eth_dev_info_get(port_id, &dev_info);
-			if (ret != 0)
-				APP_EXIT("Failed getting device (port %u) info, error=%s", port_id, strerror(-ret));
+	disable_hairpin_queues(RTE_MAX_ETHPORTS);
 
-			ret = rte_dev_dma_unmap(dev_info.device, ext_mem->buf_ptr, ext_mem->buf_iova, ext_mem->buf_len);
-			if (ret)
-				APP_EXIT("Could not DMA unmap EXT memory");
-		}
-	#endif
-		ret = unbind_hairpin_queues(port_id);
-		if (ret != 0)
-			DOCA_LOG_ERR("Disabling hairpin queues failed: err=%d, port=%u", ret, port_id);
-	}
-	for (port_id = 0; port_id < app_dpdk_config->port_config.nb_ports; port_id++) {
-		ret = rte_eth_dev_stop(port_id);
-		if (ret != 0)
-			DOCA_LOG_ERR("rte_eth_dev_stop: err=%d, port=%u", ret, port_id);
-
-		ret = rte_eth_dev_close(port_id);
-		if (ret != 0)
-			DOCA_LOG_ERR("rte_eth_dev_close: err=%d, port=%u", ret, port_id);
-	}
+	dpdk_ports_fini(app_dpdk_config, RTE_MAX_ETHPORTS);
 }
 
+/*
+ * Print ether address
+ *
+ * @dmac [in]: destination mac address
+ * @smac [in]: source mac address
+ * @ethertype [in]: eth type
+ */
 static void
 print_ether_addr(const struct rte_ether_addr *dmac, const struct rte_ether_addr *smac,
 		 const uint32_t ethertype)
@@ -475,6 +722,11 @@ print_ether_addr(const struct rte_ether_addr *dmac, const struct rte_ether_addr 
 	DOCA_LOG_DBG("DMAC=%s, SMAC=%s, ether_type=0x%04x", dmac_buf, smac_buf, ethertype);
 }
 
+/*
+ * Print L2 header
+ *
+ * @packet [in]: packet mbuf
+ */
 static void
 print_l2_header(const struct rte_mbuf *packet)
 {
@@ -483,6 +735,13 @@ print_l2_header(const struct rte_mbuf *packet)
 	print_ether_addr(&eth_hdr->d_addr, &eth_hdr->s_addr, htonl(eth_hdr->ether_type) >> 16);
 }
 
+/*
+ * Print IPV4 address
+ *
+ * @dip [in]: destination IP address
+ * @sip [in]: source IP address
+ * @packet_type [in]: packet type
+ */
 static void
 print_ipv4_addr(const rte_be32_t dip, const rte_be32_t sip, const char *packet_type)
 {
@@ -498,6 +757,13 @@ print_ipv4_addr(const rte_be32_t dip, const rte_be32_t sip, const char *packet_t
 		packet_type);
 }
 
+/*
+ * Print IPV6 address
+ *
+ * @dst_addr [in]: destination IP address
+ * @src_addr [in]: source IP address
+ * @packet_type [in]: packet type
+ */
 static void
 print_ipv6_addr(const uint8_t dst_addr[16], const uint8_t src_addr[16], const char *packet_type)
 {
@@ -505,6 +771,11 @@ print_ipv6_addr(const uint8_t dst_addr[16], const uint8_t src_addr[16], const ch
 		IPv6_BYTES(dst_addr), IPv6_BYTES(src_addr), packet_type);
 }
 
+/*
+ * Print L3 header
+ *
+ * @packet [in]: packet mbuf
+ */
 static void
 print_l3_header(const struct rte_mbuf *packet)
 {
@@ -523,6 +794,11 @@ print_l3_header(const struct rte_mbuf *packet)
 	}
 }
 
+/*
+ * Print L4 header
+ *
+ * @packet [in]: packet mbuf
+ */
 static void
 print_l4_header(const struct rte_mbuf *packet)
 {
@@ -569,24 +845,29 @@ print_header_info(const struct rte_mbuf *packet, const bool l2, const bool l3, c
 		print_l4_header(packet);
 }
 
-void
+doca_error_t
 dpdk_init(int argc, char **argv)
 {
-	int ret;
+	int result;
 
-	ret = rte_eal_init(argc, argv);
-	if (ret < 0)
-		APP_EXIT("EAL initialization failed");
+	result = rte_eal_init(argc, argv);
+	if (result < 0) {
+		DOCA_LOG_ERR("EAL initialization failed");
+		return DOCA_ERROR_DRIVER;
+	}
+	return DOCA_SUCCESS;
 }
 
 void
 dpdk_fini()
 {
-	int ret;
+	int result;
 
-	ret = rte_eal_cleanup();
-	if (ret < 0)
-		APP_EXIT("rte eal cleanup failed, error=%d", ret);
+	result = rte_eal_cleanup();
+	if (result < 0) {
+		DOCA_LOG_ERR("rte_eal_cleanup() failed, error=%d", result);
+		return;
+	}
 
 	DOCA_LOG_DBG("DPDK fini is done");
 }

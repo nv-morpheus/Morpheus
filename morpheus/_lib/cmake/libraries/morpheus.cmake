@@ -17,6 +17,7 @@ message(STATUS "Adding library: morpheus")
 add_library(morpheus
     # Keep these sorted!
     ${MORPHEUS_LIB_ROOT}/src/io/serializers.cpp
+    ${MORPHEUS_LIB_ROOT}/src/doca/samples/common.c
     ${MORPHEUS_LIB_ROOT}/src/doca/doca_context.cpp
     ${MORPHEUS_LIB_ROOT}/src/doca/dpdk_utils.c
     ${MORPHEUS_LIB_ROOT}/src/doca/flows.c

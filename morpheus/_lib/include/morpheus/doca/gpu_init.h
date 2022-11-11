@@ -23,23 +23,26 @@
 
 #include <rte_gpudev.h>
 
+#include <doca_error.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define GPU_PAGE_SIZE    (1UL << 16)
-#define DEFAULT_MBUF_DATAROOM 2048
-#define DEF_NB_MBUF 8192
-#define MAX_BURSTS_X_QUEUE 64
+#define GPU_PAGE_SIZE (1UL << 16)		/* GPU page size */
+#define DEFAULT_MBUF_DATAROOM 2048		/* Mbuf data room size */
+#define DEF_NB_MBUF 8192			/* Number of mbuf's */
+#define COMM_LIST_LEN 64			/* Length of communication objects list */
 
 struct gpu_pipeline {
-	int gpu_id;
-	bool gpu_support;
-	bool is_host_mem;
-	cudaStream_t c_stream;
-	struct rte_pktmbuf_extmem ext_mem;
-	struct rte_gpu_comm_list *comm_list;
+	int gpu_id;					/* GPU id */
+	bool gpu_support;				/* Enable program GPU support */
+	bool is_host_mem;				/* Allocate mbuf's mempool on GPU or device memory */
+	cudaStream_t c_stream;				/* CUDA stream */
+	struct rte_pktmbuf_extmem ext_mem;		/* Mbuf's mempool */
+	struct rte_gpu_comm_list *comm_list;		/* Communication list between device(GPU) and host(CPU) */
 };
 
+/* CUDA result check */
 #define CUDA_ERROR_CHECK(stmt)                                                                                         \
 	do {                                                                                                           \
 		cudaError_t result = (stmt);                                                                           \
@@ -50,11 +53,33 @@ struct gpu_pipeline {
 		assert(cudaSuccess == result);                                                                         \
 	} while (0)
 
-void gpu_init(struct gpu_pipeline *pipe);
+/*
+ * Initialized GPU resources
+ *
+ * @pipe [in/out]: GPU pipeline
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+doca_error_t gpu_init(struct gpu_pipeline *pipe);
 
+/*
+ * GPU resources cleanup
+ *
+ * @pipe [in]: GPU pipeline
+ */
 void gpu_fini(struct gpu_pipeline *pipe);
 
-struct rte_mempool *allocate_mempool_gpu(struct gpu_pipeline *pipe, const uint32_t mbuf_mem_size);
+/*
+ * Create mbuf's mempool
+ * Mempool could be located in the host (CPU) shared memory and register it to the GPU device or in GPU memory and
+ * attach it to DPDK as an external mempool.
+ *
+ * @total_nb_mbufs [in]: mempool size
+ * @pipe [in/out]: GPU pipeline
+ * @mpool_payload [out]: mbuf's mempool
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+doca_error_t allocate_mempool_gpu(const uint32_t total_nb_mbufs, struct gpu_pipeline *pipe,
+	struct rte_mempool **mpool_payload);
 
 #ifdef __cplusplus
 } /* extern "C" */

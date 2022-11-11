@@ -28,6 +28,10 @@
 		exit(1);					\
 	} while (0)
 
+#if __cplusplus
+extern "C" {
+#endif
+
 typedef doca_error_t (*caps_check)(struct doca_devinfo *, uint32_t *);
 
 doca_error_t sdk_version_callback(void *doca_config, void *param);
@@ -37,5 +41,9 @@ doca_error_t parse_pci_addr(char const *pci_addr, struct doca_pci_bdf *out_bdf);
 
 /* read the entire content of a file into a buffer */
 doca_error_t read_file(char const *path, char **out_bytes, size_t *out_bytes_len);
+
+#if __cplusplus
+}
+#endif
 
 #endif /* COMMON_UTILS_H_ */

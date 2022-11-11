@@ -13,23 +13,35 @@
 
 #include <rte_sft.h>
 
+#include <doca_log.h>
+
 #include "morpheus/doca/offload_rules.h"
-#include "morpheus/doca/utils.h"
 
 DOCA_LOG_REGISTER(OFRLS);
 
-#define GROUP_POST_SFT 1001
-#define INITIAL_GROUP 0
+#define GROUP_POST_SFT 1001		/* Group post-sft */
+#define INITIAL_GROUP 0			/* Rule group 0 is reserved for initial rules */
 
-struct application_rules app_rules;
+struct application_rules app_rules;	/* Application rules */
 
-static struct rte_flow *
+/*
+ * Create SFT state rules
+ * This rule is triggered when a the packet has been classified by the SFT
+ * A rule create for each SFT state, drop, hairpin (skipped) and RSS
+ *
+ * @port_id [in]: port id to create the rule on
+ * @action_rss [in]: RSS action to apply, can be used to hairpin or to forward to SW
+ * @sft_state [in]: SFT state to create the rule for
+ * @error [out]: Error structure
+ * @out_rule [out]: pointer to the created rule or NULL on error
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
 create_rule_post_sft(uint16_t port_id, struct rte_flow_action_rss *action_rss, uint8_t sft_state,
-			   struct rte_flow_error *error)
+			   struct rte_flow_error *error, struct rte_flow **out_rule)
 {
 	int ret;
 	struct rte_flow_item_sft sft_spec_and_mask = {.fid_valid = 1, .state = sft_state};
-	struct rte_flow *flow = NULL;
 	struct rte_flow_attr attr = {
 	    .ingress = 1,
 	    .priority = SET_STATE_PRIORITY,
@@ -49,18 +61,29 @@ create_rule_post_sft(uint16_t port_id, struct rte_flow_action_rss *action_rss, u
 	};
 
 	ret = rte_flow_validate(port_id, &attr, pattern, action, error);
-	if (ret == 0)
-		flow = rte_flow_create(port_id, &attr, pattern, action, error);
-	return flow;
+	if (ret != 0)
+		return DOCA_ERROR_DRIVER;
+	*out_rule = rte_flow_create(port_id, &attr, pattern, action, error);
+	return *out_rule ? DOCA_SUCCESS : DOCA_ERROR_DRIVER;
 }
 
-static struct rte_flow *
-create_rule_forward_to_sft_by_pattern(uint8_t port_id, struct rte_flow_error *error, struct rte_flow_item **pattern)
+/*
+ * Create a flow rule to match the initial state of the SFT
+ * This rule is used to forward IPv4/IPv6 TCP/UDP packets to the SFT
+ *
+ * @port_id [in]: Port id to create the rule on
+ * @pattern [in]: Rule pattern to match
+ * @error [out]: Error structure
+ * @out_rule [out]: pointer to the created rule or NULL on error
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+create_rule_forward_to_sft_by_pattern(uint8_t port_id, struct rte_flow_item **pattern,
+					struct rte_flow_error *error, struct rte_flow **out_rule)
 {
 	int ret;
 	struct rte_flow_action_sft action_sft = {.zone = 0xcafe}; /* SFT zone is 0xcafe */
 	struct rte_flow_action_jump action_jump = {.group = GROUP_POST_SFT};
-	struct rte_flow *flow = NULL;
 	struct rte_flow_attr attr = {
 	    .ingress = 1,
 	    .priority = JUMP_TO_SFT_PRIORITY,
@@ -75,13 +98,25 @@ create_rule_forward_to_sft_by_pattern(uint8_t port_id, struct rte_flow_error *er
 	struct rte_flow_item (*pattern_arr)[] = (struct rte_flow_item(*)[]) pattern;
 
 	ret = rte_flow_validate(port_id, &attr, *pattern_arr, action, error);
-	if (ret == 0)
-		flow = rte_flow_create(port_id, &attr, *pattern_arr, action, error);
-	return flow;
+	if (ret != 0)
+		return DOCA_ERROR_DRIVER;
+	*out_rule = rte_flow_create(port_id, &attr, *pattern_arr, action, error);
+	return *out_rule ? DOCA_SUCCESS : DOCA_ERROR_DRIVER;
 }
 
-static struct rte_flow *
-create_rule_forward_l4_to_sft(uint8_t port_id, uint8_t l3_protocol, uint8_t l4_protocol, struct rte_flow_error *error)
+/*
+ * Wrapper for create_rule_forward_to_sft_by_pattern() function
+ *
+ * @port_id [in]: port id to create rule on
+ * @l3_protocol [in]: l3 protocol to match (IPv4 or IPv6)
+ * @l4_protocol [in]: l4 protocol to match (TCP or UDP)
+ * @error [out]: pointer to error structure
+ * @out_rule [out]: pointer to the created rule or NULL on error
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+create_rule_forward_l4_to_sft(uint8_t port_id, uint8_t l3_protocol, uint8_t l4_protocol,
+		struct rte_flow_error *error, struct rte_flow **out_rule)
 {
 	struct rte_flow_item pattern[] = {
 	    [0] = {.type = RTE_FLOW_ITEM_TYPE_ETH},
@@ -90,11 +125,22 @@ create_rule_forward_l4_to_sft(uint8_t port_id, uint8_t l3_protocol, uint8_t l4_p
 	    [3] = {.type = RTE_FLOW_ITEM_TYPE_END},
 	};
 
-	return create_rule_forward_to_sft_by_pattern(port_id, error, (struct rte_flow_item **)&pattern);
+	return create_rule_forward_to_sft_by_pattern(port_id, (struct rte_flow_item **)&pattern, error, out_rule);
 }
 
-static struct rte_flow *
-create_rule_forward_fragments_to_sft(uint8_t port_id, uint8_t l3_protocol, struct rte_flow_error *error)
+/*
+ * Wrapper for create_rule_forward_to_sft_by_pattern() function
+ * This rule offloads fragmented packets to the HW, used when fragmentation is disabled.
+ *
+ * @port_id [in]: port id to create rule on
+ * @l3_protocol [in]: l3 protocol to match (IPv4 or IPv6)
+ * @error [out]: pointer to error structure
+ * @out_rule [out]: pointer to the created rule or NULL on error
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+create_rule_forward_fragments_to_sft(uint8_t port_id, uint8_t l3_protocol,
+		struct rte_flow_error *error, struct rte_flow **out_rule)
 {
 	struct rte_flow_item_ipv6 ipv6_spec_and_mask = {.has_frag_ext = 1};
 	struct rte_flow_item_ipv4 ipv4_spec = {.hdr.fragment_offset = rte_cpu_to_be_16(1)};
@@ -111,15 +157,25 @@ create_rule_forward_fragments_to_sft(uint8_t port_id, uint8_t l3_protocol, struc
 	    [2] = {.type = RTE_FLOW_ITEM_TYPE_END},
 	};
 
-	return create_rule_forward_to_sft_by_pattern(port_id, error, (struct rte_flow_item **)&pattern);
+	return create_rule_forward_to_sft_by_pattern(port_id, (struct rte_flow_item **)&pattern, error, out_rule);
 }
 
-static struct rte_flow *
-create_rule_action_rss(uint16_t port_id, struct rte_flow_action_rss *action_rss, struct rte_flow_error *error,
-		   struct rte_flow_attr *attr)
+/*
+ * Create a rule to match Ethernet packets and apply RSS action to it
+ * Used as the entry point for all packets, L4 packets are forwarded to the SFT and Non-L4 packets are hairpinned
+ *
+ * @port_id [in]: Port id to create the rule on
+ * @action_rss [in]: Action to apply to the rule
+ * @attr [in]: Rule attributes
+ * @error [out]: Error structure
+ * @out_rule [out]: pointer to the created rule or NULL on error
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+create_rule_action_rss(uint16_t port_id, struct rte_flow_action_rss *action_rss, struct rte_flow_attr *attr,
+		struct rte_flow_error *error, struct rte_flow **out_rule)
 {
 	int ret;
-	struct rte_flow *flow = NULL;
 	struct rte_flow_item pattern[] = {
 	    [0] = {.type = RTE_FLOW_ITEM_TYPE_ETH},
 	    [1] = {.type = RTE_FLOW_ITEM_TYPE_END},
@@ -131,13 +187,24 @@ create_rule_action_rss(uint16_t port_id, struct rte_flow_action_rss *action_rss,
 	};
 
 	ret = rte_flow_validate(port_id, attr, pattern, action, error);
-	if (ret == 0)
-		flow = rte_flow_create(port_id, attr, pattern, action, error);
-	return flow;
+	if (ret != 0)
+		return DOCA_ERROR_DRIVER;
+	*out_rule = rte_flow_create(port_id, attr, pattern, action, error);
+	return *out_rule ? DOCA_SUCCESS : DOCA_ERROR_DRIVER;
 }
 
-static struct rte_flow *
-create_rule_hairpin_non_l4(uint16_t port_id, struct rte_flow_action_rss *action_rss, struct rte_flow_error *error)
+/*
+ * Create a rule to hairpin non L4 packets
+ *
+ * @port_id [in]: Port id to create the rule on
+ * @action_rss [in]: RSS Action to apply to the rule
+ * @error [out]: Error structure
+ * @out_rule [out]: pointer to the created rule or NULL on error
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+create_rule_hairpin_non_l4(uint16_t port_id, struct rte_flow_action_rss *action_rss,
+		struct rte_flow_error *error, struct rte_flow **out_rule)
 {
 	struct rte_flow_attr attr = {
 	    .ingress = 1,
@@ -145,11 +212,21 @@ create_rule_hairpin_non_l4(uint16_t port_id, struct rte_flow_action_rss *action_
 	    .group = INITIAL_GROUP,
 	};
 
-	return create_rule_action_rss(port_id, action_rss, error, &attr);
+	return create_rule_action_rss(port_id, action_rss, &attr, error, out_rule);
 }
 
-static struct rte_flow *
-create_rule_rss_post_sft(uint16_t port_id, struct rte_flow_action_rss *action_rss, struct rte_flow_error *error)
+/*
+ * Create a rule to match L4 packets and forward them to the SFT
+ *
+ * @port_id [in]: Port id to create the rule on
+ * @action_rss [in]: RSS Action to apply to the rule
+ * @error [out]: Error structure
+ * @out_rule [out]: pointer to the created rule or NULL on error
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+create_rule_rss_post_sft(uint16_t port_id, struct rte_flow_action_rss *action_rss,
+		struct rte_flow_error *error, struct rte_flow **out_rule)
 {
 	struct rte_flow_attr attr = {
 	    .ingress = 1,
@@ -157,10 +234,10 @@ create_rule_rss_post_sft(uint16_t port_id, struct rte_flow_action_rss *action_rs
 	    .group = GROUP_POST_SFT,
 	};
 
-	return create_rule_action_rss(port_id, action_rss, error, &attr);
+	return create_rule_action_rss(port_id, action_rss, &attr, error, out_rule);
 }
 
-void
+doca_error_t
 create_rules_sft_offload(const struct application_dpdk_config *app_dpdk_config, struct rte_flow_action_rss *action_rss,
 			 struct rte_flow_action_rss *action_rss_hairpin)
 {
@@ -168,72 +245,108 @@ create_rules_sft_offload(const struct application_dpdk_config *app_dpdk_config, 
 	uint8_t port_id = 0;
 	uint8_t nb_ports = app_dpdk_config->port_config.nb_ports;
 	struct rte_flow_error rte_error;
+	doca_error_t result;
 
-	if (nb_ports > SFT_PORTS_NUM)
-		APP_EXIT("Invalid SFT ports number [%u] is greater than [%d]", nb_ports, SFT_PORTS_NUM);
+	if (nb_ports > SFT_PORTS_NUM) {
+		DOCA_LOG_ERR("Invalid SFT ports number [%u] is greater than [%d]", nb_ports, SFT_PORTS_NUM);
+		return DOCA_ERROR_INVALID_VALUE;
+	}
+
+	memset(&app_rules, 0, sizeof(app_rules));
+
 	/*
 	 * RTE_FLOW rules are created as list:
 	 * 1. Forward IPv4/6 L4 traffic to SFT with predefined zone in group 0
-	 * 2. Check traffic for state && valid fid for either hairpinned or dropped state in the SFT group
+	 * 2. Check traffic for state && valid fid for either hairpin or dropped state in the SFT group
 	 * 3. RSS all the L4 non-state traffic to the ARM cores
 	 */
 
 	for (port_id = 0; port_id < nb_ports; port_id++) {
-		app_rules.set_jump_to_sft_action[port_id] =
-		    create_rule_forward_l4_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV4, RTE_FLOW_ITEM_TYPE_UDP, &rte_error);
-		if (app_rules.set_jump_to_sft_action[port_id] == NULL)
-			APP_EXIT("Forward to SFT IPV4-UDP failed, error=%s", rte_error.message);
+		result = create_rule_forward_l4_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV4, RTE_FLOW_ITEM_TYPE_UDP,
+						&rte_error, &app_rules.set_jump_to_sft_action[port_id]);
 
-		app_rules.set_jump_to_sft_action[port_id + 2] =
-		    create_rule_forward_l4_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV4, RTE_FLOW_ITEM_TYPE_TCP, &rte_error);
-		if (app_rules.set_jump_to_sft_action[port_id + 2] == NULL)
-			APP_EXIT("Forward to SFT IPV4-TCP failed, error=%s", rte_error.message);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Forward to SFT IPV4-UDP failed, error=%s", rte_error.message);
+			return result;
+		}
 
-		app_rules.set_jump_to_sft_action[port_id + 4] =
-		    create_rule_forward_l4_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV6, RTE_FLOW_ITEM_TYPE_UDP, &rte_error);
-		if (app_rules.set_jump_to_sft_action[port_id + 4] == NULL)
-			APP_EXIT("Forward to SFT IPV6-UDP failed, error=%s", rte_error.message);
+		result = create_rule_forward_l4_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV4, RTE_FLOW_ITEM_TYPE_TCP,
+				&rte_error, &app_rules.set_jump_to_sft_action[port_id + 2]);
 
-		app_rules.set_jump_to_sft_action[port_id + 6] =
-		    create_rule_forward_l4_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV6, RTE_FLOW_ITEM_TYPE_TCP, &rte_error);
-		if (app_rules.set_jump_to_sft_action[port_id + 6] == NULL)
-			APP_EXIT("Forward to SFT IPV6-TCP failed, error=%s", rte_error.message);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Forward to SFT IPV4-TCP failed, error=%s", rte_error.message);
+			return result;
+		}
 
-		app_rules.rss_non_state[port_id] = create_rule_rss_post_sft(port_id, action_rss, &rte_error);
-		if (app_rules.rss_non_state[port_id] == NULL)
-			APP_EXIT("SFT set non state RSS failed, error=%s", rte_error.message);
+		result = create_rule_forward_l4_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV6, RTE_FLOW_ITEM_TYPE_UDP,
+					&rte_error, &app_rules.set_jump_to_sft_action[port_id + 4]);
 
-		app_rules.hairpin_non_l4[port_id] =
-			create_rule_hairpin_non_l4(port_id, action_rss_hairpin, &rte_error);
-		if (app_rules.hairpin_non_l4[port_id] == NULL)
-			APP_EXIT("Hairpin flow creation failed: %s", rte_error.message);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Forward to SFT IPV6-UDP failed, error=%s", rte_error.message);
+			return result;
+		}
+
+
+		result = create_rule_forward_l4_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV6, RTE_FLOW_ITEM_TYPE_TCP,
+					&rte_error, &app_rules.set_jump_to_sft_action[port_id + 6]);
+
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Forward to SFT IPV6-TCP failed, error=%s", rte_error.message);
+			return result;
+		}
+
+		result = create_rule_rss_post_sft(port_id, action_rss, &rte_error, &app_rules.rss_non_state[port_id]);
+
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("SFT set non state RSS failed, error=%s", rte_error.message);
+			return result;
+		}
+
+		result = create_rule_hairpin_non_l4(port_id, action_rss_hairpin, &rte_error,
+							&app_rules.hairpin_non_l4[port_id]);
+
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Hairpin flow creation failed: %s", rte_error.message);
+			return result;
+		}
 
 		if (app_dpdk_config->sft_config.enable_state_hairpin) {
-			app_rules.query_hairpin[port_id] =
-			    create_rule_post_sft(port_id, action_rss_hairpin, HAIRPIN_MATCHED_FLOW, &rte_error);
-			if (app_rules.query_hairpin[port_id] == NULL)
-				APP_EXIT("Forward fid with state, error=%s", rte_error.message);
+			result = create_rule_post_sft(port_id, action_rss_hairpin, HAIRPIN_MATCHED_FLOW, &rte_error,
+									&app_rules.query_hairpin[port_id]);
+
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Forward fid with state, error=%s", rte_error.message);
+				return result;
+			}
 		}
 
 		if (app_dpdk_config->sft_config.enable_state_drop) {
-			app_rules.query_hairpin[port_id + 2] =
-			    create_rule_post_sft(port_id, action_rss_hairpin, DROP_FLOW, &rte_error);
-			if (app_rules.query_hairpin[port_id + 2] == NULL)
-				APP_EXIT("Drop fid with state, error=%s", rte_error.message);
+			result = create_rule_post_sft(port_id, action_rss_hairpin, DROP_FLOW, &rte_error,
+									&app_rules.query_hairpin[port_id + 2]);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Drop fid with state, error=%s", rte_error.message);
+				return result;
+			}
 		}
 
 		if (app_dpdk_config->sft_config.enable_frag) {
-			app_rules.forward_fragments[port_id] =
-			    create_rule_forward_fragments_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV4, &rte_error);
-			if (app_rules.forward_fragments[port_id] == NULL)
-				APP_EXIT("Fragments to SFT IPV4 failed, error=%s", rte_error.message);
+			result = create_rule_forward_fragments_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV4, &rte_error,
+									&app_rules.forward_fragments[port_id]);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Fragments to SFT IPV4 failed, error=%s", rte_error.message);
+				return result;
+			}
 
-			app_rules.forward_fragments[port_id + 2] =
-			    create_rule_forward_fragments_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV6, &rte_error);
-			if (app_rules.forward_fragments[port_id + 2] == NULL)
-				APP_EXIT("Fragments to SFT IPV6 failed, error=%s", rte_error.message);
+			result = create_rule_forward_fragments_to_sft(port_id, RTE_FLOW_ITEM_TYPE_IPV6, &rte_error,
+									&app_rules.forward_fragments[port_id + 2]);
+
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Fragments to SFT IPV6 failed, error=%s", rte_error.message);
+				return result;
+			}
 		}
 	}
+	return DOCA_SUCCESS;
 }
 
 void
@@ -259,7 +372,7 @@ print_offload_rules_counter()
 		port_id = flow_i % 2; /* Even flow record = port 0,  Odd flow record = port 1 */
 		if (rte_flow_query(port_id, app_rules.set_jump_to_sft_action[flow_i], &action[0], &count, &rte_error) !=
 		    0) {
-			DOCA_LOG_ERR("query failed, error=%s", rte_error.message);
+			DOCA_LOG_ERR("Query failed, error=%s", rte_error.message);
 		} else {
 			if (flow_i < 2)
 				DOCA_LOG_DBG("Port %d UDP - %lu", port_id, count.hits);
@@ -274,7 +387,7 @@ print_offload_rules_counter()
 		port_id = flow_i % 2; /* Even flow record = port 0,  Odd flow record = port 1 */
 		if (rte_flow_query(port_id, app_rules.set_jump_to_sft_action[flow_i], &action[0], &count, &rte_error) !=
 		    0)
-			DOCA_LOG_ERR("query failed, error=%s", rte_error.message);
+			DOCA_LOG_ERR("Query failed, error=%s", rte_error.message);
 		else
 			DOCA_LOG_DBG("Port %d TCP - %lu", port_id, count.hits);
 		total_ingress += count.hits;
@@ -285,7 +398,7 @@ print_offload_rules_counter()
 	for (flow_i = 0; flow_i < 2; flow_i++) {
 		port_id = flow_i;
 		if (rte_flow_query(port_id, app_rules.hairpin_non_l4[flow_i], &action[0], &count, &rte_error) != 0) {
-			DOCA_LOG_ERR("query failed, error=%s", rte_error.message);
+			DOCA_LOG_ERR("Query failed, error=%s", rte_error.message);
 		} else {
 			DOCA_LOG_DBG("Port %d non L4- %lu", port_id, count.hits);
 			total_ingress += count.hits;
@@ -296,8 +409,11 @@ print_offload_rules_counter()
 	DOCA_LOG_DBG("---------Hairpin using state post SFT -----");
 	for (flow_i = 0; flow_i < 4; flow_i++) {
 		port_id = flow_i % 2; /* Even flow record = port 0,  Odd flow record = port 1 */
+		if (app_rules.query_hairpin[flow_i] == NULL)
+			continue;
+
 		if (rte_flow_query(port_id, app_rules.query_hairpin[flow_i], &action[0], &count, &rte_error) != 0) {
-			DOCA_LOG_ERR("query failed, error=%s", rte_error.message);
+			DOCA_LOG_ERR("Query failed, error=%s", rte_error.message);
 		} else {
 			if (flow_i < 2) {
 				DOCA_LOG_DBG("Port %d state hairpin - %lu", port_id, count.hits);
@@ -313,7 +429,7 @@ print_offload_rules_counter()
 	for (flow_i = 0; flow_i < 2; flow_i++) {
 		port_id = flow_i;
 		if (rte_flow_query(port_id, app_rules.rss_non_state[flow_i], &action[0], &count, &rte_error) != 0) {
-			DOCA_LOG_ERR("query failed, error=%s", rte_error.message);
+			DOCA_LOG_ERR("Query failed, error=%s", rte_error.message);
 		} else {
 			DOCA_LOG_DBG("Port %d RSS to queues - %lu", port_id, count.hits);
 			total_rss += count.hits;
@@ -325,7 +441,7 @@ print_offload_rules_counter()
 			port_id = flow_i % 2; /* Even flow record = port 0,  Odd flow record = port 1 */
 			if (rte_flow_query(port_id, app_rules.forward_fragments[flow_i], &action[0], &count,
 					   &rte_error) != 0) {
-				DOCA_LOG_ERR("query failed, error=%s", rte_error.message);
+				DOCA_LOG_ERR("Query failed, error=%s", rte_error.message);
 			} else {
 				if (flow_i < 2)
 					DOCA_LOG_DBG("Port %d IPv4 fragments - %lu", port_id, count.hits);

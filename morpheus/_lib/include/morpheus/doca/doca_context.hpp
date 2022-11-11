@@ -15,8 +15,10 @@ struct doca_context
 {
 private:
   doca_gpu* _gpu;
+  doca_dev* _dev;
+  doca_pci_bdf _pci_bdf;
   doca_flow_port* _flow_port;
-  uint32_t _nic_port;
+  uint16_t _nic_port;
   uint32_t _max_queue_count;
 
 public:
@@ -24,7 +26,8 @@ public:
   ~doca_context();
 
   doca_gpu* gpu();
-  uint32_t nic_port();
+  doca_dev* dev();
+  uint16_t nic_port();
   doca_flow_port* flow_port();
 };
 
