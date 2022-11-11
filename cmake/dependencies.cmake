@@ -81,6 +81,18 @@ if(MORPHEUS_BUILD_TESTS)
           )
 endif()
 
+# Check if we're building with DOCA hooks
+if(MORPHEUS_USE_DOCA)
+  # libbsd -- pull libbsd source and build for our environment
+  # ======
+  set(LIBMD_VERSION "1.0.4" CACHE STRING "Version of libmd to use")
+  include(deps/Configure_libmd)
+
+  set(LIBBSD_VERSION "0.11.7" CACHE STRING "Version of libbsd to use")
+  include(deps/Configure_libbsd)
+endif()
+
+
 # libcudacxx -- get an explicit lubcudacxx build, matx tries to pull a tag that doesn't exist.
 # =========
 set(LIBCUDACXX_VERSION "1.8.0" CACHE STRING "Version of libcudacxx to use")

@@ -29,6 +29,7 @@ option(MORPHEUS_USE_CCACHE "Enable caching compilation results with ccache" OFF)
 option(MORPHEUS_USE_CLANG_TIDY "Enable running clang-tidy as part of the build process" OFF)
 option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcpkg.
   Note: This will disable vcpkg. All dependencies must be installed first in the conda environment" OFF)
+option(MORPHEUS_USE_DOCA "Configure Morpheus to build with NVIDIA DOCA" OFF)
 option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the build process" OFF)
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 

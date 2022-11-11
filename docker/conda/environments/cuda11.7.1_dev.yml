@@ -33,7 +33,7 @@ dependencies:
     - configargparse=1.5
     - cuda-nvml-dev=11.5
     - cuda-python<=11.7.0 # Remove when Issue #251 is closed
-    - cudatoolkit=11.5
+    - cudatoolkit=11.7
     - cudf 22.08
     - cudf_kafka 22.08.*
     - cupy=9.5.0
