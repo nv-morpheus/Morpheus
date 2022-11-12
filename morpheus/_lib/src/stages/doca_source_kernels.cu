@@ -61,6 +61,11 @@ __device__ int64_t mac_int64_to_chars(int64_t mac, char* out)
   out[16] = to_hex_16(mac_5 % 16);
 }
 
+uint32_t const PACKETS_PER_THREAD = 4;
+uint32_t const THREADS_PER_BLOCK = 512;
+uint32_t const PACKETS_PER_BLOCK = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
+uint32_t const PACKET_RX_TIMEOUT_NS = 5000000; // 5ms
+
 __global__ void _packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
@@ -73,13 +78,6 @@ __global__ void _packet_receive_kernel(
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag
 )
 {
-  // if (threadIdx.x == 0) {
-  //   printf("kernel receive: started\n");
-  // }
-
-  uint16_t const packet_count_rx_max = 512;
-  uint64_t const timeout_ns = 5000000; // 5ms
-
 	__shared__ uint32_t packet_count;
 
 	uintptr_t packet_address;
@@ -158,8 +156,8 @@ __global__ void _packet_receive_kernel(
 
     auto ret = doca_gpu_device_receive_block(
       rxq_info,
-      packet_count_rx_max,
-      timeout_ns,
+      PACKETS_PER_BLOCK,
+      PACKET_RX_TIMEOUT_NS,
       sem_in + sem_idx,
       true,
       &packet_count,
@@ -351,13 +349,14 @@ __global__ void _packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count_out,
   uint32_t*                                       packets_size_out,
-  uint32_t*                                       packet_length_out,
+  uint64_t*                                       timestamp_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
   int64_t*                                        src_ip_out,
   int64_t*                                        dst_ip_out,
   uint16_t*                                       src_port_out,
   uint16_t*                                       dst_port_out,
+  uint32_t*                                       payload_size_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag
 )
 {
@@ -424,8 +423,14 @@ __global__ void _packet_gather_kernel(
 
     __syncthreads();
 
-    for (auto packet_idx = threadIdx.x; packet_idx < packet_count; packet_idx += blockDim.x)
+    for (auto i = 0; i < PACKETS_PER_THREAD; i++)
     {
+      auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
+
+      if (packet_idx >= packet_count) {
+        continue;
+      }
+
       uint8_t *packet = doca_gpu_device_comm_buf_get_stride_addr(
         &(rxq_info->comm_buf),
         stride_start_idx + packet_idx
@@ -444,11 +449,14 @@ __global__ void _packet_gather_kernel(
         &packet_payload
       );
 
-      auto total_length = BYTE_SWAP16(packet_l3->total_length);
-
       auto packet_out_idx = packet_offset + packet_idx;
 
-      packet_length_out[packet_out_idx] = total_length;
+      timestamp_out[packet_out_idx] = cuda::std::chrono::duration_cast<cuda::std::chrono::microseconds>(cuda::std::chrono::system_clock::now().time_since_epoch()).count();
+
+      auto total_length = BYTE_SWAP16(packet_l3->total_length);
+      auto payload_size = total_length - (packet_l4->dt_off * sizeof(int));
+
+      payload_size_out[packet_out_idx] = payload_size;
 
       // mac address printing works
       auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
@@ -602,7 +610,7 @@ void packet_receive_kernel(
   cudaStream_t                                    stream
 )
 {
-  _packet_receive_kernel<<<1, 512, 0, stream>>>(
+  _packet_receive_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     rxq_info,
     sem_in,
     sem_count,
@@ -627,7 +635,7 @@ void packet_count_kernel(
   cudaStream_t                                      stream
 )
 {
-  _packet_count_kernel<<<1, 512, 0, stream>>>(
+  _packet_count_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     rxq_info,
     sem_in,
     sem_count,
@@ -648,18 +656,19 @@ void packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
   uint32_t*                                       packets_size,
-  uint32_t*                                       packet_length_out,
+  uint64_t*                                       timestamp_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
   int64_t*                                        src_ip_out,
   int64_t*                                        dst_ip_out,
   uint16_t*                                       src_port_out,
   uint16_t*                                       dst_port_out,
+  uint32_t*                                       payload_size_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 )
 {
-  _packet_gather_kernel<<<1, 512, 0, stream>>>(
+  _packet_gather_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
     rxq_info,
     sem_in,
     sem_count,
@@ -667,13 +676,14 @@ void packet_gather_kernel(
     sem_idx_end,
     packet_count,
     packets_size,
-    packet_length_out,
+    timestamp_out,
     src_mac_out,
     dst_mac_out,
     src_ip_out,
     dst_ip_out,
     src_port_out,
     dst_port_out,
+    payload_size_out,
     exit_flag
   );
 }

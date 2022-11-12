@@ -50,13 +50,14 @@ void packet_gather_kernel(
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
   uint32_t*                                       packets_size,
-  uint32_t*                                       packet_length_out,
+  uint64_t*                                       timestamp_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
   int64_t*                                        src_ip_out,
   int64_t*                                        dst_ip_out,
   uint16_t*                                       src_port_out,
   uint16_t*                                       dst_port_out,
+  uint32_t*                                       payload_size_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 );
