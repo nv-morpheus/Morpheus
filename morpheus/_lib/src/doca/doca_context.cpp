@@ -93,8 +93,8 @@ doca_context::doca_context(std::string nic_addr, std::string gpu_addr):
     // argv.push_back(l_flag);
     // argv.push_back(l_arg);
 
-    argv.push_back("--log-level");
-    argv.push_back("eal,8");
+    // argv.push_back("--log-level");
+    // argv.push_back("eal,8");
 
     auto doca_ret_0 = parse_pci_addr(nic_addr_c, &_pci_bdf);
     if (doca_ret_0 != DOCA_SUCCESS) {

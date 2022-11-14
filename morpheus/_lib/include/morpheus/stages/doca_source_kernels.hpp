@@ -16,6 +16,13 @@ std::unique_ptr<cudf::column> integers_to_mac(
   rmm::cuda_stream_view stream = cudf::default_stream_value,
   rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
+std::unique_ptr<cudf::column> packet_data_to_column(
+  cudf::size_type packet_count,
+  rmm::device_uvector<char> && packet_data_chars,
+  rmm::device_uvector<uint32_t> && packet_data_lengths,
+  rmm::cuda_stream_view stream = cudf::default_stream_value,
+  rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
+
 void packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
@@ -36,7 +43,7 @@ void packet_count_kernel(
   uint32_t*                                         sem_idx_begin,
   uint32_t*                                         sem_idx_end,
   uint32_t*                                         packet_count,
-  uint32_t*                                         packets_size,
+  uint32_t*                                         payload_size_total,
   cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag,
   cudaStream_t                                      stream
 );
@@ -49,7 +56,6 @@ void packet_gather_kernel(
   uint32_t*                                       sem_idx_begin,
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
-  uint32_t*                                       packets_size,
   uint64_t*                                       timestamp_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
@@ -58,6 +64,7 @@ void packet_gather_kernel(
   uint16_t*                                       src_port_out,
   uint16_t*                                       dst_port_out,
   uint32_t*                                       payload_size_out,
+  char*                                           payload_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 );

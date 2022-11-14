@@ -13,6 +13,7 @@
 #include <memory>
 #include <stdio.h>
 #include <thrust/iterator/constant_iterator.h>
+#include <cub/cub.cuh>
 
 __device__ char to_hex_16(uint8_t value)
 {
@@ -239,7 +240,7 @@ __global__ void _packet_count_kernel(
   uint32_t*                                         sem_idx_begin,
   uint32_t*                                         sem_idx_end,
   uint32_t*                                         packet_count_out,
-  uint32_t*                                         packets_size_out,
+  uint32_t*                                         payload_size_total_out,
   cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag
 )
 {
@@ -288,10 +289,13 @@ __global__ void _packet_count_kernel(
 
     // ===== COUNT PACKETS IN SEM =================================================================
 
-    for (auto packet_idx = 0; packet_idx < packet_count; packet_idx++)
-    {
-      // compute total packet payload size
-      // atomicAdd(packets_size_out, packet_payload_length)
+    __shared__ uint32_t stride_start_idx;
+
+    if (threadIdx.x == 0) {
+			stride_start_idx = doca_gpu_device_comm_buf_get_stride_idx(
+        &(rxq_info->comm_buf),
+        packet_address
+      );
     }
 
     __syncthreads();
@@ -301,7 +305,41 @@ __global__ void _packet_count_kernel(
       *packet_count_out += packet_count;
 
       // TODO: compute packet payload size
-      *packets_size_out = 0;
+      *payload_size_total_out = 0;
+    }
+
+    __syncthreads();
+
+    for (auto i = 0; i < PACKETS_PER_THREAD; i++)
+    {
+      auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
+
+      if (packet_idx >= packet_count) {
+        continue;
+      }
+
+      uint8_t *packet = doca_gpu_device_comm_buf_get_stride_addr(
+        &(rxq_info->comm_buf),
+        stride_start_idx + packet_idx
+      );
+
+      rte_ether_hdr* packet_l2;
+      rte_ipv4_hdr*  packet_l3;
+      rte_tcp_hdr*   packet_l4;
+      uint8_t*       packet_payload;
+
+      get_packet_tcp_headers(
+        packet,
+        &packet_l2,
+        &packet_l3,
+        &packet_l4,
+        &packet_payload
+      );
+
+      auto total_length = BYTE_SWAP16(packet_l3->total_length);
+      auto payload_size = total_length - (packet_l4->dt_off * sizeof(int));
+
+      atomicAdd(payload_size_total_out, payload_size);
     }
 
     __syncthreads();
@@ -348,7 +386,6 @@ __global__ void _packet_gather_kernel(
   uint32_t*                                       sem_idx_begin,
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count_out,
-  uint32_t*                                       packets_size_out,
   uint64_t*                                       timestamp_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
@@ -357,15 +394,23 @@ __global__ void _packet_gather_kernel(
   uint16_t*                                       src_port_out,
   uint16_t*                                       dst_port_out,
   uint32_t*                                       payload_size_out,
+  char*                                           payload_data_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag
 )
 {
+  // Specialize BlockScan for a 1D block of 128 threads of type int
+  using BlockScan = cub::BlockScan<uint32_t, THREADS_PER_BLOCK>;
+
+  // Allocate shared memory for BlockScan
+  __shared__ typename BlockScan::TempStorage temp_storage;
+
   // if (threadIdx.x == 0) {
   //   printf("kernel gather: started\n");
   // }
 
   __shared__ doca_gpu_semaphore_status sem_status;
-	__shared__ uint32_t  packet_count;
+	__shared__ uint32_t packet_count;
+  __shared__ uint32_t payload_offset_total;
 
 	uintptr_t packet_address;
 
@@ -383,16 +428,16 @@ __global__ void _packet_gather_kernel(
   if (threadIdx.x == 0)
   {
     packet_offset = 0;
+    payload_offset_total = 0;
   }
 
   __syncthreads();
 
   while (*exit_flag == false)
   {
-    if (threadIdx.x == 0)
-    {
-      DOCA_GPU_VOLATILE(packet_count) = 0;
-    }
+    DOCA_GPU_VOLATILE(packet_count) = 0;
+
+    __syncthreads();
 
     // get sem info
     auto ret = doca_gpu_device_semaphore_get_value(
@@ -423,11 +468,15 @@ __global__ void _packet_gather_kernel(
 
     __syncthreads();
 
+    // Obtain a segment of consecutive items that are blocked across threads
+    uint32_t payload_offsets[PACKETS_PER_THREAD];
+
     for (auto i = 0; i < PACKETS_PER_THREAD; i++)
     {
       auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
 
       if (packet_idx >= packet_count) {
+        payload_offsets[i] = 0;
         continue;
       }
 
@@ -456,7 +505,13 @@ __global__ void _packet_gather_kernel(
       auto total_length = BYTE_SWAP16(packet_l3->total_length);
       auto payload_size = total_length - (packet_l4->dt_off * sizeof(int));
 
+      if (payload_size > 0)
+      {
+        printf("payload_size %d\n", payload_size);
+      }
+
       payload_size_out[packet_out_idx] = payload_size;
+      payload_offsets[i] = payload_size;
 
       // mac address printing works
       auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
@@ -491,6 +546,53 @@ __global__ void _packet_gather_kernel(
     }
 
     __syncthreads();
+
+    uint32_t payload_block_offset;
+
+    // Collectively compute the block-wide exclusive prefix sum
+    BlockScan(temp_storage).ExclusiveSum(payload_offsets, payload_offsets, payload_block_offset);
+
+    for (auto i = 0; i < PACKETS_PER_THREAD; i++)
+    {
+      auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
+
+      if (packet_idx >= packet_count) {
+        continue;
+      }
+
+      uint8_t *packet = doca_gpu_device_comm_buf_get_stride_addr(
+        &(rxq_info->comm_buf),
+        stride_start_idx + packet_idx
+      );
+
+      rte_ether_hdr* packet_l2;
+      rte_ipv4_hdr*  packet_l3;
+      rte_tcp_hdr*   packet_l4;
+      uint8_t*       packet_payload;
+
+      get_packet_tcp_headers(
+        packet,
+        &packet_l2,
+        &packet_l3,
+        &packet_l4,
+        &packet_payload
+      );
+
+      auto total_length = BYTE_SWAP16(packet_l3->total_length);
+      auto payload_size = total_length - (packet_l4->dt_off * sizeof(int));
+
+      auto payload_offset = payload_offset_total + payload_offsets[i];
+
+      for (auto j = 0; j < payload_size; j++)
+      {
+        // payload_data_out[payload_offset + j] = packet_payload[j];
+      }
+    }
+
+    if(threadIdx.x == 0)
+    {
+      payload_offset_total += payload_block_offset;
+    }
 
     // release sem
 
@@ -597,6 +699,64 @@ std::unique_ptr<cudf::column> integers_to_mac(
     {});
 }
 
+struct picker {
+  uint32_t* lengths;
+  __device__ uint32_t operator()(cudf::size_type idx){
+    if (lengths[idx] > 0)
+    {
+      printf("pdl: %d\n", lengths[idx]);
+    }
+    return lengths[idx];
+  }
+};
+
+std::unique_ptr<cudf::column> packet_data_to_column(
+  cudf::size_type packet_count,
+  rmm::device_uvector<char> && packet_data_chars,
+  rmm::device_uvector<uint32_t> && packet_data_lengths,
+  rmm::cuda_stream_view stream,
+  rmm::mr::device_memory_resource* mr)
+{
+  auto offsets_transformer_itr = thrust::make_transform_iterator(
+    thrust::make_counting_iterator<int32_t>(0),
+    picker{packet_data_lengths.data()}
+    // [data_lengths = packet_data_lengths.data()] __device__(cudf::size_type idx) {
+    //   return data_lengths[idx];
+    // }
+  );
+
+  auto payload_offsets_column = cudf::strings::detail::make_offsets_child_column(
+    offsets_transformer_itr,
+    offsets_transformer_itr + packet_count,
+    stream,
+    mr
+  );
+
+  stream.synchronize();
+
+  auto packet_data_chars_size = packet_data_chars.size();
+  auto packet_data_chars_col  = std::make_unique<cudf::column>(
+    cudf::data_type{cudf::type_to_id<char>()},
+    packet_data_chars_size,
+    packet_data_chars.release());
+
+  uint32_t last_offset;
+
+  cudaMemcpy(&last_offset, payload_offsets_column->view().data<uint32_t>() + packet_count - 1, sizeof(uint32_t), cudaMemcpyDeviceToHost);
+
+  std::cout << "last offset: " << last_offset << " "
+            << "chars size: " << packet_data_chars_size
+            << std::endl;
+
+  return cudf::make_strings_column(
+    packet_count,
+    std::move(payload_offsets_column),
+    std::move(packet_data_chars_col),
+    0,
+    {}
+  );
+}
+
 void packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
@@ -630,7 +790,7 @@ void packet_count_kernel(
   uint32_t*                                         sem_idx_begin,
   uint32_t*                                         sem_idx_end,
   uint32_t*                                         packet_count,
-  uint32_t*                                         packets_size,
+  uint32_t*                                         payload_size_total,
   cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag,
   cudaStream_t                                      stream
 )
@@ -642,7 +802,7 @@ void packet_count_kernel(
     sem_idx_begin,
     sem_idx_end,
     packet_count,
-    packets_size,
+    payload_size_total,
     exit_flag
   );
 }
@@ -655,7 +815,6 @@ void packet_gather_kernel(
   uint32_t*                                       sem_idx_begin,
   uint32_t*                                       sem_idx_end,
   uint32_t*                                       packet_count,
-  uint32_t*                                       packets_size,
   uint64_t*                                       timestamp_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
@@ -664,6 +823,7 @@ void packet_gather_kernel(
   uint16_t*                                       src_port_out,
   uint16_t*                                       dst_port_out,
   uint32_t*                                       payload_size_out,
+  char*                                           payload_data_out,
   cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
   cudaStream_t                                    stream
 )
@@ -675,7 +835,6 @@ void packet_gather_kernel(
     sem_idx_begin,
     sem_idx_end,
     packet_count,
-    packets_size,
     timestamp_out,
     src_mac_out,
     dst_mac_out,
@@ -684,6 +843,7 @@ void packet_gather_kernel(
     src_port_out,
     dst_port_out,
     payload_size_out,
+    payload_data_out,
     exit_flag
   );
 }
