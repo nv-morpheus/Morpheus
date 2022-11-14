@@ -67,7 +67,9 @@ class AddClassificationsStage(SinglePortStage):
                 logger.warning("The label '%s' is not in Config.class_labels and will be ignored", label)
                 continue
 
-            self._idx2label[self._class_labels.index(label)] = self._prefix + label
+            prefixed_label = self._prefix + label
+            self._idx2label[self._class_labels.index(label)] = prefixed_label
+            self.needed_columns[prefixed_label] = 'bool'
 
         assert len(self._idx2label) > 0, "No labels were added to the stage"
 

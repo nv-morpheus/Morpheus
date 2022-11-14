@@ -48,7 +48,7 @@ class AddScoresStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, labels: typing.List[str] = None, prefix: str = ""):
+    def __init__(self, c: Config, labels: typing.List[str] = None, prefix: str = "", probs_type: str = 'float32'):
         super().__init__(c)
 
         self._feature_length = c.feature_length
@@ -65,7 +65,9 @@ class AddScoresStage(SinglePortStage):
                 logger.warning("The label '%s' is not in Config.class_labels and will be ignored", label)
                 continue
 
-            self._idx2label[self._class_labels.index(label)] = self._prefix + label
+            prefixed_label = self._prefix + label
+            self._idx2label[self._class_labels.index(label)] = prefixed_label
+            self.needed_columns[prefixed_label] = probs_type
 
         assert len(self._idx2label) > 0, "No labels were added to the stage"
 

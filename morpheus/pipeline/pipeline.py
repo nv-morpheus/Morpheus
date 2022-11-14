@@ -176,6 +176,8 @@ class Pipeline():
 
         self._srf_pipeline = srf.Pipeline()
 
+        needed_columns = {}
+
         def inner_build(builder: srf.Builder, segment_id: str):
             segment_graph = self._segment_graphs[segment_id]
 
@@ -184,14 +186,15 @@ class Pipeline():
             for stage in networkx.topological_sort(segment_graph):
                 if (stage.can_build()):
                     stage.build(builder)
+                    needed_columns.update(stage.needed_columns)
 
             if (not all([x.is_built for x in segment_graph.nodes()])):
-                # raise NotImplementedError("Circular pipelines are not yet supported!")
                 logger.warning("Cyclic pipeline graph detected! Building with reduced constraints")
 
                 for stage in segment_graph.nodes():
                     if (stage.can_build(check_ports=True)):
                         stage.build()
+                        needed_columns.update(stage.needed_columns)
 
             if (not all(x.is_built for x in segment_graph.nodes())):
                 raise RuntimeError("Could not build pipeline. Ensure all types can be determined")
@@ -213,6 +216,9 @@ class Pipeline():
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
                                             segment_inner_build)
             logger.info("====Building Segment Complete!====")
+
+        for source_stage in self._sources:
+            source_stage.needed_columns.update(needed_columns)
 
         logger.info("====Building Pipeline Complete!====")
         self._is_build_complete = True
