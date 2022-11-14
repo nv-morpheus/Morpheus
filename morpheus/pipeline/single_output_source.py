@@ -85,6 +85,7 @@ class SingleOutputSource(_pipeline.SourceStage):
             num_rows = len(df)
             for column_name in missing_columns:
                 column_type = self._needed_columns[column_name]
+                logger.debug("Preallocating column %s[%s]", column_name, column_type)
                 df[column_name] = alloc_func(num_rows, column_type)
 
     def _preallocate_meta(self, msg: MessageMeta) -> None:
