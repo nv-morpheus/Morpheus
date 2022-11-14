@@ -1,11 +1,11 @@
-![NVIDIA Morpheus](./img/morpheus-banner.png "Morpheus banner image")
+![NVIDIA Morpheus]
 
 # NVIDIA Morpheus
 
 NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI framework and pre-trained AI capabilities that allow them to instantaneously inspect all IP traffic across their data center fabric. The Morpheus developer framework allows teams to build their own optimized pipelines that address cybersecurity and information security use cases. Bringing a new level of security to data centers, Morpheus provides development capabilities around dynamic protection, real-time telemetry, adaptive policies, and cyber defenses for detecting and remediating cybersecurity threats.
 
 ## Documentation
-Full documentation (including a quick start guide, a developer/user guide, and API documentation) is available online at [https://docs.nvidia.com/morpheus/](https://docs.nvidia.com/morpheus/).
+Full documentation (including a quick start guide, a developer/user guide, and API documentation) is available online at [https://docs.nvidia.com/morpheus/].
 
 ## Getting Started with Morpheus
 There are three ways to get started with Morpheus:
@@ -23,10 +23,10 @@ The following sections must be followed prior to building the Morpheus container
 #### Requirements
 - Pascal architecture GPU or better
 - NVIDIA driver `450.80.02` or higher
-- [Docker](https://docs.docker.com/get-docker/)
-- [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-- [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `22.06` or higher
-- [Git LFS](https://git-lfs.github.com/)
+- [Docker]
+- [The NVIDIA container toolkit]
+- [NVIDIA Triton Inference Server] `22.06` or higher
+- [Git LFS]
 
 
 #### Clone the Repository
@@ -39,7 +39,7 @@ cd $MORPHEUS_ROOT
 
 #### Git LFS
 
-The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned.
+The large model and data files in this repo are stored using [Git Large File Storage (LFS)]. Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned.
 
 The `scripts/fetch_data.py` script can be used to fetch the Morpheus pre-trained models, and other files required for running the training/validation scripts and example pipelines.
 
@@ -86,15 +86,15 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.09.00a` use the following:
+You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.11.00a` use the following:
 
 ```bash
-DOCKER_IMAGE_TAG="v22.09.00a-runtime" ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG="v22.11.00a-runtime" ./docker/run_container_release.sh
 ```
 
 ### Build from Source
 
-It's possible to build from source outside of a container. However, due to the large number of dependencies, this can be complex and is only necessary for developers. Instructions for developers and contributors can be found in [CONTRIBUTING.md](./CONTRIBUTING.md).
+It's possible to build from source outside of a container. However, due to the large number of dependencies, this can be complex and is only necessary for developers. Instructions for developers and contributors can be found in [CONTRIBUTING.md].
 
 ## Launching Triton Server
 
@@ -138,9 +138,10 @@ Options:
   --log_config_file FILE          Config file to use to configure logging. Use
                                   only for advanced situations. Can accept
                                   both JSON and ini style configurations
-  --version                       Show the version and exit.  [default: False]
-  --help                          Show this message and exit.  [default:
-                                  False]
+  --plugin TEXT                   Adds a Morpheus CLI plugin. Can either be a
+                                  module name or path to a python module
+  --version                       Show the version and exit.
+  --help                          Show this message and exit.
 
 Commands:
   run    Run one of the available pipelines
@@ -286,34 +287,44 @@ Commands:
 And for the AE pipeline:
 
 ```bash
-$ morpheus run pipeline-fil --help
+$ morpheus run pipeline-ae --help
 Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
                                [ARGS]...]...
 
 <Help Paragraph Omitted>
 
 Commands:
-  add-class        Add detected classifications to each message
-  add-scores       Add probability scores to each message
-  buffer           (Deprecated) Buffer results
-  delay            (Deprecated) Delay results for a certain duration
-  filter           Filter message by a classification threshold
-  from-cloudtrail  Load messages from a Cloudtrail directory
-  gen-viz          (Deprecated) Write out vizualization data frames
-  inf-pytorch      Perform inference with PyTorch
-  inf-triton       Perform inference with Triton
-  monitor          Display throughput numbers at a specific point in the
-                   pipeline
-  preprocess       Convert messages to tokens
-  serialize        Serializes messages into a text format
+  add-class        Add detected classifications to each message.
+  add-scores       Add probability scores to each message.
+  buffer           (Deprecated) Buffer results.
+  delay            (Deprecated) Delay results for a certain duration.
+  filter           Filter message by a classification threshold.
+  from-azure       Source stage is used to load Azure Active Directory messages.
+  from-cloudtrail  Load messages from a Cloudtrail directory.
+  from-duo         Source stage is used to load Duo Authentication messages.
+  inf-pytorch      Perform inference with PyTorch.
+  inf-triton       Perform inference with Triton Inference Server.
+  monitor          Display throughput numbers at a specific point in the pipeline.
+  preprocess       Prepare Autoencoder input DataFrames for inference.
+  serialize        Include & exclude columns from messages.
   timeseries       Perform time series anomaly detection and add prediction.
-  to-file          Write all messages to a file
-  to-kafka         Write all messages to a Kafka cluster
-  train-ae         Deserialize source data from JSON
-  validate         Validates pipeline output against an expected output
+  to-file          Write all messages to a file.
+  to-kafka         Write all messages to a Kafka cluster.
+  train-ae         Train an Autoencoder model on incoming data.
+  trigger          Buffer data until previous stage has completed.
+  validate         Validate pipeline output for testing.
 
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
 
 ## Contributing
 Please see our [guide for contributing to Morpheus](./CONTRIBUTING.md).
+
+[NVIDIA Morpheus]: ./img/morpheus-banner.png "Morpheus banner image"
+[https://docs.nvidia.com/morpheus/]: https://docs.nvidia.com/morpheus/
+[Docker]: https://docs.docker.com/get-docker/
+[The NVIDIA container toolkit]: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
+[NVIDIA Triton Inference Server]: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver
+[Git LFS]: https://git-lfs.github.com/
+[Git Large File Storage (LFS)]: https://git-lfs.github.com/
+[CONTRIBUTING.md]: ./CONTRIBUTING.md
