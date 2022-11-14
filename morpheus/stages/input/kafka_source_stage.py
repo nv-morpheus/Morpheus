@@ -170,11 +170,6 @@ class KafkaSourceStage(SingleOutputSource):
         return message_meta
 
     def _source_generator(self):
-        # TODO : Needs to batch records until _stop_requested, _PARTITION_EOF or batch size has been hit
-
-        # Each invocation of this function makes a new thread so recreate the producers
-
-        # Set some initial values
         consumer = None
         try:
             consumer = ck.Consumer(self._consumer_params)
