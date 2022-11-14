@@ -45,7 +45,7 @@ From the `examples/digital_fingerprinting/production` directory run:
 docker-compose run -p 3000:3000 morpheus_pipeline bash
 ```
 
-Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.
+The `-p 3000:3000` maps the visualizion app to port 3000 on the host for access via web browser. Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
 By default, a mlflow dashboard will be available at:
 ```bash
@@ -147,9 +147,9 @@ yarn
 ```
 
 ### Configure `dataset_path`
-Open the `.env` file and set `dataset_path` to directory where input files will be read from. For this example, we'll set it to directory that contains our Azure DFP output files:
+Set the `dataset_path` environment variable to directory where viz input files will be read from. For this example, we'll set it to directory that contains our Azure DFP output files:
 ```
-dataset_path=/workspace/examples/digital_fingerprinting/visualization/azure-dfp-output
+export dataset_path=/workspace/examples/digital_fingerprinting/visualization/azure-dfp-output
 ```
 
 ### Start server
