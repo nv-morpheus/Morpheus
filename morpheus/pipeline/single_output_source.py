@@ -57,9 +57,10 @@ class SingleOutputSource(_pipeline.SourceStage):
         if len(self._needed_columns) > 0:
             node_name = f"{self.unique_name}-preallocate"
 
-            if isinstance(out_type, MessageMeta):
+            logger.debug("Adding preallocate node {}".format(node_name))
+            if issubclass(out_type, MessageMeta):
                 stream = builder.make_node(node_name, self._preallocate_meta)
-            elif isinstance(out_type, (cudf.DataFrame, pd.DataFrame)):
+            elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
                 stream = builder.make_node(node_name, self._preallocate_df)
             else:
                 msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type {}"
@@ -73,7 +74,7 @@ class SingleOutputSource(_pipeline.SourceStage):
 
         return [(out_stream, out_type)]
 
-    def _preallocate_df(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]) -> None:
+    def _preallocate_df(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
         # TODO replace with a CPP impl
         missing_columns = self._needed_columns.keys() - df.columns
         if len(missing_columns) > 0:
@@ -88,5 +89,8 @@ class SingleOutputSource(_pipeline.SourceStage):
                 logger.debug("Preallocating column %s[%s]", column_name, column_type)
                 df[column_name] = alloc_func(num_rows, column_type)
 
-    def _preallocate_meta(self, msg: MessageMeta) -> None:
+        return df
+
+    def _preallocate_meta(self, msg: MessageMeta):
         self._preallocate_df(msg.df)
+        return msg
