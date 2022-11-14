@@ -1,0 +1,172 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+# Root Cause Analysis Acceleration & Predictive Maintenance Example
+
+These examples illustrate how to use Morpheus to build a binary sequence classification pipelines to perform root cause analysis on DGX kernel logs.
+
+## Background
+
+Like any other Linux based machine, DGX's generate a vast amount of logs. Analysts spend hours trying to identify the root causes of each failure. There could be infinitely many types of root causes of the failures. Some patterns might help to narrow it down; however, regular expressions can only help to identify previously known patterns. Moreover, this creates another manual task of maintaining a search script.
+
+In this example, we show how we can use Morpheus to accelerate the analysis of the enormous amount of logs using machine learning. Another benefit of analyzing in a probabilistic way is that we can pin down unseen root causes. To achieve this, we will fine-tune a pre-trained BERT[^1] model with a classification layer using HuggingFace library.
+
+Once the model is capable of identifying even the new root causes, it can also be deployed as a process running in the machines to predict failures before they happen.
+
+[^1]: BERT stands for Bidirectional Encoder Representations from Transformers. The paper can be found [here](https://arxiv.org/pdf/1810.04805.pdf).
+
+### The Dataset
+
+The dataset comprises kern.log files from multiple DGX's. Each line inside has been labelled as either 0 for ordinary or 1 or root cause by a script that uses some known patterns. We will be especially interested in lines that are marked as ordinary in the test set but predicted as a root cause as they may be new types of root causes of failures.
+
+## Pipeline Architecture
+
+The pipeline we will be using in this example is a simple feed-forward linear pipeline where the data from each stage flows on to the next. Morpheus pipelines can be configured via the Morpheus CLI or using the Python library. In this example we will be using the Morpheus CLI.
+
+Below is a visualization of the pipeline showing all of the stages and data types as it flows from one stage to the next.
+
+![Pipeline](pipeline.png)
+
+
+## Setup
+
+This example utilizes the Triton Inference Server to perform inference. The binary sequence classification neural network model is provided in the `models/root-cause--models` directory of the Morpheus repo.
+
+### Launching Triton
+
+From the Morpheus repo root directory, run the following to launch Triton and load the `root-cause-binary-onnx` model:
+
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model root-cause-binary-onnx
+```
+
+Where `22.08-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (see [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
+
+This will launch Triton and only load the model required by our example pipeline. The model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
+
+Once Triton has loaded the model, you should see the following in the output:
+
+```
++----------------------------+-----+--------+
+| Model                  | Version | Status |
++------------------------+---------+--------+
+| root-cause-binary-onnx | 1       | READY  |
++------------------------+---------+--------+
+
+```
+
+
+## Running the Pipeline
+
+With the Morpheus CLI, an entire pipeline can be configured and run without writing any code. Using the `morpheus run pipeline-nlp` command, we can build the pipeline by specifying each stage's name and configuration right on the command line. The output of each stage will become the input for the next.
+
+### Root Cause Analysis using Binary Sequence Classification
+
+The following command line is the entire command to build and launch a root cause analysis pipeline which uses binary sequence classification. Each new line represents a new stage. The comment above each stage gives information about why the stage was added and configured this way.
+
+From the Morpheus repo root directory run:
+
+```bash
+morpheus --log_level=DEBUG \
+`# Run a pipeline with 5 threads and a model batch size of 32 (Must match Triton config)` \
+run --num_threads=8 --edge_buffer_size=4 --use_cpp=True --pipeline_batch_size=1024 --model_max_batch_size=32 \
+`# Specify a NLP pipeline with 128 sequence length (Must match Triton config)` \
+pipeline-nlp --model_seq_length=128 --labels_file=./data/labels_binary_root_cause.txt \
+`# 1st Stage: Read from file` \
+from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/root-cause-validation-data-input.csv \
+`# 2nd Stage: Deserialize from JSON strings to objects` \
+deserialize \
+`# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
+preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+`# 4th Stage: Send messages to Triton for inference. Specify the binary model loaded in Setup` \
+inf-triton --force_convert_inputs=True --model_name=root-cause-binary-onnx --server_url=localhost:8001 \
+`# 5th Stage: Monitor stage prints throughput information to the console` \
+monitor --description='Inference rate' --smoothing=0.001 --unit inf \
+`# 6th Stage: Add scores from inference to the messages` \
+add-scores --label=is_root_cause \
+`# 7th Stage: Filtering removes any messages that did not detect SI` \
+filter \
+`# 8th Stage: Convert from objects back into strings` \
+serialize --exclude '^ts_' \
+`# 9th Stage: Write results out to CSV file` \
+to-file --filename=./root-cause-binary-output.csv --overwrite
+```
+
+If successful, you should see the following output:
+
+```bash
+Configuring Pipeline via CLI
+Parameter, 'labels_file', with relative path, './data/labels_binary_root_cause.txt', does not exist. Using package relative location: '/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/./data/labels_binary_root_cause.txt'
+Loaded labels file. Current labels: [['not_root_cause', 'is_root_cause']]
+Parameter, 'vocab_hash_file', with relative path, './data/bert-base-uncased-hash.txt', does not exist. Using package relative location: '/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/./data/bert-base-uncased-hash.txt'
+Starting pipeline via CLI... Ctrl+C to Quit
+W20221114 21:39:02.867462 17073 thread.cpp:138] unable to set memory policy - if using docker use: --cap-add=sys_nice to allow membind
+Config: 
+{
+  "ae": null,
+  "class_labels": [
+    "not_root_cause",
+    "is_root_cause"
+  ],
+  "debug": false,
+  "edge_buffer_size": 4,
+  "feature_length": 128,
+  "fil": null,
+  "log_config_file": null,
+  "log_level": 10,
+  "mode": "NLP",
+  "model_max_batch_size": 32,
+  "num_threads": 8,
+  "pipeline_batch_size": 1024,
+  "plugins": []
+}
+CPP Enabled: True
+====Registering Pipeline====
+====Building Pipeline====             
+====Building Segment: linear_segment_0====
+====Building Segment Complete!====    
+====Building Pipeline Complete!====   
+Starting! Time: 1668461942.8933783    
+====Registering Pipeline Complete!====
+====Starting Pipeline====             
+====Pipeline Started====              
+Inference rate: 0 inf [00:00, ? inf/s]W20221114 21:39:02.907341 17073 triton_inference.cpp:323] Failed to connect to Triton at 'localhost:8001'. Default gRPC port of (8001) was detected but C++ InferenceClientStage uses HTTP protocol. Retrying with default HTTP port (8000)
+Added source: <from-file-0; FileSourceStage(filename=/my_data/kernel_test_100.csv, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+  └─> morpheus.MessageMeta
+Added stage: <deserialize-1; DeserializeStage()>
+  └─ morpheus.MessageMeta -> morpheus.MultiMessage
+Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
+  └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
+Added stage: <inference-3; TritonInferenceStage(model_name=root-cause-binary-onnx, server_url=localhost:8001, force_convert_inputs=True, use_shared_memory=False)>
+  └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <monitor-4; MonitorStage(description=Inference rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <add-scores-5; AddScoresStage(labels=('is_root_cause',), prefix=)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <filter-6; FilterDetectionsStage(threshold=0.5, copy=True)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+Added stage: <serialize-7; SerializeStage(include=(), exclude=('^ts_',), fixed_columns=True)>
+  └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
+Added stage: <to-file-8; WriteToFileStage(filename=./root-cause-binary-output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
+  └─ morpheus.MessageMeta -> morpheus.MessageMeta
+Inference rate[Complete]: 10000 inf [00:04, 2013.65 inf/s]
+====Pipeline Complete====
+```
+
+The output file `root-cause-binary-output.csv` will contain the original kernel log messages with an additional field `is_root_cause`. The value of the new field will be root cause probability.
+
+
