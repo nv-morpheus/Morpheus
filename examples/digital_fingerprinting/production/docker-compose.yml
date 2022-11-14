@@ -24,7 +24,7 @@ services:
     image: mlflow_server
     container_name: mlflow_server
     ports:
-      - "5000:5000"
+      - "8000:5000"
     networks:
       - frontend
       - backend

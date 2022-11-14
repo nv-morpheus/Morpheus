@@ -58,12 +58,19 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                  c: Config,
                  model_name_formatter: str = "dfp-{user_id}",
                  experiment_name_formatter: str = "/dfp-models/{reg_model_name}",
-                 databricks_permissions: dict = None):
+                 databricks_permissions: dict = None,
+                 version: typing.List = [22, 11, 0],
+                 module_name: str = "DFPMLFlowWriterModule", 
+                 module_namespace: str = "DFP"):
         super().__init__(c)
 
         self._model_name_formatter = model_name_formatter
         self._experiment_name_formatter = experiment_name_formatter
         self._databricks_permissions = databricks_permissions
+        self._registry = srf.ModuleRegistry()
+        self._version =  version
+        self._module_name = module_name
+        self._module_namespace = module_namespace
 
     @property
     def name(self) -> str:
@@ -250,10 +257,22 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
-            obs.pipe(ops.map(self.on_data)).subscribe(sub)
+        def module_init(builder: srf.Builder):
 
-        stream = builder.make_node_full(self.unique_name, node_fn)
+            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+                obs.pipe(ops.map(self.on_data)).subscribe(sub)
+            
+            node = builder.make_node_full(self.unique_name, node_fn)
+            
+            builder.register_module_input("input", node)
+
+        if not self._registry.contains("DFPMLFlowWriter", self._module_namespace):
+           self._registry.register_module("DFPMLFlowWriter", self._module_namespace, self._version, module_init)
+        
+        module = builder.load_module("DFPMLFlowWriter", self._module_namespace, self._module_name, {})
+        
+        stream = module.input_port("input")
+        
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiAEMessage
