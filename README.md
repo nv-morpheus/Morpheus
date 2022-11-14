@@ -288,7 +288,7 @@ And for the AE pipeline:
 
 ```bash
 $ morpheus run pipeline-ae --help
-Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
+Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
                                [ARGS]...]...
 
 <Help Paragraph Omitted>

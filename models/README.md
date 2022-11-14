@@ -7,7 +7,7 @@ Every Morpheus use case has a subfolder, **`<use-case>-models`**, that contains 
 
 The `triton_model_repo` contains the necessary directory structure and configuration files in order to run the Morpheus Models in Triton Inference Server. This includes symlinks to the above-mentioned model files along with corresponding Triton config files (`.pbtxt`). More information on how to deploy this repository to Triton can be found in the [README](./triton-model-repo/README.md).
 
-Models can also be published to an [MLflow](https://mlflow.org/) server and deployed to Triton using the [MLflow Triton plugin](https://github.com/triton-inference-server/server/tree/main/deploy/mlflow-triton-plugin). The [mlflow](./mlflow/README.md) directory contains information on how to set up a Docker container to run an MLflow server for publishing Morpheus models and deploying them to Triton.
+Models can also be published to an [MLflow](https://mlflow.org/) server and deployed to Triton using the [MLflow Triton plugin](https://github.com/triton-inference-server/server/tree/main/deploy/mlflow-triton-plugin). The [MLflow](./mlflow/README.md) directory contains information on how to set up a Docker container to run an MLflow server for publishing Morpheus models and deploying them to Triton.
 
 In the root directory, the file `model-information.csv` contains the following information for each model:
 
@@ -49,7 +49,7 @@ SID is a classifier, designed to detect sensitive information (e.g., AWS credent
 ### Model Architecture
 Compact BERT-mini transformer model
 ### Training
-Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/google/bert_uncased_L-4_H-256_A-4). The labeled training dataset is 2 million synthetic pcap payloads generated using the [faker package](https://github.com/joke2k/faker) to mimic sensitive and benign data found in nested jsons from web APIs and environmental variables.
+Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/google/bert_uncased_L-4_H-256_A-4). The labeled training dataset is 2 million synthetic pcap payloads generated using the [faker package](https://github.com/joke2k/faker) to mimic sensitive and benign data found in nested JSON(s) from web APIs and environmental variables.
 ### How To Use This Model
 This model is an example of customized transformer-based sensitive information detection. It can be further fine-tuned for specific detection needs or retrained for alternative categorizations using the fine-tuning scripts in the repo.
 #### Input
@@ -96,7 +96,7 @@ Chen, Guestrin (2016) XGBoost. A scalable tree boosting system. https://arxiv.or
 
 ## Digital Fingerprinting (DFP)
 ### Model Overview
-This use case is currently implemented to detect changes in users' behavior that indicate a change from a human to a machine or a machine to a human. The model is an ensemble of an Autoencoder and fast Fourier transform reconstruction.
+This use case is currently implemented to detect changes in user's behavior that indicate a change from a human to a machine or a machine to a human. The model is an ensemble of an Autoencoder and fast Fourier transform reconstruction.
 ### Model Architecture
 The model is an ensemble of an Autoencoder and a fast Fourier transform reconstruction. The reconstruction loss of new log data through the trained Autoencoder is used as an anomaly score. Concurrently, the timestamps of user/entity activity are used for a time series analysis to flag activity with poor reconstruction after a fast Fourier transform.
 ### Training
@@ -109,7 +109,7 @@ aws-cloudtrail logs
 Anomalous score of Autoencoder, Binary classification of time series anomaly detection
 ### References
 - https://github.com/AlliedToasters/dfencoder/blob/master/dfencoder/autoencoder.py
-- https://github.com/rapidsai/clx/blob/branch-22.06/notebooks/anomaly_detection/FFT_Outlier_Detection.ipynb
+- https://github.com/rapidsai/clx/blob/branch-22.12/notebooks/anomaly_detection/FFT_Outlier_Detection.ipynb
 - Rasheed Peng Alhajj Rokne Jon: Fourier Transform Based Spatial Outlier Mining 2009 - https://link.springer.com/chapter/10.1007/978-3-642-04394-9_39
 
 ## Flexible Log Parsing
@@ -146,7 +146,7 @@ Transaction data with nodes including transaction, client, and merchant.
 An anomalous score of transactions indicates a probability score of being a fraud.
 ### References
 - https://stellargraph.readthedocs.io/en/stable/hinsage.html?highlight=hinsage
-- https://github.com/rapidsai/clx/blob/branch-0.20/examples/forest_inference/xgboost_training.ipynb
+- https://github.com/rapidsai/clx/blob/branch-22.12/examples/forest_inference/xgboost_training.ipynb
 - Rafaël Van Belle, Charles Van Damme, Hendrik Tytgat, Jochen De Weerdt,Inductive Graph Representation Learning for fraud detection (https://www.sciencedirect.com/science/article/abs/pii/S0957417421017449)
 
 ## Ransomware Detection via AppShield

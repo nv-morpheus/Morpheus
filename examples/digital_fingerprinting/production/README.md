@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # "Production" Digital Fingerprinting Pipeline
 
 This example is designed to show what a full scale, production ready, DFP deployment in Morpheus would look like. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
@@ -80,6 +97,51 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
 | `--help` | | Show this message and exit. |
 
+##### Steps to Run Example Pipeline
+The `/workspace/examples/digital_fingerprinting/fetch_example_data.py` script can be used to fetch the Duo and Azure logs to run the example pipelines.
+
+```bash
+export DFP_HOME=/workspace/examples/digital_fingerprinting
+```
+
+Usage of the script is as follows:
+```bash
+python $DFP_HOME/fetch_example_data.py --help
+
+usage: Fetches training and inference data for DFP examples [-h] [{azure,duo,all} [{azure,duo,all} ...]]
+
+positional arguments:
+  {azure,duo,all}  Data set to fetch
+
+optional arguments:
+  -h, --help       show this help message and exit
+```
+
+Download the data needed to run a pipeline on both Azure / Duo logs:
+```bash
+python $DFP_HOME/fetch_example_data.py all
+```
+
+Run Duo Training Pipeline:
+```bash
+python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="/workspace/examples/data/dfp/duo-training-data/*.json" 
+```
+
+Run Duo Inference Pipeline:
+```bash
+python dfp_duo_pipeline.py --train_users none --start_time "2022-08-30" --input_file="/workspace/examples/data/dfp/duo-inference-data/*.json"
+```
+
+Run Azure Training Pipeline:
+
+```bash
+python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="/workspace/examples/data/dfp/azure-training-data/AZUREAD_2022*.json"
+```
+
+Run Azure Inference Pipeline:
+```bash
+python dfp_azure_pipeline.py --train_users=none  --start_time "2022-08-30" --input_file="/workspace/examples/data/dfp/azure-inference-data/*.json"
+```
 
 #### Optional MLflow Service
 Starting either the `morpheus_pipeline` or the `jupyter` service, will start the `mlflow` service in the background.  For debugging purposes it can be helpful to view the logs of the running MLflow service.

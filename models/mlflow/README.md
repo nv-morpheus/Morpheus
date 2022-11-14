@@ -1,7 +1,7 @@
-# MLFlow Triton
+# MLflow Triton
 
-MLFlow plugin for deploying your models from MLFlow to Triton Inference Server. Scripts
-are included for publishing TensorRT, ONNX and FIL models to your MLFlow Model Registry.
+MLflow plugin for deploying your models from MLflow to Triton Inference Server. Scripts
+are included for publishing TensorRT, ONNX and FIL models to your MLflow Model Registry.
 
 ## Requirements
 
@@ -13,7 +13,7 @@ are included for publishing TensorRT, ONNX and FIL models to your MLFlow Model R
 Before you can use the Triton Docker image you must install
 [Docker](https://docs.docker.com/engine/install). If you plan on using
 a GPU for inference you must also install the [NVIDIA Container
-Toolkit](https://github.com/NVIDIA/nvidia-docker). DGX users should
+Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker). DGX users should
 follow [Preparing to use NVIDIA
 Containers](http://docs.nvidia.com/deeplearning/dgx/preparing-containers/index.html).
 
@@ -50,25 +50,25 @@ cp -RL models /opt/triton_models
 
 Use the following command to run Triton with our model
 repository you just created. The [NVIDIA Container
-Toolkit](https://github.com/NVIDIA/nvidia-docker) must be installed
+Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) must be installed
 for Docker to recognize the GPU(s). The --gpus=1 flag indicates that 1
 system GPU should be made available to Triton for inferencing.
 
-```
+```bash
 docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v /opt/triton_models:/models nvcr.io/nvidia/tritonserver:<xx.yy>-py3 tritonserver --model-repository=/models --model-control-mode=explicit
 ```
 
 ## MLflow container
 
-Build MLFlow image from Dockerfile:
+Build MLflow image from Dockerfile:
 
-```
+```bash
 docker build -t mlflow-triton-plugin:latest -f docker/Dockerfile .
 ```
 
-Create MLFlow container with volume mount to Triton model repository:
+Create an MLflow container with volume mounting to the Triton model repository:
 
-```
+```bash
 docker run -it -v /opt/triton_models:/triton_models \
 --env TRITON_MODEL_REPO=/triton_models \
 --gpus '"device=0"' \
@@ -79,7 +79,7 @@ docker run -it -v /opt/triton_models:/triton_models \
 
 Open Bash shell in container:
 
-```
+```bash
 docker exec -it <container_name> bash
 ```
 
@@ -118,7 +118,7 @@ mlflow deployments create -t triton --flavor triton --name sid-minibert-onnx -m 
 ```
 from mlflow.deployments import get_deploy_client
 client = get_deploy_client('triton')
-client.create_deployment("id-minibert-onnx", " models:/sid-minibert-onnx/1", flavor="triton")
+client.create_deployment("sid-minibert-onnx", " models:/sid-minibert-onnx/1", flavor="triton")
 ```
 
 ### Delete Deployment
