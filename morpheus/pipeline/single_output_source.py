@@ -60,19 +60,24 @@ class SingleOutputSource(_pipeline.SourceStage):
         if len(self._needed_columns) > 0:
             node_name = f"{self.unique_name}-preallocate"
 
-            if issubclass(out_type, MessageMeta):
+            if issubclass(out_type, (MessageMeta, MultiMessage)):
                 if self._build_cpp_node():
                     import morpheus._lib.stages as _stages
-                    stream = _stages.PreallocateStage(builder, node_name, self._needed_columns)
+                    if issubclass(out_type, MessageMeta):
+                        stream = _stages.PreallocateMessageMetaStage(builder, node_name, self._needed_columns)
+                    else:
+                        stream = _stages.PreallocateMultiMessageStage(builder, node_name, self._needed_columns)
                 else:
-                    stream = builder.make_node(node_name, self._preallocate_meta)
-            elif issubclass(out_type, MultiMessage):
-                stream = builder.make_node(node_name, self._preallocate_multi)
+                    if issubclass(out_type, MessageMeta):
+                        stream = builder.make_node(node_name, self._preallocate_meta)
+                    else:
+                        stream = builder.make_node(node_name, self._preallocate_multi)
+
             elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
                 stream = builder.make_node(node_name, self._preallocate_df)
             else:
                 msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type {}"
-                       " isn't a Dataframe type".format(pretty_type))
+                       " isn't a supported type".format(pretty_type))
                 raise RuntimeError(msg)
 
             builder.make_edge(out_stream, stream)

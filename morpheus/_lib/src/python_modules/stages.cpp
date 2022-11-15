@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
@@ -136,11 +138,20 @@ PYBIND11_MODULE(stages, m)
              py::arg("disable_pre_filtering") = false,
              py::arg("stop_after")            = 0);
 
-    py::class_<srf::segment::Object<PreallocateStage>,
+    py::class_<srf::segment::Object<PreallocateStage<MessageMeta>>,
                srf::segment::ObjectProperties,
-               std::shared_ptr<srf::segment::Object<PreallocateStage>>>(
-        m, "PreallocateStage", py::multiple_inheritance())
-        .def(py::init<>(&PreallocateStageInterfaceProxy::init),
+               std::shared_ptr<srf::segment::Object<PreallocateStage<MessageMeta>>>>(
+        m, "PreallocateMessageMetaStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy<MessageMeta>::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("needed_columns"));
+
+    py::class_<srf::segment::Object<PreallocateStage<MultiMessage>>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<PreallocateStage<MultiMessage>>>>(
+        m, "PreallocateMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy<MultiMessage>::init),
              py::arg("builder"),
              py::arg("name"),
              py::arg("needed_columns"));

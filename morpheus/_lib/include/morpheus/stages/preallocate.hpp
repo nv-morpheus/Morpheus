@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/utilities/type_util_detail.hpp"  // for TypeId
 
 #include <pysrf/node.hpp>
@@ -27,30 +28,66 @@
 #include <srf/segment/builder.hpp>
 #include <srf/segment/object.hpp>  // for Object
 
+#include <exception>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
+namespace {
+void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
+                 const std::vector<std::string> &column_names,
+                 const std::vector<morpheus::TypeId> &column_types)
+{
+    auto table = msg->get_mutable_info();
+    table.insert_missing_columns(column_names, column_types);
+}
+
+void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
+                 const std::vector<std::string> &column_names,
+                 const std::vector<morpheus::TypeId> &column_types)
+{
+    preallocate(msg->meta, column_names, column_types);
+}
+}  // namespace
+
 namespace morpheus {
+#pragma GCC visibility push(default)
 /****** Component public implementations *******************/
 /****** PreallocateStage ********************************/
-/**
- * TODO(Documentation)
- */
-#pragma GCC visibility push(default)
-class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
+template <typename MessageT>
+class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
+    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    PreallocateStage(const std::map<std::string, std::string> &needed_columns);
+    PreallocateStage(const std::map<std::string, std::string> &needed_columns) :
+      base_t(base_t::op_factory_from_sub_fn(build_operator()))
+    {
+        for (const auto &column : needed_columns)
+        {
+            m_column_names.push_back(column.first);
+            m_column_types.push_back(DataType::from_numpy(column.second).type_id());
+        }
+    }
 
   private:
-    subscribe_fn_t build_operator();
+    subscribe_fn_t build_operator()
+    {
+        return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+            return input.subscribe(rxcpp::make_observer<sink_type_t>(
+                [this, &output](sink_type_t x) {
+                    // Since the msg was just emitted from the source we shouldn't have any trouble acquiring the mutex.
+                    preallocate(x, m_column_names, m_column_types);
+                    output.on_next(std::move(x));
+                },
+                [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
+                [&]() { output.on_completed(); }));
+        };
+    }
 
     std::vector<std::string> m_column_names;
     std::vector<TypeId> m_column_types;
@@ -60,13 +97,19 @@ class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
+template <typename MessageT>
 struct PreallocateStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a DeserializationStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<PreallocateStage>> init(
-        srf::segment::Builder &builder, const std::string &name, std::map<std::string, std::string> needed_columns);
+    static std::shared_ptr<srf::segment::Object<PreallocateStage<MessageT>>> init(
+        srf::segment::Builder &builder, const std::string &name, std::map<std::string, std::string> needed_columns)
+    {
+        auto stage = builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
+
+        return stage;
+    }
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
