@@ -25,6 +25,7 @@ import cudf
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.type_utils import pretty_print_type_name
 
@@ -65,6 +66,8 @@ class SingleOutputSource(_pipeline.SourceStage):
                     stream = _stages.PreallocateStage(builder, node_name, self._needed_columns)
                 else:
                     stream = builder.make_node(node_name, self._preallocate_meta)
+            elif issubclass(out_type, MultiMessage):
+                stream = builder.make_node(node_name, self._preallocate_multi)
             elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
                 stream = builder.make_node(node_name, self._preallocate_df)
             else:
@@ -80,8 +83,9 @@ class SingleOutputSource(_pipeline.SourceStage):
         return [(out_stream, out_type)]
 
     def _preallocate_df(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
-        # TODO replace with a CPP impl
-        missing_columns = self._needed_columns.keys() - df.columns
+        # Using a list-comprehension in order to preserve the order
+        # Doing `missing_columns = self._needed_columns.keys() - df.columns` loses the order
+        missing_columns = [col for col in self._needed_columns.keys() if col not in df.columns]
         if len(missing_columns) > 0:
             if isinstance(df, cudf.DataFrame):
                 alloc_func = cp.zeros
@@ -98,4 +102,8 @@ class SingleOutputSource(_pipeline.SourceStage):
 
     def _preallocate_meta(self, msg: MessageMeta):
         self._preallocate_df(msg.df)
+        return msg
+
+    def _preallocate_multi(self, msg: MultiMessage):
+        self._preallocate_df(msg.meta.df)
         return msg
