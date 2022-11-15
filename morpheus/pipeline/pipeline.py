@@ -180,6 +180,15 @@ class Pipeline():
         def inner_build(builder: srf.Builder, segment_id: str):
             segment_graph = self._segment_graphs[segment_id]
 
+            # Check if preallocated columns are requested, this needs to happen before the source stages are built
+            needed_columns = OrderedDict()
+            for stage in networkx.topological_sort(segment_graph):
+                needed_columns.update(stage.needed_columns)
+
+            for stage in segment_graph.nodes():
+                if (isinstance(stage, SourceStage)):
+                    stage.needed_columns.update(needed_columns)
+
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
             # topo_sort provides a reasonable approximation.
             for stage in networkx.topological_sort(segment_graph):
@@ -201,14 +210,6 @@ class Pipeline():
             for stage in segment_graph.nodes():
                 for port in stage.input_ports:
                     port.link()
-
-        # Check if preallocated columns are requested, this needs to happen before the source stages are built
-        needed_columns = OrderedDict()
-        for stage in self._stages:
-            needed_columns.update(stage.needed_columns)
-
-        for source_stage in self._sources:
-            source_stage.needed_columns.update(needed_columns)
 
         logger.info("====Building Pipeline====")
         for segment_id in self._segments.keys():
