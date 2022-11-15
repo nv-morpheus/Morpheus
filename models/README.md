@@ -61,19 +61,19 @@ Well-Read Students Learn Better: On the Importance of Pre-training Compact Model
 
 ## Phishing Email Detection
 ### Model Overview
-Phishing email detection is a binary classifier differentiating between phishing and non-phishing emails.
+Phishing email detection is a binary classifier differentiating between phishing/spam and non-phishing/spam emails and SMS messages.
 ### Model Architecture
 BERT-base uncased transformer model
 ### Training
-Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/bert-base-uncased). The labeled training dataset is around 20000 emails from three public datasets ([CLAIR](https://www.kaggle.com/datasets/rtatman/fraudulent-email-corpus), [SPAM_ASSASIN](https://spamassassin.apache.org/old/publiccorpus/readme.html), [Enron](https://www.cs.cmu.edu/~./enron/))
+Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/bert-base-uncased). The labeled training dataset is around 5000 SMS messages from a public dataset- [SMS Spam Collection](https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection)
 ### How To Use This Model
-This model is an example of customized transformer-based phishing email detection. It can be further fine-tuned for specific detection needs and customized the emails of your enterprise using the fine-tuning scripts in the repo.
+This model is an example of customized transformer-based phishing email detection. It can be retrained for specific detection needs and customized the emails of your enterprise using the training scripts in the repo.
 #### Input
 Entire email as a string
 #### Output
-Binary sequence classification as phishing or non-phishing
+Binary sequence classification as phishing/spam or non-phishing/spam
 ### References
-- Radev, D. (2008), CLAIR collection of fraud email, ACL Data and Code Repository, ADCR2008T001, http://aclweb.org/aclwiki
+- https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection
 - Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
 https://arxiv.org/abs/1810.04805
 
