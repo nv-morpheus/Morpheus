@@ -135,9 +135,9 @@ PYBIND11_MODULE(stages, m)
              py::arg("disable_pre_filtering") = false,
              py::arg("stop_after")            = 0);
 
-    py::class_<srf::segment::Object<PreallocateStageInterfaceProxy>,
+    py::class_<srf::segment::Object<PreallocateStage>,
                srf::segment::ObjectProperties,
-               std::shared_ptr<srf::segment::Object<PreallocateStageInterfaceProxy>>>(
+               std::shared_ptr<srf::segment::Object<PreallocateStage>>>(
         m, "PreallocateStage", py::multiple_inheritance())
         .def(py::init<>(&PreallocateStageInterfaceProxy::init),
              py::arg("builder"),

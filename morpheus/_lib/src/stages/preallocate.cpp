@@ -47,8 +47,12 @@ PreallocateStage::subscribe_fn_t PreallocateStage::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
-                auto table = x->get_mutable_info();
-                table.insert_missing_columns(m_column_names, m_column_types);
+                // We want to ensure the mutable table object goes out of scope and releases the mutex prior to
+                // calling on_next which may block,
+                {
+                    auto table = x->get_mutable_info();
+                    table.insert_missing_columns(m_column_names, m_column_types);
+                }
                 output.on_next(std::move(x));
             },
             [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
@@ -58,7 +62,7 @@ PreallocateStage::subscribe_fn_t PreallocateStage::build_operator()
 
 // ************ DeserializationStageInterfaceProxy ************* //
 std::shared_ptr<srf::segment::Object<PreallocateStage>> PreallocateStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, std::map<std::string, std::string> needed_columns)
+    srf::segment::Builder &builder, const std::string &name, const std::map<std::string, std::string> &needed_columns)
 {
     auto stage = builder.construct_object<PreallocateStage>(name, needed_columns);
 

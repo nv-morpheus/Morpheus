@@ -67,7 +67,9 @@ struct PreallocateStageInterfaceProxy
      * @brief Create and initialize a DeserializationStage, and return the result.
      */
     static std::shared_ptr<srf::segment::Object<PreallocateStage>> init(
-        srf::segment::Builder &builder, const std::string &name, std::map<std::string, std::string> needed_columns);
+        srf::segment::Builder &builder,
+        const std::string &name,
+        const std::map<std::string, std::string> &needed_columns);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
