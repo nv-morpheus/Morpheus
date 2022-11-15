@@ -69,6 +69,26 @@ Once Triton has loaded the model, you should see the following in the output:
 
 ```
 
+#### ONNX->TensorRT Model Conversion
+
+To achieve optimized inference performance, Triton Inference Server provides option to convert our ONNX model to TensorRT. Simply add the following to end of your `config.pbtxt`:
+```
+dynamic_batching {
+  preferred_batch_size: [ 1, 4, 8, 16, 32 ]
+  max_queue_delay_microseconds: 50000
+}
+
+optimization { execution_accelerators {
+  gpu_execution_accelerator : [ {
+    name : "tensorrt"
+    parameters { key: "precision_mode" value: "FP16" }
+    parameters { key: "max_workspace_size_bytes" value: "1073741824" }
+    }]
+}}
+```
+This will trigger the ONNX->TensorRT model conversion upon first use of the model. Therefore, expect only the first pipeline run to take several minutes to allow for this conversion. You should notice substantial inference speedups compared to ONNX in subsequent pipeline runs.
+
+More information about TensorRT can be found [here](https://developer.nvidia.com/tensorrt).
 
 ## Running the Pipeline
 
@@ -87,7 +107,7 @@ morpheus --log_level=DEBUG \
 `# Run a pipeline with 5 threads and a model batch size of 32 (Must match Triton config)` \
 run --num_threads=8 --edge_buffer_size=4 --use_cpp=True --pipeline_batch_size=1024 --model_max_batch_size=32 \
 `# Specify a NLP pipeline with 128 sequence length (Must match Triton config)` \
-pipeline-nlp --model_seq_length=128 --labels_file=./data/labels_binary_root_cause.txt \
+pipeline-nlp --model_seq_length=128 --label=not_root_cause --label=is_root_cause \
 `# 1st Stage: Read from file` \
 from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/rootcause-validation-data-input.csv \
 `# 2nd Stage: Deserialize from JSON strings to objects` \
@@ -100,11 +120,9 @@ inf-triton --force_convert_inputs=True --model_name=root-cause-binary-onnx --ser
 monitor --description='Inference rate' --smoothing=0.001 --unit inf \
 `# 6th Stage: Add scores from inference to the messages` \
 add-scores --label=is_root_cause \
-`# 7th Stage: Filtering removes any messages that did not detect SI` \
-filter \
-`# 8th Stage: Convert from objects back into strings` \
+`# 7th Stage: Convert from objects back into strings` \
 serialize --exclude '^ts_' \
-`# 9th Stage: Write results out to CSV file` \
+`# 8th Stage: Write results out to CSV file` \
 to-file --filename=./root-cause-binary-output.csv --overwrite
 ```
 
@@ -112,11 +130,10 @@ If successful, you should see the following output:
 
 ```bash
 Configuring Pipeline via CLI
-Parameter, 'labels_file', with relative path, './data/labels_binary_root_cause.txt', does not exist. Using package relative location: '/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/./data/labels_binary_root_cause.txt'
 Loaded labels file. Current labels: [['not_root_cause', 'is_root_cause']]
 Parameter, 'vocab_hash_file', with relative path, './data/bert-base-uncased-hash.txt', does not exist. Using package relative location: '/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/./data/bert-base-uncased-hash.txt'
 Starting pipeline via CLI... Ctrl+C to Quit
-W20221114 21:39:02.867462 17073 thread.cpp:138] unable to set memory policy - if using docker use: --cap-add=sys_nice to allow membind
+W20221115 18:41:05.942132 31192 thread.cpp:138] unable to set memory policy - if using docker use: --cap-add=sys_nice to allow membind
 Config: 
 {
   "ae": null,
@@ -138,16 +155,16 @@ Config:
 }
 CPP Enabled: True
 ====Registering Pipeline====
-====Building Pipeline====             
+====Building Pipeline====
 ====Building Segment: linear_segment_0====
-====Building Segment Complete!====    
-====Building Pipeline Complete!====   
-Starting! Time: 1668461942.8933783    
+====Building Segment Complete!====
+====Building Pipeline Complete!====
+Starting! Time: 1668537665.9479523
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====             
+Inference rate: 0 inf [00:00, ? inf/s]W20221115 18:41:05.952613 31192 triton_inference.cpp:329] Failed to connect to Triton at 'localhost:8001'. Default gRPC port of (8001) was detected but C++ InferenceClientStage uses HTTP protocol. Retrying with default HTTP port (8000)
 ====Pipeline Started====              
-Inference rate: 0 inf [00:00, ? inf/s]W20221114 21:39:02.907341 17073 triton_inference.cpp:323] Failed to connect to Triton at 'localhost:8001'. Default gRPC port of (8001) was detected but C++ InferenceClientStage uses HTTP protocol. Retrying with default HTTP port (8000)
-Added source: <from-file-0; FileSourceStage(filename=/my_data/kernel_test_100.csv, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=/my_data/gitrepos/efajardo-nv/Morpheus/models/datasets/validation-data/rootcause-validation-data-input.csv, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
@@ -159,16 +176,14 @@ Added stage: <monitor-4; MonitorStage(description=Inference rate, smoothing=0.00
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
 Added stage: <add-scores-5; AddScoresStage(labels=('is_root_cause',), prefix=)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <filter-6; FilterDetectionsStage(threshold=0.5, copy=True)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
-Added stage: <serialize-7; SerializeStage(include=(), exclude=('^ts_',), fixed_columns=True)>
+Added stage: <serialize-6; SerializeStage(include=(), exclude=('^ts_',), fixed_columns=True)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
-Added stage: <to-file-8; WriteToFileStage(filename=./root-cause-binary-output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
+Added stage: <to-file-7; WriteToFileStage(filename=./root-cause-binary-output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
-Inference rate[Complete]: 10000 inf [00:04, 2013.65 inf/s]
+Inference rate[Complete]: 473 inf [00:01, 340.43 inf/s]
 ====Pipeline Complete====
 ```
 
-The output file `root-cause-binary-output.csv` will contain the original kernel log messages with an additional field `is_root_cause`. The value of the new field will be root cause probability.
+The output file `root-cause-binary-output.csv` will contain the original kernel log messages with an additional field `is_root_cause`. The value of the new field will be the root cause probability.
 
 
