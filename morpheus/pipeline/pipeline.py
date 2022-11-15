@@ -178,6 +178,7 @@ class Pipeline():
         self._srf_pipeline = srf.Pipeline()
 
         def inner_build(builder: srf.Builder, segment_id: str):
+            logger.info(f"====Building Segment: {segment_id}====")
             segment_graph = self._segment_graphs[segment_id]
 
             # Check if preallocated columns are requested, this needs to happen before the source stages are built
@@ -185,9 +186,12 @@ class Pipeline():
             for stage in networkx.topological_sort(segment_graph):
                 needed_columns.update(stage.needed_columns)
 
-            for stage in segment_graph.nodes():
-                if (isinstance(stage, SourceStage)):
-                    stage.needed_columns.update(needed_columns)
+            if (len(needed_columns) > 0):
+                print("Needed columns: {}".format(needed_columns))
+                for stage in segment_graph.nodes():
+                    if (isinstance(stage, SourceStage)):
+                        print("Found source stage: {}".format(stage))
+                        stage.needed_columns.update(needed_columns)
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
             # topo_sort provides a reasonable approximation.
@@ -211,9 +215,10 @@ class Pipeline():
                 for port in stage.input_ports:
                     port.link()
 
+            logger.info("====Building Segment Complete!====")
+
         logger.info("====Building Pipeline====")
         for segment_id in self._segments.keys():
-            logger.info(f"====Building Segment: {segment_id}====")
             segment_ingress_ports = self._segments[segment_id]["ingress_ports"]
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
@@ -221,7 +226,6 @@ class Pipeline():
             self._srf_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
                                             segment_inner_build)
-            logger.info("====Building Segment Complete!====")
 
         logger.info("====Building Pipeline Complete!====")
         self._is_build_complete = True
