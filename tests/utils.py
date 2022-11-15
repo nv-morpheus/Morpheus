@@ -65,11 +65,17 @@ class ConvMsg(SinglePortStage):
     Setting `order` specifies probs to be in either column or row major
     """
 
-    def __init__(self, c: Config, expected_data_file: str = None, columns: typing.List[str] = None, order: str = 'K'):
+    def __init__(self,
+                 c: Config,
+                 expected_data_file: str = None,
+                 columns: typing.List[str] = None,
+                 order: str = 'K',
+                 probs_type: str = 'f4'):
         super().__init__(c)
         self._expected_data_file = expected_data_file
         self._columns = columns
         self._order = order
+        self._probs_type = probs_type
 
     @property
     def name(self):
@@ -90,7 +96,7 @@ class ConvMsg(SinglePortStage):
             else:
                 df = m.get_meta()
 
-        probs = cp.array(df.values, copy=True, order=self._order)
+        probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
         return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
 
