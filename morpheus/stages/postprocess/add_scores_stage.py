@@ -48,7 +48,7 @@ class AddScoresStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, labels: typing.List[str] = None, prefix: str = "", probs_type: str = 'float32'):
+    def __init__(self, c: Config, labels: typing.List[str] = None, prefix: str = "", probs_type: str = 'f4'):
         super().__init__(c)
 
         self._feature_length = c.feature_length
