@@ -45,7 +45,8 @@ class AddScoresStage(SinglePortStage):
         the Config.class_labels property.
     prefix : str, default = ""
         Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
-
+    probs_type : str, default = "f4"
+        Numpy dtype string indicating the datatype of the scores columns.
     """
 
     def __init__(self, c: Config, labels: typing.List[str] = None, prefix: str = "", probs_type: str = 'f4'):
