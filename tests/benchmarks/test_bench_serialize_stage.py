@@ -47,7 +47,7 @@ def build_and_run_pipeline(config: Config,
     pipeline.run()
 
 
-@pytest.mark.slow
+@pytest.mark.benchmark
 @pytest.mark.parametrize("num_messages", [1, 100, 10000])
 @pytest.mark.parametrize("output_type", ["json", "csv"])
 def test_monitor_stage(benchmark, num_messages, output_type):

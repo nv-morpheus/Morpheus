@@ -105,7 +105,6 @@ def test_abp_no_cpp(mock_triton_client,
     # Fill our topic with the input data
     num_records = write_file_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, val_file_name)
 
-    # Disabling commits due to known issue in Python impl: https://github.com/nv-morpheus/Morpheus/issues/294
     pipe = LinearPipeline(config)
     pipe.set_source(
         KafkaSourceStage(config,
@@ -113,8 +112,8 @@ def test_abp_no_cpp(mock_triton_client,
                          input_topic=kafka_topics.input_topic,
                          auto_offset_reset="earliest",
                          poll_interval="1seconds",
-                         disable_commit=True,
-                         stop_after=num_records))
+                         stop_after=num_records,
+                         client_id="test_abp_no_cpp_reader"))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(PreprocessFILStage(config))
     pipe.add_stage(
@@ -123,7 +122,10 @@ def test_abp_no_cpp(mock_triton_client,
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
-        WriteToKafkaStage(config, bootstrap_servers=kafka_bootstrap_servers, output_topic=kafka_topics.output_topic))
+        WriteToKafkaStage(config,
+                          bootstrap_servers=kafka_bootstrap_servers,
+                          output_topic=kafka_topics.output_topic,
+                          client_id="test_abp_no_cpp_writer"))
 
     pipe.run()
 
