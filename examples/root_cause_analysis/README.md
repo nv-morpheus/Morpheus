@@ -44,7 +44,7 @@ Below is a visualization of the pipeline showing all of the stages and data type
 
 ## Setup
 
-This example utilizes the Triton Inference Server to perform inference. The binary sequence classification neural network model is provided in the `models/root-cause--models` directory of the Morpheus repo.
+This example utilizes the Triton Inference Server to perform inference. The binary sequence classification neural network model is provided in the `models/root-cause-models` directory of the Morpheus repo.
 
 ### Launching Triton
 
@@ -71,7 +71,7 @@ Once Triton has loaded the model, you should see the following in the output:
 
 #### ONNX->TensorRT Model Conversion
 
-To achieve optimized inference performance, Triton Inference Server provides option to convert our ONNX model to TensorRT. Simply add the following to end of your `config.pbtxt`:
+To achieve optimized inference performance, Triton Inference Server provides option to convert our ONNX model to TensorRT. Simply add the following to the end of your `config.pbtxt`:
 ```
 dynamic_batching {
   preferred_batch_size: [ 1, 4, 8, 16, 32 ]
