@@ -187,10 +187,8 @@ class Pipeline():
                 needed_columns.update(stage.needed_columns)
 
             if (len(needed_columns) > 0):
-                print("Needed columns: {}".format(needed_columns))
                 for stage in segment_graph.nodes():
                     if (isinstance(stage, SourceStage)):
-                        print("Found source stage: {}".format(stage))
                         stage.needed_columns.update(needed_columns)
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
