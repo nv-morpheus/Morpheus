@@ -102,7 +102,9 @@ From the Morpheus repo root directory run:
 
 ```bash
 export MORPHEUS_ROOT=$(pwd)
-# Launch Morpheus printing debug messages
+```
+
+```bash
 morpheus --log_level=DEBUG \
 `# Run a pipeline with 5 threads and a model batch size of 32 (Must match Triton config)` \
 run --num_threads=8 --edge_buffer_size=4 --use_cpp=True --pipeline_batch_size=1024 --model_max_batch_size=32 \
