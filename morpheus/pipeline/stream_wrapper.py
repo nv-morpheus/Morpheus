@@ -96,7 +96,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         self._output_ports: typing.List[_pipeline.Sender] = []
 
         # Mapping of {`column_name`: `numpy dtype`}
-        self._needed_columns = {}
+        self._needed_columns = collections.OrderedDict()
 
     def __init_subclass__(cls) -> None:
 
