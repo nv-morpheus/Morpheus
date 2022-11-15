@@ -81,13 +81,15 @@ The following command line is the entire command to build and launch a root caus
 From the Morpheus repo root directory run:
 
 ```bash
+export MORPHEUS_ROOT=$(pwd)
+# Launch Morpheus printing debug messages
 morpheus --log_level=DEBUG \
 `# Run a pipeline with 5 threads and a model batch size of 32 (Must match Triton config)` \
 run --num_threads=8 --edge_buffer_size=4 --use_cpp=True --pipeline_batch_size=1024 --model_max_batch_size=32 \
 `# Specify a NLP pipeline with 128 sequence length (Must match Triton config)` \
 pipeline-nlp --model_seq_length=128 --labels_file=./data/labels_binary_root_cause.txt \
 `# 1st Stage: Read from file` \
-from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/root-cause-validation-data-input.csv \
+from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/rootcause-validation-data-input.csv \
 `# 2nd Stage: Deserialize from JSON strings to objects` \
 deserialize \
 `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
