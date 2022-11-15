@@ -18,6 +18,7 @@ import os
 import signal
 import time
 import typing
+from collections import OrderedDict
 from collections import defaultdict
 from functools import partial
 
@@ -202,13 +203,10 @@ class Pipeline():
                     port.link()
 
         # Check if preallocated columns are requested, this needs to happen before the source stages are built
-        needed_columns = {}
+        needed_columns = OrderedDict()
         for stage in self._stages:
             needed_columns.update(stage.needed_columns)
 
-        logger.info("==== needed_columns ====")
-        logger.info(needed_columns)
-        logger.info(self._sources)
         for source_stage in self._sources:
             source_stage.needed_columns.update(needed_columns)
 
