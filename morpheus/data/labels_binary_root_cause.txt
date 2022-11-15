@@ -1,2 +1,0 @@
-not_root_cause
-is_root_cause
