@@ -21,6 +21,7 @@
 #include "morpheus/stages/file_source.hpp"
 #include "morpheus/stages/filter_detection.hpp"
 #include "morpheus/stages/kafka_source.hpp"
+#include "morpheus/stages/preallocate.hpp"
 #include "morpheus/stages/preprocess_fil.hpp"
 #include "morpheus/stages/preprocess_nlp.hpp"
 #include "morpheus/stages/serialize.hpp"
@@ -133,6 +134,15 @@ PYBIND11_MODULE(stages, m)
              py::arg("disable_commits")       = false,
              py::arg("disable_pre_filtering") = false,
              py::arg("stop_after")            = 0);
+
+    py::class_<srf::segment::Object<PreallocateStageInterfaceProxy>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<PreallocateStageInterfaceProxy>>>(
+        m, "PreallocateStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("needed_columns"));
 
     py::class_<srf::segment::Object<PreprocessFILStage>,
                srf::segment::ObjectProperties,

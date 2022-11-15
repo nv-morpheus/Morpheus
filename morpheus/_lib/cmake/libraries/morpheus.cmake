@@ -44,6 +44,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/stages/file_source.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/filter_detection.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/kafka_source.cpp
+    ${MORPHEUS_LIB_ROOT}/src/stages/preallocate.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/preprocess_fil.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/preprocess_nlp.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/serialize.cpp
