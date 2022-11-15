@@ -312,7 +312,8 @@ def run_pipeline(train_users,
         pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
 
         # Postprocess for viz and save to multiple files by day
-        pipeline.add_stage(DFPVizPostprocStage(config, period=period, output_dir=output_dir, output_prefix=output_prefix))
+        pipeline.add_stage(
+            DFPVizPostprocStage(config, period=period, output_dir=output_dir, output_prefix=output_prefix))
     # Run the pipeline
     pipeline.run()
 
