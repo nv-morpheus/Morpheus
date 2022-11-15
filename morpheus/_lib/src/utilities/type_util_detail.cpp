@@ -94,7 +94,14 @@ std::string DataType::name() const
 
 std::string DataType::type_str() const
 {
-    return MORPHEUS_CONCAT_STR("<" << this->type_char() << this->item_size());
+    if (m_type_id != TypeId::BOOL8)
+    {
+        return MORPHEUS_CONCAT_STR("<" << this->type_char() << this->item_size());
+    }
+    else
+    {
+        return std::string{this->type_char()};
+    }
 }
 
 bool DataType::operator==(const DataType& other) const
@@ -116,7 +123,11 @@ DataType DataType::from_numpy(const std::string& numpy_str)
         size_start = 2;
     }
 
-    auto dtype_size = std::stoi(numpy_str.substr(size_start));
+    int dtype_size = 1;
+    if (numpy_str.size() > 1)
+    {
+        dtype_size = std::stoi(numpy_str.substr(size_start));
+    }
 
     // Now lookup in the map
     auto found_type = str_to_type_id.find(type_char);
