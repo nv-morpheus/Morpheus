@@ -40,7 +40,7 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** KafkaSourceStage************************************/
 /**
- * TODO(Documentation)
+ * This class loads messages from the Kafka cluster by serving as a Kafka consumer.
  */
 #pragma GCC visibility push(default)
 
@@ -51,6 +51,20 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
+    /**
+     * @brief Constructor for class KafkaSourceStage
+     * 
+     * @param max_batch_size : The maximum batch size for the messages batch. 
+     * @param topic : Input kafka topic.
+     * @param batch_timeout_ms : Frequency of the poll in ms.
+     * @param config : Kafka consumer configuration
+     * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server. 
+     * This is only useful for debugging, allowing the user to process the same messages multiple times.
+     * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages. 
+     * This is only useful when inputs are known to be valid json.
+     * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table). 
+     * Useful for testing. Disabled if `0`
+    */
     KafkaSourceStage(size_t max_batch_size,
                      std::string topic,
                      int32_t batch_timeout_ms,
@@ -78,22 +92,35 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     subscriber_fn_t build();
 
     /**
-     * TODO(Documentation)
+     * @brief Create kafka consumer configuration and returns unique pointer to the result.
+     * 
+     * @param config_in : Configuration map contains Kafka consumer properties
+     * @return std::unique_ptr<RdKafka::Conf>
      */
     std::unique_ptr<RdKafka::Conf> build_kafka_conf(const std::map<std::string, std::string> &config_in);
 
     /**
-     * TODO(Documentation)
+     * @brief Creates Kafka consumer instance.
+     * 
+     * @param rebalancer : Group rebalance callback for use with RdKafka::KafkaConsumer
+     * @return std::unique_ptr<RdKafka::KafkaConsumer>
      */
     std::unique_ptr<RdKafka::KafkaConsumer> create_consumer(RdKafka::RebalanceCb &rebalancer);
 
     /**
-     * TODO(Documentation)
+     * @brief Load messages from a buffer/file to a cuDF table.
+     * 
+     * @param buffer : Reference of a messages buffer
+     * @return cudf::io::table_with_metadata
      */
     cudf::io::table_with_metadata load_table(const std::string &buffer);
 
     /**
-     * TODO(Documentation)
+     * @brief This function combines JSON messages from Kafka, parses them, then loads them onto a MessageMeta.
+     * and returns the shared pointer as a result.
+     * 
+     * @param message_batch : Reference of a message batch that needs to be processed.
+     * @return std::shared_ptr<morpheus::MessageMeta>
      */
     std::shared_ptr<morpheus::MessageMeta> process_batch(
         std::vector<std::unique_ptr<RdKafka::Message>> &&message_batch);

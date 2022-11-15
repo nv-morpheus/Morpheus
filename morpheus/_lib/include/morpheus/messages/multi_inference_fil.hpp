@@ -31,7 +31,16 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiInferenceFILMessage****************************************/
 /**
- * TODO(Documentation)
+ * A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
+ * proper inputs are set and eases debugging.
+ * 
+ * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+ * C++ representations of the table
+ * @param mess_offset Offset into the metadata batch
+ * @param mess_count Messages count
+ * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
+ * @param offset Message offset in inference memory instance
+ * @param count Message count in inference memory instance
  */
 #pragma GCC visibility push(default)
 class MultiInferenceFILMessage : public MultiInferenceMessage
@@ -92,17 +101,20 @@ struct MultiInferenceFILMessageInterfaceProxy
                                                           cudf::size_type count);
 
     /**
-     * TODO(Documentation)
+     * @brief Get inference memory instance, and return a shared pointer to the result.
+     * @return std::shared_ptr<morpheus::InferenceMemory>
      */
     static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceFILMessage& self);
 
     /**
-     * TODO(Documentation)
+     * @brief Message offset in inference memory instance.
+     * @return std::size_t
      */
     static std::size_t offset(MultiInferenceFILMessage& self);
 
     /**
-     * TODO(Documentation)
+     * @brief Message count in inference memory instance.
+     * @return std::size_t
      */
     static std::size_t count(MultiInferenceFILMessage& self);
 };

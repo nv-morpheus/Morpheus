@@ -37,8 +37,11 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** DeserializationStage********************************/
 /**
- * TODO(Documentation)
- */
+ * Deserialize source data into Dataframes.
+ * 
+ * This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. 
+ * This should be one of the first stages after the `Source` object.
+*/
 #pragma GCC visibility push(default)
 class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
 {
@@ -48,6 +51,11 @@ class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Constructor class for DeserializeStage.
+     * 
+     * @param batch_size : Number of messages to be divided into each batch.
+    */
     DeserializeStage(size_t batch_size);
 
   private:

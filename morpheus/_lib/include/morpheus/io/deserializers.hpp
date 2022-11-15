@@ -34,7 +34,7 @@ namespace morpheus {
 cudf::io::table_with_metadata load_table_from_file(const std::string& filename);
 
 /**
- * @brief Loads a cudf table from a json soruce, replacing any escape characters in the source data that cudf can't
+ * @brief Loads a cudf table from a JSON source, replacing any escape characters in the source data that cudf can't
  * handle
  *
  * @param json_options

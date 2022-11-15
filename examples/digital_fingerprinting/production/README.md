@@ -117,7 +117,7 @@ optional arguments:
   -h, --help       show this help message and exit
 ```
 
-Download the data needed to run a pipeline on both Azure / Duo logs:
+Download the data needed to run a pipeline on Azure / Duo logs:
 ```bash
 python $DFP_HOME/fetch_example_data.py all
 ```
@@ -140,7 +140,7 @@ python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --i
 
 Run Azure Inference Pipeline:
 ```bash
-python dfp_azure_pipeline.py --train_users=none  --start_time "2022-08-30" --input_file="/workspace/examples/data/dfp/azure-inference-data/*.json"
+python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="/workspace/examples/data/dfp/azure-inference-data/*.json"
 ```
 
 #### Optional MLflow Service

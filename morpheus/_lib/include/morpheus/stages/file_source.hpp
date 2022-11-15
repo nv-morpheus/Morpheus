@@ -35,7 +35,10 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** FileSourceStage*************************************/
 /**
- * TODO(Documentation)
+ * Load messages from a file.
+ * 
+ * Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
+ * testing performance and accuracy of a pipeline.
  */
 #pragma GCC visibility push(default)
 class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
@@ -45,6 +48,12 @@ class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
+    /**
+     * @brief Constructor of a class `FileSourceStage`
+     * 
+     * @param filename : Name of the file from which the messages will be read.
+     * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
+    */
     FileSourceStage(std::string filename, int repeat = 1);
 
   private:

@@ -30,28 +30,47 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemoryFIL****************************************/
+/**
+ * This is a container class for data that needs to be submitted to the inference server for FIL category
+ * usecases.
+ * 
+ * @param count Message count in inference memory instance
+ * @param input__0 Inference input
+ * @param seq_ids Ids used to index from an inference input to a message. Necessary since there can be more inference
+ * inputs than messages (i.e., if some messages get broken into multiple inference requests).
+*/
 class InferenceMemoryFIL : public InferenceMemory
 {
   public:
     InferenceMemoryFIL(size_t count, TensorObject input__0, TensorObject seq_ids);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'input__0' tensor, throws a `std::runtime_error` if it does not exist.
+     * 
+     * @return const TensorObject&
+     * @throw std::runtime_error
      */
     const TensorObject& get_input__0() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'seq_ids' tensor, throws a `std::runtime_error` if it does not exist.
+     * 
+     * @return const TensorObject&
+     * @throw std::runtime_error
      */
     const TensorObject& get_seq_ids() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'input__0'.
+     * 
+     * @param input_ids
      */
     void set_input__0(TensorObject input_ids);
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'seq_ids'.
+     * 
+     * @throw std::runtime_error
      */
     void set_seq_ids(TensorObject input_mask);
 };
@@ -71,32 +90,45 @@ struct InferenceMemoryFILInterfaceProxy
                                                     pybind11::object seq_ids);
 
     /**
-     * TODO(Documentation)
+     * Get messages count in the inference memory instance.
+     * 
+     * @return std::size_t
      */
     static std::size_t count(InferenceMemoryFIL& self);
 
-    /**
-     * TODO(Documentation)
+     /**
+     * Return the requested tensor for a given name.
+     * 
+     * (py) @param name Tensor name
+     * @return TensorObject
      */
     static TensorObject get_tensor(InferenceMemoryFIL& self, const std::string& name);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'input_ids' as cupy array.
+     * 
+     * @return pybind11::object
      */
     static pybind11::object get_input__0(InferenceMemoryFIL& self);
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'input__0'.
+     * 
+     * (py) @param input_ids 
      */
     static void set_input__0(InferenceMemoryFIL& self, pybind11::object cupy_values);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'seq_ids' as a cupy array.
+     * 
+     * @return pybind11::object
      */
     static pybind11::object get_seq_ids(InferenceMemoryFIL& self);
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'seq_ids'.
+     * 
+     * @param cupy_values
      */
     static void set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values);
 };

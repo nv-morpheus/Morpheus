@@ -38,7 +38,9 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** WriteToFileStage********************************/
 /**
- * TODO(Documentation)
+ * Write all messages to a file.
+ * 
+ * Messages are written to a file by this class. This class does not maintain an open file or buffer messages.
  */
 #pragma GCC visibility push(default)
 class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
@@ -50,7 +52,12 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
     using typename base_t::subscribe_fn_t;
 
     /**
-     * TODO(Documentation)
+     * @brief Constructor for class WriteToFileStage
+     * 
+     * @param filename : Name of the file to which the messages will be written.
+     * @param mode : Mode for opening a file.
+     * @param file_type : FileTypes
+     * @param include_index_col : Write out the index as a column, by default true.
      */
     WriteToFileStage(const std::string &filename,
                      std::ios::openmode mode = std::ios::out,
@@ -59,12 +66,22 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 
   private:
     /**
-     * TODO(Documentation)
+     * @brief Closes the queue.
      */
     void close();
 
+    /**
+     * @brief Write messages to a JSON format.
+     * 
+     * @param msg
+    */
     void write_json(sink_type_t &msg);
 
+    /**
+     * @brief Write messages to a CSV format.
+     * 
+     * @param msg
+    */
     void write_csv(sink_type_t &msg);
 
     subscribe_fn_t build_operator();

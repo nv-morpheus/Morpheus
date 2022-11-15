@@ -37,7 +37,10 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** AddClassificationStage********************************/
 /**
- * TODO(Documentation)
+ * Add detected classifications to each message.
+ * 
+ * Add classification labels based on probabilities calculated in inference stage. Label indexes will be looked up in
+ * the idx2label property.
  */
 #pragma GCC visibility push(default)
 class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
@@ -51,7 +54,11 @@ class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mu
     using typename base_t::subscribe_fn_t;
 
     /**
-     * TODO(Documentation)
+     * Constructor for class AddClassificationsStage
+     * 
+     * @param threshold : Threshold to consider true/false for each class.
+     * @param num_class_labels : Number of classification labels
+     * @param idx2label : Index to classification labels map
      */
     AddClassificationsStage(float threshold,
                             std::size_t num_class_labels,

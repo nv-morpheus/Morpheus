@@ -71,6 +71,12 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Constructor for class FilterDetectionsStage
+     * 
+     * @param threshold : Threshold to classify.
+     * @param copy : Whether or not to perform a copy default=true.
+    */
     FilterDetectionsStage(float threshold, bool copy = true);
 
   private:

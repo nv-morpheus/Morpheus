@@ -24,14 +24,42 @@
 
 namespace morpheus {
 
+/**
+ * @brief Transforms a dataframe into CSV format
+ * 
+ * @param tbl
+ * @param include_header
+ * @param include_index_col default=true
+ * @return std::string
+*/
 std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_index_col = true);
 
+/**
+ * @brief Transforms a dataframe into CSV format
+ * 
+ * @param tbl
+ * @param out_stream
+ * @param include_header
+ * @param include_index_col default=true
+*/
 void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col = true);
 
+/**
+ * @brief Transforms a dataframe into JSON format
+ * @param tbl
+ * @param include_index_col default=true
+ * @return std::string
+*/
 // Note the include_index_col is currently being ignored in both versions of `df_to_json` due to a known issue in
 // Pandas: https://github.com/pandas-dev/pandas/issues/37600
 std::string df_to_json(const TableInfo& tbl, bool include_index_col = true);
 
+/**
+ * @brief Transforms a dataframe into JSON format
+ * @param tbl
+ * @param out_stream
+ * @param include_index_col default=true
+*/
 void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col = true);
 
 }  // namespace morpheus

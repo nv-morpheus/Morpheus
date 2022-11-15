@@ -36,7 +36,18 @@ namespace morpheus {
 /****** Component public implementations********************/
 /****** MultiInferenceMessage*******************************/
 /**
- * TODO(Documentation)
+ * This is a container class that holds a pointer to an instance of the TensorMemory container and the metadata 
+ * of the data contained within it. Builds on top of the `MultiInferenceMessage` and `MultiTensorMessage` class 
+ * to add additional data for inferencing.
+ * 
+ * 
+ * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+ * C++ representations of the table
+ * @param mess_offset Offset into the metadata batch
+ * @param mess_count Messages count
+ * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
+ * @param offset Message offset in inference memory instance
+ * @param count Message count in inference memory instance
  */
 #pragma GCC visibility push(default)
 class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, MultiTensorMessage>
