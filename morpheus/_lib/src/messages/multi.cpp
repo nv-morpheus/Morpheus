@@ -132,13 +132,6 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
         tensor_types[i] = tensors[i].dtype().type_id();
     }
 
-    {
-        // Get the mutable table to add any missing columns. Must be scoped otherwise `get_meta` will deadlock
-        MutableTableInfo mutable_info = this->meta->get_mutable_info();
-
-        mutable_info.insert_missing_columns(column_names, tensor_types);
-    }
-
     TableInfo table_meta = this->get_meta(column_names);
 
     for (size_t i = 0; i < tensors.size(); ++i)

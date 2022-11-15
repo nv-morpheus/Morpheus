@@ -24,6 +24,7 @@ import cudf
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
+from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -61,7 +62,8 @@ class SingleOutputSource(_pipeline.SourceStage):
             node_name = f"{self.unique_name}-preallocate"
 
             if issubclass(out_type, (MessageMeta, MultiMessage)):
-                if self._build_cpp_node():
+                # Intentionally not using `_build_cpp_node` because `LinearBoundaryIngressStage` lacks a C++ impl
+                if CppConfig.get_should_use_cpp():
                     import morpheus._lib.stages as _stages
                     if issubclass(out_type, MessageMeta):
                         stream = _stages.PreallocateMessageMetaStage(builder, node_name, self._needed_columns)
