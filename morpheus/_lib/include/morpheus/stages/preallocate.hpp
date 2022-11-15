@@ -35,6 +35,14 @@
 #include <vector>
 
 namespace {
+/**
+ * @brief Performs preallocation to the underlying dataframe. These functions ensure that the MutableTableInfo object
+ * has gone out of scope and thus releasing the mutex prior to the stage calling `on_next` which may block.
+ *
+ * @param msg
+ * @param column_names
+ * @param column_types
+ */
 void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
                  const std::vector<std::string> &column_names,
                  const std::vector<morpheus::TypeId> &column_types)
@@ -55,6 +63,10 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 /****** Component public implementations *******************/
 /****** PreallocateStage ********************************/
+/* Preallocates new columns into the underlying dataframe. This stage supports both MessageMeta & subclasses of
+ * MultiMessage. In the Python bindings the stage is bound as `PreallocateMessageMetaStage` and
+ * `PreallocateMultiMessageStage`
+ */
 template <typename MessageT>
 class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
