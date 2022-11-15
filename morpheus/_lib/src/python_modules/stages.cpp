@@ -32,6 +32,7 @@
 #include <pybind11/attr.h>      // for multiple_inheritance
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>   // for dict, sequence
+#include <pybind11/stl.h>       // for dict->map conversions
 #include <pysrf/utils.hpp>      // for pysrf::import
 #include <srf/segment/object.hpp>
 
