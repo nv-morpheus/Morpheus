@@ -27,35 +27,17 @@ void packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
   uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx_begin,
-  uint32_t*                                       sem_idx_end,
+  uint32_t*                                       sem_idx,
   uint32_t*                                       packet_count,
-  uint32_t                                        packet_count_threshold,
-  cuda::std::chrono::duration<double>             debounce_threshold,
-  cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
+  uint32_t*                                       packet_data_size,
   cudaStream_t                                    stream
 );
-
-void packet_count_kernel(
-  doca_gpu_rxq_info*                                rxq_info,
-  doca_gpu_semaphore_in*                            sem_in,
-  uint32_t                                          sem_count,
-  uint32_t*                                         sem_idx_begin,
-  uint32_t*                                         sem_idx_end,
-  uint32_t*                                         packet_count,
-  uint32_t*                                         payload_size_total,
-  cuda::atomic<bool, cuda::thread_scope_system>*    exit_flag,
-  cudaStream_t                                      stream
-);
-
 
 void packet_gather_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
   uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx_begin,
-  uint32_t*                                       sem_idx_end,
-  uint32_t*                                       packet_count,
+  uint32_t*                                       sem_idx,
   uint64_t*                                       timestamp_out,
   int64_t*                                        src_mac_out,
   int64_t*                                        dst_mac_out,
@@ -63,9 +45,8 @@ void packet_gather_kernel(
   int64_t*                                        dst_ip_out,
   uint16_t*                                       src_port_out,
   uint16_t*                                       dst_port_out,
-  uint32_t*                                       payload_size_out,
-  char*                                           payload_out,
-  cuda::atomic<bool, cuda::thread_scope_system>*  exit_flag,
+  int32_t*                                        data_offsets_out,
+  char*                                           data_out,
   cudaStream_t                                    stream
 );
 

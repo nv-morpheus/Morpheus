@@ -19,6 +19,7 @@
 #include "morpheus/stages/doca_source_kernels.hpp"
 
 #include <cudf/column/column.hpp>  // for column
+#include <cudf/column/column_factories.hpp>
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
 #include <cudf/scalar/scalar.hpp>  // for string_scalar
@@ -69,61 +70,33 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     cudaStream_t processing_stream;
     cudaStreamCreateWithFlags(&processing_stream, cudaStreamNonBlocking);
 
-    auto exit_flag            = rmm::device_scalar<cuda::atomic<bool>>{false, processing_stream};
-    auto packet_count_d       = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto payload_size_total_d = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto sem_idx_begin_d      = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto sem_idx_end_d        = rmm::device_scalar<uint32_t>(0, processing_stream);
+    // auto exit_flag          = rmm::device_scalar<cuda::atomic<bool>>{false, processing_stream};
+    auto semaphore_idx_d    = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto packet_count_d     = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto packet_data_size_d = rmm::device_scalar<uint32_t>(0, processing_stream);
+    // auto sem_idx_begin_d      = rmm::device_scalar<uint32_t>(0, processing_stream);
 
     while (output.is_subscribed())
     {
-      // receive stuff
-
       morpheus::doca::packet_receive_kernel(
         _rxq->rxq_info_gpu(),
         _semaphore->in_gpu(),
         _semaphore->size(),
-        sem_idx_begin_d.data(),
-        sem_idx_end_d.data(),
+        semaphore_idx_d.data(),
         packet_count_d.data(),
-        2048,
-        cuda::std::chrono::duration<double>(1),
-        exit_flag.data(),
+        packet_data_size_d.data(),
         processing_stream
       );
 
-      // count stuff
       auto packet_count = packet_count_d.value(processing_stream);
-      auto sem_idx_begin = sem_idx_begin_d.value(processing_stream);
-      auto sem_idx_end = sem_idx_end_d.value(processing_stream);
-
-      // printf("host: packets(%d) begin(%d) end(%d)\n", packet_count, sem_idx_begin, sem_idx_end);
-
-      if (packet_count == 0 and sem_idx_begin == sem_idx_end)
+      
+      if (packet_count == 0)
       {
         continue;
       }
 
-      morpheus::doca::packet_count_kernel(
-        _rxq->rxq_info_gpu(),
-        _semaphore->in_gpu(),
-        _semaphore->size(),
-        sem_idx_begin_d.data(),
-        sem_idx_end_d.data(),
-        packet_count_d.data(),
-        payload_size_total_d.data(),
-        exit_flag.data(),
-        processing_stream
-      );
+      auto packet_data_size = packet_data_size_d.value(processing_stream);
 
-      auto payload_size = payload_size_total_d.value(processing_stream);
-
-      std::cout << std::endl
-                << "payload size total: " << payload_size
-                << std::endl
-                << std::flush;
-
-      // allocate stuff
       auto timestamp_out_d    = rmm::device_uvector<uint64_t>(packet_count, processing_stream);
       auto src_mac_out_d      = rmm::device_uvector<int64_t>(packet_count, processing_stream);
       auto dst_mac_out_d      = rmm::device_uvector<int64_t>(packet_count, processing_stream);
@@ -131,18 +104,18 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto dst_ip_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
       auto src_port_out_d     = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
       auto dst_port_out_d     = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
-      auto payload_size_out_d = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
-      auto payload_out_d      = rmm::device_uvector<char>(payload_size, processing_stream);
+      auto data_offsets_out_d = rmm::device_uvector<int32_t>(packet_count + 1, processing_stream);
+      auto data_out_d         = rmm::device_uvector<char>(packet_data_size, processing_stream);
 
-      // gather stuff
+      data_offsets_out_d.set_element(packet_count, packet_data_size, processing_stream);
+
+      // std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
       morpheus::doca::packet_gather_kernel(
         _rxq->rxq_info_gpu(),
         _semaphore->in_gpu(),
         _semaphore->size(),
-        sem_idx_begin_d.data(),
-        sem_idx_end_d.data(),
-        packet_count_d.data(),
+        semaphore_idx_d.data(),
         timestamp_out_d.data(),
         src_mac_out_d.data(),
         dst_mac_out_d.data(),
@@ -150,21 +123,41 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         dst_ip_out_d.data(),
         src_port_out_d.data(),
         dst_port_out_d.data(),
-        payload_size_out_d.data(),
-        payload_out_d.data(),
-        exit_flag.data(),
+        data_offsets_out_d.data(), // first offset is zero.
+        data_out_d.data(),
         processing_stream
       );
 
-      // emit dataframes
+      auto sem_idx_old = semaphore_idx_d.value(processing_stream);
+      auto sem_idx_new = (sem_idx_old + 1) % _semaphore->size();
+      semaphore_idx_d.set_value_async(sem_idx_new, processing_stream);
 
-      auto payload_column = morpheus::doca::packet_data_to_column(
+      int32_t last_offset = data_offsets_out_d.back_element(processing_stream);
+
+      // std::cout << "sem_idx:     "      << sem_idx_old      << std::endl
+      //           << "packet_count:     " << packet_count     << std::endl
+      //           << "packet_data_size: " << packet_data_size << std::endl
+      //           << "last_offset:      " << last_offset      << std::endl
+      //           << std::flush;
+
+      auto data_offsets_out_d_size = data_offsets_out_d.size();
+      auto data_offsets_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int32_t>()},
+        data_offsets_out_d_size,
+        data_offsets_out_d.release());
+
+      auto data_out_d_size = data_out_d.size();
+      auto data_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int8_t>()},
+        data_out_d_size,
+        data_out_d.release());
+
+      auto data_col = cudf::make_strings_column(
         packet_count,
-        std::move(payload_out_d),
-        std::move(payload_size_out_d)
-      );
-
-      cudaStreamSynchronize(processing_stream);
+        std::move(data_offsets_out_d_col),
+        std::move(data_out_d_col),
+        0,
+        {});
 
       // timestamp
       auto timestamp_out_d_size = timestamp_out_d.size();
@@ -211,7 +204,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudf::data_type{cudf::type_to_id<uint16_t>()},
         src_port_out_d_size,
         src_port_out_d.release());
-
+    
       // dst port
       auto dst_port_out_d_size = dst_port_out_d.size();
       auto dst_port_out_d_col = std::make_unique<cudf::column>(
@@ -219,36 +212,32 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         dst_port_out_d_size,
         dst_port_out_d.release());
 
-      // // packet_length
-      // auto payload_size_out_d_size = payload_size_out_d.size();
-      // auto payload_size_out_d_col  = std::make_unique<cudf::column>(
-      //   cudf::data_type{cudf::type_to_id<uint32_t>()},
-      //   payload_size_out_d_size,
-      //   payload_size_out_d.release());
-
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
-
-      my_columns.push_back(std::move(timestamp_out_d_col));
-      my_columns.push_back(std::move(src_mac_out_str_col));
-      my_columns.push_back(std::move(dst_mac_out_str_col));
-      my_columns.push_back(std::move(src_ip_out_str_col));
-      my_columns.push_back(std::move(dst_ip_out_str_col));
-      my_columns.push_back(std::move(src_port_out_d_col));
-      my_columns.push_back(std::move(dst_port_out_d_col));
-      // my_columns.push_back(std::move(payload_size_out_d_col));
-      // my_columns.push_back(std::move(payload_column));
-
       auto metadata = cudf::io::table_metadata();
 
       metadata.column_names.push_back("timestamp");
+      my_columns.push_back(std::move(timestamp_out_d_col));
+
       metadata.column_names.push_back("src_mac");
+      my_columns.push_back(std::move(src_mac_out_str_col));
+
       metadata.column_names.push_back("dst_mac");
+      my_columns.push_back(std::move(dst_mac_out_str_col));
+
       metadata.column_names.push_back("src_ip");
+      my_columns.push_back(std::move(src_ip_out_str_col));
+
       metadata.column_names.push_back("dst_ip");
+      my_columns.push_back(std::move(dst_ip_out_str_col));
+
       metadata.column_names.push_back("src_port");
+      my_columns.push_back(std::move(src_port_out_d_col));
+
       metadata.column_names.push_back("dst_port");
-      // metadata.column_names.push_back("payload_size");
-      // metadata.column_names.push_back("payload");
+      my_columns.push_back(std::move(dst_port_out_d_col));
+
+      metadata.column_names.push_back("data");
+      my_columns.push_back(std::move(data_col));
 
       auto my_table_w_metadata = cudf::io::table_with_metadata{
         std::make_unique<cudf::table>(std::move(my_columns)),
@@ -257,54 +246,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       auto meta = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 0);
 
-      cudaStreamSynchronize(cudf::default_stream_value);
+      cudaStreamSynchronize(processing_stream);
 
       output.on_next(std::move(meta));
-    }
-
-    cudaStream_t kill_stream;
-    cudaStreamCreateWithFlags(&kill_stream, cudaStreamNonBlocking);
-
-    auto flag = cuda::atomic<bool>(true);
-    exit_flag.set_value_async(flag, kill_stream);
-
-    cudaStreamSynchronize(kill_stream);
-    cudaStreamDestroy(kill_stream);
-    cudaStreamSynchronize(processing_stream);
-    cudaStreamDestroy(processing_stream);
-
-    auto cuda_error = cudaGetLastError();
-    if (cuda_error != cudaSuccess) {
-      std::cout << "cuda error: " << cudaGetErrorString(cuda_error) << std::endl;
-      return;
-    }
-
-    {
-      // auto stream = cudf::default_stream_value;
-      // auto values = rmm::device_uvector<int32_t>(1000000, stream);
-
-      // auto values_size = values.size();
-      // auto my_column   = std::make_unique<cudf::column>(
-      //   cudf::data_type{cudf::type_to_id<int32_t>()},
-      //   values_size,
-      //   values.release());
-
-      // auto my_columns          = std::vector<std::unique_ptr<cudf::column>>();
-
-      // my_columns.push_back(std::move(my_column));
-
-      // // auto my_table            = std::make_unique<cudf::table>(std::move(my_columns));
-      // auto metadata            = cudf::io::table_metadata();
-
-      // metadata.column_names.push_back("index");
-
-      // auto my_table_w_metadata = cudf::io::table_with_metadata{
-      //   std::make_unique<cudf::table>(std::move(my_columns)),
-      //   std::move(metadata)
-      // };
-      // auto meta                = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 1);
-
-      // output.on_next(meta);
     }
 
     output.on_completed();
