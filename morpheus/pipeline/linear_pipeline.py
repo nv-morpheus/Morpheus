@@ -160,3 +160,5 @@ class LinearPipeline(_pipeline.Pipeline):
                                  boundary_ingress,
                                  ingress_segment_id,
                                  port_id_tuple)
+
+        return (boundary_egress, boundary_ingress)
