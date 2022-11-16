@@ -48,8 +48,6 @@
 #include <stdexcept>  // for runtime_error
 #include <utility>
 #include <iostream>
-// IWYU thinks we need __alloc_traits<>::value_type for vector assignments
-// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace morpheus {
 // Component public implementations
@@ -70,11 +68,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     cudaStream_t processing_stream;
     cudaStreamCreateWithFlags(&processing_stream, cudaStreamNonBlocking);
 
-    // auto exit_flag          = rmm::device_scalar<cuda::atomic<bool>>{false, processing_stream};
     auto semaphore_idx_d    = rmm::device_scalar<uint32_t>(0, processing_stream);
     auto packet_count_d     = rmm::device_scalar<uint32_t>(0, processing_stream);
     auto packet_data_size_d = rmm::device_scalar<uint32_t>(0, processing_stream);
-    // auto sem_idx_begin_d      = rmm::device_scalar<uint32_t>(0, processing_stream);
 
     while (output.is_subscribed())
     {
@@ -107,9 +103,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto data_offsets_out_d = rmm::device_uvector<int32_t>(packet_count + 1, processing_stream);
       auto data_out_d         = rmm::device_uvector<char>(packet_data_size, processing_stream);
 
-      data_offsets_out_d.set_element(packet_count, packet_data_size, processing_stream);
-
-      // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      data_offsets_out_d.set_element_async(packet_count, packet_data_size, processing_stream);
 
       morpheus::doca::packet_gather_kernel(
         _rxq->rxq_info_gpu(),
@@ -123,7 +117,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         dst_ip_out_d.data(),
         src_port_out_d.data(),
         dst_port_out_d.data(),
-        data_offsets_out_d.data(), // first offset is zero.
+        data_offsets_out_d.data(),
         data_out_d.data(),
         processing_stream
       );
@@ -132,7 +126,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto sem_idx_new = (sem_idx_old + 1) % _semaphore->size();
       semaphore_idx_d.set_value_async(sem_idx_new, processing_stream);
 
-      int32_t last_offset = data_offsets_out_d.back_element(processing_stream);
+      // int32_t last_offset = data_offsets_out_d.back_element(processing_stream);
 
       // std::cout << "sem_idx:     "      << sem_idx_old      << std::endl
       //           << "packet_count:     " << packet_count     << std::endl
@@ -140,6 +134,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       //           << "last_offset:      " << last_offset      << std::endl
       //           << std::flush;
 
+      // data columns
       auto data_offsets_out_d_size = data_offsets_out_d.size();
       auto data_offsets_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int32_t>()},
@@ -159,14 +154,14 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         0,
         {});
 
-      // timestamp
+      // timestamp column
       auto timestamp_out_d_size = timestamp_out_d.size();
       auto timestamp_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<uint64_t>()},
         timestamp_out_d_size,
         timestamp_out_d.release());
 
-      // src_mac
+      // src_mac address column
       auto src_mac_out_d_size = src_mac_out_d.size();
       auto src_mac_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int64_t>()},
@@ -174,7 +169,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         src_mac_out_d.release());
       auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
 
-      // dst_mac
+      // dst_mac address column
       auto dst_mac_out_d_size = dst_mac_out_d.size();
       auto dst_mac_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int64_t>()},
@@ -182,7 +177,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         dst_mac_out_d.release());
       auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(dst_mac_out_d_col->view());
 
-      // src ip
+      // src ip address column
       auto src_ip_out_d_size = src_ip_out_d.size();
       auto src_ip_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int64_t>()},
@@ -190,7 +185,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         src_ip_out_d.release());
       auto src_ip_out_str_col = cudf::strings::integers_to_ipv4(src_ip_out_d_col->view());
 
-      // dst ip
+      // dst ip address column
       auto dst_ip_out_d_size = dst_ip_out_d.size();
       auto dst_ip_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int64_t>()},
@@ -198,19 +193,21 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         dst_ip_out_d.release());
       auto dst_ip_out_str_col = cudf::strings::integers_to_ipv4(dst_ip_out_d_col->view());
 
-      // src post
+      // src port column
       auto src_port_out_d_size = src_port_out_d.size();
       auto src_port_out_d_col = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<uint16_t>()},
         src_port_out_d_size,
         src_port_out_d.release());
     
-      // dst port
+      // dst port column
       auto dst_port_out_d_size = dst_port_out_d.size();
       auto dst_port_out_d_col = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<uint16_t>()},
         dst_port_out_d_size,
         dst_port_out_d.release());
+
+      // create dataframe
 
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
       auto metadata = cudf::io::table_metadata();

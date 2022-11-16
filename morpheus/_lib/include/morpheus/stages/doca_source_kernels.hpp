@@ -16,13 +16,6 @@ std::unique_ptr<cudf::column> integers_to_mac(
   rmm::cuda_stream_view stream = cudf::default_stream_value,
   rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
 
-std::unique_ptr<cudf::column> packet_data_to_column(
-  cudf::size_type packet_count,
-  rmm::device_uvector<char> && packet_data_chars,
-  rmm::device_uvector<uint32_t> && packet_data_lengths,
-  rmm::cuda_stream_view stream = cudf::default_stream_value,
-  rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource());
-
 void packet_receive_kernel(
   doca_gpu_rxq_info*                              rxq_info,
   doca_gpu_semaphore_in*                          sem_in,
