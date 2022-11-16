@@ -22,14 +22,15 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus")
 # Global options
 option(BUILD_SHARED_LIBS "Default value for whether or not to build shared or static libraries" ON)
 option(MORPHEUS_BUILD_BENCHMARKS "Whether or not to build benchmarks" OFF)
+option(MORPHEUS_BUILD_DOCA_DEPS "Configure Morpheus to build with NVIDIA DOCA" OFF)
 option(MORPHEUS_BUILD_EXAMPLES "Whether or not to build examples" OFF)
-option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
 option(MORPHEUS_BUILD_PYTHON_STUBS "Whether or not to generated .pyi stub files for C++ Python modules. Disable to avoid requiring loading the NVIDIA GPU Driver during build" ON)
+option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
+option(MORPHEUS_INSTALL_DOCA_DEPS "Install DOCA dependencies into the local system (primarily for Docker)" OFF)
 option(MORPHEUS_USE_CCACHE "Enable caching compilation results with ccache" OFF)
 option(MORPHEUS_USE_CLANG_TIDY "Enable running clang-tidy as part of the build process" OFF)
 option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcpkg.
   Note: This will disable vcpkg. All dependencies must be installed first in the conda environment" OFF)
-option(MORPHEUS_USE_DOCA "Configure Morpheus to build with NVIDIA DOCA" OFF)
 option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the build process" OFF)
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 
@@ -149,7 +150,7 @@ install(
   COMPONENT Wheel
 )
 
-# Use the install(DIRECTORY) to keep the files tructure
+# Use the install(DIRECTORY) to keep the files structure
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/morpheus
   DESTINATION ${MORPHEUS_PY_INSTALL_DIR}

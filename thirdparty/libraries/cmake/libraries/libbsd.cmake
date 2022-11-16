@@ -23,24 +23,20 @@ function(find_and_configure_libbsd version)
   rapids_cpm_find(bsd ${version}
     GLOBAL_TARGETS
       bsd
-    BUILD_EXPORT_SET
-      ${PROJECT_NAME}-core-exports
-    INSTALL_EXPORT_SET
-      ${PROJECT_NAME}-core-exports
     CPM_ARGS
-    GIT_REPOSITORY          https://gitlab.freedesktop.org/libbsd/libbsd
-    GIT_TAG                 ${version}
-    DOWNLOAD_ONLY           TRUE
+      GIT_REPOSITORY          https://gitlab.freedesktop.org/libbsd/libbsd
+      GIT_TAG                 ${version}
+      DOWNLOAD_ONLY           TRUE
   )
 
   if (bsd_ADDED)
-    message(STATUS "libbsd was not installed. Building from Source")
+    message(STATUS "libbsd was not installed and will be built from source")
 
-    # rapids_cpm_find creates a ${library}_BINARY_DIR entry
-    set(bsd_INSTALL_DIR ${bsd_BINARY_DIR}/install)
-
-    # Make sure install directory exists
-    file(MAKE_DIRECTORY ${bsd_INSTALL_DIR}/include)
+    if (MORPHEUS_TP_INSTALL_DOCA_DEPS)
+      set(bsd_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
+    else()
+      set(bsd_INSTALL_DIR ${bsd_BINARY_DIR}/install)
+    endif()
 
     # Get libmd components
     get_target_property(MD_INCLUDE_DIRS md::md INTERFACE_INCLUDE_DIRECTORIES) # Add '-I' to CPPFLAGS
@@ -83,36 +79,10 @@ function(find_and_configure_libbsd version)
       LOG_INSTALL         TRUE
     )
 
-    add_dependencies(bsd md)
-
-    # Install headers
-    install(
-        DIRECTORY ${bsd_INSTALL_DIR}/include
-        TYPE INCLUDE
-    )
-
-    add_library(bsd::bsd STATIC IMPORTED GLOBAL)
-    set_target_properties(bsd::bsd
-        PROPERTIES
-          INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${bsd_INSTALL_DIR}/include>;$<INSTALL_INTERFACE:include>"
-          INTERFACE_LINK_LIBRARIES "$<BUILD_INTERFACE:${bsd_INSTALL_DIR}/lib>;$<INSTALL_INTERFACE:lib>"
-          INTERFACE_POSITION_INDEPENDENT_CODE "ON"
-    )
-
-    set_property(TARGET bsd::bsd
-        APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE
-    )
-    set_target_properties(bsd::bsd
-        PROPERTIES
-          IMPORTED_LOCATION_RELEASE "${bsd_INSTALL_DIR}/lib/libbsd.a"
-          IMPORTED_SONAME_RELEASE "libbsd.a"
-    )
-
-    add_dependencies(bsd::bsd bsd)
-
+    add_dependencies(bsd md::md)
   endif()
 endfunction()
 
-find_and_configure_libbsd(${LIBBSD_VERSION})
+find_and_configure_libbsd(${MORPHEUS_TP_LIBBSD_VERSION})
 
 LIST(POP_BACK CMAKE_MESSAGE_CONTEXT)

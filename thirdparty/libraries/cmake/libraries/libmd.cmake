@@ -23,24 +23,20 @@ function(find_and_configure_libmd version)
   rapids_cpm_find(md ${version}
     GLOBAL_TARGETS
       md
-    BUILD_EXPORT_SET
-      ${PROJECT_NAME}-core-exports
-    INSTALL_EXPORT_SET
-      ${PROJECT_NAME}-core-exports
     CPM_ARGS
-    GIT_REPOSITORY          https://gitlab.freedesktop.org/libbsd/libmd.git
-    GIT_TAG                 ${version}
-    DOWNLOAD_ONLY           TRUE
+      GIT_REPOSITORY          https://gitlab.freedesktop.org/libbsd/libmd.git
+      GIT_TAG                 ${version}
+      DOWNLOAD_ONLY           TRUE
   )
 
   if (md_ADDED)
-    message(STATUS "libmd was not installed. Building from Source")
+    message(STATUS "libmd was not installed and will be built from source")
 
-    # rapids_cpm_find creates a ${library}_BINARY_DIR entry
-    set(md_INSTALL_DIR ${md_BINARY_DIR}/install)
-
-    # Make sure install directory exists
-    # file(MAKE_DIRECTORY ${md_INSTALL_DIR}/include)
+    if (MORPHEUS_TP_INSTALL_DOCA_DEPS)
+      set(md_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
+    else()
+      set(md_INSTALL_DIR ${md_BINARY_DIR}/install)
+    endif()
 
     # Get the Compiler settings to forward onto autoconf
     string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UC)
@@ -53,7 +49,7 @@ function(find_and_configure_libmd version)
         "NM=${CMAKE_NM}"
         "STRIP=${CMAKE_STRIP}"
         "CFLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${BUILD_TYPE_UC}}"
-        "CPPFLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${BUILD_TYPE_UC}} -I${CUDAToolkit_INCLUDE_DIRS}" # Add CUDAToolkit here
+        "CPPFLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${BUILD_TYPE_UC}}" # Add CUDAToolkit here
         "CXXFLAGS=${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${BUILD_TYPE_UC}}"
         "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${BUILD_TYPE_UC}}"
     )
@@ -66,7 +62,7 @@ function(find_and_configure_libmd version)
       DOWNLOAD_COMMAND    ${CMAKE_COMMAND} -E copy_directory ${md_SOURCE_DIR} ${md_BINARY_DIR}
 
       CONFIGURE_COMMAND   ${CMAKE_COMMAND} -E env SED=sed GREP=grep <SOURCE_DIR>/autogen
-                COMMAND   <SOURCE_DIR>/configure ${COMPILER_SETTINGS} --prefix=${md_INSTALL_DIR} --enable-static
+                COMMAND   <SOURCE_DIR>/configure ${COMPILER_SETTINGS} --prefix=${md_INSTALL_DIR}
 
       BUILD_COMMAND       make -j
       BUILD_IN_SOURCE     TRUE
@@ -107,6 +103,6 @@ function(find_and_configure_libmd version)
   endif()
 endfunction()
 
-find_and_configure_libmd(${LIBMD_VERSION})
+find_and_configure_libmd(${MORPHEUS_TP_LIBMD_VERSION})
 
 LIST(POP_BACK CMAKE_MESSAGE_CONTEXT)
