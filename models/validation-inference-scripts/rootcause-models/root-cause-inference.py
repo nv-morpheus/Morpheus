@@ -19,7 +19,7 @@ python \
 root-cause-inference.py \
     --validationdata ../../datasets/validation-data\
     /rootcause-validation-data.jsonlines \
-    --model ../../rootcause-models/rootcause.onnx \
+    --model ../../root-cause-models/rootcause-binary-bert-20221118.onnx \
     --vocab ../../training-tuning-scripts/rootcause-models\
     /resources/bert-base-uncased-hash.txt \
     --output rootcause-validation-output.jsonlines
