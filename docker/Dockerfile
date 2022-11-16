@@ -103,7 +103,7 @@ RUN conda config --set ssl_verify false &&\
 # Create the conda environment and install all dependencies
 FROM base as conda_env
 
-ENV TINI_VERSION v0.19.0
+ENV TINI_VERSION 0.19.0
 
 # Create a base environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
@@ -127,7 +127,7 @@ RUN source activate morpheus &&\
 
 # Set the entrypoint to use the entrypoint.sh script which sets the conda env
 COPY docker/entrypoint.sh ./docker/
-ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
+ENTRYPOINT [ "/opt/conda/envs/morpheus/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
 
 # Reset the shell back to normal
 SHELL ["/bin/bash", "-c"]
