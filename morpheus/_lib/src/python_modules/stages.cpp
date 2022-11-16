@@ -132,7 +132,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("config"),
              py::arg("disable_commits")       = false,
              py::arg("disable_pre_filtering") = false,
-             py::arg("stop_after")            = 0);
+             py::arg("stop_after")            = 0,
+             py::arg("async_commits")         = true);
 
     py::class_<srf::segment::Object<PreprocessFILStage>,
                srf::segment::ObjectProperties,
@@ -155,7 +156,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("truncation"),
              py::arg("do_lower_case"),
              py::arg("add_special_token"),
-             py::arg("stride"));
+             py::arg("stride"),
+             py::arg("column"));
 
     py::class_<srf::segment::Object<SerializeStage>,
                srf::segment::ObjectProperties,
