@@ -78,7 +78,8 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
                      std::map<std::string, std::string> config,
                      bool disable_commit        = false,
                      bool disable_pre_filtering = false,
-                     size_t stop_after          = 0);
+                     size_t stop_after          = 0,
+                     bool async_commits         = true);
 
     ~KafkaSourceStage() override = default;
 
@@ -141,6 +142,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     bool m_disable_commit{false};
     bool m_disable_pre_filtering{false};
     bool m_requires_commit{false};  // Whether or not manual committing is required
+    bool m_async_commits{true};
     size_t m_stop_after{0};
 
     void *m_rebalancer;
@@ -163,7 +165,8 @@ struct KafkaSourceStageInterfaceProxy
                                                                         std::map<std::string, std::string> config,
                                                                         bool disable_commits,
                                                                         bool disable_pre_filtering,
-                                                                        size_t stop_after = 0);
+                                                                        size_t stop_after  = 0,
+                                                                        bool async_commits = true);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
