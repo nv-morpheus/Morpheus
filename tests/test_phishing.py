@@ -150,4 +150,4 @@ def test_email_cpp(config, tmp_path):
 
     pipe.run()
     results = calc_error_val(results_file_name)
-    assert results.diff_rows == 230
+    assert results.diff_rows == 757
