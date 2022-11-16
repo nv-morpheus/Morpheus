@@ -22,11 +22,9 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus")
 # Global options
 option(BUILD_SHARED_LIBS "Default value for whether or not to build shared or static libraries" ON)
 option(MORPHEUS_BUILD_BENCHMARKS "Whether or not to build benchmarks" OFF)
-option(MORPHEUS_BUILD_DOCA_DEPS "Configure Morpheus to build with NVIDIA DOCA" OFF)
 option(MORPHEUS_BUILD_EXAMPLES "Whether or not to build examples" OFF)
 option(MORPHEUS_BUILD_PYTHON_STUBS "Whether or not to generated .pyi stub files for C++ Python modules. Disable to avoid requiring loading the NVIDIA GPU Driver during build" ON)
 option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
-option(MORPHEUS_INSTALL_DOCA_DEPS "Install DOCA dependencies into the local system (primarily for Docker)" OFF)
 option(MORPHEUS_USE_CCACHE "Enable caching compilation results with ccache" OFF)
 option(MORPHEUS_USE_CLANG_TIDY "Enable running clang-tidy as part of the build process" OFF)
 option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcpkg.
