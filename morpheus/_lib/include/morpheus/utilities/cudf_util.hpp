@@ -28,6 +28,13 @@
 
 namespace morpheus {
 /****** Component public free function implementations******/
+
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+*/
+
 /**
  * TODO(Documentation)
  */
@@ -51,4 +58,5 @@ cudf::column_view proxy_view_from_column(pybind11::object *column /*PyColumn**/)
 pybind11::object /*PyTable*/ proxy_table_from_table_info(morpheus::TableInfo table_info, pybind11::object *object);
 pybind11::object /*PyTable*/ proxy_series_from_table_info(morpheus::TableInfo table_info, pybind11::object *object);
 
+/** @} */  // end of group
 }  // namespace morpheus

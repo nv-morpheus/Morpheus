@@ -32,6 +32,13 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 
 /****** MultiTensorMessage*******************************/
+
+/**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
 /**
  * Base class for MultiInferenceMessage & MultiResponseMessage
  * Contains a pointer to an instance of TensorMemory along with an
@@ -43,11 +50,27 @@ namespace morpheus {
  * While TensorMemory can contain multiple tensors, it is a requirement that
  * they are all of the same length and that element N in each tensor refers
  * to the same record.
- */
+ * 
+*/
 class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiMessage>
 {
   public:
+    /**
+     * Constructor default.
+    */
     MultiTensorMessage(const MultiTensorMessage &other) = default;
+
+    /**
+     * Constructor for a class `MultiTensorMessage`.
+     * 
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     * C++ representations of the table
+     * @param mess_offset Offset into the metadata batch
+     * @param mess_count Messages count
+     * @param memory Shared pointer of a tensor memory
+     * @param offset Message offset in tensor memory instance
+     * @param count Message count in tensor memory instance
+    */
     MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                        std::size_t mess_offset,
                        std::size_t mess_count,
@@ -98,4 +121,5 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

@@ -31,9 +31,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiInferenceNLPMessage****************************************/
+
 /**
- * TODO(Documentation)
- */
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
 #pragma GCC visibility push(default)
 class MultiInferenceNLPMessage : public MultiInferenceMessage
 {

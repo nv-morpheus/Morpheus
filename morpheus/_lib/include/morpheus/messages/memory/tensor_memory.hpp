@@ -30,6 +30,12 @@ namespace morpheus {
 /****** TensorMemory****************************************/
 
 /**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
+/**
  * @brief Container for holding a collection of named `TensorObject`s in a `std::map` keyed by name.
  * Base class for `InferenceMemory` & `ResponseMemory`.
  *
@@ -51,4 +57,5 @@ class TensorMemory
                                     size_t num_selected_rows) const;
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

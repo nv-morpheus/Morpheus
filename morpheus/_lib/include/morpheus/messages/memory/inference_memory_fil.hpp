@@ -30,6 +30,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemoryFIL****************************************/
+
+/**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
 /**
  * This is a container class for data that needs to be submitted to the inference server for FIL category
  * usecases.
@@ -133,4 +140,6 @@ struct InferenceMemoryFILInterfaceProxy
     static void set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values);
 };
 #pragma GCC visibility pop
+
+/** @} */  // end of group
 }  // namespace morpheus

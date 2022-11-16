@@ -35,9 +35,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiMessage****************************************/
+
 /**
- * TODO(Documentation)
- */
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
 #pragma GCC visibility push(default)
 
 class MultiMessage;
@@ -359,4 +363,5 @@ struct MultiMessageInterfaceProxy
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

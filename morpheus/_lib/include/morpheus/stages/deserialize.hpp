@@ -36,6 +36,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** DeserializationStage********************************/
+
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
 /**
  * Deserialize source data into Dataframes.
  * 
@@ -52,7 +59,7 @@ class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
     using typename base_t::subscribe_fn_t;
 
     /**
-     * @brief Constructor class for DeserializeStage.
+     * @brief Constructor fo a class `DeserializeStage`.
      * 
      * @param batch_size : Number of messages to be divided into each batch.
     */
@@ -81,4 +88,5 @@ struct DeserializeStageInterfaceProxy
                                                                         size_t batch_size);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

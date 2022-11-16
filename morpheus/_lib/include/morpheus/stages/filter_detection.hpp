@@ -36,6 +36,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** FilterDetectionStage********************************/
+
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
 /**
  * The FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
  * criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
@@ -72,7 +79,7 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
     using typename base_t::subscribe_fn_t;
 
     /**
-     * @brief Constructor for class FilterDetectionsStage
+     * @brief Constructor for a class `FilterDetectionsStage`.
      * 
      * @param threshold : Threshold to classify.
      * @param copy : Whether or not to perform a copy default=true.
@@ -104,4 +111,5 @@ struct FilterDetectionStageInterfaceProxy
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

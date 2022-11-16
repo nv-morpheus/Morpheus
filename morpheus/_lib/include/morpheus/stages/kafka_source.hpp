@@ -39,6 +39,13 @@ namespace morpheus {
 
 /****** Component public implementations *******************/
 /****** KafkaSourceStage************************************/
+
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
 /**
  * This class loads messages from the Kafka cluster by serving as a Kafka consumer.
  */
@@ -52,12 +59,12 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     using typename base_t::subscriber_fn_t;
 
     /**
-     * @brief Constructor for class KafkaSourceStage
+     * @brief Constructor for a class `KafkaSourceStage`
      * 
      * @param max_batch_size : The maximum batch size for the messages batch. 
      * @param topic : Input kafka topic.
      * @param batch_timeout_ms : Frequency of the poll in ms.
-     * @param config : Kafka consumer configuration
+     * @param config : Kafka consumer configuration.
      * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server. 
      * This is only useful for debugging, allowing the user to process the same messages multiple times.
      * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages. 
@@ -76,12 +83,12 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     ~KafkaSourceStage() override = default;
 
     /**
-     * @return maximum batch size for KafkaSource
+     * @return maximum batch size for KafkaSource.
      */
     std::size_t max_batch_size();
 
     /**
-     * @return batch timeout in ms
+     * @return batch timeout in ms.
      */
     int32_t batch_timeout_ms();
 
@@ -94,7 +101,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     /**
      * @brief Create kafka consumer configuration and returns unique pointer to the result.
      * 
-     * @param config_in : Configuration map contains Kafka consumer properties
+     * @param config_in : Configuration map contains Kafka consumer properties.
      * @return std::unique_ptr<RdKafka::Conf>
      */
     std::unique_ptr<RdKafka::Conf> build_kafka_conf(const std::map<std::string, std::string> &config_in);
@@ -102,7 +109,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     /**
      * @brief Creates Kafka consumer instance.
      * 
-     * @param rebalancer : Group rebalance callback for use with RdKafka::KafkaConsumer
+     * @param rebalancer : Group rebalance callback for use with RdKafka::KafkaConsumer.
      * @return std::unique_ptr<RdKafka::KafkaConsumer>
      */
     std::unique_ptr<RdKafka::KafkaConsumer> create_consumer(RdKafka::RebalanceCb &rebalancer);
@@ -159,4 +166,5 @@ struct KafkaSourceStageInterfaceProxy
                                                                         size_t stop_after = 0);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

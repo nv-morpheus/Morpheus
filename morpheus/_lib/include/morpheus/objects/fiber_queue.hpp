@@ -28,6 +28,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** FiberQueue****************************************/
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+*/
+
 /**
  * TODO(Documentation)
  */
@@ -37,12 +44,16 @@ class FiberQueue
     FiberQueue(std::size_t max_size);
 
     /**
-     * TODO(Documentation)
+     * @brief item to the queue. Await the acknowledgement delays based on the timeout that has been specified.
+     * 
+     * @param item : Item that needs to be inserted to the queue 
+     * @param block : Block the insert until
+     * @param
      */
     boost::fibers::channel_op_status put(pybind11::object &&item, bool block = true, float timeout = 0.0);
 
     /**
-     * TODO(Documentation)
+     * Retrieves item from head of the queue.
      */
     boost::fibers::channel_op_status get(pybind11::object &item, bool block = true, float timeout = 0.0);
 
@@ -93,4 +104,5 @@ struct FiberQueueInterfaceProxy
     static void close(morpheus::FiberQueue &self);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

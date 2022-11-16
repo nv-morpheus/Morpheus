@@ -35,14 +35,38 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiResponseMessage****************************************/
+
 /**
- * TODO(Documentation)
- */
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
+/**
+ * This class is used to get or set the inference output from message containers derived
+ * from ResponseMemory.
+ * 
+*/
 #pragma GCC visibility push(default)
 class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, MultiTensorMessage>
 {
   public:
+    /**
+     * Constructor default.
+    */
     MultiResponseMessage(const MultiResponseMessage &other) = default;
+
+    /**
+     * Constructor for a class `MultiResponseMessage`.
+     * 
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     * C++ representations of the table
+     * @param mess_offset Offset into the metadata batch
+     * @param mess_count Messages count
+     * @param memory Shared pointer of a tensor memory
+     * @param offset Message offset in inference memory instance
+     * @param count Message count in inference memory instance
+    */
     MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
                          std::size_t mess_offset,
                          std::size_t mess_count,
@@ -93,24 +117,34 @@ struct MultiResponseMessageInterfaceProxy
                                                       cudf::size_type count);
 
     /**
-     * TODO(Documentation)
+     * @brief Pybind proxy function to get shared pointer for a inference memory instance.
+     * 
+     * @return std::shared_ptr<ResponseMemory>
      */
     static std::shared_ptr<ResponseMemory> memory(MultiResponseMessage &self);
 
     /**
-     * TODO(Documentation)
+     * @brief Pybind proxy function to get message offset in inference memory.
+     * 
+     * @return std::size_t
      */
     static std::size_t offset(MultiResponseMessage &self);
 
     /**
-     * TODO(Documentation)
+     * @brief Pybind proxy function to get message count in inference memory.
+     * 
+     * @return std::size_t
      */
     static std::size_t count(MultiResponseMessage &self);
 
     /**
-     * TODO(Documentation)
+     * @brief Pybind proxy function to get inference output as a cupy values.
+     * 
+     * @param name
+     * @return pybind11::object
      */
     static pybind11::object get_output(MultiResponseMessage &self, const std::string &name);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

@@ -44,6 +44,12 @@
 
 namespace morpheus {
 
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+*/
+
 using TensorIndex = long long;  // NOLINT
 using RankType    = int;        // NOLINT
 
@@ -436,4 +442,5 @@ struct TensorObject final
     std::shared_ptr<ITensor> m_tensor;
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

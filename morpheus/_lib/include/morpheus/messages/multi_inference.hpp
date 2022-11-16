@@ -35,11 +35,17 @@
 namespace morpheus {
 /****** Component public implementations********************/
 /****** MultiInferenceMessage*******************************/
+
+/**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
 /**
  * This is a container class that holds a pointer to an instance of the TensorMemory container and the metadata 
  * of the data contained within it. Builds on top of the `MultiInferenceMessage` and `MultiTensorMessage` class 
  * to add additional data for inferencing.
- * 
  * 
  * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
  * C++ representations of the table
@@ -127,4 +133,5 @@ struct MultiInferenceMessageInterfaceProxy
                                                             std::size_t stop);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

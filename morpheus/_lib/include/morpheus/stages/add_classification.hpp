@@ -36,6 +36,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** AddClassificationStage********************************/
+
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
 /**
  * Add detected classifications to each message.
  * 
@@ -54,11 +61,11 @@ class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mu
     using typename base_t::subscribe_fn_t;
 
     /**
-     * Constructor for class AddClassificationsStage
+     * Constructor for a class `AddClassificationsStage`.
      * 
      * @param threshold : Threshold to consider true/false for each class.
-     * @param num_class_labels : Number of classification labels
-     * @param idx2label : Index to classification labels map
+     * @param num_class_labels : Number of classification labels.
+     * @param idx2label : Index to classification labels map.
      */
     AddClassificationsStage(float threshold,
                             std::size_t num_class_labels,
@@ -94,4 +101,5 @@ struct AddClassificationStageInterfaceProxy
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

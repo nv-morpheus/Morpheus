@@ -28,6 +28,12 @@
 namespace morpheus {
 
 /**
+ * @addtogroup utilities
+ * @{
+ * @file
+*/
+
+/**
  * @brief Tensor Utilities
  *
  * @note A tensor whose values are laid out in the storage starting from the rightmost
@@ -102,4 +108,5 @@ struct TensorUtils
     }
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

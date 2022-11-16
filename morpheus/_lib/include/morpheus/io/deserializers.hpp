@@ -24,11 +24,16 @@
 
 namespace morpheus {
 #pragma GCC visibility push(default)
+/**
+ * @addtogroup IO
+ * @{
+ * @file
+*/
 
 /**
  * @brief Loads a cudf table from either CSV or JSON file
  *
- * @param filename
+ * @param filename : Name of the file that should be loaded into a table. 
  * @return cudf::io::table_with_metadata
  */
 cudf::io::table_with_metadata load_table_from_file(const std::string& filename);
@@ -37,7 +42,7 @@ cudf::io::table_with_metadata load_table_from_file(const std::string& filename);
  * @brief Loads a cudf table from a JSON source, replacing any escape characters in the source data that cudf can't
  * handle
  *
- * @param json_options
+ * @param json_options : JSON file reading options.
  * @return cudf::io::table_with_metadata
  */
 cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& json_options);
@@ -46,10 +51,11 @@ cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& js
  * @brief Return the number of index columns in `data_table`, in practice this will be a `0` or `1`.
  * If `data_table` contains a column named "Unnamed: 0" it will be renamed to "".
  *
- * @param data_table
+ * @param data_table : Table which contains the data and it's metadata.
  * @return int
  */
 int get_index_col_count(cudf::io::table_with_metadata& data_table);
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

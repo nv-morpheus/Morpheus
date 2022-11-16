@@ -159,4 +159,5 @@ struct DataType
     TypeId m_type_id;
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

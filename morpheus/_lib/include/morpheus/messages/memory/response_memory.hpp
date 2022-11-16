@@ -29,6 +29,11 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemory****************************************/
 /**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+/**
  * TODO(Documentation)
  */
 class ResponseMemory : public TensorMemory
@@ -59,4 +64,6 @@ struct ResponseMemoryInterfaceProxy
     static TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
 };
 #pragma GCC visibility pop
+
+/** @} */  // end of group
 }  // namespace morpheus

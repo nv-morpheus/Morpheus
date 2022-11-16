@@ -31,6 +31,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** Tensor****************************************/
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+*/
+
 /**
  * TODO(Documentation)
  */
@@ -84,4 +91,5 @@ class Tensor
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

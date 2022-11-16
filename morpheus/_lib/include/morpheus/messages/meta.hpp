@@ -32,6 +32,13 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
+
+/**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
 /**
  * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
  * Python and C++ representations of the table.
@@ -104,4 +111,5 @@ struct MessageMetaInterfaceProxy
     static pybind11::object get_data_frame(MessageMeta& self);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

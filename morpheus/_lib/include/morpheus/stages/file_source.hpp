@@ -34,6 +34,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** FileSourceStage*************************************/
+
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
 /**
  * Load messages from a file.
  * 
@@ -49,7 +56,7 @@ class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
     using typename base_t::subscriber_fn_t;
 
     /**
-     * @brief Constructor of a class `FileSourceStage`
+     * @brief Constructor of a class `FileSourceStage`.
      * 
      * @param filename : Name of the file from which the messages will be read.
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
@@ -78,4 +85,5 @@ struct FileSourceStageInterfaceProxy
                                                                        int repeat = 1);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

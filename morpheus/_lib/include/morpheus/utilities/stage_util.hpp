@@ -21,6 +21,13 @@
 
 namespace morpheus {
     /****** Component public free function implementations************/
+
+    /**
+    * @addtogroup utilities
+    * @{
+    * @file
+    */
+
     /**
      * TODO(Documentation)
      */
@@ -50,4 +57,5 @@ namespace morpheus {
 
         return result;
     }
+/** @} */  // end of group
 }  // namespace morpheus

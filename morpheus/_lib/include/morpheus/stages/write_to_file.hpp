@@ -37,6 +37,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** WriteToFileStage********************************/
+
+/**
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
 /**
  * Write all messages to a file.
  * 
@@ -66,7 +73,7 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 
   private:
     /**
-     * @brief Closes the queue.
+     * @brief Close the queue.
      */
     void close();
 
@@ -110,4 +117,5 @@ struct WriteToFileStageInterfaceProxy
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

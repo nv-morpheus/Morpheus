@@ -24,8 +24,10 @@
 
 namespace morpheus {
 /**
- * TODO(Documentation)
- */
+ * @addtogroup messages
+ * @{
+ * @file
+*/
 
 #pragma GCC visibility push(default)
 class InferenceMemory : public TensorMemory
@@ -56,4 +58,6 @@ struct InferenceMemoryInterfaceProxy
     static std::size_t get_count(InferenceMemory& self);
 };
 #pragma GCC visibility pop
+
+/** @} */  // end of group
 }  // namespace morpheus

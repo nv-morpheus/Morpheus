@@ -27,6 +27,13 @@
 #include <vector>
 
 namespace morpheus {
+
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+*/
+
 struct MatxUtil
 {
     /**
@@ -84,4 +91,5 @@ struct MatxUtil
                                                           const std::vector<int64_t> &input_stride,
                                                           const std::vector<int64_t> &output_shape);
 };
+/** @} */  // end of group
 }  // namespace morpheus

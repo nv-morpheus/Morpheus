@@ -25,6 +25,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** CuDFTableUtil****************************************/
+
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+*/
+
 /**
  * @brief Structure that encapsulates cuDF table utilities.
  */
@@ -35,4 +42,5 @@ struct CuDFTableUtil
      */
     static cudf::io::table_with_metadata load_table(const std::string &filename);
 };
+/** @} */  // end of group
 }  // namespace morpheus

@@ -26,6 +26,13 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorObject****************************************/
 /****** <NAME>InterfaceProxy *************************/
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+*/
+
 #pragma GCC visibility push(default)
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -35,4 +42,5 @@ struct TensorObjectInterfaceProxy
     static pybind11::dict cuda_array_interface(TensorObject &self);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

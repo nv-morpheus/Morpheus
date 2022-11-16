@@ -60,4 +60,5 @@ DType type_to_dtype()
     return DType::from_triton(cudf::type_to_id<T>);
 }
 
+/** @} */  // end of group
 }  // namespace morpheus

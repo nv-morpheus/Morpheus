@@ -30,6 +30,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemoryProbs*********************************/
+
+/**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
 /**
  * TODO(Documentation)
  */
@@ -82,4 +89,6 @@ struct ResponseMemoryProbsInterfaceProxy
     static void set_probs(ResponseMemoryProbs &self, pybind11::object cupy_values);
 };
 #pragma GCC visibility pop
+
+/** @} */  // end of group
 }  // namespace morpheus

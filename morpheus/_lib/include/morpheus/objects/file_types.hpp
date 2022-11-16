@@ -20,6 +20,13 @@
 #include <string>
 
 namespace morpheus {
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+*/
+
 #pragma GCC visibility push(default)
     enum class FileTypes : int32_t {
         Auto,
@@ -34,4 +41,5 @@ namespace morpheus {
     };
 #pragma GCC visibility pop
 
+/** @} */  // end of group
 }  // namespace morpheus

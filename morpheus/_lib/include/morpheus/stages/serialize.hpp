@@ -37,8 +37,17 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** SerializeStage********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
+/**
+ * Include & exclude columns from messages. 
+ * 
+ * This class filters columns from a `MultiMessage` object emitting a `MessageMeta`.
  */
 #pragma GCC visibility push(default)
 class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>
@@ -49,6 +58,14 @@ class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessag
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Constructor for a class `SerializeStage`.
+     * 
+     * @param include : Attributes that are required send to downstream stage. 
+     * @param exclude : Attributes that are not required send to downstream stage.
+     * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain 
+     * the same columns as the first message received.
+    */
     SerializeStage(const std::vector<std::string> &include,
                    const std::vector<std::string> &exclude,
                    bool fixed_columns = true);
@@ -89,4 +106,5 @@ struct SerializeStageInterfaceProxy
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

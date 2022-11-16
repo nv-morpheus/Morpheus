@@ -30,6 +30,12 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemoryNLP**********************************/
 /**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
+/**
  * TODO(Documentation)
  */
 class InferenceMemoryNLP : public InferenceMemory
@@ -119,4 +125,6 @@ struct InferenceMemoryNLPInterfaceProxy
     static void set_seq_ids(InferenceMemoryNLP& self, pybind11::object cupy_values);
 };
 #pragma GCC visibility pop
+
+/** @} */  // end of group
 }  // namespace morpheus

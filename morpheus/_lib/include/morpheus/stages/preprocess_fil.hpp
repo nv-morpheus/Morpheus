@@ -35,8 +35,15 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** PreprocessFILStage**********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
+/**
+ * Prepares FIL input data for inference.
  */
 #pragma GCC visibility push(default)
 class PreprocessFILStage
@@ -48,6 +55,11 @@ class PreprocessFILStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Constructor for a class `PreprocessFILStage`.
+     * 
+     * @param features : Features that are required for model inference. 
+    */
     PreprocessFILStage(const std::vector<std::string>& features);
 
   private:
@@ -74,4 +86,5 @@ struct PreprocessFILStageInterfaceProxy
                                                                           const std::vector<std::string>& features);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

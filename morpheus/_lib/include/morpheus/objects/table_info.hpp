@@ -32,6 +32,16 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** TableInfo******************************************/
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+*/
+
+/**
+ * A wrapper class around a pybind data table. It gives the flexibility to perform operations on a data table.
+*/
 struct TableInfo
 {
     TableInfo() = default;
@@ -42,37 +52,51 @@ struct TableInfo
               std::vector<std::string> column_names);
 
     /**
-     * TODO(Documentation)
+     * @brief Get reference of underlying cuDF DataFrame as a python object.
+     * 
+     * @return pybind11::object
      */
     const pybind11::object &get_parent_table() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get reference of a cudf table view.
+     * 
+     * @return cudf::table_view
      */
     const cudf::table_view &get_view() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get index names of a data table.
+     * 
+     * @return std::vector<std::string>
      */
     std::vector<std::string> get_index_names() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get column names of a data table.
+     * 
+     * @return std::vector<std::string>
      */
     std::vector<std::string> get_column_names() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get size of a index names in a data table.
+     * 
+     * @return cudf::size_type
      */
     cudf::size_type num_indices() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get columns count in a data table.
+     * 
+     * @return cudf::size_type
      */
     cudf::size_type num_columns() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get rows count in a data table.
+     * 
+     * @return cudf::size_type
      */
     cudf::size_type num_rows() const;
 
@@ -84,22 +108,39 @@ struct TableInfo
     pybind11::object __attribute__((visibility("default"))) as_py_object() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Insert new columns to a data table with the value zero for each row.
+     * 
+     * @param column_names : Names of the columns to be added to a table.
+     * @param column_types : Column data types.
      */
     void insert_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
 
     /**
-     * TODO(Documentation)
+     * @brief Insert missing columns to a data table with the value zero for each row.
+     * 
+     * @param column_names : Names of the columns to be added to a table.
+     * @param column_types : Column data types.
      */
     void insert_missing_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
 
     /**
-     * TODO(Documentation)
+     * @brief Returns a reference to the view of the specified column.
+     * 
+     * @throws std::out_of_range
+     * If `column_index` is out of the range [0, num_columns)
+     * 
+     * @param idx : The index of the desired column.
+     * @return cudf::column_view : A reference to the desired column
      */
     const cudf::column_view &get_column(cudf::size_type idx) const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get slice of a data table info based on the start and stop offset address.
+     * 
+     * @param start : Start offset address.
+     * @param stop : Stop offset address.
+     * @param column_names : Columns of interest.
+     * @return TableInfo
      */
     TableInfo get_slice(cudf::size_type start, cudf::size_type stop, std::vector<std::string> column_names = {}) const;
 
@@ -110,4 +151,5 @@ struct TableInfo
     std::vector<std::string> m_index_names;
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

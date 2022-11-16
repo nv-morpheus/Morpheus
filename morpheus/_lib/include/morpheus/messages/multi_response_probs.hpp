@@ -32,14 +32,38 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiResponseProbsMessage****************************************/
+
 /**
- * TODO(Documentation)
- */
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
+/**
+ * A stronger typed version of `MultiResponseMessage` that is used for inference workloads that return a probability
+ * array. Helps ensure the proper outputs are set and eases debugging.
+ * 
+*/
 #pragma GCC visibility push(default)
 class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsMessage, MultiResponseMessage>
 {
   public:
+    /**
+     * Constructor default.
+    */
     MultiResponseProbsMessage(const MultiResponseProbsMessage &other) = default;
+
+    /**
+     * Constructor for a class `MultiResponseMessage`.
+     * 
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     * C++ representations of the table
+     * @param mess_offset Offset into the metadata batch
+     * @param mess_count Messages count
+     * @param memory Holds the inference response probabilites as a tensor.
+     * @param offset Message offset in inference memory instance
+     * @param count Message count in inference memory instance
+    */
     MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                               size_t mess_offset,
                               size_t mess_count,
@@ -96,4 +120,5 @@ struct MultiResponseProbsMessageInterfaceProxy
     static pybind11::object probs(MultiResponseProbsMessage &self);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

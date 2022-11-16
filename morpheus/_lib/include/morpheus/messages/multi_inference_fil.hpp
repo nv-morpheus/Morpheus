@@ -30,6 +30,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiInferenceFILMessage****************************************/
+
+/**
+ * @addtogroup messages
+ * @{
+ * @file
+*/
+
 /**
  * A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
  * proper inputs are set and eases debugging.
@@ -119,4 +126,5 @@ struct MultiInferenceFILMessageInterfaceProxy
     static std::size_t count(MultiInferenceFILMessage& self);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

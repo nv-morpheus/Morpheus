@@ -36,8 +36,15 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** PreprocessNLPStage**********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
+*/
+
+/**
+ * Prepares NLP input data for inference.
  */
 #pragma GCC visibility push(default)
 class PreprocessNLPStage
@@ -49,6 +56,22 @@ class PreprocessNLPStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Constructor for a class `PreprocessNLPStage`.
+     * 
+     * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created from the raw vocabulary 
+     * using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
+     * @param sequence_length : Sequence Length to use (We add to special tokens for ner classification job).
+     * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will result in exactly one 
+     * output sequence. If set to false, there may be multiple output sequences when the max_length is smaller than generated tokens.
+     * @param do_lower_case : If set to true, original text will be lowercased before encoding.
+     * @param add_special_token : Whether or not to encode the sequences with the special tokens of the BERT classification model.
+     * @param stride : If `truncation` == False and the tokenized string is larger than max_length, the sequences containing the 
+     * overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is equal to stride there are no 
+     * duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will be repeated on the second sequence 
+     * and so on until the entire sentence is encoded.
+
+    */
     PreprocessNLPStage(std::string vocab_hash_file,
                        uint32_t sequence_length,
                        bool truncation,
@@ -89,4 +112,5 @@ struct PreprocessNLPStageInterfaceProxy
                                                                           int stride = -1);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus
