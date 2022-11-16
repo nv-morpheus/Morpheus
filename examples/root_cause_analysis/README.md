@@ -111,7 +111,7 @@ run --num_threads=8 --edge_buffer_size=4 --use_cpp=True --pipeline_batch_size=10
 `# Specify a NLP pipeline with 128 sequence length (Must match Triton config)` \
 pipeline-nlp --model_seq_length=128 --label=not_root_cause --label=is_root_cause \
 `# 1st Stage: Read from file` \
-from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/rootcause-validation-data-input.jsonlines \
+from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/root-cause-validation-data-input.jsonlines \
 `# 2nd Stage: Deserialize from JSON strings to objects` \
 deserialize \
 `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
@@ -165,7 +165,7 @@ Starting! Time: 1668537665.9479523
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====             
 ====Pipeline Started====              
-Added source: <from-file-0; FileSourceStage(filename=/my_data/gitrepos/efajardo-nv/Morpheus/models/datasets/validation-data/rootcause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=/my_data/gitrepos/efajardo-nv/Morpheus/models/datasets/validation-data/root-cause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
