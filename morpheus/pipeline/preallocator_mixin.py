@@ -34,6 +34,12 @@ logger = logging.getLogger(__name__)
 
 class PreallocatorMixin(ABC):
     """
+    Mixin intented to be added to stages, typically source stages,  which are emitting newly constructed DataFrame or
+    MessageMeta instances into the segment.
+    The exceptions would be non-source stages like DFP's `DFPFileToDataFrameStage` which are not sources but are
+    constructing new Dataframe instances, and `LinearBoundaryIngressStage` which is potentially emitting other message
+    types such as MultiMessages and it's various derived messages but it would still be the first stage in the given
+    segment emitting the message.
     """
 
     def _preallocate_df(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
@@ -83,6 +89,8 @@ class PreallocatorMixin(ABC):
                         stream = builder.make_node(node_name, self._preallocate_meta)
                     else:
                         stream = builder.make_node(node_name, self._preallocate_multi)
+            elif issubclass(out_type, (cudf.DataFrame, pd.DataFrame)):
+                stream = builder.make_node(node_name, self._preallocate_df)
             else:
                 msg = ("Additional columns were requested to be inserted into the Dataframe, but the output type {}"
                        " isn't a supported type".format(pretty_type))
