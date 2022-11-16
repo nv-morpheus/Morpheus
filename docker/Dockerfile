@@ -207,19 +207,6 @@ ARG CONDA_CHANNEL_ALIAS
 # Copy the source
 COPY . ./
 
-# Required by DOCA runtime
-# Build and install md, bsd, and gdrcopy libs
-RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
-    if [ -n " " ]; then \
-        source activate base && \
-        mamba install automake cmake libtool -y && \
-        cmake -DMORPHEUS_TP_BUILD_DOCA_DEPS=ON -DMORPHEUS_TP_INSTALL_DOCA_DEPS=ON \
-          -B ./tp_build -S ./thirdparty/libraries && \
-        cmake --build ./tp_build --target md bsd gdrcopy && \
-        mamba uninstall automake cmake libtool -y && \
-        rm -rf ./tp_build ;\
-    fi
-
 RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locked \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate base &&\
