@@ -83,18 +83,6 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
             // Clone the meta object before pushing while we still have access to it
             if (repeat_idx + 1 < m_repeat)
             {
-                // GIL must come after get_info
-                pybind11::gil_scoped_acquire gil;
-
-                // Reset meta to allow the DCHECK after the loop to pass
-                meta.reset();
-
-                break;
-            }
-
-            // Clone the meta object before pushing while we still have access to it
-            if (repeat_idx + 1 < m_repeat)
-            {
                 // Use the copy function
                 auto df = meta->get_info().copy_to_py_object();
 
