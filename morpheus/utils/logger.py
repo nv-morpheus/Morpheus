@@ -98,12 +98,11 @@ def _configure_from_log_level(log_level: int):
     # Default config with level
     logging.captureWarnings(True)
 
-    # Set the SRF logging level to match
-    srf.logging.set_level(log_level)
-
     # Get the root Morpheus logger
     morpheus_logger = logging.getLogger("morpheus")
-    morpheus_logger.setLevel(log_level)
+
+    # Set the level here
+    set_log_level(log_level=log_level)
 
     # Dont propagate upstream
     morpheus_logger.propagate = False
@@ -173,6 +172,35 @@ def configure_logging(log_level: int, log_config_file: str = None):
         _configure_from_log_file(log_config_file=log_config_file)
     else:
         _configure_from_log_level(log_level=log_level)
+
+
+def set_log_level(log_level: int):
+    """
+    Set the Morpheus logging level. Also propagates the value to SRF's logging system to keep the logging levels in sync
+
+    Parameters
+    ----------
+    log_level : int
+        One of the levels from the `logging` module. i.e. `logging.DEBUG`, `logging.INFO`, `logging.WARN`,
+        `logging.ERROR`, etc.
+
+    Returns
+    -------
+    int
+        The previously set logging level
+    """
+
+    # Get the old level and return it in case the user wants that
+    old_level = srf.logging.get_level()
+
+    # Set the SRF logging level to match
+    srf.logging.set_level(log_level)
+
+    # Get the root Morpheus logger
+    morpheus_logger = logging.getLogger("morpheus")
+    morpheus_logger.setLevel(log_level)
+
+    return old_level
 
 
 def deprecated_stage_warning(logger, cls, name):
