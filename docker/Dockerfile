@@ -39,7 +39,7 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="nvidia/cuda"
-ARG CUDA_VER=11.7.1
+ARG CUDA_VER=11.7.0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 
@@ -48,6 +48,7 @@ ARG LINUX_VER=20.04
 FROM ${FROM_IMAGE}:${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
 
 # Required arguments
+ARG BUILD_DOCA_DEPS="FALSE"
 ARG CONDA_CHANNEL=rapidsai
 ARG DOCA_ARTIFACTS_HOST=""
 ARG DOCA_REPO_HOST=""
@@ -57,7 +58,6 @@ ARG RAPIDS_CHANNEL=rapidsai-nightly
 ARG RAPIDS_VER=22.08
 
 # Temp option to set conda channel_alias property during build
-ARG BUILD_DOCA_DEPS="FALSE"
 ARG CONDA_CHANNEL_ALIAS
 
 # The TensorRT Version must be the full version (i.e. 7.2.2.3) and match Triton EXACTLY
@@ -103,10 +103,13 @@ RUN conda config --set ssl_verify false &&\
 # Create the conda environment and install all dependencies
 FROM base as conda_env
 
+ENV TINI_VERSION v0.19.0
+
 # Create a base environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Create the environment and install as little dependencies as possible
-    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n morpheus -c conda-forge python=${PYTHON_VER} &&\
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n morpheus -c conda-forge  \
+      python=${PYTHON_VER} tini=${TINI_VERSION} && \
     # Clean and activate
     # conda clean -afy && \
     sed -i 's/conda activate base/conda activate morpheus/g' ~/.bashrc
@@ -118,13 +121,13 @@ RUN source activate morpheus &&\
     conda config --env --add channels rapidsai
 
 # Add Tini
-ENV TINI_VERSION v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
+#ENV TINI_VERSION v0.19.0
+#ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+#RUN chmod +x /tini
 
 # Set the entrypoint to use the entrypoint.sh script which sets the conda env
 COPY docker/entrypoint.sh ./docker/
-ENTRYPOINT [ "/tini", "--", "/workspace/docker/entrypoint.sh" ]
+ENTRYPOINT [ "/opt/conda/bin/tini", "--", "/workspace/docker/entrypoint.sh" ]
 
 # Reset the shell back to normal
 SHELL ["/bin/bash", "-c"]
