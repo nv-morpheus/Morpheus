@@ -107,7 +107,7 @@ def test_email_no_cpp(mock_triton_client, config, tmp_path):
 
     pipe.run()
     results = calc_error_val(results_file_name)
-    assert results.diff_rows == 774
+    assert results.diff_rows == 198
 
 
 @pytest.mark.slow
