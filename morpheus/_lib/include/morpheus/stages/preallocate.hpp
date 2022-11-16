@@ -43,6 +43,7 @@ namespace {
  * @param column_names
  * @param column_types
  */
+//@{
 void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
                  const std::vector<std::string> &column_names,
                  const std::vector<morpheus::TypeId> &column_types)
@@ -57,6 +58,7 @@ void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
 {
     preallocate(msg->meta, column_names, column_types);
 }
+//@}
 }  // namespace
 
 namespace morpheus {
