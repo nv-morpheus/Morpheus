@@ -15,8 +15,8 @@
 """
 Example Usage:
 python root-cause-bert.py \
---trainingdata ../../datasets/training-data/rootcause-training-data.csv
---unseenerrors ../../datasets/training-data/rootcause-unseen-errors.csv
+--trainingdata ../../datasets/training-data/root-cause-training-data.csv
+--unseenerrors ../../datasets/training-data/root-cause-unseen-errors.csv
 """
 
 import argparse
