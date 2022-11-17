@@ -185,12 +185,12 @@ class Pipeline():
             # Check if preallocated columns are requested, this needs to happen before the source stages are built
             needed_columns = OrderedDict()
             for stage in networkx.topological_sort(segment_graph):
-                needed_columns.update(stage.needed_columns)
+                needed_columns.update(stage.get_needed_columns())
 
             if (len(needed_columns) > 0):
                 for stage in segment_graph.nodes():
                     if (isinstance(stage, PreallocatorMixin)):
-                        stage.needed_columns.update(needed_columns)
+                        stage.set_needed_columns(needed_columns)
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
             # topo_sort provides a reasonable approximation.

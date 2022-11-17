@@ -68,7 +68,7 @@ class AddScoresStage(SinglePortStage):
 
             prefixed_label = self._prefix + label
             self._idx2label[self._class_labels.index(label)] = prefixed_label
-            self.needed_columns[prefixed_label] = probs_type
+            self._needed_columns[prefixed_label] = probs_type
 
         assert len(self._idx2label) > 0, "No labels were added to the stage"
 

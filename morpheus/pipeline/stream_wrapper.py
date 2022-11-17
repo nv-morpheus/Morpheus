@@ -407,11 +407,10 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         self._input_ports = [_pipeline.Receiver(parent=self, port_number=i) for i in range(input_count)]
         self._output_ports = [_pipeline.Sender(parent=self, port_number=i) for i in range(output_count)]
 
-    @property
-    def needed_columns(self):
+    def get_needed_columns(self):
         """
         Stages which need to have columns inserted into the dataframe, should populate the `self._needed_columns`
         dictionary with mapping of column names to numpy dtype strings. This will ensure that the columns are initialized
         and populated with null values.
         """
-        return self._needed_columns
+        return self._needed_columns.copy()

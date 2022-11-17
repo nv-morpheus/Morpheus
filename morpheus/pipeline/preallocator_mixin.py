@@ -15,6 +15,7 @@
 import logging
 import typing
 from abc import ABC
+from collections import OrderedDict
 
 import cupy as cp
 import numpy as np
@@ -41,6 +42,9 @@ class PreallocatorMixin(ABC):
     types such as MultiMessages and it's various derived messages but it would still be the first stage in the given
     segment emitting the message.
     """
+
+    def set_needed_columns(self, needed_columns: OrderedDict):
+        self._needed_columns = needed_columns
 
     def _preallocate_df(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
         # Using a list-comprehension in order to preserve the order

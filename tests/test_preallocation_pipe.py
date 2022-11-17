@@ -48,7 +48,7 @@ class CheckPreAlloc(SinglePortStage):
         super().__init__(c)
         self._expected_type = cudf.dtype(probs_type)
         self._class_labels = c.class_labels
-        self.needed_columns.update({label: probs_type for label in c.class_labels})
+        self._needed_columns.update({label: probs_type for label in c.class_labels})
 
     @property
     def name(self):
@@ -86,7 +86,7 @@ def test_preallocation(config, tmp_path, probs_type):
     input_cols = get_column_names_from_file(input_file)
 
     file_src = FileSourceStage(config, filename=input_file, iterative=False)
-    assert len(file_src.needed_columns) == 0
+    assert len(file_src.get_needed_columns()) == 0
 
     pipe = LinearPipeline(config)
     pipe.set_source(file_src)
@@ -97,7 +97,7 @@ def test_preallocation(config, tmp_path, probs_type):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert file_src.needed_columns == {
+    assert file_src.get_needed_columns() == {
         'frogs': probs_type, 'lizards': probs_type, 'toads': probs_type, 'turtles': probs_type
     }
 
@@ -119,7 +119,7 @@ def test_preallocation_multi_segment_pipe(config, tmp_path, probs_type):
     out_file = os.path.join(tmp_path, 'results.csv')
 
     file_src = FileSourceStage(config, filename=input_file, iterative=False)
-    assert len(file_src.needed_columns) == 0
+    assert len(file_src.get_needed_columns()) == 0
 
     pipe = LinearPipeline(config)
     pipe.set_source(file_src)
@@ -135,8 +135,8 @@ def test_preallocation_multi_segment_pipe(config, tmp_path, probs_type):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert len(file_src.needed_columns) == 0
-    boundary_ingress.needed_columns == {
+    assert len(file_src.get_needed_columns()) == 0
+    boundary_ingress.get_needed_columns() == {
         'frogs': probs_type, 'lizards': probs_type, 'toads': probs_type, 'turtles': probs_type
     }
 
