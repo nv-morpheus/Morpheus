@@ -18,18 +18,17 @@ cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 list(APPEND CMAKE_MESSAGE_CONTEXT "thirdparty")
 
 option(MORPHEUS_TP_BUILD_DOCA_DEPS "Configure Morpheus to build with NVIDIA DOCA" OFF)
-option(MORPHEUS_TP_INSTALL_DOCA_DEPS "Install DOCA dependencies into local system (primarily for Docker)" OFF)
+option(MORPHEUS_TP_BUILD_LIBMD "Build third party library libmd" OFF)
+option(MORPHEUS_TP_BUILD_LIBBSD "Build third party library libbsd" OFF)
+option(MORPHEUS_TP_BUILD_LIBGDRCOPY "Build third party library gdrcopy" OFF)
 
 if (MORPHEUS_TP_BUILD_DOCA_DEPS)
-  set(MORPHEUS_TP_BUILD_LIBMD "ON" CACHE STRING "Build libmd")
-  set(MORPHEUS_TP_BUILD_LIBBSD "ON" CACHE STRING "Build libbsd")
-  set(MORPHEUS_TP_BUILD_GDRCOPY "ON" CACHE STRING "Build gdrcopy")
+  set(MORPHEUS_TP_BUILD_LIBMD "ON")
+  set(MORPHEUS_TP_BUILD_LIBBSD "ON")
+  set(MORPHEUS_TP_BUILD_GDRCOPY "ON")
 endif()
 
-# Set default library versions
-set(MORPHEUS_TP_LIBMD_VERSION "1.0.4" CACHE STRING "Version of libmd to build")
-set(MORPHEUS_TP_LIBBSD_VERSION "0.11.7" CACHE STRING "Version of libbsd to build")
-set(MORPHEUS_TP_GDRCOPY_VERSION "2.3" CACHE STRING "Version of gdrcopy to build")
+option(MORPHEUS_TP_INSTALL_DOCA_DEPS "Install DOCA dependencies into local system (primarily for Docker)" OFF)
 
 set(MORPHEUS_TP_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")
 mark_as_advanced(MORPHEUS_TP_CACHE_DIR)

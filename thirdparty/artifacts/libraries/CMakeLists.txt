@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Set default library versions
+set(MORPHEUS_TP_LIBMD_VERSION "1.0.4" CACHE STRING "Version of libmd to build")
+set(MORPHEUS_TP_LIBBSD_VERSION "0.11.7" CACHE STRING "Version of libbsd to build")
+set(MORPHEUS_TP_GDRCOPY_VERSION "2.3" CACHE STRING "Version of gdrcopy to build")
 
 if (MORPHEUS_TP_BUILD_LIBMD)
   add_subdirectory(md)
