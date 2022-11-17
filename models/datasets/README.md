@@ -20,18 +20,17 @@ The same data in both csv and jsonlines
 ## Digital Fingerprinting (DFP) Data
 
 ### DFP Azure Logs
-
-#### Sample Training Data
-- [training-data/azure/azure-ad-logs-sample-training-data.json](./training-data/azure/azure-ad-logs-sample-training-data.json)
-
 This is a synthetic dataset of Azure AD logs with activities of 20 accounts (85 applications involved, 3567 records in total). The activities are split to a train and an inference set. An anomaly is included in the inference set for model validation. The data was generated using the python [faker](https://faker.readthedocs.io/en/master/#) package. If there is any resemblance to real individuals, it is purely coincidental.
 
+#### Sample Training Data
 - 3239 records in total
 - Time range: 2022/08/01 - 2022/08/29
 - Users' log distribution:
     - 5 high volume (>= 300) users
     - 15 medium volume (~100) users
     - 5 light volume (~10) users
+
+- [training-data/azure/azure-ad-logs-sample-training-data.json](./training-data/azure/azure-ad-logs-sample-training-data.json)
 
 #### Pipeline Validation Data
 Data for the pipeline validation contains an anomlous activity for a single user.
@@ -148,3 +147,7 @@ This data contains 2000 synthetic pcap payloads generated to mimic sensitive and
 
 ### Pipeline Validation Data
 - [sid-validation-data.csv](./validation-data/sid-validation-data.csv)
+
+
+## Disclaimer
+Morpheus contributors will make every effort to keep datasets up-to-date and accurate. However, the data submitted to this repository is provided on an “as-is” basis and there is no warranty or guarantee of any kind that the information is accurate, complete, current or suitable for any particular purpose. It is the responsibility of all persons who use Morpheus to independently confirm the accuracy of the data, information, and results obtained via the Morpheus example workflows.
