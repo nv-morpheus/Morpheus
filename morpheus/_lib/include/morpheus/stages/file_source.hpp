@@ -41,13 +41,11 @@ namespace morpheus {
  * @file
 */
 
-/**
- * Load messages from a file.
- * 
- * Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
- * testing performance and accuracy of a pipeline.
- */
 #pragma GCC visibility push(default)
+/**
+ * @brief Load messages from a file. Source stage is used to load messages from a file and 
+ * dumping the contents into the pipeline immediately. Useful for testing performance and accuracy of a pipeline.
+ */
 class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
@@ -56,11 +54,11 @@ class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
     using typename base_t::subscriber_fn_t;
 
     /**
-     * @brief Constructor of a class `FileSourceStage`.
+     * @brief Construct a new File Source Stage object
      * 
-     * @param filename : Name of the file from which the messages will be read.
-     * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-    */
+     * @param filename : Name of the file from which the messages will be read
+     * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging
+     */
     FileSourceStage(std::string filename, int repeat = 1);
 
   private:
@@ -77,7 +75,13 @@ class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
 struct FileSourceStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a FileSourceStage, and return the result.
+     * @brief Create and initialize a FileSourceStage, and return the result
+     * 
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param filename : Name of the file from which the messages will be read.
+     * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
+     * @return std::shared_ptr<srf::segment::Object<FileSourceStage>> 
      */
     static std::shared_ptr<srf::segment::Object<FileSourceStage>> init(srf::segment::Builder &builder,
                                                                        const std::string &name,

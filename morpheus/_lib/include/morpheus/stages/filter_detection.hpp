@@ -43,8 +43,9 @@ namespace morpheus {
  * @file
 */
 
+#pragma GCC visibility push(default)
 /**
- * The FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
+ * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
  * criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
  * equal to `threshold`.
  *
@@ -67,7 +68,6 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-#pragma GCC visibility push(default)
 class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                             std::shared_ptr<MultiResponseProbsMessage>>
 {
@@ -79,11 +79,11 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
     using typename base_t::subscribe_fn_t;
 
     /**
-     * @brief Constructor for a class `FilterDetectionsStage`.
+     * @brief Construct a new Filter Detections Stage object
      * 
-     * @param threshold : Threshold to classify.
-     * @param copy : Whether or not to perform a copy default=true.
-    */
+     * @param threshold : Threshold to classify
+     * @param copy : Whether or not to perform a copy default=true
+     */
     FilterDetectionsStage(float threshold, bool copy = true);
 
   private:
@@ -102,7 +102,13 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
 struct FilterDetectionStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a FilterDetectionStage, and return the result.
+     * @brief Create and initialize a FilterDetectionStage, and return the result
+     * 
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param threshold : Threshold to classify
+     * @param copy : Whether or not to perform a copy default=true
+     * @return std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> 
      */
     static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &builder,
                                                                              const std::string &name,

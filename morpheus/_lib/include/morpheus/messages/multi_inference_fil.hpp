@@ -41,18 +41,22 @@ namespace morpheus {
  * A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
  * proper inputs are set and eases debugging.
  * 
- * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
- * C++ representations of the table
- * @param mess_offset Offset into the metadata batch
- * @param mess_count Messages count
- * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
- * @param offset Message offset in inference memory instance
- * @param count Message count in inference memory instance
  */
 #pragma GCC visibility push(default)
 class MultiInferenceFILMessage : public MultiInferenceMessage
 {
   public:
+    /**
+     * @brief Construct a new Multi Inference FIL Message object
+     * 
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     * C++ representations of the table
+     * @param mess_offset Offset into the metadata batch
+     * @param mess_count Messages count
+     * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
+     * @param offset Message offset in inference memory object
+     * @param count Message count in inference memory object
+     */
     MultiInferenceFILMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                              size_t mess_offset,
                              size_t mess_count,
@@ -61,7 +65,7 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
                              size_t count);
 
     /**
-     * @brief Return the 'input__0' tensor, throws a `std::runtime_error` if it does not exist.
+     * @brief Returns the 'input__0' tensor, throws a `std::runtime_error` if it does not exist
      *
      * @param name
      * @return const TensorObject
@@ -69,14 +73,14 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
     const TensorObject get_input__0() const;
 
     /**
-     * @brief Sets a tensor named 'input__0'.
+     * @brief Sets a tensor named 'input__0'
      *
      * @param input__0
      */
     void set_input__0(const TensorObject& input__0);
 
     /**
-     * @brief Return the 'seq_ids' tensor, throws a `std::runtime_error` if it does not exist.
+     * @brief Returns the 'seq_ids' tensor, throws a `std::runtime_error` if it does not exist
      *
      * @param name
      * @return const TensorObject
@@ -84,7 +88,7 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
     const TensorObject get_seq_ids() const;
 
     /**
-     * @brief Sets a tensor named 'seq_ids'.
+     * @brief Sets a tensor named 'seq_ids'
      *
      * @param seq_ids
      */
@@ -98,7 +102,16 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
 struct MultiInferenceFILMessageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a MultiInferenceFILMessage, and return a shared pointer to the result.
+     * @brief Create and initialize a MultiInferenceFILMessage, and return a shared pointer to the result
+     * 
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     * C++ representations of the table
+     * @param mess_offset Offset into the metadata batch
+     * @param mess_count Messages count
+     * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
+     * @param offset Message offset in inference memory object
+     * @param count Message count in inference memory object
+     * @return std::shared_ptr<MultiInferenceFILMessage> 
      */
     static std::shared_ptr<MultiInferenceFILMessage> init(std::shared_ptr<MessageMeta> meta,
                                                           cudf::size_type mess_offset,
@@ -108,19 +121,25 @@ struct MultiInferenceFILMessageInterfaceProxy
                                                           cudf::size_type count);
 
     /**
-     * @brief Get inference memory instance, and return a shared pointer to the result.
+     * @brief Returns a shared pointer of a inference memory object
+     * 
+     * @param self
      * @return std::shared_ptr<morpheus::InferenceMemory>
      */
     static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceFILMessage& self);
 
     /**
-     * @brief Message offset in inference memory instance.
+     * @brief Message offset in inference memory object
+     * 
+     * @param self
      * @return std::size_t
      */
     static std::size_t offset(MultiInferenceFILMessage& self);
 
     /**
-     * @brief Message count in inference memory instance.
+     * @brief Message count in inference memory object
+     * 
+     * @param self
      * @return std::size_t
      */
     static std::size_t count(MultiInferenceFILMessage& self);

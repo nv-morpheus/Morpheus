@@ -38,32 +38,52 @@ struct MatxUtil
 {
     /**
      * @brief Convert one device_buffer type to another
-     * @return
+     * 
+     * @param input 
+     * @param output_type 
+     * @return std::shared_ptr<rmm::device_buffer> 
      */
     static std::shared_ptr<rmm::device_buffer> cast(const DevMemInfo &input, TypeId output_type);
 
     /**
      * @brief Builds a Nx3 segment ID matrix
-     * @return
+     * 
+     * @param row_count 
+     * @param fea_len 
+     * @param output_type 
+     * @return std::shared_ptr<rmm::device_buffer> 
      */
     static std::shared_ptr<rmm::device_buffer> create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type);
 
     /**
      * @brief Calculate logits on device_buffer
-     * @return
+     * 
+     * @param input 
+     * @return std::shared_ptr<rmm::device_buffer> 
      */
     static std::shared_ptr<rmm::device_buffer> logits(const DevMemInfo &input);
 
     /**
      * @brief Perform transpose
-     * @return
+     * 
+     * @param input 
+     * @param rows 
+     * @param cols 
+     * @return std::shared_ptr<rmm::device_buffer> 
      */
     static std::shared_ptr<rmm::device_buffer> transpose(const DevMemInfo &input, size_t rows, size_t cols);
 
     /**
-     * @brief Return an array of boolean where x[i,j] >= thresh_val, when by_row is true an Nx1 array will be returned
+     * @brief Returns an array of boolean where x[i,j] >= thresh_val, when by_row is true an Nx1 array will be returned
      * with a true if any value in the row is above the threshold
-     * @return
+     * 
+     * @param input 
+     * @param rows 
+     * @param cols 
+     * @param stride 
+     * @param thresh_val 
+     * @param by_row 
+     * @return std::shared_ptr<rmm::device_buffer> 
      */
     static std::shared_ptr<rmm::device_buffer> threshold(const DevMemInfo &input,
                                                          size_t rows,
@@ -82,7 +102,14 @@ struct MatxUtil
      *
      * Will return:
      *               [8, 9, 8, 2]
-     * @return std::shared_ptr<rmm::device_buffer>
+     * 
+     * @param input 
+     * @param seq_ids 
+     * @param seq_id_offset 
+     * @param input_shape 
+     * @param input_stride 
+     * @param output_shape 
+     * @return std::shared_ptr<rmm::device_buffer> 
      */
     static std::shared_ptr<rmm::device_buffer> reduce_max(const DevMemInfo &input,
                                                           const std::vector<int32_t> &seq_ids,

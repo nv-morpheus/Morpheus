@@ -236,10 +236,27 @@ class DerivedMultiMessage<DerivedT>
     }
 };
 
+/**
+ * @brief  This class holds data for multiple messages at a time. To avoid copying data for slicing operations, it
+    holds a reference to a batched metadata object and stores the offset and count into that batch.
+ * 
+ */
 class MultiMessage : public DerivedMultiMessage<MultiMessage>
 {
   public:
+    /**
+     * @brief Construct a new Multi Message object
+     * 
+     * @param other 
+     */
     MultiMessage(const MultiMessage &other) = default;
+    /**
+     * @brief Construct a new Multi Message object
+     * 
+     * @param m : Deserialized messages metadata for large batch
+     * @param o : Offset into the metadata batch
+     * @param c : Messages count
+     */
     MultiMessage(std::shared_ptr<MessageMeta> m, size_t o, size_t c);
 
     std::shared_ptr<MessageMeta> meta;
@@ -247,27 +264,41 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     size_t mess_count{0};
 
     /**
-     * TODO(Documentation)
+     * @brief Get the meta object
+     * 
+     * @return TableInfo 
      */
     TableInfo get_meta();
 
     /**
-     * TODO(Documentation)
+     * @brief Returns column value from a meta object
+     * 
+     * @param col_name 
+     * @return TableInfo 
      */
     TableInfo get_meta(const std::string &col_name);
 
     /**
-     * TODO(Documentation)
+     * @brief Returns columns value from a meta object
+     * 
+     * @param column_names 
+     * @return TableInfo 
      */
     TableInfo get_meta(const std::vector<std::string> &column_names);
 
     /**
-     * TODO(Documentation)
+     * @brief Set the meta object with a given column name
+     * 
+     * @param col_name 
+     * @param tensor 
      */
     void set_meta(const std::string &col_name, TensorObject tensor);
 
     /**
-     * TODO(Documentation)
+     * @brief Set the meta object with a given column names
+     * 
+     * @param column_names 
+     * @param tensors 
      */
     void set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors);
 

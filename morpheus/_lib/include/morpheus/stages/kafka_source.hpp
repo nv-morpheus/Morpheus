@@ -46,11 +46,10 @@ namespace morpheus {
  * @file
 */
 
+#pragma GCC visibility push(default)
 /**
  * This class loads messages from the Kafka cluster by serving as a Kafka consumer.
  */
-#pragma GCC visibility push(default)
-
 class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
@@ -59,19 +58,20 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     using typename base_t::subscriber_fn_t;
 
     /**
-     * @brief Constructor for a class `KafkaSourceStage`
+     * @brief Construct a new Kafka Source Stage object
      * 
      * @param max_batch_size : The maximum batch size for the messages batch. 
      * @param topic : Input kafka topic.
      * @param batch_timeout_ms : Frequency of the poll in ms.
      * @param config : Kafka consumer configuration.
      * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server. 
-     * This is only useful for debugging, allowing the user to process the same messages multiple times.
+     * This is only useful for debugging, allowing the user to process the same messages multiple times
      * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages. 
      * This is only useful when inputs are known to be valid json.
      * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table). 
      * Useful for testing. Disabled if `0`
-    */
+     * @param async_commits : Asynchronously acknowledge consuming Kafka messages
+     */
     KafkaSourceStage(size_t max_batch_size,
                      std::string topic,
                      int32_t batch_timeout_ms,
@@ -154,8 +154,23 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
  */
 struct KafkaSourceStageInterfaceProxy
 {
+
     /**
-     * @brief Create and initialize a KafkaSourceStage, and return the result.
+     * @brief Create and initialize a KafkaSourceStage, and return the result
+     * 
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param max_batch_size : The maximum batch size for the messages batch. 
+     * @param topic : Input kafka topic.
+     * @param batch_timeout_ms : Frequency of the poll in ms.
+     * @param config : Kafka consumer configuration.
+     * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server. 
+     * This is only useful for debugging, allowing the user to process the same messages multiple times
+     * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages. 
+     * This is only useful when inputs are known to be valid json.
+     * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
+     * Useful for testing. Disabled if `0`
+     * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
     static std::shared_ptr<srf::segment::Object<KafkaSourceStage>> init(srf::segment::Builder &builder,
                                                                         const std::string &name,

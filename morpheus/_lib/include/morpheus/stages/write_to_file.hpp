@@ -44,12 +44,11 @@ namespace morpheus {
  * @file
 */
 
-/**
- * Write all messages to a file.
- * 
- * Messages are written to a file by this class. This class does not maintain an open file or buffer messages.
- */
 #pragma GCC visibility push(default)
+/**
+ * @brief Write all messages to a file. Messages are written to a file by this class. 
+ * This class does not maintain an open file or buffer messages.
+ */
 class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
 {
   public:
@@ -59,12 +58,12 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
     using typename base_t::subscribe_fn_t;
 
     /**
-     * @brief Constructor for class WriteToFileStage
+     * @brief Construct a new Write To File Stage object
      * 
-     * @param filename : Name of the file to which the messages will be written.
-     * @param mode : Mode for opening a file.
+     * @param filename : Reference to the name of the file to which the messages will be written
+     * @param mode : Reference to the mode for opening a file
      * @param file_type : FileTypes
-     * @param include_index_col : Write out the index as a column, by default true.
+     * @param include_index_col : Write out the index as a column, by default true
      */
     WriteToFileStage(const std::string &filename,
                      std::ios::openmode mode = std::ios::out,
@@ -107,6 +106,18 @@ struct WriteToFileStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a WriteToFileStage, and return the result.
+     */
+
+    /**
+     * @brief 
+     * 
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param filename : Reference to the name of the file to which the messages will be written
+     * @param mode : Reference to the mode for opening a file
+     * @param file_type : FileTypes
+     * @param include_index_col : Write out the index as a column, by default true
+     * @return std::shared_ptr<srf::segment::Object<WriteToFileStage>> 
      */
     static std::shared_ptr<srf::segment::Object<WriteToFileStage>> init(srf::segment::Builder &builder,
                                                                         const std::string &name,

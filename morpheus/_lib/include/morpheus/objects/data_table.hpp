@@ -38,6 +38,10 @@ class TableInfo;
  */
 struct IDataTable : public std::enable_shared_from_this<IDataTable>
 {
+    /**
+     * @brief Construct a new IDataTable object
+     * 
+     */
     IDataTable() = default;
 
     /**
@@ -48,14 +52,14 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
     virtual cudf::size_type count() const = 0;
 
     /**
-     * Get cuDF dataframe as a table info.
+     * @brief cuDF dataframe as a table info.
      * 
      * @return TableInfo
      */
     virtual TableInfo get_info() const = 0;
 
     /**
-     * Get underlying cuDF DataFrame as a python object.
+     * @brief underlying cuDF DataFrame as a python object.
      * 
      * @return pybind11::object
      */

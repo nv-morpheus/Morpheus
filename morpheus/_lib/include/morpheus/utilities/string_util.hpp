@@ -28,7 +28,10 @@ namespace morpheus {
  * @file
 */
 
-// Concats multiple strings together using ostringstream. Use with MORPHEUS_CONCAT_STR("Start [" << my_int << "]")
+/**
+ * @brief Concats multiple strings together using ostringstream. Use with MORPHEUS_CONCAT_STR("Start [" << my_int << "]")
+ * 
+ */
 #define MORPHEUS_CONCAT_STR(strs) ((std::ostringstream&)(std::ostringstream() << strs)).str()
 
 /****** Component public implementations *******************/

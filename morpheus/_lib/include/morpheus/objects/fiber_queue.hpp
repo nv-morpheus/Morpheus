@@ -36,7 +36,8 @@ namespace morpheus {
 */
 
 /**
- * TODO(Documentation)
+ * @brief This class acts as a collection or linear data structure that stores elements in FIFO (First In, First Out) order
+ * 
  */
 class FiberQueue
 {
@@ -44,16 +45,22 @@ class FiberQueue
     FiberQueue(std::size_t max_size);
 
     /**
-     * @brief item to the queue. Await the acknowledgement delays based on the timeout that has been specified.
+     * @brief Item to the queue. Await the acknowledgement delays based on the timeout that has been specified.
      * 
-     * @param item : Item that needs to be inserted to the queue 
-     * @param block : Block the insert until
-     * @param
+     * @param item
+     * @param block
+     * @param timeout
+     * @return boost::fibers::channel_op_status 
      */
     boost::fibers::channel_op_status put(pybind11::object &&item, bool block = true, float timeout = 0.0);
 
     /**
-     * Retrieves item from head of the queue.
+     * @brief Retrieves item from head of the queue.
+     * 
+     * @param item 
+     * @param block 
+     * @param timeout 
+     * @return boost::fibers::channel_op_status 
      */
     boost::fibers::channel_op_status get(pybind11::object &item, bool block = true, float timeout = 0.0);
 
@@ -84,7 +91,10 @@ class FiberQueue
 struct FiberQueueInterfaceProxy
 {
     /**
-     * @brief Create and initialize a FIberQueue, and return a shared pointer to the result.
+     * @brief Create and initialize a FIberQueue, and return a shared pointer to the result
+     * 
+     * @param max_size 
+     * @return std::shared_ptr<morpheus::FiberQueue> 
      */
     static std::shared_ptr<morpheus::FiberQueue> init(std::size_t max_size);
 

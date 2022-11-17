@@ -42,26 +42,28 @@ namespace morpheus {
 /**
  * Base class for MultiInferenceMessage & MultiResponseMessage
  * Contains a pointer to an instance of TensorMemory along with an
- * offset & count to those tensors.
+ * offset & count to those tensors
  *
  * mess_offset & mess_count refer to the range of records in meta.
- * offset & count refer to the range of records in TensorMemory.
+ * offset & count refer to the range of records in TensorMemory
  *
  * While TensorMemory can contain multiple tensors, it is a requirement that
  * they are all of the same length and that element N in each tensor refers
- * to the same record.
+ * to the same record
  * 
 */
 class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiMessage>
 {
   public:
     /**
-     * Constructor default.
-    */
+     * @brief Construct a new Multi Tensor Message object
+     * 
+     * @param other 
+     */
     MultiTensorMessage(const MultiTensorMessage &other) = default;
 
     /**
-     * Constructor for a class `MultiTensorMessage`.
+     * Construct a new Multi Tensor Message object.
      * 
      * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
      * C++ representations of the table
@@ -83,7 +85,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     std::size_t count{0};
 
     /**
-     * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist
      *
      * @param name
      * @return const TensorObject
@@ -91,7 +93,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     const TensorObject get_tensor(const std::string &name) const;
 
     /**
-     * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist
      *
      * @param name
      * @return TensorObject
@@ -100,7 +102,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
 
     /**
      * @brief Update the value of a given tensor. The tensor must already exist, otherwise this will halt on a fatal
-     * error.
+     * error
      *
      * @param name
      * @param value

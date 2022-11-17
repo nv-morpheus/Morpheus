@@ -38,25 +38,30 @@ namespace morpheus {
  */
 struct PyDataTable : public IDataTable
 {
+    /**
+     * @brief Construct a new Py Data Table object
+     * 
+     * @param py_table 
+     */
     PyDataTable(pybind11::object &&py_table);
     ~PyDataTable();
 
     /**
-     * @brief cuDF table rows count.
+     * @brief cuDF table rows count
      * 
      * @return cudf::size_type
      */
     cudf::size_type count() const override;
 
     /**
-     * Get cuDF table info.
+     * Get cuDF table info
      * 
      * @return TableInfo
      */
     TableInfo get_info() const override;
 
     /**
-     * Get Pybind data table.
+     * Get data table as python object
      * 
      * @return pybind11::object
      */

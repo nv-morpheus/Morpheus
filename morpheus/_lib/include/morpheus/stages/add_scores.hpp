@@ -43,13 +43,11 @@ namespace morpheus {
  * @file
 */
 
-/**
- * Add probability scores to each message.
- * 
- * Add score labels based on probabilities calculated in inference stage. Label indexes will be looked up in
- * the idx2label property.
- */
 #pragma GCC visibility push(default)
+/**
+ * @brief probability scores to each message. Add score labels based on probabilities calculated in inference stage. 
+ * Label indexes will be looked up in the idx2label property.
+ */
 class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                      std::shared_ptr<MultiResponseProbsMessage>>
 {
@@ -61,11 +59,11 @@ class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiRespon
     using typename base_t::subscribe_fn_t;
 
     /**
-     * Constructor of a class `AddScoresStage`.
+     * @brief Construct a new Add Scores Stage object
      * 
-     * @param num_class_labels : Number of classification labels.
-     * @param idx2label : Index to classification labels map.
-    */
+     * @param num_class_labels : Number of classification labels
+     * @param idx2label : Index to classification labels map
+     */
     AddScoresStage(std::size_t num_class_labels, std::map<std::size_t, std::string> idx2label);
 
     /**
@@ -84,7 +82,13 @@ class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiRespon
 struct AddScoresStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a AddScoresStage, and return the result.
+     * @brief Create and initialize a AddScoresStage, and return the result
+     * 
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param num_class_labels : Number of classification labels
+     * @param idx2label : Index to classification labels map
+     * @return std::shared_ptr<srf::segment::Object<AddScoresStage>> 
      */
     static std::shared_ptr<srf::segment::Object<AddScoresStage>> init(srf::segment::Builder &builder,
                                                                       const std::string &name,

@@ -40,7 +40,8 @@ namespace morpheus {
 */
 
 /**
- * A wrapper class around a pybind data table. It gives the flexibility to perform operations on a data table.
+ * A wrapper class around a data table, which in practice a cudf dataframe. It gives the flexibility to perform operations 
+ * on a data table
 */
 struct TableInfo
 {
@@ -52,49 +53,49 @@ struct TableInfo
               std::vector<std::string> column_names);
 
     /**
-     * @brief Get reference of underlying cuDF DataFrame as a python object.
+     * @brief Get reference of underlying cuDF DataFrame as a python object
      * 
      * @return pybind11::object
      */
     const pybind11::object &get_parent_table() const;
 
     /**
-     * @brief Get reference of a cudf table view.
+     * @brief Get reference of a cudf table view
      * 
      * @return cudf::table_view
      */
     const cudf::table_view &get_view() const;
 
     /**
-     * @brief Get index names of a data table.
+     * @brief Get index names of a data table
      * 
      * @return std::vector<std::string>
      */
     std::vector<std::string> get_index_names() const;
 
     /**
-     * @brief Get column names of a data table.
+     * @brief Get column names of a data table
      * 
      * @return std::vector<std::string>
      */
     std::vector<std::string> get_column_names() const;
 
     /**
-     * @brief Get size of a index names in a data table.
+     * @brief Get size of a index names in a data table
      * 
      * @return cudf::size_type
      */
     cudf::size_type num_indices() const;
 
     /**
-     * @brief Get columns count in a data table.
+     * @brief Get columns count in a data table
      * 
      * @return cudf::size_type
      */
     cudf::size_type num_columns() const;
 
     /**
-     * @brief Get rows count in a data table.
+     * @brief Get rows count in a data table
      * 
      * @return cudf::size_type
      */
@@ -103,43 +104,43 @@ struct TableInfo
     /**
      * @brief Returns the underlying cuDF DataFrame as a python object
      *
-     * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default.
+     * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default
      */
     pybind11::object __attribute__((visibility("default"))) as_py_object() const;
 
     /**
-     * @brief Insert new columns to a data table with the value zero for each row.
+     * @brief Insert new columns to a data table with the value zero for each row
      * 
-     * @param column_names : Names of the columns to be added to a table.
-     * @param column_types : Column data types.
+     * @param column_names : Names of the columns to be added to a table
+     * @param column_types : Column data types
      */
     void insert_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
 
     /**
-     * @brief Insert missing columns to a data table with the value zero for each row.
+     * @brief Insert missing columns to a data table with the value zero for each row
      * 
-     * @param column_names : Names of the columns to be added to a table.
-     * @param column_types : Column data types.
+     * @param column_names : Names of the columns to be added to a table
+     * @param column_types : Column data types
      */
     void insert_missing_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
 
     /**
-     * @brief Returns a reference to the view of the specified column.
+     * @brief Returns a reference to the view of the specified column
      * 
      * @throws std::out_of_range
      * If `column_index` is out of the range [0, num_columns)
      * 
-     * @param idx : The index of the desired column.
+     * @param idx : The index of the desired column
      * @return cudf::column_view : A reference to the desired column
      */
     const cudf::column_view &get_column(cudf::size_type idx) const;
 
     /**
-     * @brief Get slice of a data table info based on the start and stop offset address.
+     * @brief Get slice of a data table info based on the start and stop offset address
      * 
-     * @param start : Start offset address.
-     * @param stop : Stop offset address.
-     * @param column_names : Columns of interest.
+     * @param start : Start offset address
+     * @param stop : Stop offset address
+     * @param column_names : Columns of interest
      * @return TableInfo
      */
     TableInfo get_slice(cudf::size_type start, cudf::size_type stop, std::vector<std::string> column_names = {}) const;

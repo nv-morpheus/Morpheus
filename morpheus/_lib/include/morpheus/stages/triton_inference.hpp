@@ -45,12 +45,11 @@ namespace morpheus {
  * @file
 */
 
+#pragma GCC visibility push(default)
 /**
- * Perform inference with Triton Inference Server.
- * 
+ * @brief Perform inference with Triton Inference Server.
  * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
  */
-#pragma GCC visibility push(default)
 class InferenceClientStage
   : public srf::pysrf::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>
 {
@@ -62,7 +61,7 @@ class InferenceClientStage
     using typename base_t::subscribe_fn_t;
 
     /**
-     * @brief Constructor for a class `InferenceClientStage`
+     * @brief Construct a new Inference Client Stage object
      * 
      * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to Triton inference
      * @param server_url : Triton server URL.
@@ -73,7 +72,7 @@ class InferenceClientStage
      * @param needs_logits : Determines if logits are required.
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the 
      * Morpheus names do not match the model.
-    */
+     */
     InferenceClientStage(std::string model_name,
                          std::string server_url,
                          bool force_convert_inputs,
@@ -119,7 +118,20 @@ class InferenceClientStage
 struct InferenceClientStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a InferenceClientStage, and return the result.
+     * @brief Create and initialize a InferenceClientStage, and return the result
+     * 
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param model_name : Name of the model specifies which model can handle the inference requests that are sent to Triton inference
+     * @param server_url : Triton server URL.
+     * @param force_convert_inputs : Instructs the stage to convert the incoming data to the same format that Triton is expecting. If set to False, 
+     * data will only be converted if it would not result in the loss of data.
+     * @param use_shared_memory : Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
+     * transfer time but requires that Morpheus and Triton are located on the same machine.
+     * @param needs_logits : Determines if logits are required.
+     * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the 
+     * Morpheus names do not match the model.
+     * @return std::shared_ptr<srf::segment::Object<InferenceClientStage>> 
      */
     static std::shared_ptr<srf::segment::Object<InferenceClientStage>> init(
         srf::segment::Builder &builder,

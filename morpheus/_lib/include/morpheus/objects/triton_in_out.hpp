@@ -33,7 +33,8 @@ namespace morpheus {
 */
 
 /**
- * Data container for model input and output configuration.
+ * @brief Container for model input and output configuration
+ * 
  */
 struct TritonInOut
 {

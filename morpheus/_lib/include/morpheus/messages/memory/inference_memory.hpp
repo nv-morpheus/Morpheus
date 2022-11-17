@@ -30,10 +30,26 @@ namespace morpheus {
 */
 
 #pragma GCC visibility push(default)
+/**
+ * @brief This is a base container class for data that will be used for inference stages. This class is designed to
+    hold generic tensor data in cupy arrays
+ * 
+ */
 class InferenceMemory : public TensorMemory
 {
   public:
+    /**
+     * @brief Construct a new Inference Memory object
+     * 
+     * @param count 
+     */
     InferenceMemory(size_t count);
+    /**
+     * @brief Construct a new Inference Memory object
+     * 
+     * @param count 
+     * @param tensors 
+     */
     InferenceMemory(size_t count, tensor_map_t&& tensors);
 
     /**
@@ -53,7 +69,10 @@ class InferenceMemory : public TensorMemory
 struct InferenceMemoryInterfaceProxy
 {
     /**
-     * TODO(Documentation)
+     * @brief Get the count object
+     * 
+     * @param self 
+     * @return std::size_t 
      */
     static std::size_t get_count(InferenceMemory& self);
 };

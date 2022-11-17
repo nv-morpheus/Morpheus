@@ -23,4 +23,4 @@ doxygen
 export TARGET="docs_morpheus"
 ./scripts/compile.sh
 ```
-Note: Doxygen reads and processes all appropriate source files under the `morpheus/_lib/include/` directory and generates the output in the `morpheus/_lib/doxygen/html/` directory. You can load the local `morpheus/_lib/doxygen/html/index.html` file generated there into any web browser to view the result.
+Note: Doxygen reads and processes all appropriate source files under the `morpheus/_lib/include/` directory and generates the output in the `morpheus/_lib/doxygen/html` directory. You can load the local `morpheus/_lib/doxygen/html/index.html` file generated there into any web browser to view the result.
