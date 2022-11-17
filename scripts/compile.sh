@@ -20,8 +20,6 @@ set -e
 # Optionally can set INSTALL_PREFIX to build and install to a specific directory. Also causes cmake install to run
 BUILD_DIR=${BUILD_DIR:-"build"}
 
-TARGET=${TARGET:-"install"}
-
 echo "Runing CMake configure..."
 cmake -B ${BUILD_DIR} -GNinja \
    -DCMAKE_MESSAGE_CONTEXT_SHOW=ON \
@@ -33,4 +31,4 @@ cmake -B ${BUILD_DIR} -GNinja \
    ${CMAKE_CONFIGURE_EXTRA_ARGS:-""} .
 
 echo "Running CMake build..."
-cmake --build ${BUILD_DIR} -j ${INSTALL_PREFIX:+"--target ${TARGET}"} "$@"
+cmake --build ${BUILD_DIR} -j ${INSTALL_PREFIX:+"--target install"} "$@"
