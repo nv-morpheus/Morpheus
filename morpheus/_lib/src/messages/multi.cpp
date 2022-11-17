@@ -126,23 +126,19 @@ void MultiMessage::set_meta(const std::string &col_name, TensorObject tensor)
 
 void MultiMessage::set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors)
 {
-    std::vector<TypeId> tensor_types{tensors.size()};
-    for (size_t i = 0; i < tensors.size(); ++i)
-    {
-        tensor_types[i] = tensors[i].dtype().type_id();
-    }
-
     TableInfo table_meta = this->get_meta(column_names);
 
     for (size_t i = 0; i < tensors.size(); ++i)
     {
-        const auto cv          = table_meta.get_column(i);
-        const auto table_type  = cv.type().id();
-        const auto tensor_type = DType(tensor_types[i]).cudf_type_id();
-        const auto row_stride  = tensors[i].stride(0);
+        const auto cv             = table_meta.get_column(i);
+        const auto table_type_id  = cv.type().id();
+        const auto tensor_type    = DType(tensors[i].dtype());
+        const auto tensor_type_id = tensor_type.cudf_type_id();
+        const auto row_stride     = tensors[i].stride(0);
 
-        CHECK(tensors[i].count() == cv.size() && (table_type == tensor_type || (table_type == cudf::type_id::BOOL8 &&
-                                                                                tensor_type == cudf::type_id::UINT8)));
+        CHECK(tensors[i].count() == cv.size() &&
+              (table_type_id == tensor_type_id ||
+               (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
 
         const auto item_size = tensors[i].dtype().item_size();
 
