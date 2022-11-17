@@ -21,13 +21,13 @@ include(ExternalProject)
 function(find_and_configure_libmd version)
   # Check if md is available -- download if not
   rapids_cpm_find(md ${version}
-    GLOBAL_TARGETS
+      GLOBAL_TARGETS
       md
-    CPM_ARGS
+      CPM_ARGS
       GIT_REPOSITORY          https://gitlab.freedesktop.org/libbsd/libmd.git
       GIT_TAG                 ${version}
       DOWNLOAD_ONLY           TRUE
-  )
+      )
 
   if (md_ADDED)
     message(STATUS "libmd was not installed and will be built from source")
@@ -52,28 +52,28 @@ function(find_and_configure_libmd version)
         "CPPFLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${BUILD_TYPE_UC}}" # Add CUDAToolkit here
         "CXXFLAGS=${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${BUILD_TYPE_UC}}"
         "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${BUILD_TYPE_UC}}"
-    )
+        )
 
     ExternalProject_Add(md
-      PREFIX              ${md_BINARY_DIR} # Root directory for md
-      SOURCE_DIR          ${md_BINARY_DIR} # Move source over from cpm dir and build in binary dir
-      INSTALL_DIR         ${md_INSTALL_DIR}
+        PREFIX              ${md_BINARY_DIR} # Root directory for md
+        SOURCE_DIR          ${md_BINARY_DIR} # Move source over from cpm dir and build in binary dir
+        INSTALL_DIR         ${md_INSTALL_DIR}
 
-      DOWNLOAD_COMMAND    ${CMAKE_COMMAND} -E copy_directory ${md_SOURCE_DIR} ${md_BINARY_DIR}
+        DOWNLOAD_COMMAND    ${CMAKE_COMMAND} -E copy_directory ${md_SOURCE_DIR} ${md_BINARY_DIR}
 
-      CONFIGURE_COMMAND   ${CMAKE_COMMAND} -E env SED=sed GREP=grep <SOURCE_DIR>/autogen
-                COMMAND   <SOURCE_DIR>/configure ${COMPILER_SETTINGS} --prefix=${md_INSTALL_DIR}
+        CONFIGURE_COMMAND   ${CMAKE_COMMAND} -E env SED=sed GREP=grep <SOURCE_DIR>/autogen
+        COMMAND   <SOURCE_DIR>/configure ${COMPILER_SETTINGS} --prefix=${md_INSTALL_DIR}
 
-      BUILD_COMMAND       make -j
-      BUILD_IN_SOURCE     TRUE
-      BUILD_BYPRODUCTS    <INSTALL_DIR>/lib/libmd.a
+        BUILD_COMMAND       make -j
+        BUILD_IN_SOURCE     TRUE
+        BUILD_BYPRODUCTS    <INSTALL_DIR>/lib/libmd.a
 
-      INSTALL_COMMAND     make install
+        INSTALL_COMMAND     make install
 
-      LOG_CONFIGURE       TRUE
-      LOG_BUILD           TRUE
-      LOG_INSTALL         TRUE
-    )
+        LOG_CONFIGURE       TRUE
+        LOG_BUILD           TRUE
+        LOG_INSTALL         TRUE
+        )
 
     # Install headers
     install(
@@ -84,19 +84,19 @@ function(find_and_configure_libmd version)
     add_library(md::md STATIC IMPORTED GLOBAL)
     set_target_properties(md::md
         PROPERTIES
-          INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${md_INSTALL_DIR}/include>;$<INSTALL_INTERFACE:include>"
-          INTERFACE_LINK_LIBRARIES "$<BUILD_INTERFACE:${md_INSTALL_DIR}/lib>;$<INSTALL_INTERFACE:lib>"
-          INTERFACE_POSITION_INDEPENDENT_CODE "ON"
-    )
+        INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${md_INSTALL_DIR}/include>;$<INSTALL_INTERFACE:include>"
+        INTERFACE_LINK_LIBRARIES "$<BUILD_INTERFACE:${md_INSTALL_DIR}/lib>;$<INSTALL_INTERFACE:lib>"
+        INTERFACE_POSITION_INDEPENDENT_CODE "ON"
+        )
 
     set_property(TARGET md::md
         APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE
-    )
+        )
     set_target_properties(md::md
         PROPERTIES
-          IMPORTED_LOCATION_RELEASE "${md_INSTALL_DIR}/lib/libmd.a"
-          IMPORTED_SONAME_RELEASE "libmd.a"
-    )
+        IMPORTED_LOCATION_RELEASE "${md_INSTALL_DIR}/lib/libmd.a"
+        IMPORTED_SONAME_RELEASE "libmd.a"
+        )
 
     add_dependencies(md::md md)
 

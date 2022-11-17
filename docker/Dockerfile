@@ -175,8 +175,8 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
         source activate base && \
         mamba install automake cmake libtool -y && \
         cmake -DMORPHEUS_TP_BUILD_DOCA_DEPS=ON -DMORPHEUS_TP_INSTALL_DOCA_DEPS=ON \
-          -B ./tp_build -S ./thirdparty/libraries && \
-        cmake --build ./tp_build --target md bsd gdrcopy && \
+          -B ./tp_build -S ./thirdparty/artifacts && \
+        cmake --build ./tp_build && \
         mamba uninstall automake cmake libtool -y && \
         rm -rf ./tp_build ./thirdparty;\
     fi

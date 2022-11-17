@@ -20,6 +20,13 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "thirdparty")
 option(MORPHEUS_TP_BUILD_DOCA_DEPS "Configure Morpheus to build with NVIDIA DOCA" OFF)
 option(MORPHEUS_TP_INSTALL_DOCA_DEPS "Install DOCA dependencies into local system (primarily for Docker)" OFF)
 
+if (MORPHEUS_TP_BUILD_DOCA_DEPS)
+  set(MORPHEUS_TP_BUILD_LIBMD "ON" CACHE STRING "Build libmd")
+  set(MORPHEUS_TP_BUILD_LIBBSD "ON" CACHE STRING "Build libbsd")
+  set(MORPHEUS_TP_BUILD_GDRCOPY "ON" CACHE STRING "Build gdrcopy")
+endif()
+
+# Set default library versions
 set(MORPHEUS_TP_LIBMD_VERSION "1.0.4" CACHE STRING "Version of libmd to build")
 set(MORPHEUS_TP_LIBBSD_VERSION "0.11.7" CACHE STRING "Version of libbsd to build")
 set(MORPHEUS_TP_GDRCOPY_VERSION "2.3" CACHE STRING "Version of gdrcopy to build")
@@ -54,19 +61,6 @@ project(srf_third_party_libs LANGUAGES C CXX)
 set(CPM_SOURCE_CACHE "${CMAKE_SOURCE_DIR}/.cache/cpm")
 include(setup_cpm)
 
-# Check if we're building with DOCA hooks
-if (MORPHEUS_TP_BUILD_DOCA_DEPS)
-  # libbsd -- pull libmd source and build for our environment -- required for libbsd
-  # ======
-  include(cmake/libraries/libmd.cmake)
-
-  # libbsd -- pull libbsd source and build for our environment
-  # ======
-  include(cmake/libraries/libbsd.cmake)
-
-  # gdrcopy -- pull gdrcopy source and build for our environment
-  # ======
-  include(cmake/libraries/gdrcopy.cmake)
-endif ()
+add_subdirectory(libraries)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

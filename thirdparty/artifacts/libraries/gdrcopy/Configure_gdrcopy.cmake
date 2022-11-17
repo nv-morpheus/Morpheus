@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LIST(APPEND CMAKE_MESSAGE_CONTEXT "gdrcopy")
+
+LIST(APPEND CMAKE_MESSAGE_CONTEXT "find_and_configure")
 
 include_guard()
 include(ExternalProject)
@@ -63,11 +64,11 @@ function(find_and_configure_gdrcopy version)
 
       CONFIGURE_COMMAND   ""
 
-      BUILD_COMMAND       make -j lib lib_install
+      BUILD_COMMAND       make -j prefix=<INSTALL_DIR> lib lib_install
       BUILD_IN_SOURCE     TRUE
       BUILD_BYPRODUCTS    <INSTALL_DIR>/lib/libgdrapi.so
 
-      INSTALL_COMMAND     make prefix=<INSTALL_DIR> lib_install
+      INSTALL_COMMAND     make prefix=<INSTALL_DIR> lib lib_install
 
       LOG_CONFIGURE       TRUE
       LOG_BUILD           TRUE
