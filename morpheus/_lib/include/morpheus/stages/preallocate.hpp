@@ -31,6 +31,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace morpheus {
@@ -50,13 +51,12 @@ class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageT>
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    PreallocateStage(const std::map<std::string, std::string> &needed_columns);
+    PreallocateStage(const std::vector<std::tuple<std::string, std::string>> &needed_columns);
 
   private:
     subscribe_fn_t build_operator();
 
-    std::vector<std::string> m_column_names;
-    std::vector<TypeId> m_column_types;
+    std::vector<std::tuple<std::string, TypeId>> m_needed_columns;
 };
 
 /****** DeserializationStageInterfaceProxy******************/
@@ -70,7 +70,9 @@ struct PreallocateStageInterfaceProxy
      * @brief Create and initialize a DeserializationStage, and return the result.
      */
     static std::shared_ptr<srf::segment::Object<PreallocateStage<MessageT>>> init(
-        srf::segment::Builder &builder, const std::string &name, std::map<std::string, std::string> needed_columns);
+        srf::segment::Builder &builder,
+        const std::string &name,
+        std::vector<std::tuple<std::string, std::string>> needed_columns);
 };
 
 // Explicit instantiations

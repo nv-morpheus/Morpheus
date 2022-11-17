@@ -90,10 +90,11 @@ class PreallocatorMixin(ABC):
                 # Intentionally not using `_build_cpp_node` because `LinearBoundaryIngressStage` lacks a C++ impl
                 if CppConfig.get_should_use_cpp():
                     import morpheus._lib.stages as _stages
+                    needed_columns = list(self._needed_columns.items())
                     if issubclass(out_type, MessageMeta):
-                        stream = _stages.PreallocateMessageMetaStage(builder, node_name, self._needed_columns)
+                        stream = _stages.PreallocateMessageMetaStage(builder, node_name, needed_columns)
                     else:
-                        stream = _stages.PreallocateMultiMessageStage(builder, node_name, self._needed_columns)
+                        stream = _stages.PreallocateMultiMessageStage(builder, node_name, needed_columns)
                 else:
                     if issubclass(out_type, MessageMeta):
                         stream = builder.make_node(node_name, self._preallocate_meta)

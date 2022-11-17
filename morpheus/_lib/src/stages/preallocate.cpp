@@ -27,23 +27,27 @@ namespace {
  * has gone out of scope and thus releasing the mutex prior to the stage calling `on_next` which may block.
  *
  * @param msg
- * @param column_names
- * @param column_types
+ * @param columns
  */
 //@{
 void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
-                 const std::vector<std::string> &column_names,
-                 const std::vector<morpheus::TypeId> &column_types)
+                 const std::vector<std::tuple<std::string, morpheus::TypeId>> &columns)
 {
     auto table = msg->get_mutable_info();
+    std::vector<std::string> column_names;
+    std::vector<morpheus::TypeId> column_types;
+    for (const auto &column : columns)
+    {
+        column_names.push_back(std::get<0>(column));
+        column_types.push_back(std::get<1>(column));
+    }
     table.insert_missing_columns(column_names, column_types);
 }
 
 void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
-                 const std::vector<std::string> &column_names,
-                 const std::vector<morpheus::TypeId> &column_types)
+                 const std::vector<std::tuple<std::string, morpheus::TypeId>> &columns)
 {
-    preallocate(msg->meta, column_names, column_types);
+    preallocate(msg->meta, columns);
 }
 //@}
 }  // namespace
@@ -51,13 +55,14 @@ void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
 namespace morpheus {
 
 template <typename MessageT>
-PreallocateStage<MessageT>::PreallocateStage(const std::map<std::string, std::string> &needed_columns) :
-  base_t(base_t::op_factory_from_sub_fn(build_operator()))
+PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, std::string>> &needed_columns) :
+  base_t(base_t::op_factory_from_sub_fn(build_operator())),
+  m_needed_columns{needed_columns.size()}
 {
-    for (const auto &column : needed_columns)
+    for (std::size_t i = 0; i < needed_columns.size(); ++i)
     {
-        m_column_names.push_back(column.first);
-        m_column_types.push_back(DataType::from_numpy(column.second).type_id());
+        const auto dtype{DataType::from_numpy(std::get<1>(needed_columns[i]))};
+        m_needed_columns[i] = std::make_tuple<>(std::get<0>(needed_columns[i]), dtype.type_id());
     }
 }
 
@@ -68,7 +73,7 @@ typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
                 // Since the msg was just emitted from the source we shouldn't have any trouble acquiring the mutex.
-                preallocate(x, m_column_names, m_column_types);
+                preallocate(x, m_needed_columns);
                 output.on_next(std::move(x));
             },
             [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
@@ -78,7 +83,9 @@ typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::
 
 template <typename MessageT>
 std::shared_ptr<srf::segment::Object<PreallocateStage<MessageT>>> PreallocateStageInterfaceProxy<MessageT>::init(
-    srf::segment::Builder &builder, const std::string &name, std::map<std::string, std::string> needed_columns)
+    srf::segment::Builder &builder,
+    const std::string &name,
+    std::vector<std::tuple<std::string, std::string>> needed_columns)
 {
     return builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
 }
