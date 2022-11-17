@@ -27,7 +27,6 @@ python log-parsing-inference.py \
 
 import argparse
 import json
-import os
 import string
 from collections import defaultdict
 
