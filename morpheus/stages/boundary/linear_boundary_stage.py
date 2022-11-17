@@ -18,6 +18,7 @@ import typing
 import srf
 
 from morpheus.config import Config
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -78,7 +79,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
         return input_stream[0], self.output_type
 
 
-class LinearBoundaryIngressStage(SingleOutputSource):
+class LinearBoundaryIngressStage(SingleOutputSource, PreallocatorMixin):
     """
     TheLinearBoundaryIngressStage acts as source ingress point from a corresponding egress in another linear segment.
     Given an existing linear pipeline that we want to connect to another segment, a linear boundary egress stage would

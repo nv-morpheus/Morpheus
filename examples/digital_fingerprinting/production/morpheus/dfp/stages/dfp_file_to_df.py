@@ -35,6 +35,7 @@ import cudf
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -79,7 +80,7 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
     return s3_df
 
 
-class DFPFileToDataFrameStage(SinglePortStage):
+class DFPFileToDataFrameStage(SinglePortStage, PreallocatorMixin):
 
     def __init__(self,
                  c: Config,

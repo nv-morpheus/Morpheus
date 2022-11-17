@@ -29,6 +29,7 @@ from tqdm import tqdm
 import cudf
 
 from morpheus.config import Config
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.source_stage import SourceStage
@@ -188,7 +189,7 @@ class Pipeline():
 
             if (len(needed_columns) > 0):
                 for stage in segment_graph.nodes():
-                    if (isinstance(stage, SourceStage)):
+                    if (isinstance(stage, PreallocatorMixin)):
                         stage.needed_columns.update(needed_columns)
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
