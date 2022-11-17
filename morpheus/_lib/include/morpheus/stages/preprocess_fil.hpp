@@ -40,7 +40,7 @@ namespace morpheus {
  * @addtogroup stages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
@@ -57,9 +57,9 @@ class PreprocessFILStage
 
     /**
      * @brief Constructor for a class `PreprocessFILStage`
-     * 
+     *
      * @param features : Reference to the features that are required for model inference
-    */
+     */
     PreprocessFILStage(const std::vector<std::string>& features);
 
   private:
@@ -80,11 +80,11 @@ struct PreprocessFILStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a PreprocessFILStage, and return the result
-     * 
+     *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param features : Reference to the features that are required for model inference
-     * @return std::shared_ptr<srf::segment::Object<PreprocessFILStage>> 
+     * @return std::shared_ptr<srf::segment::Object<PreprocessFILStage>>
      */
     static std::shared_ptr<srf::segment::Object<PreprocessFILStage>> init(srf::segment::Builder& builder,
                                                                           const std::string& name,

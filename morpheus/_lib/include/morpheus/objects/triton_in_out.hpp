@@ -30,11 +30,11 @@ namespace morpheus {
  * @addtogroup objects
  * @{
  * @file
-*/
+ */
 
 /**
  * @brief Container for model input and output configuration
- * 
+ *
  */
 struct TritonInOut
 {

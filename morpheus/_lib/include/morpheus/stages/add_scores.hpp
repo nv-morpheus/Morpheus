@@ -41,11 +41,11 @@ namespace morpheus {
  * @addtogroup stages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
- * @brief probability scores to each message. Add score labels based on probabilities calculated in inference stage. 
+ * @brief probability scores to each message. Add score labels based on probabilities calculated in inference stage.
  * Label indexes will be looked up in the idx2label property.
  */
 class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
@@ -60,7 +60,7 @@ class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiRespon
 
     /**
      * @brief Construct a new Add Scores Stage object
-     * 
+     *
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
      */
@@ -83,12 +83,12 @@ struct AddScoresStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a AddScoresStage, and return the result
-     * 
+     *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
-     * @return std::shared_ptr<srf::segment::Object<AddScoresStage>> 
+     * @return std::shared_ptr<srf::segment::Object<AddScoresStage>>
      */
     static std::shared_ptr<srf::segment::Object<AddScoresStage>> init(srf::segment::Builder &builder,
                                                                       const std::string &name,

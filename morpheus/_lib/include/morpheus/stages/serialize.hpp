@@ -42,11 +42,12 @@ namespace morpheus {
  * @addtogroup stages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
- * @brief Include & exclude columns from messages. This class filters columns from a `MultiMessage` object emitting a `MessageMeta`.
+ * @brief Include & exclude columns from messages. This class filters columns from a `MultiMessage` object emitting a
+ * `MessageMeta`.
  */
 class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>
 {
@@ -58,10 +59,10 @@ class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessag
 
     /**
      * @brief Construct a new Serialize Stage object
-     * 
-     * @param include : Attributes that are required send to downstream stage. 
+     *
+     * @param include : Attributes that are required send to downstream stage.
      * @param exclude : Attributes that are not required send to downstream stage.
-     * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain 
+     * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain
      * the same columns as the first message received.
      */
     SerializeStage(const std::vector<std::string> &include,
@@ -95,14 +96,14 @@ struct SerializeStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a SerializeStage, and return the result
-     * 
+     *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
-     * @param include : Reference to the attributes that are required send to downstream stage. 
+     * @param include : Reference to the attributes that are required send to downstream stage.
      * @param exclude : Reference to the attributes that are not required send to downstream stage.
-     * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain 
+     * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain
      * the same columns as the first message received.
-     * @return std::shared_ptr<srf::segment::Object<SerializeStage>> 
+     * @return std::shared_ptr<srf::segment::Object<SerializeStage>>
      */
     static std::shared_ptr<srf::segment::Object<SerializeStage>> init(srf::segment::Builder &builder,
                                                                       const std::string &name,

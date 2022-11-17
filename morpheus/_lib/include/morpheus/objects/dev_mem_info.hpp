@@ -32,7 +32,7 @@ namespace morpheus {
  * @addtogroup objects
  * @{
  * @file
-*/
+ */
 
 /**
  * @brief Simple object that just holds 4 things: element count, element dtype, device_buffer, and bytes_offset

@@ -36,21 +36,21 @@ namespace morpheus {
  * @addtogroup messages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
  * A stronger typed version of `MultiInferenceMessage` that is used for NLP workloads. Helps ensure the
  * proper inputs are set and eases debugging.
- * 
+ *
  */
 class MultiInferenceNLPMessage : public MultiInferenceMessage
 {
   public:
     /**
      * @brief Construct a new Multi Inference NLP Message object
-     * 
-     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
      * C++ representations of the table
      * @param mess_offset Offset into the metadata batch
      * @param mess_count Messages count
@@ -119,15 +119,15 @@ struct MultiInferenceNLPMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceNLPMessage, and return a shared pointer to the result
-     * 
-     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
      * C++ representations of the table
      * @param mess_offset Offset into the metadata batch
      * @param mess_count Messages count
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
-     * @return std::shared_ptr<MultiInferenceNLPMessage> 
+     * @return std::shared_ptr<MultiInferenceNLPMessage>
      */
     static std::shared_ptr<MultiInferenceNLPMessage> init(std::shared_ptr<MessageMeta> meta,
                                                           cudf::size_type mess_offset,
@@ -138,49 +138,49 @@ struct MultiInferenceNLPMessageInterfaceProxy
 
     /**
      * @brief Get inference memory object shared pointer
-     * 
-     * @param self 
-     * @return std::shared_ptr<morpheus::InferenceMemory> 
+     *
+     * @param self
+     * @return std::shared_ptr<morpheus::InferenceMemory>
      */
     static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceNLPMessage& self);
 
     /**
      * @brief Get message offset
-     * 
-     * @param self 
-     * @return std::size_t 
+     *
+     * @param self
+     * @return std::size_t
      */
     static std::size_t offset(MultiInferenceNLPMessage& self);
 
     /**
      * @brief Get messages count
-     * 
-     * @param self 
-     * @return std::size_t 
+     *
+     * @param self
+     * @return std::size_t
      */
     static std::size_t count(MultiInferenceNLPMessage& self);
 
     /**
      * @brief Get  'input_ids' tensor as a python object, throws a `std::runtime_error` if it does not exist
-     * 
-     * @param self 
-     * @return pybind11::object 
+     *
+     * @param self
+     * @return pybind11::object
      */
     static pybind11::object input_ids(MultiInferenceNLPMessage& self);
 
     /**
      * @brief Get 'input_mask' tensor as a python object, throws a `std::runtime_error` if it does not exist
-     * 
-     * @param self 
-     * @return pybind11::object 
+     *
+     * @param self
+     * @return pybind11::object
      */
     static pybind11::object input_mask(MultiInferenceNLPMessage& self);
 
     /**
      * @brief Get 'seq_ids' tensor as a python object, throws a `std::runtime_error` if it does not exist
-     * 
-     * @param self 
-     * @return pybind11::object 
+     *
+     * @param self
+     * @return pybind11::object
      */
     static pybind11::object seq_ids(MultiInferenceNLPMessage& self);
 };

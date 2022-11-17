@@ -37,7 +37,7 @@ namespace morpheus {
  * @addtogroup messages
  * @{
  * @file
-*/
+ */
 
 /**
  * Base class for MultiInferenceMessage & MultiResponseMessage
@@ -50,29 +50,29 @@ namespace morpheus {
  * While TensorMemory can contain multiple tensors, it is a requirement that
  * they are all of the same length and that element N in each tensor refers
  * to the same record
- * 
-*/
+ *
+ */
 class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiMessage>
 {
   public:
     /**
      * @brief Construct a new Multi Tensor Message object
-     * 
-     * @param other 
+     *
+     * @param other
      */
     MultiTensorMessage(const MultiTensorMessage &other) = default;
 
     /**
      * Construct a new Multi Tensor Message object.
-     * 
-     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
      * C++ representations of the table
      * @param mess_offset Offset into the metadata batch
      * @param mess_count Messages count
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in tensor memory instance
      * @param count Message count in tensor memory instance
-    */
+     */
     MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                        std::size_t mess_offset,
                        std::size_t mess_count,

@@ -41,7 +41,7 @@ namespace morpheus {
  * @addtogroup stages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
@@ -80,7 +80,7 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
 
     /**
      * @brief Construct a new Filter Detections Stage object
-     * 
+     *
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
      */
@@ -103,12 +103,12 @@ struct FilterDetectionStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a FilterDetectionStage, and return the result
-     * 
+     *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
-     * @return std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> 
+     * @return std::shared_ptr<srf::segment::Object<FilterDetectionsStage>>
      */
     static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &builder,
                                                                              const std::string &name,

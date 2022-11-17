@@ -48,7 +48,7 @@ namespace morpheus {
  * @addtogroup objects
  * @{
  * @file
-*/
+ */
 
 using TensorIndex = long long;  // NOLINT
 using RankType    = int;        // NOLINT

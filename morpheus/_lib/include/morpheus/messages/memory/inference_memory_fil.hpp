@@ -35,28 +35,28 @@ namespace morpheus {
  * @addtogroup messages
  * @{
  * @file
-*/
+ */
 
 /**
  * This is a container class for data that needs to be submitted to the inference server for FIL category
  * usecases.
-*/
+ */
 class InferenceMemoryFIL : public InferenceMemory
 {
   public:
     /**
      * @brief Construct a new Inference Memory FIL object
-     * 
+     *
      * @param count : Message count in inference memory object
-     * @param input__0 : Inference input 
-     * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more inference
-     * inputs than messages (i.e., if some messages get broken into multiple inference requests)
+     * @param input__0 : Inference input
+     * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more
+     * inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      */
     InferenceMemoryFIL(size_t count, TensorObject input__0, TensorObject seq_ids);
 
     /**
      * @brief Returns the 'input__0' tensor, throws a `std::runtime_error` if it does not exist
-     * 
+     *
      * @throw std::runtime_error
      * @return const TensorObject&
      */
@@ -64,7 +64,7 @@ class InferenceMemoryFIL : public InferenceMemory
 
     /**
      * @brief Returns the 'seq_ids' tensor, throws a `std::runtime_error` if it does not exist
-     * 
+     *
      * @return const TensorObject&
      * @throw std::runtime_error
      */
@@ -72,14 +72,14 @@ class InferenceMemoryFIL : public InferenceMemory
 
     /**
      * @brief Sets a tensor named 'input__0'
-     * 
+     *
      * @param input_ids
      */
     void set_input__0(TensorObject input_ids);
 
     /**
      * @brief Sets a tensor named 'seq_ids'
-     * 
+     *
      * @throw std::runtime_error
      */
     void set_seq_ids(TensorObject input_mask);
@@ -94,12 +94,12 @@ struct InferenceMemoryFILInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryFIL object, and return a shared pointer to the result
-     * 
+     *
      * @param count : Message count in inference memory object
-     * @param input__0 : Inference input 
-     * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more inference
-     * inputs than messages (i.e., if some messages get broken into multiple inference requests)
-     * @return std::shared_ptr<InferenceMemoryFIL> 
+     * @param input__0 : Inference input
+     * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more
+     * inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
+     * @return std::shared_ptr<InferenceMemoryFIL>
      */
     static std::shared_ptr<InferenceMemoryFIL> init(cudf::size_type count,
                                                     pybind11::object input__0,
@@ -107,15 +107,15 @@ struct InferenceMemoryFILInterfaceProxy
 
     /**
      * Get messages count in the inference memory instance
-     * 
+     *
      * @param self
      * @return std::size_t
      */
     static std::size_t count(InferenceMemoryFIL& self);
 
-     /**
+    /**
      * Return the requested tensor for a given name
-     * 
+     *
      * @param self
      * @param name Tensor name
      * @return TensorObject
@@ -124,7 +124,7 @@ struct InferenceMemoryFILInterfaceProxy
 
     /**
      * @brief Returns the 'input_ids' as cupy array
-     * 
+     *
      * @param self
      * @return pybind11::object
      */
@@ -132,15 +132,15 @@ struct InferenceMemoryFILInterfaceProxy
 
     /**
      * @brief Sets a tensor named 'input__0'
-     * 
+     *
      * @param self
-     * @param input_ids 
+     * @param input_ids
      */
     static void set_input__0(InferenceMemoryFIL& self, pybind11::object cupy_values);
 
     /**
      * @brief Returns the 'seq_ids' as a cupy array
-     * 
+     *
      * @param self
      * @return pybind11::object
      */
@@ -148,7 +148,7 @@ struct InferenceMemoryFILInterfaceProxy
 
     /**
      * @brief Sets a tensor named 'seq_ids'
-     * 
+     *
      * @param self
      * @param cupy_values
      */

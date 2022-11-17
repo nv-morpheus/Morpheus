@@ -41,13 +41,14 @@ namespace morpheus {
  * @addtogroup stages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
- * @brief Deserialize source data into Dataframes. This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` 
- * into a `MultiMessage`. This should be one of the first stages after the `Source` object.
-*/
+ * @brief Deserialize source data into Dataframes. This stage deserialize the output of
+ * `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. This should be one of the first stages after the `Source`
+ * object.
+ */
 class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
 {
   public:
@@ -58,7 +59,7 @@ class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 
     /**
      * @brief Construct a new Deserialize Stage object
-     * 
+     *
      * @param batch_size : Number of messages to be divided into each batch
      */
     DeserializeStage(size_t batch_size);
@@ -80,11 +81,11 @@ struct DeserializeStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a DeserializationStage, and return the result
-     * 
+     *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param batch_size : Number of messages to be divided into each batch
-     * @return std::shared_ptr<srf::segment::Object<DeserializeStage>> 
+     * @return std::shared_ptr<srf::segment::Object<DeserializeStage>>
      */
     static std::shared_ptr<srf::segment::Object<DeserializeStage>> init(srf::segment::Builder &builder,
                                                                         const std::string &name,

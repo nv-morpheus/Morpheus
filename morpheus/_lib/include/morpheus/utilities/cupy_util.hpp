@@ -30,7 +30,7 @@ namespace morpheus {
  * @addtogroup utilities
  * @{
  * @file
-*/
+ */
 
 /**
  * @brief Structure that encapsulates cupy utilities.

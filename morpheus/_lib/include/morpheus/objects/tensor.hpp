@@ -36,7 +36,7 @@ namespace morpheus {
  * @addtogroup objects
  * @{
  * @file
-*/
+ */
 
 /**
  * TODO(Documentation)

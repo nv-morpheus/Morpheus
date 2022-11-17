@@ -33,7 +33,7 @@ namespace morpheus {
  * @addtogroup messages
  * @{
  * @file
-*/
+ */
 
 /**
  * @brief Container for holding a collection of named `TensorObject`s in a `std::map` keyed by name.
@@ -47,16 +47,16 @@ class TensorMemory
 
     /**
      * @brief Construct a new Tensor Memory object
-     * 
-     * @param count 
+     *
+     * @param count
      */
     TensorMemory(size_t count);
 
     /**
      * @brief Construct a new Tensor Memory object
-     * 
-     * @param count 
-     * @param tensors 
+     *
+     * @param count
+     * @param tensors
      */
     TensorMemory(size_t count, tensor_map_t &&tensors);
     virtual ~TensorMemory() = default;
@@ -66,19 +66,19 @@ class TensorMemory
 
     /**
      * @brief Verify whether the specified tensor name is present in the tensor memory
-     * 
-     * @param name 
-     * @return true 
-     * @return false 
+     *
+     * @param name
+     * @return true
+     * @return false
      */
     bool has_tensor(const std::string &name) const;
 
     /**
      * @brief Copy tensor ranges
-     * 
-     * @param ranges 
-     * @param num_selected_rows 
-     * @return tensor_map_t 
+     *
+     * @param ranges
+     * @param num_selected_rows
+     * @return tensor_map_t
      */
     tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>> &ranges,
                                     size_t num_selected_rows) const;

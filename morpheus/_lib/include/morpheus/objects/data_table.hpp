@@ -30,7 +30,7 @@ class TableInfo;
  * @addtogroup objects
  * @{
  * @file
-*/
+ */
 
 /**
  * @brief Owning object which owns a unique_ptr<cudf::table>, table_metadata, and index information
@@ -40,27 +40,27 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
 {
     /**
      * @brief Construct a new IDataTable object
-     * 
+     *
      */
     IDataTable() = default;
 
     /**
      * @brief cuDF dataframe rows count.
-     * 
+     *
      * @return cudf::size_type
      */
     virtual cudf::size_type count() const = 0;
 
     /**
      * @brief cuDF dataframe as a table info.
-     * 
+     *
      * @return TableInfo
      */
     virtual TableInfo get_info() const = 0;
 
     /**
      * @brief underlying cuDF DataFrame as a python object.
-     * 
+     *
      * @return pybind11::object
      */
     virtual const pybind11::object &get_py_object() const = 0;

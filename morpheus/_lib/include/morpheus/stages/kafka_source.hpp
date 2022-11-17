@@ -44,7 +44,7 @@ namespace morpheus {
  * @addtogroup stages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
@@ -59,16 +59,16 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
 
     /**
      * @brief Construct a new Kafka Source Stage object
-     * 
-     * @param max_batch_size : The maximum batch size for the messages batch. 
+     *
+     * @param max_batch_size : The maximum batch size for the messages batch.
      * @param topic : Input kafka topic.
      * @param batch_timeout_ms : Frequency of the poll in ms.
      * @param config : Kafka consumer configuration.
-     * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server. 
+     * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server.
      * This is only useful for debugging, allowing the user to process the same messages multiple times
-     * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages. 
+     * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages.
      * This is only useful when inputs are known to be valid json.
-     * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table). 
+     * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
@@ -101,7 +101,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
 
     /**
      * @brief Create kafka consumer configuration and returns unique pointer to the result.
-     * 
+     *
      * @param config_in : Configuration map contains Kafka consumer properties.
      * @return std::unique_ptr<RdKafka::Conf>
      */
@@ -109,7 +109,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
 
     /**
      * @brief Creates Kafka consumer instance.
-     * 
+     *
      * @param rebalancer : Group rebalance callback for use with RdKafka::KafkaConsumer.
      * @return std::unique_ptr<RdKafka::KafkaConsumer>
      */
@@ -117,7 +117,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
 
     /**
      * @brief Load messages from a buffer/file to a cuDF table.
-     * 
+     *
      * @param buffer : Reference of a messages buffer
      * @return cudf::io::table_with_metadata
      */
@@ -126,7 +126,7 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
     /**
      * @brief This function combines JSON messages from Kafka, parses them, then loads them onto a MessageMeta.
      * and returns the shared pointer as a result.
-     * 
+     *
      * @param message_batch : Reference of a message batch that needs to be processed.
      * @return std::shared_ptr<morpheus::MessageMeta>
      */
@@ -154,19 +154,18 @@ class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Message
  */
 struct KafkaSourceStageInterfaceProxy
 {
-
     /**
      * @brief Create and initialize a KafkaSourceStage, and return the result
-     * 
+     *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
-     * @param max_batch_size : The maximum batch size for the messages batch. 
+     * @param max_batch_size : The maximum batch size for the messages batch.
      * @param topic : Input kafka topic.
      * @param batch_timeout_ms : Frequency of the poll in ms.
      * @param config : Kafka consumer configuration.
-     * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server. 
+     * @param disable_commit : Enabling this option will skip committing messages as they are pulled off the server.
      * This is only useful for debugging, allowing the user to process the same messages multiple times
-     * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages. 
+     * @param disable_pre_filtering : Enabling this option will skip pre-filtering of json messages.
      * This is only useful when inputs are known to be valid json.
      * @param stop_after : Stops ingesting after emitting `stop_after` records (rows in the table).
      * Useful for testing. Disabled if `0`

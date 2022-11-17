@@ -33,7 +33,7 @@ namespace morpheus {
  * @addtogroup utilities
  * @{
  * @file
-*/
+ */
 
 /**
  * TODO(Documentation)
@@ -46,8 +46,8 @@ void load_cudf_helpers();
  * @brief These proxy functions allow us to have a shared set of cudf_helpers interfaces declarations, which proxy
  * the actual generated cython calls. The cython implementation in 'cudf_helpers_api.h' can only appear in the
  * translation unit for the pybind module declaration.
- * 
- * @return pybind11::object 
+ *
+ * @return pybind11::object
  */
 pybind11::object proxy_table_from_table_with_metadata(cudf::io::table_with_metadata &&, int);
 TableInfo proxy_table_info_from_table(pybind11::object table, std::shared_ptr<morpheus::IDataTable const> idata_table);

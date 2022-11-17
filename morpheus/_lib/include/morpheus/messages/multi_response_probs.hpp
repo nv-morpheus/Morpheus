@@ -37,33 +37,33 @@ namespace morpheus {
  * @addtogroup messages
  * @{
  * @file
-*/
+ */
 
 /**
  * A stronger typed version of `MultiResponseMessage` that is used for inference workloads that return a probability
  * array. Helps ensure the proper outputs are set and eases debugging
- * 
-*/
+ *
+ */
 #pragma GCC visibility push(default)
 class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsMessage, MultiResponseMessage>
 {
   public:
     /**
      * Constructor default.
-    */
+     */
     MultiResponseProbsMessage(const MultiResponseProbsMessage &other) = default;
 
     /**
      * Construct a new Multi Response Probs Message object
-     * 
-     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
      * C++ representations of the table
      * @param mess_offset Offset into the metadata batch
      * @param mess_count Messages count
      * @param memory Holds the inference response probabilites as a tensor
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
-    */
+     */
     MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
                               size_t mess_offset,
                               size_t mess_count,
@@ -94,15 +94,15 @@ struct MultiResponseProbsMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiResponseProbsMessage object, and return a shared pointer to the result
-     * 
-     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
      * C++ representations of the table
      * @param mess_offset Offset into the metadata batch
      * @param mess_count Messages count
      * @param memory Holds the inference response probabilites as a tensor
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
-     * @return std::shared_ptr<MultiResponseProbsMessage> 
+     * @return std::shared_ptr<MultiResponseProbsMessage>
      */
     static std::shared_ptr<MultiResponseProbsMessage> init(std::shared_ptr<MessageMeta> meta,
                                                            cudf::size_type mess_offset,
@@ -113,7 +113,7 @@ struct MultiResponseProbsMessageInterfaceProxy
 
     /**
      * @brief Returns a shared pointer of a response memory probs object
-     * 
+     *
      * @param self
      * @return std::shared_ptr<morpheus::ResponseMemoryProbs>
      */
@@ -121,7 +121,7 @@ struct MultiResponseProbsMessageInterfaceProxy
 
     /**
      * @brief Message offset in response memory probs object
-     * 
+     *
      * @param self
      * @return std::size_t
      */
@@ -129,7 +129,7 @@ struct MultiResponseProbsMessageInterfaceProxy
 
     /**
      * @brief Messages count in response memory probs object
-     * 
+     *
      * @param self
      * @return std::size_t
      */
@@ -137,9 +137,9 @@ struct MultiResponseProbsMessageInterfaceProxy
 
     /**
      * @brief Return the `probs` (probabilities) output tensor
-     * 
-     * @param self 
-     * @return pybind11::object 
+     *
+     * @param self
+     * @return pybind11::object
      */
     static pybind11::object probs(MultiResponseProbsMessage &self);
 };

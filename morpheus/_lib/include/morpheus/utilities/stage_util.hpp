@@ -20,42 +20,44 @@
 #include <algorithm>
 
 namespace morpheus {
-    /****** Component public free function implementations************/
+/****** Component public free function implementations************/
 
-    /**
-    * @addtogroup utilities
-    * @{
-    * @file
-    */
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
 
-    /**
-     * TODO(Documentation)
-     */
-    template<typename FuncT, typename SeqT>
-    auto foreach_map(const SeqT &seq, FuncT func) {
-        using value_t = typename SeqT::const_reference;
-        using return_t = decltype(func(std::declval<value_t>()));
+/**
+ * TODO(Documentation)
+ */
+template <typename FuncT, typename SeqT>
+auto foreach_map(const SeqT &seq, FuncT func)
+{
+    using value_t  = typename SeqT::const_reference;
+    using return_t = decltype(func(std::declval<value_t>()));
 
-        std::vector<return_t> result{};
+    std::vector<return_t> result{};
 
-        std::transform(seq.cbegin(), seq.cend(), std::back_inserter(result), func);
+    std::transform(seq.cbegin(), seq.cend(), std::back_inserter(result), func);
 
-        return result;
-    }
+    return result;
+}
 
-    /**
-     * TODO(Documentation)
-     */
-    template<typename FuncT, typename SeqT>
-    auto foreach_map2(const SeqT &seq, FuncT func) {
-        using value_t = typename SeqT::const_reference;
-        using return_t = decltype(func(std::declval<value_t>()));
+/**
+ * TODO(Documentation)
+ */
+template <typename FuncT, typename SeqT>
+auto foreach_map2(const SeqT &seq, FuncT func)
+{
+    using value_t  = typename SeqT::const_reference;
+    using return_t = decltype(func(std::declval<value_t>()));
 
-        std::vector<return_t> result{};
+    std::vector<return_t> result{};
 
-        std::transform(seq.begin(), seq.end(), std::back_inserter(result), func);
+    std::transform(seq.begin(), seq.end(), std::back_inserter(result), func);
 
-        return result;
-    }
+    return result;
+}
 /** @} */  // end of group
 }  // namespace morpheus

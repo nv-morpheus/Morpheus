@@ -42,11 +42,11 @@ namespace morpheus {
  * @addtogroup stages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
- * @brief Write all messages to a file. Messages are written to a file by this class. 
+ * @brief Write all messages to a file. Messages are written to a file by this class.
  * This class does not maintain an open file or buffer messages.
  */
 class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
@@ -59,7 +59,7 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 
     /**
      * @brief Construct a new Write To File Stage object
-     * 
+     *
      * @param filename : Reference to the name of the file to which the messages will be written
      * @param mode : Reference to the mode for opening a file
      * @param file_type : FileTypes
@@ -78,16 +78,16 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 
     /**
      * @brief Write messages to a JSON format.
-     * 
+     *
      * @param msg
-    */
+     */
     void write_json(sink_type_t &msg);
 
     /**
      * @brief Write messages to a CSV format.
-     * 
+     *
      * @param msg
-    */
+     */
     void write_csv(sink_type_t &msg);
 
     subscribe_fn_t build_operator();
@@ -109,15 +109,15 @@ struct WriteToFileStageInterfaceProxy
      */
 
     /**
-     * @brief 
-     * 
+     * @brief
+     *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param filename : Reference to the name of the file to which the messages will be written
      * @param mode : Reference to the mode for opening a file
      * @param file_type : FileTypes
      * @param include_index_col : Write out the index as a column, by default true
-     * @return std::shared_ptr<srf::segment::Object<WriteToFileStage>> 
+     * @return std::shared_ptr<srf::segment::Object<WriteToFileStage>>
      */
     static std::shared_ptr<srf::segment::Object<WriteToFileStage>> init(srf::segment::Builder &builder,
                                                                         const std::string &name,

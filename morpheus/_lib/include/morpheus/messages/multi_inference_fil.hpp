@@ -35,12 +35,12 @@ namespace morpheus {
  * @addtogroup messages
  * @{
  * @file
-*/
+ */
 
 /**
  * A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
  * proper inputs are set and eases debugging.
- * 
+ *
  */
 #pragma GCC visibility push(default)
 class MultiInferenceFILMessage : public MultiInferenceMessage
@@ -48,8 +48,8 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
   public:
     /**
      * @brief Construct a new Multi Inference FIL Message object
-     * 
-     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
      * C++ representations of the table
      * @param mess_offset Offset into the metadata batch
      * @param mess_count Messages count
@@ -103,15 +103,15 @@ struct MultiInferenceFILMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceFILMessage, and return a shared pointer to the result
-     * 
-     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and 
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
      * C++ representations of the table
      * @param mess_offset Offset into the metadata batch
      * @param mess_count Messages count
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
-     * @return std::shared_ptr<MultiInferenceFILMessage> 
+     * @return std::shared_ptr<MultiInferenceFILMessage>
      */
     static std::shared_ptr<MultiInferenceFILMessage> init(std::shared_ptr<MessageMeta> meta,
                                                           cudf::size_type mess_offset,
@@ -122,7 +122,7 @@ struct MultiInferenceFILMessageInterfaceProxy
 
     /**
      * @brief Returns a shared pointer of a inference memory object
-     * 
+     *
      * @param self
      * @return std::shared_ptr<morpheus::InferenceMemory>
      */
@@ -130,7 +130,7 @@ struct MultiInferenceFILMessageInterfaceProxy
 
     /**
      * @brief Message offset in inference memory object
-     * 
+     *
      * @param self
      * @return std::size_t
      */
@@ -138,7 +138,7 @@ struct MultiInferenceFILMessageInterfaceProxy
 
     /**
      * @brief Message count in inference memory object
-     * 
+     *
      * @param self
      * @return std::size_t
      */

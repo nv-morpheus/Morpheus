@@ -39,11 +39,11 @@ namespace morpheus {
  * @addtogroup stages
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**
- * @brief Load messages from a file. Source stage is used to load messages from a file and 
+ * @brief Load messages from a file. Source stage is used to load messages from a file and
  * dumping the contents into the pipeline immediately. Useful for testing performance and accuracy of a pipeline.
  */
 class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
@@ -55,7 +55,7 @@ class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
 
     /**
      * @brief Construct a new File Source Stage object
-     * 
+     *
      * @param filename : Name of the file from which the messages will be read
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging
      */
@@ -76,12 +76,12 @@ struct FileSourceStageInterfaceProxy
 {
     /**
      * @brief Create and initialize a FileSourceStage, and return the result
-     * 
+     *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param filename : Name of the file from which the messages will be read.
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-     * @return std::shared_ptr<srf::segment::Object<FileSourceStage>> 
+     * @return std::shared_ptr<srf::segment::Object<FileSourceStage>>
      */
     static std::shared_ptr<srf::segment::Object<FileSourceStage>> init(srf::segment::Builder &builder,
                                                                        const std::string &name,

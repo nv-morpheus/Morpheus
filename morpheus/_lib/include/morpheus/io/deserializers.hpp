@@ -28,7 +28,7 @@ namespace morpheus {
  * @addtogroup IO
  * @{
  * @file
-*/
+ */
 
 /**
  * @brief Loads a cudf table from either CSV or JSON file

@@ -31,7 +31,7 @@ namespace morpheus {
  * @addtogroup objects
  * @{
  * @file
-*/
+ */
 
 #pragma GCC visibility push(default)
 /**

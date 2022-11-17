@@ -37,7 +37,7 @@ namespace morpheus {
  * @addtogroup messages
  * @{
  * @file
-*/
+ */
 
 /**
  * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
@@ -49,39 +49,39 @@ class MessageMeta
   public:
     /**
      * @brief Get the py table object
-     * 
-     * @return pybind11::object 
+     *
+     * @return pybind11::object
      */
     pybind11::object get_py_table() const;
 
     /**
      * @brief Get messages count
-     * 
-     * @return size_t 
+     *
+     * @return size_t
      */
     size_t count() const;
 
     /**
      * @brief Get the info object
-     * 
-     * @return TableInfo 
+     *
+     * @return TableInfo
      */
     TableInfo get_info() const;
 
     /**
      * @brief Create MessageMeta cpp object from a python object
-     * 
-     * @param data_table 
-     * @return std::shared_ptr<MessageMeta> 
+     *
+     * @param data_table
+     * @return std::shared_ptr<MessageMeta>
      */
     static std::shared_ptr<MessageMeta> create_from_python(pybind11::object&& data_table);
 
     /**
      * @brief Create MessageMeta cpp object from a cpp object
-     * 
-     * @param data_table 
-     * @param index_col_count 
-     * @return std::shared_ptr<MessageMeta> 
+     *
+     * @param data_table
+     * @param index_col_count
+     * @return std::shared_ptr<MessageMeta>
      */
     static std::shared_ptr<MessageMeta> create_from_cpp(cudf::io::table_with_metadata&& data_table,
                                                         int index_col_count = 0);
@@ -91,10 +91,10 @@ class MessageMeta
 
     /**
      * @brief Create MessageMeta python object from a cpp object
-     * 
-     * @param table 
-     * @param index_col_count 
-     * @return pybind11::object 
+     *
+     * @param table
+     * @param index_col_count
+     * @return pybind11::object
      */
     static pybind11::object cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count = 0);
 
@@ -109,33 +109,33 @@ struct MessageMetaInterfaceProxy
 {
     /**
      * @brief Initialize MessageMeta cpp object with the given filename
-     * 
+     *
      * @param filename : Filename for loading the data on to MessageMeta
-     * @return std::shared_ptr<MessageMeta> 
+     * @return std::shared_ptr<MessageMeta>
      */
     static std::shared_ptr<MessageMeta> init_cpp(const std::string& filename);
 
     /**
      * @brief Initialize MessageMeta cpp object with a given dataframe and returns shared pointer as the result
-     * 
+     *
      * @param data_frame : Dataframe that contains the data
-     * @return std::shared_ptr<MessageMeta> 
+     * @return std::shared_ptr<MessageMeta>
      */
     static std::shared_ptr<MessageMeta> init_python(pybind11::object&& data_frame);
 
     /**
      * @brief Get messages count
-     * 
-     * @param self 
-     * @return cudf::size_type 
+     *
+     * @param self
+     * @return cudf::size_type
      */
     static cudf::size_type count(MessageMeta& self);
 
     /**
      * @brief Get the data frame object
-     * 
-     * @param self 
-     * @return pybind11::object 
+     *
+     * @param self
+     * @return pybind11::object
      */
     static pybind11::object get_data_frame(MessageMeta& self);
 };
