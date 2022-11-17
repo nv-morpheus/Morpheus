@@ -38,17 +38,13 @@ class BinarySequenceClassifier(SequenceClassifier):
     def init_model(self, model_or_path):
         """
         Load model from huggingface or locally saved model.
-
         :param model_or_path: huggingface pretrained model name or directory path to model
         :type model_or_path: str
-
         Examples
         --------
         >>> from clx.analytics.binary_sequence_classifier import BinarySequenceClassifier
         >>> sc = BinarySequenceClassifier()
-
         >>> sc.init_model("bert-base-uncased")  # huggingface pre-trained model
-
         >>> sc.init_model(model_path) # locally saved model
         """
         self._model = AutoModelForSequenceClassification.from_pretrained(model_or_path)
@@ -65,7 +61,6 @@ class BinarySequenceClassifier(SequenceClassifier):
     def predict(self, input_data, max_seq_len=128, batch_size=32, threshold=0.5):
         """
         Predict the class with the trained model
-
         :param input_data: input text data for prediction
         :type input_data: cudf.Series
         :param max_seq_len: Limits the length of the sequence returned by tokenizer. If tokenized sentence is shorter
@@ -78,7 +73,6 @@ class BinarySequenceClassifier(SequenceClassifier):
         :type threshold: float
         :return: predictions, probabilities: predictions are labels (0 or 1) based on minimum threshold
         :rtype: cudf.Series, cudf.Series
-
         Examples
         --------
         >>> from cuml.preprocessing.model_selection import train_test_split
@@ -95,8 +89,8 @@ class BinarySequenceClassifier(SequenceClassifier):
         predict_dataset = Dataset(predict_gdf)
         predict_dataloader = DataLoader(predict_dataset, batchsize=batch_size)
 
-        preds = cudf.Series()
-        probs = cudf.Series()
+        preds_l = []
+        probs_l = []
 
         self._model.eval()
         for df in predict_dataloader.get_chunks():
@@ -104,11 +98,14 @@ class BinarySequenceClassifier(SequenceClassifier):
             with torch.no_grad():
                 logits = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)[0]
                 b_probs = torch.sigmoid(logits[:, 1])
-                b_preds = b_probs.ge(threshold)
+                b_preds = b_probs.ge(threshold).type(torch.int8)
 
             b_probs = cudf.io.from_dlpack(to_dlpack(b_probs))
-            b_preds = cudf.io.from_dlpack(to_dlpack(b_preds))
-            preds = preds.append(b_preds)
-            probs = probs.append(b_probs)
+            b_preds = cudf.io.from_dlpack(to_dlpack(b_preds)).astype("boolean")
+            preds_l.append(b_preds)
+            probs_l.append(b_probs)
+
+        preds = cudf.concat(preds_l)
+        probs = cudf.concat(probs_l)
 
         return preds, probs

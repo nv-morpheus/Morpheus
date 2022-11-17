@@ -16,13 +16,15 @@
 Example Usage:
 python phish-bert-training-script.py
 """
-import cudf
-import binary_sequence_classifier
-import requests
 import os.path
 import zipfile
-from sklearn.model_selection import train_test_split
+
+import binary_sequence_classifier
+import requests
 from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
+
+import cudf
 
 
 def preprocessing():
@@ -42,8 +44,7 @@ def preprocessing():
     # convert label to binary 0 = ham, 1 = spam
     df["label"] = df["spam/ham"].str.match('spam').astype(int)
     # split into 80% training, 20% testing datasets
-    X_train, X_test, y_train, y_test = train_test_split(df["message"], df["label"], train_size=0.8,
-                                                        random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(df["message"], df["label"], train_size=0.8, random_state=42)
 
     return (X_train, y_train, X_test, y_test)
 
@@ -66,8 +67,8 @@ def main():
     print("Model Evaluation")
     print("Accuracy:")
     print(seq_classifier.evaluate_model(X_test, y_test))
-    test_preds = seq_classifier.predict(X_test, batch_size=128)[0].to_array()
-    true_labels = y_test.to_array()
+    test_preds = seq_classifier.predict(X_test, batch_size=128)[0].to_numpy()
+    true_labels = y_test.to_numpy()
     print("F1 Score:")
     print(f1_score(true_labels, test_preds))
 

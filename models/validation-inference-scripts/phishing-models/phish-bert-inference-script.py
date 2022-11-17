@@ -23,12 +23,14 @@ python phish-bert-inference-script.py \
 
 import argparse
 import json
+
 import numpy as np
 import onnxruntime
 import torch
-from cudf.core.subword_tokenizer import SubwordTokenizer
 from scipy.special import expit
+
 import cudf
+from cudf.core.subword_tokenizer import SubwordTokenizer
 
 
 def infer(validationdata, vocab, model, output):
