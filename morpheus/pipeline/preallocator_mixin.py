@@ -36,7 +36,9 @@ logger = logging.getLogger(__name__)
 class PreallocatorMixin(ABC):
     """
     Mixin intented to be added to stages, typically source stages,  which are emitting newly constructed DataFrame or
-    MessageMeta instances into the segment.
+    MessageMeta instances into the segment. During segment build, if the `_needed_columns` addtribut is not empty an
+    additional node will be inserted into the graph after the derived class' node which will perform the allocation.
+
     The exceptions would be non-source stages like DFP's `DFPFileToDataFrameStage` which are not sources but are
     constructing new Dataframe instances, and `LinearBoundaryIngressStage` which is potentially emitting other message
     types such as MultiMessages and it's various derived messages but it would still be the first stage in the given
@@ -44,6 +46,10 @@ class PreallocatorMixin(ABC):
     """
 
     def set_needed_columns(self, needed_columns: OrderedDict):
+        """
+        Sets the columns needed to perform preallocation. This should only be called by the Pipeline at build time.
+        The needed_columns shoudl contain the entire set of columns needed by any other stage in this segment.
+        """
         self._needed_columns = needed_columns
 
     def _preallocate_df(self, df: typing.Union[pd.DataFrame, cudf.DataFrame]):
