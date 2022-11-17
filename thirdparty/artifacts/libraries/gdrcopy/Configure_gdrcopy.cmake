@@ -74,6 +74,23 @@ function(find_and_configure_gdrcopy version)
       LOG_BUILD           TRUE
       LOG_INSTALL         TRUE
     )
+
+    add_library(gdrcopy::gdrcopy STATIC IMPORTED GLOBAL)
+    set_target_properties(gdrcopy::gdrcopy
+        PROPERTIES
+          INTERFACE_INCLUDE_DIRECTORIES
+            "$<BUILD_INTERFACE:${gdrcopy_INSTALL_DIR}/include>;$<INSTALL_INTERFACE:include>"
+          INTERFACE_LINK_LIBRARIES
+            "$<BUILD_INTERFACE:${gdrcopy_INSTALL_DIR}/lib>;$<INSTALL_INTERFACE:lib>"
+          INTERFACE_POSITION_INDEPENDENT_CODE
+            "ON"
+          IMPORTED_LOCATION
+            "${gdrcopy_INSTALL_DIR}/lib/libgdrapi.so"
+          IMPORTED_SONAME
+            "libgdrapi.so"
+        )
+
+    add_dependencies(gdrcopy::gdrcopy gdrcopy)
   endif()
 endfunction()
 

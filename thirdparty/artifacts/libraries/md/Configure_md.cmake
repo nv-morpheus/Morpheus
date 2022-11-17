@@ -52,7 +52,7 @@ function(find_and_configure_libmd version)
         "CPPFLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${BUILD_TYPE_UC}}" # Add CUDAToolkit here
         "CXXFLAGS=${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${BUILD_TYPE_UC}}"
         "LDFLAGS=${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${BUILD_TYPE_UC}}"
-        )
+    )
 
     ExternalProject_Add(md
         PREFIX              ${md_BINARY_DIR} # Root directory for md
@@ -73,30 +73,22 @@ function(find_and_configure_libmd version)
         LOG_CONFIGURE       TRUE
         LOG_BUILD           TRUE
         LOG_INSTALL         TRUE
-        )
-
-    # Install headers
-    install(
-        DIRECTORY ${md_INSTALL_DIR}/include
-        TYPE INCLUDE
     )
 
     add_library(md::md STATIC IMPORTED GLOBAL)
     set_target_properties(md::md
         PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "$<BUILD_INTERFACE:${md_INSTALL_DIR}/include>;$<INSTALL_INTERFACE:include>"
-        INTERFACE_LINK_LIBRARIES "$<BUILD_INTERFACE:${md_INSTALL_DIR}/lib>;$<INSTALL_INTERFACE:lib>"
-        INTERFACE_POSITION_INDEPENDENT_CODE "ON"
-        )
-
-    set_property(TARGET md::md
-        APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE
-        )
-    set_target_properties(md::md
-        PROPERTIES
-        IMPORTED_LOCATION_RELEASE "${md_INSTALL_DIR}/lib/libmd.a"
-        IMPORTED_SONAME_RELEASE "libmd.a"
-        )
+          INTERFACE_INCLUDE_DIRECTORIES
+            "$<BUILD_INTERFACE:${md_INSTALL_DIR}/include>;$<INSTALL_INTERFACE:include>"
+          INTERFACE_LINK_LIBRARIES
+            "$<BUILD_INTERFACE:${md_INSTALL_DIR}/lib>;$<INSTALL_INTERFACE:lib>"
+          INTERFACE_POSITION_INDEPENDENT_CODE
+            "ON"
+          IMPORTED_LOCATION
+            "${md_INSTALL_DIR}/lib/libmd.a"
+          IMPORTED_SONAME
+            "libmd.a"
+    )
 
     add_dependencies(md::md md)
 

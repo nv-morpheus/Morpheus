@@ -80,6 +80,23 @@ function(find_and_configure_libbsd version)
         )
 
     add_dependencies(bsd md::md)
+
+    add_library(bsd::bsd STATIC IMPORTED GLOBAL)
+    set_target_properties(bsd::bsd
+        PROPERTIES
+          INTERFACE_INCLUDE_DIRECTORIES
+            "$<BUILD_INTERFACE:${bsd_INSTALL_DIR}/include>;$<INSTALL_INTERFACE:include>"
+          INTERFACE_LINK_LIBRARIES
+            "$<BUILD_INTERFACE:${bsd_INSTALL_DIR}/lib>;$<INSTALL_INTERFACE:lib>"
+          INTERFACE_POSITION_INDEPENDENT_CODE
+            "ON"
+          IMPORTED_LOCATION
+            "${bsd_INSTALL_DIR}/lib/libbsd.a"
+          IMPORTED_SONAME
+            "libbsd.a"
+    )
+
+    add_dependencies(bsd::bsd bsd)
   endif()
 endfunction()
 
