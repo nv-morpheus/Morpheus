@@ -70,8 +70,8 @@ Files for `role-g` include a single csv and split json version of the same data:
 - [hammah-role-g-training-part2.json](./training-data/cloudtrail/hammah-role-g-training-part1.json)
 
 #### Pipeline Validation Data
-- [dfp-cloudtrail-role-g-validation-data-input.csv](.validation-data/dfp-cloudtrail-role-g-validation-data-input.csv)
-- [dfp-cloudtrail-role-g-validation-data-output.csv](.validation-data/dfp-cloudtrail-role-g-validation-data-output.csv)
+- [dfp-cloudtrail-role-g-validation-data-input.csv](./validation-data/dfp-cloudtrail-role-g-validation-data-input.csv)
+- [dfp-cloudtrail-role-g-validation-data-output.csv](./validation-data/dfp-cloudtrail-role-g-validation-data-output.csv)
 
 
 ## Fraud Detection
