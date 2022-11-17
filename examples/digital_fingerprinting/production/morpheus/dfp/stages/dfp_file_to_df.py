@@ -80,7 +80,7 @@ def _single_object_to_dataframe(file_object: fsspec.core.OpenFile,
     return s3_df
 
 
-class DFPFileToDataFrameStage(SinglePortStage, PreallocatorMixin):
+class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
 
     def __init__(self,
                  c: Config,

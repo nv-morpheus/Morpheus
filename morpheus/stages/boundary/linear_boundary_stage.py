@@ -79,7 +79,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
         return input_stream[0], self.output_type
 
 
-class LinearBoundaryIngressStage(SingleOutputSource, PreallocatorMixin):
+class LinearBoundaryIngressStage(PreallocatorMixin, SingleOutputSource):
     """
     TheLinearBoundaryIngressStage acts as source ingress point from a corresponding egress in another linear segment.
     Given an existing linear pipeline that we want to connect to another segment, a linear boundary egress stage would

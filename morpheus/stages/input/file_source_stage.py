@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 @register_stage("from-file",
                 modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
                 ignore_args=["cudf_kwargs"])
-class FileSourceStage(SingleOutputSource, PreallocatorMixin):
+class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.
 
