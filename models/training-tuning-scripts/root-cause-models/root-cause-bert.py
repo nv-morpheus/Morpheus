@@ -15,7 +15,7 @@
 """
 Example Usage:
 python root-cause-bert.py \
---trainingdata ../../datasets/training-data/root-cause-training-data.csv
+--trainingdata ../../datasets/training-data/root-cause-training-data.csv \
 --unseenerrors ../../datasets/training-data/root-cause-unseen-errors.csv
 """
 
@@ -74,7 +74,7 @@ def train(trainingdata, unseenerrors):
     np.random.seed(random_seed)
     torch.backends.cudnn.deterministic = True
     seq_classifier.train_model(X_train['log'], y_train, batch_size=128,
-                               epochs=1, learning_rate=2e-04)
+                               epochs=1, learning_rate=3.6e-04)
 
     timestr = time.strftime('%Y%m%d-%H%M%S')
 
@@ -85,7 +85,7 @@ def train(trainingdata, unseenerrors):
     test_preds = seq_classifier.predict(X_test['log'], batch_size=128,
                                         threshold=0.5)
 
-    tests = test_preds[0].to_array()
+    tests = test_preds[0].to_numpy()
 
     true_labels = X_test['label']
 
