@@ -30,6 +30,7 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
@@ -141,3 +142,46 @@ def test_preallocation_multi_segment_pipe(config, tmp_path, probs_type):
     }
 
     assert_file_exists_with_timeout(out_file, 1.0)
+
+
+@pytest.mark.slow
+@pytest.mark.use_cpp
+def test_preallocation_error(config, tmp_path):
+    """
+    Verify that we get a raised exception when add_scores attempts to use columns that don't exist
+    """
+    config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
+
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    out_file = os.path.join(tmp_path, 'results.csv')
+
+    input_cols = get_column_names_from_file(input_file)
+
+    file_src = FileSourceStage(config, filename=input_file, iterative=False)
+    assert len(file_src.get_needed_columns()) == 0
+
+    add_scores = AddScoresStage(config)
+    assert len(add_scores.get_needed_columns()) > 0
+    add_scores._needed_columns = {}
+    assert len(add_scores.get_needed_columns()) == 0
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(file_src)
+    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(ConvMsg(config, columns=input_cols, probs_type='f4'))
+    pipe.add_stage(add_scores)
+    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+
+    try:
+        pipe.run()
+    except Exception as e:
+        assert isinstance(e, RuntimeError)
+
+        # Ensure the error mentioned populating the needed_columns and using a stage with the PreallocatorMixin
+        # Without depending on a specific string
+        assert "frogs" in str(e)
+        assert "PreallocatorMixin" in str(e)
+        assert "needed_columns" in str(e)
+
+    assert len(file_src.get_needed_columns()) == 0

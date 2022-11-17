@@ -40,7 +40,7 @@
 #include <array>      // needed for pybind11::make_tuple
 #include <cstdint>    // for uint8_t
 #include <sstream>
-#include <stdexcept>  // for invalid_argument & logic_error
+#include <stdexcept>  // for runtime_error
 // IWYU pragma: no_include <unordered_map>
 
 namespace morpheus {
@@ -124,38 +124,35 @@ void MultiMessage::set_meta(const std::string &col_name, TensorObject tensor)
 
 void MultiMessage::set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors)
 {
-    TableInfo table_meta = this->get_meta(column_names);
+    TableInfo table_meta;
+    try
+    {
+        table_meta = this->get_meta(column_names);
+    } catch (const std::runtime_error &e)
+    {
+        std::ostringstream err_msg;
+        err_msg << e.what() << " Ensure that the stage that needs this column has populated the '_needed_columns' "
+                << "attribute and that at least one stage in the current segment is using the PreallocatorMixin to "
+                << "ensure all needed columns have been allocated.";
+        throw std::runtime_error(err_msg.str());
+    }
 
     for (size_t i = 0; i < tensors.size(); ++i)
     {
-        const cudf::column_view *cv{nullptr};
-        try
-        {
-            const auto &col_view = table_meta.get_column(i);
-            cv                   = &col_view;
-        } catch (const std::logic_error &e)
-        {
-            std::ostringstream err_msg;
-            err_msg << "Failed to locate column: " << column_names[i] << " : '" << e.what() << "' "
-                    << "Ensure that the stage that needs this column has populated the '_needed_columns' attribute "
-                    << "and that at least one stage in the current segment is using the PreallocatorMixin to ensure "
-                    << "all needed columns have been allocated.";
-            throw std::invalid_argument(err_msg.str());
-        }
-
-        const auto table_type_id  = cv->type().id();
+        const auto &cv            = table_meta.get_column(i);
+        const auto table_type_id  = cv.type().id();
         const auto tensor_type    = DType(tensors[i].dtype());
         const auto tensor_type_id = tensor_type.cudf_type_id();
         const auto row_stride     = tensors[i].stride(0);
 
-        CHECK(tensors[i].count() == cv->size() &&
+        CHECK(tensors[i].count() == cv.size() &&
               (table_type_id == tensor_type_id ||
                (table_type_id == cudf::type_id::BOOL8 && tensor_type_id == cudf::type_id::UINT8)));
 
         const auto item_size = tensors[i].dtype().item_size();
 
         // Dont use cv.data<>() here since that does not account for the size of each element
-        auto data_start = const_cast<uint8_t *>(cv->head<uint8_t>()) + cv->offset() * item_size;
+        auto data_start = const_cast<uint8_t *>(cv.head<uint8_t>()) + cv.offset() * item_size;
 
         if (row_stride == 1)
         {
@@ -169,7 +166,7 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
                                         tensors[i].data(),
                                         row_stride * item_size,
                                         item_size,
-                                        cv->size(),
+                                        cv.size(),
                                         cudaMemcpyDeviceToDevice));
         }
     }
