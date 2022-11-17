@@ -28,9 +28,9 @@ root-cause-inference.py \
 import argparse
 import json
 import numpy as np
+from cudf.core.subword_tokenizer import SubwordTokenizer
 import onnxruntime
 import torch
-from cudf.core.subword_tokenizer import SubwordTokenizer
 from scipy.special import expit
 import cudf
 
