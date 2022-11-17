@@ -149,7 +149,7 @@ Note: This step assumes you have both [Docker](https://docs.docker.com/engine/in
 From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
 
 ```shell
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --log-info=true
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --log-info=true
 ```
 
 Once we have Triton running, we can verify that it is healthy using [curl](https://curl.se/). The `/v2/health/live` endpoint should return a 200 status code:
