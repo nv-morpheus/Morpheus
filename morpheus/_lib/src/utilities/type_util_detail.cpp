@@ -48,6 +48,8 @@ std::map<char, std::map<size_t, TypeId>> make_str_to_type_id()
     map['f'][4] = TypeId::FLOAT32;
     map['f'][8] = TypeId::FLOAT64;
 
+    map['O'][8] = TypeId::OBJECT64;
+
     return map;
 }
 
@@ -78,6 +80,7 @@ size_t DataType::item_size() const
     case TypeId::INT64:
     case TypeId::UINT64:
     case TypeId::FLOAT64:
+    case TypeId::OBJECT64:
         return 8;
     case TypeId::NUM_TYPE_IDS:
     case TypeId::EMPTY:
@@ -160,6 +163,8 @@ char DataType::type_char() const
     case TypeId::FLOAT32:
     case TypeId::FLOAT64:
         return 'f';
+    case TypeId::OBJECT64:
+        return 'O';
     case TypeId::NUM_TYPE_IDS:
     case TypeId::EMPTY:
     default:
