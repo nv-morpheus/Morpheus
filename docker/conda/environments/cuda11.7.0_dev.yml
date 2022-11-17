@@ -35,7 +35,6 @@ dependencies:
     - cuda-python<=11.7.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.7
     - cudf 22.08
-    - cudf_kafka 22.08.*
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
@@ -57,6 +56,7 @@ dependencies:
     - gxx_linux-64=9.4
     - include-what-you-use=0.18
     - isort
+    - librdkafka=1.7.0
     - mlflow>=1.23
     - myst-parser==0.17
     - networkx=2.8
@@ -74,6 +74,7 @@ dependencies:
     - pytest
     - pytest-benchmark>=4.0
     - pytest-cov
+    - python-confluent-kafka=1.7.0
     - python-graphviz
     - python=3.8
     - rapidjson=1.1.0
