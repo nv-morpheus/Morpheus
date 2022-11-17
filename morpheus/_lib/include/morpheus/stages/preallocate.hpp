@@ -28,38 +28,10 @@
 #include <srf/segment/builder.hpp>
 #include <srf/segment/object.hpp>  // for Object
 
-#include <exception>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-namespace {
-/**
- * @brief Performs preallocation to the underlying dataframe. These functions ensure that the MutableTableInfo object
- * has gone out of scope and thus releasing the mutex prior to the stage calling `on_next` which may block.
- *
- * @param msg
- * @param column_names
- * @param column_types
- */
-//@{
-void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
-                 const std::vector<std::string> &column_names,
-                 const std::vector<morpheus::TypeId> &column_types)
-{
-    auto table = msg->get_mutable_info();
-    table.insert_missing_columns(column_names, column_types);
-}
-
-void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
-                 const std::vector<std::string> &column_names,
-                 const std::vector<morpheus::TypeId> &column_types)
-{
-    preallocate(msg->meta, column_names, column_types);
-}
-//@}
-}  // namespace
 
 namespace morpheus {
 #pragma GCC visibility push(default)
@@ -78,30 +50,10 @@ class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageT>
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    PreallocateStage(const std::map<std::string, std::string> &needed_columns) :
-      base_t(base_t::op_factory_from_sub_fn(build_operator()))
-    {
-        for (const auto &column : needed_columns)
-        {
-            m_column_names.push_back(column.first);
-            m_column_types.push_back(DataType::from_numpy(column.second).type_id());
-        }
-    }
+    PreallocateStage(const std::map<std::string, std::string> &needed_columns);
 
   private:
-    subscribe_fn_t build_operator()
-    {
-        return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-            return input.subscribe(rxcpp::make_observer<sink_type_t>(
-                [this, &output](sink_type_t x) {
-                    // Since the msg was just emitted from the source we shouldn't have any trouble acquiring the mutex.
-                    preallocate(x, m_column_names, m_column_types);
-                    output.on_next(std::move(x));
-                },
-                [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-                [&]() { output.on_completed(); }));
-        };
-    }
+    subscribe_fn_t build_operator();
 
     std::vector<std::string> m_column_names;
     std::vector<TypeId> m_column_types;
@@ -118,12 +70,15 @@ struct PreallocateStageInterfaceProxy
      * @brief Create and initialize a DeserializationStage, and return the result.
      */
     static std::shared_ptr<srf::segment::Object<PreallocateStage<MessageT>>> init(
-        srf::segment::Builder &builder, const std::string &name, std::map<std::string, std::string> needed_columns)
-    {
-        auto stage = builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
-
-        return stage;
-    }
+        srf::segment::Builder &builder, const std::string &name, std::map<std::string, std::string> needed_columns);
 };
+
+// Explicit instantiations
+template class PreallocateStage<MessageMeta>;
+template class PreallocateStage<MultiMessage>;
+
+template struct PreallocateStageInterfaceProxy<MessageMeta>;
+template struct PreallocateStageInterfaceProxy<MultiMessage>;
+
 #pragma GCC visibility pop
 }  // namespace morpheus
