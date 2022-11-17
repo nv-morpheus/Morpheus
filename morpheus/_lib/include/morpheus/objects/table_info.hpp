@@ -144,12 +144,12 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
     /**
      * TODO(Documentation)
      */
-    void insert_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
+    void insert_columns(const std::vector<std::tuple<std::string, morpheus::DataType>> &columns);
 
     /**
      * TODO(Documentation)
      */
-    void insert_missing_columns(const std::vector<std::string> &column_names, const std::vector<TypeId> &column_types);
+    void insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DataType>> &columns);
 
     /**
      * @brief Allows the python object to be "checked out" which gives exclusive access to the python object during the

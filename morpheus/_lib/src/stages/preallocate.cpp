@@ -31,21 +31,14 @@ namespace {
  */
 //@{
 void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
-                 const std::vector<std::tuple<std::string, morpheus::TypeId>> &columns)
+                 const std::vector<std::tuple<std::string, morpheus::DataType>> &columns)
 {
     auto table = msg->get_mutable_info();
-    std::vector<std::string> column_names;
-    std::vector<morpheus::TypeId> column_types;
-    for (const auto &column : columns)
-    {
-        column_names.push_back(std::get<0>(column));
-        column_types.push_back(std::get<1>(column));
-    }
-    table.insert_missing_columns(column_names, column_types);
+    table.insert_missing_columns(columns);
 }
 
 void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
-                 const std::vector<std::tuple<std::string, morpheus::TypeId>> &columns)
+                 const std::vector<std::tuple<std::string, morpheus::DataType>> &columns)
 {
     preallocate(msg->meta, columns);
 }
@@ -56,13 +49,11 @@ namespace morpheus {
 
 template <typename MessageT>
 PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, std::string>> &needed_columns) :
-  base_t(base_t::op_factory_from_sub_fn(build_operator())),
-  m_needed_columns{needed_columns.size()}
+  base_t(base_t::op_factory_from_sub_fn(build_operator()))
 {
-    for (std::size_t i = 0; i < needed_columns.size(); ++i)
+    for (const auto &col : needed_columns)
     {
-        const auto dtype{DataType::from_numpy(std::get<1>(needed_columns[i]))};
-        m_needed_columns[i] = std::make_tuple<>(std::get<0>(needed_columns[i]), dtype.type_id());
+        m_needed_columns.emplace_back(std::make_tuple<>(std::get<0>(col), DataType::from_numpy(std::get<1>(col))));
     }
 }
 

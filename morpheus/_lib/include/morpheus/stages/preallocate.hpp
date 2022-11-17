@@ -56,7 +56,7 @@ class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageT>
   private:
     subscribe_fn_t build_operator();
 
-    std::vector<std::tuple<std::string, TypeId>> m_needed_columns;
+    std::vector<std::tuple<std::string, DataType>> m_needed_columns;
 };
 
 /****** DeserializationStageInterfaceProxy******************/

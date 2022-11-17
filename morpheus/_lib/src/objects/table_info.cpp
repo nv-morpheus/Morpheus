@@ -232,10 +232,8 @@ MutableTableInfo::~MutableTableInfo()
     }
 }
 
-void MutableTableInfo::insert_columns(const std::vector<std::string> &column_names,
-                                      const std::vector<TypeId> &column_types)
+void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, morpheus::DataType>> &columns)
 {
-    CHECK(column_names.size() == column_types.size());
     const auto num_existing_cols = this->get_data().column_names.size();
     const auto num_rows          = this->get_data().table_view.num_rows();
 
@@ -247,35 +245,31 @@ void MutableTableInfo::insert_columns(const std::vector<std::string> &column_nam
 
         auto table = this->get_parent()->get_py_object();
 
-        for (std::size_t i = 0; i < column_names.size(); ++i)
+        for (std::size_t i = 0; i < columns.size(); ++i)
         {
-            auto empty_array = cupy_zeros(num_rows, DataType(column_types[i]).type_str());
-            table.attr("insert")(num_existing_cols + i, column_names[i], empty_array);
-            this->get_data().column_names.push_back(column_names[i]);
+            auto empty_array = cupy_zeros(num_rows, std::get<1>(columns[i]).type_str());
+            table.attr("insert")(num_existing_cols + i, std::get<0>(columns[i]), empty_array);
+            this->get_data().column_names.push_back(std::get<0>(columns[i]));
         }
     }
 }
 
-void MutableTableInfo::insert_missing_columns(const std::vector<std::string> &column_names,
-                                              const std::vector<TypeId> &column_types)
+void MutableTableInfo::insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DataType>> &columns)
 {
-    CHECK(column_names.size() == column_types.size());
-
-    std::vector<std::string> missing_names;
-    std::vector<TypeId> missing_types;
-    for (std::size_t i = 0; i < column_names.size(); ++i)
+    std::vector<std::tuple<std::string, morpheus::DataType>> missing_columns;
+    for (const auto &column : columns)
     {
-        if (std::find(this->get_data().column_names.begin(), this->get_data().column_names.end(), column_names[i]) ==
-            this->get_data().column_names.end())
+        if (std::find(this->get_data().column_names.begin(),
+                      this->get_data().column_names.end(),
+                      std::get<0>(column)) == this->get_data().column_names.end())
         {
-            missing_names.push_back(column_names[i]);
-            missing_types.push_back(column_types[i]);
+            missing_columns.push_back(column);
         }
     }
 
-    if (!missing_names.empty())
+    if (!missing_columns.empty())
     {
-        insert_columns(missing_names, missing_types);
+        insert_columns(missing_columns);
     }
 }
 
