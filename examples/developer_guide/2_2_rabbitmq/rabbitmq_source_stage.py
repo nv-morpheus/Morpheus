@@ -26,6 +26,7 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-rabbitmq")
-class RabbitMQSourceStage(SingleOutputSource):
+class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
