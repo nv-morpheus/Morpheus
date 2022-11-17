@@ -12,27 +12,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Example Usage:
 python \
 root-cause-inference.py \
-    --validationdata ../../datasets/validation-data\
-    /root-cause-validation-data-input.jsonlines \
+    --validationdata ../../datasets/validation-data/root-cause-validation-data-input.jsonlines \
     --model ../../root-cause-models/root-cause-binary-bert-20221118.onnx \
-    --vocab ../../training-tuning-scripts/root-cause-models\
-    /resources/bert-base-uncased-hash.txt \
-    --output rootcause-validation-output.jsonlines
+    --vocab ../../training-tuning-scripts/root-cause-models/resources/bert-base-uncased-hash.txt \
+    --output root-cause-validation-output.jsonlines
 """
 
 import argparse
 import json
+
 import numpy as np
-from cudf.core.subword_tokenizer import SubwordTokenizer
 import onnxruntime
 import torch
 from scipy.special import expit
+
 import cudf
+from cudf.core.subword_tokenizer import SubwordTokenizer
 
 
 def infer(
@@ -40,7 +39,7 @@ def infer(
     vocab,
     model,
     output,
-        ):
+):
 
     MODEL_FILE = model
 
@@ -59,7 +58,7 @@ def infer(
             max_num_rows=len(strings),
             add_special_tokens=False,
             return_tensors='pt',
-            )
+        )
         input_ids = tokenizer_output['input_ids'].type(torch.long)
         att_masks = tokenizer_output['attention_mask'].type(torch.long)
         # meta_data = tokenizer_output['metadata']
@@ -84,8 +83,7 @@ def infer(
 
     # compute ONNX Runtime output prediction
 
-    ort_inputs = {ort_session.get_inputs()[0].name: input_ids,
-                  ort_session.get_inputs()[1].name: att_masks}
+    ort_inputs = {ort_session.get_inputs()[0].name: input_ids, ort_session.get_inputs()[1].name: att_masks}
     ort_outs = ort_session.run(None, ort_inputs)
 
     probs = expit(ort_outs[0])
@@ -106,14 +104,10 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--validationdata', required=True,
-                        help='Labelled data in JSON format')
-    parser.add_argument('--vocab', required=True,
-                        help='BERT voabulary file')
-    parser.add_argument('--model', required=True,
-                        help='pretrained model')
-    parser.add_argument('--output', required=True,
-                        help='output filename')
+    parser.add_argument('--validationdata', required=True, help='Labelled data in JSON format')
+    parser.add_argument('--vocab', required=True, help='BERT voabulary file')
+    parser.add_argument('--model', required=True, help='pretrained model')
+    parser.add_argument('--output', required=True, help='output filename')
     args = parser.parse_args()
 
 main()
