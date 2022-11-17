@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Example Usage:
 python abp-nvsmi-xgb-20210310.py \
@@ -21,7 +20,9 @@ python abp-nvsmi-xgb-20210310.py \
 """
 
 import argparse
+
 import xgboost as xgb
+
 import cudf
 from sklearn.model_selection import train_test_split
 
@@ -68,9 +69,8 @@ def train(X_train, X_test, y_train, y_test):
         'objective': 'binary:logistic',
         'max_depth': 5,
         'learning_rate': 0.1,
-        }
-    evallist = [(dmatrix_validation, 'validation'), (dmatrix_train,
-                'train')]
+    }
+    evallist = [(dmatrix_validation, 'validation'), (dmatrix_train, 'train')]
     num_round = 5
 
     # Train the model
@@ -94,6 +94,7 @@ def save_model(model):
 #     acc = accuracy_score(y_true, y_pred)
 #     print("Validation_score: ", acc)
 
+
 def main():
     print('Preprocessing...')
     (X_train, X_test, y_train, y_test) = \
@@ -109,8 +110,7 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--trainingdata', required=True,
-                        help='Labelled data in JSON format')
+    parser.add_argument('--trainingdata', required=True, help='Labelled data in JSON format')
     args = parser.parse_args()
 
     main()
