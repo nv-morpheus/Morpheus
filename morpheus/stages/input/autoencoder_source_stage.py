@@ -25,6 +25,7 @@ from srf.core import operators as ops
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
 from morpheus.messages import UserMessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.directory_watcher import DirectoryWatcher
@@ -32,7 +33,7 @@ from morpheus.utils.directory_watcher import DirectoryWatcher
 logger = logging.getLogger(__name__)
 
 
-class AutoencoderSourceStage(SingleOutputSource):
+class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     All AutoEncoder source stages must extend this class and implement the `files_to_dfs_per_user` abstract method.
     Feature columns can be managed by overriding the `derive_features` method. Otherwise, all columns from input
