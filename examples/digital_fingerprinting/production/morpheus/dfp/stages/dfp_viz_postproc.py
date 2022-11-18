@@ -30,6 +30,23 @@ logger = logging.getLogger(__name__)
 
 
 class DFPVizPostprocStage(SinglePortStage):
+    """
+    DFPVizPostprocStage performs post-processing on DFP inference output. The inference output is converted
+    to input format expected by the DFP Visualization and saves to multiple files based on specified time
+    period. Time period to group data by must be one of pandas' offset strings. The default period is one
+    day (D). The output file will be named by appending period to prefix (e.g. dfp-viz-2022-08-30.csv).
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    period : str
+        Time period to batch input data and save output files by. [default: `D`]
+    output_dir : str
+         Directory to which the output files will be written. [default: current directory]
+    output_prefix : str
+         Prefix for output files.
+    """
 
     def __init__(self, c: Config, period: str = "D", output_dir: str = ".", output_prefix: str = "dfp-viz-"):
         super().__init__(c)
