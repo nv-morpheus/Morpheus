@@ -29,7 +29,7 @@ namespace morpheus {
  */
 
 /**
- Apply a function `func` to a sequence `seq` and return the results in a new vector.     
+ @brief Apply a function `func` to a sequence `seq` and return the results in a new vector.
  * @param seq
  * @param func
  * @return std::vector<return_t>
@@ -47,25 +47,5 @@ auto foreach_map(const SeqT &seq, FuncT func)
     return result;
 }
 
-/**
-/**
- Apply a function `func` to a sequence `seq` and return the results in a new vector.     
- * @param seq
- * @param func
- * @return std::vector<return_t>
- */
- */
-template <typename FuncT, typename SeqT>
-auto foreach_map2(const SeqT &seq, FuncT func)
-{
-    using value_t  = typename SeqT::const_reference;
-    using return_t = decltype(func(std::declval<value_t>()));
-
-    std::vector<return_t> result{};
-
-    std::transform(seq.begin(), seq.end(), std::back_inserter(result), func);
-
-    return result;
-}
 /** @} */  // end of group
 }  // namespace morpheus

@@ -65,8 +65,8 @@ class InferenceMemoryFIL : public InferenceMemory
     /**
      * @brief Returns the 'seq_ids' tensor, throws a `std::runtime_error` if it does not exist
      *
-     * @return const TensorObject&
      * @throw std::runtime_error
+     * @return const TensorObject&
      */
     const TensorObject& get_seq_ids() const;
 
@@ -74,6 +74,7 @@ class InferenceMemoryFIL : public InferenceMemory
      * @brief Sets a tensor named 'input__0'
      *
      * @param input_ids
+     * @throw std::runtime_error
      */
     void set_input__0(TensorObject input_ids);
 
