@@ -162,4 +162,4 @@ The DFP Visualization Tool can now be accessed via web browser at http://localho
 
 <img src="./img/screenshot.png">
 
-More information about the DFP Visualization Tool can be found [here](https://github.com/nv-morpheus/morpheus-visualizations/tree/HEAD/morpheus-DFP).
+More information about the DFP Visualization Tool can be found [here](https://github.com/nv-morpheus/morpheus-visualizations/tree/HEAD/DFP).
