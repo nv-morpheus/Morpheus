@@ -79,7 +79,7 @@ outputs:
         - distributed
         - docker-py 5.0
         - grpcio # Version determined from cudf
-        - mlflow >=1.23
+        - mlflow >1.29,<2
         - networkx 2.8
         - numpydoc 1.4
         - pandas 1.3

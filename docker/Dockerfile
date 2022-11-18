@@ -145,9 +145,6 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_runtime.yml &&\
-    # Install jupyter support (e.g., DFP)
-    # TODO: this might not be the right spot to get these
-    /opt/conda/bin/mamba install -n morpheus ipywidgets jupyterlab nb_conda_kernels &&\
     # Clean and activate
     conda clean -afy
 
