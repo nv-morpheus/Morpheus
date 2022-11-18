@@ -61,19 +61,19 @@ Well-Read Students Learn Better: On the Importance of Pre-training Compact Model
 
 ## Phishing Email Detection
 ### Model Overview
-Phishing email detection is a binary classifier differentiating between phishing and non-phishing emails.
+Phishing email detection is a binary classifier differentiating between phishing/spam and non-phishing/spam emails and SMS messages.
 ### Model Architecture
 BERT-base uncased transformer model
 ### Training
-Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/bert-base-uncased). The labeled training dataset is around 20000 emails from three public datasets ([CLAIR](https://www.kaggle.com/datasets/rtatman/fraudulent-email-corpus), [SPAM_ASSASIN](https://spamassassin.apache.org/old/publiccorpus/readme.html), [Enron](https://www.cs.cmu.edu/~./enron/))
+Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/bert-base-uncased). The labeled training dataset is around 5000 SMS messages from a public dataset- [SMS Spam Collection](https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection)
 ### How To Use This Model
-This model is an example of customized transformer-based phishing email detection. It can be further fine-tuned for specific detection needs and customized the emails of your enterprise using the fine-tuning scripts in the repo.
+This model is an example of customized transformer-based phishing email detection. It can be retrained for specific detection needs and customized the emails of your enterprise using the training scripts in the repo.
 #### Input
 Entire email as a string
 #### Output
-Binary sequence classification as phishing or non-phishing
+Binary sequence classification as phishing/spam or non-phishing/spam
 ### References
-- Radev, D. (2008), CLAIR collection of fraud email, ACL Data and Code Repository, ADCR2008T001, http://aclweb.org/aclwiki
+- https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection
 - Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
 https://arxiv.org/abs/1810.04805
 
@@ -165,3 +165,20 @@ For each process_id and snapshot there is a probablity score between 1 and 0, wh
 ### References
 - Cohen, A,. & Nissim, N. (2018). Trusted detection of ransomware in a private cloud using machine learning methods leveraging meta-features from volatile memory. In Expert Systems With Applications. (https://www.sciencedirect.com/science/article/abs/pii/S0957417418301283)
 - https://developer.nvidia.com/networking/doca
+
+## Root Cause Analysis
+### Model Overview
+Root cause analysis is a binary classifier differentiating between ordinary logs and errors/problems/root causes in the log files.
+### Model Architecture
+BERT-base uncased transformer model
+### Training
+Training consisted of fine-tuning the original pre-trained [model from google](https://huggingface.co/bert-base-uncased). The labeled dataset is Linux kernel logs, and it has two parts. Kernel errors and new errors. Kernel logs will be split into two parts so that the new and unseen error logs can be appended to the test set after the split to later check if the model can catch them despite not seeing such errors in the training.
+### How To Use This Model
+This model is an example of customized transformer-based root cause analysis. It can be further fine-tuned for specific root cause analysis or predictive maintenance needs and of your enterprise using the fine-tuning scripts in the repo. The hyper parameters can be optimised to adjust to get the best results with your dataset. The aim is to get the model to predict some false positives that could be previously unknown error types. Users can use this root cause analysis method with other log types too. If they have known failures in their logs, they can use them to train along with ordinary logs and can detect other root causes they weren't aware of before. 
+#### Input
+Kernel logs
+#### Output
+Binary sequence classification as ordinary or root cause
+### References
+- Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+https://arxiv.org/abs/1810.04805

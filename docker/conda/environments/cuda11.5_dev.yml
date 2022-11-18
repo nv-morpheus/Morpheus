@@ -57,7 +57,7 @@ dependencies:
     - include-what-you-use=0.18
     - isort
     - librdkafka=1.7.0
-    - mlflow>=1.23
+    - mlflow>1.29,<2
     - myst-parser==0.17
     - networkx=2.8
     - ninja=1.10
