@@ -158,7 +158,7 @@ export dataset_path=/workspace/examples/digital_fingerprinting/visualization/azu
 yarn dev
 ```
 
-The DFP Visualization app can now be accessed via web browser at http://localhost:3000.
+The DFP Visualization Tool can now be accessed via web browser at http://localhost:3000.
 
 <img src="./img/screenshot.png">
 
