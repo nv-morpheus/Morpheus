@@ -24,6 +24,12 @@ To run the demo you will need the following:
 - Docker
 - `docker-compose` (Tested with version 1.29)
 
+## Pull `morpheus-visualizations` submodule
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Build the Morpheus container
 This is necessary to get the latest changes needed for DFP. From the root of the Morpheus repo:
 ```bash
@@ -131,14 +137,9 @@ python dfp_viz_duo_pipeline.py \
 
 While still in the `morpheus_pipeline` container, perform the following steps to install and run the DFP Visualization Tool:
 
-### Clone `morpheus-visualizations` repo:
-```
-git clone https://github.com/nv-morpheus/morpheus-visualizations.git /opt/morpheus-visualizations
-```
-
 ### Install dependencies
 ```
-cd /opt/morpheus-visualizations/DFP
+cd /workspace/external/morpheus-visualizations/DFP
 ```
 ```
 corepack enable
