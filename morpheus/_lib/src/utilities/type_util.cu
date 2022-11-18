@@ -52,7 +52,6 @@ cudf::type_id DType::cudf_type_id() const
         return cudf::type_id::FLOAT64;
     case TypeId::BOOL8:
         return cudf::type_id::BOOL8;
-    case TypeId::OBJECT64:
     case TypeId::EMPTY:
     case TypeId::NUM_TYPE_IDS:
     default:
@@ -90,7 +89,6 @@ std::string DType::triton_str() const
         return "BOOL";
     case TypeId::EMPTY:
     case TypeId::NUM_TYPE_IDS:
-    case TypeId::OBJECT64:
     default:
         throw std::runtime_error("Not supported");
     }

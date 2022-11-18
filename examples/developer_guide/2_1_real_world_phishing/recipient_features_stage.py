@@ -73,7 +73,7 @@ class RecipientFeaturesStage(SinglePortStage):
                       df['Message'])
 
         # Return the message for the next stage
-        return MessageMeta(df)
+        return message
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)

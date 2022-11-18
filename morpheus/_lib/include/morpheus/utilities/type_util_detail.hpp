@@ -39,19 +39,18 @@ constexpr std::size_t size_in_bits()
 // Pulled from cudf
 enum class TypeId : int32_t
 {
-    EMPTY,     ///< Always null with no underlying data
-    INT8,      ///< 1 byte signed integer
-    INT16,     ///< 2 byte signed integer
-    INT32,     ///< 4 byte signed integer
-    INT64,     ///< 8 byte signed integer
-    UINT8,     ///< 1 byte unsigned integer
-    UINT16,    ///< 2 byte unsigned integer
-    UINT32,    ///< 4 byte unsigned integer
-    UINT64,    ///< 8 byte unsigned integer
-    FLOAT32,   ///< 4 byte floating point
-    FLOAT64,   ///< 8 byte floating point
-    BOOL8,     ///< Boolean using one byte per value, 0 == false, else true
-    OBJECT64,  ///< 8 byte object not supported by cudf
+    EMPTY,    ///< Always null with no underlying data
+    INT8,     ///< 1 byte signed integer
+    INT16,    ///< 2 byte signed integer
+    INT32,    ///< 4 byte signed integer
+    INT64,    ///< 8 byte signed integer
+    UINT8,    ///< 1 byte unsigned integer
+    UINT16,   ///< 2 byte unsigned integer
+    UINT32,   ///< 4 byte unsigned integer
+    UINT64,   ///< 8 byte unsigned integer
+    FLOAT32,  ///< 4 byte floating point
+    FLOAT64,  ///< 8 byte floating point
+    BOOL8,    ///< Boolean using one byte per value, 0 == false, else true
 
     //   TIMESTAMP_DAYS,          ///< point in time in days since Unix Epoch in int32
     //   TIMESTAMP_SECONDS,       ///< point in time in seconds since Unix Epoch in int64
