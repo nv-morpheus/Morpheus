@@ -139,7 +139,7 @@ While still in the `morpheus_pipeline` container, perform the following steps to
 
 ### Install dependencies
 ```
-cd /workspace/external/morpheus-visualizations/DFP
+cd viz
 ```
 ```
 corepack enable
