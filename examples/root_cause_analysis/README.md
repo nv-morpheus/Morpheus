@@ -37,11 +37,6 @@ The dataset comprises kern.log files from multiple DGX's. Each line inside has b
 
 The pipeline we will be using in this example is a simple feed-forward linear pipeline where the data from each stage flows on to the next. Morpheus pipelines can be configured via the Morpheus CLI or using the Python library. In this example we will be using the Morpheus CLI.
 
-Below is a visualization of the pipeline showing all of the stages and data types as it flows from one stage to the next.
-
-![Pipeline](pipeline.png)
-
-
 ## Setup
 
 This example utilizes the Triton Inference Server to perform inference. The binary sequence classification neural network model is provided in the `models/root-cause-models` directory of the Morpheus repo.
@@ -111,11 +106,11 @@ run --num_threads=8 --edge_buffer_size=4 --use_cpp=True --pipeline_batch_size=10
 `# Specify a NLP pipeline with 128 sequence length (Must match Triton config)` \
 pipeline-nlp --model_seq_length=128 --label=not_root_cause --label=is_root_cause \
 `# 1st Stage: Read from file` \
-from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/rootcause-validation-data-input.csv \
+from-file --filename=${MORPHEUS_ROOT}/models/datasets/validation-data/root-cause-validation-data-input.jsonlines \
 `# 2nd Stage: Deserialize from JSON strings to objects` \
 deserialize \
 `# 3rd Stage: Preprocessing converts the input data into BERT tokens` \
-preprocess --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
+preprocess --column=log --vocab_hash_file=./data/bert-base-uncased-hash.txt --truncation=True --do_lower_case=True --add_special_tokens=False \
 `# 4th Stage: Send messages to Triton for inference. Specify the binary model loaded in Setup` \
 inf-triton --force_convert_inputs=True --model_name=root-cause-binary-onnx --server_url=localhost:8001 \
 `# 5th Stage: Monitor stage prints throughput information to the console` \
@@ -125,7 +120,7 @@ add-scores --label=is_root_cause \
 `# 7th Stage: Convert from objects back into strings` \
 serialize --exclude '^ts_' \
 `# 8th Stage: Write results out to CSV file` \
-to-file --filename=./root-cause-binary-output.csv --overwrite
+to-file --filename=./root-cause-binary-output.jsonlines --overwrite
 ```
 
 If successful, you should see the following output:
@@ -164,13 +159,12 @@ CPP Enabled: True
 Starting! Time: 1668537665.9479523
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====             
-Inference rate: 0 inf [00:00, ? inf/s]W20221115 18:41:05.952613 31192 triton_inference.cpp:329] Failed to connect to Triton at 'localhost:8001'. Default gRPC port of (8001) was detected but C++ InferenceClientStage uses HTTP protocol. Retrying with default HTTP port (8000)
 ====Pipeline Started====              
-Added source: <from-file-0; FileSourceStage(filename=/my_data/gitrepos/efajardo-nv/Morpheus/models/datasets/validation-data/rootcause-validation-data-input.csv, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=/my_data/gitrepos/efajardo-nv/Morpheus/models/datasets/validation-data/root-cause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1)>
+Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1, column=log)>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=root-cause-binary-onnx, server_url=localhost:8001, force_convert_inputs=True, use_shared_memory=False)>
   └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
@@ -180,12 +174,12 @@ Added stage: <add-scores-5; AddScoresStage(labels=('is_root_cause',), prefix=)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
 Added stage: <serialize-6; SerializeStage(include=(), exclude=('^ts_',), fixed_columns=True)>
   └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
-Added stage: <to-file-7; WriteToFileStage(filename=./root-cause-binary-output.csv, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
+Added stage: <to-file-7; WriteToFileStage(filename=./root-cause-binary-output.jsonlines, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 Inference rate[Complete]: 473 inf [00:01, 340.43 inf/s]
 ====Pipeline Complete====
 ```
 
-The output file `root-cause-binary-output.csv` will contain the original kernel log messages with an additional field `is_root_cause`. The value of the new field will be the root cause probability.
+The output file `root-cause-binary-output.jsonlines` will contain the original kernel log messages with an additional field `is_root_cause`. The value of the new field will be the root cause probability.
 
 
