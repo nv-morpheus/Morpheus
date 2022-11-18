@@ -45,7 +45,7 @@ From the `examples/digital_fingerprinting/production` directory run:
 docker-compose run -p 3000:3000 morpheus_pipeline bash
 ```
 
-The `-p 3000:3000` maps the visualizion app to port 3000 on the host for access via web browser. Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
+The `-p 3000:3000` maps the visualization app to port 3000 on the host for access via web browser. Starting the `morpheus_pipeline` service will also start the `mlflow` service in the background. For debugging purposes it can be helpful to view the logs of the running MLflow service.
 
 By default, a mlflow dashboard will be available at:
 ```bash
@@ -127,8 +127,9 @@ python dfp_viz_duo_pipeline.py \
     --output_dir=./duo-dfp-output
 ```
 
-## Install DFP Visualization App
+## Install DFP Visualization Tool
 
+While in the same `morpheus_pipeline` container, perform the following steps to install and run the DFP Visualization Tool:
 
 ### Clone `morpheus-visualizations` repo:
 ```
@@ -137,7 +138,7 @@ git clone https://github.com/nv-morpheus/morpheus-visualizations.git /opt/morphe
 
 ### Install dependencies
 ```
-cd /opt/morpheus-visualizations/morpheus-DFP
+cd /opt/morpheus-visualizations/DFP
 ```
 ```
 corepack enable
@@ -161,4 +162,4 @@ The DFP Visualization app can now be accessed via web browser at http://localhos
 
 <img src="./img/screenshot.png">
 
-More information about the DFP Visualization app can be found [here](https://github.com/nv-morpheus/morpheus-visualizations/tree/HEAD/morpheus-DFP).
+More information about the DFP Visualization Tool can be found [here](https://github.com/nv-morpheus/morpheus-visualizations/tree/HEAD/morpheus-DFP).
