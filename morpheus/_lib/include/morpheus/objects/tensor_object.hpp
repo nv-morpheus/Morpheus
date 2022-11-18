@@ -179,6 +179,11 @@ struct ITensor : public ITensorStorage, public ITensorOperations
     }
 };
 
+/**
+ * @brief Handle for interacting with Morpheus `Tensor` objects. Typically constructed using the `Tensor::create`
+ * factory method.
+ *
+ */
 struct TensorObject final
 {
     TensorObject() = default;

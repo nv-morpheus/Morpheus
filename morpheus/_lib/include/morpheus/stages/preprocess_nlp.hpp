@@ -57,7 +57,7 @@ class PreprocessNLPStage
     using typename base_t::subscribe_fn_t;
 
     /**
-     * @brief Construct a new Preprocess N L P Stage object
+     * @brief Construct a new Preprocess NLP Stage object
      *
      * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
      * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.

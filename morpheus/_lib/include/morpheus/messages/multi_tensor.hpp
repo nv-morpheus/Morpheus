@@ -56,9 +56,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
 {
   public:
     /**
-     * @brief Construct a new Multi Tensor Message object
-     *
-     * @param other
+     * @brief Default copy constructor
      */
     MultiTensorMessage(const MultiTensorMessage &other) = default;
 

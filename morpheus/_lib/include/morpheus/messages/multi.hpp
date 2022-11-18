@@ -245,9 +245,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
 {
   public:
     /**
-     * @brief Construct a new Multi Message object
-     *
-     * @param other
+     * @brief Default copy constructor
      */
     MultiMessage(const MultiMessage &other) = default;
     /**

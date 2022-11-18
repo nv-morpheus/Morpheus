@@ -52,9 +52,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
 {
   public:
     /**
-     * @brief Construct a new Multi Inference Message object
-     *
-     * @param other
+     * @brief Default copy constructor
      */
     MultiInferenceMessage(const MultiInferenceMessage &other) = default;
     /**

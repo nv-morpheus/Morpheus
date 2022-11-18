@@ -45,9 +45,9 @@ namespace morpheus {
 
 #pragma GCC visibility push(default)
 /**
- * @brief Deserialize source data into Dataframes. This stage deserialize the output of
- * `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. This should be one of the first stages after the `Source`
- * object.
+ * @brief Slices incoming Dataframes into smaller `batch_size`'d chunks. This stage accepts the `MessageMeta` output
+ * from `FileSourceStage`/`KafkaSourceStage` stages breaking them up into into `MultiMessage`'s. This should be one of
+ * the first stages after the `Source` object.
  */
 class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
 {

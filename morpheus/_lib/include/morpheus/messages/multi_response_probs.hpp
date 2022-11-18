@@ -49,7 +49,7 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
 {
   public:
     /**
-     * Constructor default.
+     * @brief Default copy constructor
      */
     MultiResponseProbsMessage(const MultiResponseProbsMessage &other) = default;
 

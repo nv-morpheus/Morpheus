@@ -72,19 +72,19 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 
   private:
     /**
-     * @brief Close the queue.
+     * @brief Close the file
      */
     void close();
 
     /**
-     * @brief Write messages to a JSON format.
+     * @brief Write messages (rows in a DataFrame) to a JSON format
      *
      * @param msg
      */
     void write_json(sink_type_t &msg);
 
     /**
-     * @brief Write messages to a CSV format.
+     * @brief Write messages (rows in a DataFrame) to a CSV format
      *
      * @param msg
      */
@@ -105,11 +105,7 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 struct WriteToFileStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a WriteToFileStage, and return the result.
-     */
-
-    /**
-     * @brief
+     * @brief Create and initialize a WriteToFileStage, and return the result
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference

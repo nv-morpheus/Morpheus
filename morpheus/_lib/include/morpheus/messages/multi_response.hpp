@@ -52,9 +52,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
 {
   public:
     /**
-     * @brief Construct a new Multi Response Message object
-     *
-     * @param other
+     * @brief Default copy constructor
      */
     MultiResponseMessage(const MultiResponseMessage &other) = default;
 

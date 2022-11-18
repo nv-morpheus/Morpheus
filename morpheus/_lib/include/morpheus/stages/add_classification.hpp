@@ -45,7 +45,7 @@ namespace morpheus {
 
 #pragma GCC visibility push(default)
 /**
- * @brief detected classifications to each message. Add classification labels based on probabilities calculated in
+ * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
  * inference stage. Label indexes will be looked up in the idx2label property.
  */
 class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,

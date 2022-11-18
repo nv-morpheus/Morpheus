@@ -45,7 +45,7 @@ namespace morpheus {
 
 #pragma GCC visibility push(default)
 /**
- * @brief probability scores to each message. Add score labels based on probabilities calculated in inference stage.
+ * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
  * Label indexes will be looked up in the idx2label property.
  */
 class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
