@@ -22,9 +22,9 @@ import cupy
 import torch
 from dataloader import DataLoader
 from dataset import Dataset
+from torch.optim import AdamW
 from torch.utils.dlpack import to_dlpack
 from tqdm import trange
-from transformers import AdamW
 
 import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
@@ -100,10 +100,10 @@ class SequenceClassifier(ABC):
             for df in train_dataloader.get_chunks():
                 b_input_ids, b_input_mask = self._bert_uncased_tokenize(df["text"], max_seq_len)
 
-                b_labels = torch.tensor(df["label"].to_array())
+                b_labels = torch.tensor(df["label"].to_numpy())
                 self._optimizer.zero_grad()  # Clear out the gradients
-                # forwardpass
-                loss = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)[0]
+                loss = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask,
+                                   labels=b_labels)[0]  # forwardpass
 
                 loss.sum().backward()
                 self._optimizer.step()  # update parameters
@@ -148,7 +148,7 @@ class SequenceClassifier(ABC):
         nb_eval_steps = 0
         for df in test_dataloader.get_chunks():
             b_input_ids, b_input_mask = self._bert_uncased_tokenize(df["text"], max_seq_len)
-            b_labels = torch.tensor(df["label"].to_array())
+            b_labels = torch.tensor(df["label"].to_numpy())
             with torch.no_grad():
                 logits = self._model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)[0]
 
@@ -178,7 +178,6 @@ class SequenceClassifier(ABC):
         >>> emails_train, emails_test, labels_train, labels_test = train_test_split(train_emails_df,
                                                                                     'label',
                                                                                     train_size=0.8)
-        >>> sc.train_model(emails_train, labels_train)
         >>> sc.save_model()
         """
 
