@@ -20,7 +20,7 @@
 Additional packages required for building the documentation are defined in `./conda_docs.yml`.
 
 ## Get additional dependency
-From the roof of the morpheus repo:
+From the root of the morpheus repo:
 ```bash
 mamba env update -f docs/conda_docs.yml
 ```
