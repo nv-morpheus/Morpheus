@@ -129,7 +129,7 @@ python dfp_viz_duo_pipeline.py \
 
 ## Install DFP Visualization Tool
 
-While in the same `morpheus_pipeline` container, perform the following steps to install and run the DFP Visualization Tool:
+While still in the `morpheus_pipeline` container, perform the following steps to install and run the DFP Visualization Tool:
 
 ### Clone `morpheus-visualizations` repo:
 ```
