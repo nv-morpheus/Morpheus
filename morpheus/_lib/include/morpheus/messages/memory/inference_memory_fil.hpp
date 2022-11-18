@@ -80,9 +80,10 @@ class InferenceMemoryFIL : public InferenceMemory
     /**
      * @brief Sets a tensor named 'seq_ids'
      *
+     * @param seq_ids
      * @throw std::runtime_error
      */
-    void set_seq_ids(TensorObject input_mask);
+    void set_seq_ids(TensorObject seq_ids);
 };
 
 /****** InferenceMemoryFILInterfaceProxy *************************/

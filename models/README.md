@@ -96,7 +96,7 @@ Chen, Guestrin (2016) XGBoost. A scalable tree boosting system. https://arxiv.or
 
 ## Digital Fingerprinting (DFP)
 ### Model Overview
-This use case is currently implemented to detect changes in user's behavior that indicate a change from a human to a machine or a machine to a human. The model is an ensemble of an Autoencoder and fast Fourier transform reconstruction.
+This use case is currently implemented to detect changes in users' behavior that indicate a change from a human to a machine or a machine to a human. The model is an ensemble of an Autoencoder and fast Fourier transform reconstruction.
 ### Model Architecture
 The model is an ensemble of an Autoencoder and a fast Fourier transform reconstruction. The reconstruction loss of new log data through the trained Autoencoder is used as an anomaly score. Concurrently, the timestamps of user/entity activity are used for a time series analysis to flag activity with poor reconstruction after a fast Fourier transform.
 ### Training

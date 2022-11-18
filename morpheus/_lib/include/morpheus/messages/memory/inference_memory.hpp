@@ -32,7 +32,7 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 /**
  * @brief This is a base container class for data that will be used for inference stages. This class is designed to
-    hold generic tensor data in cupy arrays
+    hold generic data as a `TensorObject`s
  *
  */
 class InferenceMemory : public TensorMemory

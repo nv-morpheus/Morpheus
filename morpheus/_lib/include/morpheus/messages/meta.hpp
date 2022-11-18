@@ -77,7 +77,7 @@ class MessageMeta
     static std::shared_ptr<MessageMeta> create_from_python(pybind11::object&& data_table);
 
     /**
-     * @brief Create MessageMeta cpp object from a cpp object
+     * @brief Create MessageMeta cpp object from a cpp object, used internally by `create_from_cpp`
      *
      * @param data_table
      * @param index_col_count

@@ -2,10 +2,10 @@
 
 ### Install Doxygen
 
-Install Doxygen using conda.
+Install Doxygen using mamba.
 
 ```bash
-conda install -c conda-forge doxygen
+mamba install -c conda-forge doxygen
 ```
 
 ### Build libmorpheus HTML Documentation

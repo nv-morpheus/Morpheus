@@ -66,7 +66,7 @@ Build MLflow image from Dockerfile:
 docker build -t mlflow-triton-plugin:latest -f docker/Dockerfile .
 ```
 
-Create an MLflow container with volume mounting to the Triton model repository:
+Create an MLflow container with a volume mounting the Triton model repository:
 
 ```bash
 docker run -it -v /opt/triton_models:/triton_models \

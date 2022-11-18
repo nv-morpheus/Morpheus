@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -98,10 +98,10 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--help` | | Show this message and exit. |
 
 ##### Steps to Run Example Pipeline
-The `/workspace/examples/digital_fingerprinting/fetch_example_data.py` script can be used to fetch the Duo and Azure logs to run the example pipelines.
+The `examples/digital_fingerprinting/fetch_example_data.py` script can be used to fetch the Duo and Azure logs to run the example pipelines.
 
 ```bash
-export DFP_HOME=/workspace/examples/digital_fingerprinting
+export DFP_HOME=examples/digital_fingerprinting
 ```
 
 Usage of the script is as follows:
@@ -124,23 +124,23 @@ python $DFP_HOME/fetch_example_data.py all
 
 Run Duo Training Pipeline:
 ```bash
-python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="/workspace/examples/data/dfp/duo-training-data/*.json" 
+python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="./examples/data/dfp/duo-training-data/*.json" 
 ```
 
 Run Duo Inference Pipeline:
 ```bash
-python dfp_duo_pipeline.py --train_users none --start_time "2022-08-30" --input_file="/workspace/examples/data/dfp/duo-inference-data/*.json"
+python dfp_duo_pipeline.py --train_users none --start_time "2022-08-30" --input_file="./examples/data/dfp/duo-inference-data/*.json"
 ```
 
 Run Azure Training Pipeline:
 
 ```bash
-python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="/workspace/examples/data/dfp/azure-training-data/AZUREAD_2022*.json"
+python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="./examples/data/dfp/azure-training-data/AZUREAD_2022*.json"
 ```
 
 Run Azure Inference Pipeline:
 ```bash
-python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="/workspace/examples/data/dfp/azure-inference-data/*.json"
+python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="./examples/data/dfp/azure-inference-data/*.json"
 ```
 
 #### Optional MLflow Service

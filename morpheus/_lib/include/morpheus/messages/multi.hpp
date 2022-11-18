@@ -237,8 +237,8 @@ class DerivedMultiMessage<DerivedT>
 };
 
 /**
- * @brief  This class holds data for multiple messages at a time. To avoid copying data for slicing operations, it
-    holds a reference to a batched metadata object and stores the offset and count into that batch.
+ * @brief  This class holds data for multiple messages (rows in a DataFrame) at a time. To avoid copying data for
+ slicing operations, it holds a reference to a batched metadata object and stores the offset and count into that batch.
  *
  */
 class MultiMessage : public DerivedMultiMessage<MultiMessage>
@@ -271,17 +271,19 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     TableInfo get_meta();
 
     /**
-     * @brief Returns column value from a meta object
+     * @brief Returns column value from a meta object.
      *
      * @param col_name
+     * @throws std::runtime_error
      * @return TableInfo
      */
     TableInfo get_meta(const std::string &col_name);
 
     /**
-     * @brief Returns columns value from a meta object
+     * @brief Returns columns value from a meta object. When `columns_names` is empty all columns are returned.
      *
      * @param column_names
+     * @throws std::runtime_error
      * @return TableInfo
      */
     TableInfo get_meta(const std::vector<std::string> &column_names);
