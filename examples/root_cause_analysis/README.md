@@ -37,11 +37,6 @@ The dataset comprises kern.log files from multiple DGX's. Each line inside has b
 
 The pipeline we will be using in this example is a simple feed-forward linear pipeline where the data from each stage flows on to the next. Morpheus pipelines can be configured via the Morpheus CLI or using the Python library. In this example we will be using the Morpheus CLI.
 
-Below is a visualization of the pipeline showing all of the stages and data types as it flows from one stage to the next.
-
-![Pipeline](pipeline.png)
-
-
 ## Setup
 
 This example utilizes the Triton Inference Server to perform inference. The binary sequence classification neural network model is provided in the `models/root-cause-models` directory of the Morpheus repo.
