@@ -75,6 +75,7 @@ class InferenceMemoryFIL : public InferenceMemory
      *
      * @param input_ids
      * @throw std::runtime_error
+     * @throw std::runtime_error
      */
     void set_input__0(TensorObject input_ids);
 
