@@ -39,7 +39,9 @@ namespace morpheus {
  */
 
 /**
- * TODO(Documentation)
+ * @brief Morpheus Tensor object, using RMM device buffers for the underlying storage. Typically created using the
+ * `Tensor::create` factory method and accessed through a `TensorObject` handle.
+ *
  */
 
 #pragma GCC visibility push(default)
