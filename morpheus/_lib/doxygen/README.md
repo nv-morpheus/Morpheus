@@ -19,7 +19,7 @@ doxygen
 
 * The libmorpheus documentation can also be built using `cmake` from the Morpheus root directory.
 ```bash
-./scripts/compile.sh # This will generated the build directory
+./scripts/compile.sh # This will generate the build directory
 cmake --build build -j --target docs_morpheus
 ```
 

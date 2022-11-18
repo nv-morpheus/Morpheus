@@ -28,6 +28,12 @@
 
 namespace morpheus {
 
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
+
 // Pulled from cuDF
 template <typename T>
 constexpr std::size_t size_in_bits()

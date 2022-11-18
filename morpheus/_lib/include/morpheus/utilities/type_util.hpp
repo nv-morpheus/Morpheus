@@ -26,6 +26,13 @@
 #include <stdexcept>
 
 namespace morpheus {
+
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
+
 /****** Component public implementations *******************/
 /****** DType****************************************/
 struct DType : DataType  // NOLINT
