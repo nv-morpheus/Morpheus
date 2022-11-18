@@ -59,7 +59,7 @@ class RecipientFeaturesStage(SinglePortStage):
         return False
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
-        # Get the DataFrame from the incoming message
+        # Get a copy of the DataFrame from the incoming message
         df = message.df
 
         df['to_count'] = df['To'].str.count('@')
@@ -72,8 +72,8 @@ class RecipientFeaturesStage(SinglePortStage):
                       df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
                       df['Message'])
 
-        # Return the message for the next stage
-        return message
+        # Return a new message with our updated DataFrame for the next stage
+        return MessageMeta(df)
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)

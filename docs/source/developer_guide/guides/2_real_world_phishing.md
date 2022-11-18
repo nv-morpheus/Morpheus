@@ -36,38 +36,25 @@ def accepted_types(self) -> typing.Tuple:
 ```
 
 Next, we will update our `on_data` method to perform the actual work.
-We grab a reference to the incoming message's `df` attribute. It is important to note that `message` is a reference, and any changes made to it or its members (such as `df`) will be performed in place on the existing message instance.
+We grab a copy of the incoming message's `df` attribute.
 
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
-    # Get the DataFrame from the incoming message
-    df = message.df
+        # Get a copy of the DataFrame from the incoming message
+        df = message.df
 
-    df['to_count'] = df['To'].str.count('@')
-    df['bcc_count'] = df['BCC'].str.count('@')
-    df['cc_count'] = df['CC'].str.count('@')
-    df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
+        df['to_count'] = df['To'].str.count('@')
+        df['bcc_count'] = df['BCC'].str.count('@')
+        df['cc_count'] = df['CC'].str.count('@')
+        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
-    # Attach features to string data
-    df['data'] = (df['to_count'].astype(str) + '[SEP]' +
-                    df['bcc_count'].astype(str) + '[SEP]' +
-                    df['cc_count'].astype(str) + '[SEP]' +
-                    df['total_recipients'].astype(str) + '[SEP]' +
-                    df['Message'])
+        # Attach features to string data
+        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
+                      df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
+                      df['Message'])
 
-    # Return the message for the next stage
-    return message
-```
-
-If mutating the data frame is undesirable, we could make a call to the data frame's [copy](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.DataFrame.copy.html#cudf.DataFrame.copy) method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. Our updated `on_data` method would look like this (changing the first and last lines of the method):
-
-```python
-def on_data(self, message: MessageMeta) -> MessageMeta:
-    # Take a copy of the DataFrame from the incoming message
-    df = message.df.copy(True)
-    ...
-    # Construct and return a new message containing our DataFrame
-    return MessageMeta(df=df)
+        # Return a new message with our updated DataFrame for the next stage
+        return MessageMeta(df)
 ```
 
 Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
@@ -109,7 +96,7 @@ class RecipientFeaturesStage(SinglePortStage):
         return False
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
-        # Get the DataFrame from the incoming message
+        # Get a copy of the DataFrame from the incoming message
         df = message.df
 
         df['to_count'] = df['To'].str.count('@')
@@ -122,8 +109,8 @@ class RecipientFeaturesStage(SinglePortStage):
                       df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
                       df['Message'])
 
-        # Return the message for the next stage
-        return message
+        # Return a new message with our updated DataFrame for the next stage
+        return MessageMeta(df)
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
