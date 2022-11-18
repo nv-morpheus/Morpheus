@@ -29,7 +29,10 @@ namespace morpheus {
  */
 
 /**
- * TODO(Documentation)
+ Apply a function `func` to a sequence `seq` and return the results in a new vector.     
+ * @param seq
+ * @param func
+ * @return std::vector<return_t>
  */
 template <typename FuncT, typename SeqT>
 auto foreach_map(const SeqT &seq, FuncT func)
