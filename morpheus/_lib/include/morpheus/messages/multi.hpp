@@ -273,6 +273,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      *
      * @param col_name
      * @throws std::runtime_error
+     * @throws std::runtime_error
      * @return TableInfo
      */
     TableInfo get_meta(const std::string &col_name);
