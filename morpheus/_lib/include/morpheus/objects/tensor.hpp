@@ -34,6 +34,8 @@ namespace morpheus {
 /**
  * TODO(Documentation)
  */
+
+#pragma GCC visibility push(default)
 class Tensor
 {
   public:
@@ -80,4 +82,6 @@ class Tensor
     size_t m_offset;
     std::shared_ptr<rmm::device_buffer> m_device_buffer;
 };
+
+#pragma GCC visibility pop
 }  // namespace morpheus

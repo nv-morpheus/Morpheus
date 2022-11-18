@@ -17,6 +17,7 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
+#include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/type_util.hpp"
@@ -30,7 +31,7 @@
 #include <gtest/gtest.h>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
-#include <srf/cuda/common.hpp>
+#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
 
 #include <cstdint>  // for int64_t, int32_t, uint8_t
 #include <cstdlib>  // for std::getenv
@@ -135,7 +136,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     std::filesystem::path morpheus_root{std::getenv("MORPHEUS_ROOT")};
     auto input_file = morpheus_root / "tests/tests_data/filter_probs.csv";
 
-    auto table_m  = load_table_from_csv(input_file);
+    auto table_m  = morpheus::load_table_from_file(input_file);
     auto num_rows = table_m.tbl->num_rows();
     auto num_cols = table_m.tbl->num_columns();
 

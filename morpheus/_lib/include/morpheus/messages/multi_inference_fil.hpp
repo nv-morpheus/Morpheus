@@ -45,22 +45,32 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
                              size_t count);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'input__0' tensor, throws a `std::runtime_error` if it does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
     const TensorObject get_input__0() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'input__0'.
+     *
+     * @param input__0
      */
     void set_input__0(const TensorObject& input__0);
 
     /**
-     * TODO(Documentation)
+     * @brief Return the 'seq_ids' tensor, throws a `std::runtime_error` if it does not exist.
+     *
+     * @param name
+     * @return const TensorObject
      */
     const TensorObject get_seq_ids() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Sets a tensor named 'seq_ids'.
+     *
+     * @param seq_ids
      */
     void set_seq_ids(const TensorObject& seq_ids);
 };

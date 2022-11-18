@@ -1,22 +1,29 @@
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 {{#inject}}(()=>{
-    if(!this.counter) {
-        this.counter=0;
+
+    // Check for the shared state object
+    if (!this.Handlebars._nv_morpheus === undefined){
+        throw "Must call `POST /reset` endpoint before calling other methods!";
     }
 
-    this.counter+=1;
-    this.filename = "payloads/sid-no-trunc/sid_infer_resp." + this.counter + ".body"
+    const counter = this.Handlebars._nv_morpheus.get_and_increment();
+    const filename = "payloads/sid-no-trunc/sid_infer_resp." + counter + ".body"
+
+    logger.info(`Returning payload for counter: ${counter}, and filename: ${filename}`);
 
     let inf_header_content_length = 157;
-    if (this.counter === 33) {
+    if (counter === 33) {
         inf_header_content_length = 156;
-    } else if (this.counter === 65) {
+    } else if (counter === 65) {
         inf_header_content_length = 155;
     }
 
     // This seems like the only way to pass a variable to the file helper
-    request._nv_morpheus_params = {counter: this.counter, filename: this.filename};
+    request._nv_morpheus_params = {
+        counter,
+        filename
+    };
 
     return "Inference-Header-Content-Length: " + inf_header_content_length;
 })();{{/inject}}
