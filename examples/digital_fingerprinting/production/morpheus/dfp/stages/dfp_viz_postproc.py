@@ -18,9 +18,7 @@ import typing
 
 import pandas as pd
 import srf
-import srf.core.operators as ops
 
-from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
@@ -40,7 +38,6 @@ class DFPVizPostprocStage(SinglePortStage):
         self._timestamp_column = c.ae.timestamp_column_name
         self._feature_columns = c.ae.feature_columns
         self._period = period
-        self._file_type = FileTypes.CSV
         self._output_dir = output_dir
         self._output_prefix = output_prefix
         self._output_filenames = []
@@ -64,25 +61,10 @@ class DFPVizPostprocStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _convert_to_strings(self, df: pd.DataFrame, include_header=False):
-        if (self._file_type == FileTypes.JSON):
-            output_strs = serializers.df_to_json(df)
-        elif (self._file_type == FileTypes.CSV):
-            output_strs = serializers.df_to_csv(df, include_header=include_header, include_index_col=False)
-        else:
-            raise NotImplementedError("Unknown file type: {}".format(self._file_type))
-
-        # Remove any trailing whitespace
-        if (len(output_strs[-1].strip()) == 0):
-            output_strs = output_strs[:-1]
-
-        return output_strs
-
     def _postprocess(self, x: MultiAEMessage):
 
         viz_pdf = pd.DataFrame()
-        viz_pdf["user"] = x.get_meta(self._user_column_name)
-        viz_pdf["time"] = x.get_meta(self._timestamp_column)
+        viz_pdf[["user", "time"]] = x.get_meta([self._user_column_name, self._timestamp_column])
         datetimes = pd.to_datetime(viz_pdf["time"], errors='coerce')
         viz_pdf["period"] = datetimes.dt.to_period(self._period)
 
@@ -97,34 +79,30 @@ class DFPVizPostprocStage(SinglePortStage):
 
         stream = input_stream[0]
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def write_to_files(x: MultiAEMessage):
 
-            def write_to_files(x: MultiAEMessage):
+            message_meta = self._postprocess(x)
 
-                message_meta = self._postprocess(x)
+            unique_periods = message_meta.df["period"].unique()
 
-                unique_periods = message_meta.df["period"].unique()
+            for period in unique_periods:
+                period_df = message_meta.df[message_meta.df["period"] == period]
+                period_df = period_df.drop(["period"], axis=1)
+                output_file = os.path.join(self._output_dir, self._output_prefix + str(period) + ".csv")
 
-                for period in unique_periods:
-                    period_df = message_meta.df[message_meta.df["period"] == period]
-                    period_df = period_df.drop(["period"], axis=1)
-                    output_file = os.path.join(self._output_dir, self._output_prefix + str(period) + ".csv")
+                is_first = False
+                if output_file not in self._output_filenames:
+                    self._output_filenames.append(output_file)
+                    is_first = True
 
-                    is_first = False
-                    if output_file not in self._output_filenames:
-                        self._output_filenames.append(output_file)
-                        is_first = True
+                lines = serializers.df_to_csv(period_df, include_header=is_first, include_index_col=False)
+                os.makedirs(os.path.realpath(os.path.dirname(output_file)), exist_ok=True)
+                with open(output_file, "a") as out_file:
+                    out_file.writelines(lines)
 
-                    lines = self._convert_to_strings(period_df, include_header=is_first)
-                    os.makedirs(os.path.realpath(os.path.dirname(output_file)), exist_ok=True)
-                    with open(output_file, "a") as out_file:
-                        out_file.writelines(lines)
+            return x
 
-                return x
-
-            obs.pipe(ops.map(write_to_files)).subscribe(sub)
-
-        dfp_viz_postproc = builder.make_node_full(self.unique_name, node_fn)
+        dfp_viz_postproc = builder.make_node(self.unique_name, write_to_files)
 
         builder.make_edge(stream, dfp_viz_postproc)
         stream = dfp_viz_postproc
