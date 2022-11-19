@@ -58,4 +58,21 @@ if (MORPHEUS_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
 
+#----------make documentation---------
+
+# doc targets for libmorpheus
+add_custom_command(
+  OUTPUT MORPHEUS_DOXYGEN
+  WORKING_DIRECTORY ${MORPHEUS_LIB_ROOT}/doxygen
+  COMMAND doxygen Doxyfile
+  VERBATIM
+  COMMENT "Custom command for building morpheus doxygen docs."
+)
+
+add_custom_target(
+  docs_morpheus
+  DEPENDS MORPHEUS_DOXYGEN
+  COMMENT "Custom command for building morpheus doxygen docs."
+)
+
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

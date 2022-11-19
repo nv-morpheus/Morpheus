@@ -86,10 +86,10 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.09.00a` use the following:
+You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.11.00a` use the following:
 
 ```bash
-DOCKER_IMAGE_TAG="v22.09.00a-runtime" ./docker/run_container_release.sh
+DOCKER_IMAGE_TAG="v22.11.00a-runtime" ./docker/run_container_release.sh
 ```
 
 ### Build from Source
@@ -138,9 +138,10 @@ Options:
   --log_config_file FILE          Config file to use to configure logging. Use
                                   only for advanced situations. Can accept
                                   both JSON and ini style configurations
-  --version                       Show the version and exit.  [default: False]
-  --help                          Show this message and exit.  [default:
-                                  False]
+  --plugin TEXT                   Adds a Morpheus CLI plugin. Can either be a
+                                  module name or path to a python module
+  --version                       Show the version and exit.
+  --help                          Show this message and exit.
 
 Commands:
   run    Run one of the available pipelines
@@ -286,32 +287,32 @@ Commands:
 And for the AE pipeline:
 
 ```bash
-$ morpheus run pipeline-fil --help
-Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
+$ morpheus run pipeline-ae --help
+Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
                                [ARGS]...]...
 
 <Help Paragraph Omitted>
 
 Commands:
-  add-class        Add detected classifications to each message
-  add-scores       Add probability scores to each message
-  buffer           (Deprecated) Buffer results
-  delay            (Deprecated) Delay results for a certain duration
-  filter           Filter message by a classification threshold
-  from-cloudtrail  Load messages from a Cloudtrail directory
-  gen-viz          (Deprecated) Write out vizualization data frames
-  inf-pytorch      Perform inference with PyTorch
-  inf-triton       Perform inference with Triton
-  monitor          Display throughput numbers at a specific point in the
-                   pipeline
-  preprocess       Convert messages to tokens
-  serialize        Serializes messages into a text format
+  add-class        Add detected classifications to each message.
+  add-scores       Add probability scores to each message.
+  buffer           (Deprecated) Buffer results.
+  delay            (Deprecated) Delay results for a certain duration.
+  filter           Filter message by a classification threshold.
+  from-azure       Source stage is used to load Azure Active Directory messages.
+  from-cloudtrail  Load messages from a Cloudtrail directory.
+  from-duo         Source stage is used to load Duo Authentication messages.
+  inf-pytorch      Perform inference with PyTorch.
+  inf-triton       Perform inference with Triton Inference Server.
+  monitor          Display throughput numbers at a specific point in the pipeline.
+  preprocess       Prepare Autoencoder input DataFrames for inference.
+  serialize        Include & exclude columns from messages.
   timeseries       Perform time series anomaly detection and add prediction.
-  to-file          Write all messages to a file
-  to-kafka         Write all messages to a Kafka cluster
-  train-ae         Deserialize source data from JSON
-  validate         Validates pipeline output against an expected output
-
+  to-file          Write all messages to a file.
+  to-kafka         Write all messages to a Kafka cluster.
+  train-ae         Train an Autoencoder model on incoming data.
+  trigger          Buffer data until previous stage has completed.
+  validate         Validate pipeline output for testing.
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
 

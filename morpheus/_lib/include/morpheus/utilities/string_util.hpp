@@ -22,7 +22,17 @@
 
 namespace morpheus {
 
-// Concats multiple strings together using ostringstream. Use with MORPHEUS_CONCAT_STR("Start [" << my_int << "]")
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Concats multiple strings together using ostringstream. Use with MORPHEUS_CONCAT_STR("Start [" << my_int <<
+ * "]")
+ *
+ */
 #define MORPHEUS_CONCAT_STR(strs) ((std::ostringstream&)(std::ostringstream() << strs)).str()
 
 /****** Component public implementations *******************/
@@ -60,4 +70,5 @@ struct StringUtil
      */
     static bool str_contains(const std::string& str, const std::string& search_str);
 };
+/** @} */  // end of group
 }  // namespace morpheus
