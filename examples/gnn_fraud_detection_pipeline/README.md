@@ -21,7 +21,7 @@ limitations under the License.
 Prior to running the gnn fruad detection pipeline, additional requirements must be installed in to your conda environment. A supplemental requirements file has been provided in this example directory.
 
 ```bash
-mamba install -c rapidsai -c nvidia -c stellargraph -c conda-forge chardet cuml stellargraph tensorflow
+mamba env update -n ${CONDA_DEFAULT_ENV} -f examples/gnn_fraud_detection_pipeline/requirements.yml
 ```
 
 ## Running

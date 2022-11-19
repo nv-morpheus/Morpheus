@@ -29,12 +29,30 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemory****************************************/
 /**
- * TODO(Documentation)
+ * @addtogroup messages
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Output memory block holding the results of inference
+ *
  */
 class ResponseMemory : public TensorMemory
 {
   public:
+    /**
+     * @brief Construct a new Response Memory object
+     *
+     * @param count
+     */
     ResponseMemory(size_t count);
+    /**
+     * @brief Construct a new Response Memory object
+     *
+     * @param count
+     * @param tensors
+     */
     ResponseMemory(size_t count, tensor_map_t &&tensors);
 
     /**
@@ -51,12 +69,29 @@ class ResponseMemory : public TensorMemory
 #pragma GCC visibility push(default)
 /**
  * @brief Interface proxy, used to insulate python bindings.
+ *
  */
 struct ResponseMemoryInterfaceProxy
 {
+    /**
+     * @brief Get the output object
+     *
+     * @param self
+     * @param name
+     * @return pybind11::object
+     */
     static pybind11::object get_output(ResponseMemory &self, const std::string &name);
 
+    /**
+     * @brief Get the output tensor object
+     *
+     * @param self
+     * @param name
+     * @return TensorObject
+     */
     static TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
 };
 #pragma GCC visibility pop
+
+/** @} */  // end of group
 }  // namespace morpheus

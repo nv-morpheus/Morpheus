@@ -19,6 +19,7 @@
 
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 #include "morpheus/utilities/type_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToHost
@@ -79,6 +80,10 @@ TensorObject Tensor::create(std::shared_ptr<rmm::device_buffer> buffer,
 {
     auto md = nullptr;
 
+    if (!strides.empty())
+    {
+        strides = TensorUtils::get_element_stride<TensorIndex>(strides);
+    }
     auto tensor = std::make_shared<RMMTensor>(buffer, offset, dtype, shape, strides);
 
     return TensorObject(md, tensor);

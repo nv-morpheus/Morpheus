@@ -27,7 +27,7 @@ In this example, we will be using Morpheus' provided ABP NVSMI Detection model. 
 
 ### The Dataset
 
-The dataset that this workflow was designed to process contains NVIDIA GPU metrics at regular time intervals and is extracted by a NetQ agent and serialized into JSON. Each line in the dataset contains much of the same information that is returned by the `nvidia-smi` utility. We won't look at a full message directly since each line contains 176 different columns, but it's possible to get a idea of how the dataset was generated using the `nvidia-smi dmon` command. If you run this yourself, you will se output similar to the following:
+The dataset that this workflow was designed to process contains NVIDIA GPU metrics at regular time intervals and is extracted by a NetQ agent and serialized into JSON. Each line in the dataset contains much of the same information that is returned by the `nvidia-smi` utility. We won't look at a full message directly since each line contains 176 different columns, but it's possible to get a idea of how the dataset was generated using the `nvidia-smi dmon` command. If you run this yourself, you will see output similar to the following:
 
 ```bash
 $ nvidia-smi dmon
