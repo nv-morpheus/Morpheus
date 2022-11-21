@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/objects/dtype.hpp"
 
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 

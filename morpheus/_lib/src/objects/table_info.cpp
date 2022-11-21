@@ -17,7 +17,7 @@
 
 #include "morpheus/objects/table_info.hpp"
 
-#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/objects/dtype.hpp"
 
 #include <cudf/copying.hpp>
 #include <cudf/table/table_view.hpp>

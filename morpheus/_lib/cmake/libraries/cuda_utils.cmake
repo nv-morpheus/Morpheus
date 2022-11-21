@@ -51,10 +51,10 @@ add_library(cuda_utils
     $<TARGET_OBJECTS:cuda_utils_objs>
       ${MORPHEUS_LIB_ROOT}/src/objects/data_table.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/dev_mem_info.cpp
+      ${MORPHEUS_LIB_ROOT}/src/objects/dtype.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/table_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/tensor_object.cpp
       ${MORPHEUS_LIB_ROOT}/src/utilities/tensor_util.cpp
-      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cpp
 )
 
 target_include_directories(cuda_utils

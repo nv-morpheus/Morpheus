@@ -18,10 +18,10 @@
 #include "morpheus/objects/rmm_tensor.hpp"
 
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for get_element_stride
-#include "morpheus/utilities/type_util.hpp"
 
 #include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>            // for DCHECK_LT, COMPACT_GOOGLE_LOG_FATAL, DCHECK, DCHECK_EQ, LogMessageFatal

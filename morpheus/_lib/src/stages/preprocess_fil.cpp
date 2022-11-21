@@ -21,11 +21,11 @@
 #include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/table_info.hpp"    // for TableInfo
+#include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/type_util.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <cudf/column/column.hpp>       // for column, column::contents

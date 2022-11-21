@@ -19,7 +19,7 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/utilities/type_util.hpp"  // for TypeId
+#include "morpheus/objects/dtype.hpp"  // for TypeId
 
 #include <pysrf/node.hpp>
 #include <rxcpp/rx.hpp>

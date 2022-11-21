@@ -19,8 +19,8 @@
 
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/type_util.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <cudf/column/column.hpp>       // for column

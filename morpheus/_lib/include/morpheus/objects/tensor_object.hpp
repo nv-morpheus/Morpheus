@@ -17,8 +17,8 @@
 
 #pragma once
 
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/utilities/string_util.hpp"
-#include "morpheus/utilities/type_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
