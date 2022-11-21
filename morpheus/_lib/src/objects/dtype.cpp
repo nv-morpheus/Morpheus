@@ -27,30 +27,22 @@
 #include <string>
 
 namespace {
-// todo should just be an initializer list
-std::map<char, std::map<size_t, morpheus::TypeId>> make_str_to_type_id()
-{
-    std::map<char, std::map<size_t, morpheus::TypeId>> map;
+const std::map<char, std::map<size_t, morpheus::TypeId>> StrToTypeId = {
+    {'?', {{1, morpheus::TypeId::BOOL8}}},
 
-    map['?'][1] = morpheus::TypeId::BOOL8;
-
-    map['i'][1] = morpheus::TypeId::INT8;
-    map['i'][2] = morpheus::TypeId::INT16;
-    map['i'][4] = morpheus::TypeId::INT32;
-    map['i'][8] = morpheus::TypeId::INT64;
-
-    map['u'][1] = morpheus::TypeId::UINT8;
-    map['u'][2] = morpheus::TypeId::UINT16;
-    map['u'][4] = morpheus::TypeId::UINT32;
-    map['u'][8] = morpheus::TypeId::UINT64;
-
-    map['f'][4] = morpheus::TypeId::FLOAT32;
-    map['f'][8] = morpheus::TypeId::FLOAT64;
-
-    return map;
-}
-
-std::map<char, std::map<size_t, morpheus::TypeId>> str_to_type_id = make_str_to_type_id();
+    {'i',
+     {{1, morpheus::TypeId::INT8},
+      {2, morpheus::TypeId::INT16},
+      {4, morpheus::TypeId::INT32},
+      {8, morpheus::TypeId::INT64}}},
+    {'u',
+     {
+         {1, morpheus::TypeId::UINT8},
+         {2, morpheus::TypeId::UINT16},
+         {4, morpheus::TypeId::UINT32},
+         {8, morpheus::TypeId::UINT64},
+     }},
+    {'f', {{4, morpheus::TypeId::FLOAT32}, {8, morpheus::TypeId::FLOAT64}}}};
 }  // namespace
 
 namespace morpheus {
@@ -236,9 +228,9 @@ DType DType::from_numpy(const std::string& numpy_str)
     }
 
     // Now lookup in the map
-    auto found_type = str_to_type_id.find(type_char);
+    auto found_type = StrToTypeId.find(type_char);
 
-    CHECK(found_type != str_to_type_id.end()) << "Type char '" << type_char << "' not supported";
+    CHECK(found_type != StrToTypeId.end()) << "Type char '" << type_char << "' not supported";
 
     auto found_enum = found_type->second.find(dtype_size);
 
