@@ -28,8 +28,7 @@
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
-#include "morpheus/utilities/type_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
+#include "morpheus/utilities/type_util.hpp"    // for DType
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>

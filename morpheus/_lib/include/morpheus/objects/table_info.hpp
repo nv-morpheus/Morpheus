@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/data_table.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table_view.hpp>
@@ -144,12 +144,12 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
     /**
      * TODO(Documentation)
      */
-    void insert_columns(const std::vector<std::tuple<std::string, morpheus::DataType>> &columns);
+    void insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>> &columns);
 
     /**
      * TODO(Documentation)
      */
-    void insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DataType>> &columns);
+    void insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DType>> &columns);
 
     /**
      * @brief Allows the python object to be "checked out" which gives exclusive access to the python object during the

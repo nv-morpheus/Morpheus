@@ -20,8 +20,7 @@ find_package(pybind11 REQUIRED)
 add_library(cuda_utils_objs
 OBJECT
       ${MORPHEUS_LIB_ROOT}/src/utilities/matx_util.cu
-      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cu
-)
+      )
 
 
 set_target_properties(
@@ -55,7 +54,7 @@ add_library(cuda_utils
       ${MORPHEUS_LIB_ROOT}/src/objects/table_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/tensor_object.cpp
       ${MORPHEUS_LIB_ROOT}/src/utilities/tensor_util.cpp
-      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util_detail.cpp
+      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cpp
 )
 
 target_include_directories(cuda_utils

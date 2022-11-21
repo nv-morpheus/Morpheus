@@ -19,7 +19,7 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"  // for TypeId
+#include "morpheus/utilities/type_util.hpp"  // for TypeId
 
 #include <pysrf/node.hpp>
 #include <rxcpp/rx.hpp>
@@ -56,7 +56,7 @@ class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageT>
   private:
     subscribe_fn_t build_operator();
 
-    std::vector<std::tuple<std::string, DataType>> m_needed_columns;
+    std::vector<std::tuple<std::string, DType>> m_needed_columns;
 };
 
 /****** DeserializationStageInterfaceProxy******************/

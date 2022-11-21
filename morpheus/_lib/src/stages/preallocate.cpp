@@ -31,14 +31,14 @@ namespace {
  */
 //@{
 void preallocate(std::shared_ptr<morpheus::MessageMeta> msg,
-                 const std::vector<std::tuple<std::string, morpheus::DataType>> &columns)
+                 const std::vector<std::tuple<std::string, morpheus::DType>> &columns)
 {
     auto table = msg->get_mutable_info();
     table.insert_missing_columns(columns);
 }
 
 void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
-                 const std::vector<std::tuple<std::string, morpheus::DataType>> &columns)
+                 const std::vector<std::tuple<std::string, morpheus::DType>> &columns)
 {
     preallocate(msg->meta, columns);
 }
@@ -53,7 +53,7 @@ PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::s
 {
     for (const auto &col : needed_columns)
     {
-        m_needed_columns.emplace_back(std::make_tuple<>(std::get<0>(col), DataType::from_numpy(std::get<1>(col))));
+        m_needed_columns.emplace_back(std::make_tuple<>(std::get<0>(col), DType::from_numpy(std::get<1>(col))));
     }
 }
 

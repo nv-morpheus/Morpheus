@@ -76,7 +76,7 @@ RankType RMMTensor::rank() const
     return m_shape.size();
 }
 
-DataType RMMTensor::dtype() const
+DType RMMTensor::dtype() const
 {
     return m_dtype;
 }
@@ -160,7 +160,7 @@ std::shared_ptr<ITensor> RMMTensor::deep_copy() const
     return std::make_shared<RMMTensor>(copied_buffer, m_offset, m_dtype, m_shape, m_stride);
 }
 
-std::shared_ptr<ITensor> RMMTensor::as_type(DataType dtype) const
+std::shared_ptr<ITensor> RMMTensor::as_type(DType dtype) const
 {
     DType new_dtype(dtype.type_id());
 

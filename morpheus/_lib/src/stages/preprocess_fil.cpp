@@ -26,7 +26,6 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/type_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <cudf/column/column.hpp>       // for column, column::contents

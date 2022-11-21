@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/utilities/string_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
@@ -140,7 +140,7 @@ struct ITensorOperations
     virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
                                                TensorIndex num_rows) const = 0;
 
-    virtual std::shared_ptr<ITensor> as_type(DataType dtype) const = 0;
+    virtual std::shared_ptr<ITensor> as_type(DType dtype) const = 0;
 };
 
 struct ITensor : public ITensorStorage, public ITensorOperations
@@ -149,7 +149,7 @@ struct ITensor : public ITensorStorage, public ITensorOperations
 
     virtual RankType rank() const     = 0;
     virtual std::size_t count() const = 0;
-    virtual DataType dtype() const    = 0;
+    virtual DType dtype() const       = 0;
 
     virtual std::size_t shape(std::size_t) const  = 0;
     virtual std::size_t stride(std::size_t) const = 0;
@@ -197,7 +197,7 @@ struct TensorObject final
         return m_tensor->data();
     }
 
-    DataType dtype() const
+    DType dtype() const
     {
         return m_tensor->dtype();
     }
@@ -297,8 +297,8 @@ struct TensorObject final
             << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
             << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
 
-        CHECK(DataType::create<T>() == this->dtype())
-            << "read_element type must match array type. read_element type: '" << DataType::create<T>().name()
+        CHECK(DType::create<T>() == this->dtype())
+            << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
             << "', array type: '" << this->dtype().name() << "'";
 
         size_t offset = std::transform_reduce(
@@ -327,8 +327,8 @@ struct TensorObject final
             << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
             << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
 
-        CHECK(DataType::create<T>() == this->dtype())
-            << "read_element type must match array type. read_element type: '" << DataType::create<T>().name()
+        CHECK(DType::create<T>() == this->dtype())
+            << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
             << "', array type: '" << this->dtype().name() << "'";
 
         size_t offset = std::transform_reduce(
@@ -403,7 +403,7 @@ struct TensorObject final
         return m_tensor->dtype().type_str();
     }
 
-    TensorObject as_type(DataType dtype) const
+    TensorObject as_type(DType dtype) const
     {
         if (dtype == m_tensor->dtype())
         {

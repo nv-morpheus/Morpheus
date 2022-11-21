@@ -17,7 +17,7 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
-#include "morpheus/utilities/type_util_detail.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <gtest/gtest.h>  // for EXPECT_EQ
 
@@ -28,12 +28,12 @@
 
 TEST_CLASS(TypeUtils);
 
-TEST_F(TestTypeUtils, DataTypeCopy)
+TEST_F(TestTypeUtils, DTypeCopy)
 {
-    morpheus::DataType d1(morpheus::TypeId::INT32);
-    morpheus::DataType d2(morpheus::TypeId::FLOAT32);
+    morpheus::DType d1(morpheus::TypeId::INT32);
+    morpheus::DType d2(morpheus::TypeId::FLOAT32);
 
-    std::vector<morpheus::DataType> type_list;
+    std::vector<morpheus::DType> type_list;
     type_list.push_back(d1);
     type_list.push_back(d2);
     type_list.emplace_back(morpheus::TypeId::INT32);
@@ -44,8 +44,8 @@ TEST_F(TestTypeUtils, DataTypeCopy)
     EXPECT_EQ(type_list[2], d1);
     EXPECT_EQ(type_list[3], d2);
 
-    morpheus::DataType d3 = d1;
-    morpheus::DataType d4 = d2;
+    morpheus::DType d3 = d1;
+    morpheus::DType d4 = d2;
 
     EXPECT_EQ(d3, d1);
     EXPECT_EQ(d3.type_id(), d1.type_id());
@@ -53,6 +53,6 @@ TEST_F(TestTypeUtils, DataTypeCopy)
     EXPECT_EQ(d4, d2);
     EXPECT_EQ(d4.type_id(), d2.type_id());
 
-    morpheus::DataType d5{d1};
-    morpheus::DataType d6{d2};
+    morpheus::DType d5{d1};
+    morpheus::DType d6{d2};
 }

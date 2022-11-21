@@ -17,7 +17,7 @@
 
 #include "morpheus/objects/table_info.hpp"
 
-#include "morpheus/utilities/type_util_detail.hpp"
+#include "morpheus/utilities/type_util.hpp"
 
 #include <cudf/copying.hpp>
 #include <cudf/table/table_view.hpp>
@@ -232,7 +232,7 @@ MutableTableInfo::~MutableTableInfo()
     }
 }
 
-void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, morpheus::DataType>> &columns)
+void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>> &columns)
 {
     const auto num_existing_cols = this->get_data().column_names.size();
     const auto num_rows          = this->get_data().table_view.num_rows();
@@ -254,9 +254,9 @@ void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, 
     }
 }
 
-void MutableTableInfo::insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DataType>> &columns)
+void MutableTableInfo::insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DType>> &columns)
 {
-    std::vector<std::tuple<std::string, morpheus::DataType>> missing_columns;
+    std::vector<std::tuple<std::string, morpheus::DType>> missing_columns;
     for (const auto &column : columns)
     {
         if (std::find(this->get_data().column_names.begin(),

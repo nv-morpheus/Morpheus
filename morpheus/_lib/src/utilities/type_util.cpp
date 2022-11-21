@@ -17,13 +17,100 @@
 
 #include "morpheus/utilities/type_util.hpp"
 
+#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
+
+#include <glog/logging.h>  // for CHECK
+
+#include <map>
+#include <sstream>  // Needed by MORPHEUS_CONCAT_STR
 #include <stdexcept>
 #include <string>
 
+namespace {
+// todo should just be an initializer list
+std::map<char, std::map<size_t, morpheus::TypeId>> make_str_to_type_id()
+{
+    std::map<char, std::map<size_t, morpheus::TypeId>> map;
+
+    map['?'][1] = morpheus::TypeId::BOOL8;
+
+    map['i'][1] = morpheus::TypeId::INT8;
+    map['i'][2] = morpheus::TypeId::INT16;
+    map['i'][4] = morpheus::TypeId::INT32;
+    map['i'][8] = morpheus::TypeId::INT64;
+
+    map['u'][1] = morpheus::TypeId::UINT8;
+    map['u'][2] = morpheus::TypeId::UINT16;
+    map['u'][4] = morpheus::TypeId::UINT32;
+    map['u'][8] = morpheus::TypeId::UINT64;
+
+    map['f'][4] = morpheus::TypeId::FLOAT32;
+    map['f'][8] = morpheus::TypeId::FLOAT64;
+
+    return map;
+}
+
+std::map<char, std::map<size_t, morpheus::TypeId>> str_to_type_id = make_str_to_type_id();
+}  // namespace
+
 namespace morpheus {
 
-DType::DType(const DataType& dtype) : DataType(dtype.type_id()) {}
-DType::DType(TypeId tid) : DataType(tid) {}
+DType::DType(TypeId tid) : m_type_id(tid) {}
+
+bool DType::operator==(const DType& other) const
+{
+    return m_type_id == other.m_type_id;
+}
+
+TypeId DType::type_id() const
+{
+    return m_type_id;
+}
+
+size_t DType::item_size() const
+{
+    switch (m_type_id)
+    {
+    case TypeId::INT8:
+    case TypeId::UINT8:
+    case TypeId::BOOL8:
+        return 1;
+    case TypeId::INT16:
+    case TypeId::UINT16:
+        return 2;
+    case TypeId::INT32:
+    case TypeId::UINT32:
+    case TypeId::FLOAT32:
+        return 4;
+    case TypeId::INT64:
+    case TypeId::UINT64:
+    case TypeId::FLOAT64:
+    case TypeId::STRING:  // not sure, but size of individual char
+        return 8;
+    case TypeId::NUM_TYPE_IDS:
+    case TypeId::EMPTY:
+    default:
+        throw std::invalid_argument("Unknown datatype");
+    }
+}
+
+std::string DType::name() const
+{
+    // TODO(MDD): Replace this with a better version. For now, follow type_str
+    return this->type_str();
+}
+
+std::string DType::type_str() const
+{
+    if (m_type_id != TypeId::BOOL8)
+    {
+        return MORPHEUS_CONCAT_STR("<" << this->type_char() << this->item_size());
+    }
+    else
+    {
+        return std::string{this->type_char()};
+    }
+}
 
 // Cudf representation
 cudf::type_id DType::cudf_type_id() const
@@ -128,6 +215,38 @@ DType DType::from_cudf(cudf::type_id tid)
     }
 }
 
+DType DType::from_numpy(const std::string& numpy_str)
+{
+    CHECK(!numpy_str.empty()) << "Cannot create DataType from empty string";
+
+    char type_char    = numpy_str[0];
+    size_t size_start = 1;
+
+    // Can start with < or > or none
+    if (numpy_str[0] == '<' || numpy_str[0] == '>')
+    {
+        type_char  = numpy_str[1];
+        size_start = 2;
+    }
+
+    int dtype_size = 1;
+    if (numpy_str.size() > 1)
+    {
+        dtype_size = std::stoi(numpy_str.substr(size_start));
+    }
+
+    // Now lookup in the map
+    auto found_type = str_to_type_id.find(type_char);
+
+    CHECK(found_type != str_to_type_id.end()) << "Type char '" << type_char << "' not supported";
+
+    auto found_enum = found_type->second.find(dtype_size);
+
+    CHECK(found_enum != found_type->second.end()) << "Type str '" << type_char << dtype_size << "' not supported";
+
+    return DType(found_enum->second);
+}
+
 // From triton
 DType DType::from_triton(const std::string& type_str)
 {
@@ -178,6 +297,32 @@ DType DType::from_triton(const std::string& type_str)
     else
     {
         throw std::runtime_error("Not supported");
+    }
+}
+
+char DType::type_char() const
+{
+    switch (m_type_id)
+    {
+    case TypeId::INT8:
+    case TypeId::INT16:
+    case TypeId::INT32:
+    case TypeId::INT64:
+        return 'i';
+    case TypeId::UINT8:
+    case TypeId::UINT16:
+    case TypeId::UINT32:
+    case TypeId::UINT64:
+        return 'u';
+    case TypeId::BOOL8:
+        return '?';
+    case TypeId::FLOAT32:
+    case TypeId::FLOAT64:
+        return 'f';
+    case TypeId::NUM_TYPE_IDS:
+    case TypeId::EMPTY:
+    default:
+        throw std::invalid_argument("Unknown datatype");
     }
 }
 

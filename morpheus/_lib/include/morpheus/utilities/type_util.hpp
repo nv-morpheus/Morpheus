@@ -17,22 +17,81 @@
 
 #pragma once
 
-#include "morpheus/utilities/type_util_detail.hpp"
-
 #include <cudf/types.hpp>
 #include <cudf/utilities/traits.hpp>
 
+#include <climits>  // for CHAR_BIT
+#include <cstddef>  // for size_t
+#include <cstdint>  // for int32_t
 #include <memory>
 #include <stdexcept>
+#include <string>  // for string
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** DType****************************************/
-struct DType : DataType  // NOLINT
-{
-    DType(const DataType &dtype);
 
+// Pulled from cudf
+enum class TypeId : int32_t
+{
+    EMPTY,    ///< Always null with no underlying data
+    INT8,     ///< 1 byte signed integer
+    INT16,    ///< 2 byte signed integer
+    INT32,    ///< 4 byte signed integer
+    INT64,    ///< 8 byte signed integer
+    UINT8,    ///< 1 byte unsigned integer
+    UINT16,   ///< 2 byte unsigned integer
+    UINT32,   ///< 4 byte unsigned integer
+    UINT64,   ///< 8 byte unsigned integer
+    FLOAT32,  ///< 4 byte floating point
+    FLOAT64,  ///< 8 byte floating point
+    BOOL8,    ///< Boolean using one byte per value, 0 == false, else true
+    STRING,   ///< String elements, not supported by cupy
+
+    //   TIMESTAMP_DAYS,          ///< point in time in days since Unix Epoch in int32
+    //   TIMESTAMP_SECONDS,       ///< point in time in seconds since Unix Epoch in int64
+    //   TIMESTAMP_MILLISECONDS,  ///< point in time in milliseconds since Unix Epoch in int64
+    //   TIMESTAMP_MICROSECONDS,  ///< point in time in microseconds since Unix Epoch in int64
+    //   TIMESTAMP_NANOSECONDS,   ///< point in time in nanoseconds since Unix Epoch in int64
+    //   DURATION_DAYS,           ///< time interval of days in int32
+    //   DURATION_SECONDS,        ///< time interval of seconds in int64
+    //   DURATION_MILLISECONDS,   ///< time interval of milliseconds in int64
+    //   DURATION_MICROSECONDS,   ///< time interval of microseconds in int64
+    //   DURATION_NANOSECONDS,    ///< time interval of nanoseconds in int64
+    //   DICTIONARY32,            ///< Dictionary type using int32 indices
+    //   LIST,                    ///< List elements
+    //   DECIMAL32,               ///< Fixed-point type with int32_t
+    //   DECIMAL64,               ///< Fixed-point type with int64_t
+    //   STRUCT,                  ///< Struct elements
+
+    // `NUM_TYPE_IDS` must be last!
+    NUM_TYPE_IDS  ///< Total number of type ids
+};
+
+// Pulled from cuDF
+template <typename T>
+constexpr std::size_t size_in_bits()
+{
+    static_assert(CHAR_BIT == 8, "Size of a byte must be 8 bits.");
+    return sizeof(T) * CHAR_BIT;
+}
+
+/****** DType****************************************/
+struct DType  // TODO move to dtype.hpp
+{
     DType(TypeId tid);
+    DType(const DType &dtype) = default;
+    bool operator==(const DType &other) const;
+
+    TypeId type_id() const;
+
+    // Number of bytes per item
+    size_t item_size() const;
+
+    // Pretty print
+    std::string name() const;
+
+    // Returns the numpy string representation
+    std::string type_str() const;
 
     // Cudf representation
     cudf::type_id cudf_type_id() const;
@@ -40,18 +99,76 @@ struct DType : DataType  // NOLINT
     // Returns the triton string representation
     std::string triton_str() const;
 
+    // From cudf
+    static DType from_cudf(cudf::type_id tid);
+
+    // From numpy
+    static DType from_numpy(const std::string &numpy_str);
+
+    // From triton
+    static DType from_triton(const std::string &type_str);
+
     // from template
     template <typename T>
     static DType create()
     {
-        return DType(DataType::create<T>());
+        if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 8)
+        {
+            return DType(TypeId::INT8);
+        }
+        else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 16)
+        {
+            return DType(TypeId::INT16);
+        }
+        else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 32)
+        {
+            return DType(TypeId::INT32);
+        }
+        else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 64)
+        {
+            return DType(TypeId::INT64);
+        }
+        else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 8)
+        {
+            return DType(TypeId::UINT8);
+        }
+        else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 16)
+        {
+            return DType(TypeId::UINT16);
+        }
+        else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 32)
+        {
+            return DType(TypeId::UINT32);
+        }
+        else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 64)
+        {
+            return DType(TypeId::UINT64);
+        }
+        else if constexpr (std::is_floating_point_v<T> && size_in_bits<T>() == 32)
+        {
+            return DType(TypeId::FLOAT32);
+        }
+        else if constexpr (std::is_floating_point_v<T> && size_in_bits<T>() == 64)
+        {
+            return DType(TypeId::FLOAT64);
+        }
+        else if constexpr (std::is_same_v<T, bool>)
+        {
+            return DType(TypeId::BOOL8);
+        }
+        else
+        {
+            static_assert(!sizeof(T), "Type not implemented");
+        }
+
+        // To hide compiler warnings
+        return DType(TypeId::EMPTY);
     }
 
-    // From cudf
-    static DType from_cudf(cudf::type_id tid);
+  private:
+    char type_char() const;
 
-    // From triton
-    static DType from_triton(const std::string &type_str);
+    TypeId m_type_id;
 };
 
 template <typename T>

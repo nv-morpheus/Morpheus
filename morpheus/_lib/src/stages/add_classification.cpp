@@ -21,9 +21,8 @@
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/tensor_util.hpp"       // for TensorUtils::get_element_stride
-#include "morpheus/utilities/type_util.hpp"         // for DType
-#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
+#include "morpheus/utilities/type_util.hpp"    // for DType
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
