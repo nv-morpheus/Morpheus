@@ -99,8 +99,8 @@ build_rxq_pipe(uint16_t port_id, struct doca_flow_port *port, uint8_t rxq_idx, u
 	rxq_pipe_cfg.match = &rxq_match;
 	rxq_pipe_cfg.port = port;
 
-	rxq_match.out_src_ip.type = DOCA_FLOW_IP4_ADDR;
-	rxq_match.out_src_ip.ipv4_addr = BE_IPV4_ADDR(IP_ADD_0, IP_ADD_1, IP_ADD_2, IP_ADD_3+rxq_idx);
+	// rxq_match.out_src_ip.type = DOCA_FLOW_IP4_ADDR;
+	// rxq_match.out_src_ip.ipv4_addr = BE_IPV4_ADDR(IP_ADD_0, IP_ADD_1, IP_ADD_2, IP_ADD_3+rxq_idx);
 	if (is_tcp)
 		rxq_match.out_l4_type = IPPROTO_TCP;
 	else

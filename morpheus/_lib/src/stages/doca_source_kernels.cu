@@ -8,7 +8,6 @@
 #include <cudf/strings/detail/utilities.hpp>
 #include <cudf/column/column_factories.hpp>
 #include <cudf/column/column_device_view.cuh>
-#include <cuda/atomic>
 #include <cuda/std/chrono>
 #include <memory>
 #include <stdio.h>
@@ -69,12 +68,12 @@ uint32_t const PACKETS_PER_BLOCK = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
 uint32_t const PACKET_RX_TIMEOUT_NS = 50000000; // 50ms
 
 __global__ void _packet_receive_kernel(
-  doca_gpu_rxq_info*                              rxq_info,
-  doca_gpu_semaphore_in*                          sem_in,
-  uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx,
-  uint32_t*                                       packet_count_out,
-  uint32_t*                                       packet_data_size_out
+  doca_gpu_rxq_info*     rxq_info,
+  doca_gpu_semaphore_in* sem_in,
+  int32_t                sem_count,
+  int32_t*               sem_idx,
+  int32_t*               packet_count_out,
+  int32_t*               packet_data_size_out
 )
 {
   if (threadIdx.x == 0)
@@ -195,20 +194,75 @@ __global__ void _packet_receive_kernel(
   __syncthreads();
 }
 
+__device__ uint32_t tcp_parse_timestamp(rte_tcp_hdr const *tcp)
+{
+// 	const uint8_t *tcp_opt = (typeof(tcp_opt))tcp + RTE_TCP_MIN_HDR_LEN;
+// 	const uint8_t *tcp_data = (typeof(tcp_data))tcp + static_cast<int32_t>(tcp->dt_off * sizeof(int32_t));
+// 	int ret;
+// parse:
+// 	switch (static_cast<rte_tcp_opt>(tcp_opt[0])) {
+// 	default:
+// 		// SFT_TCP_LOG(ERR, "invalid TCP option %u\n", tcp_opt[0]);
+// 		ret = -1;
+// 		goto out;
+// 	case RTE_TCP_OPT_END:
+// 		ret = 0;
+// 		goto out;
+// 	case RTE_TCP_OPT_NOP:
+// 		tcp_opt++;
+// 		break;
+// 	case RTE_TCP_OPT_MSS:
+// 		// sender->max_seg_size = ((uint16_t)tcp_opt[2]) << 8 | tcp_opt[3];
+// 		tcp_opt += tcp_opt[1];
+// 		break;
+// 	case RTE_TCP_OPT_WND_SCALE:
+// 		// sender->wnd_scale = tcp_opt[2];
+// 		tcp_opt += tcp_opt[1];
+// 		break;
+// 	case RTE_TCP_OPT_SACK_PERMITTED:
+// 		// sender->sack_permitted = 1;
+// 		tcp_opt += tcp_opt[1];
+// 		break;
+// 	case RTE_TCP_OPT_SACK:
+// 		// SFT_TCP_LOG(ERR, "TCP option SACK not implemented\n");
+// 		ret = -1;
+// 		break;
+// 	case RTE_TCP_OPT_TIMESTAMP:
+//     return tcp_opt[1];
+// 		// tcp_opt += tcp_opt[1];
+//     return  (static_cast<uint32_t>(tcp_opt[2]) << 24)
+//           | (static_cast<uint32_t>(tcp_opt[3]) << 16)
+//           | (static_cast<uint32_t>(tcp_opt[4]) << 8)
+//           | (static_cast<uint32_t>(tcp_opt[5]));
+// 		break;
+// 	}
+// 	if (tcp_opt == tcp_data) {
+// 		ret = 0;
+// 		goto out;
+// 	} else if (tcp_opt < tcp_data) {
+// 		goto parse;
+// 	} else {
+// 		// SFT_TCP_LOG(ERR, "missed TCP END option\n");
+// 		ret = -1;
+// 	}
+// out:
+	return 0;
+}
+
 __global__ void _packet_gather_kernel(
-  doca_gpu_rxq_info*                              rxq_info,
-  doca_gpu_semaphore_in*                          sem_in,
-  uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx,
-  uint64_t*                                       timestamp_out,
-  int64_t*                                        src_mac_out,
-  int64_t*                                        dst_mac_out,
-  int64_t*                                        src_ip_out,
-  int64_t*                                        dst_ip_out,
-  uint16_t*                                       src_port_out,
-  uint16_t*                                       dst_port_out,
-  int32_t*                                        data_offsets_out,
-  char*                                           data_out
+  doca_gpu_rxq_info*     rxq_info,
+  doca_gpu_semaphore_in* sem_in,
+  int32_t                sem_count,
+  int32_t*               sem_idx,
+  uint32_t*              timestamp_out,
+  int64_t*               src_mac_out,
+  int64_t*               dst_mac_out,
+  int64_t*               src_ip_out,
+  int64_t*               dst_ip_out,
+  uint16_t*              src_port_out,
+  uint16_t*              dst_port_out,
+  int32_t*               data_offsets_out,
+  char*                  data_out
 )
 {
   // Specialize BlockScan for a 1D block of 128 threads of type int
@@ -279,9 +333,13 @@ __global__ void _packet_gather_kernel(
     );
 
     auto total_length = static_cast<int32_t>(BYTE_SWAP16(packet_l3->total_length));
-    auto data_size = total_length - static_cast<int32_t>(packet_l4->dt_off * sizeof(int32_t));
+    auto header_length = static_cast<int32_t>(packet_l4->dt_off * sizeof(int32_t));
+    auto data_size = total_length - header_length;
 
     data_offsets[i] = data_size;
+
+    // TCP timestamp option
+    timestamp_out[packet_idx] = tcp_parse_timestamp(packet_l4);
 
     // mac address
     auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
@@ -314,6 +372,8 @@ __global__ void _packet_gather_kernel(
     src_port_out[packet_idx] = src_port;
     dst_port_out[packet_idx] = dst_port;
   }
+
+  __syncthreads();
 
   BlockScan(temp_storage).ExclusiveSum(data_offsets, data_offsets);
 
@@ -451,13 +511,13 @@ struct picker {
 };
 
 void packet_receive_kernel(
-  doca_gpu_rxq_info*                              rxq_info,
-  doca_gpu_semaphore_in*                          sem_in,
-  uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx,
-  uint32_t*                                       packet_count,
-  uint32_t*                                       packet_data_size,
-  cudaStream_t                                    stream
+  doca_gpu_rxq_info*     rxq_info,
+  doca_gpu_semaphore_in* sem_in,
+  int32_t                sem_count,
+  int32_t*               sem_idx,
+  int32_t*               packet_count,
+  int32_t*               packet_data_size,
+  cudaStream_t           stream
 )
 {
   _packet_receive_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(
@@ -471,20 +531,20 @@ void packet_receive_kernel(
 }
 
 void packet_gather_kernel(
-  doca_gpu_rxq_info*                              rxq_info,
-  doca_gpu_semaphore_in*                          sem_in,
-  uint32_t                                        sem_count,
-  uint32_t*                                       sem_idx,
-  uint64_t*                                       timestamp_out,
-  int64_t*                                        src_mac_out,
-  int64_t*                                        dst_mac_out,
-  int64_t*                                        src_ip_out,
-  int64_t*                                        dst_ip_out,
-  uint16_t*                                       src_port_out,
-  uint16_t*                                       dst_port_out,
-  int32_t*                                        data_offsets_out,
-  char*                                           data_out,
-  cudaStream_t                                    stream
+  doca_gpu_rxq_info*     rxq_info,
+  doca_gpu_semaphore_in* sem_in,
+  int32_t                sem_count,
+  int32_t*               sem_idx,
+  uint32_t*              timestamp_out,
+  int64_t*               src_mac_out,
+  int64_t*               dst_mac_out,
+  int64_t*               src_ip_out,
+  int64_t*               dst_ip_out,
+  uint16_t*              src_port_out,
+  uint16_t*              dst_port_out,
+  int32_t*               data_offsets_out,
+  char*                  data_out,
+  cudaStream_t           stream
 )
 {
   _packet_gather_kernel<<<1, THREADS_PER_BLOCK, 0, stream>>>(

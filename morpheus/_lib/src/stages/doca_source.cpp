@@ -34,7 +34,6 @@
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
 #include <srf/segment/builder.hpp>
-#include <cuda/atomic>
 #include <cuda/std/chrono>
 
 #include <rmm/device_uvector.hpp>
@@ -55,7 +54,7 @@ namespace morpheus {
 DocaSourceStage::DocaSourceStage() :
   PythonSource(build())
 {
-  _context   = std::make_shared<morpheus::doca::doca_context>("b5:00.0", "b6:00.0");
+  _context   = std::make_shared<morpheus::doca::doca_context>("17:00.1", "ca:00.0");
   _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
   _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
   _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 1024);
@@ -68,9 +67,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
     cudaStream_t processing_stream;
     cudaStreamCreateWithFlags(&processing_stream, cudaStreamNonBlocking);
 
-    auto semaphore_idx_d    = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto packet_count_d     = rmm::device_scalar<uint32_t>(0, processing_stream);
-    auto packet_data_size_d = rmm::device_scalar<uint32_t>(0, processing_stream);
+    auto semaphore_idx_d    = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto packet_count_d     = rmm::device_scalar<int32_t>(0, processing_stream);
+    auto packet_data_size_d = rmm::device_scalar<int32_t>(0, processing_stream);
 
     while (output.is_subscribed())
     {
@@ -93,7 +92,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       auto packet_data_size = packet_data_size_d.value(processing_stream);
 
-      auto timestamp_out_d    = rmm::device_uvector<uint64_t>(packet_count, processing_stream);
+      auto timestamp_out_d    = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
       auto src_mac_out_d      = rmm::device_uvector<int64_t>(packet_count, processing_stream);
       auto dst_mac_out_d      = rmm::device_uvector<int64_t>(packet_count, processing_stream);
       auto src_ip_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
@@ -157,7 +156,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       // timestamp column
       auto timestamp_out_d_size = timestamp_out_d.size();
       auto timestamp_out_d_col  = std::make_unique<cudf::column>(
-        cudf::data_type{cudf::type_to_id<uint64_t>()},
+        cudf::data_type{cudf::type_to_id<uint32_t>()},
         timestamp_out_d_size,
         timestamp_out_d.release());
 
