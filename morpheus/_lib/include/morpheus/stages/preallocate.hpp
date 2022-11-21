@@ -51,7 +51,7 @@ class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageT>
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    PreallocateStage(const std::vector<std::tuple<std::string, std::string>> &needed_columns);
+    PreallocateStage(const std::vector<std::tuple<std::string, TypeId>> &needed_columns);
 
   private:
     subscribe_fn_t build_operator();
@@ -72,7 +72,7 @@ struct PreallocateStageInterfaceProxy
     static std::shared_ptr<srf::segment::Object<PreallocateStage<MessageT>>> init(
         srf::segment::Builder &builder,
         const std::string &name,
-        std::vector<std::tuple<std::string, std::string>> needed_columns);
+        std::vector<std::tuple<std::string, TypeId>> needed_columns);
 };
 
 // Explicit instantiations

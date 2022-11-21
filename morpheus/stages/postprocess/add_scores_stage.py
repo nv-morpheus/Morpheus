@@ -18,6 +18,7 @@ import typing
 import srf
 
 import morpheus._lib.stages as _stages
+from morpheus._lib.type_id import TypeId
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
@@ -45,11 +46,15 @@ class AddScoresStage(SinglePortStage):
         the Config.class_labels property.
     prefix : str, default = ""
         Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
-    probs_type : str, default = "f4"
-        Numpy dtype string indicating the datatype of the scores columns.
+    probs_type : `morpheus._lib.type_id.TypeId`, default = "float32"
+        Datatype of the scores columns.
     """
 
-    def __init__(self, c: Config, labels: typing.List[str] = None, prefix: str = "", probs_type: str = 'f4'):
+    def __init__(self,
+                 c: Config,
+                 labels: typing.List[str] = None,
+                 prefix: str = "",
+                 probs_type: TypeId = TypeId.FLOAT32):
         super().__init__(c)
 
         self._feature_length = c.feature_length

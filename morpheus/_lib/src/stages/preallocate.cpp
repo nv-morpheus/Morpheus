@@ -48,12 +48,12 @@ void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
 namespace morpheus {
 
 template <typename MessageT>
-PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, std::string>> &needed_columns) :
+PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, TypeId>> &needed_columns) :
   base_t(base_t::op_factory_from_sub_fn(build_operator()))
 {
     for (const auto &col : needed_columns)
     {
-        m_needed_columns.emplace_back(std::make_tuple<>(std::get<0>(col), DType::from_numpy(std::get<1>(col))));
+        m_needed_columns.emplace_back(std::make_tuple<>(std::get<0>(col), DType(std::get<1>(col))));
     }
 }
 
@@ -76,7 +76,7 @@ template <typename MessageT>
 std::shared_ptr<srf::segment::Object<PreallocateStage<MessageT>>> PreallocateStageInterfaceProxy<MessageT>::init(
     srf::segment::Builder &builder,
     const std::string &name,
-    std::vector<std::tuple<std::string, std::string>> needed_columns)
+    std::vector<std::tuple<std::string, TypeId>> needed_columns)
 {
     return builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
 }

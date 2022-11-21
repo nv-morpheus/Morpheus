@@ -17,6 +17,7 @@ import typing
 
 import srf
 
+from morpheus._lib.type_id import TypeId
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
@@ -69,7 +70,7 @@ class AddClassificationsStage(SinglePortStage):
 
             prefixed_label = self._prefix + label
             self._idx2label[self._class_labels.index(label)] = prefixed_label
-            self._needed_columns[prefixed_label] = '?'
+            self._needed_columns[prefixed_label] = TypeId.BOOL8
 
         assert len(self._idx2label) > 0, "No labels were added to the stage"
 

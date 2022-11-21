@@ -24,6 +24,7 @@ import srf
 
 import cudf
 
+from morpheus._lib.type_id import tyepid_to_numpy_str
 from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -64,7 +65,7 @@ class PreallocatorMixin(ABC):
 
             num_rows = len(df)
             for column_name in missing_columns:
-                column_type = self._needed_columns[column_name]
+                column_type = tyepid_to_numpy_str(self._needed_columns[column_name])
                 logger.debug("Preallocating column %s[%s]", column_name, column_type)
                 df[column_name] = alloc_func(num_rows, column_type)
 

@@ -95,7 +95,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         self._input_ports: typing.List[_pipeline.Receiver] = []
         self._output_ports: typing.List[_pipeline.Sender] = []
 
-        # Mapping of {`column_name`: `numpy dtype`}
+        # Mapping of {`column_name`: `TyepId`}
         self._needed_columns = collections.OrderedDict()
 
     def __init_subclass__(cls) -> None:
@@ -410,7 +410,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
     def get_needed_columns(self):
         """
         Stages which need to have columns inserted into the dataframe, should populate the `self._needed_columns`
-        dictionary with mapping of column names to numpy dtype strings. This will ensure that the columns are allocated
-        and populated with null values.
+        dictionary with mapping of column names to `morpheus._lib.type_id.TypeId`. This will ensure that the columns are
+        allocated and populated with null values.
         """
         return self._needed_columns.copy()

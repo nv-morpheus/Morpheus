@@ -40,5 +40,7 @@ PYBIND11_MODULE(type_id, m)
         .value("BOOL8", TypeId::BOOL8)
         .value("STRING", TypeId::STRING);
 
+    m.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
+
 }  // module
 }  // namespace morpheus
