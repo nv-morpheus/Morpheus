@@ -153,7 +153,11 @@ extern "C" {
 
 void register_gpu_params(void);
 struct doca_flow_port * init_doca_flow(uint8_t port_id, uint8_t rxq_num, struct application_dpdk_config *dpdk_config);
-struct doca_flow_pipe * build_rxq_pipe(uint16_t port_id, struct doca_flow_port *port, uint8_t rxq_idx, uint16_t dpdk_rxq_idx, bool is_tcp);
+struct doca_flow_pipe * build_rxq_pipe(
+    uint16_t port_id,
+    struct doca_flow_port *port,
+    uint32_t source_ip_filter,
+    uint16_t dpdk_rxq_idx);
 doca_error_t destroy_doca_flow(uint8_t port_id, uint8_t rxq_num, struct doca_flow_pipe **rxq_pipe);
 
 doca_error_t kernel_proxy_persistent(cudaStream_t stream, uint32_t *exit_cond, uint16_t max_rx_pkts, uint64_t timeout_ns, uint32_t sem_proxy_num,

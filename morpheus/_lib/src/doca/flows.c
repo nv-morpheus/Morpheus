@@ -70,7 +70,11 @@ init_doca_flow(uint8_t port_id, uint8_t rxq_num, struct application_dpdk_config 
 
 /* Builds DOCA flow pipe for every RxQ with an incremental src IP address */
 struct doca_flow_pipe *
-build_rxq_pipe(uint16_t port_id, struct doca_flow_port *port, uint8_t rxq_idx, uint16_t dpdk_rxq_idx, bool is_tcp)
+build_rxq_pipe(
+    uint16_t port_id,
+    struct doca_flow_port *port,
+    uint32_t source_ip_filter,
+    uint16_t dpdk_rxq_idx)
 {
 	struct doca_flow_match rxq_match;
 	struct doca_flow_fwd rxq_fw;
@@ -100,11 +104,8 @@ build_rxq_pipe(uint16_t port_id, struct doca_flow_port *port, uint8_t rxq_idx, u
 	rxq_pipe_cfg.port = port;
 
 	rxq_match.out_src_ip.type = DOCA_FLOW_IP4_ADDR;
-	rxq_match.out_src_ip.ipv4_addr = BE_IPV4_ADDR(IP_ADD_0, IP_ADD_1, IP_ADD_2, IP_ADD_3+rxq_idx);
-	if (is_tcp)
-		rxq_match.out_l4_type = IPPROTO_TCP;
-	else
-		rxq_match.out_l4_type = IPPROTO_UDP;
+	rxq_match.out_src_ip.ipv4_addr = source_ip_filter;
+	rxq_match.out_l4_type = IPPROTO_TCP;
 
 	rss_queues[0] = dpdk_rxq_idx;
 	rxq_fw.type = DOCA_FLOW_FWD_RSS;

@@ -67,23 +67,30 @@ class DocaSourceStage(SingleOutputSource):
 
     def __init__(self,
                  c: Config,
-                 iterative: bool = False,
-                 filter_null: bool = True,
-                 cudf_kwargs: dict = None):
+                 nic_pci_address,
+                 gpu_pci_address,
+                 source_ip_filter = "",
+                #  iterative: bool = False,
+                #  cudf_kwargs: dict = None,
+                 ):
 
         super().__init__(c)
 
         self._batch_size = c.pipeline_batch_size
 
-        self._filter_null = filter_null
-        self._cudf_kwargs = {} if cudf_kwargs is None else cudf_kwargs
+        # self._filter_null = filter_null
+        # self._cudf_kwargs = {} if cudf_kwargs is None else cudf_kwargs
 
         self._input_count = None
         self._max_concurrent = c.num_threads
 
-        # Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode
-        # is good for interleaving source stages.
-        self._iterative = iterative
+        # # Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode
+        # # is good for interleaving source stages.
+        # self._iterative = iterative
+
+        self._nic_pci_address = nic_pci_address
+        self._gpu_pci_address = gpu_pci_address
+        self._source_ip_filter = source_ip_filter
 
     @property
     def name(self) -> str:
@@ -101,7 +108,13 @@ class DocaSourceStage(SingleOutputSource):
 
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
-            out_stream = _stages.DocaSourceStage(builder, self.unique_name)
+            out_stream = _stages.DocaSourceStage(
+                builder,
+                self.unique_name,
+                self._nic_pci_address,
+                self._gpu_pci_address,
+                self._source_ip_filter
+            )
         else:
             raise NotImplementedError("Does not support Python nodes")
 

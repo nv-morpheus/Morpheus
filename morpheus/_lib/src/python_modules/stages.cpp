@@ -92,7 +92,10 @@ PYBIND11_MODULE(stages, m)
                std::shared_ptr<srf::segment::Object<DocaSourceStage>>>(m, "DocaSourceStage", py::multiple_inheritance())
         .def(py::init<>(&DocaSourceStageInterfaceProxy::init),
              py::arg("builder"),
-             py::arg("name"));
+             py::arg("name"),
+             py::arg("nic_pci_address"),
+             py::arg("gpu_pci_address"),
+             py::arg("source_ip_filter") = "");
 
     py::class_<srf::segment::Object<FileSourceStage>,
                srf::segment::ObjectProperties,

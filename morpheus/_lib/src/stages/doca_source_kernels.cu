@@ -339,7 +339,7 @@ __global__ void _packet_gather_kernel(
     data_offsets[i] = data_size;
 
     // TCP timestamp option
-    timestamp_out[packet_idx] = tcp_parse_timestamp(packet_l4);
+    // timestamp_out[packet_idx] = tcp_parse_timestamp(packet_l4);
 
     // mac address
     auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes

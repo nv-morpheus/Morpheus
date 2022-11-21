@@ -56,7 +56,8 @@ struct doca_rx_pipe
   public:
     doca_rx_pipe(
       std::shared_ptr<doca_context> context,
-      std::shared_ptr<doca_rx_queue> rxq
+      std::shared_ptr<doca_rx_queue> rxq,
+      uint32_t source_ip_filter
     );
     ~doca_rx_pipe();
 };

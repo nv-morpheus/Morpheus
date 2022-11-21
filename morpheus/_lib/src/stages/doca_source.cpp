@@ -17,6 +17,7 @@
 
 #include "morpheus/stages/doca_source.hpp"
 #include "morpheus/stages/doca_source_kernels.hpp"
+#include "morpheus/doca/common.h"
 
 #include <cudf/column/column.hpp>  // for column
 #include <cudf/column/column_factories.hpp>
@@ -48,15 +49,51 @@
 #include <utility>
 #include <iostream>
 
+std::optional<uint32_t> ip_to_int(std::string const& ip_address)
+{
+  if (ip_address.empty())
+  {
+    return 0;
+  }
+
+  uint8_t a, b, c, d;
+  uint32_t ret;
+
+  ret = sscanf(ip_address.c_str(), "%hhu.%hhu.%hhu.%hhu", &a, &b, &c, &d);
+
+  printf("%u: %u %u %u %u\n", ret, a, b, c, d);
+
+  if (ret == 4)
+  {
+    return BE_IPV4_ADDR(a, b, c, d);
+  }
+
+  return std::nullopt;
+}
+
 namespace morpheus {
 // Component public implementations
 // ************ DocaSourceStage ************* //
-DocaSourceStage::DocaSourceStage() :
+DocaSourceStage::DocaSourceStage(
+  std::string const& nic_pci_address,
+  std::string const& gpu_pci_address,
+  std::string const& source_ip_filter
+) :
   PythonSource(build())
 {
-  _context   = std::make_shared<morpheus::doca::doca_context>("17:00.1", "ca:00.0");
+  auto source_ip = ip_to_int(source_ip_filter);
+
+  if (source_ip == std::nullopt) {
+    throw std::runtime_error("source ip filter invalid");
+  }
+
+  _context   = std::make_shared<morpheus::doca::doca_context>(
+    nic_pci_address, // "17:00.1"
+    gpu_pci_address  // "ca:00.0"
+  );
+
   _rxq       = std::make_shared<morpheus::doca::doca_rx_queue>(_context);
-  _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq);
+  _rxpipe    = std::make_shared<morpheus::doca::doca_rx_pipe>(_context, _rxq, source_ip.value());
   _semaphore = std::make_shared<morpheus::doca::doca_semaphore>(_context, 1024);
 }
 
@@ -253,10 +290,17 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
 // ************ DocaSourceStageInterfaceProxy ************ //
 std::shared_ptr<srf::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name)
+    srf::segment::Builder& builder,
+    std::string const& name,
+    std::string const& nic_pci_address,
+    std::string const& gpu_pci_address,
+    std::string const& source_ip_filter)
 {
-    auto stage = builder.construct_object<DocaSourceStage>(name);
-
-    return stage;
+    return builder.construct_object<DocaSourceStage>(
+      name,
+      nic_pci_address,
+      gpu_pci_address,
+      source_ip_filter
+    );
 }
 }  // namespace morpheus

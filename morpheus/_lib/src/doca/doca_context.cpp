@@ -246,20 +246,17 @@ doca_gpu_rxq_info* doca_rx_queue::rxq_info_gpu()
 
 doca_rx_pipe::doca_rx_pipe(
   std::shared_ptr<doca_context> context,
-  std::shared_ptr<doca_rx_queue> rxq
+  std::shared_ptr<doca_rx_queue> rxq,
+  uint32_t source_ip_filter
 ):
     _context(context),
     _rxq(rxq)
 {
-  // TODO: inline this function and adjust accordingly. That, or updte build_rxq_pipe to accept IP Address / packet type
   _pipe = build_rxq_pipe(
     _context->nic_port(),
     _context->flow_port(),
-    // rxq id,
-    0,
-    _rxq->rxq_info_cpu()->dpdk_idx,
-    // is_tcp
-    true
+    source_ip_filter,
+    _rxq->rxq_info_cpu()->dpdk_idx
   );
 
   if(_pipe == nullptr) {

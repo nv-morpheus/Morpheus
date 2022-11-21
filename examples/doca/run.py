@@ -55,11 +55,27 @@ from morpheus.utils.logger import configure_logging
     type=click.IntRange(min=1),
     help="Features length to use for the model",
 )
+@click.option(
+    "--nic_addr",
+    help="NIC PCI Address",
+)
+@click.option(
+    "--gpu_addr",
+    help="GPU PCI Address",
+)
+@click.option(
+    "--source_ip_filter",
+    default="",
+    help="Source IP Address to filter packets by",
+)
 def run_pipeline(
     num_threads,
     pipeline_batch_size,
     model_max_batch_size,
     model_fea_length,
+    nic_addr,
+    gpu_addr,
+    source_ip_filter,
 ):
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
@@ -85,6 +101,9 @@ def run_pipeline(
     # # Set source stage
     pipeline.set_source(DocaSourceStage(
         config,
+        nic_addr,
+        gpu_addr,
+        source_ip_filter
     ))
 
     # # Add a deserialize stage
@@ -107,7 +126,7 @@ def run_pipeline(
     pipeline.add_stage(MonitorStage(config, description="Serialize rate"))
 
     # # # Write the file to the output
-    pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
+    # pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

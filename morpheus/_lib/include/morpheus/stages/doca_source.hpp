@@ -46,7 +46,11 @@ class DocaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageM
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    DocaSourceStage();
+    DocaSourceStage(
+      std::string const& nic_pci_address,
+      std::string const& gpu_pci_address,
+      std::string const& source_ip_filter
+    );
 
   private:
     subscriber_fn_t build();
@@ -66,8 +70,12 @@ struct DocaSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a DocaSourceStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<DocaSourceStage>> init(srf::segment::Builder &builder,
-                                                                       const std::string &name);
+    static std::shared_ptr<srf::segment::Object<DocaSourceStage>> init(
+      srf::segment::Builder& builder,
+      std::string const& name,
+      std::string const& nic_pci_address,
+      std::string const& gpu_pci_address,
+      std::string const& source_ip_filter);
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
