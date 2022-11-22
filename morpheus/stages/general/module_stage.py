@@ -17,14 +17,23 @@ import logging
 import typing
 
 import srf
-from srf.core import operators as ops
 
 from morpheus.config import Config
-from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.modules.module_factory import ModuleFactory
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
+
+
+def get_type_class(type_class):
+    module, classname = type_class.rsplit('.', 1)
+    # load the type module, will raise ImportError if module cannot be loaded
+    module = importlib.import_module(module)
+    # get the type class, will raise AttributeError if class cannot be found
+    type_class = getattr(module, classname)
+
+    return type_class
 
 
 class ModuleStage(SinglePortStage):
@@ -32,33 +41,20 @@ class ModuleStage(SinglePortStage):
     def __init__(
         self,
         c: Config,
-        module_id: str,
-        module_namespace: str,
-        module_name: str,
-        input_type_class: str,
-        output_type_class: str,
         module_config: typing.Dict = {},
     ):
 
         super().__init__(c)
 
-        self._registry = srf.ModuleRegistry
-        self._module_id = module_id
-        self._module_namespace = module_namespace
-        self._module_name = module_name
+        self._module_id = module_config["module_id"]
+        self._module_namespace = module_config["module_namespace"]
+        self._module_name = module_config["module_name"]
         self._module_config = module_config
 
-        self._input_type_class = self.get_type_class(input_type_class)
-        self._output_type_class = self.get_type_class(output_type_class)
+        self._input_type_class = get_type_class(module_config["input_type_class"])
+        self._output_type_class = get_type_class(module_config["output_type_class"])
 
-    def get_type_class(self, type_class):
-        module, classname = self._input_type_class.rsplit('.', 1)
-        # load the type module, will raise ImportError if module cannot be loaded
-        module = importlib.import_module(module)
-        # get the type class, will raise AttributeError if class cannot be found
-        type_class = getattr(module, classname)
-
-        return type_class
+        self._registry = srf.ModuleRegistry()
 
     @property
     def name(self) -> str:
@@ -69,9 +65,22 @@ class ModuleStage(SinglePortStage):
 
     def input_types(self) -> typing.Tuple:
         return (self._input_type_class, )
-    
-    @register_module
+
+    def accepted_types(self) -> typing.Tuple:
+        """
+        Accepted input types for this stage are returned.
+
+        Returns
+        -------
+        typing.Tuple
+            Accepted input types.
+
+        """
+        return (self._input_type_class, )
+
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+        
+        ModuleFactory.register_module(self._config, self._module_config, self.unique_name)
 
         if not self._registry.contains(self._module_id, self._module_namespace):
             raise Exception("Module: {} with Namespace: {} doesn't exists in the registry".format(

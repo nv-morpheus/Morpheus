@@ -20,6 +20,7 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from functools import partial
+from morpheus.stages.general.module_stage import ModuleStage
 
 import srf
 import click
@@ -286,16 +287,34 @@ def run_pipeline(train_users,
 
     if (is_training):
 
+        traing_module_config = {
+            "module_id": "DFPTraining",
+            "version": [22, 11, 0],
+            "module_name": "DFPTrainingModule",
+            "module_namespace": "DFP",
+            "input_type_class": "morpheus.messages.multi_dfp_message.MultiDFPMessage",
+            "output_type_class": "morpheus.messages.multi_ae_message.MultiAEMessage"
+        }
         # Finally, perform training which will output a model
-        pipeline.add_stage(DFPTraining(config))
+        pipeline.add_stage(ModuleStage(config, traing_module_config))
 
         pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
 
+        mlflow_writer_module_config = {
+            "model_name_formatter": model_name_formatter,
+            "experiment_name_formatter": experiment_name_formatter,
+            "databricks_permissions": None,
+            "version": [22, 11, 0],
+            "module_name": "DFPMLFlowWriterModule",
+            "module_id": "DFPMLFlowModelWriter",
+            "module_namespace": "DFP",
+            "input_type_class": "morpheus.messages.multi_ae_message.MultiAEMessage",
+            "output_type_class": "morpheus.messages.multi_ae_message.MultiAEMessage"
+        }
+
         # Write that model to MLFlow
-        pipeline.add_stage(
-            DFPMLFlowModelWriterStage(config,
-                                      model_name_formatter=model_name_formatter,
-                                      experiment_name_formatter=experiment_name_formatter))
+        pipeline.add_stage(ModuleStage(config, mlflow_writer_module_config))
+
     else:
         pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))
 
@@ -307,24 +326,7 @@ def run_pipeline(train_users,
 
     # Run the pipeline
     pipeline.run()
-    
-    create_dfp_training_pipeline_module()
 
-def create_dfp_training_pipeline_module():
-
-    def dfp_module_init(builder: srf.Builder):
-        training_module = builder.load_module("DFPTraining", "DFP", "TestDFPTrainingModule", {})
-        mlflow_writer_module = builder.load_module("DFPMLFlowWriter","DFP", "TestDFPMLFLowWriterModule", {})
-        
-        builder.make_edge(training_module.output_port("output"), mlflow_writer_module.input_port("input"))
-        
-        builder.register_module_input("input", training_module.input_port("input"))
-        builder.register_module_output("output", mlflow_writer_module.output_port("output"))
-
-    registry = srf.ModuleRegistry()
-    registry.register_module("dfp_training_pipeline", "DFP", [22, 11, 0], dfp_module_init)
-
-    print(registry.registered_modules())
 
 if __name__ == "__main__":
     run_pipeline(obj={}, auto_envvar_prefix='DFP', show_default=True, prog_name="dfp")

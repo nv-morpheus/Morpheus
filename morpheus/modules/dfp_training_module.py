@@ -25,22 +25,16 @@ from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
-from examples.digital_fingerprinting.production.morpheus.dfp.messages.multi_dfp_message import MultiDFPMessage
+from morpheus.messages.multi_dfp_message import MultiDFPMessage
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPTrainingModule(Module):
 
-    def __init__(self,
-                 config: typing.Dict = {},
-                 version: typing.List = [22, 11, 0],
-                 module_id: str = "DFPTraining",
-                 module_name: str = "DFPTrainingModule",
-                 module_namespace: str = "DFP",
-                 model_kwargs: dict = None):
+    def __init__(self, config: Config, module_config: typing.Dict = {}):
 
-        super().__init__(config, version, module_id, module_name, module_namespace)
+        super().__init__(config, module_config)
 
         self._model_kwargs = {
             "encoder_layers": [512, 500],  # layers of the encoding part
@@ -59,7 +53,8 @@ class DFPTrainingModule(Module):
         }
 
         # Update the defaults
-        self._model_kwargs.update(model_kwargs if model_kwargs is not None else {})
+        self._model_kwargs.update(
+            self._module_config["model_args"] if self._module_config["model_args"] is not None else {})
 
     def on_data(self, message):
         if (message is None or message.mess_count == 0):
