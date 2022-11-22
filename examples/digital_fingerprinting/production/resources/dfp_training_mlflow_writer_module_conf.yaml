@@ -1,0 +1,34 @@
+DFPTrainingMLFlowWriterModule:
+  module_id: dfp_training_mlflow_model_writer
+  version:
+    - 22
+    - 11
+    - 0
+  module_name: DFPTrainingMLFlowWriterModule
+  module_namespace: dfp
+  input_type_class: morpheus.messages.multi_dfp_message.MultiDFPMessage
+  output_type_class: morpheus.messages.multi_ae_message.MultiAEMessage
+  modules:
+    DFPTrainingModule:
+      module_id: dfp_training
+      module_name: DFPTrainingModule
+      module_namespace: dfp
+      version:
+        - 22
+        - 11
+        - 0
+      input_type_class: morpheus.messages.multi_dfp_message.MultiDFPMessage
+      output_type_class: morpheus.messages.multi_ae_message.MultiAEMessage
+    DFPMLFlowWriterModule:
+      module_id: dfp_mlflow_model_writer
+      module_name: DFPMLFlowWriterModule
+      module_namespace: dfp
+      version:
+        - 22
+        - 11
+        - 0
+      input_type_class: morpheus.messages.multi_ae_message.MultiAEMessage
+      output_type_class: morpheus.messages.multi_ae_message.MultiAEMessage
+      model_name_formatter: DFP-duo-{user_id}
+      experiment_name_formatter: dfp/duo/training/{reg_model_name}
+      databricks_permissions: ''

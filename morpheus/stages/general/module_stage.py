@@ -38,21 +38,17 @@ def get_type_class(type_class):
 
 class ModuleStage(SinglePortStage):
 
-    def __init__(
-        self,
-        c: Config,
-        module_config: typing.Dict = {},
-    ):
+    def __init__(self, c: Config, mc: typing.Dict):
 
         super().__init__(c)
 
-        self._module_id = module_config["module_id"]
-        self._module_namespace = module_config["module_namespace"]
-        self._module_name = module_config["module_name"]
-        self._module_config = module_config
+        self._mc = mc
+        self._module_id = mc["module_id"]
+        self._module_name = mc["module_name"]
+        self._module_ns = mc["module_namespace"]
 
-        self._input_type_class = get_type_class(module_config["input_type_class"])
-        self._output_type_class = get_type_class(module_config["output_type_class"])
+        self._input_type_class = get_type_class(mc["input_type_class"])
+        self._output_type_class = get_type_class(mc["output_type_class"])
 
         self._registry = srf.ModuleRegistry()
 
@@ -78,15 +74,38 @@ class ModuleStage(SinglePortStage):
         """
         return (self._input_type_class, )
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-        
-        ModuleFactory.register_module(self._config, self._module_config, self.unique_name)
+    def _register_modules(self):
 
-        if not self._registry.contains(self._module_id, self._module_namespace):
+        # Register if there are any inner modules.
+        if "modules" in self._mc and self._mc["modules"] is not None:
+
+            inner_mc = self._mc["modules"]
+
+            for key in inner_mc.keys():
+                module_conf = inner_mc[key]
+                unique_name = self.unique_name + "-" + module_conf["module_id"]
+                module_conf["unique_name"] = unique_name
+
+                ModuleFactory.register_module(self._config, module_conf)
+
+        self._mc["unique_name"] = self.unique_name
+
+        # Register a module
+        ModuleFactory.register_module(self._config, self._mc)
+
+        # Verify if module exists in the namespace.
+        if not self._registry.contains(self._module_id, self._module_ns):
             raise Exception("Module: {} with Namespace: {} doesn't exists in the registry".format(
-                self._module_id, self._module_namespace))
+                self._module_id, self._module_ns))
 
-        module = builder.load_module(self._module_id, self._module_namespace, self._module_name, self._module_config)
+        logger.debug("Available modules: {}".format(self._registry.registered_modules()))
+
+    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+
+        self._register_modules()
+
+        # Load registered module
+        module = builder.load_module(self._module_id, self._module_ns, self._module_name, self._mc)
 
         mod_in_stream = module.input_port("input")
         mod_out_stream = module.output_port("output")

@@ -17,17 +17,22 @@ import typing
 
 from morpheus.modules.dfp_training_module import DFPTrainingModule
 from morpheus.modules.dfp_mlflow_model_writer_module import DFPMLFlowModelWriterModule
-from morpheus.modules.module import Module
+from morpheus.modules.dfp_training_and_mlflow_writer_module import DFPTrainingMLFlowWriterModule
+from morpheus.modules.abstract_module import AbstractModule
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class ModuleFactory:
 
-    __cls_dict = {"dfptraining": "DFPTrainingModule", "dfpmlflowmodelwriter": "DFPMLFlowModelWriterModule"}
+    __cls_dict = {
+        "dfp_training": "DFPTrainingModule",
+        "dfp_mlflow_model_writer": "DFPMLFlowModelWriterModule",
+        "dfp_training_mlflow_model_writer": "DFPTrainingMLFlowWriterModule"
+    }
 
     @staticmethod
-    def cls_dict() -> Module:
+    def cls_dict() -> AbstractModule:
         return ModuleFactory.__cls_dict
 
     class GenerateInstance(object):
@@ -46,7 +51,7 @@ class ModuleFactory:
                 raise
 
     @GenerateInstance
-    def get_instance(pipeline_config: typing.Dict, module_config: typing.Dict) -> Module:
+    def get_instance(pipeline_config: typing.Dict, module_config: typing.Dict) -> AbstractModule:
         module = module_config["module_id"].lower()
         if module and module in ModuleFactory.cls_dict():
             return ModuleFactory.cls_dict()[module], pipeline_config, module_config
@@ -54,6 +59,6 @@ class ModuleFactory:
             raise KeyError("Module implementation doesn't exists for module { }".format(module))
 
     @staticmethod
-    def register_module(pipeline_config: typing.Dict, module_config: typing.Dict, unique_name: str):
+    def register_module(pipeline_config: typing.Dict, module_config: typing.Dict):
         module = ModuleFactory.get_instance(pipeline_config, module_config)
-        module.register_module(unique_name)
+        module.register_module()

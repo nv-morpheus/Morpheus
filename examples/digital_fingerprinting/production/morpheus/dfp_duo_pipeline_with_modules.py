@@ -16,11 +16,13 @@ import functools
 import logging
 import os
 import typing
+import yaml
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from functools import partial
 from morpheus.stages.general.module_stage import ModuleStage
+from pathlib import Path
 
 import srf
 import click
@@ -125,6 +127,13 @@ from morpheus.utils.logger import parse_log_level
               type=str,
               default="http://localhost:8000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
+@click.option(
+    "--modules_conf",
+    type=str,
+    default="../resources/dfp_training_mlflow_writer_module_conf.yaml",
+    show_envvar=True,
+    help="The location to cache data such as S3 downloads and pre-processed data",
+)
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -282,38 +291,15 @@ def run_pipeline(train_users,
     # Output is UserMessageMeta -- Cached frame set
     pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
 
-    model_name_formatter = "DFP-duo-{user_id}"
-    experiment_name_formatter = "dfp/duo/training/{reg_model_name}"
+    module_config = yaml.safe_load(Path(kwargs["modules_conf"]).read_text())
+    traning_mlflow_module_config = module_config["DFPTrainingMLFlowWriterModule"]
+
+    model_name_formatter = traning_mlflow_module_config["modules"]['DFPMLFlowWriterModule']["model_name_formatter"]
 
     if (is_training):
-
-        traing_module_config = {
-            "module_id": "DFPTraining",
-            "version": [22, 11, 0],
-            "module_name": "DFPTrainingModule",
-            "module_namespace": "DFP",
-            "input_type_class": "morpheus.messages.multi_dfp_message.MultiDFPMessage",
-            "output_type_class": "morpheus.messages.multi_ae_message.MultiAEMessage"
-        }
-        # Finally, perform training which will output a model
-        pipeline.add_stage(ModuleStage(config, traing_module_config))
+        pipeline.add_stage(ModuleStage(config, traning_mlflow_module_config))
 
         pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
-
-        mlflow_writer_module_config = {
-            "model_name_formatter": model_name_formatter,
-            "experiment_name_formatter": experiment_name_formatter,
-            "databricks_permissions": None,
-            "version": [22, 11, 0],
-            "module_name": "DFPMLFlowWriterModule",
-            "module_id": "DFPMLFlowModelWriter",
-            "module_namespace": "DFP",
-            "input_type_class": "morpheus.messages.multi_ae_message.MultiAEMessage",
-            "output_type_class": "morpheus.messages.multi_ae_message.MultiAEMessage"
-        }
-
-        # Write that model to MLFlow
-        pipeline.add_stage(ModuleStage(config, mlflow_writer_module_config))
 
     else:
         pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))

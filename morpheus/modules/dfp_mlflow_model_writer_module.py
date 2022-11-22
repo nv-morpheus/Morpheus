@@ -20,8 +20,7 @@ import urllib.parse
 
 import mlflow
 import requests
-from morpheus.modules.module import Module
-import srf
+
 from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
@@ -33,12 +32,10 @@ from mlflow.types import ColSpec
 from mlflow.types import Schema
 from mlflow.types.utils import _infer_pandas_column
 from mlflow.types.utils import _infer_schema
-from srf.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.modules.abstract_module import AbstractModule
 
 from morpheus.utils.model_cache import user_to_model_name
 
@@ -53,14 +50,14 @@ conda_env = {
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-class DFPMLFlowModelWriterModule(Module):
+class DFPMLFlowModelWriterModule(AbstractModule):
 
-    def __init__(self, c: Config, module_config: typing.Dict):
-        super().__init__(c, module_config)
+    def __init__(self, c: Config, mc: typing.Dict):
+        super().__init__(c, mc)
 
-        self._model_name_formatter = module_config["model_name_formatter"]
-        self._experiment_name_formatter = module_config["experiment_name_formatter"]
-        self._databricks_permissions = module_config["databricks_permissions"]
+        self._model_name_formatter = mc["model_name_formatter"]
+        self._experiment_name_formatter = mc["experiment_name_formatter"]
+        self._databricks_permissions = mc["databricks_permissions"]
 
     def user_id_to_model(self, user_id: str):
 
@@ -217,9 +214,9 @@ class DFPMLFlowModelWriterModule(Module):
                 model_src = RunsArtifactRepository.get_underlying_uri(model_info.model_uri)
 
                 tags = {
-                    "start": message.get_meta(self._config.ae.timestamp_column_name).min(),
-                    "end": message.get_meta(self._config.ae.timestamp_column_name).max(),
-                    "count": message.get_meta(self._config.ae.timestamp_column_name).count()
+                    "start": message.get_meta(self._c.ae.timestamp_column_name).min(),
+                    "end": message.get_meta(self._c.ae.timestamp_column_name).max(),
+                    "count": message.get_meta(self._c.ae.timestamp_column_name).count()
                 }
 
                 # Now create the model version
@@ -234,25 +231,3 @@ class DFPMLFlowModelWriterModule(Module):
             logger.exception("Error uploading model to ML Flow", exc_info=True)
 
         return message
-
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def module_init(builder: srf.Builder):
-
-            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
-                obs.pipe(ops.map(self.on_data)).subscribe(sub)
-
-            node = builder.make_node_full(self.unique_name, node_fn)
-
-            builder.register_module_input("input", node)
-
-        if not self._registry.contains("DFPMLFlowWriter", self._module_namespace):
-            self._registry.register_module("DFPMLFlowWriter", self._module_namespace, self._version, module_init)
-
-        module = builder.load_module("DFPMLFlowWriter", self._module_namespace, self._module_name, {})
-
-        stream = module.input_port("input")
-
-        builder.make_edge(input_stream[0], stream)
-
-        return stream, MultiAEMessage

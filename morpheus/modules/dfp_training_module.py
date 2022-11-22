@@ -15,26 +15,22 @@
 import logging
 import typing
 
-import srf
 from dfencoder import AutoEncoder
-from srf.core import operators as ops
 
-from morpheus.modules.module import Module
+from morpheus.modules.abstract_module import AbstractModule
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
 
-from morpheus.messages.multi_dfp_message import MultiDFPMessage
+from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-class DFPTrainingModule(Module):
+class DFPTrainingModule(AbstractModule):
 
-    def __init__(self, config: Config, module_config: typing.Dict = {}):
+    def __init__(self, c: Config, mc: typing.Dict):
 
-        super().__init__(config, module_config)
+        super().__init__(c, mc)
 
         self._model_kwargs = {
             "encoder_layers": [512, 500],  # layers of the encoding part
@@ -52,9 +48,9 @@ class DFPTrainingModule(Module):
             "device": "cuda"
         }
 
-        # Update the defaults
-        self._model_kwargs.update(
-            self._module_config["model_args"] if self._module_config["model_args"] is not None else {})
+        if "model_args" in self._mc:
+            # Update the defaults
+            self._model_kwargs.update(self._mc["model_args"] if self._mc["model_args"] is not None else {})
 
     def on_data(self, message):
         if (message is None or message.mess_count == 0):
@@ -67,7 +63,7 @@ class DFPTrainingModule(Module):
         final_df = message.get_meta_dataframe()
 
         # Only train on the feature columns
-        final_df = final_df[final_df.columns.intersection(self._config.ae.feature_columns)]
+        final_df = final_df[final_df.columns.intersection(self._c.ae.feature_columns)]
 
         logger.debug("Training AE model for user: '%s'...", user_id)
         model.fit(final_df, epochs=30)
