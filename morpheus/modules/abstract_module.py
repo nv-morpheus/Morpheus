@@ -50,16 +50,16 @@ class AbstractModule(ABC):
 
             for key in modules_conf.keys():
                 module_conf = modules_conf[key]
-                module = builder.load_module(module_conf["module_id"],
+                curr_module = builder.load_module(module_conf["module_id"],
                                              module_conf["module_namespace"],
                                              module_conf["module_name"],
                                              module_conf)
                 if prev_module:
-                    builder.make_edge(prev_module.output_port("output"), module.input_port("input"))
+                    builder.make_edge(prev_module.output_port("output"), curr_module.input_port("input"))
                 else:
-                    head_module = module
+                    head_module = curr_module
 
-                prev_module = module
+                prev_module = curr_module
 
             # Register module input and ouptut ports.
             builder.register_module_input("input", head_module.input_port("input"))

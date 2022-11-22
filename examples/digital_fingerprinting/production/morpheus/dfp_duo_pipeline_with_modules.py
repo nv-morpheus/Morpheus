@@ -292,12 +292,12 @@ def run_pipeline(train_users,
     pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
 
     module_config = yaml.safe_load(Path(kwargs["modules_conf"]).read_text())
-    traning_mlflow_module_config = module_config["DFPTrainingMLFlowWriterModule"]
+    module_config = module_config["DFPTrainingMLFlowWriterModule"]
 
-    model_name_formatter = traning_mlflow_module_config["modules"]['DFPMLFlowWriterModule']["model_name_formatter"]
+    model_name_formatter = module_config["modules"]['DFPMLFlowWriterModule']["model_name_formatter"]
 
     if (is_training):
-        pipeline.add_stage(ModuleStage(config, traning_mlflow_module_config))
+        pipeline.add_stage(ModuleStage(config, module_config))
 
         pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
 
