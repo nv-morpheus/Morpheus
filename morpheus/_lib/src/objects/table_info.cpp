@@ -241,14 +241,14 @@ void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, 
     {
         namespace py = pybind11;
         pybind11::gil_scoped_acquire gil;
-        pybind11::object cupy_zeros = pybind11::module_::import("cupy").attr("zeros");
+        pybind11::object cudf_scalar = pybind11::module_::import("cudf").attr("Scalar");
 
         auto table = this->get_parent()->get_py_object();
 
         for (std::size_t i = 0; i < columns.size(); ++i)
         {
-            auto empty_array = cupy_zeros(num_rows, std::get<1>(columns[i]).type_str());
-            table.attr("insert")(num_existing_cols + i, std::get<0>(columns[i]), empty_array);
+            auto scalar = cudf_scalar(0, std::get<1>(columns[i]).type_str());
+            table.attr("insert")(num_existing_cols + i, std::get<0>(columns[i]), scalar);
             this->get_data().column_names.push_back(std::get<0>(columns[i]));
         }
     }

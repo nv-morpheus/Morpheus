@@ -18,6 +18,25 @@ import pandas as pd
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
+'''
+@dataclasses.dataclass(init=False)
+class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
+    """
+    This is a container class to hold batch deserialized messages metadata.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input rows in dataframe.
+
+    """
+    _df: pd.DataFrame
+
+    def __init__(self, df: pd.DataFrame) -> None:
+        super().__init__()
+        self._df = df
+
+'''
 
 
 @dataclasses.dataclass

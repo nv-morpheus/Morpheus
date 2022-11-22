@@ -17,6 +17,7 @@ import typing
 
 import srf
 
+from morpheus._lib.type_id import TypeId
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -47,6 +48,14 @@ class RecipientFeaturesStage(SinglePortStage):
             self._sep_token = sep_token
         else:
             raise ValueError("sep_token cannot be an empty string")
+
+        self._needed_columns.update({
+            'to_count': TypeId.INT32,
+            'bcc_count': TypeId.INT32,
+            'cc_count': TypeId.INT32,
+            'total_recipients': TypeId.INT32,
+            'data': TypeId.STRING
+        })
 
     @property
     def name(self) -> str:
