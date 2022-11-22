@@ -157,6 +157,10 @@ struct DType  // TODO move to dtype.hpp
         {
             return DType(TypeId::BOOL8);
         }
+        else if constexpr (std::is_same_v<T, std::string>)
+        {
+            return DType(TypeId::STRING);
+        }
         else
         {
             static_assert(!sizeof(T), "Type not implemented");
@@ -172,10 +176,5 @@ struct DType  // TODO move to dtype.hpp
     TypeId m_type_id;
 };
 
-template <typename T>
-DType type_to_dtype()
-{
-    return DType::from_triton(cudf::type_to_id<T>);
-}
 #pragma GCC visibility pop
 }  // namespace morpheus

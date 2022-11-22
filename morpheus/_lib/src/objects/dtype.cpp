@@ -19,6 +19,7 @@
 
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
+#include <cudf/types.hpp>
 #include <glog/logging.h>  // for CHECK
 
 #include <map>
@@ -35,6 +36,7 @@ const std::map<char, std::map<size_t, morpheus::TypeId>> StrToTypeId = {
       {2, morpheus::TypeId::INT16},
       {4, morpheus::TypeId::INT32},
       {8, morpheus::TypeId::INT64}}},
+
     {'u',
      {
          {1, morpheus::TypeId::UINT8},
@@ -42,7 +44,10 @@ const std::map<char, std::map<size_t, morpheus::TypeId>> StrToTypeId = {
          {4, morpheus::TypeId::UINT32},
          {8, morpheus::TypeId::UINT64},
      }},
-    {'f', {{4, morpheus::TypeId::FLOAT32}, {8, morpheus::TypeId::FLOAT64}}}};
+
+    {'f', {{4, morpheus::TypeId::FLOAT32}, {8, morpheus::TypeId::FLOAT64}}},
+
+    {'O', {{1, morpheus::TypeId::STRING}}}};
 }  // namespace
 
 namespace morpheus {
@@ -63,9 +68,10 @@ size_t DType::item_size() const
 {
     switch (m_type_id)
     {
-    case TypeId::INT8:
-    case TypeId::UINT8:
     case TypeId::BOOL8:
+    case TypeId::INT8:
+    case TypeId::STRING:  // not sure, but size of individual char
+    case TypeId::UINT8:
         return 1;
     case TypeId::INT16:
     case TypeId::UINT16:
@@ -77,7 +83,6 @@ size_t DType::item_size() const
     case TypeId::INT64:
     case TypeId::UINT64:
     case TypeId::FLOAT64:
-    case TypeId::STRING:  // not sure, but size of individual char
         return 8;
     case TypeId::NUM_TYPE_IDS:
     case TypeId::EMPTY:
@@ -94,7 +99,7 @@ std::string DType::name() const
 
 std::string DType::type_str() const
 {
-    if (m_type_id != TypeId::BOOL8)
+    if (m_type_id != TypeId::BOOL8 && m_type_id != TypeId::STRING)
     {
         return MORPHEUS_CONCAT_STR("<" << this->type_char() << this->item_size());
     }
@@ -131,6 +136,8 @@ cudf::type_id DType::cudf_type_id() const
         return cudf::type_id::FLOAT64;
     case TypeId::BOOL8:
         return cudf::type_id::BOOL8;
+    case TypeId::STRING:
+        return cudf::type_id::STRING;
     case TypeId::EMPTY:
     case TypeId::NUM_TYPE_IDS:
     default:
@@ -168,6 +175,7 @@ std::string DType::triton_str() const
         return "BOOL";
     case TypeId::EMPTY:
     case TypeId::NUM_TYPE_IDS:
+    case TypeId::STRING:
     default:
         throw std::runtime_error("Not supported");
     }
@@ -200,6 +208,8 @@ DType DType::from_cudf(cudf::type_id tid)
         return DType(TypeId::FLOAT64);
     case cudf::type_id::BOOL8:
         return DType(TypeId::BOOL8);
+    case cudf::type_id::STRING:
+        return DType(TypeId::STRING);
     case cudf::type_id::EMPTY:
     case cudf::type_id::NUM_TYPE_IDS:
     default:
@@ -311,6 +321,8 @@ char DType::type_char() const
     case TypeId::FLOAT32:
     case TypeId::FLOAT64:
         return 'f';
+    case TypeId::STRING:
+        return 'O';
     case TypeId::NUM_TYPE_IDS:
     case TypeId::EMPTY:
     default:
