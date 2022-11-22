@@ -58,10 +58,12 @@ from morpheus.utils.logger import configure_logging
 @click.option(
     "--nic_addr",
     help="NIC PCI Address",
+    required=True,
 )
 @click.option(
     "--gpu_addr",
     help="GPU PCI Address",
+    required=True,
 )
 @click.option(
     "--source_ip_filter",
@@ -82,7 +84,6 @@ def run_pipeline(
 
     CppConfig.set_should_use_cpp(True)
 
-    # Its necessary to get the global config object and configure it for FIL mode
     config = Config()
     config.mode = PipelineModes.OTHER
 
@@ -95,10 +96,8 @@ def run_pipeline(
     config.class_labels = ["probs"]
     config.edge_buffer_size = 4
 
-    # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
-    # # Set source stage
     pipeline.set_source(DocaSourceStage(
         config,
         nic_addr,
@@ -106,27 +105,9 @@ def run_pipeline(
         source_ip_filter
     ))
 
-    # # Add a deserialize stage
-    # pipeline.add_stage(DeserializeStage(config))
-
-    # # Add the graph construction stage
-    # pipeline.add_stage(FraudGraphConstructionStage(config, training_file))
-    # pipeline.add_stage(MonitorStage(config, description="Doca Source Rate"))
-
-    # # add sage inference stage
-    # pipeline.add_stage(GraphSAGEStage(config, model_hinsage_file))
-    # pipeline.add_stage(MonitorStage(config, description="Inference rate"))
-
-    # # Add classification stage
-    # pipeline.add_stage(ClassificationStage(config, model_xgb_file))
-    # pipeline.add_stage(MonitorStage(config, description="Add classification rate"))
-
-    # # Convert the probabilities to serialized JSON strings using the custom serialization stage
-    # pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(MonitorStage(config, description="Serialize rate"))
 
-    # # # Write the file to the output
-    # pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
+    pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()
