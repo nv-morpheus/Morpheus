@@ -130,7 +130,7 @@ from morpheus.utils.logger import parse_log_level
 @click.option(
     "--modules_conf",
     type=str,
-    default="../resources/dfp_training_mlflow_writer_module_conf.yaml",
+    default="../resources/dfp_module_conf.yaml",
     show_envvar=True,
     help="The location to cache data such as S3 downloads and pre-processed data",
 )
@@ -291,8 +291,7 @@ def run_pipeline(train_users,
     # Output is UserMessageMeta -- Cached frame set
     pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
 
-    module_config = yaml.safe_load(Path(kwargs["modules_conf"]).read_text())
-    module_config = module_config["DFPTrainingMLFlowWriterModule"]
+    module_config = yaml.safe_load(Path(kwargs["modules_conf"]).read_text())["DFPTrainingMLFlowWriterModule"]
 
     model_name_formatter = module_config["modules"]['DFPMLFlowWriterModule']["model_name_formatter"]
 
