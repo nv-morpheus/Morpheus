@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 @register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
 class GenerateVizFramesStage(SinglePortStage):
     """
-    Write out vizualization DataFrames.
+    Write out visualization DataFrames.
 
     Parameters
     ----------

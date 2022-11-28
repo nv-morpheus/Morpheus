@@ -332,7 +332,7 @@ TensorRT    :Skipped
 Complete!
 ```
 
-This indicates that only 3 out of 314 rows did not match the validation dataset. If you see errors similar to `:/ ( %)` or very high percentages, then the workflow did not complete sucessfully.
+This indicates that only 3 out of 314 rows did not match the validation dataset. If you see errors similar to `:/ ( %)` or very high percentages, then the workflow did not complete successfully.
 
 ### Troubleshooting the Build
 
@@ -342,7 +342,7 @@ Due to the large number of dependencies, it's common to run into build issues. T
    - To avoid rebuilding every compilation unit for all dependencies after each change, a fair amount of the build is cached. By default, the cache is located at `${MORPHEUS_ROOT}/.cache`. The cache contains both compiled object files, source repositories, ccache files, clangd files and even the cuDF build.
    - The entire cache folder can be deleted at any time and will be redownload/recreated on the next build
  - Message indicating `git apply ...` failed
-   - Many of the dependencies require small patches to make them work. These patches must be applied once and only once. If you see this error, try deleting the offending package from the `build/_deps/<offending_packag>` directory or from `.cache/cpm/<offending_package>`.
+   - Many of the dependencies require small patches to make them work. These patches must be applied once and only once. If you see this error, try deleting the offending package from the `build/_deps/<offending_package>` directory or from `.cache/cpm/<offending_package>`.
    - If all else fails, delete the entire `build/` directory and `.cache/` directory.
 
 ## Licensing

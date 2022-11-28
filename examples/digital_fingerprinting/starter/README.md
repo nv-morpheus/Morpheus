@@ -80,7 +80,7 @@ Commands:
   from-azure       Source stage is used to load Azure Active Directory messages.
   from-cloudtrail  Load messages from a Cloudtrail directory
   from-duo         Source stage is used to load Duo Authentication messages.
-  gen-viz          (Deprecated) Write out vizualization data frames
+  gen-viz          (Deprecated) Write out visualization data frames
   inf-pytorch      Perform inference with PyTorch
   inf-triton       Perform inference with Triton
   monitor          Display throughput numbers at a specific point in the
