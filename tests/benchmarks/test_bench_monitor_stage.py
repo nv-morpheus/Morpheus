@@ -45,6 +45,7 @@ def build_and_run_pipeline(config: Config, df: cudf.DataFrame):
     pipeline.run()
 
 
+@pytest.mark.benchmark
 @pytest.mark.parametrize("num_messages", [1, 100, 10000, 1000000])
 def test_monitor_stage(benchmark, num_messages):
 

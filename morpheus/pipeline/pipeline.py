@@ -247,20 +247,28 @@ class Pipeline():
 
     async def join(self):
 
-        await self._srf_executor.join_async()
+        try:
+            await self._srf_executor.join_async()
+        except Exception:
+            logger.exception("Exception occurred in pipeline. Rethrowing")
+            raise
+        finally:
+            # Make sure these are always shut down even if there was an error
+            for s in list(self._sources):
+                s.stop()
 
-        # First wait for all sources to stop. This only occurs after all messages have been processed fully
-        for s in list(self._sources):
-            await s.join()
+            # First wait for all sources to stop. This only occurs after all messages have been processed fully
+            for s in list(self._sources):
+                await s.join()
 
-        # Now that there is no more data, call stop on all stages to ensure shutdown (i.e., for stages that have their
-        # own worker loop thread)
-        for s in list(self._stages):
-            s.stop()
+            # Now that there is no more data, call stop on all stages to ensure shutdown (i.e., for stages that have
+            # their own worker loop thread)
+            for s in list(self._stages):
+                s.stop()
 
-        # Now call join on all stages
-        for s in list(self._stages):
-            await s.join()
+            # Now call join on all stages
+            for s in list(self._stages):
+                await s.join()
 
     async def build_and_start(self):
 

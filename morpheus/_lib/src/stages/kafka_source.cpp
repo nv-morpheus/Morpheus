@@ -17,6 +17,7 @@
 
 #include "morpheus/stages/kafka_source.hpp"
 
+#include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
@@ -256,7 +257,8 @@ KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
-                                   size_t stop_after) :
+                                   size_t stop_after,
+                                   bool async_commits) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topic(std::move(topic)),
@@ -264,7 +266,8 @@ KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
   m_config(std::move(config)),
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering),
-  m_stop_after{stop_after}
+  m_stop_after{stop_after},
+  m_async_commits(async_commits)
 {}
 
 KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
@@ -333,7 +336,14 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 
                 if (should_commit)
                 {
-                    CHECK_KAFKA(consumer->commitAsync(), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
+                    if (m_async_commits)
+                    {
+                        CHECK_KAFKA(consumer->commitAsync(), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
+                    }
+                    else
+                    {
+                        CHECK_KAFKA(consumer->commitSync(), RdKafka::ERR_NO_ERROR, "Error during commit");
+                    }
                 }
             }
 
@@ -519,31 +529,7 @@ cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string &bu
     auto options =
         cudf::io::json_reader_options::builder(cudf::io::source_info(buffer.c_str(), buffer.size())).lines(true);
 
-    auto tbl = cudf::io::read_json(options.build());
-
-    auto found = std::find(tbl.metadata.column_names.begin(), tbl.metadata.column_names.end(), "data");
-
-    if (found == tbl.metadata.column_names.end())
-        return tbl;
-
-    // Super ugly but cudf cant handle newlines and add extra escapes. So we need to convert
-    // \\n -> \n
-    // \\/ -> \/
-    auto columns = tbl.tbl->release();
-
-    size_t idx = found - tbl.metadata.column_names.begin();
-
-    auto updated_data = cudf::strings::replace(
-        cudf::strings_column_view{columns[idx]->view()}, cudf::string_scalar("\\n"), cudf::string_scalar("\n"));
-
-    updated_data = cudf::strings::replace(
-        cudf::strings_column_view{updated_data->view()}, cudf::string_scalar("\\/"), cudf::string_scalar("/"));
-
-    columns[idx] = std::move(updated_data);
-
-    tbl.tbl = std::move(std::make_unique<cudf::table>(std::move(columns)));
-
-    return tbl;
+    return load_json_table(options.build());
 }
 
 template <bool EnableFilter>
@@ -594,10 +580,18 @@ std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     std::map<std::string, std::string> config,
     bool disable_commits,
     bool disable_pre_filtering,
-    size_t stop_after)
+    size_t stop_after,
+    bool async_commits)
 {
-    auto stage = builder.construct_object<KafkaSourceStage>(
-        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering, stop_after);
+    auto stage = builder.construct_object<KafkaSourceStage>(name,
+                                                            max_batch_size,
+                                                            topic,
+                                                            batch_timeout_ms,
+                                                            config,
+                                                            disable_commits,
+                                                            disable_pre_filtering,
+                                                            stop_after,
+                                                            async_commits);
 
     return stage;
 }

@@ -47,7 +47,7 @@ DOCKER_ARGS="${DOCKER_ARGS} --network=host"
 DOCKER_ARGS="${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS}"
 
 # Export buildkit variable
-export DOCKER_BUILDKIT
+export DOCKER_BUILDKIT=1
 
 echo "Building morpheus:${DOCKER_TAG}..."
 echo "   FROM_IMAGE      : ${FROM_IMAGE}"
@@ -58,7 +58,7 @@ echo "   RAPIDS_VER      : ${RAPIDS_VER}"
 echo "   PYTHON_VER      : ${PYTHON_VER}"
 echo "   TENSORRT_VERSION: ${TENSORRT_VERSION}"
 echo ""
-echo "   COMMAND: docker buildx build ${DOCKER_ARGS} -f docker/Dockerfile ."
+echo "   COMMAND: docker build ${DOCKER_ARGS} -f docker/Dockerfile ."
 echo "   Note: add '--progress plain' to DOCKER_ARGS to show all container build output"
 
 docker build ${DOCKER_ARGS} -f docker/Dockerfile .
