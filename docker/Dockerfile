@@ -52,37 +52,42 @@ RUN apt-get update &&\
         build-essential pkg-config curl unzip tar zip openssh-client bc jq git-lfs wget \
     && rm -rf /var/lib/apt/lists/*
 
-ARG DOCA_BUILD_ID=6590105
+# stable: 6590105
+ARG DOCA_BUILD_ID=6411662
+# stable: 1.6.0024-1
+ARG DOCA_VERSION=1.6.0008-1
+# stable: 20.11.0-7.1.2
+ARG DPDK_VERSION=20.11.0-7.0.1
 
 RUN mkdir -p ./docker/deb
 RUN wget -O ./docker/deb/doca-host-repo-ubuntu2004_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb \
     https://urm.nvidia.com/artifactory/sw-nbu-int-generic-local/doca-repo-1.6.0/doca-repo-1.6.0-0.0.9-221109-160039-daily/doca-host-repo-ubuntu2004_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb
-RUN wget -O ./docker/deb/doca-apps-dev_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps-dev_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/doca-apps_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/doca-grpc-dev_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-grpc-dev_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/doca-grpc_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-grpc_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/doca-libs_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-libs_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/doca-prime-runtime_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-runtime_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/doca-prime-sdk_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-sdk_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/doca-prime-tools_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-tools_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/doca-samples_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-samples_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/libdoca-libs-dev_1.6.0024-1_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/libdoca-libs-dev_1.6.0024-1_amd64.deb
-RUN wget -O ./docker/deb/mlnx-dpdk-dev_20.11.0-7.1.2_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-dev_20.11.0-7.1.2_amd64.deb
-RUN wget -O ./docker/deb/mlnx-dpdk-doc_20.11.0-7.1.2_all.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-doc_20.11.0-7.1.2_all.deb
-RUN wget -O ./docker/deb/mlnx-dpdk_20.11.0-7.1.2_amd64.deb \
-    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk_20.11.0-7.1.2_amd64.deb
+RUN wget -O ./docker/deb/doca-apps-dev_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps-dev_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/doca-apps_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-apps_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/doca-grpc-dev_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-grpc-dev_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/doca-grpc_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-grpc_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/doca-libs_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-libs_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/doca-prime-runtime_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-runtime_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/doca-prime-sdk_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-sdk_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/doca-prime-tools_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-prime-tools_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/doca-samples_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/doca-samples_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/libdoca-libs-dev_${DOCA_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/mlnx-dpdk-dev_${DPDK_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-dev_${DPDK_VERSION}_amd64.deb
+RUN wget -O ./docker/deb/mlnx-dpdk-doc_${DPDK_VERSION}_all.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-doc_${DPDK_VERSION}_all.deb
+RUN wget -O ./docker/deb/mlnx-dpdk_${DPDK_VERSION}_amd64.deb \
+    https://urm.nvidia.com/artifactory/sw-nbu-int-generic/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk_${DPDK_VERSION}_amd64.deb
 
 
 RUN dpkg -i ./docker/deb/*.deb ; exit 0
