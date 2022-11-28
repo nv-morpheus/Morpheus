@@ -39,7 +39,7 @@ class AbstractModule(ABC):
             self._registry.register_module(self._module_id, self._module_ns, self._version, module_init)
 
     # Registers modules which contains chain of inner modules
-    def _register_chained_module(self):
+    def _register_chain_module(self):
 
         def module_init(builder: srf.Builder):
 
@@ -51,11 +51,14 @@ class AbstractModule(ABC):
             for key in modules_conf.keys():
                 module_conf = modules_conf[key]
                 curr_module = builder.load_module(module_conf["module_id"],
-                                             module_conf["module_namespace"],
-                                             module_conf["module_name"],
-                                             module_conf)
+                                                  module_conf["module_namespace"],
+                                                  module_conf["module_name"],
+                                                  module_conf)
                 if prev_module:
-                    builder.make_edge(prev_module.output_port("output"), curr_module.input_port("input"))
+                    if prev_module.config()["output_type_class"] == curr_module.config()["input_type_class"]:
+                        builder.make_edge(prev_module.output_port("output"), curr_module.input_port("input"))
+                    else:
+                        raise Exception("The current node input type does not match the previous node output type.")
                 else:
                     head_module = curr_module
 

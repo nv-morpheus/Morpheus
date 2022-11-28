@@ -34,6 +34,6 @@ class DFPTrainingMLFlowWriterModule(AbstractModule):
 
     def register_module(self):
 
-        self._register_chained_module()
+        self._register_chain_module()
 
     

@@ -74,6 +74,9 @@ class ModuleStage(SinglePortStage):
         """
         return (self._input_type_class, )
 
+    def _get_cpp_module_node(self, builder: srf.Builder) -> srf.SegmentObject:
+        raise NotImplementedError("No C++ node is available for this module type")
+
     def _register_modules(self):
 
         # Register if there are any inner modules.
