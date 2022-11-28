@@ -44,6 +44,12 @@
 
 namespace morpheus {
 
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
+
 using TensorIndex = long long;  // NOLINT
 using RankType    = int;        // NOLINT
 
@@ -173,6 +179,11 @@ struct ITensor : public ITensorStorage, public ITensorOperations
     }
 };
 
+/**
+ * @brief Handle for interacting with Morpheus `Tensor` objects. Typically constructed using the `Tensor::create`
+ * factory method.
+ *
+ */
 struct TensorObject final
 {
     TensorObject() = default;
@@ -436,4 +447,5 @@ struct TensorObject final
     std::shared_ptr<ITensor> m_tensor;
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

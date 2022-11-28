@@ -25,6 +25,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** CupyUtil****************************************/
+
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
+
 /**
  * @brief Structure that encapsulates cupy utilities.
  */
@@ -47,4 +54,5 @@ struct CupyUtil
      */
     static TensorObject cupy_to_tensor(pybind11::object cupy_array);
 };
+/** @} */  // end of group
 }  // namespace morpheus
