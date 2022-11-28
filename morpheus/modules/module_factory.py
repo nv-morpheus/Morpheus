@@ -58,8 +58,3 @@ class ModuleFactory:
             return ModuleFactory.cls_dict()[module], pipeline_config, module_config
         else:
             raise KeyError("Module implementation doesn't exists for module { }".format(module))
-
-    @staticmethod
-    def register_module(pipeline_config: typing.Dict, module_config: typing.Dict):
-        module = ModuleFactory.get_instance(pipeline_config, module_config)
-        module.register_module()
