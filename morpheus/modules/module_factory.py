@@ -15,10 +15,11 @@
 import logging
 import typing
 
-from morpheus.modules.dfp_training_module import DFPTrainingModule
+from morpheus.modules import *
 from morpheus.modules.dfp_mlflow_model_writer_module import DFPMLFlowModelWriterModule
 from morpheus.modules.dfp_training_and_mlflow_writer_module import DFPTrainingMLFlowWriterModule
 from morpheus.modules.abstract_module import AbstractModule
+from morpheus.modules.dfp_training_module import DFPTrainingModule
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -26,9 +27,9 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 class ModuleFactory:
 
     __cls_dict = {
-        "dfp_training": "DFPTrainingModule",
-        "dfp_mlflow_model_writer": "DFPMLFlowModelWriterModule",
-        "dfp_training_mlflow_model_writer": "DFPTrainingMLFlowWriterModule"
+        "dfp_training": DFPTrainingModule,
+        "dfp_mlflow_model_writer": DFPMLFlowModelWriterModule,
+        "dfp_training_mlflow_model_writer": DFPTrainingMLFlowWriterModule
     }
 
     @staticmethod
@@ -43,7 +44,7 @@ class ModuleFactory:
         def __call__(self, *args, **kwargs):
             class_name, pipeline_config, module_config = self.func(*args, **kwargs)
             try:
-                target_cls = globals()[class_name](pipeline_config, module_config)
+                target_cls = class_name(pipeline_config, module_config)
                 return target_cls
             except KeyError as error:
                 logger.error(error)
