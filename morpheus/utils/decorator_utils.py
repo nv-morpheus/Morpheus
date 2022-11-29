@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import srf
 
 registry = srf.ModuleRegistry
 
-
+"""
+A module availability in the module registry is verified by this function.
+"""
 def is_module_registered(func):
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
 
         if args is not None and len(args) >= 2:

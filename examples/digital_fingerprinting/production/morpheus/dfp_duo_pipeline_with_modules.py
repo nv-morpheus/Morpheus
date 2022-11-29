@@ -124,13 +124,6 @@ from morpheus.utils.logger import parse_log_level
               type=str,
               default="http://localhost:8000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
-@click.option(
-    "--modules_conf",
-    type=str,
-    default="../resources/dfp_module_conf.yaml",
-    show_envvar=True,
-    help="The location to cache data such as S3 downloads and pre-processed data",
-)
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -292,6 +285,8 @@ def run_pipeline(train_users,
     model_name_formatter = "DFP-duo-{user_id}"
 
     if (is_training):
+
+        # Module configuration
         module_config = {
             "module_id": "DFPTrainingPipeline",
             "module_name": "dfp_training_pipeline",
