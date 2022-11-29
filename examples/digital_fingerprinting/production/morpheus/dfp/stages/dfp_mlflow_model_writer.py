@@ -58,19 +58,12 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                  c: Config,
                  model_name_formatter: str = "dfp-{user_id}",
                  experiment_name_formatter: str = "/dfp-models/{reg_model_name}",
-                 databricks_permissions: dict = None,
-                 version: typing.List = [22, 11, 0],
-                 module_name: str = "DFPMLFlowWriterModule", 
-                 module_namespace: str = "DFP"):
+                 databricks_permissions: dict = None):
         super().__init__(c)
 
         self._model_name_formatter = model_name_formatter
         self._experiment_name_formatter = experiment_name_formatter
         self._databricks_permissions = databricks_permissions
-        self._registry = srf.ModuleRegistry()
-        self._version =  version
-        self._module_name = module_name
-        self._module_namespace = module_namespace
 
     @property
     def name(self) -> str:

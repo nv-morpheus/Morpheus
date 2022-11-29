@@ -16,27 +16,23 @@ import functools
 import logging
 import os
 import typing
-import yaml
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from functools import partial
-from morpheus.stages.general.module_stage import ModuleStage
-from pathlib import Path
 
-import srf
 import click
+import dfp.modules.dfp_modules
 import mlflow
 import pandas as pd
+
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
-from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
 from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
-from dfp.stages.dfp_training import DFPTraining
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.column_info import BoolColumn
 from dfp.utils.column_info import ColumnInfo
@@ -57,6 +53,7 @@ from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
+from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.utils.logger import configure_logging
@@ -194,6 +191,7 @@ def run_pipeline(train_users,
     config.ae = ConfigAutoEncoder()
 
     config.ae.feature_columns = load_labels_file(get_package_relative_file("data/columns_ae_duo.txt"))
+
     config.ae.userid_column_name = "username"
     config.ae.timestamp_column_name = "timestamp"
 
@@ -291,14 +289,54 @@ def run_pipeline(train_users,
     # Output is UserMessageMeta -- Cached frame set
     pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
 
-    module_config = yaml.safe_load(Path(kwargs["modules_conf"]).read_text())["DFPTrainingMLFlowWriterModule"]
-
-    model_name_formatter = module_config["modules"]['DFPMLFlowWriterModule']["model_name_formatter"]
+    model_name_formatter = "DFP-duo-{user_id}"
 
     if (is_training):
-        pipeline.add_stage(ModuleStage(config, module_config))
+        module_config = {
+            "module_id": "DFPTrainingPipeline",
+            "module_name": "dfp_training_pipeline",
+            "namespace": "morpheus_modules",
+            "DFPTraining": {
+                "module_id": "DFPTraining",
+                "module_name": "dfp_training",
+                "namespace": "morpheus_modules",
+                "model_kwargs": {
+                    "encoder_layers": [512, 500],  # layers of the encoding part
+                    "decoder_layers": [512],  # layers of the decoding part
+                    "activation": 'relu',  # activation function
+                    "swap_p": 0.2,  # noise parameter
+                    "lr": 0.001,  # learning rate
+                    "lr_decay": .99,  # learning decay
+                    "batch_size": 512,
+                    "verbose": False,
+                    "optimizer": 'sgd',  # SGD optimizer is selected(Stochastic gradient descent)
+                    "scaler": 'standard',  # feature scaling method
+                    "min_cats": 1,  # cut off for minority categories
+                    "progress_bar": False,
+                    "device": "cuda"
+                },
+                "feature_columns": config.ae.feature_columns,
+            },
+            "DFPMLFlowWriter": {
+                "module_id": "DFPMLFlowWriter",
+                "module_name": "dfp_mlflow_writer",
+                "namespace": "morpheus_modules",
+                "model_name_formatter": "DFP-duo-{user_id}",
+                "experiment_name_formatter": "dfp/duo/training/{reg_model_name}",
+                "timestamp_column_name": config.ae.timestamp_column_name,
+                "conda_env": {
+                    'channels': ['defaults', 'conda-forge'],
+                    'dependencies': ['python={}'.format('3.8'), 'pip'],
+                    'pip': ['mlflow', 'dfencoder'],
+                    'name': 'mlflow-env'
+                },
+                "databricks_permissions": None
+            }
+        }
+        
+        pipeline.add_stage(LinearModulesStage(config, module_config))
 
-        pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
+        pipeline.add_stage(MonitorStage(config, description="Training and MLFlowWriter rate", smoothing=0.001))
 
     else:
         pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))

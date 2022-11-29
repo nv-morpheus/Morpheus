@@ -19,7 +19,7 @@ from unittest import mock
 import pytest
 import srf
 
-from morpheus.stages.general.module_stage import ModuleStage
+from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 
 module_config = {
     "module_id": "dfp_training",
@@ -33,7 +33,7 @@ module_config = {
 
 def test_constructor(config):
 
-    mod_stage = ModuleStage(config, module_config)
+    mod_stage = LinearModulesStage(config, module_config)
     assert mod_stage._module_id == "dfp_training"
     assert mod_stage._module_name == "DFPTrainingModule"
     assert mod_stage.name == "DFPTrainingModule"
