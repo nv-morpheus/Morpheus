@@ -82,7 +82,7 @@ class DFPModuleRegisterUtil:
         if not self._registry.contains(module_id, namespace):
             self._registry.register_module(module_id, namespace, self._release_version, training_module)
 
-    def register_mlflow_writer_module(self, module_id, namespace):
+    def register_mlflow_model_writer_module(self, module_id, namespace):
 
         def mlflow_writer_module(builder: srf.Builder):
 
@@ -313,13 +313,13 @@ dfp_util = DFPModuleRegisterUtil()
 # Register DFP training module
 dfp_util.register_training_module("DFPTraining", "morpheus_modules")
 
-# Register DFP MLFlow writer module
-dfp_util.register_mlflow_writer_module("DFPMLFlowWriter", "morpheus_modules")
+# Register DFP MLFlow model writer module
+dfp_util.register_mlflow_model_writer_module("DFPMLFlowModelWriter", "morpheus_modules")
 
 ordered_module_meta = [{
     "module_id": "DFPTraining", "namespace": "morpheus_modules"
 }, {
-    "module_id": "DFPMLFlowWriter", "namespace": "morpheus_modules"
+    "module_id": "DFPMLFlowModelWriter", "namespace": "morpheus_modules"
 }]
 # Register DFP training pipeline module
 dfp_util.register_training_pipeline_module("DFPTrainingPipeline", "morpheus_modules", ordered_module_meta)

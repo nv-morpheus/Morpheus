@@ -317,9 +317,9 @@ def run_pipeline(train_users,
                 },
                 "feature_columns": config.ae.feature_columns,
             },
-            "DFPMLFlowWriter": {
-                "module_id": "DFPMLFlowWriter",
-                "module_name": "dfp_mlflow_writer",
+            "DFPMLFlowModelWriter": {
+                "module_id": "DFPMLFlowModelWriter",
+                "module_name": "dfp_mlflow_model_writer",
                 "namespace": "morpheus_modules",
                 "model_name_formatter": "DFP-duo-{user_id}",
                 "experiment_name_formatter": "dfp/duo/training/{reg_model_name}",
@@ -336,7 +336,7 @@ def run_pipeline(train_users,
         
         pipeline.add_stage(LinearModulesStage(config, module_config))
 
-        pipeline.add_stage(MonitorStage(config, description="Training and MLFlowWriter rate", smoothing=0.001))
+        pipeline.add_stage(MonitorStage(config, description="Training and MLFlowModelWriter rate", smoothing=0.001))
 
     else:
         pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))
