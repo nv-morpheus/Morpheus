@@ -250,22 +250,10 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def module_init(builder: srf.Builder):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+            obs.pipe(ops.map(self.on_data)).subscribe(sub)
 
-            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
-                obs.pipe(ops.map(self.on_data)).subscribe(sub)
-            
-            node = builder.make_node_full(self.unique_name, node_fn)
-            
-            builder.register_module_input("input", node)
-
-        if not self._registry.contains("DFPMLFlowWriter", self._module_namespace):
-           self._registry.register_module("DFPMLFlowWriter", self._module_namespace, self._version, module_init)
-        
-        module = builder.load_module("DFPMLFlowWriter", self._module_namespace, self._module_name, {})
-        
-        stream = module.input_port("input")
-        
+        stream = builder.make_node_full(self.unique_name, node_fn)
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiAEMessage

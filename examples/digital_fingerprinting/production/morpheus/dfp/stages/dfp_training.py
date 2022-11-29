@@ -31,12 +31,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class DFPTraining(SinglePortStage):
 
-    def __init__(self, c: Config,  
-                model_kwargs: dict = None,
-                version: typing.List = [22, 11, 0],
-                module_name: str = "DFPTrainingModule", 
-                module_namespace: str = "DFP"):
-
+    def __init__(self, c: Config, model_kwargs: dict = None):
         super().__init__(c)
 
         self._model_kwargs = {
@@ -57,11 +52,6 @@ class DFPTraining(SinglePortStage):
 
         # Update the defaults
         self._model_kwargs.update(model_kwargs if model_kwargs is not None else {})
-
-        self._registry = srf.ModuleRegistry()
-        self._version =  version
-        self._module_name = module_name
-        self._module_namespace = module_namespace
 
     @property
     def name(self) -> str:
@@ -99,22 +89,10 @@ class DFPTraining(SinglePortStage):
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def module_init(builder: srf.Builder):
+        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+            obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
-                obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-            
-            node = builder.make_node_full(self.unique_name, node_fn)
-
-            builder.register_module_input("input", node)
-
-        if not self._registry.contains("DFPTraining", self._module_namespace):
-           self._registry.register_module("DFPTraining", self._module_namespace, self._version, module_init)
-        
-        module = builder.load_module("DFPTraining", self._module_namespace, self._module_name, {})
-        
-        stream = module.input_port("input")
-
+        stream = builder.make_node_full(self.unique_name, node_fn)
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiAEMessage
