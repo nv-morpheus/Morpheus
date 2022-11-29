@@ -36,10 +36,18 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** AddScoresStage********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
  */
+
 #pragma GCC visibility push(default)
+/**
+ * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
+ * Label indexes will be looked up in the idx2label property.
+ */
 class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                      std::shared_ptr<MultiResponseProbsMessage>>
 {
@@ -50,6 +58,12 @@ class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiRespon
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Construct a new Add Scores Stage object
+     *
+     * @param num_class_labels : Number of classification labels
+     * @param idx2label : Index to classification labels map
+     */
     AddScoresStage(std::size_t num_class_labels, std::map<std::size_t, std::string> idx2label);
 
     /**
@@ -68,7 +82,13 @@ class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiRespon
 struct AddScoresStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a AddScoresStage, and return the result.
+     * @brief Create and initialize a AddScoresStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param num_class_labels : Number of classification labels
+     * @param idx2label : Index to classification labels map
+     * @return std::shared_ptr<srf::segment::Object<AddScoresStage>>
      */
     static std::shared_ptr<srf::segment::Object<AddScoresStage>> init(srf::segment::Builder &builder,
                                                                       const std::string &name,
@@ -77,4 +97,5 @@ struct AddScoresStageInterfaceProxy
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

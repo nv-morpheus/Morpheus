@@ -37,10 +37,18 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** WriteToFileStage********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
  */
+
 #pragma GCC visibility push(default)
+/**
+ * @brief Write all messages to a file. Messages are written to a file by this class.
+ * This class does not maintain an open file or buffer messages.
+ */
 class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
 {
   public:
@@ -50,7 +58,12 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
     using typename base_t::subscribe_fn_t;
 
     /**
-     * TODO(Documentation)
+     * @brief Construct a new Write To File Stage object
+     *
+     * @param filename : Reference to the name of the file to which the messages will be written
+     * @param mode : Reference to the mode for opening a file
+     * @param file_type : FileTypes
+     * @param include_index_col : Write out the index as a column, by default true
      */
     WriteToFileStage(const std::string &filename,
                      std::ios::openmode mode = std::ios::out,
@@ -59,12 +72,22 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 
   private:
     /**
-     * TODO(Documentation)
+     * @brief Close the file
      */
     void close();
 
+    /**
+     * @brief Write messages (rows in a DataFrame) to a JSON format
+     *
+     * @param msg
+     */
     void write_json(sink_type_t &msg);
 
+    /**
+     * @brief Write messages (rows in a DataFrame) to a CSV format
+     *
+     * @param msg
+     */
     void write_csv(sink_type_t &msg);
 
     subscribe_fn_t build_operator();
@@ -82,7 +105,15 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 struct WriteToFileStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a WriteToFileStage, and return the result.
+     * @brief Create and initialize a WriteToFileStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param filename : Reference to the name of the file to which the messages will be written
+     * @param mode : Reference to the mode for opening a file
+     * @param file_type : FileTypes
+     * @param include_index_col : Write out the index as a column, by default true
+     * @return std::shared_ptr<srf::segment::Object<WriteToFileStage>>
      */
     static std::shared_ptr<srf::segment::Object<WriteToFileStage>> init(srf::segment::Builder &builder,
                                                                         const std::string &name,
@@ -93,4 +124,5 @@ struct WriteToFileStageInterfaceProxy
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus
