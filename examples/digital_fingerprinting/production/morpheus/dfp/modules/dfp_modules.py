@@ -12,20 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from contextlib import contextmanager
-import datetime
-from functools import partial
 import hashlib
+import json
 import logging
+import multiprocessing as mp
 import os
 import random
 import time
 import typing
 import urllib.parse
+from contextlib import contextmanager
+from datetime import datetime
+from functools import partial
+
+import fsspec
+import fsspec.utils
+import mlflow
+import numpy as np
+import pandas as pd
+import requests
+import srf
+from dfencoder import AutoEncoder
 from dfp.stages.dfp_file_batcher_stage import TimestampFileObj
-from dfp.utils.file_utils import date_extractor, iso_date_regex
-import cudf
-from dfp.utils.column_info import BoolColumn, create_increment_col, process_dataframe
+from dfp.stages.dfp_rolling_window_stage import CachedUserWindow
+from dfp.utils.column_info import BoolColumn
 from dfp.utils.column_info import ColumnInfo
 from dfp.utils.column_info import CustomColumn
 from dfp.utils.column_info import DataFrameInputSchema
@@ -33,21 +43,11 @@ from dfp.utils.column_info import DateTimeColumn
 from dfp.utils.column_info import IncrementColumn
 from dfp.utils.column_info import RenameColumn
 from dfp.utils.column_info import StringCatColumn
-from dfp.stages.dfp_rolling_window_stage import CachedUserWindow
-import numpy as np
-import dask
-from dask.distributed import Client
-from dask.distributed import LocalCluster
+from dfp.utils.column_info import create_increment_col
+from dfp.utils.column_info import process_dataframe
+from dfp.utils.file_utils import date_extractor
+from dfp.utils.file_utils import iso_date_regex
 from dfp.utils.logging_timer import log_time
-import mlflow
-import requests
-from morpheus._lib.file_types import FileTypes
-from morpheus.io.deserializers import read_file_to_df
-import srf
-import fsspec
-import fsspec.utils
-import pandas as pd
-from dfencoder import AutoEncoder
 from dfp.utils.model_cache import user_to_model_name
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
@@ -60,13 +60,20 @@ from mlflow.types import Schema
 from mlflow.types.utils import _infer_pandas_column
 from mlflow.types.utils import _infer_schema
 from srf.core import operators as ops
-import json
-import multiprocessing as mp
 
+import dask
+from dask.distributed import Client
+from dask.distributed import LocalCluster
+
+import cudf
+
+from morpheus._lib.file_types import FileTypes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.decorator_utils import is_module_registered
 
-from ..messages.multi_dfp_message import DFPMessageMeta, MultiDFPMessage
+from ..messages.multi_dfp_message import DFPMessageMeta
+from ..messages.multi_dfp_message import MultiDFPMessage
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -83,8 +90,8 @@ class DFPModuleRegisterUtil:
         return ver_list
 
     def register_training_module(self, module_id, namespace):
-        
-        def training_module(builder: srf.Builder):
+
+        def module_init(builder: srf.Builder):
 
             config = builder.get_current_module_config()
 
@@ -124,11 +131,11 @@ class DFPModuleRegisterUtil:
             builder.register_module_output("output", node)
 
         if not self._registry.contains(module_id, namespace):
-            self._registry.register_module(module_id, namespace, self._release_version, training_module)
+            self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
     def register_mlflow_model_writer_module(self, module_id, namespace):
 
-        def mlflow_writer_module(builder: srf.Builder):
+        def module_init(builder: srf.Builder):
 
             config = builder.get_current_module_config()
 
@@ -317,7 +324,7 @@ class DFPModuleRegisterUtil:
             builder.register_module_output("output", node)
 
         if not self._registry.contains(module_id, namespace):
-            self._registry.register_module(module_id, namespace, self._release_version, mlflow_writer_module)
+            self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
     @is_module_registered
     def is_module_registered(self, module_id=None, namespace=None):
@@ -359,7 +366,7 @@ class DFPModuleRegisterUtil:
 
     def register_file_batcher_module(self, module_id, namespace):
 
-        def file_batcher_module(builder: srf.Builder):
+        def module_init(builder: srf.Builder):
 
             config = builder.get_current_module_config()
 
@@ -444,11 +451,11 @@ class DFPModuleRegisterUtil:
             builder.register_module_output("output", node)
 
         if not self._registry.contains(module_id, namespace):
-            self._registry.register_module(module_id, namespace, self._release_version, file_batcher_module)
+            self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
     def register_file_to_dataframe_module(self, module_id, namespace):
 
-        def file_to_dataframe_module(builder: srf.Builder):
+        def module_init(builder: srf.Builder):
 
             config = builder.get_current_module_config()
 
@@ -459,8 +466,6 @@ class DFPModuleRegisterUtil:
                                             "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE",
                                                                             "dask_thread")
             cache_dir = os.path.join(config["cache_dir"], "file_cache")
-
-            dask_cluster = None
 
             source_column_info = [
                 DateTimeColumn(name=config["timestamp_column_name"], dtype=datetime, input_name="timestamp"),
@@ -487,17 +492,19 @@ class DFPModuleRegisterUtil:
             schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
                                           column_info=source_column_info)
 
+            file_types = {"csv": FileTypes.CSV, "json": FileTypes.JSON}
+
+            file_type = file_types[config["file_types"].lower()]
+
             def get_dask_cluster():
+                logger.debug("Creating dask cluster...")
 
-                if (dask_cluster is None):
-                    logger.debug("Creating dask cluster...")
+                # Up the heartbeat interval which can get violated with long download times
+                dask.config.set({"distributed.client.heartbeat": "30s"})
 
-                    # Up the heartbeat interval which can get violated with long download times
-                    dask.config.set({"distributed.client.heartbeat": "30s"})
+                dask_cluster = LocalCluster(start=True, processes=not download_method == "dask_thread")
 
-                    dask_cluster = LocalCluster(start=True, processes=not download_method == "dask_thread")
-
-                    logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
+                logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
 
                 return dask_cluster
 
@@ -507,12 +514,9 @@ class DFPModuleRegisterUtil:
 
                     dask_cluster.close()
 
-                    dask_cluster = None
-
                     logger.debug("Stopping dask cluster... Done.")
 
             def single_object_to_dataframe(file_object: fsspec.core.OpenFile,
-                                           schema: DataFrameInputSchema,
                                            file_type: FileTypes,
                                            filter_null: bool,
                                            parser_kwargs: dict):
@@ -575,8 +579,7 @@ class DFPModuleRegisterUtil:
 
                 # Cache miss
                 download_method_func = partial(single_object_to_dataframe,
-                                               schema=schema,
-                                               file_type=FileTypes.Auto,
+                                               file_type=file_type,
                                                filter_null=config["filter_null"],
                                                parser_kwargs=config["parser_kwargs"])
 
@@ -586,9 +589,8 @@ class DFPModuleRegisterUtil:
                 try:
                     dfs = []
                     if (download_method.startswith("dask")):
-
                         # Create the client each time to ensure all connections to the cluster are closed (they can time out)
-                        with Client(get_dask_cluster()) as client:
+                        with Client(dask_cluster) as client:
                             dfs = client.map(download_method_func, download_buckets)
 
                             dfs = client.gather(dfs)
@@ -600,7 +602,7 @@ class DFPModuleRegisterUtil:
                     else:
                         # Simply loop
                         for s3_object in download_buckets:
-                            dfs.append(download_method(s3_object))
+                            dfs.append(download_method_func(s3_object))
 
                 except Exception:
                     logger.exception("Failed to download logs. Error: ", exc_info=True)
@@ -637,7 +639,6 @@ class DFPModuleRegisterUtil:
                 start_time = time.time()
 
                 try:
-
                     output_df, cache_hit = get_or_create_dataframe_from_s3_batch(s3_object_batch)
 
                     duration = (time.time() - start_time) * 1000.0
@@ -646,7 +647,6 @@ class DFPModuleRegisterUtil:
                                  len(output_df),
                                  "hit" if cache_hit else "miss",
                                  duration)
-
                     return output_df
                 except Exception:
                     logger.exception("Error while converting S3 buckets to DF.")
@@ -655,17 +655,19 @@ class DFPModuleRegisterUtil:
             def node_fn(obs: srf.Observable, sub: srf.Subscriber):
                 obs.pipe(ops.map(convert_to_dataframe), ops.on_completed(close_dask_cluster)).subscribe(sub)
 
+            dask_cluster = get_dask_cluster()
+
             node = builder.make_node_full(self.get_unique_name(module_id), node_fn)
 
             builder.register_module_input("input", node)
             builder.register_module_output("output", node)
 
         if not self._registry.contains(module_id, namespace):
-            self._registry.register_module(module_id, namespace, self._release_version, file_to_dataframe_module)
+            self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
     def register_split_users_module(self, module_id, namespace):
 
-        def split_users_module(builder: srf.Builder):
+        def module_init(builder: srf.Builder):
             config = builder.get_current_module_config()
 
             if module_id in config:
@@ -723,12 +725,6 @@ class DFPModuleRegisterUtil:
 
                         output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
 
-                        # logger.debug("Emitting dataframe for user '%s'. Start: %s, End: %s, Count: %s",
-                        #              user,
-                        #              df_user[self._config.ae.timestamp_column_name].min(),
-                        #              df_user[self._config.ae.timestamp_column_name].max(),
-                        #              df_user[self._config.ae.timestamp_column_name].count())
-
                     rows_per_user = [len(x.df) for x in output_messages]
 
                     if (len(output_messages) > 0):
@@ -755,11 +751,11 @@ class DFPModuleRegisterUtil:
             builder.register_module_output("output", node)
 
         if not self._registry.contains(module_id, namespace):
-            self._registry.register_module(module_id, namespace, self._release_version, split_users_module)
+            self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
     def register_rolling_window_module(self, module_id, namespace):
 
-        def rolling_window_module(builder: srf.Builder):
+        def module_init(builder: srf.Builder):
 
             config = builder.get_current_module_config()
 
@@ -899,11 +895,11 @@ class DFPModuleRegisterUtil:
             builder.register_module_output("output", node)
 
         if not self._registry.contains(module_id, namespace):
-            self._registry.register_module(module_id, namespace, self._release_version, rolling_window_module)
+            self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
     def register_preporcessing_module(self, module_id, namespace):
 
-        def preprocessing_module(builder: srf.Builder):
+        def module_init(builder: srf.Builder):
 
             config = builder.get_current_module_config()
 
@@ -963,7 +959,7 @@ class DFPModuleRegisterUtil:
             builder.register_module_output("output", node)
 
         if not self._registry.contains(module_id, namespace):
-            self._registry.register_module(module_id, namespace, self._release_version, preprocessing_module)
+            self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
 
 dfp_util = DFPModuleRegisterUtil()

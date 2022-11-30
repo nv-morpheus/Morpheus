@@ -25,20 +25,15 @@ import click
 import dfp.modules.dfp_modules
 import mlflow
 import pandas as pd
-
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
 from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-
 from dfp.stages.multi_file_source import MultiFileSource
-
 from dfp.utils.column_info import ColumnInfo
 from dfp.utils.column_info import CustomColumn
 from dfp.utils.column_info import DataFrameInputSchema
-
 from dfp.utils.column_info import IncrementColumn
-
 from dfp.utils.column_info import create_increment_col
 
 from morpheus.cli.utils import get_package_relative_file
@@ -205,12 +200,13 @@ def run_pipeline(train_users,
             "module_name": "dfp_file_to_dataframe",
             "namespace": "morpheus_modules",
             "timestamp_column_name": config.ae.timestamp_column_name,
-            "userid_column_name": config.ae.timestamp_column_name,
+            "userid_column_name": config.ae.userid_column_name,
             "parser_kwargs": {
                 "lines": False, "orient": "records"
             },
             "cache_dir": cache_dir,
-            "filter_null": True
+            "filter_null": True,
+            "file_types": "JSON"
         },
         "DFPSplitUsers": {
             "module_id": "DFPSplitUsers",
