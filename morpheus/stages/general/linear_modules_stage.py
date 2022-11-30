@@ -62,10 +62,22 @@ class LinearModulesStage(SinglePortStage):
         raise NotImplementedError("No C++ node is available for this module type")
 
     @is_module_registered
+    def load_module_from_registry(builder: srf.Builder,
+                                  module_id: str,
+                                  namespace: str,
+                                  module_name: str,
+                                  module_config: str):
+        module = builder.load_module(module_id, namespace, module_name, module_config)
+        return module
+
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Load registered module
-        module = builder.load_module(self._module_id, self._namespace, self._module_name, self._module_config)
+        module = LinearModulesStage.load_module_from_registry(builder=builder,
+                                                              module_id=self._module_id,
+                                                              namespace=self._namespace,
+                                                              module_name=self._module_name,
+                                                              module_config=self._module_config)
 
         mod_in_stream = module.input_port("input")
         mod_out_stream = module.output_port("output")

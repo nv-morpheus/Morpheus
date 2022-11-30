@@ -26,27 +26,21 @@ import dfp.modules.dfp_modules
 import mlflow
 import pandas as pd
 
-from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
-from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
 from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
+
 from dfp.stages.multi_file_source import MultiFileSource
-from dfp.utils.column_info import BoolColumn
+
 from dfp.utils.column_info import ColumnInfo
 from dfp.utils.column_info import CustomColumn
 from dfp.utils.column_info import DataFrameInputSchema
-from dfp.utils.column_info import DateTimeColumn
-from dfp.utils.column_info import IncrementColumn
-from dfp.utils.column_info import RenameColumn
-from dfp.utils.column_info import StringCatColumn
-from dfp.utils.column_info import create_increment_col
-from dfp.utils.file_utils import date_extractor
-from dfp.utils.file_utils import iso_date_regex
 
-from morpheus._lib.file_types import FileTypes
+from dfp.utils.column_info import IncrementColumn
+
+from dfp.utils.column_info import create_increment_col
+
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
 from morpheus.config import Config
@@ -188,109 +182,102 @@ def run_pipeline(train_users,
     config.ae.userid_column_name = "username"
     config.ae.timestamp_column_name = "timestamp"
 
-    # Specify the column names to ensure all data is uniform
-    source_column_info = [
-        DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="timestamp"),
-        RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="user.name"),
-        RenameColumn(name="accessdevicebrowser", dtype=str, input_name="access_device.browser"),
-        RenameColumn(name="accessdeviceos", dtype=str, input_name="access_device.os"),
-        StringCatColumn(name="location",
-                        dtype=str,
-                        input_columns=[
-                            "access_device.location.city",
-                            "access_device.location.state",
-                            "access_device.location.country"
-                        ],
-                        sep=", "),
-        RenameColumn(name="authdevicename", dtype=str, input_name="auth_device.name"),
-        BoolColumn(name="result",
-                   dtype=bool,
-                   input_name="result",
-                   true_values=["success", "SUCCESS"],
-                   false_values=["denied", "DENIED", "FRAUD"]),
-        ColumnInfo(name="reason", dtype=str),
-    ]
-
-    source_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
-                                         column_info=source_column_info)
-
-    # Preprocessing schema
-    preprocess_column_info = [
-        ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
-        ColumnInfo(name=config.ae.userid_column_name, dtype=str),
-        ColumnInfo(name="accessdevicebrowser", dtype=str),
-        ColumnInfo(name="accessdeviceos", dtype=str),
-        ColumnInfo(name="authdevicename", dtype=str),
-        ColumnInfo(name="result", dtype=bool),
-        ColumnInfo(name="reason", dtype=str),
-        # Derived columns
-        IncrementColumn(name="logcount",
-                        dtype=int,
-                        input_name=config.ae.timestamp_column_name,
-                        groupby_column=config.ae.userid_column_name),
-        CustomColumn(name="locincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="location")),
-    ]
-
-    preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
-
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
-    # Batch files into buckets by time. Use the default ISO date extractor from the filename
-    pipeline.add_stage(
-        DFPFileBatcherStage(config,
-                            period="D",
-                            sampling_rate_s=sample_rate_s,
-                            date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex),
-                            start_time=start_time,
-                            end_time=end_time))
-
-    # Output is S3 Buckets. Convert to DataFrames. This caches downloaded S3 data
-    pipeline.add_stage(
-        DFPFileToDataFrameStage(config,
-                                schema=source_schema,
-                                file_type=FileTypes.JSON,
-                                parser_kwargs={
-                                    "lines": False, "orient": "records"
-                                },
-                                cache_dir=cache_dir))
-
-    pipeline.add_stage(MonitorStage(config, description="Input data rate"))
-
-    # This will split users or just use one single user
-    pipeline.add_stage(
-        DFPSplitUsersStage(config,
-                           include_generic=include_generic,
-                           include_individual=include_individual,
-                           skip_users=skip_users,
-                           only_users=only_users))
-
-    # Next, have a stage that will create rolling windows
-    pipeline.add_stage(
-        DFPRollingWindowStage(
-            config,
-            min_history=300 if is_training else 1,
-            min_increment=300 if is_training else 0,
-            # For inference, we only ever want 1 day max
-            max_history="60d" if is_training else "1d",
-            cache_dir=cache_dir))
+    preprocessing_module_config = {
+        "module_id": "DFPPipelinePreprocessing",
+        "module_name": "dfp_pipeline_preprocessing",
+        "namespace": "morpheus_modules",
+        "DFPFileBatcher": {
+            "module_id": "DFPFileBatcher",
+            "module_name": "dfp_file_batcher",
+            "namespace": "morpheus_modules",
+            "period": "D",
+            "sampling_rate_s": sample_rate_s,
+            "start_time": start_time,
+            "end_time": end_time
+        },
+        "DFPFileToDataFrame": {
+            "module_id": "DFPFileToDataFrame",
+            "module_name": "dfp_file_to_dataframe",
+            "namespace": "morpheus_modules",
+            "timestamp_column_name": config.ae.timestamp_column_name,
+            "userid_column_name": config.ae.timestamp_column_name,
+            "parser_kwargs": {
+                "lines": False, "orient": "records"
+            },
+            "cache_dir": cache_dir,
+            "filter_null": True
+        },
+        "DFPSplitUsers": {
+            "module_id": "DFPSplitUsers",
+            "module_name": "dfp_fsplit_users",
+            "namespace": "morpheus_modules",
+            "include_generic": include_generic,
+            "include_individual": include_individual,
+            "skip_users": skip_users,
+            "only_users": only_users,
+            "timestamp_column_name": config.ae.timestamp_column_name,
+            "userid_column_name": config.ae.userid_column_name,
+            "fallback_username": config.ae.fallback_username
+        },
+        "DFPSplitUsers": {
+            "module_id": "DFPSplitUsers",
+            "module_name": "dfp_fsplit_users",
+            "namespace": "morpheus_modules",
+            "include_generic": include_generic,
+            "include_individual": include_individual,
+            "skip_users": skip_users,
+            "only_users": only_users,
+            "timestamp_column_name": config.ae.timestamp_column_name,
+            "userid_column_name": config.ae.userid_column_name,
+            "fallback_username": config.ae.fallback_username
+        },
+        "DFPRollingWindow": {
+            "module_id": "DFPRollingWindow",
+            "module_name": "dfp_rolling_window",
+            "namespace": "morpheus_modules",
+            "min_history": 300 if is_training else 1,
+            "min_increment": 300 if is_training else 0,
+            "max_history": "60d" if is_training else "1d",
+            "cache_dir": cache_dir,
+            "timestamp_column_name": config.ae.timestamp_column_name
+        },
+        "DFPPreprocessing": {
+            "module_id": "DFPPreprocessing",
+            "module_name": "dfp_preprocessing",
+            "namespace": "morpheus_modules",
+            "timestamp_column_name": config.ae.timestamp_column_name,
+            "userid_column_name": config.ae.userid_column_name
+        }
+    }
 
     # Output is UserMessageMeta -- Cached frame set
-    pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
+    pipeline.add_stage(LinearModulesStage(config, preprocessing_module_config))
+
+    pipeline.add_stage(MonitorStage(config, description="Preprocessing rate", smoothing=0.001))
 
     model_name_formatter = "DFP-duo-{user_id}"
 
     if (is_training):
 
         # Module configuration
-        module_config = {
-            "module_id": "DFPTrainingPipeline",
-            "module_name": "dfp_training_pipeline",
+        training_module_config = {
+            "module_id": "DFPPipelineTraining",
+            "module_name": "dfp_pipeline_training",
             "namespace": "morpheus_modules",
+            "DFPFileBatcher": {
+                "module_id": "DFPFileBatcher",
+                "module_name": "dfp_file_batcher",
+                "namespace": "morpheus_modules",
+                "period": "D",
+                "sampling_rate_s": sample_rate_s,
+                "start_time": start_time,
+                "end_time": end_time
+            },
             "DFPTraining": {
                 "module_id": "DFPTraining",
                 "module_name": "dfp_training",
@@ -328,10 +315,10 @@ def run_pipeline(train_users,
                 "databricks_permissions": None
             }
         }
-        
-        pipeline.add_stage(LinearModulesStage(config, module_config))
 
-        pipeline.add_stage(MonitorStage(config, description="Training and MLFlowModelWriter rate", smoothing=0.001))
+        pipeline.add_stage(LinearModulesStage(config, training_module_config))
+
+        pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
 
     else:
         pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))

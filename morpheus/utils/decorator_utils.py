@@ -25,12 +25,8 @@ def is_module_registered(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
 
-        if args is not None and len(args) >= 2:
-            module_id = args[0]._module_id
-            namespace = args[0]._namespace
-        else:
-            module_id = kwargs["module_id"]
-            namespace = kwargs["namespace"]
+        module_id = kwargs["module_id"]
+        namespace = kwargs["namespace"]
 
         if not registry.contains(module_id, namespace):
             raise Exception("Module {} doesn't exist in the Namespace {}".format(module_id, namespace))
