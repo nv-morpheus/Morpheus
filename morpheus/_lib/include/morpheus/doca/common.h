@@ -15,7 +15,7 @@
 #define DOCA_GPU_PACKET_PROCESSING_H
 
 #include <stdio.h>
-#include <bsd/string.h>
+// #include <bsd/string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
