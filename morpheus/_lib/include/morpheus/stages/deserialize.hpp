@@ -36,10 +36,19 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** DeserializationStage********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
  */
+
 #pragma GCC visibility push(default)
+/**
+ * @brief Slices incoming Dataframes into smaller `batch_size`'d chunks. This stage accepts the `MessageMeta` output
+ * from `FileSourceStage`/`KafkaSourceStage` stages breaking them up into into `MultiMessage`'s. This should be one of
+ * the first stages after the `Source` object.
+ */
 class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
 {
   public:
@@ -48,6 +57,11 @@ class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Construct a new Deserialize Stage object
+     *
+     * @param batch_size : Number of messages to be divided into each batch
+     */
     DeserializeStage(size_t batch_size);
 
   private:
@@ -66,11 +80,17 @@ class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 struct DeserializeStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a DeserializationStage, and return the result.
+     * @brief Create and initialize a DeserializationStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param batch_size : Number of messages to be divided into each batch
+     * @return std::shared_ptr<srf::segment::Object<DeserializeStage>>
      */
     static std::shared_ptr<srf::segment::Object<DeserializeStage>> init(srf::segment::Builder &builder,
                                                                         const std::string &name,
                                                                         size_t batch_size);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

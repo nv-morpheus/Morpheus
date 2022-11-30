@@ -20,7 +20,6 @@ add_executable(test_libmorpheus
   # test_cuda.cu
   test_main.cpp
   test_matx_util.cpp
-  test_morpheus.cpp
   test_doca.cpp
   test_multi_slices.cpp
   test_tensor.cpp
@@ -31,6 +30,7 @@ target_link_libraries(test_libmorpheus
   PRIVATE
     morpheus
     cuda_utils
+    morpheus
     srf::pysrf
     GTest::gtest
     matx::matx

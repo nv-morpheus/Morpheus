@@ -31,9 +31,20 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** Tensor****************************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup objects
+ * @{
+ * @file
  */
+
+/**
+ * @brief Morpheus Tensor object, using RMM device buffers for the underlying storage. Typically created using the
+ * `Tensor::create` factory method and accessed through a `TensorObject` handle.
+ *
+ */
+
+#pragma GCC visibility push(default)
 class Tensor
 {
   public:
@@ -80,4 +91,7 @@ class Tensor
     size_t m_offset;
     std::shared_ptr<rmm::device_buffer> m_device_buffer;
 };
+
+#pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

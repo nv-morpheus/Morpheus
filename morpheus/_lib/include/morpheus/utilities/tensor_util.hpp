@@ -20,12 +20,18 @@
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <algorithm>  // IWYU pragma: keep
-#include <iosfwd>  // for ostream
-#include <string>  // for string
-#include <vector>  // for vector
+#include <iosfwd>     // for ostream
+#include <string>     // for string
+#include <vector>     // for vector
 // <algorithm> is needed for copy, min_element & transform
 
 namespace morpheus {
+
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
 
 /**
  * @brief Tensor Utilities
@@ -102,4 +108,5 @@ struct TensorUtils
     }
 };
 
+/** @} */  // end of group
 }  // namespace morpheus
