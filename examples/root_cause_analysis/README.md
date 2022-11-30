@@ -128,9 +128,8 @@ If successful, you should see the following output:
 ```bash
 Configuring Pipeline via CLI
 Loaded labels file. Current labels: [['not_root_cause', 'is_root_cause']]
-Parameter, 'vocab_hash_file', with relative path, './data/bert-base-uncased-hash.txt', does not exist. Using package relative location: '/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/./data/bert-base-uncased-hash.txt'
+Parameter, 'vocab_hash_file', with relative path, './data/bert-base-uncased-hash.txt', does not exist. Using package relative location: '/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/./data/bert-base-uncased-hash.txt'
 Starting pipeline via CLI... Ctrl+C to Quit
-W20221115 18:41:05.942132 31192 thread.cpp:138] unable to set memory policy - if using docker use: --cap-add=sys_nice to allow membind
 Config: 
 {
   "ae": null,
@@ -160,11 +159,11 @@ Starting! Time: 1668537665.9479523
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====             
 ====Pipeline Started====              
-Added source: <from-file-0; FileSourceStage(filename=/my_data/gitrepos/efajardo-nv/Morpheus/models/datasets/validation-data/root-cause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=/workspace/models/datasets/validation-data/root-cause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/my_data/gitrepos/efajardo-nv/Morpheus/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1, column=log)>
+Added stage: <preprocess-nlp-2; PreprocessNLPStage(vocab_hash_file=/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/data/bert-base-uncased-hash.txt, truncation=True, do_lower_case=True, add_special_tokens=False, stride=-1, column=log)>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceNLPMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=root-cause-binary-onnx, server_url=localhost:8001, force_convert_inputs=True, use_shared_memory=False)>
   └─ morpheus.MultiInferenceNLPMessage -> morpheus.MultiResponseProbsMessage
