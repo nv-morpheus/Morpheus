@@ -22,9 +22,9 @@ import time
 import typing
 import urllib.parse
 from contextlib import contextmanager
-from datetime import datetime
 from functools import partial
 
+import dill
 import fsspec
 import fsspec.utils
 import mlflow
@@ -35,15 +35,6 @@ import srf
 from dfencoder import AutoEncoder
 from dfp.stages.dfp_file_batcher_stage import TimestampFileObj
 from dfp.stages.dfp_rolling_window_stage import CachedUserWindow
-from dfp.utils.column_info import BoolColumn
-from dfp.utils.column_info import ColumnInfo
-from dfp.utils.column_info import CustomColumn
-from dfp.utils.column_info import DataFrameInputSchema
-from dfp.utils.column_info import DateTimeColumn
-from dfp.utils.column_info import IncrementColumn
-from dfp.utils.column_info import RenameColumn
-from dfp.utils.column_info import StringCatColumn
-from dfp.utils.column_info import create_increment_col
 from dfp.utils.column_info import process_dataframe
 from dfp.utils.file_utils import date_extractor
 from dfp.utils.file_utils import iso_date_regex
@@ -467,30 +458,11 @@ class DFPModuleRegisterUtil:
                                                                             "dask_thread")
             cache_dir = os.path.join(config["cache_dir"], "file_cache")
 
-            source_column_info = [
-                DateTimeColumn(name=config["timestamp_column_name"], dtype=datetime, input_name="timestamp"),
-                RenameColumn(name=config["userid_column_name"], dtype=str, input_name="user.name"),
-                RenameColumn(name="accessdevicebrowser", dtype=str, input_name="access_device.browser"),
-                RenameColumn(name="accessdeviceos", dtype=str, input_name="access_device.os"),
-                StringCatColumn(name="location",
-                                dtype=str,
-                                input_columns=[
-                                    "access_device.location.city",
-                                    "access_device.location.state",
-                                    "access_device.location.country"
-                                ],
-                                sep=", "),
-                RenameColumn(name="authdevicename", dtype=str, input_name="auth_device.name"),
-                BoolColumn(name="result",
-                           dtype=bool,
-                           input_name="result",
-                           true_values=["success", "SUCCESS"],
-                           false_values=["denied", "DENIED", "FRAUD"]),
-                ColumnInfo(name="reason", dtype=str),
-            ]
+            if not os.path.exists(config["source_schema_file"]):
+                raise Exception("Source schema file doesn't exists at location :{}".format(
+                    config["source_schema_file"]))
 
-            schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
-                                          column_info=source_column_info)
+            input_schema = dill.load(open(config["source_schema_file"], "rb"))
 
             file_types = {"csv": FileTypes.CSV, "json": FileTypes.JSON}
 
@@ -545,7 +517,7 @@ class DFPModuleRegisterUtil:
                 if (s3_df is None):
                     return s3_df
 
-                s3_df = process_dataframe(df_in=s3_df, input_schema=schema)
+                s3_df = process_dataframe(df_in=s3_df, input_schema=input_schema)
 
                 return s3_df
 
@@ -906,26 +878,11 @@ class DFPModuleRegisterUtil:
             if module_id in config:
                 config = config[module_id]
 
-            # Preprocessing schema
-            preprocess_column_info = [
-                ColumnInfo(name=config["timestamp_column_name"], dtype=datetime),
-                ColumnInfo(name=config["userid_column_name"], dtype=str),
-                ColumnInfo(name="accessdevicebrowser", dtype=str),
-                ColumnInfo(name="accessdeviceos", dtype=str),
-                ColumnInfo(name="authdevicename", dtype=str),
-                ColumnInfo(name="result", dtype=bool),
-                ColumnInfo(name="reason", dtype=str),
-                # Derived columns
-                IncrementColumn(name="logcount",
-                                dtype=int,
-                                input_name=config["timestamp_column_name"],
-                                groupby_column=config["userid_column_name"]),
-                CustomColumn(name="locincrement",
-                             dtype=int,
-                             process_column_fn=partial(create_increment_col, column_name="location")),
-            ]
+            if not os.path.exists(config["preprocess_schema_file"]):
+                raise Exception("Preprocess schema file doesn't exists at location :{}".format(
+                    config["preprocess_schema_file"]))
 
-            preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+            preprocess_schema = dill.load(open(config["preprocess_schema_file"], "rb"))
 
             def process_features(message: MultiDFPMessage):
                 if (message is None):

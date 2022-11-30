@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import logging
 import os
 import typing
@@ -20,15 +19,25 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from functools import partial
+from pathlib import Path
 
 import click
 import dfp.modules.dfp_modules
+import dill
 import mlflow
 import pandas as pd
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.multi_file_source import MultiFileSource
-
+from dfp.utils.column_info import BoolColumn
+from dfp.utils.column_info import ColumnInfo
+from dfp.utils.column_info import CustomColumn
+from dfp.utils.column_info import DataFrameInputSchema
+from dfp.utils.column_info import DateTimeColumn
+from dfp.utils.column_info import IncrementColumn
+from dfp.utils.column_info import RenameColumn
+from dfp.utils.column_info import StringCatColumn
+from dfp.utils.column_info import create_increment_col
 
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
@@ -176,6 +185,67 @@ def run_pipeline(train_users,
 
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
+    source_column_info = [
+        DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="timestamp"),
+        RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="user.name"),
+        RenameColumn(name="accessdevicebrowser", dtype=str, input_name="access_device.browser"),
+        RenameColumn(name="accessdeviceos", dtype=str, input_name="access_device.os"),
+        StringCatColumn(name="location",
+                        dtype=str,
+                        input_columns=[
+                            "access_device.location.city",
+                            "access_device.location.state",
+                            "access_device.location.country"
+                        ],
+                        sep=", "),
+        RenameColumn(name="authdevicename", dtype=str, input_name="auth_device.name"),
+        BoolColumn(name="result",
+                   dtype=bool,
+                   input_name="result",
+                   true_values=["success", "SUCCESS"],
+                   false_values=["denied", "DENIED", "FRAUD"]),
+        ColumnInfo(name="reason", dtype=str),
+    ]
+
+    source_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
+                                         column_info=source_column_info)
+
+    # Preprocessing schema
+    preprocess_column_info = [
+        ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
+        ColumnInfo(name=config.ae.userid_column_name, dtype=str),
+        ColumnInfo(name="accessdevicebrowser", dtype=str),
+        ColumnInfo(name="accessdeviceos", dtype=str),
+        ColumnInfo(name="authdevicename", dtype=str),
+        ColumnInfo(name="result", dtype=bool),
+        ColumnInfo(name="reason", dtype=str),
+        # Derived columns
+        IncrementColumn(name="logcount",
+                        dtype=int,
+                        input_name=config.ae.timestamp_column_name,
+                        groupby_column=config.ae.userid_column_name),
+        CustomColumn(name="locincrement",
+                     dtype=int,
+                     process_column_fn=partial(create_increment_col, column_name="location")),
+    ]
+
+    preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+
+    cache_dir = os.path.abspath(cache_dir)
+
+    schema_dir = os.path.join(cache_dir, "schema")
+    
+    Path(schema_dir).mkdir(parents=True, exist_ok=True)
+
+    source_schema_file = os.path.join(schema_dir, "duo_source_schema.pkl")
+    preprocess_schema_file = os.path.join(schema_dir, "duo_preprocess_schema.pkl")
+
+    if not os.path.exists(source_schema_file):
+        dill.dump(source_schema, file=open(source_schema_file, "wb"))
+
+    if not os.path.exists(preprocess_schema_file):
+        dill.dump(preprocess_schema, file=open(preprocess_schema_file, "wb"))
+
     preprocessing_module_config = {
         "module_id": "DFPPipelinePreprocessing",
         "module_name": "dfp_pipeline_preprocessing",
@@ -200,7 +270,8 @@ def run_pipeline(train_users,
             },
             "cache_dir": cache_dir,
             "filter_null": True,
-            "file_types": "JSON"
+            "file_types": "JSON",
+            "source_schema_file": source_schema_file
         },
         "DFPSplitUsers": {
             "module_id": "DFPSplitUsers",
@@ -241,7 +312,8 @@ def run_pipeline(train_users,
             "module_name": "dfp_preprocessing",
             "namespace": "morpheus_modules",
             "timestamp_column_name": config.ae.timestamp_column_name,
-            "userid_column_name": config.ae.userid_column_name
+            "userid_column_name": config.ae.userid_column_name,
+            "preprocess_schema_file": preprocess_schema_file
         }
     }
 
