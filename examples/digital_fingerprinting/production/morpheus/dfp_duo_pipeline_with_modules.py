@@ -241,10 +241,13 @@ def run_pipeline(train_users,
     preprocess_schema_file = os.path.join(schema_dir, "duo_preprocess_schema.pkl")
 
     if not os.path.exists(source_schema_file):
+        logger.info("Presisting source schema file to loaction: {}".format(source_schema_file))
         dill.dump(source_schema, file=open(source_schema_file, "wb"))
 
     if not os.path.exists(preprocess_schema_file):
+        logger.info("Presisting preprocess schema file to loaction: {}".format(preprocess_schema_file))
         dill.dump(preprocess_schema, file=open(preprocess_schema_file, "wb"))
+        
 
     preprocessing_module_config = {
         "module_id": "DFPPipelinePreprocessing",
@@ -320,7 +323,7 @@ def run_pipeline(train_users,
     # Output is UserMessageMeta -- Cached frame set
     pipeline.add_stage(LinearModulesStage(config, preprocessing_module_config))
 
-    pipeline.add_stage(MonitorStage(config, description="Preprocessing rate", smoothing=0.001))
+    pipeline.add_stage(MonitorStage(config, description="Preprocessing Module rate", smoothing=0.001))
 
     model_name_formatter = "DFP-duo-{user_id}"
 
@@ -380,7 +383,7 @@ def run_pipeline(train_users,
 
         pipeline.add_stage(LinearModulesStage(config, training_module_config))
 
-        pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
+        pipeline.add_stage(MonitorStage(config, description="Training Module rate", smoothing=0.001))
 
     else:
         pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))
