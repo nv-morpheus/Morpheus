@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2022, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ import srf
 
 registry = srf.ModuleRegistry
 
-"""
-A module availability in the module registry is verified by this function.
-"""
+
 def is_module_registered(func):
+    """A module availability in the module registry is verified by this function."""
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
