@@ -307,7 +307,7 @@ std::shared_ptr<srf::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceP
 namespace py = pybind11;
 
 // Define the pybind11 module m.
-PYBIND11_MODULE(morpheus_doca, m)
+PYBIND11_MODULE(stages_doca, m)
 {
     srf::pysrf::import(m, "morpheus._lib.messages");
 

@@ -107,8 +107,8 @@ class DocaSourceStage(SingleOutputSource):
     def _build_source(self, builder: srf.Builder) -> StreamPair:
 
         if self._build_cpp_node():
-            import morpheus._lib.stages as _stages
-            out_stream = _stages.DocaSourceStage(
+            import morpheus._lib.doca as _doca
+            out_stream = _doca.DocaSourceStage(
                 builder,
                 self.unique_name,
                 self._nic_pci_address,
