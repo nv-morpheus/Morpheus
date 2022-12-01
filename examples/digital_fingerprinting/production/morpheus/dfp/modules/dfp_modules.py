@@ -69,7 +69,7 @@ from ..messages.multi_dfp_message import MultiDFPMessage
 logger = logging.getLogger(f"morpheus.{__name__}")
 
 
-class DFPModuleRegisterUtil:
+class DFPModulesMaker:
 
     def __init__(self):
         self._registry = srf.ModuleRegistry
@@ -80,7 +80,7 @@ class DFPModuleRegisterUtil:
         ver_list = [int(i) for i in ver_list]
         return ver_list
 
-    def register_training_module(self, module_id, namespace):
+    def make_training_module(self, module_id, namespace):
 
         def module_init(builder: srf.Builder):
 
@@ -124,7 +124,7 @@ class DFPModuleRegisterUtil:
         if not self._registry.contains(module_id, namespace):
             self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
-    def register_mlflow_model_writer_module(self, module_id, namespace):
+    def make_mlflow_model_writer_module(self, module_id, namespace):
 
         def module_init(builder: srf.Builder):
 
@@ -321,7 +321,7 @@ class DFPModuleRegisterUtil:
     def is_module_registered(self, module_id=None, namespace=None):
         return
 
-    def register_chain_modules(self, module_id, namespace, ordered_module_meta):
+    def make_nested_module(self, module_id, namespace, ordered_module_meta):
 
         def module_init(builder: srf.Builder):
 
@@ -355,7 +355,7 @@ class DFPModuleRegisterUtil:
         unique_name = id + "-" + str(random.randint(0, 1000))
         return unique_name
 
-    def register_file_batcher_module(self, module_id, namespace):
+    def make_file_batcher_module(self, module_id, namespace):
 
         def module_init(builder: srf.Builder):
 
@@ -444,7 +444,7 @@ class DFPModuleRegisterUtil:
         if not self._registry.contains(module_id, namespace):
             self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
-    def register_file_to_dataframe_module(self, module_id, namespace):
+    def make_file_to_dataframe_module(self, module_id, namespace):
 
         def module_init(builder: srf.Builder):
 
@@ -458,11 +458,10 @@ class DFPModuleRegisterUtil:
                                                                             "dask_thread")
             cache_dir = os.path.join(config["cache_dir"], "file_cache")
 
-            if not os.path.exists(config["source_schema_file"]):
-                raise Exception("Source schema file doesn't exists at location :{}".format(
-                    config["source_schema_file"]))
+            if not os.path.exists(config["schema_filepath"]):
+                raise Exception("Source schema file doesn't exists at location :{}".format(config["schema_filepath"]))
 
-            input_schema = dill.load(open(config["source_schema_file"], "rb"))
+            input_schema = dill.load(open(config["schema_filepath"], "rb"))
 
             file_types = {"csv": FileTypes.CSV, "json": FileTypes.JSON}
 
@@ -637,7 +636,7 @@ class DFPModuleRegisterUtil:
         if not self._registry.contains(module_id, namespace):
             self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
-    def register_split_users_module(self, module_id, namespace):
+    def make_split_users_module(self, module_id, namespace):
 
         def module_init(builder: srf.Builder):
             config = builder.get_current_module_config()
@@ -725,7 +724,7 @@ class DFPModuleRegisterUtil:
         if not self._registry.contains(module_id, namespace):
             self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
-    def register_rolling_window_module(self, module_id, namespace):
+    def make_rolling_window_module(self, module_id, namespace):
 
         def module_init(builder: srf.Builder):
 
@@ -869,7 +868,7 @@ class DFPModuleRegisterUtil:
         if not self._registry.contains(module_id, namespace):
             self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
-    def register_preporcessing_module(self, module_id, namespace):
+    def make_preporcessing_module(self, module_id, namespace):
 
         def module_init(builder: srf.Builder):
 
@@ -878,11 +877,11 @@ class DFPModuleRegisterUtil:
             if module_id in config:
                 config = config[module_id]
 
-            if not os.path.exists(config["preprocess_schema_file"]):
+            if not os.path.exists(config["schema_filepath"]):
                 raise Exception("Preprocess schema file doesn't exists at location :{}".format(
-                    config["preprocess_schema_file"]))
+                    config["schema_filepath"]))
 
-            preprocess_schema = dill.load(open(config["preprocess_schema_file"], "rb"))
+            preprocess_schema = dill.load(open(config["schema_filepath"], "rb"))
 
             def process_features(message: MultiDFPMessage):
                 if (message is None):
@@ -919,45 +918,50 @@ class DFPModuleRegisterUtil:
             self._registry.register_module(module_id, namespace, self._release_version, module_init)
 
 
-dfp_util = DFPModuleRegisterUtil()
+def make_dfp_modules():
 
-dfp_util.register_file_batcher_module("DFPFileBatcher", "morpheus_modules")
+    modules_maker = DFPModulesMaker()
 
-dfp_util.register_file_to_dataframe_module("DFPFileToDataFrame", "morpheus_modules")
+    namespace = "morpheus_modules"
 
-dfp_util.register_split_users_module("DFPSplitUsers", "morpheus_modules")
+    modules_maker.make_file_batcher_module("DFPFileBatcher", namespace)
 
-dfp_util.register_rolling_window_module("DFPRollingWindow", "morpheus_modules")
+    modules_maker.make_file_to_dataframe_module("DFPFileToDataFrame", namespace)
 
-dfp_util.register_preporcessing_module("DFPPreprocessing", "morpheus_modules")
+    modules_maker.make_split_users_module("DFPSplitUsers", namespace)
 
-# Register DFP training module
-dfp_util.register_training_module("DFPTraining", "morpheus_modules")
+    modules_maker.make_rolling_window_module("DFPRollingWindow", namespace)
 
-# Register DFP MLFlow model writer module
-dfp_util.register_mlflow_model_writer_module("DFPMLFlowModelWriter", "morpheus_modules")
+    modules_maker.make_preporcessing_module("DFPPreprocessing", namespace)
 
-ordered_dfp_pipeline_preprocessing_module_meta = [{
-    "module_id": "DFPFileBatcher", "namespace": "morpheus_modules"
-}, {
-    "module_id": "DFPFileToDataFrame", "namespace": "morpheus_modules"
-}, {
-    "module_id": "DFPSplitUsers", "namespace": "morpheus_modules"
-}, {
-    "module_id": "DFPRollingWindow", "namespace": "morpheus_modules"
-}, {
-    "module_id": "DFPPreprocessing", "namespace": "morpheus_modules"
-}]
+    # Create and register DFP training module
+    modules_maker.make_training_module("DFPTraining", namespace)
 
-ordered_dfp_pipeline_training_module_meta = [{
-    "module_id": "DFPTraining", "namespace": "morpheus_modules"
-}, {
-    "module_id": "DFPMLFlowModelWriter", "namespace": "morpheus_modules"
-}]
+    # Register DFP MLFlow model writer module
+    modules_maker.make_mlflow_model_writer_module("DFPMLFlowModelWriter", namespace)
 
-dfp_util.register_chain_modules("DFPPipelinePreprocessing",
-                                "morpheus_modules",
-                                ordered_dfp_pipeline_preprocessing_module_meta)
+    ordered_preprocessing_module_meta = [{
+        "module_id": "DFPFileBatcher", "namespace": namespace
+    }, {
+        "module_id": "DFPFileToDataFrame", "namespace": namespace
+    }, {
+        "module_id": "DFPSplitUsers", "namespace": namespace
+    }, {
+        "module_id": "DFPRollingWindow", "namespace": namespace
+    }, {
+        "module_id": "DFPPreprocessing", "namespace": namespace
+    }]
 
-# Register DFP training pipeline module
-dfp_util.register_chain_modules("DFPPipelineTraining", "morpheus_modules", ordered_dfp_pipeline_training_module_meta)
+    ordered_pipeline_training_module_meta = [{
+        "module_id": "DFPTraining", "namespace": namespace
+    }, {
+        "module_id": "DFPMLFlowModelWriter", "namespace": namespace
+    }]
+
+    modules_maker.make_nested_module("DFPPipelinePreprocessing", namespace, ordered_preprocessing_module_meta)
+
+    # Register DFP training pipeline module
+    modules_maker.make_nested_module("DFPPipelineTraining", namespace, ordered_pipeline_training_module_meta)
+
+
+make_dfp_modules()

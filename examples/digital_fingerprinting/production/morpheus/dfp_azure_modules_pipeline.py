@@ -12,24 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import logging
 import os
+from pathlib import Path
 import typing
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from functools import partial
-from pathlib import Path
+import dfp.modules.dfp_modules
 
 import click
-import dfp.modules.dfp_modules
 import dill
 import mlflow
 import pandas as pd
+
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.multi_file_source import MultiFileSource
-from dfp.utils.column_info import BoolColumn
 from dfp.utils.column_info import ColumnInfo
 from dfp.utils.column_info import CustomColumn
 from dfp.utils.column_info import DataFrameInputSchema
@@ -114,7 +115,7 @@ from morpheus.utils.logger import parse_log_level
 )
 @click.option('--tracking_uri',
               type=str,
-              default="http://localhost:8000",
+              default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
 def run_pipeline(train_users,
                  skip_user: typing.Tuple[str],
@@ -175,50 +176,45 @@ def run_pipeline(train_users,
 
     config.ae = ConfigAutoEncoder()
 
-    config.ae.feature_columns = load_labels_file(get_package_relative_file("data/columns_ae_duo.txt"))
-
+    config.ae.feature_columns = load_labels_file(get_package_relative_file("data/columns_ae_azure.txt"))
     config.ae.userid_column_name = "username"
     config.ae.timestamp_column_name = "timestamp"
 
-    # Create a linear pipeline object
-    pipeline = LinearPipeline(config)
-
-    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
-
+    # Specify the column names to ensure all data is uniform
     source_column_info = [
-        DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="timestamp"),
-        RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="user.name"),
-        RenameColumn(name="accessdevicebrowser", dtype=str, input_name="access_device.browser"),
-        RenameColumn(name="accessdeviceos", dtype=str, input_name="access_device.os"),
+        DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="time"),
+        RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="properties.userPrincipalName"),
+        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
+        ColumnInfo(name="category", dtype=str),
+        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
+        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
+        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
+        RenameColumn(name="deviceDetailoperatingSystem",
+                     dtype=str,
+                     input_name="properties.deviceDetail.operatingSystem"),
         StringCatColumn(name="location",
                         dtype=str,
                         input_columns=[
-                            "access_device.location.city",
-                            "access_device.location.state",
-                            "access_device.location.country"
+                            "properties.location.city",
+                            "properties.location.countryOrRegion",
                         ],
                         sep=", "),
-        RenameColumn(name="authdevicename", dtype=str, input_name="auth_device.name"),
-        BoolColumn(name="result",
-                   dtype=bool,
-                   input_name="result",
-                   true_values=["success", "SUCCESS"],
-                   false_values=["denied", "DENIED", "FRAUD"]),
-        ColumnInfo(name="reason", dtype=str),
+        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
     ]
 
-    source_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
-                                         column_info=source_column_info)
+    source_schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
 
     # Preprocessing schema
     preprocess_column_info = [
         ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
         ColumnInfo(name=config.ae.userid_column_name, dtype=str),
-        ColumnInfo(name="accessdevicebrowser", dtype=str),
-        ColumnInfo(name="accessdeviceos", dtype=str),
-        ColumnInfo(name="authdevicename", dtype=str),
-        ColumnInfo(name="result", dtype=bool),
-        ColumnInfo(name="reason", dtype=str),
+        ColumnInfo(name="appDisplayName", dtype=str),
+        ColumnInfo(name="clientAppUsed", dtype=str),
+        ColumnInfo(name="deviceDetailbrowser", dtype=str),
+        ColumnInfo(name="deviceDetaildisplayName", dtype=str),
+        ColumnInfo(name="deviceDetailoperatingSystem", dtype=str),
+        ColumnInfo(name="statusfailureReason", dtype=str),
+
         # Derived columns
         IncrementColumn(name="logcount",
                         dtype=int,
@@ -227,27 +223,38 @@ def run_pipeline(train_users,
         CustomColumn(name="locincrement",
                      dtype=int,
                      process_column_fn=partial(create_increment_col, column_name="location")),
+        CustomColumn(name="appincrement",
+                     dtype=int,
+                     process_column_fn=partial(create_increment_col, column_name="appDisplayName")),
     ]
 
     preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
 
     cache_dir = os.path.abspath(cache_dir)
 
-    schema_dir = os.path.join(cache_dir, "schema")
-    
-    Path(schema_dir).mkdir(parents=True, exist_ok=True)
+    def persist_schema(dir, filename, schema) -> str:
 
-    source_schema_file = os.path.join(schema_dir, "duo_source_schema.pkl")
-    preprocess_schema_file = os.path.join(schema_dir, "duo_preprocess_schema.pkl")
+        if not os.path.exists(dir):
+            logger.info("Creating directory: {}".format(dir))
+            Path(dir).mkdir(parents=True, exist_ok=True)
 
-    if not os.path.exists(source_schema_file):
-        logger.info("Presisting source schema file to loaction: {}".format(source_schema_file))
-        dill.dump(source_schema, file=open(source_schema_file, "wb"))
+        schema_file = os.path.join(dir, filename)
 
-    if not os.path.exists(preprocess_schema_file):
-        logger.info("Presisting preprocess schema file to loaction: {}".format(preprocess_schema_file))
-        dill.dump(preprocess_schema, file=open(preprocess_schema_file, "wb"))
-        
+        if not os.path.exists(schema_file):
+            logger.info("Persisting schema file to location: {}".format(schema_file))
+            dill.dump(schema, file=open(schema_file, "wb"))
+
+        return schema_file
+
+    cache_schema_dir = os.path.join(cache_dir, "schema")
+
+    source_schema_filepath = persist_schema(cache_schema_dir, "azure_source_schema.pkl", source_schema)
+    preprocess_schema_filepath = persist_schema(cache_schema_dir, "azure_preprocess_schema.pkl", preprocess_schema)
+
+    # Create a linear pipeline object
+    pipeline = LinearPipeline(config)
+
+    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     preprocessing_module_config = {
         "module_id": "DFPPipelinePreprocessing",
@@ -274,7 +281,7 @@ def run_pipeline(train_users,
             "cache_dir": cache_dir,
             "filter_null": True,
             "file_types": "JSON",
-            "source_schema_file": source_schema_file
+            "schema_filepath": source_schema_filepath
         },
         "DFPSplitUsers": {
             "module_id": "DFPSplitUsers",
@@ -316,7 +323,7 @@ def run_pipeline(train_users,
             "namespace": "morpheus_modules",
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
-            "preprocess_schema_file": preprocess_schema_file
+            "schema_filepath": preprocess_schema_filepath
         }
     }
 
@@ -325,7 +332,8 @@ def run_pipeline(train_users,
 
     pipeline.add_stage(MonitorStage(config, description="Preprocessing Module rate", smoothing=0.001))
 
-    model_name_formatter = "DFP-duo-{user_id}"
+    model_name_formatter = "DFP-azure-{user_id}"
+    experiment_name_formatter = "dfp/azure/training/{reg_model_name}"
 
     if (is_training):
 
@@ -368,8 +376,8 @@ def run_pipeline(train_users,
                 "module_id": "DFPMLFlowModelWriter",
                 "module_name": "dfp_mlflow_model_writer",
                 "namespace": "morpheus_modules",
-                "model_name_formatter": "DFP-duo-{user_id}",
-                "experiment_name_formatter": "dfp/duo/training/{reg_model_name}",
+                "model_name_formatter": model_name_formatter,
+                "experiment_name_formatter": experiment_name_formatter,
                 "timestamp_column_name": config.ae.timestamp_column_name,
                 "conda_env": {
                     'channels': ['defaults', 'conda-forge'],
@@ -386,13 +394,16 @@ def run_pipeline(train_users,
         pipeline.add_stage(MonitorStage(config, description="Training Module rate", smoothing=0.001))
 
     else:
+        # Perform inference on the preprocessed data
         pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))
 
         pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
 
+        # Filter for only the anomalous logs
         pipeline.add_stage(DFPPostprocessingStage(config, z_score_threshold=2.0))
 
-        pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_duo.csv", overwrite=True))
+        # Write all anomalies to a CSV file
+        pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_azure.csv", overwrite=True))
 
     # Run the pipeline
     pipeline.run()
