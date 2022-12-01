@@ -303,4 +303,23 @@ std::shared_ptr<srf::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceP
       source_ip_filter
     );
 }
+
+namespace py = pybind11;
+
+// Define the pybind11 module m.
+PYBIND11_MODULE(stages_doca, m)
+{
+    srf::pysrf::import(m, "morpheus._lib.messages");
+
+    py::class_<srf::segment::Object<DocaSourceStage>,
+               srf::segment::ObjectProperties,
+               std::shared_ptr<srf::segment::Object<DocaSourceStage>>>(m, "DocaSourceStage", py::multiple_inheritance())
+        .def(py::init<>(&DocaSourceStageInterfaceProxy::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("nic_pci_address"),
+             py::arg("gpu_pci_address"),
+             py::arg("source_ip_filter") = "");
+}
+
 }  // namespace morpheus
