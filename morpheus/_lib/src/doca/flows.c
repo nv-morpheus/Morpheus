@@ -21,8 +21,8 @@ DOCA_LOG_REGISTER(GPU_FLOWS);
 struct doca_flow_port *
 init_doca_flow(uint8_t port_id, uint8_t rxq_num, struct application_dpdk_config *dpdk_config)
 {
+    doca_error_t result;
 	char port_id_str[MAX_PORT_STR_LEN];
-	struct doca_flow_error err = {0};
 	struct doca_flow_port_cfg port_cfg = {0};
 	struct doca_flow_port *df_port;
 	struct doca_flow_cfg rxq_flow_cfg = {0};
@@ -51,8 +51,9 @@ init_doca_flow(uint8_t port_id, uint8_t rxq_num, struct application_dpdk_config 
 	/* Initialize doca flow framework */
 	rxq_flow_cfg.queues = rxq_num;
 	rxq_flow_cfg.mode_args = "vnf";
-	if (doca_flow_init(&rxq_flow_cfg, &err) < 0) {
-		DOCA_LOG_ERR("failed to init doca flow: %s", err.message);
+    result = doca_flow_init(&rxq_flow_cfg);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("failed to init doca flow with: %s", doca_get_error_string(result));
 		return NULL;
 	}
 
@@ -61,9 +62,11 @@ init_doca_flow(uint8_t port_id, uint8_t rxq_num, struct application_dpdk_config 
 	port_cfg.type = DOCA_FLOW_PORT_DPDK_BY_ID;
 	snprintf(port_id_str, MAX_PORT_STR_LEN, "%d", port_cfg.port_id);
 	port_cfg.devargs = port_id_str;
-	df_port = doca_flow_port_start(&port_cfg, &err);
-	if (df_port == NULL)
-		DOCA_LOG_ERR("failed to initialize doca flow port: %s", err.message);
+	result = doca_flow_port_start(&port_cfg, &df_port);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("failed to initialize doca flow port with: %s", doca_get_error_string(result));
+		return NULL;
+	}
 
 	return df_port;
 }
@@ -76,13 +79,13 @@ build_rxq_pipe(
     uint32_t source_ip_filter,
     uint16_t dpdk_rxq_idx)
 {
+    doca_error_t res_doca;
 	struct doca_flow_match rxq_match;
 	struct doca_flow_fwd rxq_fw;
 	struct doca_flow_actions actions;
     struct doca_flow_actions *actions_array[NB_ACTION_ARRAY];
 	struct doca_flow_pipe_cfg rxq_pipe_cfg;
 	struct doca_flow_pipe *rxq_pipe;
-	struct doca_flow_error err = {0};
 	uint16_t rss_queues[1];
 	struct doca_flow_pipe_entry *entry;
 
@@ -113,17 +116,16 @@ build_rxq_pipe(
 	rxq_fw.rss_flags = DOCA_FLOW_RSS_IP;
 	rxq_fw.num_of_queues = 1;
 
-	rxq_pipe = doca_flow_pipe_create(&rxq_pipe_cfg, &rxq_fw, NULL, &err);
-	if (rxq_pipe == NULL) {
-		DOCA_LOG_ERR("RxQ pipe creation FAILED: %s", err.message);
+	res_doca = doca_flow_pipe_create(&rxq_pipe_cfg, &rxq_fw, NULL, &rxq_pipe);
+	if (res_doca != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("RxQ pipe creation failed with: %s", doca_get_error_string(res_doca));
 		return NULL;
 	}
 
 	/* Add HW offload */
-	entry = doca_flow_pipe_add_entry(0, rxq_pipe, &rxq_match, &actions, NULL, NULL, 0, NULL, &err);
-	if (entry == NULL) {
-		DOCA_LOG_ERR("RxQ pipe entry creation FAILED: %s", err.message);
-		// doca_flow_destroy_pipe(port_id, rxq_pipe);
+	res_doca = doca_flow_pipe_add_entry(0, rxq_pipe, &rxq_match, &actions, NULL, NULL, 0, NULL, &entry);
+	if (res_doca != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("RxQ pipe entry creation failed with: %s", doca_get_error_string(res_doca));
 		return NULL;
 	}
 

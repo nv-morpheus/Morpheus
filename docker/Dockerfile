@@ -139,11 +139,11 @@ ARG DOCA_REPO_HOST=""
 COPY ./thirdparty thirdparty
 
 # stable: 6590105
-ARG DOCA_BUILD_ID=6411662
+ARG DOCA_BUILD_ID=6627568
 # stable: 1.6.0024-1
-ARG DOCA_VERSION=1.6.0008-1
+ARG DOCA_VERSION=1.6.0024-1
 # stable: 20.11.0-7.1.2
-ARG DPDK_VERSION=20.11.0-7.0.1
+ARG DPDK_VERSION=20.11.0-7.1.2
 
 RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
         mkdir -p ./docker/deb && \
@@ -174,13 +174,16 @@ RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
         wget -O ./docker/deb/mlnx-dpdk-doc_${DPDK_VERSION}_all.deb \
             https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk-doc_${DPDK_VERSION}_all.deb && \
         wget -O ./docker/deb/mlnx-dpdk_${DPDK_VERSION}_amd64.deb \
-            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk_${DPDK_VERSION}_amd64.deb && \
+            https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk_${DPDK_VERSION}_amd64.deb ;\
+    fi
+
+RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
         dpkg -i ./docker/deb/*.deb; exit 0 ;\
     fi
 
 RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
-        rm ./docker/deb/*.deb && \
-        apt-get update && \
+        rm ./docker/deb/*.deb &&  \
+        apt-get update -o APT::Update::Error-Mode=any && \
         apt-get install -y -f &&\
         rm -rf /var/lib/apt/lists/* ;\
     fi

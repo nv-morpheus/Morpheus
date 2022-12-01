@@ -115,8 +115,6 @@ __global__ void _packet_receive_kernel(
     rxq_info,
     PACKETS_PER_BLOCK,
     PACKET_RX_TIMEOUT_NS,
-    nullptr,
-    false,
     &packet_count,
     &packet_address
   );
