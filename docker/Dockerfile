@@ -70,7 +70,7 @@ RUN apt-get update &&\
     apt-get upgrade -y &&\
     curl -sL https://deb.nodesource.com/setup_16.x | bash - &&\
     apt-get install --no-install-recommends -y \
-        build-essential pkg-config curl unzip tar zip openssh-client bc jq git-lfs wget \
+        build-essential pkg-config curl unzip tar zip openssh-client bc jq git-lfs wget libnuma1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Enables "source activate conda"
