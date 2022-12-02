@@ -20,8 +20,8 @@
    :language: python
    :class: highlight
 
-Welcome to Morpheus' Documentation
-==================================
+Welcome to Morpheus Documentation
+=================================
 
 NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI
 pipeline and pre-trained AI capabilities that, for the first time, allow them to instantaneously inspect all IP traffic
