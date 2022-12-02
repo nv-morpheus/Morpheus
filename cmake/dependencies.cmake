@@ -84,36 +84,36 @@ endif()
 # libcudacxx -- get an explicit lubcudacxx build, matx tries to pull a tag that doesn't exist.
 # =========
 set(LIBCUDACXX_VERSION "1.8.0" CACHE STRING "Version of libcudacxx to use")
-include(deps/Configure_libcudacxx)
+morpheus_utils_configure_libcudacxx(${LIBCUDACXX_VERSION})
 
 # matx
 # ====
 set(MATX_VERSION "0.1.0" CACHE STRING "Version of MatX to use")
-include(deps/Configure_matx)
+morpheus_utils_configure_matx(${MATX_VERSION})
 
 # pybind11
 # =========
 set(PYBIND11_VERSION "2.8.1" CACHE STRING "Version of Pybind11 to use")
-include(deps/Configure_pybind11)
+morpheus_utils_configure_pybind11(${PYBIND11_VERSION})
 
 # RD-Kafka
 # =====
 set(RDKAFKA_VERSION 1.6.2)
-include(deps/Configure_rdkafka)
+morpheus_utils_configure_rdkafka(${RDKAFKA_VERSION})
 
 # SRF (Should come after all third party but before NVIDIA repos)
 # =====
 set(SRF_VERSION 22.11 CACHE STRING "Which version of SRF to use")
-include(deps/Configure_srf)
+morpheus_utils_configure_srf(${SRF_VERSION})
 
 # CuDF
 # =====
-set(CUDF_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of cuDF to use")
-include(deps/Configure_cudf)
+set(CUDF_VERSION "${MORPHEUS_RAPIDS_CMAKE_VERSION}" CACHE STRING "Which version of cuDF to use")
+morpheus_utils_configure_cudf(${CUDF_VERSION})
 
 # Triton-client
 # =====
-set(TRITONCLIENT_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of TritonClient to use")
-include(deps/Configure_TritonClient)
+set(TRITONCLIENT_VERSION "${MORPHEUS_RAPIDS_CMAKE_VERSION}" CACHE STRING "Which version of TritonClient to use")
+morpheus_utils_configure_tritonclient(${TRITONCLIENT_VERSION})
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

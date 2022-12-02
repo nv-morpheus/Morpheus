@@ -32,6 +32,7 @@ option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcp
 option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the build process" OFF)
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 
+set(MORPHEUS_RAPIDS_CMAKE_VERSION "22.08" CACHE STRING "Sets default versions for RAPIDS CMake.")
 set(MORPHEUS_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")
 mark_as_advanced(MORPHEUS_CACHE_DIR)
 
@@ -43,16 +44,31 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_INSTALL_RPATH "$ORIGIN")
 
+enable_language(C CXX) # TODO(Devin) Required for coverage import
 enable_testing()
 
 # CMake path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+# Load morpheus utils and update CMake paths
+set(MORPHEUS_UTILS_VERSION "23.01.01-alpha" CACHE STRING "Version of Morpheus utils")
+set(MORPHEUS_UTILS_RAPIDS_CMAKE_VERSION ${MORPHEUS_RAPIDS_CMAKE_VERSION})
+include(load_morpheus_utils)
+
+# Configure project package manager
+morpheus_utils_initialize_package_manager_2(
+    MORPHEUS_USE_CONDA
+    BUILD_SHARED_LIBS
+    MORPHEUS_VCPKG_TOOLCHAIN
+    MORPHEUS_VCPKG_DEFAULT_BINARY_CACHE
+)
+
 # Add the RAPIDS cmake helper scripts
-include(import-rapids-cmake)
+#include(import-rapids-cmake)
 
 # Configure CUDA architecture
+#morpheus_utils_initialize_cuda_arch(morpheus)
 include(configure_cuda_architecture)
 
 # Set a default build type if none was specified
@@ -62,7 +78,8 @@ rapids_cmake_build_type(Release)
 include(cmake/configure_toolchain.cmake)
 
 # Project definition
-project(morpheus LANGUAGES C CXX CUDA)
+project(morpheus
+    LANGUAGES C CXX CUDA)
 
 # Ccache configuration
 include(setup_cache)
