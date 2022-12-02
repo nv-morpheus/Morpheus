@@ -68,14 +68,10 @@ morpheus_utils_initialize_package_manager_2(
 #include(import-rapids-cmake)
 
 # Configure CUDA architecture
-#morpheus_utils_initialize_cuda_arch(morpheus)
-include(configure_cuda_architecture)
+morpheus_utils_initialize_cuda_arch(morpheus)
 
 # Set a default build type if none was specified
 rapids_cmake_build_type(Release)
-
-# Toolchain selection (Conda/VCPKG/custom) and configuration
-include(cmake/configure_toolchain.cmake)
 
 # Project definition
 project(morpheus
