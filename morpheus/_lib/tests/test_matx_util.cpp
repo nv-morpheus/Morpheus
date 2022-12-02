@@ -37,6 +37,7 @@
 #include <cstdlib>  // for std::getenv
 #include <filesystem>
 #include <memory>  // for shared_ptr, make_shared, unique_ptr
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -131,9 +132,20 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     }
 }
 
+std::filesystem::path get_morpheus_root()
+{
+    auto root = std::getenv("MORPHEUS_ROOT");
+
+    if (root == nullptr) {
+      throw std::runtime_error("MORPHEUS_ROOT env variable is not set");
+    }
+
+    return std::filesystem::path{root};
+}
+
 TEST_F(TestMatxUtil, ReduceMax2dColMajor)
 {
-    std::filesystem::path morpheus_root{std::getenv("MORPHEUS_ROOT")};
+    auto morpheus_root = get_morpheus_root();
     auto input_file = morpheus_root / "tests/tests_data/filter_probs.csv";
 
     auto table_m  = morpheus::load_table_from_file(input_file);
