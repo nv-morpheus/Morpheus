@@ -123,6 +123,7 @@ See :doc:`basics/overview` for more information on using the CLI.
 
    developer_guide/architecture
    developer_guide/guides
+   developer_guide/examples/index
    api
 
 .. toctree::
