@@ -299,7 +299,7 @@ def register_stage(command_name: str = None,
                         command_params.append(option)
                     except Exception as ex:
                         raise RuntimeError((f"Error auto registering CLI command '{command_name}' with "
-                                            f"class '{stage_class}' and parameter '{p_name}'. Error:")) from ex
+                                            f"class '{stage_class}' and parameter '{p_name}'. Error: {ex}")) from ex
 
                 if (config_param_name is None):
                     raise RuntimeError("All stages must take on argument of morpheus.Config. Ensure your stage "

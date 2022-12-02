@@ -32,9 +32,9 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-# @register_stage("from-doca",
-#                 modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
-#                 ignore_args=["cudf_kwargs"])
+@register_stage("from-doca",
+                modes=[PipelineModes.NLP],
+                ignore_args=["cudf_kwargs"])
 class DocaSourceStage(SingleOutputSource):
     """
     Load messages from a file.
@@ -67,11 +67,9 @@ class DocaSourceStage(SingleOutputSource):
 
     def __init__(self,
                  c: Config,
-                 nic_pci_address,
-                 gpu_pci_address,
-                 source_ip_filter = "",
-                #  iterative: bool = False,
-                #  cudf_kwargs: dict = None,
+                 nic_pci_address: str,
+                 gpu_pci_address: str,
+                 source_ip_filter: str = "",
                  ):
 
         super().__init__(c)
