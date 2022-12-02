@@ -64,9 +64,6 @@ morpheus_utils_initialize_package_manager_2(
     MORPHEUS_VCPKG_DEFAULT_BINARY_CACHE
 )
 
-# Add the RAPIDS cmake helper scripts
-#include(import-rapids-cmake)
-
 # Configure CUDA architecture
 morpheus_utils_initialize_cuda_arch(morpheus)
 
@@ -78,17 +75,17 @@ project(morpheus
     LANGUAGES C CXX CUDA)
 
 # Ccache configuration
-include(setup_cache)
+include(environment/init_ccache)
 
 # Configure all dependencies
-include(cmake/dependencies.cmake)
+include(dependencies)
 
 ####################################
 # - Post dependencies setup --------
-include(cmake/setup_compiler.cmake)
+include(environment/init_compiler)
 
 # Setup IWYU if enabled
-include(cmake/setup_iwyu.cmake)
+include(environment/init_iwyu)
 
 # To make it easier for CI to find output files, set the default executable suffix to .x if not set
 if("${CMAKE_EXECUTABLE_SUFFIX}" STREQUAL "")
