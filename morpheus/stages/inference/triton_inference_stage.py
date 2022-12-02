@@ -24,6 +24,7 @@ from functools import lru_cache
 from functools import partial
 
 import cupy as cp
+import dill
 import numpy as np
 import srf
 import tritonclient.grpc as tritonclient
@@ -406,7 +407,8 @@ class _TritonInferenceWorker(InferenceWorker):
                  server_url: str,
                  force_convert_inputs: bool,
                  inout_mapping: typing.Dict[str, str] = None,
-                 use_shared_memory: bool = False):
+                 use_shared_memory: bool = False,
+                 fea_length=None):
         super().__init__(inf_queue)
 
         # Combine the class defaults with any user supplied ones
@@ -422,7 +424,12 @@ class _TritonInferenceWorker(InferenceWorker):
         self._requires_seg_ids = False
 
         self._max_batch_size = c.model_max_batch_size
-        self._fea_length = c.feature_length
+
+        if fea_length is None:
+            self._fea_length = c.feature_length
+        else:
+            self._fea_length = fea_length
+
         self._force_convert_inputs = force_convert_inputs
 
         # Whether or not the returned value needs a logits calc for the response
@@ -774,22 +781,24 @@ class TritonInferenceAE(_TritonInferenceWorker):
                  server_url: str,
                  force_convert_inputs: bool = False,
                  use_shared_memory: bool = False,
-                 inout_mapping: typing.Dict[str, str] = None):
+                 inout_mapping: typing.Dict[str, str] = None,
+                 fea_length=None):
         super().__init__(inf_queue,
                          c,
                          model_name=model_name,
                          server_url=server_url,
                          force_convert_inputs=force_convert_inputs,
                          use_shared_memory=use_shared_memory,
-                         inout_mapping=inout_mapping)
+                         inout_mapping=inout_mapping,
+                         fea_length=fea_length)
 
         import torch
         from dfencoder import AutoEncoder
 
         # Save the autoencoder path
         with open(c.ae.autoencoder_path, 'rb') as in_strm:
-            self._autoencoder = AutoEncoder()
-            self._autoencoder.load_state_dict(torch.load(in_strm))
+            self._autoencoder = dill.load(in_strm)
+            #self._autoencoder.load_state_dict(torch.load(in_strm))
 
             # Ensure that there is a label_smoothing property on cce. Necessary if pytorch version is different
             if (not hasattr(self._autoencoder.cce, "label_smoothing")):
