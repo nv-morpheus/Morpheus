@@ -54,8 +54,10 @@ include(cmake/python_modules/common.cmake)
 #----------morpheus._lib.file_types---------
 include(cmake/python_modules/file_types.cmake)
 
-#----------morpheus._lib.messages---------
-include(cmake/python_modules/doca.cmake)
+#----------morpheus._lib.doca---------
+if(MORPHEUS_SUPPORT_DOCA)
+    include(cmake/python_modules/doca.cmake)
+endif()
 
 if (MORPHEUS_BUILD_TESTS)
   add_subdirectory(tests)

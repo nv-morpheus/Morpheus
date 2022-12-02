@@ -22,7 +22,7 @@ DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 # Build args
-BUILD_DOCA_DEPS=${BUILD_DOCA_DEPS:-"FALSE"}
+MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA:-"FALSE"}
 CUDA_VER=${CUDA_VER:-11.7.0}
 DOCA_ARTIFACTS_HOST=${DOCA_ARTIFACTS_HOST:-""}
 DOCA_REPO_HOST=${DOCA_REPO_HOST:-""}
@@ -35,7 +35,7 @@ TENSORRT_VERSION=${TENSORRT_VERSION:-8.2.1.3}
 
 DOCKER_ARGS="-t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
 DOCKER_ARGS="${DOCKER_ARGS} --target ${DOCKER_TARGET}"
-DOCKER_ARGS="${DOCKER_ARGS} --build-arg BUILD_DOCA_DEPS=${BUILD_DOCA_DEPS}"
+DOCKER_ARGS="${DOCKER_ARGS} --build-arg MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg CUDA_VER=${CUDA_VER}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg DOCA_ARTIFACTS_HOST=${DOCA_ARTIFACTS_HOST}"
 DOCKER_ARGS="${DOCKER_ARGS} --build-arg DOCA_REPO_HOST=${DOCA_REPO_HOST}"
@@ -54,19 +54,19 @@ DOCKER_ARGS="${DOCKER_ARGS} ${DOCKER_EXTRA_ARGS}"
 export DOCKER_BUILDKIT=1
 
 echo "Building morpheus:${DOCKER_TAG}..."
-echo "   FROM_IMAGE           : ${FROM_IMAGE}"
-echo "   BUILD_DOCA_DEPS      : ${BUILD_DOCA_DEPS}"
-echo "   CUDA_VER             : ${CUDA_VER}"
-if [ -n "${BUILD_DOCA_DEPS}" ]; then
-  echo "   DOCA_ARTIFACTS_HOST  : ${DOCA_ARTIFACTS_HOST}"
-  echo "   DOCA_REPO_HOST       : ${DOCA_REPO_HOST}"
+echo "   FROM_IMAGE            : ${FROM_IMAGE}"
+echo "   MORPHEUS_SUPPORT_DOCA : ${MORPHEUS_SUPPORT_DOCA}"
+echo "   CUDA_VER              : ${CUDA_VER}"
+if [ -n "${MORPHEUS_SUPPORT_DOCA}" ]; then
+  echo "   DOCA_ARTIFACTS_HOST   : ${DOCA_ARTIFACTS_HOST}"
+  echo "   DOCA_REPO_HOST        : ${DOCA_REPO_HOST}"
 fi
-echo "   CUDA_VER             : ${CUDA_VER}"
-echo "   LINUX_DISTRO         : ${LINUX_DISTRO}"
-echo "   LINUX_VER            : ${LINUX_VER}"
-echo "   RAPIDS_VER           : ${RAPIDS_VER}"
-echo "   PYTHON_VER           : ${PYTHON_VER}"
-echo "   TENSORRT_VERSION     : ${TENSORRT_VERSION}"
+echo "   CUDA_VER              : ${CUDA_VER}"
+echo "   LINUX_DISTRO          : ${LINUX_DISTRO}"
+echo "   LINUX_VER             : ${LINUX_VER}"
+echo "   RAPIDS_VER            : ${RAPIDS_VER}"
+echo "   PYTHON_VER            : ${PYTHON_VER}"
+echo "   TENSORRT_VERSION      : ${TENSORRT_VERSION}"
 echo ""
 echo "   COMMAND: docker build ${DOCKER_ARGS} -f docker/Dockerfile ."
 echo "   Note: add '--progress plain' to DOCKER_ARGS to show all container build output"

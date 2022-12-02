@@ -131,7 +131,8 @@ FROM conda_env as base_extended
 # Add one or more optional dependencies to the base environment
 
 ARG CONDA_CHANNEL_ALIAS
-ARG BUILD_DOCA_DEPS="FALSE"
+ARG MORPHEUS_SUPPORT_DOCA="FALSE"
+ENV MORPHEUS_SUPPORT_DOCA=${MORPHEUS_SUPPORT_DOCA}
 ARG DOCA_ARTIFACTS_HOST=""
 ARG DOCA_REPO_HOST=""
 
@@ -145,7 +146,7 @@ ARG DOCA_VERSION=1.6.0024-1
 # stable: 20.11.0-7.1.2
 ARG DPDK_VERSION=20.11.0-7.1.2
 
-RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
+RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         mkdir -p ./docker/deb && \
         wget -O ./docker/deb/doca-host-repo-ubuntu2004_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb \
             https://${DOCA_REPO_HOST}/doca-repo-1.6.0/doca-repo-1.6.0-0.0.9-221109-160039-daily/doca-host-repo-ubuntu2004_1.6.0-0.0.9-221109-160039-daily.1.6.0023.1.5.8.1.0.1.1_amd64.deb && \
@@ -177,11 +178,11 @@ RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
             https://${DOCA_ARTIFACTS_HOST}/doca-gpunet/${DOCA_BUILD_ID}/doca-gpu-mlnx-dpdk/mlnx-dpdk_${DPDK_VERSION}_amd64.deb ;\
     fi
 
-RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
+RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         dpkg -i ./docker/deb/*.deb; exit 0 ;\
     fi
 
-RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
+RUN if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         rm ./docker/deb/*.deb &&  \
         apt-get update -o APT::Update::Error-Mode=any && \
         apt-get install -y -f &&\
@@ -190,7 +191,7 @@ RUN if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
 
 # Build and install md, bsd, and gdrcopy libs
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
-    if [[ ${BUILD_DOCA_DEPS} == @(TRUE|True|true|1) ]]; then \
+    if [[ ${MORPHEUS_SUPPORT_DOCA} == @(TRUE|ON) ]]; then \
         source activate base && \
         mamba install automake cmake libtool -y && \
         cmake -DMORPHEUS_TP_BUILD_DOCA_DEPS=ON -DMORPHEUS_TP_INSTALL_DOCA_DEPS=ON \

@@ -15,8 +15,7 @@
 message(STATUS "Adding library: morpheus")
 
 set(DOCA_BUILD_FILES "")
-set(BUILD_DOCA_FILES True)
-if (BUILD_DOCA_FILES)
+if(MORPHEUS_SUPPORT_DOCA)
   set(DOCA_BUILD_FILES
     ${MORPHEUS_LIB_ROOT}/src/doca/samples/common.c
     ${MORPHEUS_LIB_ROOT}/src/doca/doca_context.cpp
@@ -87,7 +86,7 @@ target_include_directories(morpheus
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-if(BUILD_DOCA_FILES)
+if(MORPHEUS_SUPPORT_DOCA)
     target_link_libraries(morpheus
         PUBLIC
             -L/opt/mellanox/dpdk/lib/x86_64-linux-gnu/
