@@ -136,8 +136,9 @@ std::filesystem::path get_morpheus_root()
 {
     auto root = std::getenv("MORPHEUS_ROOT");
 
-    if (root == nullptr) {
-      throw std::runtime_error("MORPHEUS_ROOT env variable is not set");
+    if (root == nullptr)
+    {
+        throw std::runtime_error("MORPHEUS_ROOT env variable is not set");
     }
 
     return std::filesystem::path{root};
