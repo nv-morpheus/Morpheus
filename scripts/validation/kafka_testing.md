@@ -31,7 +31,7 @@ pytest --run_slow --run_kafka
     export KAFKA_ADVERTISED_HOST_NAME=$(docker network inspect bridge | jq -r '.[0].IPAM.Config[0].Gateway')
     export BROKER_LIST=$(HOST_IP=$KAFKA_ADVERTISED_HOST_NAME ~/work/kafka-docker/broker-list.sh)
     ```
-1. Open a new terminala and start the Kafka docker container:
+1. Open a new terminal and start the Kafka docker container:
     ```bash
     docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
          -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
