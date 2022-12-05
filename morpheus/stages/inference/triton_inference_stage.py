@@ -814,14 +814,16 @@ class TritonInferenceAE(_TritonInferenceWorker):
         import torch
 
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
-        #print(f"*********\nself._outputs={self._outputs}\noutput={sorted(output.keys())}")
 
         data = self._autoencoder.prepare_df(batch.get_meta())
         num_target, bin_target, codes = self._autoencoder.compute_targets(data)
         mse_loss = self._autoencoder.mse(torch.as_tensor(output["num"], device='cuda'), num_target)
         net_loss = [mse_loss.data]
-        #bce_loss = self._autoencoder.bce(torch.as_tensor(output["bin"], device='cuda'), bin_target)
-        #net_loss += [bce_loss.data]
+
+        if 'bin' in output:
+            bce_loss = self._autoencoder.bce(torch.as_tensor(output["bin"], device='cuda'), bin_target)
+            net_loss += [bce_loss.data]
+
         cce_loss = []
         for i, ft in enumerate(self._autoencoder.categorical_fts):
             loss = self._autoencoder.cce(torch.as_tensor(output[ft], device='cuda'), codes[i])
