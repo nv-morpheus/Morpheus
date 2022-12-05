@@ -44,10 +44,13 @@ class PreprocessAEStage(PreprocessBaseStage):
 
     """
 
-    def __init__(self, c: Config):
+    def __init__(self, c: Config, fea_length=None):
         super().__init__(c)
+        if fea_length is None:
+            self._fea_length = c.feature_length
+        else:
+            self._fea_length = fea_length
 
-        self._fea_length = c.feature_length
         self._feature_columns = c.ae.feature_columns
 
     @property
