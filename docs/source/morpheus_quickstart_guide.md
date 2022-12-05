@@ -249,7 +249,7 @@ pod/mlflow-6d98        1/1     Running   0          39s
 ```
 
 ### Model Deployment
-Attach to the MLfLow pod to publish models to the MLflow server and then deploy it onto Morpheus AI Engine:
+Attach to the MLflow pod to publish models to the MLflow server and then deploy it onto Morpheus AI Engine:
 
 ```bash
 kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
@@ -903,7 +903,7 @@ Commands:
   filter        Filter message by a classification threshold.
   from-file     Load messages from a file.
   from-kafka    Load messages from a Kafka cluster.
-  gen-viz       (Deprecated) Write out vizualization DataFrames.
+  gen-viz       (Deprecated) Write out visualization DataFrames.
   inf-identity  Perform inference for testing that performs a no-op.
   inf-pytorch   Perform inference with PyTorch.
   inf-triton    Perform inference with Triton Inference Server.

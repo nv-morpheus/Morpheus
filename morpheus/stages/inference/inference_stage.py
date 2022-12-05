@@ -348,7 +348,7 @@ class InferenceStage(MultiMessageStage):
 
         for inf, res in zip(in_message, out_message):
 
-            # Ensure they all share the same meta object. Otherwise this doesnt work
+            # Ensure they all share the same meta object. Otherwise this doesn't work
             # assert inf.meta is saved_meta
 
             # Make sure we have a continuous list
