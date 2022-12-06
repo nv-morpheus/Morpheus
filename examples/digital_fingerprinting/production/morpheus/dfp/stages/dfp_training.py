@@ -15,9 +15,9 @@
 import logging
 import typing
 
-import srf
+import mrc
 from dfencoder import AutoEncoder
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
@@ -87,9 +87,9 @@ class DFPTraining(SinglePortStage):
 
         return output_message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)

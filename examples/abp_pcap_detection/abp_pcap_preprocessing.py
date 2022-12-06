@@ -17,7 +17,7 @@ from functools import partial
 
 import cupy as cp
 import numpy as np
-import srf
+import mrc
 
 import cudf
 
@@ -203,5 +203,5 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
             fea_cols=self.features,
         )
 
-    def _get_preprocess_node(self, builder: srf.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder):
         return _stages.AbpPcapPreprocessingStage(builder, self.unique_name)

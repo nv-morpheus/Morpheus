@@ -19,7 +19,7 @@ from io import StringIO
 
 import pandas as pd
 import pika
-import srf
+import mrc
 
 import cudf
 
@@ -91,7 +91,7 @@ class RabbitMQSourceStage(SingleOutputSource):
 
         return super().stop()
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
         node = builder.make_source(self.unique_name, self.source_generator)
         return node, MessageMeta
 

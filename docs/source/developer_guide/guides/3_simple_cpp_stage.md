@@ -59,7 +59,7 @@ template <typename SinkT, typename SourceT = SinkT>  // by default, emit type ==
 class PythonNode : ...
 ```
 
-Both the `PythonSource` and `PythonNode` classes are defined in the `pysrf/node.hpp` header.
+Both the `PythonSource` and `PythonNode` classes are defined in the `pymrc/node.hpp` header.
 
 Note: `SourceT` and `SinkT` types are typically `shared_ptr`s to a Morpheus message type. For example, `std::shared_ptr<MessageMeta>`. This allows the reference counting mechanisms used in Python and C++ to share the same count, properly cleaning up the objects when they are no longer referenced.
 
@@ -77,9 +77,9 @@ To start with, we have our Morpheus and SRF-specific includes:
 
 ```cpp
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <pysrf/node.hpp>               // for PythonNode
-#include <srf/segment/builder.hpp>      // for Segment Builder
-#include <srf/segment/object.hpp>       // for Segment Object
+#include <pymrc/node.hpp>               // for PythonNode
+#include <mrc/segment/builder.hpp>      // for Segment Builder
+#include <mrc/segment/object.hpp>       // for Segment Object
 ```
 
 We'll want to define our stage in its own namespace. In this case, we will name it `morpheus_example`, giving us a namespace and class definition that look like this:
@@ -92,10 +92,10 @@ namespace morpheus_example {
 
 using namespace morpheus;
 
-class PassThruStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
     using base_t::sink_type_t;
     using base_t::source_type_t;
     using base_t::subscribe_fn_t;
@@ -123,7 +123,7 @@ We will also define an interface proxy object to keep the class definition separ
 ```cpp
 struct PassThruStageInterfaceProxy
 {
-    static std::shared_ptr<srf::segment::Object<PassThruStage>> init(srf::segment::Builder &builder,
+    static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder &builder,
                                                                      const std::string &name);
 };
 ```
@@ -136,9 +136,9 @@ Putting it all together, our header file looks like this:
 #pragma once
 
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <pysrf/node.hpp>               // for PythonNode
-#include <srf/segment/builder.hpp>      // for Segment Builder
-#include <srf/segment/object.hpp>       // for Segment Object
+#include <pymrc/node.hpp>               // for PythonNode
+#include <mrc/segment/builder.hpp>      // for Segment Builder
+#include <mrc/segment/object.hpp>       // for Segment Object
 
 #include <memory>
 #include <string>
@@ -150,10 +150,10 @@ namespace morpheus_example {
 
 using namespace morpheus;
 
-class PassThruStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
     using base_t::sink_type_t;
     using base_t::source_type_t;
     using base_t::subscribe_fn_t;
@@ -165,7 +165,7 @@ class PassThruStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage
 
 struct PassThruStageInterfaceProxy
 {
-    static std::shared_ptr<srf::segment::Object<PassThruStage>> init(srf::segment::Builder &builder,
+    static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder &builder,
                                                                      const std::string &name);
 };
 
@@ -181,7 +181,7 @@ Our includes section looks like:
 #include "pass_thru.hpp"
 
 #include <pybind11/pybind11.h>
-#include <pysrf/utils.hpp>  // for pysrf::import
+#include <pymrc/utils.hpp>  // for pymrc::import
 
 #include <exception>
 ```
@@ -242,11 +242,11 @@ We scoped the acquisition of the GIL such that it is held only for the parts of 
 ### Python Proxy and Interface
 
 The things that all proxy interfaces need to do are:
-1. Construct the stage using the `srf::segment::Builder::construct_object` method
-2. Return a `shared_ptr` to the stage wrapped in a `srf::segment::Object`
+1. Construct the stage using the `mrc::segment::Builder::construct_object` method
+2. Return a `shared_ptr` to the stage wrapped in a `mrc::segment::Object`
 
 ```cpp
-std::shared_ptr<srf::segment::Object<PassThruStage>> PassThruStageInterfaceProxy::init(srf::segment::Builder& builder,
+std::shared_ptr<mrc::segment::Object<PassThruStage>> PassThruStageInterfaceProxy::init(mrc::segment::Builder& builder,
                                                                                        const std::string& name)
 {
     return builder.construct_object<PassThruStage>(name);
@@ -261,11 +261,11 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_example, m)
 {
-    srf::pysrf::import(m, "morpheus._lib.messages");
+    mrc::pymrc::import(m, "morpheus._lib.messages");
 
-    py::class_<srf::segment::Object<PassThruStage>,
-               srf::segment::ObjectProperties,
-               std::shared_ptr<srf::segment::Object<PassThruStage>>>(m, "PassThruStage", py::multiple_inheritance())
+    py::class_<mrc::segment::Object<PassThruStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PassThruStage>>>(m, "PassThruStage", py::multiple_inheritance())
         .def(py::init<>(&PassThruStageInterfaceProxy::init), py::arg("builder"), py::arg("name"));
 }
 ```
@@ -276,7 +276,7 @@ PYBIND11_MODULE(morpheus_example, m)
 #include "pass_thru.hpp"
 
 #include <pybind11/pybind11.h>
-#include <pysrf/utils.hpp>  // for pysrf::import
+#include <pymrc/utils.hpp>  // for pymrc::import
 
 #include <exception>
 
@@ -294,7 +294,7 @@ PassThruStage::subscribe_fn_t PassThruStage::build_operator()
     };
 }
 
-std::shared_ptr<srf::segment::Object<PassThruStage>> PassThruStageInterfaceProxy::init(srf::segment::Builder& builder,
+std::shared_ptr<mrc::segment::Object<PassThruStage>> PassThruStageInterfaceProxy::init(mrc::segment::Builder& builder,
                                                                                        const std::string& name)
 {
     return builder.construct_object<PassThruStage>(name);
@@ -305,11 +305,11 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_example, m)
 {
-    srf::pysrf::import(m, "morpheus._lib.messages");
+    mrc::pymrc::import(m, "morpheus._lib.messages");
 
-    py::class_<srf::segment::Object<PassThruStage>,
-               srf::segment::ObjectProperties,
-               std::shared_ptr<srf::segment::Object<PassThruStage>>>(m, "PassThruStage", py::multiple_inheritance())
+    py::class_<mrc::segment::Object<PassThruStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PassThruStage>>>(m, "PassThruStage", py::multiple_inheritance())
         .def(py::init<>(&PassThruStageInterfaceProxy::init), py::arg("builder"), py::arg("name"));
 }
 
@@ -331,7 +331,7 @@ def supports_cpp_node(self):
    return True
 ```
 ```python
-def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
     if self._build_cpp_node():
         print("building C++ node")
         node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)

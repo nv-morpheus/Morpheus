@@ -1,11 +1,11 @@
 [
 
 ## Include mappings
-# srf protos
-{ "include": [ "\"srf/protos/architect.pb.h\"", private, "<srf/protos/architect.pb.h>", "public" ] },
-{ "include": [ "\"srf/protos/codable.pb.h\"", private, "<srf/protos/codable.pb.h>", "public" ] },
-{ "include": [ "\"srf/protos/remote_descriptor.pb.h\"", private, "<srf/protos/remote_descriptor.pb.h>", "public" ] },
-{ "include": [ "\"srf/protos/tensor_meta_data.pb.h\"", private, "<srf/protos/tensor_meta_data.pb.h>", "public" ] },
+# mrc protos
+{ "include": [ "\"mrc/protos/architect.pb.h\"", private, "<mrc/protos/architect.pb.h>", "public" ] },
+{ "include": [ "\"mrc/protos/codable.pb.h\"", private, "<mrc/protos/codable.pb.h>", "public" ] },
+{ "include": [ "\"mrc/protos/remote_descriptor.pb.h\"", private, "<mrc/protos/remote_descriptor.pb.h>", "public" ] },
+{ "include": [ "\"mrc/protos/tensor_meta_data.pb.h\"", private, "<mrc/protos/tensor_meta_data.pb.h>", "public" ] },
 
 # stdlib
 { "include": [ "<bits/cxxabi_forced.h>", private, "<mutex>", "public" ] },
@@ -138,7 +138,7 @@
 # xtensor
 { "symbol": ["xt::no_ownership", "private", "<xtensor/xadapt.hpp>", "public"] },
 
-# srf
-{ "symbol": ["std::__decay_and_strip<std::shared_ptr<srf::TraceStatistics> &>::__type" , "private", "<srf/benchmarking/trace_statistics.hpp>", "public"] },
+# mrc
+{ "symbol": ["std::__decay_and_strip<std::shared_ptr<mrc::TraceStatistics> &>::__type" , "private", "<mrc/benchmarking/trace_statistics.hpp>", "public"] },
 
 ]

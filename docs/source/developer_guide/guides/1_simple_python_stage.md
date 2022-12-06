@@ -34,7 +34,7 @@ We start our class definition with a few basic imports:
 ```python
 import typing
 
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -75,7 +75,7 @@ Our `on_data` method accepts the incoming message and returns a message. The ret
 
 Finally, the `_build_single` method will be used at build time to wire our stage into the pipeline. `_build_single` receives an instance of the SRF pipeline segment along with a `StreamPair` instance. We will be using the segment instance to build a node from our stage and add it to the pipeline segment. The `StreamPair` argument is a tuple; the first element is our parent node, and the second is our parent node's output type. The return type of this method is also a `StreamPair`. Typically, we will be returning our newly constructed node along with our output type.
 ```python
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 
@@ -101,7 +101,7 @@ return node, input_stream[1]
 ```python
 import typing
 
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -128,7 +128,7 @@ class PassThruStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 

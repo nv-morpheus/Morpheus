@@ -16,8 +16,8 @@ import logging
 import typing
 
 import numpy as np
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 import cudf
 
@@ -128,9 +128,9 @@ class DFPSplitUsersStage(SinglePortStage):
 
             return output_messages
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.extract_users), ops.flatten()).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)

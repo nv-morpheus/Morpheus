@@ -18,7 +18,7 @@ import typing
 from io import StringIO
 
 import pika
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -68,7 +68,7 @@ class WriteToRabbitMQStage(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
         builder.make_edge(input_stream[0], node)
         return input_stream

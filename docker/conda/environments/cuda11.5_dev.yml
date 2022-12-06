@@ -66,7 +66,7 @@ dependencies:
     - numpydoc=1.4
     - pandas=1.3
     - pip
-    - pkg-config # for srf cmake
+    - pkg-config # for mrc cmake
     - pluggy=1.0
     - protobuf=3.20
     - pybind11-stubgen=0.10.5
@@ -81,7 +81,7 @@ dependencies:
     - scikit-build=0.13
     - sphinx
     - sphinx_rtd_theme
-    - srf 22.11.*
+    - mrc 23.01.*
     - sysroot_linux-64=2.17
     - tqdm=4
     - typing_utils=0.1

@@ -17,7 +17,7 @@ import os
 import typing
 
 import pandas as pd
-import srf
+import mrc
 
 from morpheus.config import Config
 from morpheus.io import serializers
@@ -92,7 +92,7 @@ class DFPVizPostprocStage(SinglePortStage):
 
         return MessageMeta(df=viz_pdf)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
