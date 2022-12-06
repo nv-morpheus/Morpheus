@@ -29,7 +29,8 @@ ninja --version
 
 rapids-logger "Configuring cmake for Morpheus"
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
-    -DCCACHE_PROGRAM_PATH=$(which sccache) .
+    -DCCACHE_PROGRAM_PATH=$(which sccache) \
+    -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON .
 
 rapids-logger "Building Morpheus"
 cmake --build build --parallel ${PARALLEL_LEVEL}

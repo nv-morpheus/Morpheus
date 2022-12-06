@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,34 +20,32 @@
 #include <algorithm>
 
 namespace morpheus {
-    /****** Component public free function implementations************/
-    /**
-     * TODO(Documentation)
-     */
-    template<typename FuncT, typename SeqT>
-    auto foreach_map(const SeqT &seq, FuncT func) {
-        using value_t = typename SeqT::const_reference;
-        using return_t = decltype(func(std::declval<value_t>()));
+/****** Component public free function implementations************/
 
-        std::vector<return_t> result{};
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
 
-        std::transform(seq.cbegin(), seq.cend(), std::back_inserter(result), func);
+/**
+ @brief Apply a function `func` to a sequence `seq` and return the results in a new vector.
+ * @param seq
+ * @param func
+ * @return std::vector<return_t>
+ */
+template <typename FuncT, typename SeqT>
+auto foreach_map(const SeqT &seq, FuncT func)
+{
+    using value_t  = typename SeqT::const_reference;
+    using return_t = decltype(func(std::declval<value_t>()));
 
-        return result;
-    }
+    std::vector<return_t> result{};
 
-    /**
-     * TODO(Documentation)
-     */
-    template<typename FuncT, typename SeqT>
-    auto foreach_map2(const SeqT &seq, FuncT func) {
-        using value_t = typename SeqT::const_reference;
-        using return_t = decltype(func(std::declval<value_t>()));
+    std::transform(seq.cbegin(), seq.cend(), std::back_inserter(result), func);
 
-        std::vector<return_t> result{};
+    return result;
+}
 
-        std::transform(seq.begin(), seq.end(), std::back_inserter(result), func);
-
-        return result;
-    }
+/** @} */  // end of group
 }  // namespace morpheus

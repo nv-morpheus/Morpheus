@@ -42,7 +42,6 @@ set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 set(CMAKE_INSTALL_RPATH "$ORIGIN")
 
 enable_testing()
@@ -145,7 +144,7 @@ add_custom_target(copy_python_source ALL
   DEPENDS ${OUTPUT_PYTHON_FILES}
 )
 
-# Manually install the below files. install(DIRECTORY) doesnt work well and
+# Manually install the below files. install(DIRECTORY) doesn't work well and
 # makes it impossible to get these files and MORPHEUS_PYTHON_FILES in one command.
 install(
   FILES ${MORPHEUS_ROOT_PYTHON_FILES}

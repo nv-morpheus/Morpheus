@@ -20,20 +20,13 @@
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 
-#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
-#include <rmm/cuda_stream_view.hpp>        // for cuda_stream_per_thread
-#include <rmm/device_buffer.hpp>           // for device_buffer
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/cuda/common.hpp>             // for SRF_CHECK_CUDA
 #include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
 #include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <srf/segment/object.hpp>          // for Object
 
-#include <algorithm>  // for min_element, transform
-#include <cstddef>    // for size_t
+#include <cstddef>  // for size_t
 #include <exception>
-#include <functional>  // for divides, placeholders
 #include <map>
 #include <memory>
 #include <ostream>      // for logging
@@ -59,9 +52,8 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
-                const auto& probs  = x->get_probs();
-                const auto& shape  = probs.get_shape();
-                const auto& stride = probs.get_stride();
+                const auto& probs = x->get_probs();
+                const auto& shape = probs.get_shape();
 
                 CHECK(shape.size() == 2 && shape[1] == m_num_class_labels)
                     << "Label count does not match output of model. Label count: " << m_num_class_labels
@@ -70,28 +62,6 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
                 const std::size_t num_rows    = shape[0];
                 const std::size_t num_columns = shape[1];
 
-                auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
-
-                SRF_CHECK_CUDA(
-                    cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
-
-                // Depending on the input the stride is given in bytes or elements,
-                // divide the stride elements by the smallest item to ensure tensor_stride is defined in
-                // terms of elements
-                std::vector<TensorIndex> tensor_stride(stride.size());
-                auto min_stride = std::min_element(stride.cbegin(), stride.cend());
-
-                std::transform(stride.cbegin(),
-                               stride.cend(),
-                               tensor_stride.begin(),
-                               std::bind(std::divides<>(), std::placeholders::_1, *min_stride));
-
-                auto tensor_obj = Tensor::create(
-                    tmp_buffer,
-                    probs.dtype(),
-                    std::vector<TensorIndex>{static_cast<long long>(shape[0]), static_cast<long long>(shape[1])},
-                    tensor_stride);
-
                 std::vector<std::string> columns(m_idx2label.size());
                 std::vector<TensorObject> tensors(m_idx2label.size());
 
@@ -99,9 +69,9 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
                 for (const auto& [column_num, column_name] : m_idx2label)
                 {
                     columns[i] = column_name;
-                    tensors[i] = tensor_obj.slice(std::vector<TensorIndex>{0, static_cast<TensorIndex>(column_num)},
-                                                  std::vector<TensorIndex>{static_cast<TensorIndex>(num_rows),
-                                                                           static_cast<TensorIndex>(column_num + 1)});
+                    tensors[i] = probs.slice(std::vector<TensorIndex>{0, static_cast<TensorIndex>(column_num)},
+                                             std::vector<TensorIndex>{static_cast<TensorIndex>(num_rows),
+                                                                      static_cast<TensorIndex>(column_num + 1)});
 
                     ++i;
                 }
@@ -122,8 +92,6 @@ std::shared_ptr<srf::segment::Object<AddScoresStage>> AddScoresStageInterfacePro
     std::size_t num_class_labels,
     std::map<std::size_t, std::string> idx2label)
 {
-    auto stage = builder.construct_object<AddScoresStage>(name, num_class_labels, std::move(idx2label));
-
-    return stage;
+    return builder.construct_object<AddScoresStage>(name, num_class_labels, std::move(idx2label));
 }
 }  // namespace morpheus

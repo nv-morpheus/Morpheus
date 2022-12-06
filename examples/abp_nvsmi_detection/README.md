@@ -27,7 +27,7 @@ In this example, we will be using Morpheus' provided ABP NVSMI Detection model. 
 
 ### The Dataset
 
-The dataset that this workflow was designed to process contains NVIDIA GPU metrics at regular time intervals and is extracted by a NetQ agent and serialized into JSON. Each line in the dataset contains much of the same information that is returned by the `nvidia-smi` utility. We won't look at a full message directly since each line contains 176 different columns, but it's possible to get a idea of how the dataset was generated using the `nvidia-smi dmon` command. If you run this yourself, you will se output similar to the following:
+The dataset that this workflow was designed to process contains NVIDIA GPU metrics at regular time intervals and is extracted by a NetQ agent and serialized into JSON. Each line in the dataset contains much of the same information that is returned by the `nvidia-smi` utility. We won't look at a full message directly since each line contains 176 different columns, but it's possible to get a idea of how the dataset was generated using the `nvidia-smi dmon` command. If you run this yourself, you will see output similar to the following:
 
 ```bash
 $ nvidia-smi dmon
@@ -44,7 +44,7 @@ $ nvidia-smi dmon
     0   281    57     -    85    54     0     0  7000  1740
 ```
 
-Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and you can see the SM% and Mem% increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurriences without needing additional information from the host machine.
+Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and you can see the SM% and Mem% increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurrencies without needing additional information from the host machine.
 
 In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
 
@@ -221,4 +221,4 @@ The output file `detections.jsonlines` will contain a single boolean value for e
 ...
 ```
 
- We have stripped out the input data to make the detections easier to see. Ommitting the argument `--include 'mining'` would show the input data in the detections file.
+ We have stripped out the input data to make the detections easier to see. Omitting the argument `--include 'mining'` would show the input data in the detections file.

@@ -95,7 +95,7 @@ Options:
 ```
 
 ### CLI Example
-The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplush the same goal. To do this we must ensure that the `examples`/log_parsing directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplish the same goal. To do this we must ensure that the `examples`/log_parsing directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
 
 From the root of the Morpheus repo run:
 ```bash
