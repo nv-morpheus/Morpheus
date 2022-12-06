@@ -128,7 +128,7 @@ The validation set contains raw data from 27 AppShield snapshots.
 
 ## Root Cause
 
-This dataset contains a small sample of sanitized linux kernel logs of a DGX machine prior to a hardware failure. The training dataset contains 1359 logs labeled as indicators of the root cause or not. A model trained on this set can be robust enough to correctly identify previously undetected errors from the `unseen-errors` file as a root cause as well.
+This dataset contains a small sample of anonymized Linux kernel logs of a DGX machine prior to a hardware failure. The training dataset contains 1359 logs labeled as indicators of the root cause or not. A model trained on this set can be robust enough to correctly identify previously undetected errors from the `unseen-errors` file as a root cause as well.
 
 ### Sample Training Data
 - [root-cause-training-data.csv](./training-data/root-cause-training-data.csv)
