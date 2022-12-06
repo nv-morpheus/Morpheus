@@ -210,9 +210,6 @@ def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_
 
     pipeline.add_stage(GenerateVizFramesStage(config, server_url="0.0.0.0", server_port=8765))
 
-    # Build pipeline
-    pipeline.build()
-
     # Run the pipeline
     pipeline.run()
 
