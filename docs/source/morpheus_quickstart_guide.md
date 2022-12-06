@@ -261,7 +261,7 @@ kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
 
 `Important`: When (mlflow) is present, commands are directly within the container.
 
-First let's have a look at the syntax of the commands we will be using to communicate with the MLflow Triton plugin before we start deploying models.
+First let's examine the syntax of the commands we will be using to communicate with the MLflow Triton plugin before we start deploying models.
 Publish models to MLflow server looks like:
 
 ```bash

@@ -62,7 +62,7 @@ class NLPVizFileSource(SingleOutputSource):
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
     cudf_kwargs: dict, default=None
-        keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
+        keyword args passed to underlying cuDF I/O function. Refer to the cuDF documentation for `cudf.read_csv()` and
         `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
         and with `file_type` == 'csv', this defaults to ``{}``.
     """
