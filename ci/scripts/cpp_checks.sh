@@ -58,7 +58,7 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
       CLANG_TIDY_DIFF=$(find_clang_tidy_diff)
 
-      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesnt return the correct error codes)
+      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesn't return the correct error codes)
       CLANG_TIDY_OUTPUT=`get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_TIDY_DIFF} -j 0 -path ${BUILD_DIR} -p1 -quiet 2>&1`
 
       if [[ -n "${CLANG_TIDY_OUTPUT}" && ${CLANG_TIDY_OUTPUT} != "No relevant changes found." ]]; then

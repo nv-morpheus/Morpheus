@@ -240,7 +240,7 @@ Commands:
   filter        Filter message by a classification threshold
   from-file     Load messages from a file
   from-kafka    Load messages from a Kafka cluster
-  gen-viz       (Deprecated) Write out vizualization data frames
+  gen-viz       (Deprecated) Write out visualization data frames
   inf-identity  Perform a no-op inference for testing
   inf-pytorch   Perform inference with PyTorch
   inf-triton    Perform inference with Triton

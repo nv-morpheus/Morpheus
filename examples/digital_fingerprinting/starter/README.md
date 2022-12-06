@@ -80,7 +80,7 @@ Commands:
   from-azure       Source stage is used to load Azure Active Directory messages.
   from-cloudtrail  Load messages from a Cloudtrail directory
   from-duo         Source stage is used to load Duo Authentication messages.
-  gen-viz          (Deprecated) Write out vizualization data frames
+  gen-viz          (Deprecated) Write out visualization data frames
   inf-pytorch      Perform inference with PyTorch
   inf-triton       Perform inference with Triton
   monitor          Display throughput numbers at a specific point in the
@@ -115,7 +115,7 @@ The following table shows mapping between the main Morpheus CLI commands and und
 
 **Preprocessing stages**
 
-`TrainAEStage` can either train user models using data matching a provided `--train_data_glob` or load pre-trained models from file using `--pretrained_filename`. When using `--train_data_glob`, user models can be saved using the `--models_output_filename` option. The `--source_stage_class` must also be used with `--train_data_glob` so that the training stage knows how to read the training data. The autoencoder implementation from this [fork](https://github.com/efajardo-nv/dfencoder/tree/morpheus-22.08) is used for user model training. The following are the available CLI options for the `TrainAEStage` (train-ae):
+`TrainAEStage` can either train user models using data matching a provided `--train_data_glob` or load pre-trained models from file using `--pretrained_filename`. When using `--train_data_glob`, user models can be saved using the `--models_output_filename` option. The `--source_stage_class` must also be used with `--train_data_glob` so that the training stage knows how to read the training data. The autoencoder implementation used for user model training can be found [here](https://github.com/nv-morpheus/dfencoder). The following are the available CLI options for the `TrainAEStage` (train-ae):
 
 | Option                | Description
 | ----------------------| ---------------------------------------------------------

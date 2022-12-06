@@ -35,7 +35,7 @@ class RecipientFeaturesStage(SinglePortStage):
     config : morpheus.config.Config
         Pipeline configuration instance.
     sep_token : str
-        Bert separator toeken.
+        Bert separator token.
     """
 
     def __init__(self, config: Config, sep_token: str = '[SEP]'):
