@@ -1085,9 +1085,9 @@ The Drop Null Attributes stage (dropna) requires the specification of a column n
 
 
 
-[Morpheus Pipeline Examples]: https://github.com/nv-morpheus/Morpheus/tree/branch-22.09/examples
-[Morpheus Contribution]: https://github.com/nv-morpheus/Morpheus/blob/branch-22.09/CONTRIBUTING.md
-[Morpheus Developer Guide]: https://github.com/nv-morpheus/Morpheus/tree/branch-22.09/docs/source/developer_guide/guides
+[Morpheus Pipeline Examples]: https://github.com/nv-morpheus/Morpheus/tree/main/examples
+[Morpheus Contribution]: https://github.com/nv-morpheus/Morpheus/blob/main/CONTRIBUTING.md
+[Morpheus Developer Guide]: https://github.com/nv-morpheus/Morpheus/tree/main/docs/source/developer_guide/guides
 [Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
 [NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
 [NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1
