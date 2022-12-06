@@ -35,9 +35,9 @@ This is a synthetic dataset of Azure AD logs with activities of 20 accounts (85 
 #### Pipeline Validation Data
 Data for the pipeline validation contains an anomlous activity for a single user.
 
-- Account: `attacktarget@domain.com`    
+- Account: `attacktarget@domain.com`
 - Time: 2022/08/31
-- Description: 
+- Description:
     - Anomalously high log volume (100+)
     - New IP for the account
     - New location for the account (new country, state, city, latitude, longitude)
@@ -50,7 +50,7 @@ This dataset is stored in our S3 bucket. It can be downloaded using a script.
 
 ### DFP Cloudtrail Logs
 
-This is a synthetic dataset of AWS CloudTrail logs events with activities from 2 entities/users in separate files. 
+This is a synthetic dataset of AWS CloudTrail logs events with activities from 2 entities/users in separate files.
 
 Files for `user-123` include a single csv and split json versions of the same data:
 #### Sample Training Data
@@ -103,8 +103,8 @@ Log validation data in csv and json format
 
 ## Phishing Detection
 
-The SMS Spam Collection is a public set of 5574 SMS labeled messages that have been collected for mobile phone spam research hosted at UCI Machine Learning Repository: [SMS Spam Collection Data Set](https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection) last accessed on 11/09/2022 with an MD5 hash of `ab53f9571d479ee677e7b283a06a661a` 
-During training, 20% of the dataset is randomly selected as the test set and is saved as a jsonlines file for use in pipeline validation. 
+The SMS Spam Collection is a public set of 5574 SMS labeled messages that have been collected for mobile phone spam research hosted at UCI Machine Learning Repository: [SMS Spam Collection Data Set](https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection) last accessed on 11/09/2022 with an MD5 hash of `ab53f9571d479ee677e7b283a06a661a`
+During training, 20% of the dataset is randomly selected as the test set and is saved as a jsonlines file for use in pipeline validation.
 
 ### Pipeline Validation Data
 - [phishing-email-validation-data.jsonlines](./validation-data/phishing-email-validation-data.jsonlines)
@@ -128,7 +128,7 @@ The validation set contains raw data from 27 AppShield snapshots.
 
 ## Root Cause
 
-This dataset contains a small sample of sanitized linux kernel logs of a DGX machine prior to a hardware failure. The training dataset contains 1359 logs labeled as indicators of the root cause or not. A model trained on this set can be robust enough to correctly identify previously unseen errors from the `unseen-errors` file as a root cause as well. 
+This dataset contains a small sample of sanitized linux kernel logs of a DGX machine prior to a hardware failure. The training dataset contains 1359 logs labeled as indicators of the root cause or not. A model trained on this set can be robust enough to correctly identify previously undetected errors from the `unseen-errors` file as a root cause as well.
 
 ### Sample Training Data
 - [root-cause-training-data.csv](./training-data/root-cause-training-data.csv)
