@@ -798,7 +798,6 @@ class TritonInferenceAE(_TritonInferenceWorker):
         # Save the autoencoder path
         with open(c.ae.autoencoder_path, 'rb') as in_strm:
             self._autoencoder = dill.load(in_strm)
-            #self._autoencoder.load_state_dict(torch.load(in_strm))
 
             # Ensure that there is a label_smoothing property on cce. Necessary if pytorch version is different
             if (not hasattr(self._autoencoder.cce, "label_smoothing")):
