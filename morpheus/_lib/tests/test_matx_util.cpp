@@ -35,9 +35,7 @@
 
 #include <cstdint>  // for int64_t, int32_t, uint8_t
 #include <cstdlib>  // for std::getenv
-#include <filesystem>
 #include <memory>  // for shared_ptr, make_shared, unique_ptr
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -130,18 +128,6 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     {
         EXPECT_DOUBLE_EQ(output[i], expected_output[i]);
     }
-}
-
-std::filesystem::path get_morpheus_root()
-{
-    auto root = std::getenv("MORPHEUS_ROOT");
-
-    if (root == nullptr)
-    {
-        throw std::runtime_error("MORPHEUS_ROOT env variable is not set");
-    }
-
-    return std::filesystem::path{root};
 }
 
 TEST_F(TestMatxUtil, ReduceMax2dColMajor)

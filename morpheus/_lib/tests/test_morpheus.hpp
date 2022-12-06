@@ -20,6 +20,21 @@
 #include <glog/logging.h>  // IWYU pragma: keep
 #include <gtest/gtest.h>   // IWYU pragma: keep
 
+#include <filesystem>
+#include <stdexcept>
+
 #define TEST_CLASS(name)                      \
     class Test##name : public ::testing::Test \
     {}
+
+std::filesystem::path get_morpheus_root()
+{
+    auto root = std::getenv("MORPHEUS_ROOT");
+
+    if (root == nullptr)
+    {
+        throw std::runtime_error("MORPHEUS_ROOT env variable is not set");
+    }
+
+    return std::filesystem::path{root};
+}
