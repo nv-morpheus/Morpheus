@@ -21,7 +21,7 @@ import typing
 
 import cupy as cp
 import pandas as pd
-import srf
+import mrc
 
 import morpheus
 from morpheus._lib.file_types import FileTypes
@@ -94,7 +94,7 @@ class ConvMsg(SinglePortStage):
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
         return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
 
-    def _build_single(self, builder: srf.Builder, input_stream):
+    def _build_single(self, builder: mrc.Builder, input_stream):
         stream = builder.make_node(self.unique_name, self._conv_message)
         builder.make_edge(input_stream[0], stream)
 

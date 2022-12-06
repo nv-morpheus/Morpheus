@@ -17,9 +17,9 @@
 
 #include "morpheus/stages/deserialize.hpp"
 
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/segment/builder.hpp>
+#include <mrc/segment/builder.hpp>
 
 #include <algorithm>  // for min
 #include <cstddef>
@@ -58,8 +58,8 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
 }
 
 // ************ DeserializationStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, size_t batch_size)
+std::shared_ptr<mrc::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
+    mrc::segment::Builder &builder, const std::string &name, size_t batch_size)
 {
     auto stage = builder.construct_object<DeserializeStage>(name, batch_size);
 

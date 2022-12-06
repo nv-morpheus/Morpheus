@@ -20,12 +20,12 @@
 #include "morpheus/messages/meta.hpp"
 
 #include <cudf/io/types.hpp>  // for table_with_metadata
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
 
 #include <memory>
 #include <string>
@@ -46,10 +46,10 @@ namespace morpheus {
  * @brief Load messages from a file. Source stage is used to load messages from a file and
  * dumping the contents into the pipeline immediately. Useful for testing performance and accuracy of a pipeline.
  */
-class FileSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
+class FileSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
@@ -81,9 +81,9 @@ struct FileSourceStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param filename : Name of the file from which the messages will be read.
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
-     * @return std::shared_ptr<srf::segment::Object<FileSourceStage>>
+     * @return std::shared_ptr<mrc::segment::Object<FileSourceStage>>
      */
-    static std::shared_ptr<srf::segment::Object<FileSourceStage>> init(srf::segment::Builder &builder,
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder &builder,
                                                                        const std::string &name,
                                                                        std::string filename,
                                                                        int repeat = 1);

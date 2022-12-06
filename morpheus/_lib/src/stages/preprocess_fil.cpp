@@ -37,11 +37,11 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor, arg
 #include <pybind11/pytypes.h>
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
-#include <srf/segment/builder.hpp>
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
+#include <mrc/segment/builder.hpp>
 
 #include <array>
 #include <cstddef>
@@ -121,14 +121,14 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                         auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
 
                         // Do the copy here before it goes out of scope
-                        SRF_CHECK_CUDA(cudaMemcpy(curr_ptr,
+                        MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
                                                   float_data.data->data(),
                                                   df_just_features.num_rows() * sizeof(float),
                                                   cudaMemcpyDeviceToDevice));
                     }
                     else
                     {
-                        SRF_CHECK_CUDA(cudaMemcpy(curr_ptr,
+                        MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
                                                   curr_col.data<float>(),
                                                   df_just_features.num_rows() * sizeof(float),
                                                   cudaMemcpyDeviceToDevice));
@@ -169,8 +169,8 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
 }
 
 // ************ PreprocessFILStageInterfaceProxy *********** //
-std::shared_ptr<srf::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, const std::vector<std::string> &features)
+std::shared_ptr<mrc::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
+    mrc::segment::Builder &builder, const std::string &name, const std::vector<std::string> &features)
 {
     auto stage = builder.construct_object<PreprocessFILStage>(name, features);
 

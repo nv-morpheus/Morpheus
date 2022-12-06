@@ -15,7 +15,7 @@
 import logging
 import typing
 
-import srf
+import mrc
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -103,7 +103,7 @@ class AddScoresStage(SinglePortStage):
         # Return passthrough
         return x
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         if self._build_cpp_node():

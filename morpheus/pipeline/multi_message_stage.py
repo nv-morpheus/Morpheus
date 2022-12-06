@@ -15,7 +15,7 @@
 import logging
 import time
 
-import srf
+import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
@@ -46,7 +46,7 @@ class MultiMessageStage(_pipeline.SinglePortStage):
 
         super().__init__(c)
 
-    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
         # Check if we are debug and should log timestamps. Disable for C++ nodes
         if (self._config.debug and self._should_log_timestamps and not self._build_cpp_node()):

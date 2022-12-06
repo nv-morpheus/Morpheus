@@ -19,7 +19,7 @@ from functools import partial
 import cupy as cp
 import numpy as np
 import pandas as pd
-import srf
+import mrc
 
 import cudf
 
@@ -128,5 +128,5 @@ class PreprocessFILStage(PreprocessBaseStage):
     def _get_preprocess_fn(self) -> typing.Callable[[MultiMessage], MultiInferenceMessage]:
         return partial(PreprocessFILStage.pre_process_batch, fea_len=self._fea_length, fea_cols=self.features)
 
-    def _get_preprocess_node(self, builder: srf.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder):
         return _stages.PreprocessFILStage(builder, self.unique_name, self.features)

@@ -32,7 +32,7 @@
 #include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
-#include <srf/cuda/common.hpp>                    // for SRF_CHECK_CUDA
+#include <mrc/cuda/common.hpp>                    // for MRC_CHECK_CUDA
 
 #include <algorithm>  // for transform
 #include <array>      // needed for pybind11::make_tuple
@@ -152,11 +152,11 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
         if (row_stride == 1)
         {
             // column major just use cudaMemcpy
-            SRF_CHECK_CUDA(cudaMemcpy(data_start, tensors[i].data(), tensors[i].bytes(), cudaMemcpyDeviceToDevice));
+            MRC_CHECK_CUDA(cudaMemcpy(data_start, tensors[i].data(), tensors[i].bytes(), cudaMemcpyDeviceToDevice));
         }
         else
         {
-            SRF_CHECK_CUDA(cudaMemcpy2D(data_start,
+            MRC_CHECK_CUDA(cudaMemcpy2D(data_start,
                                         item_size,
                                         tensors[i].data(),
                                         row_stride * item_size,

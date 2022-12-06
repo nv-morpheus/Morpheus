@@ -15,8 +15,8 @@
 
 import typing
 
-import srf
-import srf.core.operators as ops
+import mrc
+import mrc.core.operators as ops
 import typing_utils
 
 import cudf
@@ -46,11 +46,11 @@ class StaticMessageSource(SingleOutputSource):
     def input_count(self) -> int:
         return len(self._df)
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
         out_stream = builder.make_source(self.unique_name, self._generate_frames())
         return out_stream, MessageMeta
 
-    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
@@ -58,7 +58,7 @@ class StaticMessageSource(SingleOutputSource):
         # Convert our list of dataframes into the desired type. Flatten if necessary
         if (typing_utils.issubtype(out_type, typing.List)):
 
-            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+            def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
                 obs.pipe(ops.flatten()).subscribe(sub)
 

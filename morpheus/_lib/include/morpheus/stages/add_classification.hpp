@@ -19,13 +19,13 @@
 
 #include "morpheus/messages/multi_response_probs.hpp"
 
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
 
 #include <cstddef>  // for size_t
 #include <map>
@@ -48,12 +48,12 @@ namespace morpheus {
  * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
  * inference stage. Label indexes will be looked up in the idx2label property.
  */
-class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+class AddClassificationsStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                               std::shared_ptr<MultiResponseProbsMessage>>
 {
   public:
     using base_t =
-        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -95,10 +95,10 @@ struct AddClassificationStageInterfaceProxy
      * @param threshold : Threshold to consider true/false for each class
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
-     * @return std::shared_ptr<srf::segment::Object<AddClassificationsStage>>
+     * @return std::shared_ptr<mrc::segment::Object<AddClassificationsStage>>
      */
-    static std::shared_ptr<srf::segment::Object<AddClassificationsStage>> init(
-        srf::segment::Builder &builder,
+    static std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> init(
+        mrc::segment::Builder &builder,
         const std::string &name,
         float threshold,
         std::size_t num_class_labels,

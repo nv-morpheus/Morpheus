@@ -30,9 +30,9 @@
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
 #include <nvtext/subword_tokenize.hpp>
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rmm/device_buffer.hpp>  // for device_buffer
-#include <srf/segment/builder.hpp>
+#include <mrc/segment/builder.hpp>
 
 #include <cstdint>
 #include <exception>
@@ -138,8 +138,8 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
 }
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
-std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
+    mrc::segment::Builder &builder,
     const std::string &name,
     std::string vocab_hash_file,
     uint32_t sequence_length,

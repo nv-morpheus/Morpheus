@@ -19,13 +19,13 @@
 
 #include "morpheus/messages/multi_response_probs.hpp"
 
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
 
 #include <cstddef>  // for size_t
 #include <map>
@@ -48,12 +48,12 @@ namespace morpheus {
  * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
  * Label indexes will be looked up in the idx2label property.
  */
-class AddScoresStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+class AddScoresStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                      std::shared_ptr<MultiResponseProbsMessage>>
 {
   public:
     using base_t =
-        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -88,9 +88,9 @@ struct AddScoresStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
-     * @return std::shared_ptr<srf::segment::Object<AddScoresStage>>
+     * @return std::shared_ptr<mrc::segment::Object<AddScoresStage>>
      */
-    static std::shared_ptr<srf::segment::Object<AddScoresStage>> init(srf::segment::Builder &builder,
+    static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(mrc::segment::Builder &builder,
                                                                       const std::string &name,
                                                                       std::size_t num_class_labels,
                                                                       std::map<std::size_t, std::string> idx2label);

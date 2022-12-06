@@ -37,14 +37,14 @@ target_include_directories(cuda_utils_objs
       "${MORPHEUS_LIB_ROOT}/include"
       cudf::cudf
       matx::matx
-      srf::pysrf
+      mrc::pymrc
 )
 
 target_link_libraries(cuda_utils_objs
     PUBLIC
       cudf::cudf
       matx::matx
-      srf::pysrf
+      mrc::pymrc
 )
 
 add_library(cuda_utils
@@ -64,7 +64,7 @@ target_include_directories(cuda_utils
 
 target_link_libraries(cuda_utils
     PUBLIC
-      srf::pysrf
+      mrc::pymrc
       matx::matx
       cudf::cudf
       Python3::NumPy

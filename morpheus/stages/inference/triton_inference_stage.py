@@ -25,7 +25,7 @@ from functools import partial
 
 import cupy as cp
 import numpy as np
-import srf
+import mrc
 import tritonclient.grpc as tritonclient
 from tritonclient.utils import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
@@ -893,7 +893,7 @@ class TritonInferenceStage(InferenceStage):
 
         return worker_cls(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
-    def _get_cpp_inference_node(self, builder: srf.Builder):
+    def _get_cpp_inference_node(self, builder: mrc.Builder):
 
         return _stages.InferenceClientStage(builder,
                                             name=self.unique_name,

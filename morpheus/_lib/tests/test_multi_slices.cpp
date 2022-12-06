@@ -36,7 +36,7 @@
 #include <pybind11/embed.h>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
-#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 
 #include <algorithm>
 #include <cstdlib>

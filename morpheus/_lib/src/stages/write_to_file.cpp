@@ -107,8 +107,8 @@ WriteToFileStage::subscribe_fn_t WriteToFileStage::build_operator()
 }
 
 // ************ WriteToFileStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
+std::shared_ptr<mrc::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
+    mrc::segment::Builder &builder,
     const std::string &name,
     const std::string &filename,
     const std::string &mode,

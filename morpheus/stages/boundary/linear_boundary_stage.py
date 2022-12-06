@@ -15,7 +15,7 @@
 import logging
 import typing
 
-import srf
+import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -71,7 +71,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         boundary_egress = builder.get_egress(self._port_id)
         builder.make_edge(input_stream[0], boundary_egress)
 
@@ -124,7 +124,7 @@ class LinearBoundaryIngressStage(SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
         boundary_ingress = builder.get_ingress(self._port_id)
         source = builder.make_node(self.unique_name, lambda data: data)
         builder.make_edge(boundary_ingress, source)

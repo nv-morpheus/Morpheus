@@ -22,8 +22,8 @@ import typing
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import srf
-import srf.core.operators as ops
+import mrc
+import mrc.core.operators as ops
 import websockets.legacy.server
 from websockets.server import serve
 
@@ -225,7 +225,7 @@ class GenerateVizFramesStage(SinglePortStage):
         # Wait for it to
         await self._server_task
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 

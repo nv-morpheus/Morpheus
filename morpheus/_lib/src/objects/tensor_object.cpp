@@ -21,16 +21,16 @@
 
 namespace morpheus {
 
-static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::vector<TensorIndex>& stride)
-{
-    stride.resize(shape.size());
-    TensorIndex ttl = 1;
-    auto rank       = shape.size();
-    for (int i = rank - 1; i >= 0; i--)
-    {
-        stride[i] = ttl;
-        ttl *= shape.at(i);
+    static void set_contiguous_stride(const std::vector<TensorIndex> &shape, std::vector<TensorIndex> &stride) {
+        stride.resize(shape.size());
+        TensorIndex ttl = 1;
+        auto rank = shape.size();
+        for (int i = rank - 1; i >= 0; i--) {
+            stride[i] = ttl;
+            ttl *= shape.at(i);
+        }
     }
-}
+
+    void TensorObject::throw_on_invalid_storage() {}
 
 }  // namespace morpheus
