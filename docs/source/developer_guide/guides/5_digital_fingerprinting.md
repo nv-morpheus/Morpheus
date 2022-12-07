@@ -316,12 +316,12 @@ Other attributes which might be needed:
 ### Schema Definition
 
 #### DataFrame Input Schema (`DataFrameInputSchema`)
-The `DataFrameInputSchema` ([examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py](/examples/digital_fingerprinting/production/morpheus/dfp/utils/column_info.py)) class defines the schema specifying the columns to be included in the output `DataFrame`.  Within the DFP pipeline there are two stages where pre-processing is performed, the `DFPFileToDataFrameStage` stage and the `DFPPreprocessingStage`.  This decoupling of the pre-processing stages from the actual operations needed to be performed allows for the actual schema to be user-defined in the pipeline and re-usability of the stages.  It is up to the user to define the fields which will appear in the `DataFrame`.  Any column in the input data that isn't specified in either `column_info` or `preserve_columns` constructor arguments will not appear in the output.   The exception to this are JSON fields, specified in the `json_columns` argument which defines json fields which are to be normalized.
+The `DataFrameInputSchema` ([morpheus/utils/column_info.py](/morpheus/utils/column_info.py)) class defines the schema specifying the columns to be included in the output `DataFrame`.  Within the DFP pipeline there are two stages where pre-processing is performed, the `DFPFileToDataFrameStage` stage and the `DFPPreprocessingStage`.  This decoupling of the pre-processing stages from the actual operations needed to be performed allows for the actual schema to be user-defined in the pipeline and re-usability of the stages.  It is up to the user to define the fields which will appear in the `DataFrame`.  Any column in the input data that isn't specified in either `column_info` or `preserve_columns` constructor arguments will not appear in the output.   The exception to this are JSON fields, specified in the `json_columns` argument which defines json fields which are to be normalized.
 
 It is important to note that the fields defined in `json_columns` are normalized prior to the processing of the fields in `column_info`, allowing for processing to be performed on fields nested in json columns.  For example, say we had a JSON field named `event` containing a key named `timestamp` which in the JSON data appears as an ISO 8601 formatted date string, we could ensure it was converted to a datetime object to downstream stages with the following:
 ```python
-from dfp.utils.column_info import DataFrameInputSchema
-from dfp.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import DateTimeColumn
 ```
 ```python
 schema = DataFrameInputSchema(
@@ -370,7 +370,7 @@ Subclass of `ColumnInfo`, adds the ability to also perform a rename.
 #### Boolean Column (`BoolColumn`)
 Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values. For example say we had a string input field containing one of 5 possible enum values: `OK`, `SUCCESS`, `DENIED`, `CANCELED` and `EXPIRED` we could map these values into a single boolean field as:
 ```python
-from dfp.utils.column_info import BoolColumn
+from morpheus.utils.column_info import BoolColumn
 ```
 ```python
 field = BoolColumn(name="result",
@@ -458,14 +458,14 @@ The `DFPFileBatcherStage` ([`examples/digital_fingerprinting/production/morpheus
 | `start_time` | `datetime` | Optional, default=`None`. When not None incoming data files will be filtered, excluding any files created prior to `start_time` |
 | `end_time` | `datetime` | Optional, default=`None`. When not None incoming data files will be filtered, excluding any files created after `end_time` |
 
-For situations where the creation date of the log file is encoded in the filename, the `date_extractor` in the [`examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py`](/examples/digital_fingerprinting/production/morpheus/dfp/utils/file_utils.py) module can be used.  The `date_extractor` assumes that the timestamps are localized to UTC and will need to have a regex pattern bound to it before being passed in as a parameter to `DFPFileBatcherStage`. The regex pattern will need to contain the following named groups: `year`, `month`, `day`, `hour`, `minute`, `second`, and optionally `microsecond`.  In cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
+For situations where the creation date of the log file is encoded in the filename, the `date_extractor` in the [`morpheus/utils/file_utils.py`](/morpheus/utils/file_utils.py) module can be used.  The `date_extractor` assumes that the timestamps are localized to UTC and will need to have a regex pattern bound to it before being passed in as a parameter to `DFPFileBatcherStage`. The regex pattern will need to contain the following named groups: `year`, `month`, `day`, `hour`, `minute`, `second`, and optionally `microsecond`.  In cases where the regular expression does not match the `date_extractor` function will fallback to using the modified time of the file.
 
 For input files containing an ISO 8601 formatted date string the `iso_date_regex` regex can be used ex:
 ```python
 from functools import partial
 
-from dfp.utils.file_utils import date_extractor
-from dfp.utils.file_utils import iso_date_regex
+from morpheus.file_utils import date_extractor
+from dfp.utils.regex_utils import iso_date_regex
 ```
 ```python
 # Batch files into buckets by time. Use the default ISO date extractor from the filename

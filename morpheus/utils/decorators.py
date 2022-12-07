@@ -27,10 +27,19 @@ registry = srf.ModuleRegistry
 def is_module_registered(func):
     """
     Module availability in the module registry is verified by this function.
+
+    Parameters
+    ----------
+    func : Function that requires wrapping.
+
+    Returns
+    -------
+    inner_func
+        Encapsulated function.
     """
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def inner_func(*args, **kwargs):
 
         module_id = kwargs["module_id"]
         namespace = kwargs["namespace"]
@@ -43,12 +52,24 @@ def is_module_registered(func):
 
         return func(*args, **kwargs)
 
-    return wrapper
+    return inner_func
 
 
 def register_module(**kwargs):
+    """
+    Registers a module if not exists in the module registry.
 
-    def wrapper(func):
+    Parameters
+    ----------
+    **kwargs : Function arguments.
+
+    Returns
+    -------
+    inner_func
+        Encapsulated function.
+    """
+
+    def inner_func(func):
 
         module_id = kwargs["module_id"]
         namespace = kwargs["namespace"]
@@ -60,4 +81,4 @@ def register_module(**kwargs):
         else:
             logger.info("Module: {} already exists in the given namespace: {}".format(module_id, namespace))
 
-    return wrapper
+    return inner_func

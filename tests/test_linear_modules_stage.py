@@ -15,14 +15,14 @@
 # limitations under the License.
 
 from unittest import mock
-from morpheus.utils.version_utils import get_srf_version_as_list
 
 import pytest
 import srf
 
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
+from morpheus.utils.version_utils import get_srf_version_as_list
 
-module_config = {"module_id": "TestModule", "module_name": "test_module", "namespace": "test"}
+module_config = {"module_id": "TestModule", "module_name": "test_module", "namespace": "test_morpheus_modules"}
 
 
 def test_constructor(config):
@@ -62,7 +62,7 @@ def register_test_module():
     def module_init_fn(builder: srf.Builder):
         pass
 
-    registry.register_module("TestModule", "test", get_srf_version_as_list(), module_init_fn)
+    registry.register_module("TestModule", "test_morpheus_modules", get_srf_version_as_list(), module_init_fn)
 
 
 @pytest.mark.use_python
