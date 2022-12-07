@@ -18,8 +18,7 @@
 #include <filesystem>
 #include <stdexcept>
 
-namespace morpheus::test
-{
+namespace morpheus::test {
 
 std::filesystem::path get_morpheus_root()
 {
@@ -33,4 +32,4 @@ std::filesystem::path get_morpheus_root()
     return std::filesystem::path{root};
 }
 
-}
+}  // namespace morpheus::test

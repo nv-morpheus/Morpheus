@@ -26,7 +26,6 @@
     class Test##name : public ::testing::Test \
     {}
 
-namespace morpheus::test
-{
-    std::filesystem::path get_morpheus_root();
+namespace morpheus::test {
+std::filesystem::path get_morpheus_root();
 }
