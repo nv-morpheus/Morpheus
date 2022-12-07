@@ -17,4 +17,4 @@ limitations under the License.
 
 # Known Issues
 
-There are no known issues at this time.
+Refer to [open issues in the Morpheus project](https://github.com/nv-morpheus/Morpheus/issues)
