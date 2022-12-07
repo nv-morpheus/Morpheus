@@ -12,24 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
+import typing
+
 import srf
 
-registry = srf.ModuleRegistry
 
+def get_srf_version_as_list() -> typing.List[int]:
+    """
+    This function returns the SRF version as a list.
 
-def is_module_registered(func):
-    """A module availability in the module registry is verified by this function."""
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-
-        module_id = kwargs["module_id"]
-        namespace = kwargs["namespace"]
-
-        if not registry.contains(module_id, namespace):
-            raise Exception("Module {} doesn't exist in the Namespace {}".format(module_id, namespace))
-
-        return func(*args, **kwargs)
-
-    return wrapper
+    Returns
+    -------
+    typing.List
+        ver_list : typing.List
+    """
+    ver_list = srf.__version__.split('.')
+    ver_list = [int(i) for i in ver_list]
+    return ver_list

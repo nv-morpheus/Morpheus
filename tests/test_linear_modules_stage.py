@@ -15,26 +15,21 @@
 # limitations under the License.
 
 from unittest import mock
+from morpheus.utils.version_utils import get_srf_version_as_list
 
 import pytest
 import srf
 
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 
-module_config = {
-    "module_id": "TestModule",
-    "module_name": "test_module",
-    "namespace": "test"
-}
+module_config = {"module_id": "TestModule", "module_name": "test_module", "namespace": "test"}
 
 
 def test_constructor(config):
 
     mod_stage = LinearModulesStage(config, module_config)
-    assert mod_stage._module_id == "TestModule"
-    assert mod_stage._module_name == "test_module"
+
     assert mod_stage.name == "test_module"
-    assert mod_stage._namespace == "test"
 
     # Just ensure that we get a valid non-empty tuple
     accepted_types = mod_stage.accepted_types()
@@ -60,13 +55,15 @@ def test_build_single_before_module_registration(config):
     with pytest.raises(Exception):
         mod_stage._build_single(mock_segment, mock_input_stream)
 
+
 def register_test_module():
     registry = srf.ModuleRegistry
 
     def module_init_fn(builder: srf.Builder):
         pass
 
-    registry.register_module("TestModule", "test", [22, 11, 0], module_init_fn)
+    registry.register_module("TestModule", "test", get_srf_version_as_list(), module_init_fn)
+
 
 @pytest.mark.use_python
 def test_build_single_after_module_registration(config):
@@ -87,5 +84,3 @@ def test_build_single_after_module_registration(config):
 
     mock_segment.load_module.assert_called_once()
     mock_segment.make_edge.assert_called_once()
-
-    

@@ -12,33 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import logging
 import os
-from pathlib import Path
+import pickle
 import typing
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from functools import partial
-import dfp.modules.dfp_modules
 
 import click
-import dill
+import dfp.modules.dfp_modules
 import mlflow
 import pandas as pd
-
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.multi_file_source import MultiFileSource
-from dfp.utils.column_info import ColumnInfo
-from dfp.utils.column_info import CustomColumn
-from dfp.utils.column_info import DataFrameInputSchema
-from dfp.utils.column_info import DateTimeColumn
-from dfp.utils.column_info import IncrementColumn
-from dfp.utils.column_info import RenameColumn
-from dfp.utils.column_info import StringCatColumn
-from dfp.utils.column_info import create_increment_col
 
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
@@ -49,6 +38,14 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.utils.column_info import ColumnInfo
+from morpheus.utils.column_info import CustomColumn
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import IncrementColumn
+from morpheus.utils.column_info import RenameColumn
+from morpheus.utils.column_info import StringCatColumn
+from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import get_log_levels
 from morpheus.utils.logger import parse_log_level
@@ -230,48 +227,32 @@ def run_pipeline(train_users,
 
     preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
 
-    cache_dir = os.path.abspath(cache_dir)
+    encoding = "latin1"
 
-    def persist_schema(dir, filename, schema) -> str:
+    # Convert schema as a string
+    source_schema_str = str(pickle.dumps(source_schema), encoding=encoding)
+    preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
 
-        if not os.path.exists(dir):
-            logger.info("Creating directory: {}".format(dir))
-            Path(dir).mkdir(parents=True, exist_ok=True)
-
-        schema_file = os.path.join(dir, filename)
-
-        if not os.path.exists(schema_file):
-            logger.info("Persisting schema file to location: {}".format(schema_file))
-            dill.dump(schema, file=open(schema_file, "wb"))
-
-        return schema_file
-
-    cache_schema_dir = os.path.join(cache_dir, "schema")
-
-    source_schema_filepath = persist_schema(cache_schema_dir, "azure_source_schema.pkl", source_schema)
-    preprocess_schema_filepath = persist_schema(cache_schema_dir, "azure_preprocess_schema.pkl", preprocess_schema)
-
-    # Create a linear pipeline object
-    pipeline = LinearPipeline(config)
-
-    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
+    iso_date_regex = r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
+    r"T(?P<hour>\d{1,2})(:|_)(?P<minute>\d{1,2})(:|_)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z"
 
     preprocessing_module_config = {
         "module_id": "DFPPipelinePreprocessing",
         "module_name": "dfp_pipeline_preprocessing",
         "namespace": "morpheus_modules",
-        "DFPFileBatcher": {
-            "module_id": "DFPFileBatcher",
-            "module_name": "dfp_file_batcher",
+        "FileBatcher": {
+            "module_id": "FileBatcher",
+            "module_name": "file_batcher",
             "namespace": "morpheus_modules",
             "period": "D",
             "sampling_rate_s": sample_rate_s,
             "start_time": start_time,
-            "end_time": end_time
+            "end_time": end_time,
+            "iso_date_regex": iso_date_regex
         },
-        "DFPFileToDataFrame": {
-            "module_id": "DFPFileToDataFrame",
-            "module_name": "dfp_file_to_dataframe",
+        "FileToDataFrame": {
+            "module_id": "FileToDataFrame",
+            "module_name": "file_to_dataframe",
             "namespace": "morpheus_modules",
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
@@ -280,20 +261,10 @@ def run_pipeline(train_users,
             },
             "cache_dir": cache_dir,
             "filter_null": True,
-            "file_types": "JSON",
-            "schema_filepath": source_schema_filepath
-        },
-        "DFPSplitUsers": {
-            "module_id": "DFPSplitUsers",
-            "module_name": "dfp_fsplit_users",
-            "namespace": "morpheus_modules",
-            "include_generic": include_generic,
-            "include_individual": include_individual,
-            "skip_users": skip_users,
-            "only_users": only_users,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "userid_column_name": config.ae.userid_column_name,
-            "fallback_username": config.ae.fallback_username
+            "file_type": "JSON",
+            "schema": {
+                "schema_str": source_schema_str, "encoding": encoding
+            }
         },
         "DFPSplitUsers": {
             "module_id": "DFPSplitUsers",
@@ -323,9 +294,16 @@ def run_pipeline(train_users,
             "namespace": "morpheus_modules",
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
-            "schema_filepath": preprocess_schema_filepath
+            "schema": {
+                "schema_str": preprocess_schema_str, "encoding": encoding
+            }
         }
     }
+
+    # Create a linear pipeline object
+    pipeline = LinearPipeline(config)
+
+    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Output is UserMessageMeta -- Cached frame set
     pipeline.add_stage(LinearModulesStage(config, preprocessing_module_config))
@@ -342,15 +320,6 @@ def run_pipeline(train_users,
             "module_id": "DFPPipelineTraining",
             "module_name": "dfp_pipeline_training",
             "namespace": "morpheus_modules",
-            "DFPFileBatcher": {
-                "module_id": "DFPFileBatcher",
-                "module_name": "dfp_file_batcher",
-                "namespace": "morpheus_modules",
-                "period": "D",
-                "sampling_rate_s": sample_rate_s,
-                "start_time": start_time,
-                "end_time": end_time
-            },
             "DFPTraining": {
                 "module_id": "DFPTraining",
                 "module_name": "dfp_training",
@@ -372,9 +341,9 @@ def run_pipeline(train_users,
                 },
                 "feature_columns": config.ae.feature_columns,
             },
-            "DFPMLFlowModelWriter": {
-                "module_id": "DFPMLFlowModelWriter",
-                "module_name": "dfp_mlflow_model_writer",
+            "MLFlowModelWriter": {
+                "module_id": "MLFlowModelWriter",
+                "module_name": "mlflow_model_writer",
                 "namespace": "morpheus_modules",
                 "model_name_formatter": model_name_formatter,
                 "experiment_name_formatter": experiment_name_formatter,
