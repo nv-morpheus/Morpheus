@@ -43,7 +43,7 @@ setup(
         # Only list the packages which cannot be installed via conda here. Should mach the requirements in
         # docker/conda/environments/requirements.txt
         "dfencoder @ git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder",
-        "torch==1.10.2+cu113",
+        "torch==1.12.0+cu113",
         "tritonclient[all]==2.17.*",  # Force to 2.17 since they require grpcio==1.41 for newer versions
     ],
     license="Apache",
