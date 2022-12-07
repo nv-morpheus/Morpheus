@@ -51,7 +51,7 @@ Features
 Getting Started
 ---------------
 
-The best way to get started with Morpheus will vary depending on the goal of the user. These users fall into two large groups: those who want to use the pre-built pipelines exactly as they are with few modifications (refer to :ref:`using-ngc-container`) and those who want to use Morpheus as a framework for implementing their own end-to-end workflows (refer to `Build in a Conda Environment <https://github.com/nv-morpheus/Morpheus/blob/branch-22.08/CONTRIBUTING.md#build-in-a-conda-environment>`_).
+Refer to :doc:`getting_started`
 
 .. _using-ngc-container:
 
@@ -105,6 +105,7 @@ Refer to :doc:`basics/overview` for more information on using the CLI.
    :maxdepth: 20
    :hidden:
 
+   getting_started
    morpheus_quickstart_guide
 
 .. toctree::
@@ -121,6 +122,7 @@ Refer to :doc:`basics/overview` for more information on using the CLI.
    :maxdepth: 20
    :hidden:
 
+   contributing
    developer_guide/architecture
    developer_guide/guides
    developer_guide/examples/index
