@@ -110,16 +110,19 @@ exhale_args = {
         True,
     "exhaleDoxygenStdin":
         textwrap.dedent('''
-        INPUT = ../../morpheus/_lib
-        FILE_PATTERNS = *.c *.cc *.cpp *.h *.hpp *.cu *.cuh *.md
-        EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/*
-        SOURCE_BROWSER = YES
-        EXTENSION_MAPPING = cu=C++ cuh=C++
         BRIEF_MEMBER_DESC = YES
-        HIDE_UNDOC_MEMBERS = NO
-        HAVE_DOT = YES
+        BUILTIN_STL_SUPPORT = YES
         DOT_IMAGE_FORMAT = svg
+        EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/*
+        EXCLUDE_SYMBOLS = "@85" "cudf*" "py::literals" "RdKafka" "srf*" "std*"
+        EXTENSION_MAPPING = cu=C++ cuh=C++
+        EXTRACT_ALL = YES
+        FILE_PATTERNS = *.c *.cc *.cpp *.h *.hpp *.cu *.cuh *.md
+        HAVE_DOT = YES
+        HIDE_UNDOC_MEMBERS = NO
+        INPUT = ../../morpheus/_lib
         INTERACTIVE_SVG = YES
+        SOURCE_BROWSER = YES
     ''')
 }
 
