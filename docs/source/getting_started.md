@@ -178,7 +178,7 @@ morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize seriali
 
 You should see some output similar to:
 
-```log
+```
 ====Building Pipeline====
 Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=test_pcap, group_id=custreamz, poll_interval=10millis)>
   └─> morpheus.MessageMeta

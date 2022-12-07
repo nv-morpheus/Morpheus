@@ -36,7 +36,7 @@ Features
       the analysis of logs and telemetry to help detect and mitigate security threats.
  * AI Cybersecurity Capabilities
     * Deploy your own models using common deep learning frameworks. Or get a jump-start in building applications to
-      identify leaked sensitive information, detect malware, and identify errors via logs by using one of NVIDIA’s
+      identify leaked sensitive information, detect malware, and identify errors via logs by using one of NVIDIA's
       pre-trained and tested models.
  * Real-Time Telemetry
     * Morpheus can receive rich, real-time network telemetry from every NVIDIA® BlueField® DPU-accelerated server in the

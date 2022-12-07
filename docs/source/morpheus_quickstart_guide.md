@@ -77,7 +77,7 @@ This quick start guide provides the necessary instructions to set up the minimum
 
 Morpheus makes it easy to build and scale cybersecurity applications that harness adaptive pipelines supporting a wider range of model complexity than previously feasible. Morpheus makes it possible to analyze up to 100% of your data in real-time, for more accurate detection and faster remediation of threats as they occur. Morpheus also provides the ability to leverage AI to adjust to threats and compensate on the fly, at line rate.
 
-NVIDIA Morpheus enables organizations to attack the issue of cybersecurity head on. Rather than continuously chasing the cybersecurity problem, Morpheus provides the ability to propel you ahead of the breach and address the cybersecurity issue. With the world in a "discover and respond" state, where companies are finding breaches much too late, in a way that is way behind the curve, NVIDIA’s Morpheus cybersecurity AI framework enables any organization to warp to the present and begin to defend itself in real time.
+NVIDIA Morpheus enables organizations to attack the issue of cybersecurity head on. Rather than continuously chasing the cybersecurity problem, Morpheus provides the ability to propel you ahead of the breach and address the cybersecurity issue. With the world in a "discover and respond" state, where companies are finding breaches much too late, in a way that is way behind the curve, NVIDIA's Morpheus cybersecurity AI framework enables any organization to warp to the present and begin to defend itself in real time.
 
 The Morpheus Developer Kit allows developers to quickly and easily set up example pipelines to run inference on different sample models provided by NVIDIA and experiment with the features and capabilities available within the Morpheus framework to address their cybersecurity and information security use cases.
 
@@ -97,11 +97,11 @@ The Morpheus Developer Kit allows developers to quickly and easily set up exampl
 
 - **Real-time Telemetry**
 
-    The Morpheus native graph streaming engine can receive rich, real-time network telemetry from every NVIDIA BlueField DPU-accelerated server or NVIDIA AppShield in the data center without impacting performance. Integrating the framework into a third-party cybersecurity offering brings the world’s best AI computing to communication networks. 
+    The Morpheus native graph streaming engine can receive rich, real-time network telemetry from every NVIDIA BlueField DPU-accelerated server or NVIDIA AppShield in the data center without impacting performance. Integrating the framework into a third-party cybersecurity offering brings the world's best AI computing to communication networks. 
 
 - **AI Cybersecurity Capabilities**
 
-    Deploy your own models using common deep learning frameworks. Or get a jump-start in building applications to identify leaked sensitive information, detect malware or fraud, do network mapping, flag user behavior changes, and identify errors via logs by using one of NVIDIA’s pre-trained and tested models.
+    Deploy your own models using common deep learning frameworks. Or get a jump-start in building applications to identify leaked sensitive information, detect malware or fraud, do network mapping, flag user behavior changes, and identify errors via logs by using one of NVIDIA's pre-trained and tested models.
 
 ## Setup
 
@@ -115,7 +115,7 @@ Continue with the setup steps below once the host system is installed, configure
 
 First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide].
 
-Once you’ve created your API key, create an environment variable containing your API key for use by the commands used further in this document:
+Once you've created your API key, create an environment variable containing your API key for use by the commands used further in this document:
 
 ```bash
 export API_KEY="<NGC_API_KEY>"
@@ -726,7 +726,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 ### Verify Running Pipeline
-Once you’ve deployed the SDK client to run a pipeline, you can check the status of the pod using the following command:
+Once you've deployed the SDK client to run a pipeline, you can check the status of the pod using the following command:
 
 ```bash
 kubectl -n $NAMESPACE get pods sdk-cli-<RELEASE_NAME>
@@ -758,7 +758,7 @@ Inference rate: 7051messages [00:04, 4639.40messages/s]
 2.  AWS EC2 G4 instance with T4 or V100 GPU, at least 64GB RAM, 8 cores CPU, and 100 GB storage.
 
 #### Install Cloud Native Core Stack for AWS
-On your AWS EC2 G4 instance, follow the instructions in the linked document to install [NVIDIA’s Cloud Native Core Stack for AWS][NVIDIA’s Cloud Native Core Stack].
+On your AWS EC2 G4 instance, follow the instructions in the linked document to install [NVIDIA's Cloud Native Core Stack for AWS][NVIDIA's Cloud Native Core Stack].
 
 ### Prerequisites and Installation for Ubuntu
 
@@ -768,7 +768,7 @@ On your AWS EC2 G4 instance, follow the instructions in the linked document to i
 3.  Ubuntu 20.04 LTS or newer
 
 ### Installing Cloud Native Core Stack on NVIDIA Certified Systems
-On your NVIDIA-Certified System, follow the instructions in the linked document to install [NVIDIA’s Cloud Native Core Stack].
+On your NVIDIA-Certified System, follow the instructions in the linked document to install [NVIDIA's Cloud Native Core Stack].
 
 ## Appendix B
 
@@ -1089,5 +1089,5 @@ The Drop Null Attributes stage (dropna) requires the specification of a column n
 [Morpheus Contribution]: https://github.com/nv-morpheus/Morpheus/blob/main/CONTRIBUTING.md
 [Morpheus Developer Guide]: https://github.com/nv-morpheus/Morpheus/tree/main/docs/source/developer_guide/guides
 [Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
-[NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
+[NVIDIA's Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
 [NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1
