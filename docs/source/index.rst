@@ -51,54 +51,11 @@ Features
 Getting Started
 ---------------
 
-Refer to :doc:`getting_started`
-
-.. _using-ngc-container:
-
-Using NGC Container
-^^^^^^^^^^^^^^^^^^^
-
-Accessing Morpheus by pulling the pre-built `NGC container <https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_>`_ is best suited for users who do not need any customization and
-are only interested in running Morpheus via the CLI. The pre-built container does not require checking out the source
-code and is best suited for users who are new to Morpheus and don't require any customization.
-
-Prerequisites
-"""""""""""""
- * `Docker <https://docs.docker.com/get-docker/>`__
- * `The NVIDIA container toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`__
-
-To get started, first pull the NGC container:
-
-.. code-block:: console
-
-   $ docker pull nvcr.io/nvidia/morpheus/morpheus:22.09-runtime
-
-Launch an interactive container to start using Morpheus:
-
-.. code-block:: console
-
-   $ docker run --rm -ti --net=host --gpus=all nvcr.io/nvidia/morpheus/morpheus:22.09-runtime bash
-   (morpheus) root@958a683a8a26:/workspace# morpheus --help
-   Usage: morpheus [OPTIONS] COMMAND [ARGS]...Options:
-     --debug / --no-debug            [default: False]
-     --log_level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG]
-                                     Specify the logging level to use.  [default:
-                                     WARNING]
-
-     --log_config_file FILE          Config file to use to configure logging. Use
-                                     only for advanced situations. Can accept
-                                     both JSON and ini style configurations
-
-     --version                       Show the version and exit.  [default: False]
-     --help                          Show this message and exit.  [default:
-                                     False]
-
-
-   Commands:
-     run    Run one of the available pipelines
-     tools  Run a utility tool
-
-Refer to :doc:`basics/overview` for more information on using the CLI.
+The best way to get started with Morpheus will vary depending on the goal of the user.
+ * :doc:`getting_started` - Most users should start here, covers using pre-built Docker containers, building from source, and fetching models and datasets.
+ * :doc:`developer_guide/guides` - Covers extending Morpheus with custom stages
+ * :doc:`morpheus_quickstart_guide` - Kubernetes and cloud based deployments
+ * :doc:`contributing` - Covers making changes and contributing to Morpheus
 
 
 .. toctree::
