@@ -79,11 +79,11 @@ The best way to get started with Morpheus will vary depending on the goal of the
    :maxdepth: 20
    :hidden:
 
-   contributing
    developer_guide/architecture
    developer_guide/guides
    developer_guide/examples/index
    api
+   developer_guide/contributing
 
 .. toctree::
    :maxdepth: 20

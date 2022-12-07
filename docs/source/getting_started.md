@@ -85,7 +85,7 @@ DOCKER_IMAGE_TAG="v22.11.00a-runtime" ./docker/run_container_release.sh
 
 ### Build from Source
 
-It's possible to build from source outside of a container. However, due to the large number of dependencies, this can be complex and is only necessary for developers. Instructions for developers and contributors can be found in [CONTRIBUTING.md](./CONTRIBUTING.md).
+It's possible to build from source outside of a container. However, due to the large number of dependencies, this can be complex and is only necessary for developers. Instructions for developers and contributors can be found in [contributing.md](./developer_guide/contributing.md).
 
 ## Launching Triton Server
 
@@ -306,6 +306,3 @@ Commands:
   validate         Validate pipeline output for testing.
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
-
-## Contributing
-Please refer to our [guide for contributing to Morpheus](./contributing.md).
