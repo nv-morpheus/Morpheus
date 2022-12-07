@@ -205,7 +205,7 @@ PassThruStage::PassThruStage() :
 {}
 ```
 
-However, this doesnt illustrate well how to customize a stage. So we will be using the long form signature for our examples.
+However, this doesn't illustrate well how to customize a stage. So we will be using the long form signature for our examples.
 
 The `build_operator` method defines an observer who is subscribed to our input `rxcpp::observable`. The observer consists of three functions that are typically lambdas:  `on_next`, `on_error`, and `on_completed`. Typically, these three functions call the associated methods on the output subscriber.
 

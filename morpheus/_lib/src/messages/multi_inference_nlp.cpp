@@ -92,7 +92,7 @@ std::shared_ptr<morpheus::InferenceMemory> MultiInferenceNLPMessageInterfaceProx
 
 std::size_t MultiInferenceNLPMessageInterfaceProxy::offset(MultiInferenceNLPMessage &self)
 {
-    return self.count;
+    return self.offset;
 }
 
 std::size_t MultiInferenceNLPMessageInterfaceProxy::count(MultiInferenceNLPMessage &self)

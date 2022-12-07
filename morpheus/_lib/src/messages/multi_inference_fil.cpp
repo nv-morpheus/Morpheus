@@ -79,7 +79,7 @@ std::shared_ptr<morpheus::InferenceMemory> MultiInferenceFILMessageInterfaceProx
 
 std::size_t MultiInferenceFILMessageInterfaceProxy::offset(MultiInferenceFILMessage &self)
 {
-    return self.count;
+    return self.offset;
 }
 
 std::size_t MultiInferenceFILMessageInterfaceProxy::count(MultiInferenceFILMessage &self)

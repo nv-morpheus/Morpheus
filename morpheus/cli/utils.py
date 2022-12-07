@@ -206,7 +206,7 @@ def get_package_relative_file(filename: str):
         does_exist = os.path.exists(filename)
 
         if (not does_exist):
-            # If it doesnt exist, then try to make it relative to the morpheus library root
+            # If it doesn't exist, then try to make it relative to the morpheus library root
             morpheus_root = os.path.dirname(morpheus.__file__)
 
             value_abs_to_root = os.path.join(morpheus_root, filename)

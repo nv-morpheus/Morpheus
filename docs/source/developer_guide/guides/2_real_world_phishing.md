@@ -402,7 +402,7 @@ In our previous examples, we didn't define a constructor for the Python classes 
 
 Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started.
 
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented propperly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
 
 ```python
 from morpheus.config import Config
@@ -417,7 +417,7 @@ class RecipientFeaturesStage(SinglePortStage):
     config : morpheus.config.Config
         Pipeline configuration instance.
     sep_token : str
-        Bert separator toeken.
+        Bert separator token.
     """
 
     def __init__(self, config: Config, sep_token: str = '[SEP]'):
@@ -442,7 +442,7 @@ Usage: morpheus run pipeline-nlp recipient-features [OPTIONS]
   Pre-processing stage which counts the number of recipients in an email's metadata.
 
 Options:
-  --sep_token TEXT  Bert separator toeken.  [default: [SEP]]
+  --sep_token TEXT  Bert separator token.  [default: [SEP]]
   --help            Show this message and exit.
 ```
 
