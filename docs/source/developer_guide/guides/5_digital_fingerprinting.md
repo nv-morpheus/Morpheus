@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# 5. Digital Fingerprinting (DFP)
+# Digital Fingerprinting (DFP)
 
 ## Overview
 Every account, user, service and machine has a digital fingerprint​, which represents the typical actions performed and not performed over a given period of time.  Understanding every entity's day-to-day, moment-by-moment work helps us identify anomalous behavior and uncover potential threats in the environment​.
