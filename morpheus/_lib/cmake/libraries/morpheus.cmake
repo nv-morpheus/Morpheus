@@ -84,5 +84,5 @@ install(
 )
 
 if (MORPHEUS_PYTHON_INPLACE_BUILD)
-  inplace_build_copy(morpheus ${CMAKE_CURRENT_SOURCE_DIR})
+  morpheus_utils_inplace_build_copy(morpheus ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

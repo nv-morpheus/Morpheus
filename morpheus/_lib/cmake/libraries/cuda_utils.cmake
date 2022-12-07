@@ -87,7 +87,7 @@ install(
 )
 
 if (MORPHEUS_PYTHON_INPLACE_BUILD)
-  inplace_build_copy(cuda_utils ${MORPHEUS_LIB_ROOT})
+  morpheus_utils_inplace_build_copy(cuda_utils ${MORPHEUS_LIB_ROOT})
 endif()
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

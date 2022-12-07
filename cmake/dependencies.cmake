@@ -83,37 +83,30 @@ endif()
 
 # libcudacxx -- get an explicit lubcudacxx build, matx tries to pull a tag that doesn't exist.
 # =========
-set(LIBCUDACXX_VERSION "1.8.0" CACHE STRING "Version of libcudacxx to use")
-include(deps/Configure_libcudacxx)
+morpheus_utils_configure_libcudacxx()
 
 # matx
 # ====
-set(MATX_VERSION "0.1.0" CACHE STRING "Version of MatX to use")
-include(deps/Configure_matx)
+morpheus_utils_configure_matx()
 
 # pybind11
 # =========
-set(PYBIND11_VERSION "2.8.1" CACHE STRING "Version of Pybind11 to use")
-include(deps/Configure_pybind11)
+morpheus_utils_configure_pybind11()
 
 # RD-Kafka
 # =====
-set(RDKAFKA_VERSION 1.6.2)
-include(deps/Configure_rdkafka)
+morpheus_utils_configure_rdkafka()
 
 # MRC (Should come after all third party but before NVIDIA repos)
 # =====
-set(MRC_VERSION 23.01 CACHE STRING "Which version of MRC to use")
-include(deps/Configure_mrc)
+morpheus_utils_configure_mrc()
 
 # CuDF
 # =====
-set(CUDF_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of cuDF to use")
-include(deps/Configure_cudf)
+morpheus_utils_configure_cudf()
 
 # Triton-client
 # =====
-set(TRITONCLIENT_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of TritonClient to use")
-include(deps/Configure_TritonClient)
+morpheus_utils_configure_tritonclient()
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

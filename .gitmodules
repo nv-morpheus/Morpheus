@@ -2,3 +2,9 @@
 	path = external/morpheus-visualizations
 	url = https://github.com/nv-morpheus/morpheus-visualizations.git
 	branch = branch-22.11
+[submodule "external/utilities"]
+	path = external/utilities
+	url = git@github.com:nv-morpheus/utilities.git
+	branch = devin-issue-255-87
+[submodule "./external/utilities/"]
+	branch = devin-issue-225-87
