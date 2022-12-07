@@ -131,7 +131,7 @@ Refer to :doc:`basics/overview` for more information on using the CLI.
    :caption: Extra Information:
    :hidden:
 
-   Contributor Covenant Code of Conduct <https://docs.rapids.ai/resources/conduct/>
+   Code of Conduct <https://docs.rapids.ai/resources/conduct/>
    extra_info/performance
    extra_info/troubleshooting
    extra_info/known_issues
