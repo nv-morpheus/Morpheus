@@ -383,42 +383,44 @@ def make_dfp_preporcessing_module(module_id: str, namespace: str):
         builder.register_module_output("output", node)
 
 
-namespace = "morpheus_modules"
+def make_modules():
+    namespace = "morpheus_modules"
 
-# Register file batcher module
-make_file_batcher_module("FileBatcher", namespace)
+    # Register file batcher module
+    make_file_batcher_module("FileBatcher", namespace)
 
-# Register file to dataframe module
-make_file_to_df_module("FileToDataFrame", namespace)
+    # Register file to dataframe module
+    make_file_to_df_module("FileToDataFrame", namespace)
 
-# Register DFP split data by users module
-make_dfp_split_users_module("DFPSplitUsers", namespace)
+    # Register DFP split data by users module
+    make_dfp_split_users_module("DFPSplitUsers", namespace)
 
-# Register DFP rolling window module
-make_dfp_rolling_window_module("DFPRollingWindow", namespace)
+    # Register DFP rolling window module
+    make_dfp_rolling_window_module("DFPRollingWindow", namespace)
 
-# Register DFP processing module
-make_dfp_preporcessing_module("DFPPreprocessing", namespace)
+    # Register DFP processing module
+    make_dfp_preporcessing_module("DFPPreprocessing", namespace)
 
-# register DFP training module
-make_dfp_training_module("DFPTraining", namespace)
+    # register DFP training module
+    make_dfp_training_module("DFPTraining", namespace)
 
-# Register MLFlow model writer module
-make_mlflow_model_writer_module("MLFlowModelWriter", namespace)
+    # Register MLFlow model writer module
+    make_mlflow_model_writer_module("MLFlowModelWriter", namespace)
 
-# Ordered DFP pipeline preprocessing modules meta
-ordered_proc_modules_meta = [("FileBatcher", namespace), ("FileToDataFrame", namespace), ("DFPSplitUsers", namespace),
-                             ("DFPRollingWindow", namespace), ("DFPPreprocessing", namespace)]
+    # Ordered DFP pipeline preprocessing modules meta
+    ordered_proc_modules_meta = [("FileBatcher", namespace), ("FileToDataFrame", namespace),
+                                 ("DFPSplitUsers", namespace), ("DFPRollingWindow", namespace),
+                                 ("DFPPreprocessing", namespace)]
 
-# Ordered DFP pipeline training modules meta
-ordered_train_modules_meta = [("DFPTraining", namespace), ("MLFlowModelWriter", namespace)]
+    # Ordered DFP pipeline training modules meta
+    ordered_train_modules_meta = [("DFPTraining", namespace), ("MLFlowModelWriter", namespace)]
 
-# Register DFP preprocessing pipeline module
-make_nested_module(module_id="DFPPipelinePreprocessing",
-                   namespace=namespace,
-                   ordered_modules_meta=ordered_proc_modules_meta)
+    # Register DFP preprocessing pipeline module
+    make_nested_module(module_id="DFPPipelinePreprocessing",
+                       namespace=namespace,
+                       ordered_modules_meta=ordered_proc_modules_meta)
 
-# Register DFP training pipeline module
-make_nested_module(module_id="DFPPipelineTraining",
-                   namespace=namespace,
-                   ordered_modules_meta=ordered_train_modules_meta)
+    # Register DFP training pipeline module
+    make_nested_module(module_id="DFPPipelineTraining",
+                       namespace=namespace,
+                       ordered_modules_meta=ordered_train_modules_meta)

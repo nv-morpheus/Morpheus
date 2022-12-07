@@ -22,10 +22,10 @@ from datetime import timezone
 from functools import partial
 
 import click
-import dfp.modules.dfp_modules
 import mlflow
 import pandas as pd
 from dfp.messages.multi_dfp_message import MultiDFPMessage
+from dfp.modules.dfp_modules import make_modules
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.multi_file_source import MultiFileSource
@@ -298,6 +298,8 @@ def run_pipeline(train_users,
             }
         }
     }
+
+    make_modules()
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
