@@ -132,7 +132,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
 
 TEST_F(TestMatxUtil, ReduceMax2dColMajor)
 {
-    auto morpheus_root = get_morpheus_root();
+    auto morpheus_root = test::get_morpheus_root();
     auto input_file = morpheus_root / "tests/tests_data/filter_probs.csv";
 
     auto table_m  = morpheus::load_table_from_file(input_file);
