@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
 from unittest import mock
 
 import pytest
@@ -25,6 +26,7 @@ from morpheus.utils.version_utils import get_srf_version_as_list
 module_config = {"module_id": "TestModule", "module_name": "test_module", "namespace": "test_morpheus_modules"}
 
 
+@pytest.mark.use_python
 def test_constructor(config):
 
     mod_stage = LinearModulesStage(config, module_config)
@@ -33,8 +35,10 @@ def test_constructor(config):
 
     # Just ensure that we get a valid non-empty tuple
     accepted_types = mod_stage.accepted_types()
+    print(accepted_types)
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
+    assert accepted_types[0] == typing.Any
 
     pytest.raises(NotImplementedError, mod_stage._get_cpp_module_node, None)
 

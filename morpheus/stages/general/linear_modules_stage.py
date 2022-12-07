@@ -37,13 +37,19 @@ class LinearModulesStage(SinglePortStage):
         Pipeline configuration instance.
     module_config : typing.Dict
         Module configuration.
+    input_type : default `typing.Any`
+        The stage acceptable input type.
+    output_type : default `typing.Any`
+        The output type that the stage produces.
 
     """
 
-    def __init__(self, c: Config, module_config: typing.Dict):
+    def __init__(self, c: Config, module_config: typing.Dict, input_type=typing.Any, output_type=typing.Any):
 
         super().__init__(c)
 
+        self._input_type = input_type
+        self._ouput_type = output_type
         self._module_config = module_config
 
     @property
@@ -66,7 +72,7 @@ class LinearModulesStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (typing.Any, )
+        return (self._input_type, )
 
     def _get_cpp_module_node(self, builder: srf.Builder) -> srf.SegmentObject:
         raise NotImplementedError("No C++ node is available for this module type")
@@ -90,4 +96,4 @@ class LinearModulesStage(SinglePortStage):
 
         builder.make_edge(input_stream[0], mod_in_stream)
 
-        return mod_out_stream, typing.Any
+        return mod_out_stream, self._ouput_type

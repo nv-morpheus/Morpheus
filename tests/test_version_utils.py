@@ -14,9 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from morpheus.utils.version_utils import get_srf_version_as_list
 
 
+@pytest.mark.use_python
 def test_get_srf_version_as_list():
 
     result = get_srf_version_as_list()

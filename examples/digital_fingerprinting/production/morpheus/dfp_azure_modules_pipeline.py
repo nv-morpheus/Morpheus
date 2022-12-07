@@ -25,6 +25,7 @@ import click
 import dfp.modules.dfp_modules
 import mlflow
 import pandas as pd
+from dfp.messages.multi_dfp_message import MultiDFPMessage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.multi_file_source import MultiFileSource
@@ -306,7 +307,7 @@ def run_pipeline(train_users,
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Output is UserMessageMeta -- Cached frame set
-    pipeline.add_stage(LinearModulesStage(config, preprocessing_module_config))
+    pipeline.add_stage(LinearModulesStage(config, preprocessing_module_config, output_type=MultiDFPMessage))
 
     pipeline.add_stage(MonitorStage(config, description="Preprocessing Module rate", smoothing=0.001))
 
