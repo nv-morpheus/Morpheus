@@ -1,1 +1,0 @@
-../../../../examples/nlp_si_detection/README.md

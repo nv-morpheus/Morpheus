@@ -1,1 +1,0 @@
-../../../../examples/sid_visualization/README.md
