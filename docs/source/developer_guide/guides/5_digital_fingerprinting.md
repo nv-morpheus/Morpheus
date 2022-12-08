@@ -39,7 +39,7 @@ Adding a new source for the DFP pipeline requires defining five critical pieces:
    * IP address of a client
    * Name of a service (ie. "DNS", "Customer DB", "SMTP")
 
-1. The timestamp column in the Morpheus config attribute `ae.timestamp_column_name` and ensure it is converted to a datetime column see [`DateTimeColumn`](#date-time-column-datetimecolumn).
+1. The timestamp column in the Morpheus config attribute `ae.timestamp_column_name` and ensure it is converted to a datetime column refer to [`DateTimeColumn`](#date-time-column-datetimecolumn).
 1. The model's features as a list of strings in the Morpheus config attribute `ae.feature_columns` which should all be available to the pipeline after the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
 1. A [`DataFrameInputSchema`](#dataframe-input-schema-dataframeinputschema) for the [`DFPFileToDataFrameStage`](#file-to-dataframe-stage-dfpfiletodataframestage) stage.
 1. A [`DataFrameInputSchema`](#dataframe-input-schema-dataframeinputschema) for the [`DFPPreprocessingStage`](#preprocessing-stage-dfppreprocessingstage).
@@ -60,7 +60,7 @@ This example is described in more detail in [`examples/digital_fingerprinting/st
 
 ### The "Production" Example
 
-This example is designed to show what a full scale, production ready, DFP deployment in Morpheus would look like. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
+This example is designed to illustrate a full-scale, production-ready, DFP deployment in Morpheus. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
 
 Key Differences:
  * Multiple pipelines are specialized to perform either training or inference
@@ -166,7 +166,7 @@ The reference architecture is composed of the following services:​
 * [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/) installed on the host machine​
 * Supported GPU with [nvidia-docker runtime​](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 
-> **Note:**  For GPU Requirements see [README.md](/README.md#requirements)
+> **Note:**  For GPU Requirements refer to [README.md](/README.md#requirements)
 
 #### Building the services
 From the root of the Morpheus repo run:
@@ -189,7 +189,7 @@ From the `examples/digital_fingerprinting/production` dir run:
 docker-compose up jupyter
 ```
 
-Once the build is complete and the service has started you will be prompted with a message that should look something like:
+Once the build is complete and the service has started, a message similar to the following should display:
 ```
 jupyter  |     To access the server, open this file in a browser:
 jupyter  |         file:///root/.local/share/jupyter/runtime/jpserver-7-open.html
@@ -235,7 +235,7 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
 | `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
 | `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
-| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. See [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
+| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. Refer to [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
 | `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
 | `--help` | | Show this message and exit. |
 
@@ -275,7 +275,7 @@ docker-compose up mlflow
 * [Kubernetes](https://kubernetes.io/) cluster configured with GPU resources​
 * [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
 
-> **Note:**  For GPU Requirements see [README.md](/README.md#requirements)
+> **Note:**  For GPU Requirements refer to [README.md](/README.md#requirements)
 
 ## Morpheus Configuration
 ![Morpheus Configuration](img/dfp_deployment_configs.png)
@@ -287,7 +287,7 @@ The stages in both the Training and Inference pipelines can be mixed and matched
 
 ### Morpheus Config
 
-For both inference and training pipeline the Morpheus config object should be constructed with the same values, and should look like:
+For both inference and training pipeline the Morpheus config object should be constructed with the same values, for example:
 ```python
 import os
 
@@ -537,7 +537,7 @@ The `DFPRollingWindowStage` ([examples/digital_fingerprinting/production/morpheu
    * These logs are saved to disk to reduce memory requirements between logs from the same user
 1. It only emits logs when the window history requirements are met
    * Until all of the window history requirements are met, no messages will be sent to the rest of the pipeline.
-   * See the below options for configuring the window history requirements
+   * Configuration options for defining the window history requirements are detailed below.
 1. It repeats the necessary logs to properly calculate log dependent features.
    * To support all column feature types, incoming log messages can be combined with existing history and sent to downstream stages.
    * For example, to calculate a feature that increments a counter for the number of logs a particular user has generated in a single day, we must have the user's log history for the past 24 hours. To support this, this stage will combine new logs with existing history into a single `DataFrame`.
@@ -576,7 +576,7 @@ The `DFPTraining` ([examples/digital_fingerprinting/production/morpheus/dfp/stag
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `model_kwargs` | `dict` or `None` | Optional dictionary of keyword arguments to be used when constructing the model.  See [`AutoEncoder`](https://github.com/nv-morpheus/dfencoder/blob/master/dfencoder/autoencoder.py) for information on the available options.|
+| `model_kwargs` | `dict` or `None` | Optional dictionary of keyword arguments to be used when constructing the model. Refer to [`AutoEncoder`](https://github.com/nv-morpheus/dfencoder/blob/master/dfencoder/autoencoder.py) for information on the available options.|
 
 #### MLflow Model Writer Stage (`DFPMLFlowModelWriterStage`)
 The `DFPMLFlowModelWriterStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py)) stage publishes trained models into MLflow, skipping any model which lacked sufficient training data (current required minimum is 300 log records).
