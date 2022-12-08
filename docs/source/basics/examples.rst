@@ -71,12 +71,7 @@ This example will report the throughput on the command line.
 Multi-Monitor Throughput
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-<<<<<<< 524-doc-remove-usage-of-buffer-stage-from-examplesrst
 This example will report the throughput for each stage independently.
-=======
-This example will report the throughput for each stage independently. Keep in mind, ``buffer`` stages are necessary to
-decouple one stage from the next. Without the buffers, all monitoring would show the same throughput.
->>>>>>> branch-23.01
 
 .. image:: img/multi_monitor_throughput.png
 
