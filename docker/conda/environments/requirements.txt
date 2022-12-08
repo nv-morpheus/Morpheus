@@ -9,6 +9,7 @@ ipywidgets
 jupyter-core>=4.11.2,<5.0
 jupyterlab
 nvidia-pyindex
+pytest-benchmark>=4.0
 torch==1.12.0+cu113
 tritonclient[all]==2.17.*
 websockets

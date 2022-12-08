@@ -14,11 +14,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-API Reference
-=============
+Python API
+==========
+.. autosummary::
+    :toctree: _modules
+    :template: custom-module-template.rst
+    :recursive:
 
-.. toctree::
-   :maxdepth: 3
-
-   py_api
-   _lib/index
+    morpheus
