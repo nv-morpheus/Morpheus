@@ -109,7 +109,7 @@ To run Morpheus, users will need to choose from the Morpheus Command Line Interf
 
 ### Morpheus Python Interface
 
-The Morpheus python interface allows users to configure their pipelines using a python script file. This is ideal for users who are working in a Jupyter notebook, users who need complex initialization logic or users who have customized stages. Documentation on using the Morpheus python interface can be found at [`docs/source/developer_guide/guides.rst`](./docs/source/developer_guide/guides.rst).
+The Morpheus python interface allows users to configure their pipelines using a python script file. This is ideal for users who are working in a Jupyter notebook, users who need complex initialization logic or users who have customized stages. Documentation on using the Morpheus python interface can be found at [`developer_guide/guides.md`](./developer_guide/guides.md).
 
 For full example pipelines using the python interface, see the `./examples` directory.
 
@@ -166,7 +166,7 @@ Options:
                                   False]
 ```
 
-Several examples on using the Morpheus CLI can be found at [`docs/source/basics/examples.rst`](./docs/source/basics/examples.rst).
+Several examples on using the Morpheus CLI can be found at [`basics/examples.rst`](./basics/examples.rst).
 
 #### CLI Stage Configuration
 
