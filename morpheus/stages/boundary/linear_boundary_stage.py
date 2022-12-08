@@ -82,7 +82,7 @@ class LinearBoundaryIngressStage(SingleOutputSource):
     """
     The LinearBoundaryIngressStage acts as source ingress point from a corresponding egress in another linear segment.
     Given an existing linear pipeline that we want to connect to another segment, a linear boundary egress stage would
-    be added to it and a matching LinearBoundaryIngressStage would be created to receive the e.
+    be added to it and a matching LinearBoundaryIngressStage would be created to receive the egress point.
 
     Parameters
     ----------
