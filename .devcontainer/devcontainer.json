@@ -15,7 +15,7 @@
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
         "./features/protobuf": {
-            "grpcVersion": "3.20"
+            "protobufVersion": "3.20.0"
         },
         "./features/grpc": {
             "grpcVersion": "1.46.0"

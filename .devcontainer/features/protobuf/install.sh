@@ -42,7 +42,7 @@ git clone \
     https://github.com/protocolbuffers/protobuf.git ${tmpdir} \
     && cd ${tmpdir}
 
-cmake .
+cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON.
 cmake --build . --parallel $(nproc --ignore=2)
 cmake --install .
 

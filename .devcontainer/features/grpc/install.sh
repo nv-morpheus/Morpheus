@@ -44,6 +44,7 @@ git clone \
 
 cmake -S . -B build -GNinja \
     -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DgRPC_INSTALL=ON \
     -DgRPC_BUILD_CSHARP_EXT=OFF \
     -DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF \
@@ -52,7 +53,6 @@ cmake -S . -B build -GNinja \
     -DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
     -DgRPC_BUILD_GRPC_PYTHON_PLUGIN=OFF \
     -DgRPC_BUILD_GRPC_RUBY_PLUGIN=OFF \
-    -DgRPC_ABSL_PROVIDER=package \
     -DgRPC_PROTOBUF_PROVIDER=package
 
 make -j$(nproc --ignore=2)
