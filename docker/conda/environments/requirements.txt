@@ -13,3 +13,5 @@ pytest-benchmark>=4.0
 torch==1.10.2+cu113
 tritonclient[all]==2.17.*
 websockets
+dask
+distributed
