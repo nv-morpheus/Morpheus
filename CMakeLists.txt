@@ -50,7 +50,7 @@ enable_testing()
 # MRC CMake path and module extensions
 set(MORPHEUS_CMAKE_MODULE_PATH_EXTENSIONS
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utilities/cmake")
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake")
 
 set(MORPHEUS_CMAKE_PREFIX_PATH_EXTENSIONS
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
@@ -61,8 +61,7 @@ list(PREPEND CMAKE_MODULE_PATH "${MORPHEUS_CMAKE_MODULE_PATH_EXTENSIONS}")
 list(PREPEND CMAKE_PREFIX_PATH "${MORPHEUS_CMAKE_PREFIX_PATH_EXTENSIONS}")
 
 # Load morpheus utils and update CMake paths
-set(MORPHEUS_UTILS_RAPIDS_CMAKE_VERSION ${MRC_RAPIDS_VERSION})
-set(MORPHEUS_UTILS_RAPIDS_CPM_INIT_OVERRIDE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/rapids_cpm_package_overrides.json")
+set(MORPHEUS_UTILS_RAPIDS_CMAKE_VERSION ${MORPHEUS_RAPIDS_CMAKE_VERSION})
 include(morpheus_utils/load)
 
 # Configure project package manager
