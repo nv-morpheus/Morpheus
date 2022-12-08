@@ -203,3 +203,4 @@ morpheus/_lib/**/*.pyi
 # and user settings will go in .vscode/launch.json and .vscode/settings.json
 .vscode/settings.json
 .vscode/launch.json
+.devcontainer/.conda
