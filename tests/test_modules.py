@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import srf
 
 from morpheus.modules.file_batcher_module import make_file_batcher_module
@@ -23,6 +24,7 @@ from morpheus.modules.mlflow_model_writer_module import make_mlflow_model_writer
 registry = srf.ModuleRegistry
 
 
+@pytest.mark.use_python
 def test_file_batcher_module(config):
 
     module_id = "TestFileBatcher"
@@ -36,10 +38,11 @@ def test_file_batcher_module(config):
     registered_mod_dict = registry.registered_modules()
 
     assert "default" in registered_mod_dict
-    assert module_id in registered_mod_dict
+    assert module_id in registered_mod_dict[namespace]
     assert registry.contains(module_id, "default") is not True
 
 
+@pytest.mark.use_python
 def test_file_to_df_module():
 
     module_id = "TestFileToDataFrame"
@@ -53,10 +56,11 @@ def test_file_to_df_module():
     registered_mod_dict = registry.registered_modules()
 
     assert "default" in registered_mod_dict
-    assert module_id in registered_mod_dict
+    assert module_id in registered_mod_dict[namespace]
     assert registry.contains(module_id, "default") is not True
 
 
+@pytest.mark.use_python
 def test_mlflow_model_writer_module():
 
     module_id = "TestMLFlowModelWriter"
@@ -70,5 +74,5 @@ def test_mlflow_model_writer_module():
     registered_mod_dict = registry.registered_modules()
 
     assert "default" in registered_mod_dict
-    assert module_id in registered_mod_dict
+    assert module_id in registered_mod_dict[namespace]
     assert registry.contains(module_id, "default") is not True
