@@ -110,8 +110,7 @@ class Cybert:
         for symbol in string.punctuation:
             raw_data_col = raw_data_col.str.replace(symbol, ' ' + symbol + ' ')
 
-        byte_count = raw_data_col.str.byte_count()
-        max_rows_tensor = int((byte_count / 120).ceil().sum())
+        max_rows_tensor = len(raw_data_col) * 2
 
         tokenizer = SubwordTokenizer(self._hashpath, do_lower_case=False)
         tokenizer_output = tokenizer(raw_data_col,
