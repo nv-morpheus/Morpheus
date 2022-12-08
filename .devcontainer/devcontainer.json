@@ -10,10 +10,21 @@
         "--runtime=nvidia",
         "--gpus",
         "all"
-    ]
+    ],
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
+	"features": {
+        "./features/protobuf": {
+            "grpcVersion": "3.20"
+        },
+        "./features/grpc": {
+            "grpcVersion": "1.46.0"
+        }
+    },
+    "overrideFeatureInstallOrder": [
+        "./features/protobuf",
+        "./features/grpc"
+    ]
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],

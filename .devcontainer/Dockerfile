@@ -1,1 +1,4 @@
-FROM nvidia/cuda:11.5.0-devel-ubuntu20.04 AS base
+FROM ghcr.io/trxcllnt/devcontainer-images/cmake-ninja-sccache-llvm-cuda-mambaforge:latest AS base
+
+# RUN DEBIAN_FRONTEND=noninteractive \
+#     apt-get install -y --no-install-recommends
