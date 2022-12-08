@@ -234,14 +234,14 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    ```
 5. Update the `kafka-docker/docker-compose.yml`, performing two changes:
    1. Update the `ports` entry to:
-      ```yml
+      ```yaml
       ports:
          - "0.0.0.0::9092"
       ```
       This will prevent the containers from attempting to map IPv6 ports.
    1. Change the value of `KAFKA_ADVERTISED_HOST_NAME` to match the value of the `KAFKA_ADVERTISED_HOST_NAME` environment variable from the previous step. For example, the line should look like:
 
-      ```yml
+      ```yaml
       environment:
          KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
       ```
