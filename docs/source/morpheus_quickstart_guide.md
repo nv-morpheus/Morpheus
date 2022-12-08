@@ -973,7 +973,7 @@ Commands:
   validate        Validate pipeline output for testing.
 ```
 
-Morpheus SDK Client provides the commands below to run the AutoEncoder pipeline:
+Morpheus provides the commands below to run the AutoEncoder pipeline:
 
 ```bash
 (morpheus) root@sdk-cli:/workspace# morpheus run pipeline-ae --help

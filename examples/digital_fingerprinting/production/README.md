@@ -166,9 +166,9 @@ MLflow for this production digital fingerprint use case can be installed from NG
 
 ### Production DFP Helm chart
 
-The deployment of the [Morpheus SDK Client](../../../docs/source/morpheus_quickstart_guide.md#install-morpheus-sdk-client) is also done _almost_ the same way as what's specified in the Quick Start Guide. However, you would specify command arguments differently for this production DFP use case.
+The deployment of the [Morpheus](../../../docs/source/morpheus_quickstart_guide.md#install-morpheus-sdk-client) is also done _almost_ the same way as what's specified in the Quick Start Guide. However, you would specify command arguments differently for this production DFP use case.
 
-NOTE: The published SDK image includes a minimal set of packages for launching JupyterLab but you will likely still want to update the conda environment inside the running pod with the `conda_env.yml` file in this same directory to install other use case dependencies such as boto3 and s3fs.
+NOTE: The published Morpheus image includes a minimal set of packages for launching JupyterLab but you will likely still want to update the conda environment inside the running pod with the `conda_env.yml` file in this same directory to install other use case dependencies such as boto3 and s3fs.
 
 #### Notebooks
 
