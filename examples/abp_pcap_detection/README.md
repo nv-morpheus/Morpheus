@@ -98,7 +98,7 @@ The pipeline will process the input `pcap_dump.jsonlines` sample data and write 
 
 ### CLI Example
 The above example is illustrative of using the Python API to build a custom Morpheus Pipeline.
-Alternately the Morpheus command line could have been used to accomplush the same goal by registering the `abp_pcap_preprocessing.py` module as a plugin.
+Alternately the Morpheus command line could have been used to accomplish the same goal by registering the `abp_pcap_preprocessing.py` module as a plugin.
 
 From the root of the Morpheus repo run:
 ```bash

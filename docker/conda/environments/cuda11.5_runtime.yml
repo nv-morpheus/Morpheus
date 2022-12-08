@@ -20,6 +20,7 @@ channels:
     - rapidsai-nightly
     - conda-forge
 dependencies:
+    - nb_conda_kernels
     - pip
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:

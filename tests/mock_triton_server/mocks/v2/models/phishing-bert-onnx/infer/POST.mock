@@ -2,15 +2,24 @@ HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Inference-Header-Content-Length: 156
 {{#inject}}(()=>{
-    if(!this.counter) {
-        this.counter=0;
+
+    // Check for the shared state object
+    if (!this.Handlebars._nv_morpheus === undefined){
+        throw "Must call `POST /reset` endpoint before calling other methods!";
     }
 
-    this.counter+=1;
-    this.filename = "payloads/phishing/phishing_infer_resp." + this.counter + ".body"
+    const counter = this.Handlebars._nv_morpheus.get_and_increment();
+    const filename = "payloads/phishing/phishing_infer_resp." + counter + ".body"
+
+    logger.info(`Returning payload for counter: ${counter}, and filename: ${filename}`);
 
     // This seems like the only way to pass a variable to the file helper
-    request._nv_morpheus_params = {counter: this.counter, filename: this.filename};
+    request._nv_morpheus_params = {
+        counter,
+        filename
+    };
+
+    return "";
 })();{{/inject}}
 
 {{file path=request._nv_morpheus_params.filename}}

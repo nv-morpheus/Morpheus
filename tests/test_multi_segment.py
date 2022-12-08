@@ -67,20 +67,7 @@ def test_multi_segment_bad_data_type(tmp_path, config, output_type='json'):
         pipe.run()
         assert (False)
     except Exception as e:
-        return e
+        print(e)
+        pass
 
-    assert os.path.exists(out_file)
-
-    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
-
-    if output_type == "csv":
-        # The output data will contain an additional id column that we will need to slice off
-        output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-        output_data = output_data[:, 1:]
-    else:  # assume json
-        df = read_file_to_df(out_file, file_type=FileTypes.Auto)
-        output_data = df.values
-
-    # Somehow 0.7 ends up being 0.7000000000000001
-    output_data = np.around(output_data, 2)
-    assert output_data.tolist() == input_data.tolist()
+    assert not os.path.exists(out_file)

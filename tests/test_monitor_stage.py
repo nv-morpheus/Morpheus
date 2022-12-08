@@ -117,7 +117,7 @@ def test_build_single(mock_morph_tqdm, mock_operators, config):
     mock_operators.on_completed.assert_called_once()
     sink_on_completed = mock_operators.on_completed.call_args.args[0]
 
-    # Verify we close tqdm propperly on complete
+    # Verify we close tqdm properly on complete
     sink_on_completed()
     mock_morph_tqdm.stop.assert_called_once()
 

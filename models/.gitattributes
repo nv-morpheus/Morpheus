@@ -1,6 +1,8 @@
-sid-models/* filter=lfs diff=lfs merge=lfs -text
-phishing-models/* filter=lfs diff=lfs merge=lfs -text
-dfp-models/* filter=lfs diff=lfs merge=lfs -text
 abp-models/* filter=lfs diff=lfs merge=lfs -text
+datasets/training-data/** filter=lfs diff=lfs merge=lfs -text
+datasets/validation-data/** filter=lfs diff=lfs merge=lfs -text
+dfp-models/* filter=lfs diff=lfs merge=lfs -text
 log-parsing-models/* filter=lfs diff=lfs merge=lfs -text
-datasets/** filter=lfs diff=lfs merge=lfs -text
+phishing-models/* filter=lfs diff=lfs merge=lfs -text
+root-cause-models/* filter=lfs diff=lfs merge=lfs -text
+sid-models/* filter=lfs diff=lfs merge=lfs -text

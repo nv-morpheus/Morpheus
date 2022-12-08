@@ -17,8 +17,6 @@
 
 #include "morpheus/messages/memory/response_memory_probs.hpp"
 
-#include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>
@@ -36,6 +34,12 @@ namespace morpheus {
 ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : ResponseMemory(count)
 {
     this->tensors["probs"] = std::move(probs);
+}
+
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, tensor_map_t &&tensors) :
+  ResponseMemory(count, std::move(tensors))
+{
+    CHECK(has_tensor("probs")) << "Tensor: 'probs' not found in memory";
 }
 
 const TensorObject &ResponseMemoryProbs::get_probs() const

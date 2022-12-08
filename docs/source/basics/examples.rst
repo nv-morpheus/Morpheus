@@ -72,7 +72,7 @@ Multi-Monitor Throughput
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 This example will report the throughput for each stage independently. Keep in mind, ``buffer`` stages are necessary to
-decouple one stage from the next. Without the buffers, all montioring would show the same throughput.
+decouple one stage from the next. Without the buffers, all monitoring would show the same throughput.
 
 .. image:: img/multi_monitor_throughput.png
 
