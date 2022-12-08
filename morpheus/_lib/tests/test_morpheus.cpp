@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2018-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,21 @@
  * limitations under the License.
  */
 
-#include "test_morpheus.hpp"
+#include <filesystem>
+#include <stdexcept>
 
-#include <cudf/io/csv.hpp>
-#include <cudf/table/table.hpp>  // IWYU pragma: keep
+namespace morpheus::test {
 
-cudf::io::table_with_metadata load_table_from_csv(std::string filename)
+std::filesystem::path get_morpheus_root()
 {
-    auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{filename});
-    return cudf::io::read_csv(options.build());
+    auto root = std::getenv("MORPHEUS_ROOT");
+
+    if (root == nullptr)
+    {
+        throw std::runtime_error("MORPHEUS_ROOT env variable is not set");
+    }
+
+    return std::filesystem::path{root};
 }
+
+}  // namespace morpheus::test

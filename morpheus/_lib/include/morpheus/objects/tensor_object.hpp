@@ -44,6 +44,12 @@
 
 namespace morpheus {
 
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
+
 using TensorIndex = long long;  // NOLINT
 using RankType    = int;        // NOLINT
 
@@ -173,6 +179,11 @@ struct ITensor : public ITensorStorage, public ITensorOperations
     }
 };
 
+/**
+ * @brief Handle for interacting with Morpheus `Tensor` objects. Typically constructed using the `Tensor::create`
+ * factory method.
+ *
+ */
 struct TensorObject final
 {
     TensorObject() = default;
@@ -269,11 +280,14 @@ struct TensorObject final
         return TensorObject(copy);
     }
 
-    std::vector<uint8_t> get_host_data() const
+    template <typename T = uint8_t>
+    std::vector<T> get_host_data() const
     {
-        std::vector<uint8_t> out_data;
+        std::vector<T> out_data;
 
-        out_data.resize(this->bytes());
+        CHECK_EQ(this->bytes() % sizeof(T), 0) << "Bytes isnt divisible by type. Check the types are correct";
+
+        out_data.resize(this->bytes() / sizeof(T));
 
         SRF_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
 
@@ -433,4 +447,5 @@ struct TensorObject final
     std::shared_ptr<ITensor> m_tensor;
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

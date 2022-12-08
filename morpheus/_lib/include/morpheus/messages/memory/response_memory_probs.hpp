@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
@@ -29,21 +30,46 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemoryProbs*********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup messages
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Output memory block containing the inference response probabilities.
+ *
  */
 class ResponseMemoryProbs : public ResponseMemory
 {
   public:
+    /**
+     * @brief Construct a new Response Memory Probs object
+     *
+     * @param count
+     * @param probs
+     */
     ResponseMemoryProbs(size_t count, TensorObject probs);
+    /**
+     * @brief Construct a new Response Memory Probs object
+     *
+     * @param count
+     * @param tensors
+     */
+    ResponseMemoryProbs(size_t count, tensor_map_t &&tensors);
 
     /**
-     * TODO(Documentation)
+     * @brief Returns the tensor named 'probs', throws a `std::runtime_error` if it does not exist
+     *
+     * @return const TensorObject&
      */
     const TensorObject &get_probs() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Update the tensor named 'probs'
+     *
+     * @param probs
      */
     void set_probs(TensorObject probs);
 };
@@ -51,29 +77,44 @@ class ResponseMemoryProbs : public ResponseMemory
 /****** ResponseMemoryProbsInterfaceProxy*******************/
 #pragma GCC visibility push(default)
 /**
- * @brief Interface proxy, used to insulate python bindings.
+ * @brief Interface proxy, used to insulate python bindings
  */
 struct ResponseMemoryProbsInterfaceProxy
 {
     /**
-     * @brief Create and initialize a ResponseMemoryProbs object, and return a shared pointer to the result.
+     * @brief Create and initialize a ResponseMemoryProbs object, and return a shared pointer to the result
+     *
+     * @param count
+     * @param probs
+     * @return std::shared_ptr<ResponseMemoryProbs>
      */
     static std::shared_ptr<ResponseMemoryProbs> init(cudf::size_type count, pybind11::object probs);
 
     /**
-     * TODO(Documentation)
+     * @brief Get messages count in the response memory probs object
+     *
+     * @param self
+     * @return std::size_t
      */
     static std::size_t count(ResponseMemoryProbs &self);
 
     /**
-     * TODO(Documentation)
+     * @brief Get the response memory probs object
+     *
+     * @param self
+     * @return pybind11::object
      */
     static pybind11::object get_probs(ResponseMemoryProbs &self);
 
     /**
-     * TODO(Documentation)
+     * @brief Set the response memory probs object
+     *
+     * @param self
+     * @param cupy_values
      */
     static void set_probs(ResponseMemoryProbs &self, pybind11::object cupy_values);
 };
 #pragma GCC visibility pop
+
+/** @} */  // end of group
 }  // namespace morpheus

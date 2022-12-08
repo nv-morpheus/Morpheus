@@ -27,7 +27,7 @@ To start, we will implement a single stage that could be included in a pipeline.
 
 Defining this stage requires us to specify the stage type. Morpheus stages contain a single input and a single output inherited from `SinglePortStage`.  Stages that act as sources of data, in that they do not take an input from a prior stage but rather produce data from a source such as a file, Kafka service, or other external sources, will need to inherit from the `SingleOutputSource` base class.
 
-Optionally, stages can be registered as a command with the Morpheus CLI using the `register_stage` decorator.  This allows for pipelines to be constructed from both pre-built stages and custom user stages via the command line.  Any constructor arguments will be introspected using [numpydoc](https://numpydoc.readthedocs.io/en/latest/) and exposed as command line flags.  Similarly the class's docstrings will be exposed in the help string of the stage on the command line. 
+Optionally, stages can be registered as a command with the Morpheus CLI using the `register_stage` decorator.  This allows for pipelines to be constructed from both pre-built stages and custom user stages via the command line.  Any constructor arguments will be introspected using [numpydoc](https://numpydoc.readthedocs.io/en/latest/) and exposed as command line flags.  Similarly the class's docstrings will be exposed in the help string of the stage on the command line.
 
 We start our class definition with a few basic imports:
 
@@ -54,7 +54,7 @@ There are four methods that need to be defined in our new subclass to implement 
         return "pass-thru"
 ```
 
-The `accepted_types` method returns a tuple of message classes that this stage accepts as valid inputs. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as `MessageMeta` or `MultiMessage` (see the message classes defined in `morpheus.pipeline.messages` for a complete list).
+The `accepted_types` method returns a tuple of message classes that this stage accepts as valid inputs. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as `MessageMeta` or `MultiMessage` (refer to the message classes defined in `morpheus.pipeline.messages` for a complete list).
 ```python
     def accepted_types(self) -> typing.Tuple:
         return (typing.Any,)
@@ -113,7 +113,7 @@ class PassThruStage(SinglePortStage):
     """
     A Simple Pass Through Stage
     """
-    
+
     @property
     def name(self) -> str:
         return "pass-thru"
@@ -182,7 +182,7 @@ Finally, we run the pipeline:
 pipeline.run()
 ```
 
-The output should look like this:
+The output should display:
 ```
 ====Registering Pipeline====
 ====Registering Pipeline Complete!====

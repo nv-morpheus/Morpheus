@@ -26,6 +26,6 @@ dependencies:
     - dill
     - kfp
     - librdkafka
-    - mlflow
+    - mlflow>1.29.0,<2
     - papermill
     - s3fs==2022.8.2

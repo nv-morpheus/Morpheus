@@ -17,11 +17,8 @@
 API Reference
 =============
 
-This page contains the list of project's modules.
+.. toctree::
+   :maxdepth: 3
 
-.. autosummary::
-   :toctree: _modules
-   :template: custom-module-template.rst
-   :recursive:
-
-   morpheus
+   py_api
+   _lib/index

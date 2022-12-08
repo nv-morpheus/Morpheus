@@ -175,9 +175,6 @@ def run_pipeline(
     # Add a monitor stage
     pipeline.add_stage(MonitorStage(config, description="Write to file rate", unit="to-file"))
 
-    # Build the pipeline here to see types in the vizualization
-    pipeline.build()
-
     # Run the pipeline
     pipeline.run()
 

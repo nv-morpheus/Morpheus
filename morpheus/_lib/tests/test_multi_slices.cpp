@@ -17,26 +17,56 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
+#include "morpheus/io/deserializers.hpp"
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/messages/multi_response.hpp"
+#include "morpheus/objects/tensor.hpp"
+#include "morpheus/utilities/matx_util.hpp"  // for MatxUtil::create_seg_ids
+#include "morpheus/utilities/type_util.hpp"  // for TypeId
+
+#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyHostToDevice
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <gtest/gtest.h>
+#include <pybind11/embed.h>
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
+#include <rmm/device_buffer.hpp>
+#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
 
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <memory>  // for unique_ptr
+#include <random>
+#include <typeinfo>  //for typeid
 #include <vector>
 
-TEST_CLASS(Masking);
+using namespace morpheus;
+namespace py = pybind11;
 
-TEST_F(TestMasking, Ranges)
+namespace {
+int random_int(int lower, int upper)
+{
+    std::random_device r;
+    std::default_random_engine e1(r());
+    std::uniform_int_distribution<unsigned> uniform_dist(lower, upper);
+    return uniform_dist(e1);
+}
+}  // namespace
+
+TEST_CLASS(MultiSlices);
+
+TEST_F(TestMultiSlices, Ranges)
 {
     std::filesystem::path morpheus_root{std::getenv("MORPHEUS_ROOT")};
     auto input_file = morpheus_root / "tests/tests_data/filter_probs.csv";
 
-    auto table_m = load_table_from_csv(input_file);
+    auto table_m = load_table_from_file(input_file);
     EXPECT_EQ(table_m.tbl->num_rows(), 20);
 
     auto table_v = table_m.tbl->view();

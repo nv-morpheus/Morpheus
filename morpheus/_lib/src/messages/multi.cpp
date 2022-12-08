@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/type_util.hpp"
 #include "morpheus/utilities/type_util_detail.hpp"  // for TypeId, DataType
 
@@ -98,8 +99,9 @@ std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<st
     std::vector<cudf::size_type> cudf_ranges;
     for (const auto &p : ranges)
     {
-        cudf_ranges.push_back(static_cast<cudf::size_type>(p.first));
-        cudf_ranges.push_back(static_cast<cudf::size_type>(p.second));
+        // Append the message offset to the range here
+        cudf_ranges.push_back(static_cast<cudf::size_type>(p.first + this->mess_offset));
+        cudf_ranges.push_back(static_cast<cudf::size_type>(p.second + this->mess_offset));
     }
 
     auto table_info                       = this->meta->get_info();
@@ -142,18 +144,19 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
         CHECK(tensors[i].count() == cv.size() && (table_type == tensor_type || (table_type == cudf::type_id::BOOL8 &&
                                                                                 tensor_type == cudf::type_id::UINT8)));
 
+        const auto item_size = tensors[i].dtype().item_size();
+
+        // Dont use cv.data<>() here since that does not account for the size of each element
+        auto data_start = const_cast<uint8_t *>(cv.head<uint8_t>()) + cv.offset() * item_size;
+
         if (row_stride == 1)
         {
             // column major just use cudaMemcpy
-            SRF_CHECK_CUDA(cudaMemcpy(const_cast<uint8_t *>(cv.data<uint8_t>()),
-                                      tensors[i].data(),
-                                      tensors[i].bytes(),
-                                      cudaMemcpyDeviceToDevice));
+            SRF_CHECK_CUDA(cudaMemcpy(data_start, tensors[i].data(), tensors[i].bytes(), cudaMemcpyDeviceToDevice));
         }
         else
         {
-            const auto item_size = tensors[i].dtype().item_size();
-            SRF_CHECK_CUDA(cudaMemcpy2D(const_cast<uint8_t *>(cv.data<uint8_t>()),
+            SRF_CHECK_CUDA(cudaMemcpy2D(data_start,
                                         item_size,
                                         tensors[i].data(),
                                         row_stride * item_size,

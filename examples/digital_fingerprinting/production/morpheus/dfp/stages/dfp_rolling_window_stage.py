@@ -84,7 +84,7 @@ class CachedUserWindow:
         # Set the filtered index
         filtered_df.index = range(self.total_count, self.total_count + len(filtered_df))
 
-        # Save the row hash to make it easier to find later. Do this before the batch so it doesnt participate
+        # Save the row hash to make it easier to find later. Do this before the batch so it doesn't participate
         filtered_df["_row_hash"] = pd.util.hash_pandas_object(filtered_df, index=False)
 
         # Use batch id to distinguish groups in the same dataframe
