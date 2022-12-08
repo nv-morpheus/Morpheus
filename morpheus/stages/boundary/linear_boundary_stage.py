@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class LinearBoundaryEgressStage(SinglePortStage):
     """
-    TheLinearBoundaryEgressStage acts as an egress point from one linear segment to another. Given an existing linear
+    The LinearBoundaryEgressStage acts as an egress point from one linear segment to another. Given an existing linear
     pipeline that we want to connect to another segment, a linear boundary egress stage would be added, in conjunction
     with a matching LinearBoundaryIngressStage on the target linear segment.
 
@@ -41,9 +41,9 @@ class LinearBoundaryEgressStage(SinglePortStage):
     data_type : `typing.Type`
         Data type that this Stage will accept and then output to its egress port.
 
-    Example
-    -------
-        boundary_egress = LinearBoundaryEgressStage(config, "my_boundary_port", int)
+    Examples
+    --------
+    >>> boundary_egress = LinearBoundaryEgressStage(config, "my_boundary_port", int)
     """
 
     def __init__(self, c: Config, boundary_port_id: str, data_type):
@@ -80,7 +80,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
 
 class LinearBoundaryIngressStage(SingleOutputSource):
     """
-    TheLinearBoundaryIngressStage acts as source ingress point from a corresponding egress in another linear segment.
+    The LinearBoundaryIngressStage acts as source ingress point from a corresponding egress in another linear segment.
     Given an existing linear pipeline that we want to connect to another segment, a linear boundary egress stage would
     be added to it and a matching LinearBoundaryIngressStage would be created to receive the e.
 
@@ -94,9 +94,9 @@ class LinearBoundaryIngressStage(SingleOutputSource):
     data_type : `object`
         Data type that this Stage will accept, which will correspond to some existing egress output.
 
-    Example
-    -------
-        boundary_ingress = LinearBoundaryIngressStage(config, "my_boundary_port", int)
+    Examples
+    --------
+    >>> boundary_ingress = LinearBoundaryIngressStage(config, "my_boundary_port", int)
     """
 
     def __init__(self, c: Config, boundary_port_id: str, data_type=None):
