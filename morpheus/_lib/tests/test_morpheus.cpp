@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <glog/logging.h>  // IWYU pragma: keep
-#include <gtest/gtest.h>   // IWYU pragma: keep
-
 #include <filesystem>
-
-#define TEST_CLASS(name)                      \
-    class Test##name : public ::testing::Test \
-    {}
+#include <stdexcept>
 
 namespace morpheus::test {
 
-/**
-* @brief Gets the `MORPHEUS_ROOT` env variable or throws a runtime_error.
-* @return std::filesystem::path
-*/
-std::filesystem::path get_morpheus_root();
+std::filesystem::path get_morpheus_root()
+{
+    auto root = std::getenv("MORPHEUS_ROOT");
+
+    if (root == nullptr)
+    {
+        throw std::runtime_error("MORPHEUS_ROOT env variable is not set");
+    }
+
+    return std::filesystem::path{root};
 }
+
+}  // namespace morpheus::test
