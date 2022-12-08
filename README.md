@@ -33,7 +33,7 @@ The following sections must be followed prior to building the Morpheus container
 
 ```bash
 MORPHEUS_ROOT=$(pwd)/morpheus
-git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
+git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
 

@@ -3,13 +3,13 @@
 Contributions to Morpheus fall into the following three categories.
 
 1. To report a bug, request a new feature, or report a problem with
-    documentation, please file an [issue](https://github.com/NVIDIA/Morpheus/issues/new)
+    documentation, please file an [issue](https://github.com/nv-morpheus/Morpheus/issues/new)
     describing in detail the problem or new feature. The Morpheus team evaluates
     and triages issues, and schedules them for a release. If you believe the
     issue needs priority attention, please comment on the issue to notify the
     team.
 2. To propose and implement a new Feature, please file a new feature request
-    [issue](https://github.com/NVIDIA/Morpheus/issues/new). Describe the
+    [issue](https://github.com/nv-morpheus/Morpheus/issues/new). Describe the
     intended feature and discuss the design and implementation with the team and
     community. Once the team agrees that the plan looks good, go ahead and
     implement it, using the [code contributions](#code-contributions) guide below.
@@ -25,10 +25,10 @@ More information can be found at: [Contributor Code of Conduct](CODE_OF_CONDUCT.
 
 ### Your first issue
 
-1. Find an issue to work on. The best way is to look for issues with the [good first issue](https://github.com/NVIDIA/Morpheus/issues) label.
+1. Find an issue to work on. The best way is to look for issues with the [good first issue](https://github.com/nv-morpheus/Morpheus/issues) label.
 2. Comment on the issue stating that you are going to work on it.
 3. Code! Make sure to update unit tests! Ensure the [license headers are set properly](#Licensing).
-4. When done, [create your pull request](https://github.com/NVIDIA/Morpheus/compare).
+4. When done, [create your pull request](https://github.com/nv-morpheus/Morpheus/compare).
 5. Wait for other developers to review your code and update code as needed.
 6. Once reviewed and approved, a Morpheus developer will merge your pull request.
 
@@ -36,7 +36,7 @@ Remember, if you are unsure about anything, don't hesitate to comment on issues 
 
 ### Seasoned developers
 
-Once you have gotten your feet wet and are more comfortable with the code, you can look at the prioritized issues for our next release in our [project boards](https://github.com/NVIDIA/Morpheus/projects).
+Once you have gotten your feet wet and are more comfortable with the code, you can look at the prioritized issues for our next release in our [project boards](https://github.com/nv-morpheus/Morpheus/projects).
 
 > **Pro Tip:** Always look at the release board with the highest number for issues to work on. This is where Morpheus developers also focus their efforts.
 
@@ -60,7 +60,7 @@ export PYTHON_VER=3.8
 export RAPIDS_VER=22.08
 export CUDA_VER=11.5
 export MORPHEUS_ROOT=$(pwd)/morpheus
-git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
+git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
@@ -168,7 +168,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    export RAPIDS_VER=22.08
    export CUDA_VER=11.5
    export MORPHEUS_ROOT=$(pwd)/morpheus
-   git clone https://github.com/NVIDIA/Morpheus.git $MORPHEUS_ROOT
+   git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
    ```
 1. Create the morpheus Conda environment

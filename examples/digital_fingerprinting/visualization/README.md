@@ -111,7 +111,7 @@ python dfp_viz_azure_pipeline.py \
     --output_dir=./azure-dfp-output
 ```
 
-When pipeline run completes, you should now see `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` in the `azure-dfp-output` directory. These files can be used as input to the DFP Viz UI.
+When the pipeline run completes, the `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` output files will be present in the `azure-dfp-output` directory. These files can be used as input to the DFP Viz UI.
 
 ### Duo
 
