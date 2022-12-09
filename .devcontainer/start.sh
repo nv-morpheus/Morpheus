@@ -15,6 +15,6 @@ if conda_env_find "${MORPHEUS_DEFAULT_CONDA_ENV}" ; then
 else
     read -p "Morpheus conda environment not found. Would you like to create it? [yn] " yn
     case $yn in
-        [Yy]* ) mamba env create --name ${MORPHUES_DEFAULT_CONDA_ENV} -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.5_dev.yml && conda activate ${env_name};;
+        [Yy]* ) mamba env create --name ${MORPHEUS_DEFAULT_CONDA_ENV} -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.5_dev.yml && conda activate ${env_name};;
     esac
 fi
