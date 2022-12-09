@@ -117,6 +117,6 @@ This example shows an NLP Pipeline which uses most stages available in Morpheus.
    Configuring Pipeline via CLI
    Starting pipeline via CLI... Ctrl+C to Quit
    Inference Rate[Complete]: 93085 inf [00:07, 12334.49 inf/s]
-   ToKafka Rate: 93085 msg [00:07, 13297.85 msg/s]
+   ToKafka Rate[Complete]: 93085 msg [00:07, 13297.85 msg/s]
    Pipeline visualization saved to basic_usage_img/nlp_kitchen_sink.png
 
