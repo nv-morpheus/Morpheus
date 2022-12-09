@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-	"name": "Morpheus",
+    "name": "Morpheus",
     "build": {
         "dockerfile": "Dockerfile"
     },
@@ -37,6 +37,6 @@
         }
     },
     "settings": {
-	    "C_Cpp.intelliSenseEngine": "disabled"
+        "C_Cpp.intelliSenseEngine": "disabled"
     }
 }
