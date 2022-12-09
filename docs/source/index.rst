@@ -60,7 +60,7 @@ The best way to get started with Morpheus will vary depending on the goal of the
    :hidden:
 
    getting_started
-   morpheus_quickstart_guide
+   cloud_deployment_guide
 
 .. toctree::
    :caption: Basic Usage via CLI
