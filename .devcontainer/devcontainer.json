@@ -29,6 +29,7 @@
             "extensions": [
                 "eamodio.gitlens",
                 "llvm-vs-code-extensions.vscode-clangd",
+                "ms-python.python",
                 "ms-vscode.cpptools",
                 "nvidia.nsight-vscode-edition",
                 "twxs.cmake",
@@ -37,6 +38,7 @@
         }
     },
     "settings": {
-        "C_Cpp.intelliSenseEngine": "disabled"
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "python.terminal.activateEnvironment": false
     }
 }
