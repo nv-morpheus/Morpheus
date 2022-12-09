@@ -17,8 +17,8 @@ import typing
 
 import srf
 
-from morpheus.utils.decorators import is_module_registered
 from morpheus.utils.decorators import register_module
+from morpheus.utils.decorators import verify_module_registration
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
@@ -38,12 +38,12 @@ def make_nested_module(module_id: str, namespace: str, ordered_modules_meta: typ
         The sequence in which the edges between the nodes are made will be determined by ordered modules meta.
     """
 
-    @is_module_registered
-    def is_module_exists(module_id=None, namespace=None):
+    @verify_module_registration
+    def verify_module_existance(module_id, namespace):
         logger.debug("Registry contains module {} with namespace {}".format(module_id, namespace))
         return True
 
-    @register_module(module_id=module_id, namespace=namespace)
+    @register_module(module_id, namespace)
     def module_init(builder: srf.Builder):
 
         config = builder.get_current_module_config()
@@ -62,7 +62,7 @@ def make_nested_module(module_id: str, namespace: str, ordered_modules_meta: typ
         #                ________________________ ______
         for x, y in ordered_modules_meta:
 
-            is_module_exists(module_id=x, namespace=y)
+            verify_module_existance(x, y)
 
             curr_module = builder.load_module(x, y, module_id, config)
 

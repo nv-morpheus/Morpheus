@@ -24,7 +24,7 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 registry = srf.ModuleRegistry
 
 
-def is_module_registered(func):
+def verify_module_registration(func):
     """
     Module availability in the module registry is verified by this function.
 
@@ -39,29 +39,29 @@ def is_module_registered(func):
     """
 
     @functools.wraps(func)
-    def inner_func(*args, **kwargs):
-
-        module_id = kwargs["module_id"]
-        namespace = kwargs["namespace"]
+    def inner_func(module_id, namespace, **kwargs):
 
         if module_id is None or namespace is None:
             raise TypeError("TypeError: a string-like object is required for module_id and namespace, not 'NoneType'")
 
         if not registry.contains(module_id, namespace):
-            raise Exception("Module {} doesn't exist in the namespace {}".format(module_id, namespace))
+            raise Exception("Module '{}' doesn't exist in the namespace '{}'".format(module_id, namespace))
 
-        return func(*args, **kwargs)
+        return func(module_id, namespace, **kwargs)
 
     return inner_func
 
 
-def register_module(**kwargs):
+def register_module(module_id, namespace):
     """
     Registers a module if not exists in the module registry.
 
     Parameters
     ----------
-    **kwargs : Function arguments.
+    module_id : str
+        Unique identifier for a module in the module registry.
+    namespace : str
+        Namespace to virtually cluster the modules.
 
     Returns
     -------
@@ -70,15 +70,13 @@ def register_module(**kwargs):
     """
 
     def inner_func(func):
-
-        module_id = kwargs["module_id"]
-        namespace = kwargs["namespace"]
-
         # Register a module if not exists in the registry.
         if not registry.contains(module_id, namespace):
             registry.register_module(module_id, namespace, get_srf_version_as_list(), func)
-            logger.info("Module {} was successfully registered with {} namespace.".format(module_id, namespace))
+            logger.debug("Module '{}' was successfully registered with '{}' namespace.".format(module_id, namespace))
         else:
-            logger.info("Module: {} already exists in the given namespace: {}".format(module_id, namespace))
+            logger.debug("Module: '{}' already exists in the given namespace '{}'".format(module_id, namespace))
+
+        return func
 
     return inner_func

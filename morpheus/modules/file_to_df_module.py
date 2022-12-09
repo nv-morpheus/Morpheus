@@ -57,7 +57,7 @@ def make_file_to_df_module(module_id, namespace):
         Namespace to virtually cluster the modules.
     """
 
-    @register_module(module_id=module_id, namespace=namespace)
+    @register_module(module_id, namespace)
     def module_init(builder: srf.Builder):
 
         config = builder.get_current_module_config()

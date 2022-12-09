@@ -56,7 +56,7 @@ def make_dfp_training_module(module_id: str, namespace: str):
         Namespace to virtually cluster the modules.
     """
 
-    @register_module(module_id=module_id, namespace=namespace)
+    @register_module(module_id, namespace)
     def module_init(builder: srf.Builder):
 
         config = builder.get_current_module_config()
@@ -109,7 +109,7 @@ def make_dfp_split_users_module(module_id: str, namespace: str):
         Namespace to virtually cluster the modules.
     """
 
-    @register_module(module_id=module_id, namespace=namespace)
+    @register_module(module_id, namespace)
     def module_init(builder: srf.Builder):
         config = builder.get_current_module_config()
 
@@ -206,7 +206,7 @@ def make_dfp_rolling_window_module(module_id: str, namespace: str):
         Namespace to virtually cluster the modules.
     """
 
-    @register_module(module_id=module_id, namespace=namespace)
+    @register_module(module_id, namespace)
     def module_init(builder: srf.Builder):
 
         config = builder.get_current_module_config()
@@ -336,7 +336,7 @@ def make_dfp_preporcessing_module(module_id: str, namespace: str):
         Namespace to virtually cluster the modules.
     """
 
-    @register_module(module_id=module_id, namespace=namespace)
+    @register_module(module_id, namespace)
     def module_init(builder: srf.Builder):
 
         config = builder.get_current_module_config()

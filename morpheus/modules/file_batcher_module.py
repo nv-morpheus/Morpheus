@@ -43,7 +43,7 @@ def make_file_batcher_module(module_id, namespace):
         Namespace to virtually cluster the modules.
     """
 
-    @register_module(module_id=module_id, namespace=namespace)
+    @register_module(module_id, namespace)
     def module_init(builder: srf.Builder):
 
         TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_object"])

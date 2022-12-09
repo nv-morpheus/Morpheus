@@ -20,7 +20,7 @@ import srf
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.decorators import is_module_registered
+from morpheus.utils.decorators import verify_module_registration
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -77,19 +77,20 @@ class LinearModulesStage(SinglePortStage):
     def _get_cpp_module_node(self, builder: srf.Builder) -> srf.SegmentObject:
         raise NotImplementedError("No C++ node is available for this module type")
 
-    @is_module_registered
-    def _load_module(self, builder: srf.Builder, module_id: str, namespace: str, module_name: str):
-
-        module = builder.load_module(module_id, namespace, module_name, self._module_config)
-
-        return module
-
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
-        module = self._load_module(builder=builder,
-                                   module_id=self._module_config["module_id"],
-                                   namespace=self._module_config["namespace"],
-                                   module_name=self._module_config["module_name"])
+        @verify_module_registration
+        def load_module(module_id: str, namespace: str, module_name: str, builder: srf.Builder):
+
+            module = builder.load_module(module_id, namespace, module_name, self._module_config)
+            logger.info("Module '{}' with namespace '{}' is successfully loaded.".format(module_id, namespace))
+
+            return module
+
+        module = load_module(self._module_config["module_id"],
+                             self._module_config["namespace"],
+                             module_name=self._module_config["module_name"],
+                             builder=builder)
 
         mod_in_stream = module.input_port("input")
         mod_out_stream = module.output_port("output")
