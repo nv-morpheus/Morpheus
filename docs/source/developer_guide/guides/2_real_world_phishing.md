@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Data Preprocessing
 
-Now that we've seen a basic example of how to create a stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
+The previous example demonstated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
 
 As part of this process, we might want to use a classification model trained on various pieces of metadata, such as recipient count, in addition to the raw content of each email. If we suppose this is true for our example, we need to build and connect a pre-processing stage to attach this information to each record before applying our classifier.
 
@@ -28,7 +28,7 @@ For this task, we'll need to define a new stage, which we will call our `Recipie
 1. Count the number of recipients in the email's metadata.
 1. Construct a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
 
-For this stage, the code will look very similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on {py:obj}`~morpheus.pipeline.messages.MessageMeta` types, our new `accepted_types` method now looks like:
+For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on {py:obj}`~morpheus.pipeline.messages.MessageMeta` types, our new `accepted_types` method now looks like:
 
 ```python
 def accepted_types(self) -> typing.Tuple:
@@ -59,7 +59,7 @@ def on_data(self, message: MessageMeta) -> MessageMeta:
     return message
 ```
 
-If mutating the data frame is undesirable, we could make a call to the data frame's [copy](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.DataFrame.copy.html#cudf.DataFrame.copy) method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. Our updated `on_data` method would look like this (changing the first and last lines of the method):
+If mutating the data frame is undesirable, we could make a call to the data frame's [copy](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.DataFrame.copy.html#cudf.DataFrame.copy) method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. Changing the first and last lines of the `on_data` method to:
 
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
@@ -175,7 +175,7 @@ Output:
 {"name":"phishing-bert-onnx","versions":["1"],"platform":"onnxruntime_onnx","inputs":[{"name":"input_ids","datatype":"INT64","shape":[-1,128]},{"name":"attention_mask","datatype":"INT64","shape":[-1,128]}],"outputs":[{"name":"output","datatype":"FP32","shape":[-1,2]}]}
 ```
 
-From this information, we can see that the expected shape of the model inputs is `"shape":[-1,128]}`.
+From this information, we note that the expected shape of the model inputs is `"shape":[-1,128]}`.
 
 ### Defining our Pipeline
 Let's set up the paths for our input and output files. For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository. In a production deployment, it may be more prudent to replace our usage of environment variables with command-line flags or a dedicated configuration management library.
@@ -596,7 +596,7 @@ In Morpheus, we define a stage to be a sink if it outputs the results of a pipel
 
 Recall that in the previous section we wrote a `RabbitMQSourceStage`. We will now complement that by writing a sink stage that can output Morpheus data into RabbitMQ. For this example, we are again using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python.
 
-The code for our sink will look similar to other stages with a few changes. First, we will subclass `SinglePortStage`:
+The code for our sink will be similar to other stages with a few changes. First, we will subclass `SinglePortStage`:
 
 ```python
 @register_stage("to-rabbitmq")
@@ -719,4 +719,4 @@ class WriteToRabbitMQStage(SinglePortStage):
 ```
 
 ## Note
-For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages see [examples/developer_guide/2_2_rabbitmq/README.md](../../../../examples/developer_guide/2_2_rabbitmq/README.md)
+For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to [examples/developer_guide/2_2_rabbitmq/README.md](../../../../examples/developer_guide/2_2_rabbitmq/README.md)
