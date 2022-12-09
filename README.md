@@ -24,7 +24,7 @@ NVIDIA Morpheus is an open AI application framework that provides cybersecurity 
 ## Documentation
 * [Getting Started with Morpheus](./docs/source/getting_started.md) - Using pre-built Docker containers, building from source, and fetching models and datasets
 * [Developer Guides](./docs/source/developer_guide/guides.md) - Covers extending Morpheus with custom stages
-* [Deployment Guide](./docs/source/morpheus_quickstart_guide.md) - Kubernetes and cloud based deployments
+* [Deployment Guide](./docs/source/cloud_deployment_guide.md) - Kubernetes and cloud based deployments
 * [Contributing to Morpheus](./CONTRIBUTING.md) - Covers making changes and contributing to Morpheus
 
 Full documentation for the latest official release is available at [https://docs.nvidia.com/morpheus/](https://docs.nvidia.com/morpheus/).
