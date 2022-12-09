@@ -112,9 +112,11 @@ This example shows an NLP Pipeline which uses most stages available in Morpheus.
       add-class \
       filter --threshold=0.8 \
       serialize --include 'timestamp' --exclude '^_ts_' \
-      to-kafka --bootstrap_servers localhost:9092 --output_topic "inference_output"
+      to-kafka --bootstrap_servers localhost:9092 --output_topic "inference_output" \
+      monitor --description "ToKafka Rate" --smoothing=0.001 --unit "msg"
    Configuring Pipeline via CLI
    Starting pipeline via CLI... Ctrl+C to Quit
    Inference Rate[Complete]: 93085 inf [00:07, 12334.49 inf/s]
+   ToKafka Rate: 93085 msg [00:07, 13297.85 msg/s]
    Pipeline visualization saved to basic_usage_img/nlp_kitchen_sink.png
 
