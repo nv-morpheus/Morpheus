@@ -19,8 +19,8 @@ limitations under the License.
 
 Morpheus includes several stages to choose from when building a custom pipeline, which can be included and configured to suit your needs. However, there are likely going to be situations that require writing a custom stage. Morpheus stages are written in Python and optionally may include a C++ implementation. The following guides outline how to create your own stages in both Python and C++.
 
-## [Simple Python Stage](./guides/1_simple_python_stage.md)
-## [Real-World Application: Phishing Detection](./guides/2_real_world_phishing.md)
-## [Simple C++ Stage](./guides/3_simple_cpp_stage.md).
-## [Creating a C++ Source Stage](./guides/4_source_cpp_stage.md).
-## [Digital Fingerprinting (DFP)](./guides/5_digital_fingerprinting.md).
+* [Simple Python Stage](./guides/1_simple_python_stage.md)
+* [Real-World Application: Phishing Detection](./guides/2_real_world_phishing.md)
+* [Simple C++ Stage](./guides/3_simple_cpp_stage.md).
+* [Creating a C++ Source Stage](./guides/4_source_cpp_stage.md).
+* [Digital Fingerprinting (DFP)](./guides/5_digital_fingerprinting.md).

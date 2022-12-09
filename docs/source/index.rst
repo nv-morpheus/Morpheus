@@ -77,7 +77,7 @@ The best way to get started with Morpheus will vary depending on the goal of the
    :hidden:
 
    developer_guide/architecture
-   developer_guide/guides
+   developer_guide/guides/index
    developer_guide/examples/index
    api
    developer_guide/contributing

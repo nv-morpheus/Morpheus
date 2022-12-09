@@ -125,7 +125,7 @@ This will launch Triton using the default network ports (8000 for HTTP, 8001 for
 
 To run Morpheus, users will need to choose from the Morpheus Command Line Interface (CLI) or Python interface. Which interface to use depends on the user's needs, amount of customization, and operating environment. More information on each interface can be found below.
 
-For full example pipelines using both the Python and command line interface interface, refer to the [Morpheus Examples](./developer_guide/examples/index.md).
+For full example pipelines using both the Python and command line interface interface, refer to the [developer examples](./developer_guide/examples.md).
 
 ### Morpheus Python Interface
 
