@@ -23,10 +23,7 @@
 Welcome to Morpheus Documentation
 =================================
 
-NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI
-pipeline and pre-trained AI capabilities that, for the first time, allow them to instantaneously inspect all IP traffic
-across their data center fabric. Bringing a new level of security to data centers, Morpheus provides dynamic protection,
-real-time telemetry, adaptive policies, and cyber defenses for detecting and remediating cybersecurity threats.
+NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI framework and pre-trained AI capabilities that allow them to instantaneously inspect all IP traffic across their data center fabric. The Morpheus developer framework allows teams to build their own optimized pipelines that address cybersecurity and information security use cases. Bringing a new level of security to data centers, Morpheus provides development capabilities around dynamic protection, real-time telemetry, adaptive policies, and cyber defenses for detecting and remediating cybersecurity threats.
 
 Features
 --------
