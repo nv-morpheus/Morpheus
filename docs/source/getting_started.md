@@ -153,7 +153,7 @@ The Morpheus Python interface allows users to configure their pipelines using a 
 The CLI allows users to completely configure a Morpheus pipeline directly from a terminal. This is ideal for users who do not need customized stages and for users configuring a pipeline in Kubernetes. The Morpheus CLI can be invoked using the `morpheus` command and is capable of running linear pipelines as well as additional tools. Instructions for using the CLI can be queried directly in the terminal using `morpheus --help`:
 
 ```bash
-$ morpheus
+$ morpheus --help
 Usage: morpheus [OPTIONS] COMMAND [ARGS]...
 
 Options:
@@ -208,10 +208,10 @@ Several examples on using the Morpheus CLI can be found at [`basics/examples.rst
 When configuring a pipeline via the CLI, you start with the command `morpheus run pipeline` and then list the stages in order from start to finish. The order that the commands are placed in will be the order that data flows from start to end. The output of each stage will be linked to the input of the next. For example, to build a simple pipeline that reads from Kafka, deserializes messages, serializes them, and then writes to a file, use the following:
 
 ```bash
-morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json
+morpheus run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json
 ```
 
-You should see some output similar to:
+The output should be similar to:
 
 ```
 ====Building Pipeline====
@@ -226,7 +226,7 @@ Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite
 ====Building Pipeline Complete!====
 ```
 
-This is important because it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, you will see the following:
+This is important because it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, Morpheus should ouput an error similar to:
 
 ```bash
 $ morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize to-file --filename .tmp/temp_out.json --overwrite
