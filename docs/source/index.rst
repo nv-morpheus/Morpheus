@@ -49,10 +49,10 @@ Getting Started
 ---------------
 
 The best way to get started with Morpheus will vary depending on the goal of the user.
- * :doc:`getting_started` - Using pre-built Docker containers, building from source, and fetching models and datasets
+ * :doc:`getting_started` - Using pre-built Docker containers, building Docker containers from source, and fetching models and datasets
  * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
  * :doc:`cloud_deployment_guide` - Kubernetes and cloud based deployments
- * :doc:`developer_guide/contributing` - Covers making changes and contributing to Morpheus
+ * :doc:`developer_guide/contributing` - Covers building from source, making changes and contributing to Morpheus
 
 
 .. toctree::
