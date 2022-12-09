@@ -69,7 +69,6 @@ The best way to get started with Morpheus will vary depending on the goal of the
 
    basics/overview
    basics/building_a_pipeline
-   basics/examples
 
 .. toctree::
    :caption: Developer Guide:
