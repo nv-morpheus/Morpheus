@@ -22,5 +22,21 @@
 
     "mounts": [
         {"type":"bind", "source": "${localWorkspaceFolder}/.devcontainer/.conda", "target": "/home/coder/.conda"}
-    ]
+    ],
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "eamodio.gitlens",
+                "llvm-vs-code-extensions.vscode-clangd",
+                "ms-vscode.cpptools",
+                "nvidia.nsight-vscode-edition",
+                "twxs.cmake",
+                "xaver.clang-format"
+            ]
+        }
+    },
+    "settings": {
+	    "C_Cpp.intelliSenseEngine": "disabled"
+    }
 }

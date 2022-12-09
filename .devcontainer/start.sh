@@ -6,7 +6,7 @@ conda_env_find(){
 
 MORPHEUS_DEFAULT_CONDA_ENV=${MORPHEUS_DEFAULT_CONDA_ENV:-morpheus}
 
-conda_env_update(){onda
+conda_env_update(){
     mamba env update -n ${MORPHEUS_DEFAULT_CONDA_ENV} -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.5_dev.yml
 }
 
