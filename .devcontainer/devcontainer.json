@@ -14,6 +14,8 @@
         "MORPHEUS_ROOT": "/workspaces/morpheus"
     },
 
+    "postStartCommand": "/opt/morpheus-devcontainer/bin/setup-morpheus-env",
+
     "initializeCommand": [
         "mkdir", "-p", "${localWorkspaceFolder}/.devcontainer/.conda"
     ],
