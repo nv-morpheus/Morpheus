@@ -152,9 +152,6 @@ def run_pipeline(
     # # Write the file to the output
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
 
-    # Build the pipeline here to see types in the visualization
-    pipeline.build()
-
     # Run the pipeline
     pipeline.run()
 

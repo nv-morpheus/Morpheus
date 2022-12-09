@@ -23,7 +23,7 @@ These examples illustrate how to use Morpheus to build a binary sequence classif
 
 Like any other Linux based machine, DGX's generate a vast amount of logs. Analysts spend hours trying to identify the root causes of each failure. There could be infinitely many types of root causes of the failures. Some patterns might help to narrow it down; however, regular expressions can only help to identify previously known patterns. Moreover, this creates another manual task of maintaining a search script.
 
-In this example, we show how we can use Morpheus to accelerate the analysis of the enormous amount of logs using machine learning. Another benefit of analyzing in a probabilistic way is that we can pin down unseen root causes. To achieve this, we will fine-tune a pre-trained BERT[^1] model with a classification layer using HuggingFace library.
+In this example, we show how we can use Morpheus to accelerate the analysis of the enormous amount of logs using machine learning. Another benefit of analyzing in a probabilistic way is that we can pin down previously undetected root causes. To achieve this, we will fine-tune a pre-trained BERT[^1] model with a classification layer using HuggingFace library.
 
 Once the model is capable of identifying even the new root causes, it can also be deployed as a process running in the machines to predict failures before they happen.
 
@@ -49,11 +49,11 @@ From the Morpheus repo root directory, run the following to launch Triton and lo
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model root-cause-binary-onnx
 ```
 
-Where `22.08-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (see [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
+Where `22.08-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (refer to [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
 
 This will launch Triton and only load the model required by our example pipeline. The model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
 
-Once Triton has loaded the model, you should see the following in the output:
+Once Triton has loaded the model, the following should be displayed:
 
 ```
 +----------------------------+-----+--------+
@@ -123,14 +123,14 @@ serialize --exclude '^ts_' \
 to-file --filename=./root-cause-binary-output.jsonlines --overwrite
 ```
 
-If successful, you should see the following output:
+If successful, the following should be displayed:
 
 ```bash
 Configuring Pipeline via CLI
 Loaded labels file. Current labels: [['not_root_cause', 'is_root_cause']]
 Parameter, 'vocab_hash_file', with relative path, './data/bert-base-uncased-hash.txt', does not exist. Using package relative location: '/opt/conda/envs/morpheus/lib/python3.8/site-packages/morpheus/./data/bert-base-uncased-hash.txt'
 Starting pipeline via CLI... Ctrl+C to Quit
-Config: 
+Config:
 {
   "ae": null,
   "class_labels": [
@@ -157,8 +157,8 @@ CPP Enabled: True
 ====Building Pipeline Complete!====
 Starting! Time: 1668537665.9479523
 ====Registering Pipeline Complete!====
-====Starting Pipeline====             
-====Pipeline Started====              
+====Starting Pipeline====
+====Pipeline Started====
 Added source: <from-file-0; FileSourceStage(filename=/workspace/models/datasets/validation-data/root-cause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
@@ -180,5 +180,3 @@ Inference rate[Complete]: 473 inf [00:01, 340.43 inf/s]
 ```
 
 The output file `root-cause-binary-output.jsonlines` will contain the original kernel log messages with an additional field `is_root_cause`. The value of the new field will be the root cause probability.
-
-

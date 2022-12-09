@@ -218,9 +218,6 @@ def run_pipeline(debug,
     # Add a monitor stage
     pipeline.add_stage(MonitorStage(config, description="ToFile rate"))
 
-    # Build pipeline
-    pipeline.build()
-
     # Run the pipeline
     pipeline.run()
 

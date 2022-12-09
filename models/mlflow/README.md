@@ -36,11 +36,11 @@ mkdir -p /opt/triton_models
 
 ## Download Morpheus reference models
 
-The Morpheus reference models can be found in the [Morpheus](https://github.com/NVIDIA/Morpheus) repo. A script is provided to fetch the models using git-lfs due to size.
+The Morpheus reference models can be found in the [Morpheus](https://github.com/nv-morpheus/Morpheus) repo. A script is provided to fetch the models using git-lfs due to size.
 Before running the MLflow plugin container, you can fetch the models and mount them to the local path on your host (for example, `/opt/triton_models`).
 
 ```bash
-git clone https://github.com/NVIDIA/Morpheus.git morpheus
+git clone https://github.com/nv-morpheus/Morpheus.git morpheus
 cd morpheus
 scripts/fetch_data.py fetch models
 cp -RL models /opt/triton_models
