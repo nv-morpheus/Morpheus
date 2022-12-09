@@ -12,6 +12,10 @@
         "all"
     ],
 
+    "containerEnv": {
+        "MORPHEUS_ROOT": "/workspaces/morpheus"
+    },
+
     "initializeCommand": [
         "mkdir", "-p", "${localWorkspaceFolder}/.devcontainer/.conda"
     ],
