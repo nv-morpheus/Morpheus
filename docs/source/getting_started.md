@@ -19,8 +19,8 @@ limitations under the License.
 
 There are three ways to get started with Morpheus:
 - [Using pre-built Docker containers](#using-pre-built-docker-containers)
-- Building the Morpheus Docker container
-- Building Morpheus from source
+- [Building the Morpheus Docker container](#building-the-morpheus-container)
+- [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
 The [pre-built Docker containers](#using-pre-built-docker-containers) are the easiest way to get started with the latest release of Morpheus. Instructions on how to download and run these containers, including the necessary data and models, can be found on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
 
@@ -142,11 +142,11 @@ This will launch Triton using the default network ports (8000 for HTTP, 8001 for
 
 To run Morpheus, users will need to choose from the Morpheus Command Line Interface (CLI) or Python interface. Which interface to use depends on the user's needs, amount of customization, and operating environment. More information on each interface can be found below.
 
-For full example pipelines using both the Python and command line interface interface, refer to the [developer examples](./developer_guide/examples.md).
+For full example pipelines using both the Python API and command line interface, refer to the [Morpheus Examples](./developer_guide/examples.md).
 
 ### Morpheus Python Interface
 
-The Morpheus Python interface allows users to configure their pipelines using a Python script file. This is ideal for users who are working in a Jupyter notebook, users who need complex initialization logic or users who have customized stages. Documentation on using the Morpheus Python interface can be found in the [Morpheus Developer Guide](./developer_guide/guides.md).
+The Morpheus Python interface allows users to configure their pipelines using a Python script file. This is ideal for users who are working in a Jupyter notebook, users who need complex initialization logic or users who have customized stages. Documentation on using both the Morpheus Python & C++ APIs can be found in the [Morpheus Developer Guide](./developer_guide/guides.md).
 
 ### Morpheus Command Line Interface (CLI)
 
@@ -341,3 +341,7 @@ Commands:
   validate         Validate pipeline output for testing.
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
+
+## Next Steps
+* [Morpheus Examples](./developer_guide/examples.md) - Example pipelines using both the Python API and command line interface
+* [Morpheus Developer Guide](./developer_guide/guides.md) - Documentation on using the Morpheus Python & C++ APIs
