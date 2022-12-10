@@ -68,7 +68,7 @@ def register_test_module():
     def module_init_fn(builder: srf.Builder):
         pass
 
-    registry.register_module("TestSimpleModule", "test_simple_module", get_srf_version_as_list(), module_init_fn)
+    registry.register_module("TestSimpleModule", "test_morpheus_modules", get_srf_version_as_list(), module_init_fn)
 
 
 @pytest.mark.use_python
