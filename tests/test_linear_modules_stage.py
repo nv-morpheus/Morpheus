@@ -23,7 +23,9 @@ import srf
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.utils.version_utils import get_srf_version_as_list
 
-module_config = {"module_id": "TestSimpleModule", "module_name": "test_simple_module", "namespace": "test_morpheus_modules"}
+module_config = {
+    "module_id": "TestSimpleModule", "module_name": "test_simple_module", "namespace": "test_morpheus_modules"
+}
 
 
 @pytest.mark.use_python
