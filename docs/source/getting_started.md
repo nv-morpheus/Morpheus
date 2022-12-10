@@ -142,7 +142,7 @@ This will launch Triton using the default network ports (8000 for HTTP, 8001 for
 
 To run Morpheus, users will need to choose from the Morpheus Command Line Interface (CLI) or Python interface. Which interface to use depends on the user's needs, amount of customization, and operating environment. More information on each interface can be found below.
 
-For full example pipelines using both the Python API and command line interface, refer to the [Morpheus Examples](./developer_guide/examples.md).
+For full example pipelines using both the Python API and command line interface, refer to the [Morpheus Examples](./examples.md).
 
 ### Morpheus Python Interface
 
@@ -201,7 +201,7 @@ Options:
                                   False]
 ```
 
-Several examples on using the Morpheus CLI can be found at [`basics/examples.rst`](./basics/examples.rst).
+Several examples on using the Morpheus CLI can be found in the [Basic Usage](./examples/basic_usage/README.md) guide along with the other [Morpheus Examples](./examples.md).
 
 #### CLI Stage Configuration
 
@@ -343,5 +343,5 @@ Commands:
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
 
 ## Next Steps
-* [Morpheus Examples](./developer_guide/examples.md) - Example pipelines using both the Python API and command line interface
+* [Morpheus Examples](./examples.md) - Example pipelines using both the Python API and command line interface
 * [Morpheus Developer Guide](./developer_guide/guides.md) - Documentation on using the Morpheus Python & C++ APIs
