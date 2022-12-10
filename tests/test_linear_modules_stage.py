@@ -23,7 +23,7 @@ import srf
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.utils.version_utils import get_srf_version_as_list
 
-module_config = {"module_id": "TestModule", "module_name": "test_module", "namespace": "test_morpheus_modules"}
+module_config = {"module_id": "TestSimpleModule", "module_name": "test_simple_module", "namespace": "test_morpheus_modules"}
 
 
 @pytest.mark.use_python
@@ -31,7 +31,7 @@ def test_constructor(config):
 
     mod_stage = LinearModulesStage(config, module_config)
 
-    assert mod_stage.name == "test_module"
+    assert mod_stage.name == "test_simple_module"
 
     # Just ensure that we get a valid non-empty tuple
     accepted_types = mod_stage.accepted_types()
@@ -66,7 +66,7 @@ def register_test_module():
     def module_init_fn(builder: srf.Builder):
         pass
 
-    registry.register_module("TestModule", "test_morpheus_modules", get_srf_version_as_list(), module_init_fn)
+    registry.register_module("TestSimpleModule", "test_simple_module", get_srf_version_as_list(), module_init_fn)
 
 
 @pytest.mark.use_python
