@@ -120,7 +120,7 @@ from morpheus.utils.logger import parse_log_level
               help=("List of files to process. Can specify multiple arguments for multiple files. "
                     "Also accepts glob (*) wildcards and schema prefixes such as `s3://`. "
                     "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
-                    "See fsspec documentation for list of possible options."))
+                    "Refer to fsspec documentation for list of possible options."))
 @click.option('--tracking_uri',
               type=str,
               default="http://mlflow:5000",

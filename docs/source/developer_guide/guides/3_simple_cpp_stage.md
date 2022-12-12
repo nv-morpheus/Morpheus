@@ -82,7 +82,7 @@ To start with, we have our Morpheus and SRF-specific includes:
 #include <mrc/segment/object.hpp>       // for Segment Object
 ```
 
-We'll want to define our stage in its own namespace. In this case, we will name it `morpheus_example`, giving us a namespace and class definition that look like this:
+We'll want to define our stage in its own namespace. In this case, we will name it `morpheus_example`, giving us a namespace and class definition like:
 
 ```cpp
 namespace morpheus_example {
@@ -192,7 +192,7 @@ The constructor for our class is responsible for passing the output of `build_op
 PassThruStage::PassThruStage() : PythonNode(base_t::op_factory_from_sub_fn(build_operator())) {}
 ```
 
-We can see that the output of `build_operator()` is not passed directly to the `PythonNode` constructor and instead gets passed to `base_t::op_factory_from_sub_fn()`. This is because reactive operators can be defined two ways:
+Note that the output of `build_operator()` is not passed directly to the `PythonNode` constructor and instead gets passed to `base_t::op_factory_from_sub_fn()`. This is because reactive operators can be defined two ways:
 
 1. Using the short form `std::function<rxcpp::observable<T>(rxcpp::observable<R>)` which is good when you can use an existing `rxcpp` operator
 2. Using the long form `std::function<rxcpp::subscription(rxcpp::observable<T>, rxcpp::subscriber<R>)>` which allows for more customization and better control over the lifetime of objects.
@@ -253,7 +253,7 @@ std::shared_ptr<mrc::segment::Object<PassThruStage>> PassThruStageInterfaceProxy
 }
 ```
 
-The Python interface itself defines a Python module named `morpheus_example` and a Python class in that module named `PassThruStage`. Note that the only method we are exposing to Python is the constructor. Our Python code will see this class as `lib_.morpheus_example.PassThruStage`.
+The Python interface itself defines a Python module named `morpheus_example` and a Python class in that module named `PassThruStage`. Note that the only method we are exposing to Python is the constructor. The class will be exposed to Python code as `lib_.morpheus_example.PassThruStage`.
 
 ```cpp
 namespace py = pybind11;

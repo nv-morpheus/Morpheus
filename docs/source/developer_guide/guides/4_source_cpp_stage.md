@@ -93,7 +93,7 @@ std::string m_queue_name;
 AmqpClient::Channel::ptr_t m_channel;
 ```
 
-Wrapping it all together, our header file should look like this:
+Wrapping it all together, our header file should be similar to:
 ```cpp
 #pragma once
 
@@ -335,7 +335,7 @@ PYBIND11_MODULE(morpheus_rabbit, m)
 }
 ```
 
-Wrapping it all together, our source file should look like:
+Wrapping it all together, our source file should be:
 ```cpp
 #include "rabbitmq_source.hpp"
 
