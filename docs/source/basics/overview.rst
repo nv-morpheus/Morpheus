@@ -14,8 +14,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Overview
-========
+Morpheus CLI Overview
+=====================
 
 This section focuses on the Morpheus CLI and illustrates how the CLI can be used to configure and run a Morpheus
 Pipeline.

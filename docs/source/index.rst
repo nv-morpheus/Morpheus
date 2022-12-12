@@ -50,40 +50,59 @@ Features
 
 Getting Started
 ---------------
-
 The best way to get started with Morpheus will vary depending on the goal of the user.
+
+Using Morpheus
+^^^^^^^^^^^^^^
  * :doc:`getting_started` - Using pre-built Docker containers, building Docker containers from source, and fetching models and datasets
+ * :doc:`basics/overview.rst` - Brief overview of the command line interface
+ * :doc:`basics/building_a_pipeline.rst` - Introduction to building a pipeline using the command line interface
  * :doc:`Morpheus Examples <examples>` - Example pipelines using both the Python API and command line interface
  * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
- * :doc:`cloud_deployment_guide` - Kubernetes and cloud based deployments
+
+Modifying Morpheus
+^^^^^^^^^^^^^^^^^^
  * :doc:`developer_guide/contributing` - Covers building from source, making changes and contributing to Morpheus
+
+Deploying Morpheus
+^^^^^^^^^^^^^^^^^^
+ * :doc:`cloud_deployment_guide` - Kubernetes and cloud based deployments
+
 
 
 .. toctree::
+   :caption: Using Morpheus
    :maxdepth: 20
    :hidden:
 
    getting_started
-   cloud_deployment_guide
-
-.. toctree::
-   :caption: Basic Usage via CLI
-   :maxdepth: 20
-   :hidden:
-
    basics/overview
    basics/building_a_pipeline
    examples/index
+   developer_guide/guides/index
 
 .. toctree::
-   :caption: Developer Guide:
+   :caption: Modifying Morpheus
    :maxdepth: 20
    :hidden:
 
    developer_guide/architecture
-   developer_guide/guides/index
-   api
    developer_guide/contributing
+
+.. toctree::
+   :caption: Deploying Morpheus
+   :maxdepth: 20
+   :hidden:
+
+   cloud_deployment_guide
+
+.. toctree::
+   :caption: API:
+   :maxdepth: 20
+   :hidden:
+
+   py_api
+   _lib/index
 
 .. toctree::
    :maxdepth: 20
