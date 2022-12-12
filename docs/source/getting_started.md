@@ -33,6 +33,9 @@ More advanced users, or those who are interested in using the latest pre-release
 - [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `22.06` or higher
 
+#### Note about Docker
+> The Morpheus documentation and examples assume that the [Manage Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user) post install step has been performed allowing docker commands to be executed by a non-root user. This is not strictly necessary so long as the current user has `sudo` privileges to execute docker commands.
+
 ## Using pre-built Docker containers
 ### Pulling the Morpheus Image
 1. Goto [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
@@ -43,7 +46,7 @@ docker pull nvcr.io/nvidia/morpheus/morpheus:22.11-runtime
 ```
 
 #### Note about Morpheus versions:
-> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v22.11.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v22.11.01-runtime`, `v22.11.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference to that point release.
+> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v22.11.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v22.11.01-runtime`, `v22.11.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference that point release.
 >
 > Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
 
