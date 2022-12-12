@@ -1,0 +1,16 @@
+version: "3"
+services:
+  httpd:
+    image: httpd
+    network_mode: bridge
+  triton:
+    runtime: nvidia
+    image: nvcr.io/nvidia/tritonserver:22.08-py3
+    command: tritonserver --model-repository=/models --exit-on-error=false --model-control-mode=poll --repository-poll-secs=30
+    ports:
+      - 8000:8000
+      - 8001:8001
+      - 8002:8002
+    volumes:
+      - ${HOST_MORPHEUS_ROOT}/examples/abp_pcap_detection/abp-pcap-xgb:/models/abp-pcap-xgb
+    network_mode: bridge

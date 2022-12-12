@@ -4,13 +4,12 @@
         "dockerfile": "Dockerfile"
     },
 
-    "runArgs": [
-        "--runtime=nvidia",
-        "--gpus",
-        "all"
-    ],
+    "hostRequirements": {
+        "gpu": true
+    },
 
     "containerEnv": {
+        "HOST_MORPHEUS_ROOT": "${localWorkspaceFolder}",
         "MORPHEUS_ROOT": "/workspaces/morpheus"
     },
 
@@ -20,9 +19,22 @@
         "mkdir", "-p", "${localWorkspaceFolder}/.devcontainer/.conda"
     ],
 
+    "remoteUser": "coder",
+
     "mounts": [
+        {"type":"bind", "source": "/var/run/docker.sock", "target": "/var/run/docker.sock"},
         {"type":"bind", "source": "${localWorkspaceFolder}/.devcontainer/.conda", "target": "/home/coder/.conda"}
     ],
+
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:1": {
+            "uid": "1000",
+            "gid": "1000",
+            "username": "coder"
+        },
+        "ghcr.io/trxcllnt/devcontainer-features/cmake": {},
+        "ghcr.io/devcontainers/features/docker-from-docker": {}
+    },
 
     "customizations": {
         "vscode": {

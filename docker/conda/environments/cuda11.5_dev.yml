@@ -25,6 +25,7 @@ dependencies:
     - automake=1.16.5
     - benchmark=1.6.1
     - boost-cpp=1.74
+    - boa>=0.10
     - cachetools=5.0.0
     - ccache>=3.7
     - clangdev=14
