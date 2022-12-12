@@ -42,6 +42,11 @@ More advanced users, or those who are interested in using the latest pre-release
 docker pull nvcr.io/nvidia/morpheus/morpheus:22.11-runtime
 ```
 
+#### Note about Morpheus versions:
+> Morpheus uses Calendar Versioning ([CalVer](https://calver.org/)). For each Morpheus release there will be an image tagged in the form of `YY.MM-runtime` this tag will always refer to the latest point release for that version. In addition to this there will also be at least one point release version tagged in the form of `vYY.MM.00-runtime` this will be the initial point release for that version (ex. `v22.11.00-runtime`). In the event of a major bug, we may release additional point releases (ex. `v22.11.01-runtime`, `v22.11.02-runtime` etc...), and the `YY.MM-runtime` tag will be updated to reference to that point release.
+>
+> Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
+
 Skip ahead to the [Starting the Morpheus Container](#starting-the-morpheus-container) section.
 
 ## Building the Morpheus Container
