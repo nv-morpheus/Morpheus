@@ -28,7 +28,6 @@ function(find_and_configure_mrc version)
     CPM_ARGS
       #GIT_REPOSITORY  https://github.com/nv-morpheus/MRC.git
       GIT_REPOSITORY  /home/drobison/Development/devin-mrc-public
-      GIT_SUBMODULES  utilities
       #GIT_TAG         branch-${version}
       GIT_TAG         devin-issue-225
       GIT_SHALLOW     TRUE

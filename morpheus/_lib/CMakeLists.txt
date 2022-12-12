@@ -54,6 +54,69 @@ include(cmake/python_modules/common.cmake)
 #----------morpheus._lib.file_types---------
 include(cmake/python_modules/file_types.cmake)
 
+function(print_target_properties)
+  set(prefix F_ARGV)
+  set(options WRITE_TO_FILE PRINT_NOTFOUND)
+  set(singleValueArgs WRITE_TO_FILE_NAME)
+  set(multiValueArgs TARGETS PROPERTIES)
+
+  include(CMakeParseArguments)
+  cmake_parse_arguments(${prefix}
+      "${options}"
+      "${singleValueArgs}"
+      "${multiValueArgs}"
+      ${ARGN})
+
+  list(SORT F_ARGV_PROPERTIES)
+  list(REMOVE_DUPLICATES F_ARGV_PROPERTIES)
+  foreach(CURRENT_TARGET ${F_ARGV_TARGETS})
+    set(current_properties_list "")
+
+    message(STATUS "[Target Properties '${CURRENT_TARGET}']")
+    message(STATUS "=====================================================")
+    foreach(CURRENT_PROPERTY ${F_ARGV_PROPERTIES})
+      string(STRIP ${CURRENT_PROPERTY} CURRENT_PROPERTY) # Remove trailing/leading whitespace
+      string(REGEX MATCHALL "^[^#].*$" CURRENT_PROPERTY ${CURRENT_PROPERTY}) # Comments hack
+
+      if (NOT CURRENT_PROPERTY)
+        continue()
+      endif()
+
+      get_target_property(CURRENT_PROPERTY_VALUE ${CURRENT_TARGET} ${CURRENT_PROPERTY})
+      if((NOT F_ARGV_PRINT_NOTFOUND) AND ("${CURRENT_PROPERTY_VALUE}" STREQUAL "CURRENT_PROPERTY_VALUE-NOTFOUND"))
+      else()
+        if ("${CURRENT_PROPERTY_VALUE}" STREQUAL "")
+          set(CURRENT_PROPERTY_VALUE "<EMPTY_STR>")
+        else()
+          set(CURRENT_PROPERTY_VALUE "${CURRENT_PROPERTY_VALUE}")
+        endif()
+
+        string(JOIN ", " CURRENT_PROPERTY_VALUE ${CURRENT_PROPERTY_VALUE})
+        list(APPEND current_properties_list "${CURRENT_PROPERTY} -> \"${CURRENT_PROPERTY_VALUE}\"")
+      endif()
+    endforeach()
+
+    foreach(PROPERTY_PAIR ${current_properties_list})
+      if (F_ARGV_WRITE_TO_FILE)
+        FILE(APPEND "${CMAKE_BINARY_DIR}/morpheus_utils_debug_target_properties.txt" ${PROPERTY_PAIR})
+      endif()
+      message(STATUS "${PROPERTY_PAIR}")
+    endforeach()
+  endforeach()
+endfunction()
+
+file(STRINGS "${CMAKE_SOURCE_DIR}/test.cmake.props" PROPS_TO_GET)
+print_target_properties(
+    TARGETS
+      cudf::cudf
+      matx::matx
+      mrc::pymrc
+      cuda_utils_objs
+      cuda_utils
+    PROPERTIES
+      ${PROPS_TO_GET}
+    )
+
 if (MORPHEUS_BUILD_TESTS)
   add_subdirectory(tests)
 endif()

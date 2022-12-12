@@ -18,18 +18,21 @@ find_package(pybind11 REQUIRED)
 
 # Place the two cuda sources in their own target and disable IWYU for that target.
 add_library(cuda_utils_objs
-OBJECT
-      ${MORPHEUS_LIB_ROOT}/src/utilities/matx_util.cu
-      ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cu
+  OBJECT
+    ${MORPHEUS_LIB_ROOT}/src/utilities/matx_util.cu
+    ${MORPHEUS_LIB_ROOT}/src/utilities/type_util.cu
 )
 
-
 set_target_properties(
-  cuda_utils_objs
+    cuda_utils_objs
     PROPERTIES
-      C_INCLUDE_WHAT_YOU_USE ""
-      CXX_INCLUDE_WHAT_YOU_USE ""
-      EXPORT_COMPILE_COMMANDS OFF
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
+    C_INCLUDE_WHAT_YOU_USE ""
+    CXX_INCLUDE_WHAT_YOU_USE ""
+    EXPORT_COMPILE_COMMANDS OFF
 )
 
 target_include_directories(cuda_utils_objs
@@ -69,6 +72,15 @@ target_link_libraries(cuda_utils
       cudf::cudf
       Python3::NumPy
       pybind11::pybind11
+)
+
+set_target_properties(
+    cuda_utils
+    PROPERTIES
+      CXX_STANDARD 17
+      CXX_STANDARD_REQUIRED ON
+      CUDA_STANDARD 17
+      CUDA_STANDARD_REQUIRED ON
 )
 
 set_target_properties(cuda_utils
