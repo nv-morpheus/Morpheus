@@ -50,13 +50,12 @@ Features
 
 Getting Started
 ---------------
-The best way to get started with Morpheus will vary depending on the goal of the user.
 
 Using Morpheus
 ^^^^^^^^^^^^^^
  * :doc:`getting_started` - Using pre-built Docker containers, building Docker containers from source, and fetching models and datasets
- * :doc:`basics/overview.rst` - Brief overview of the command line interface
- * :doc:`basics/building_a_pipeline.rst` - Introduction to building a pipeline using the command line interface
+ * :doc:`basics/overview` - Brief overview of the command line interface
+ * :doc:`basics/building_a_pipeline` - Introduction to building a pipeline using the command line interface
  * :doc:`Morpheus Examples <examples>` - Example pipelines using both the Python API and command line interface
  * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
 
@@ -97,7 +96,7 @@ Deploying Morpheus
    cloud_deployment_guide
 
 .. toctree::
-   :caption: API:
+   :caption: API
    :maxdepth: 20
    :hidden:
 
@@ -106,7 +105,7 @@ Deploying Morpheus
 
 .. toctree::
    :maxdepth: 20
-   :caption: Extra Information:
+   :caption: Extra Information
    :hidden:
 
    extra_info/performance
