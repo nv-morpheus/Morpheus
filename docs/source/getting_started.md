@@ -154,7 +154,7 @@ For full example pipelines using both the Python API and command line interface,
 
 ### Morpheus Python Interface
 
-The Morpheus Python interface allows users to configure their pipelines using a Python script file. This is ideal for users who are working in a Jupyter notebook, users who need complex initialization logic or users who have customized stages. Documentation on using both the Morpheus Python & C++ APIs can be found in the [Morpheus Developer Guide](./developer_guide/guides.md).
+The Morpheus Python interface allows users to configure their pipelines using a Python script file. This is ideal for users who are working in a Jupyter notebook, and users who need complex initialization logic. Documentation on using both the Morpheus Python & C++ APIs can be found in the [Morpheus Developer Guide](./developer_guide/guides.md).
 
 ### Morpheus Command Line Interface (CLI)
 
