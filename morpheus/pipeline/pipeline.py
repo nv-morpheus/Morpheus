@@ -21,8 +21,8 @@ import typing
 from collections import defaultdict
 from functools import partial
 
-import networkx
 import mrc
+import networkx
 from tqdm import tqdm
 
 import cudf

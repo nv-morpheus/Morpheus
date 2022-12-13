@@ -18,8 +18,8 @@ from enum import Enum
 from io import StringIO
 
 import confluent_kafka as ck
-import pandas as pd
 import mrc
+import pandas as pd
 
 import cudf
 

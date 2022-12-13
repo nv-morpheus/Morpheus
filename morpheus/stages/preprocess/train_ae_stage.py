@@ -19,9 +19,9 @@ import pathlib
 import typing
 
 import dill
+import mrc
 import numpy as np
 import pandas as pd
-import mrc
 import torch
 from dfencoder import AutoEncoder
 from mrc.core import operators as ops

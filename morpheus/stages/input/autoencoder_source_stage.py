@@ -18,8 +18,8 @@ import typing
 from abc import abstractmethod
 from functools import partial
 
-import pandas as pd
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus._lib.file_types import FileTypes

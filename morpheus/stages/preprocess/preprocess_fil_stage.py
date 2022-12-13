@@ -17,9 +17,9 @@ import typing
 from functools import partial
 
 import cupy as cp
+import mrc
 import numpy as np
 import pandas as pd
-import mrc
 
 import cudf
 

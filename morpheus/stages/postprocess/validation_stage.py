@@ -18,8 +18,8 @@ import logging
 import os
 import typing
 
-import pandas as pd
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
 
 import cudf
