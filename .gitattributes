@@ -3,3 +3,4 @@ examples/data/** filter=lfs diff=lfs merge=lfs -text
 morpheus/_version.py export-subst
 tests/mock_triton_server/payloads/** filter=lfs diff=lfs merge=lfs -text
 tests/tests_data/** filter=lfs diff=lfs merge=lfs -text
+examples/basic_usage/img/** filter=lfs diff=lfs merge=lfs -text

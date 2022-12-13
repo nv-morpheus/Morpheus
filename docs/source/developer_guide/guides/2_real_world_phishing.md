@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# 2. A Real-World Application: Phishing Detection
+# Real-World Application: Phishing Detection
 
 ## Data Preprocessing
 
