@@ -144,7 +144,7 @@ It's important to note here that Triton is a service that is external to the Mor
 
 Triton will need to be running while we execute our pipeline. For simplicity, we will launch it locally inside of a Docker container.
 
-Note: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [Nvidia container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
+Note: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
 
 From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
 
