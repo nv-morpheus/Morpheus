@@ -21,7 +21,7 @@ import pytest
 import srf
 
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
-from morpheus.utils.version_utils import get_srf_version_as_list
+from morpheus.utils.module_utils import srf_version
 
 module_config = {
     "module_id": "TestSimpleModule", "module_name": "test_simple_module", "namespace": "test_morpheus_modules"
@@ -68,7 +68,7 @@ def register_test_module():
     def module_init_fn(builder: srf.Builder):
         pass
 
-    registry.register_module("TestSimpleModule", "test_morpheus_modules", get_srf_version_as_list(), module_init_fn)
+    registry.register_module("TestSimpleModule", "test_morpheus_modules", srf_version, module_init_fn)
 
 
 @pytest.mark.use_python

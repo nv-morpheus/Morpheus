@@ -20,7 +20,7 @@ import srf
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.utils.decorators import verify_module_registration
+from morpheus.utils.module_utils import load_module
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -54,7 +54,7 @@ class LinearModulesStage(SinglePortStage):
 
     @property
     def name(self) -> str:
-        return self._module_config["module_name"]
+        return self._module_config.get("module_name", "linear_module")
 
     def supports_cpp_node(self):
         return False
@@ -79,18 +79,8 @@ class LinearModulesStage(SinglePortStage):
 
     def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
 
-        @verify_module_registration
-        def load_module(module_id: str, namespace: str, module_name: str, builder: srf.Builder):
-
-            module = builder.load_module(module_id, namespace, module_name, self._module_config)
-            logger.info("Module '{}' with namespace '{}' is successfully loaded.".format(module_id, namespace))
-
-            return module
-
-        module = load_module(self._module_config["module_id"],
-                             self._module_config["namespace"],
-                             module_name=self._module_config["module_name"],
-                             builder=builder)
+        # Laod module from registry.
+        module = load_module(self._module_config, builder=builder)
 
         mod_in_stream = module.input_port("input")
         mod_out_stream = module.output_port("output")
