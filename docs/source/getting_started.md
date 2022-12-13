@@ -1,6 +1,6 @@
 # Getting Started with Morpheus
 There are three ways to get started with Morpheus:
-- Using pre-built Docker containers
+- [Using pre-built Docker containers](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_)
 - Building the Morpheus Docker container
 - Building Morpheus from source
 

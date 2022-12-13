@@ -48,7 +48,7 @@ limitations under the License.
   - [Installing Cloud Native Core Stack on NVIDIA Certified Systems](#installing-cloud-native-core-stack-on-nvidia-certified-systems)
 - [Appendix B](#appendix-b)
   - [Kafka Topic Commands](#kafka-topic-commands)
-  - [Using Morpheus SDK Client to Run Pipelines](#using-morpheus-sdk-client-to-run-pipelines)
+  - [Using Morpheus to Run Pipelines](#using-morpheus-to-run-pipelines)
 - [Appendix C](#appendix-c)
   - [Additional Documentation](#additional-documentation)
   - [Troubleshooting](#troubleshooting)
@@ -440,7 +440,7 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the Using Morpheus SDK Client to Run Pipelines section of the Appendix for more information regarding the commands.
+Refer to the [Using Morpheus to Run Pipelines](#using-morpheus-to-run-pipelines) section of the Appendix for more information regarding the commands.
 
 **Note**: Before running the example pipelines, ensure that the criteria below are met:
 -   Ensure that models specific to the pipeline are deployed.
@@ -821,9 +821,9 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --topic <YOUR_KAFKA_TOPIC>
 ```
 
-### Using Morpheus SDK Client to Run Pipelines
+### Using Morpheus to Run Pipelines
 
-The Morpheus SDK client allows you to configure several supported pipelines and provides flexibility to execute the pipeline in multithread mode.
+Morpheus allows you to configure several supported pipelines and provides flexibility to execute the pipeline in multithread mode.
 
 ```bash
 (morpheus) root@sdk-cli:/workspace# morpheus run --help
@@ -859,7 +859,7 @@ Four different pipelines are currently supported: a pipeline running an NLP mode
 For details of running `pipeline-other`, please refer to the GNN Fraud Detection use case in the `examples` source directory.
 
 
-The Morpheus SDK Client provides the commands below to run the NLP pipeline:
+The Morpheus command line tool provides the commands below to run the NLP pipeline:
 
 ```bash
 (morpheus) root@sdk-cli:/workspace# morpheus run pipeline-nlp --help
@@ -917,7 +917,7 @@ Commands:
   validate      Validate pipeline output for testing.
 ```
 
-Morpheus SDK Client provides the commands below to run the FIL pipeline:
+The Morpheus command line tool provides the commands below to run the FIL pipeline:
 
 ```bash
 (morpheus) root@sdk-cli:/workspace# morpheus run pipeline-fil --help
@@ -973,7 +973,7 @@ Commands:
   validate        Validate pipeline output for testing.
 ```
 
-Morpheus SDK Client provides the commands below to run the AutoEncoder pipeline:
+The Morpheus command line tool provides the commands below to run the AutoEncoder pipeline:
 
 ```bash
 (morpheus) root@sdk-cli:/workspace# morpheus run pipeline-ae --help
