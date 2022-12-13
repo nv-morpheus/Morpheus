@@ -101,24 +101,8 @@ Deploying Morpheus
    :maxdepth: 20
    :hidden:
 
-<<<<<<< HEAD
    py_api
    _lib/index
-=======
-   basics/overview
-   basics/building_a_pipeline
-   examples/index
-
-.. toctree::
-   :caption: Developer Guide:
-   :maxdepth: 20
-   :hidden:
-
-   developer_guide/architecture
-   developer_guide/guides/index
-   api
-   developer_guide/contributing
->>>>>>> branch-23.01
 
 .. toctree::
    :maxdepth: 20
