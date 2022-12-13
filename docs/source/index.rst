@@ -105,7 +105,7 @@ Refer to :doc:`basics/overview` for more information on using the CLI.
    :maxdepth: 20
    :hidden:
 
-   morpheus_quickstart_guide
+   cloud_deployment_guide
 
 .. toctree::
    :caption: Basic Usage via CLI

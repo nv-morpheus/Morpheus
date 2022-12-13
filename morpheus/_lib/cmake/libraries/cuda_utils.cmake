@@ -26,13 +26,11 @@ add_library(cuda_utils_objs
 set_target_properties(
     cuda_utils_objs
     PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
-    CUDA_STANDARD 17
-    CUDA_STANDARD_REQUIRED ON
-    C_INCLUDE_WHAT_YOU_USE ""
-    CXX_INCLUDE_WHAT_YOU_USE ""
-    EXPORT_COMPILE_COMMANDS OFF
+      CUDA_STANDARD 17
+      CUDA_STANDARD_REQUIRED ON
+      C_INCLUDE_WHAT_YOU_USE ""
+      CXX_INCLUDE_WHAT_YOU_USE ""
+      EXPORT_COMPILE_COMMANDS OFF
 )
 
 target_include_directories(cuda_utils_objs
@@ -77,8 +75,6 @@ target_link_libraries(cuda_utils
 set_target_properties(
     cuda_utils
     PROPERTIES
-      CXX_STANDARD 17
-      CXX_STANDARD_REQUIRED ON
       CUDA_STANDARD 17
       CUDA_STANDARD_REQUIRED ON
 )
