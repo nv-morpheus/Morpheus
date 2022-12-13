@@ -19,11 +19,11 @@ import os
 import sys
 import typing
 
+import mrc
+import mrc.core.operators as ops
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import mrc
-import mrc.core.operators as ops
 import websockets.legacy.server
 from websockets.server import serve
 

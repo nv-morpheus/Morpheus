@@ -15,9 +15,9 @@
 import os
 import typing
 
-import pandas as pd
 import mrc
 import mrc.core.operators as ops
+import pandas as pd
 
 import cudf
 

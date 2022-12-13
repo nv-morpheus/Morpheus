@@ -24,8 +24,8 @@ from functools import lru_cache
 from functools import partial
 
 import cupy as cp
-import numpy as np
 import mrc
+import numpy as np
 import tritonclient.grpc as tritonclient
 from tritonclient.utils import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype

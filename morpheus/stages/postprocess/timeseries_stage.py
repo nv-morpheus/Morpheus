@@ -21,8 +21,8 @@ from collections import deque
 from math import ceil
 
 import cupy as cp
-import pandas as pd
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
