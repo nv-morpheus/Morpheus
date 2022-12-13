@@ -17,9 +17,9 @@ import pathlib
 import typing
 from collections import defaultdict
 
+import mrc
 import numpy as np
 import pandas as pd
-import mrc
 
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage

@@ -19,8 +19,8 @@ import typing
 import urllib.parse
 
 import mlflow
-import requests
 import mrc
+import requests
 from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature

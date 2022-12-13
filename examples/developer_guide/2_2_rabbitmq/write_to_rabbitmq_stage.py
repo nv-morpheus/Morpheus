@@ -17,8 +17,8 @@ import logging
 import typing
 from io import StringIO
 
-import pika
 import mrc
+import pika
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config

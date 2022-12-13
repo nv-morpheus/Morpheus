@@ -15,8 +15,8 @@
 import logging
 import typing
 
-import numpy as np
 import mrc
+import numpy as np
 from mrc.core import operators as ops
 
 import cudf

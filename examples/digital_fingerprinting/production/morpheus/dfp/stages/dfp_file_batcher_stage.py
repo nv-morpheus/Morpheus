@@ -18,8 +18,8 @@ from collections import namedtuple
 from datetime import datetime
 
 import fsspec
-import pandas as pd
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.config import Config

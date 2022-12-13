@@ -22,8 +22,8 @@ import typing
 from functools import partial
 
 import fsspec
-import pandas as pd
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
 
 import dask

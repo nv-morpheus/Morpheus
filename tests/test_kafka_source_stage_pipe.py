@@ -18,9 +18,9 @@ import json
 import os
 import typing
 
+import mrc
 import numpy as np
 import pytest
-import mrc
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
