@@ -49,10 +49,11 @@ Getting Started
 ---------------
 
 The best way to get started with Morpheus will vary depending on the goal of the user.
- * :doc:`getting_started` - Using pre-built Docker containers, building from source, and fetching models and datasets
+ * :doc:`getting_started` - Using pre-built Docker containers, building Docker containers from source, and fetching models and datasets
+ * :doc:`Morpheus Examples <examples>` - Example pipelines using both the Python API and command line interface
  * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
- * :doc:`morpheus_quickstart_guide` - Kubernetes and cloud based deployments
- * :doc:`developer_guide/contributing` - Covers making changes and contributing to Morpheus
+ * :doc:`cloud_deployment_guide` - Kubernetes and cloud based deployments
+ * :doc:`developer_guide/contributing` - Covers building from source, making changes and contributing to Morpheus
 
 
 .. toctree::
@@ -69,7 +70,7 @@ The best way to get started with Morpheus will vary depending on the goal of the
 
    basics/overview
    basics/building_a_pipeline
-   basics/examples
+   examples/index
 
 .. toctree::
    :caption: Developer Guide:
@@ -77,8 +78,7 @@ The best way to get started with Morpheus will vary depending on the goal of the
    :hidden:
 
    developer_guide/architecture
-   developer_guide/guides
-   developer_guide/examples/index
+   developer_guide/guides/index
    api
    developer_guide/contributing
 

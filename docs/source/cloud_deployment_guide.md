@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Morpheus Quickstart Guide
+# Morpheus Cloud Deployment Guide
 
 ## Table of Contents
 - [Introduction](#introduction)
