@@ -26,10 +26,8 @@ function(find_and_configure_mrc version)
     INSTALL_EXPORT_SET
       ${PROJECT_NAME}-exports
     CPM_ARGS
-      #GIT_REPOSITORY  https://github.com/nv-morpheus/MRC.git
-      GIT_REPOSITORY  /home/drobison/Development/devin-mrc-public
-      #GIT_TAG         branch-${version}
-      GIT_TAG         devin-issue-225
+      GIT_REPOSITORY  https://github.com/nv-morpheus/MRC.git
+      GIT_TAG         branch-${version}
       GIT_SHALLOW     TRUE
       OPTIONS         "MRC_BUILD_EXAMPLES OFF"
                       "MRC_BUILD_TESTS OFF"
