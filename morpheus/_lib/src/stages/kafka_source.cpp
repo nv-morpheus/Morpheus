@@ -578,7 +578,7 @@ std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
     std::string topic,
     int32_t batch_timeout_ms,
     std::map<std::string, std::string> config,
-    bool disable_commits,
+    bool disable_commit,
     bool disable_pre_filtering,
     size_t stop_after,
     bool async_commits)
@@ -588,7 +588,7 @@ std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfac
                                                             topic,
                                                             batch_timeout_ms,
                                                             config,
-                                                            disable_commits,
+                                                            disable_commit,
                                                             disable_pre_filtering,
                                                             stop_after,
                                                             async_commits);
