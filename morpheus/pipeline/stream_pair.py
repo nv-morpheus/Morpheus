@@ -18,3 +18,7 @@ import typing
 import srf
 
 StreamPair = typing.Tuple[srf.SegmentObject, typing.Type]
+"""
+Tuple used during Pipeline construction representing a pipeline node (first element), and the node's output type
+(second element)
+"""
