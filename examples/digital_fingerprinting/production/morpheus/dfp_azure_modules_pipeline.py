@@ -359,7 +359,7 @@ def run_pipeline(train_users,
                 "databricks_permissions": None
             }
         }
-
+        # Here we add a wrapped module that implements the full DFPTraining pipeline.
         pipeline.add_stage(LinearModulesStage(config, training_module_config))
 
         pipeline.add_stage(MonitorStage(config, description="Training Module rate", smoothing=0.001))
