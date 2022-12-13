@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 conda_env_find(){
     conda env list | grep "${@}" >/dev/null 2>/dev/null

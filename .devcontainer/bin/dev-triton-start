@@ -6,8 +6,7 @@ if [ $# -gt 0 ] ; then
     args="$args --model-control-mode=explicit"
 fi
 
-for model in $@
-do
+for model in $@ ; do
     args="$args --load-model=$model"
 done
 
