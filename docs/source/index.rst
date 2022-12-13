@@ -36,7 +36,7 @@ Features
       the analysis of logs and telemetry to help detect and mitigate security threats.
  * AI Cybersecurity Capabilities
     * Deploy your own models using common deep learning frameworks. Or get a jump-start in building applications to
-      identify leaked sensitive information, detect malware, and identify errors via logs by using one of NVIDIA’s
+      identify leaked sensitive information, detect malware, and identify errors via logs by using one of NVIDIA's
       pre-trained and tested models.
  * Real-Time Telemetry
     * Morpheus can receive rich, real-time network telemetry from every NVIDIA® BlueField® DPU-accelerated server in the
@@ -51,60 +51,18 @@ Features
 Getting Started
 ---------------
 
-The best way to get started with Morpheus will vary depending on the goal of the user. These users fall into two large groups: those who want to use the pre-built pipelines exactly as they are with few modifications (refer to :ref:`using-ngc-container`) and those who want to use Morpheus as a framework for implementing their own end-to-end workflows (refer to `Build in a Conda Environment <https://github.com/nv-morpheus/Morpheus/blob/branch-22.08/CONTRIBUTING.md#build-in-a-conda-environment>`_).
-
-.. _using-ngc-container:
-
-Using NGC Container
-^^^^^^^^^^^^^^^^^^^
-
-Accessing Morpheus by pulling the pre-built `NGC container <https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_>`_ is best suited for users who do not need any customization and
-are only interested in running Morpheus via the CLI. The pre-built container does not require checking out the source
-code and is best suited for users who are new to Morpheus and don't require any customization.
-
-Prerequisites
-"""""""""""""
- * `Docker <https://docs.docker.com/get-docker/>`__
- * `The NVIDIA container toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`__
-
-To get started, first pull the NGC container:
-
-.. code-block:: console
-
-   $ docker pull nvcr.io/nvidia/morpheus/morpheus:22.09-runtime
-
-Launch an interactive container to start using Morpheus:
-
-.. code-block:: console
-
-   $ docker run --rm -ti --net=host --gpus=all nvcr.io/nvidia/morpheus/morpheus:22.09-runtime bash
-   (morpheus) root@958a683a8a26:/workspace# morpheus --help
-   Usage: morpheus [OPTIONS] COMMAND [ARGS]...Options:
-     --debug / --no-debug            [default: False]
-     --log_level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG]
-                                     Specify the logging level to use.  [default:
-                                     WARNING]
-
-     --log_config_file FILE          Config file to use to configure logging. Use
-                                     only for advanced situations. Can accept
-                                     both JSON and ini style configurations
-
-     --version                       Show the version and exit.  [default: False]
-     --help                          Show this message and exit.  [default:
-                                     False]
-
-
-   Commands:
-     run    Run one of the available pipelines
-     tools  Run a utility tool
-
-Refer to :doc:`basics/overview` for more information on using the CLI.
+The best way to get started with Morpheus will vary depending on the goal of the user.
+ * :doc:`getting_started` - Using pre-built Docker containers, building from source, and fetching models and datasets
+ * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
+ * :doc:`morpheus_quickstart_guide` - Kubernetes and cloud based deployments
+ * :doc:`developer_guide/contributing` - Covers making changes and contributing to Morpheus
 
 
 .. toctree::
    :maxdepth: 20
    :hidden:
 
+   getting_started
    cloud_deployment_guide
 
 .. toctree::
@@ -125,6 +83,7 @@ Refer to :doc:`basics/overview` for more information on using the CLI.
    developer_guide/guides
    developer_guide/examples/index
    api
+   developer_guide/contributing
 
 .. toctree::
    :maxdepth: 20
@@ -134,6 +93,8 @@ Refer to :doc:`basics/overview` for more information on using the CLI.
    extra_info/performance
    extra_info/troubleshooting
    extra_info/known_issues
+   Code of Conduct <https://docs.rapids.ai/resources/conduct/>
+   License <https://github.com/nv-morpheus/Morpheus/blob/main/LICENSE>
 
 Indices and tables
 ==================

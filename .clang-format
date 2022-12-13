@@ -1,6 +1,6 @@
 ---
 # Refer to the following link for the explanation of each params:
-#   http://releases.llvm.org/8.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+#   https://releases.llvm.org/14.0.0/tools/clang/docs/ClangFormatStyleOptions.html
 Language: Cpp
 # BasedOnStyle: Google
 AccessModifierOffset: -2

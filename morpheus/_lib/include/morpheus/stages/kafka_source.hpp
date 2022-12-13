@@ -177,7 +177,7 @@ struct KafkaSourceStageInterfaceProxy
                                                                         std::string topic,
                                                                         int32_t batch_timeout_ms,
                                                                         std::map<std::string, std::string> config,
-                                                                        bool disable_commits,
+                                                                        bool disable_commit,
                                                                         bool disable_pre_filtering,
                                                                         size_t stop_after  = 0,
                                                                         bool async_commits = true);
