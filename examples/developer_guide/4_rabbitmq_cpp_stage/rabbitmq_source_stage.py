@@ -17,9 +17,9 @@ import logging
 import time
 from io import StringIO
 
+import mrc
 import pandas as pd
 import pika
-import mrc
 
 import cudf
 

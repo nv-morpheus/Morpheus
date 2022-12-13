@@ -20,8 +20,8 @@ import time
 import typing
 
 import cupy as cp
-import pandas as pd
 import mrc
+import pandas as pd
 
 import morpheus
 from morpheus._lib.file_types import FileTypes

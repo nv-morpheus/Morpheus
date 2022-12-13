@@ -17,9 +17,9 @@ import dataclasses
 import pathlib
 import typing
 
+import mrc
 import networkx as nx
 import pandas as pd
-import mrc
 
 import cudf
 

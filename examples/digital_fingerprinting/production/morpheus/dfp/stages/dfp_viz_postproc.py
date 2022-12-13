@@ -16,8 +16,8 @@ import logging
 import os
 import typing
 
-import pandas as pd
 import mrc
+import pandas as pd
 
 from morpheus.config import Config
 from morpheus.io import serializers

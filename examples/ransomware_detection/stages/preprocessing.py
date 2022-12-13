@@ -15,8 +15,8 @@
 import typing
 
 import cupy as cp
-import pandas as pd
 import mrc
+import pandas as pd
 from common.data_models import SnapshotData
 
 from morpheus.cli.register_stage import register_stage
