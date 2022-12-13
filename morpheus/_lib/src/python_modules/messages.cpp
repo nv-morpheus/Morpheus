@@ -62,7 +62,7 @@ PYBIND11_MODULE(messages, m)
         .. currentmodule:: morpheus.messages
         .. autosummary::
            :toctree: _generate
-            TODO(Documentation)
+
         )pbdoc";
 
     // Load the cudf helpers

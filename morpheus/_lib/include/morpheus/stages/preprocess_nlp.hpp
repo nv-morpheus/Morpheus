@@ -72,6 +72,7 @@ class PreprocessNLPStage
      * containing the overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is
      * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
      * be repeated on the second sequence and so on until the entire sentence is encoded.
+     * @param column : Name of the string column to operate on, defaults to "data".
      */
     PreprocessNLPStage(std::string vocab_hash_file,
                        uint32_t sequence_length,
@@ -120,6 +121,7 @@ struct PreprocessNLPStageInterfaceProxy
      * containing the overflowing token-ids can contain duplicated token-ids from the main sequence. If max_length is
      * equal to stride there are no duplicated-id tokens. If stride is 80% of max_length, 20% of the first sequence will
      * be repeated on the second sequence and so on until the entire sentence is encoded.
+     * @param column : Name of the string column to operate on, defaults to "data".
      * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
      */
     static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> init(mrc::segment::Builder &builder,
