@@ -20,6 +20,17 @@
 #include <glog/logging.h>  // IWYU pragma: keep
 #include <gtest/gtest.h>   // IWYU pragma: keep
 
+#include <filesystem>
+
 #define TEST_CLASS(name)                      \
     class Test##name : public ::testing::Test \
     {}
+
+namespace morpheus::test {
+
+/**
+* @brief Gets the `MORPHEUS_ROOT` env variable or throws a runtime_error.
+* @return std::filesystem::path
+*/
+std::filesystem::path get_morpheus_root();
+}

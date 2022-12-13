@@ -63,7 +63,7 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
     cudf_kwargs: dict, default=None
-        keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
+        keyword args passed to underlying cuDF I/O function. Refer to the cuDF documentation for `cudf.read_csv()` and
         `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
         and with `file_type` == 'csv', this defaults to ``{}``.
     """
@@ -210,9 +210,6 @@ def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_
     pipeline.add_stage(AddClassificationsStage(config, threshold=0.8))
 
     pipeline.add_stage(GenerateVizFramesStage(config, server_url="0.0.0.0", server_port=8765))
-
-    # Build pipeline
-    pipeline.build()
 
     # Run the pipeline
     pipeline.run()

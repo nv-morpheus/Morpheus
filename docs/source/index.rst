@@ -20,8 +20,8 @@
    :language: python
    :class: highlight
 
-Welcome to Morpheus documentation!
-==================================
+Welcome to Morpheus Documentation
+=================================
 
 NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI
 pipeline and pre-trained AI capabilities that, for the first time, allow them to instantaneously inspect all IP traffic
@@ -51,7 +51,7 @@ Features
 Getting Started
 ---------------
 
-The best way to get started with Morpheus will vary depending on the goal of the user. These users fall into two large groups: those who want to use the pre-built pipelines exactly as they are with few modifications (see :ref:`using-ngc-container`) and those who want to use Morpheus as a framework for implementing their own end-to-end workflows (see `Build in a Conda Environment <https://github.com/nv-morpheus/Morpheus/blob/branch-22.08/CONTRIBUTING.md#build-in-a-conda-environment>`_).
+The best way to get started with Morpheus will vary depending on the goal of the user. These users fall into two large groups: those who want to use the pre-built pipelines exactly as they are with few modifications (refer to :ref:`using-ngc-container`) and those who want to use Morpheus as a framework for implementing their own end-to-end workflows (refer to `Build in a Conda Environment <https://github.com/nv-morpheus/Morpheus/blob/branch-22.08/CONTRIBUTING.md#build-in-a-conda-environment>`_).
 
 .. _using-ngc-container:
 
@@ -98,14 +98,14 @@ Launch an interactive container to start using Morpheus:
      run    Run one of the available pipelines
      tools  Run a utility tool
 
-See :doc:`basics/overview` for more information on using the CLI.
+Refer to :doc:`basics/overview` for more information on using the CLI.
 
 
 .. toctree::
    :maxdepth: 20
    :hidden:
 
-   morpheus_quickstart_guide
+   cloud_deployment_guide
 
 .. toctree::
    :caption: Basic Usage via CLI
@@ -123,6 +123,7 @@ See :doc:`basics/overview` for more information on using the CLI.
 
    developer_guide/architecture
    developer_guide/guides
+   developer_guide/examples/index
    api
 
 .. toctree::

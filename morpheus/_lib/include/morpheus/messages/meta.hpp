@@ -32,21 +32,32 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 /****** Component public implementations ******************/
 /****** MessageMeta****************************************/
+
+/**
+ * @addtogroup messages
+ * @{
+ * @file
+ */
+
 /**
  * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
- * Python and C++ representations of the table.
+ * Python and C++ representations of the table
  *
  */
 class MessageMeta
 {
   public:
     /**
-     * TODO(Documentation)
+     * @brief Get the py table object
+     *
+     * @return pybind11::object
      */
     size_t count() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get the info object
+     *
+     * @return TableInfo
      */
     virtual TableInfo get_info() const;
 
@@ -56,12 +67,19 @@ class MessageMeta
     virtual MutableTableInfo get_mutable_info() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Create MessageMeta cpp object from a python object
+     *
+     * @param data_table
+     * @return std::shared_ptr<MessageMeta>
      */
     static std::shared_ptr<MessageMeta> create_from_python(pybind11::object&& data_table);
 
     /**
-     * TODO(Documentation)
+     * @brief Create MessageMeta cpp object from a cpp object, used internally by `create_from_cpp`
+     *
+     * @param data_table
+     * @param index_col_count
+     * @return std::shared_ptr<MessageMeta>
      */
     static std::shared_ptr<MessageMeta> create_from_cpp(cudf::io::table_with_metadata&& data_table,
                                                         int index_col_count = 0);
@@ -70,7 +88,11 @@ class MessageMeta
     MessageMeta(std::shared_ptr<IDataTable> data);
 
     /**
-     * TODO(Documentation)
+     * @brief Create MessageMeta python object from a cpp object
+     *
+     * @param table
+     * @param index_col_count
+     * @return pybind11::object
      */
     static pybind11::object cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count = 0);
 
@@ -107,17 +129,26 @@ class SlicedMessageMeta : public MessageMeta
 struct MessageMetaInterfaceProxy
 {
     /**
-     * TODO(Documentation)
+     * @brief Initialize MessageMeta cpp object with the given filename
+     *
+     * @param filename : Filename for loading the data on to MessageMeta
+     * @return std::shared_ptr<MessageMeta>
      */
     static std::shared_ptr<MessageMeta> init_cpp(const std::string& filename);
 
     /**
-     * TODO(Documentation)
+     * @brief Initialize MessageMeta cpp object with a given dataframe and returns shared pointer as the result
+     *
+     * @param data_frame : Dataframe that contains the data
+     * @return std::shared_ptr<MessageMeta>
      */
     static std::shared_ptr<MessageMeta> init_python(pybind11::object&& data_frame);
 
     /**
-     * TODO(Documentation)
+     * @brief Get messages count
+     *
+     * @param self
+     * @return cudf::size_type
      */
     static cudf::size_type count(MessageMeta& self);
 
@@ -138,4 +169,5 @@ struct MessageMetaInterfaceProxy
     static void set_data_frame(MessageMeta& self, const pybind11::object& new_df);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

@@ -24,16 +24,53 @@
 
 namespace morpheus {
 
+/**
+ * @addtogroup IO
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Serialize a dataframe to an output stream in JSON format
+ *
+ * @param tbl : A wrapper around data in the dataframe
+ * @param include_header : Determines whether or not to include the header
+ * @param include_index_col : Determines whether or not to include the dataframe index
+ * @return std::string
+ */
 std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_index_col = true);
 
+/**
+ * @brief Serialize a dataframe to an output stream in CSV format
+ *
+ * @param tbl : A wrapper around data in the dataframe
+ * @param out_stream : Output stream to write the results to a destination
+ * @param include_header : Determines whether or not to include the header
+ * @param include_index_col : Determines whether or not to include the dataframe index
+ */
 void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col = true);
 
-// Note the include_index_col is currently being ignored in both versions of `df_to_json` due to a known issue in
-// Pandas: https://github.com/pandas-dev/pandas/issues/37600
-// Requires MutableTableInfo since there is no C++ implementation of the JSON writer
+/**
+ * @brief Serialize a dataframe into a JSON formatted string
+ * @param tbl : A wrapper around data in the dataframe
+ * @param include_index_col : Determines whether or not to include the dataframe index
+ * @return std::string
+ *
+ * Note the include_index_col is currently being ignored in both versions of `df_to_json` due to a known issue in
+ * Pandas: https://github.com/pandas-dev/pandas/issues/37600
+ * Requires MutableTableInfo since there is no C++ implementation of the JSON writer
+ */
 std::string df_to_json(MutableTableInfo& tbl, bool include_index_col = true);
 
-// Requires MutableTableInfo since there is no C++ implementation of the JSON writer
-void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col = true);
+/**
+ * @brief Serialize a dataframe into a JSON formatted string
+ * @param tbl : A wrapper around data in the dataframe
+ * @param out_stream : Output stream to write the results to a destination
+ * @param include_index_col : Determines whether or not to include the dataframe index
+ *
+ * Requires MutableTableInfo since there is no C++ implementation of the JSON writer
+ */
+void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col = true);
 
+/** @} */  // end of group
 }  // namespace morpheus

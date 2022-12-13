@@ -60,44 +60,62 @@ struct TableInfoData
 struct __attribute__((visibility("default"))) TableInfoBase
 {
     /**
-     * TODO(Documentation)
+     * @brief Get reference of a cudf table view
+     *
+     * @return cudf::table_view
      */
     const cudf::table_view &get_view() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get index names of a data table
+     *
+     * @return std::vector<std::string>
      */
     std::vector<std::string> get_index_names() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get column names of a data table
+     *
+     * @return std::vector<std::string>
      */
     std::vector<std::string> get_column_names() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get size of a index names in a data table
+     *
+     * @return cudf::size_type
      */
     cudf::size_type num_indices() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get columns count in a data table
+     *
+     * @return cudf::size_type
      */
     cudf::size_type num_columns() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Get rows count in a data table
+     *
+     * @return cudf::size_type
      */
     cudf::size_type num_rows() const;
 
     /**
      * @brief Returns a copy of the underlying cuDF DataFrame as a python object
      *
-     * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default.
+     * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default
      */
     pybind11::object copy_to_py_object() const;
 
     /**
-     * TODO(Documentation)
+     * @brief Returns a reference to the view of the specified column
+     *
+     * @throws std::out_of_range
+     * If `column_index` is out of the range [0, num_columns)
+     *
+     * @param idx : The index of the desired column
+     * @return cudf::column_view : A reference to the desired column
      */
     const cudf::column_view &get_column(cudf::size_type idx) const;
 
@@ -123,7 +141,12 @@ struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
     TableInfo(std::shared_ptr<const IDataTable> parent, std::shared_lock<std::shared_mutex> lock, TableInfoData data);
 
     /**
-     * TODO(Documentation)
+     * @brief Get slice of a data table info based on the start and stop offset address
+     *
+     * @param start : Start offset address
+     * @param stop : Stop offset address
+     * @param column_names : Columns of interest
+     * @return TableInfo
      */
     TableInfo get_slice(cudf::size_type start, cudf::size_type stop, std::vector<std::string> column_names = {}) const;
 
@@ -175,4 +198,5 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
     mutable int m_checked_out_ref_count{-1};
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

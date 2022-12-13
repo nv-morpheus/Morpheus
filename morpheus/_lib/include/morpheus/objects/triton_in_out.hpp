@@ -25,8 +25,16 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** TritonInOut****************************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup objects
+ * @{
+ * @file
+ */
+
+/**
+ * @brief Container for model input and output configuration
+ *
  */
 struct TritonInOut
 {
@@ -37,4 +45,5 @@ struct TritonInOut
     std::string mapped_name;
     size_t offset;
 };
+/** @} */  // end of group
 }  // namespace morpheus

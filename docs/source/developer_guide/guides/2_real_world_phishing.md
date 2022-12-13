@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Data Preprocessing
 
-Now that we've seen a basic example of how to create a stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
+The previous example demonstated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
 
 As part of this process, we might want to use a classification model trained on various pieces of metadata, such as recipient count, in addition to the raw content of each email. If we suppose this is true for our example, we need to build and connect a pre-processing stage to attach this information to each record before applying our classifier.
 
@@ -28,7 +28,7 @@ For this task, we'll need to define a new stage, which we will call our `Recipie
 1. Count the number of recipients in the email's metadata.
 1. Construct a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
 
-For this stage, the code will look very similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on {py:obj}`~morpheus.pipeline.messages.MessageMeta` types, our new `accepted_types` method now looks like:
+For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on {py:obj}`~morpheus.pipeline.messages.MessageMeta` types, our new `accepted_types` method now looks like:
 
 ```python
 def accepted_types(self) -> typing.Tuple:
@@ -40,21 +40,21 @@ We grab a copy of the incoming message's `df` attribute.
 
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
-        # Get a copy of the DataFrame from the incoming message
-        df = message.df
+    # Get a copy of the DataFrame from the incoming message
+    df = message.df
 
-        df['to_count'] = df['To'].str.count('@')
-        df['bcc_count'] = df['BCC'].str.count('@')
-        df['cc_count'] = df['CC'].str.count('@')
-        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
+    df['to_count'] = df['To'].str.count('@')
+    df['bcc_count'] = df['BCC'].str.count('@')
+    df['cc_count'] = df['CC'].str.count('@')
+    df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
-        # Attach features to string data
-        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
-                      df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
-                      df['Message'])
+    # Attach features to string data
+    df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
+                    df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
+                    df['Message'])
 
-        # Return a new message with our updated DataFrame for the next stage
-        return MessageMeta(df)
+    # Return a new message with our updated DataFrame for the next stage
+    return MessageMeta(df)
 ```
 
 Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
@@ -136,7 +136,7 @@ Note: This step assumes you have both [Docker](https://docs.docker.com/engine/in
 From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
 
 ```shell
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --log-info=true
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --log-info=true
 ```
 
 Once we have Triton running, we can verify that it is healthy using [curl](https://curl.se/). The `/v2/health/live` endpoint should return a 200 status code:
@@ -162,7 +162,7 @@ Output:
 {"name":"phishing-bert-onnx","versions":["1"],"platform":"onnxruntime_onnx","inputs":[{"name":"input_ids","datatype":"INT64","shape":[-1,128]},{"name":"attention_mask","datatype":"INT64","shape":[-1,128]}],"outputs":[{"name":"output","datatype":"FP32","shape":[-1,2]}]}
 ```
 
-From this information, we can see that the expected shape of the model inputs is `"shape":[-1,128]}`.
+From this information, we note that the expected shape of the model inputs is `"shape":[-1,128]}`.
 
 ### Defining our Pipeline
 Let's set up the paths for our input and output files. For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository. In a production deployment, it may be more prudent to replace our usage of environment variables with command-line flags or a dedicated configuration management library.
@@ -389,7 +389,7 @@ In our previous examples, we didn't define a constructor for the Python classes 
 
 Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started.
 
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented propperly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
 
 ```python
 from morpheus.config import Config
@@ -404,7 +404,7 @@ class RecipientFeaturesStage(SinglePortStage):
     config : morpheus.config.Config
         Pipeline configuration instance.
     sep_token : str
-        Bert separator toeken.
+        Bert separator token.
     """
 
     def __init__(self, config: Config, sep_token: str = '[SEP]'):
@@ -429,7 +429,7 @@ Usage: morpheus run pipeline-nlp recipient-features [OPTIONS]
   Pre-processing stage which counts the number of recipients in an email's metadata.
 
 Options:
-  --sep_token TEXT  Bert separator toeken.  [default: [SEP]]
+  --sep_token TEXT  Bert separator token.  [default: [SEP]]
   --help            Show this message and exit.
 ```
 
@@ -583,7 +583,7 @@ In Morpheus, we define a stage to be a sink if it outputs the results of a pipel
 
 Recall that in the previous section we wrote a `RabbitMQSourceStage`. We will now complement that by writing a sink stage that can output Morpheus data into RabbitMQ. For this example, we are again using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python.
 
-The code for our sink will look similar to other stages with a few changes. First, we will subclass `SinglePortStage`:
+The code for our sink will be similar to other stages with a few changes. First, we will subclass `SinglePortStage`:
 
 ```python
 @register_stage("to-rabbitmq")
@@ -706,4 +706,4 @@ class WriteToRabbitMQStage(SinglePortStage):
 ```
 
 ## Note
-For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages see [examples/developer_guide/2_2_rabbitmq/README.md](../../../../examples/developer_guide/2_2_rabbitmq/README.md)
+For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to [examples/developer_guide/2_2_rabbitmq/README.md](../../../../examples/developer_guide/2_2_rabbitmq/README.md)

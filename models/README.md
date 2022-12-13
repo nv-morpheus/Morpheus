@@ -7,7 +7,7 @@ Every Morpheus use case has a subfolder, **`<use-case>-models`**, that contains 
 
 The `triton_model_repo` contains the necessary directory structure and configuration files in order to run the Morpheus Models in Triton Inference Server. This includes symlinks to the above-mentioned model files along with corresponding Triton config files (`.pbtxt`). More information on how to deploy this repository to Triton can be found in the [README](./triton-model-repo/README.md).
 
-Models can also be published to an [MLflow](https://mlflow.org/) server and deployed to Triton using the [MLflow Triton plugin](https://github.com/triton-inference-server/server/tree/main/deploy/mlflow-triton-plugin). The [mlflow](./mlflow/README.md) directory contains information on how to set up a Docker container to run an MLflow server for publishing Morpheus models and deploying them to Triton.
+Models can also be published to an [MLflow](https://mlflow.org/) server and deployed to Triton using the [MLflow Triton plugin](https://github.com/triton-inference-server/server/tree/main/deploy/mlflow-triton-plugin). The [MLflow](./mlflow/README.md) directory contains information on how to set up a Docker container to run an MLflow server for publishing Morpheus models and deploying them to Triton.
 
 In the root directory, the file `model-information.csv` contains the following information for each model:
 
@@ -49,7 +49,7 @@ SID is a classifier, designed to detect sensitive information (e.g., AWS credent
 ### Model Architecture
 Compact BERT-mini transformer model
 ### Training
-Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/google/bert_uncased_L-4_H-256_A-4). The labeled training dataset is 2 million synthetic pcap payloads generated using the [faker package](https://github.com/joke2k/faker) to mimic sensitive and benign data found in nested jsons from web APIs and environmental variables.
+Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/google/bert_uncased_L-4_H-256_A-4). The labeled training dataset is 2 million synthetic pcap payloads generated using the [faker package](https://github.com/joke2k/faker) to mimic sensitive and benign data found in nested JSON(s) from web APIs and environmental variables.
 ### How To Use This Model
 This model is an example of customized transformer-based sensitive information detection. It can be further fine-tuned for specific detection needs or retrained for alternative categorizations using the fine-tuning scripts in the repo.
 #### Input
@@ -61,19 +61,19 @@ Well-Read Students Learn Better: On the Importance of Pre-training Compact Model
 
 ## Phishing Email Detection
 ### Model Overview
-Phishing email detection is a binary classifier differentiating between phishing and non-phishing emails.
+Phishing email detection is a binary classifier differentiating between phishing/spam and non-phishing/spam emails and SMS messages.
 ### Model Architecture
 BERT-base uncased transformer model
 ### Training
-Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/bert-base-uncased). The labeled training dataset is around 20000 emails from three public datasets ([CLAIR](https://www.kaggle.com/datasets/rtatman/fraudulent-email-corpus), [SPAM_ASSASIN](https://spamassassin.apache.org/old/publiccorpus/readme.html), [Enron](https://www.cs.cmu.edu/~./enron/))
+Training consisted of fine-tuning the original pretrained [model from google](https://huggingface.co/bert-base-uncased). The labeled training dataset is around 5000 SMS messages from a public dataset- [SMS Spam Collection](https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection)
 ### How To Use This Model
-This model is an example of customized transformer-based phishing email detection. It can be further fine-tuned for specific detection needs and customized the emails of your enterprise using the fine-tuning scripts in the repo.
+This model is an example of customized transformer-based phishing email detection. It can be retrained for specific detection needs and customized the emails of your enterprise using the training scripts in the repo.
 #### Input
 Entire email as a string
 #### Output
-Binary sequence classification as phishing or non-phishing
+Binary sequence classification as phishing/spam or non-phishing/spam
 ### References
-- Radev, D. (2008), CLAIR collection of fraud email, ACL Data and Code Repository, ADCR2008T001, http://aclweb.org/aclwiki
+- https://archive.ics.uci.edu/ml/datasets/SMS+Spam+Collection
 - Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
 https://arxiv.org/abs/1810.04805
 
@@ -109,7 +109,7 @@ aws-cloudtrail logs
 Anomalous score of Autoencoder, Binary classification of time series anomaly detection
 ### References
 - https://github.com/AlliedToasters/dfencoder/blob/master/dfencoder/autoencoder.py
-- https://github.com/rapidsai/clx/blob/branch-22.06/notebooks/anomaly_detection/FFT_Outlier_Detection.ipynb
+- https://github.com/rapidsai/clx/blob/branch-22.12/notebooks/anomaly_detection/FFT_Outlier_Detection.ipynb
 - Rasheed Peng Alhajj Rokne Jon: Fourier Transform Based Spatial Outlier Mining 2009 - https://link.springer.com/chapter/10.1007/978-3-642-04394-9_39
 
 ## Flexible Log Parsing
@@ -135,7 +135,7 @@ parsed apache web log as jsonlines
 ### Model Overview
 This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks.
 ### Model Architecture
-It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogenous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.
+It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogeneous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.
 ### Training
 A training data consists of raw 753 labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. The `GraphSAGE` is trained to output embedded representation of transactions out of the graph. The `XGBoost` is trained using the embedded features as a binary classifier to classify fraud and genuine transactions.
 ### How To Use This Model
@@ -146,7 +146,7 @@ Transaction data with nodes including transaction, client, and merchant.
 An anomalous score of transactions indicates a probability score of being a fraud.
 ### References
 - https://stellargraph.readthedocs.io/en/stable/hinsage.html?highlight=hinsage
-- https://github.com/rapidsai/clx/blob/branch-0.20/examples/forest_inference/xgboost_training.ipynb
+- https://github.com/rapidsai/clx/blob/branch-22.12/examples/forest_inference/xgboost_training.ipynb
 - Rafaël Van Belle, Charles Van Damme, Hendrik Tytgat, Jochen De Weerdt,Inductive Graph Representation Learning for fraud detection (https://www.sciencedirect.com/science/article/abs/pii/S0957417421017449)
 
 ## Ransomware Detection via AppShield
@@ -161,7 +161,24 @@ Combined with host data from DOCA AppShield, this model can be used to detect ra
 #### Input
 Snapshots collected from DOCA AppShield
 #### Output
-For each process_id and snapshot there is a probablity score between 1 and 0, where 1 is ransomware and 0 is benign.
+For each process_id and snapshot there is a probability score between 1 and 0, where 1 is ransomware and 0 is benign.
 ### References
 - Cohen, A,. & Nissim, N. (2018). Trusted detection of ransomware in a private cloud using machine learning methods leveraging meta-features from volatile memory. In Expert Systems With Applications. (https://www.sciencedirect.com/science/article/abs/pii/S0957417418301283)
 - https://developer.nvidia.com/networking/doca
+
+## Root Cause Analysis
+### Model Overview
+Root cause analysis is a binary classifier differentiating between ordinary logs and errors/problems/root causes in the log files.
+### Model Architecture
+BERT-base uncased transformer model
+### Training
+Training consisted of fine-tuning the original pre-trained [model from google](https://huggingface.co/bert-base-uncased). The labeled dataset is Linux kernel logs, and it has two parts. Kernel errors and new errors. Kernel logs will be split into two parts so that the new and unseen error logs can be appended to the test set after the split to later check if the model can catch them despite not seeing such errors in the training.
+### How To Use This Model
+This model is an example of customized transformer-based root cause analysis. It can be further fine-tuned for specific root cause analysis or predictive maintenance needs and of your enterprise using the fine-tuning scripts in the repo. The hyper parameters can be optimised to adjust to get the best results with your dataset. The aim is to get the model to predict some false positives that could be previously unknown error types. Users can use this root cause analysis method with other log types too. If they have known failures in their logs, they can use them to train along with ordinary logs and can detect other root causes they weren't aware of before. 
+#### Input
+Kernel logs
+#### Output
+Binary sequence classification as ordinary or root cause
+### References
+- Devlin J. et al. (2018), BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+https://arxiv.org/abs/1810.04805

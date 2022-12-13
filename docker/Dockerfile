@@ -54,7 +54,8 @@ RUN apt-get update &&\
 SHELL ["/bin/bash", "-c"]
 
 # All code will be under /workspace
-WORKDIR /workspace
+ENV MORPHEUS_ROOT=/workspace
+WORKDIR ${MORPHEUS_ROOT}
 
 # Install mamba to speed the solve up
 RUN conda config --set ssl_verify false &&\
@@ -125,7 +126,7 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     source activate base &&\
     # Need to get around recent versions of git locking paths until they are deemed safe
     git config --global --add safe.directory "*" &&\
-    MORPHEUS_ROOT=/workspace MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # sid_visualization is a submodule we need to init
 RUN git submodule update --init --recursive
@@ -145,9 +146,6 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_runtime.yml &&\
-    # Install jupyter support (e.g., DFP)
-    # TODO: this might not be the right spot to get these
-    /opt/conda/bin/mamba install -n morpheus ipywidgets jupyterlab nb_conda_kernels &&\
     # Clean and activate
     conda clean -afy
 

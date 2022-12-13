@@ -148,7 +148,7 @@ cudf::type_id DType::cudf_type_id() const
 // Returns the triton string representation
 std::string DType::triton_str() const
 {
-    // Triton doesnt have any definitions or enums. Wow
+    // Triton doesn't have any definitions or enums. Wow
     switch (m_type_id)
     {
     case TypeId::INT8:

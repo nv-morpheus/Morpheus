@@ -26,21 +26,37 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** PyDataTable****************************************/
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
+
 /**
  * TODO(Documentation)
  */
 struct PyDataTable : public IDataTable
 {
+    /**
+     * @brief Construct a new Py Data Table object
+     *
+     * @param py_table
+     */
     PyDataTable(pybind11::object &&py_table);
     ~PyDataTable();
 
     /**
-     * TODO(Documentation)
+     * @brief cuDF table rows count
+     *
+     * @return cudf::size_type
      */
     cudf::size_type count() const override;
 
     /**
-     * TODO(Documentation)
+     * Get cuDF table info
+     *
+     * @return TableInfo
      */
     const pybind11::object &get_py_object() const override;
 
@@ -49,4 +65,5 @@ struct PyDataTable : public IDataTable
 
     pybind11::object m_py_table;
 };
+/** @} */  // end of group
 }  // namespace morpheus

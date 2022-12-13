@@ -36,10 +36,18 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** AddClassificationStage********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
  */
+
 #pragma GCC visibility push(default)
+/**
+ * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
+ * inference stage. Label indexes will be looked up in the idx2label property.
+ */
 class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                               std::shared_ptr<MultiResponseProbsMessage>>
 {
@@ -51,7 +59,11 @@ class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mu
     using typename base_t::subscribe_fn_t;
 
     /**
-     * TODO(Documentation)
+     * @brief Construct a new Add Classifications Stage object
+     *
+     * @param threshold : Threshold to consider true/false for each class
+     * @param num_class_labels : Number of classification labels
+     * @param idx2label : Index to classification labels map
      */
     AddClassificationsStage(float threshold,
                             std::size_t num_class_labels,
@@ -76,7 +88,14 @@ class AddClassificationsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mu
 struct AddClassificationStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a AddClassificationStage, and return the result.
+     * @brief Create and initialize a AddClassificationStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param threshold : Threshold to consider true/false for each class
+     * @param num_class_labels : Number of classification labels
+     * @param idx2label : Index to classification labels map
+     * @return std::shared_ptr<srf::segment::Object<AddClassificationsStage>>
      */
     static std::shared_ptr<srf::segment::Object<AddClassificationsStage>> init(
         srf::segment::Builder &builder,
@@ -87,4 +106,5 @@ struct AddClassificationStageInterfaceProxy
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

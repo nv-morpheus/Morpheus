@@ -30,6 +30,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** RMMTensor****************************************/
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
+
 /**
  * TODO(Documentation)
  */
@@ -157,4 +164,5 @@ class RMMTensor : public ITensor
     std::vector<TensorIndex> m_shape;
     std::vector<TensorIndex> m_stride;
 };
+/** @} */  // end of group
 }  // namespace morpheus

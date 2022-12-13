@@ -37,10 +37,17 @@ struct TableInfo;
 
 /****** Component public implementations *******************/
 /****** PreprocessFILStage**********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
  */
+
 #pragma GCC visibility push(default)
+/**
+ * @brief FIL input data for inference
+ */
 class PreprocessFILStage
   : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiInferenceMessage>>
 {
@@ -50,6 +57,11 @@ class PreprocessFILStage
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Constructor for a class `PreprocessFILStage`
+     *
+     * @param features : Reference to the features that are required for model inference
+     */
     PreprocessFILStage(const std::vector<std::string>& features);
 
   private:
@@ -71,11 +83,17 @@ class PreprocessFILStage
 struct PreprocessFILStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a PreprocessFILStage, and return the result.
+     * @brief Create and initialize a PreprocessFILStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param features : Reference to the features that are required for model inference
+     * @return std::shared_ptr<srf::segment::Object<PreprocessFILStage>>
      */
     static std::shared_ptr<srf::segment::Object<PreprocessFILStage>> init(srf::segment::Builder& builder,
                                                                           const std::string& name,
                                                                           const std::vector<std::string>& features);
 };
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

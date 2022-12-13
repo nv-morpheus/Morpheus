@@ -32,15 +32,27 @@ struct MutableTableInfo;
 /****** IDataTable******************************************/
 
 /**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
+
+/**
  * @brief Owning object which owns a unique_ptr<cudf::table>, table_metadata, and index information
- * Why this doesnt exist in cudf is beyond me
+ * Why this doesn't exist in cudf is beyond me
  */
 struct IDataTable : public std::enable_shared_from_this<IDataTable>
 {
+    /**
+     * @brief Construct a new IDataTable object
+     *
+     */
     IDataTable() = default;
 
     /**
-     * TODO(Documentation)
+     * @brief cuDF dataframe rows count.
+     *
+     * @return cudf::size_type
      */
     virtual cudf::size_type count() const = 0;
 
@@ -109,4 +121,5 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
     // supported mutex if we support C++ nodes with Fiber runables in the future
     mutable std::shared_mutex m_mutex{};
 };
+/** @} */  // end of group
 }  // namespace morpheus

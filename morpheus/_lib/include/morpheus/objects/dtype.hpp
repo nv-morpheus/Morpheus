@@ -28,7 +28,20 @@
 #include <string>  // for string
 
 namespace morpheus {
-/****** Component public implementations *******************/
+
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
+
+// Pulled from cuDF
+template <typename T>
+constexpr std::size_t size_in_bits()
+{
+    static_assert(CHAR_BIT == 8, "Size of a byte must be 8 bits.");
+    return sizeof(T) * CHAR_BIT;
+}
 
 // Pulled from cudf
 #pragma GCC visibility push(default)
@@ -176,5 +189,6 @@ struct DType  // TODO move to dtype.hpp
     TypeId m_type_id;
 };
 
+/** @} */  // end of group
 #pragma GCC visibility pop
 }  // namespace morpheus
