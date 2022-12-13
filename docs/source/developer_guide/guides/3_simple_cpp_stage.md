@@ -65,7 +65,7 @@ Note: `SourceT` and `SinkT` types are typically `shared_ptr`s to a Morpheus mess
 
 Note: The C++ implementation of a stage must receive and emit the same message types as the Python implementation.
 
-Note: The "Python" in the `PythonSource` & `PythonNode` class names refers to the fact that these classes read and write objects registered with python, not the implementation language.
+Note: The "Python" in the `PythonSource` & `PythonNode` class names refers to the fact that these classes read and write objects registered with Python, not the implementation language.
 
 ## A Simple Pass Through Stage
 

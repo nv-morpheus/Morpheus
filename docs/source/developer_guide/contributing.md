@@ -86,7 +86,7 @@ By default only those files stored in LFS strictly needed for running Morpheus a
 
 ### Build in Docker Container
 
-This workflow utilizes a docker container to set up most dependencies ensuring a consistent environment.
+This workflow utilizes a Docker container to set up most dependencies ensuring a consistent environment.
 
 #### Prerequisites
 
@@ -100,13 +100,13 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
       DOCKER_IMAGE_TAG=my_tag ./docker/build_container_dev.sh
       ```
       Would build the container `morpheus:my_tag`.
-   1. To build the container with a debugging version of cpython installed, update the docker target as follows:
+   1. To build the container with a debugging version of CPython installed, update the Docker target as follows:
    ```shell
    DOCKER_TARGET=development_pydbg ./docker/build_container_dev.sh
    ```
-   1. Note: When debugging python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
+   1. Note: When debugging Python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
    source path.
-   1. Once created, you will be able to introspect python objects from within GDB. For example, if we were to break within a generator setup call and examine it's PyFrame_Object `f`, it might look like this:
+   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine it's PyFrame_Object `f`, it might look like this:
    ```shell
     #4  0x000056498ce685f4 in gen_send_ex (gen=0x7f3ecc07ad40, arg=<optimized out>, exc=<optimized out>, closing=<optimized out>) at Objects/genobject.c:222
     (gdb) pyo f
@@ -116,7 +116,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
     object type name: frame
     object repr     : <frame at 0x7f3eb3888750, file '/workspace/morpheus/pipeline/pipeline.py', line 902, code join
    ```
-   1. Note: Now when running the container, conda should list your python version as `pyxxx_dbg_morpheus`.
+   1. Note: Now when running the container, Conda should list your Python version as `pyxxx_dbg_morpheus`.
    ```shell
     (morpheus) user@host:/workspace# conda list | grep python
     python                    3.8.13          py3.8.13_dbg_morpheus    local
@@ -128,11 +128,11 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
    ```
    1. The container tag follows the same rules as `build_container_dev.sh` and will default to the current `YYMMDD`. Specify the desired tag with `DOCKER_IMAGE_TAG`. i.e. `DOCKER_IMAGE_TAG=my_tag ./docker/run_container_dev.sh`
    2. This will automatically mount the current working directory to `/workspace`.
-   3. Some of the validation tests require launching a triton docker container within the morpheus container. To enable this you will need to grant the morpheus container access to your host OS's docker socket file with:
+   3. Some of the validation tests require launching a Triton Docker container within the morpheus container. To enable this you will need to grant the morpheus container access to your host OS's Docker socket file with:
       ```bash
       DOCKER_EXTRA_ARGS="-v /var/run/docker.sock:/var/run/docker.sock" ./docker/run_container_dev.sh
       ```
-      Then once the container is started you will need to install some extra packages to enable launching docker containers:
+      Then once the container is started you will need to install some extra packages to enable launching Docker containers:
       ```bash
       ./docker/install_docker.sh
 
@@ -160,7 +160,7 @@ This workflow utilizes a docker container to set up most dependencies ensuring a
 
 If a Conda environment on the host machine is preferred over Docker, it is relatively easy to install the necessary dependencies (In reality, the Docker workflow creates a Conda environment inside the container).
 
-Note: These instructions assume the user is using `mamba` instead of `conda` since it's improved solver speed is very helpful when working with a large number of dependencies. If you are not familiar with `mamba` you can install it with `conda install -n base -c conda-forge mamba` (Make sure to only install into the base environment). `mamba` is a drop in replacement for `conda` and all conda commands are compatible between the two.
+Note: These instructions assume the user is using `mamba` instead of `conda` since it's improved solver speed is very helpful when working with a large number of dependencies. If you are not familiar with `mamba` you can install it with `conda install -n base -c conda-forge mamba` (Make sure to only install into the base environment). `mamba` is a drop in replacement for `conda` and all Conda commands are compatible between the two.
 
 #### Prerequisites
 
@@ -284,7 +284,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
       # Change to the morpheus root to make it easier for mounting volumes
       cd ${MORPHEUS_ROOT}
 
-      # Run the Kafka shell docker container
+      # Run the Kafka shell Docker container
       docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
          -e HOST_IP=$KAFKA_ADVERTISED_HOST_NAME -e ZK=$2 \
          -v $PWD:/workspace wurstmeister/kafka /bin/bash
