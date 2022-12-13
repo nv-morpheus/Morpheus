@@ -1,0 +1,25 @@
+#!/bin/bash
+
+args=""
+
+if [ $# -gt 0 ] ; then
+    args="$args --model-control-mode=explicit"
+fi
+
+for model in $@
+do
+    args="$args --load-model=$model"
+done
+
+export TRITON_MODEL_ARGS="$args"
+
+COMPOSE_FILE="${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml"
+
+docker compose -f $COMPOSE_FILE up -d triton
+export TRITON_HOST=$(docker compose -f $COMPOSE_FILE exec triton hostname -i)
+sleep 1 # wait for triton to load models
+docker compose -f $COMPOSE_FILE logs triton
+
+echo "$TRITON_HOST triton" | sudo tee -a /etc/hosts
+
+echo "TRITON_HOST:       ${TRITON_HOST}"

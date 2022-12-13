@@ -2,8 +2,6 @@ FROM nvidia/cuda:11.5.1-devel-ubuntu20.04 AS base
 
 # FROM ghcr.io/trxcllnt/devcontainer-images/cmake-ninja-sccache-llvm-cuda-mambaforge:latest AS base
 
-COPY bin/setup-morpheus-env.sh /opt/morpheus-devcontainer/bin/setup-morpheus-env
-
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         wget
@@ -18,4 +16,4 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mamb
 ENV PATH="${CONDA_DIR}/bin:${PATH}"
 
 ENV MAMBA_NO_BANNER=1
-ENV PATH="${PATH}:/opt/morpheus-devcontainer/bin"
+ENV PATH="${PATH}:/workspaces/morpheus/.devcontainer/bin"

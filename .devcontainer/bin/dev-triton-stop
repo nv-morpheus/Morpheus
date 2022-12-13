@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker compose -f ${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml stop triton
