@@ -37,6 +37,10 @@ class LinearModulesStage(SinglePortStage):
         Pipeline configuration instance.
     module_config : typing.Dict
         Module configuration.
+    input_port_name : str
+        Name of the input port for the registered module.
+    output_port_name : str
+        Name of the output port for the registered module
     input_type : default `typing.Any`
         The stage acceptable input type.
     output_type : default `typing.Any`
@@ -44,13 +48,21 @@ class LinearModulesStage(SinglePortStage):
 
     """
 
-    def __init__(self, c: Config, module_config: typing.Dict, input_type=typing.Any, output_type=typing.Any):
+    def __init__(self,
+                 c: Config,
+                 module_config: typing.Dict,
+                 input_port_name: str,
+                 output_port_name: str,
+                 input_type=typing.Any,
+                 output_type=typing.Any):
 
         super().__init__(c)
 
         self._input_type = input_type
         self._ouput_type = output_type
         self._module_config = module_config
+        self._input_port_name = input_port_name
+        self._output_port_name = output_port_name
 
     @property
     def name(self) -> str:
@@ -82,8 +94,8 @@ class LinearModulesStage(SinglePortStage):
         # Laod module from registry.
         module = load_module(self._module_config, builder=builder)
 
-        mod_in_stream = module.input_port("input")
-        mod_out_stream = module.output_port("output")
+        mod_in_stream = module.input_port(self._input_port_name)
+        mod_out_stream = module.output_port(self._output_port_name)
 
         builder.make_edge(input_stream[0], mod_in_stream)
 

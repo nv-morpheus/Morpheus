@@ -30,6 +30,7 @@ from dfp.messages.multi_dfp_message import MultiDFPMessage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.multi_file_source import MultiFileSource
+from dfp.utils.regex_utils import iso_date_regex_pattern
 
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
@@ -235,9 +236,6 @@ def run_pipeline(train_users,
     source_schema_str = str(pickle.dumps(source_schema), encoding=encoding)
     preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
 
-    iso_date_regex = r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
-    r"T(?P<hour>\d{1,2})(:|_)(?P<minute>\d{1,2})(:|_)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z"
-
     preprocessing_module_config = {
         "module_id": "DFPPipelinePreprocessing",
         "module_name": "dfp_pipeline_preprocessing",
@@ -250,7 +248,7 @@ def run_pipeline(train_users,
             "sampling_rate_s": sample_rate_s,
             "start_time": start_time,
             "end_time": end_time,
-            "iso_date_regex": iso_date_regex
+            "iso_date_regex_pattern": iso_date_regex_pattern
         },
         "FileToDataFrame": {
             "module_id": "FileToDataFrame",
@@ -307,8 +305,13 @@ def run_pipeline(train_users,
 
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
-    # Output is UserMessageMeta -- Cached frame set
-    pipeline.add_stage(LinearModulesStage(config, preprocessing_module_config, output_type=MultiDFPMessage))
+    # Here we add a wrapped module that implements the full DFPPreprocessing pipeline.
+    pipeline.add_stage(
+        LinearModulesStage(config,
+                           preprocessing_module_config,
+                           input_port_name="input",
+                           output_port_name="output",
+                           output_type=MultiDFPMessage))
 
     pipeline.add_stage(MonitorStage(config, description="Preprocessing Module rate", smoothing=0.001))
 
@@ -360,7 +363,13 @@ def run_pipeline(train_users,
             }
         }
         # Here we add a wrapped module that implements the full DFPTraining pipeline.
-        pipeline.add_stage(LinearModulesStage(config, training_module_config))
+        pipeline.add_stage(
+            LinearModulesStage(
+                config,
+                training_module_config,
+                input_port_name="input",
+                output_port_name="output",
+            ))
 
         pipeline.add_stage(MonitorStage(config, description="Training Module rate", smoothing=0.001))
 

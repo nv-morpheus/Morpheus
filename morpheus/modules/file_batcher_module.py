@@ -47,13 +47,13 @@ def file_batcher(builder: srf.Builder):
 
     TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_object"])
 
-    regex_pattern = config.get("iso_date_regex", None)
+    iso_date_regex_pattern = config.get("iso_date_regex_pattern", None)
     start_time = config.get("start_time", None)
     end_time = config.get("end_time", None)
     sampling_rate_s = config.get("sampling_rate_s", None)
     period = config.get("period", None)
 
-    iso_date_regex = re.compile(regex_pattern)
+    iso_date_regex = re.compile(iso_date_regex_pattern)
 
     def on_data(file_objects: fsspec.core.OpenFiles):
 
