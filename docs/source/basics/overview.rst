@@ -29,7 +29,7 @@ together. At a high level, the CLI is broken up into two main sections:
  * ``run``
     * For running NLP or FIL pipelines.
  * ``tools``
-    * Tools/Utilities to help setup, configure and run pipelines and external resources
+    * Tools/Utilities to help set up, configure and run pipelines and external resources
 
 Users can get help on any command by passing ``--help`` to a command or sub-command. For example, to get help on the
 tools:
@@ -67,7 +67,7 @@ queried in the same manner:
 AutoComplete
 ------------
 
-The Morpheus CLI supports bash, fish, zsh, and powershell autocompletion. To setup autocomplete, it must first be
+The Morpheus CLI supports bash, fish, zsh, and powershell autocompletion. To set up autocomplete, it must first be
 installed. Morpheus comes with a tool to assist with this:
 
 .. code-block:: console
