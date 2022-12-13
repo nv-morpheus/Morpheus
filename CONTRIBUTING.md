@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Contributing to Morpheus
 
 Contributions to Morpheus fall into the following three categories.
@@ -234,14 +251,14 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    ```
 5. Update the `kafka-docker/docker-compose.yml`, performing two changes:
    1. Update the `ports` entry to:
-      ```yml
+      ```yaml
       ports:
          - "0.0.0.0::9092"
       ```
       This will prevent the containers from attempting to map IPv6 ports.
    1. Change the value of `KAFKA_ADVERTISED_HOST_NAME` to match the value of the `KAFKA_ADVERTISED_HOST_NAME` environment variable from the previous step. For example, the line should look like:
 
-      ```yml
+      ```yaml
       environment:
          KAFKA_ADVERTISED_HOST_NAME: 172.17.0.1
       ```
