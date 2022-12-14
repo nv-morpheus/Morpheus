@@ -40,7 +40,7 @@ class AppShieldSourceStage(SingleOutputSource):
     """
     Source stage is used to load Appshield messages from one or more plugins into a dataframe.
     It normalizes nested json messages and arranges them into a dataframe by snapshot
-    and source(Determine which source generated the plugin messages).
+    and source.
 
     Parameters
     ----------

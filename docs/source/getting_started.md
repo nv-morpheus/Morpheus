@@ -318,7 +318,7 @@ Commands:
   filter          Filter message by a classification threshold.
   from-appshield  Source stage is used to load Appshield messages from one or more plugins into a
                   dataframe. It normalizes nested json messages and arranges them into a dataframe by
-                  snapshot and source(Determine which source generated the plugin messages).
+                  snapshot and source.
   from-file       Load messages from a file.
   from-kafka      Load messages from a Kafka cluster.
   inf-identity    Perform inference for testing that performs a no-op.
@@ -332,7 +332,6 @@ Commands:
   to-kafka        Write all messages to a Kafka cluster.
   trigger         Buffer data until the previous stage has completed.
   validate        Validate pipeline output for testing.
-
 ```
 
 And for the AE pipeline:
