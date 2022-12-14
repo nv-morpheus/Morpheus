@@ -34,11 +34,11 @@
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
 #include <http_client.h>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <nlohmann/json.hpp>
 #include <pymrc/node.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 
 #include <algorithm>  // for min
 #include <cstddef>

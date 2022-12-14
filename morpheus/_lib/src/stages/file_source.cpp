@@ -28,11 +28,11 @@
 #include <cudf/table/table.hpp>                  // for table
 #include <cudf/types.hpp>
 #include <glog/logging.h>
+#include <mrc/segment/builder.hpp>
 #include <pybind11/cast.h>  // for object_api::operator()
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
-#include <mrc/segment/builder.hpp>
 
 #include <algorithm>  // for find
 #include <cstddef>    // for size_t

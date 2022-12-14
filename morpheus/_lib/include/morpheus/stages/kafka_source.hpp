@@ -21,12 +21,12 @@
 
 #include <cudf/io/types.hpp>
 #include <librdkafka/rdkafkacpp.h>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 #include <mrc/channel/status.hpp>          // for Status
 #include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
+#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
 #include <cstddef>  // for size_t
 #include <cstdint>  // for int32_t, uint32_t

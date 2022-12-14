@@ -29,10 +29,10 @@
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <mrc/segment/builder.hpp>
 #include <nvtext/subword_tokenize.hpp>
 #include <pymrc/node.hpp>
 #include <rmm/device_buffer.hpp>  // for device_buffer
-#include <mrc/segment/builder.hpp>
 
 #include <cstdint>
 #include <exception>

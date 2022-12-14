@@ -27,9 +27,9 @@
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 
 #include <algorithm>  // for min_element, transform
 #include <cstddef>

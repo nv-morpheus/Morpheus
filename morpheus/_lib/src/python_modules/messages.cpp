@@ -31,6 +31,9 @@
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <mrc/channel/status.hpp>  // for Status
+#include <mrc/node/edge_connector.hpp>
+#include <mrc/node/port_registry.hpp>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -38,10 +41,7 @@
 #include <pymrc/edge_adapter.hpp>
 #include <pymrc/node.hpp>
 #include <pymrc/port_builders.hpp>
-#include <pymrc/utils.hpp>         // for pymrc::import
-#include <mrc/channel/status.hpp>  // for Status
-#include <mrc/node/edge_connector.hpp>
-#include <mrc/node/port_registry.hpp>
+#include <pymrc/utils.hpp>  // for pymrc::import
 
 #include <cstddef>
 #include <filesystem>
