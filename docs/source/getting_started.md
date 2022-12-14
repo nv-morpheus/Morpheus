@@ -89,7 +89,7 @@ To download the data needed for unittests:
 scripts/fetch_data.py fetch tests validation
 ```
 
-If `Git LFS` is not installed before cloning the repository, the `scripts/fetch_data.py` script will fail. If this is the case follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
+If `Git LFS` is not installed before cloning the repository, the `scripts/fetch_data.py` script will fail. If this is the case, follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
 ```bash
 git lfs install
 ```
@@ -345,7 +345,7 @@ Commands:
   to-file          Write all messages to a file.
   to-kafka         Write all messages to a Kafka cluster.
   train-ae         Train an Autoencoder model on incoming data.
-  trigger          Buffer data until previous stage has completed.
+  trigger          Buffer data until the previous stage has completed.
   validate         Validate pipeline output for testing.
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
