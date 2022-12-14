@@ -611,7 +611,7 @@ def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> Strea
     return (node, input_stream[1])
 ```
 
-Note that in this case, while we created an edge from the parent node to our new node. The return tuple contains our newly constructed node, along with the unchanged input type. Ourur sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could hypothetically have a pipeline where we emit the results to both RabbitMQ and a file.
+Note that in this case, while we created an edge from the parent node to our new node. The return tuple contains our newly constructed node, along with the unchanged input type. Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could hypothetically have a pipeline where we emit the results to both RabbitMQ and a file.
 
 ![Morpheus node dependency diagram](img/sink_deps.png)
 
