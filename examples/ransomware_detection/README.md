@@ -17,7 +17,7 @@ limitations under the License.
 
 # Example Ransomware Detection Morpheus Pipeline for AppShield Data
 
-Example Morpheus pipeline using Docker containers for Triton Inference server and Morpheus SDK/Client.
+Example Morpheus pipeline using Triton Inference server and Morpheus.
 
 ## Setup Triton Inference Server
 
