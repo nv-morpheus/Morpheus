@@ -50,7 +50,21 @@ docker pull nvcr.io/nvidia/morpheus/morpheus:22.11-runtime
 >
 > Users who want to ensure they are running with the latest bug fixes should use a release image tag (`YY.MM-runtime`). Users who need to deploy a specific version into production should use a point release image tag (`vYY.MM.00-runtime`).
 
-Skip ahead to the [Starting the Morpheus Container](#starting-the-morpheus-container) section.
+### Starting the Morpheus Container
+1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
+1. Start the container downloaded from the previous section:
+```bash
+docker run --rm -ti --runtime=nvidia --gpus=all --net=host nvcr.io/nvidia/morpheus/morpheus:22.11-runtime bash
+```
+
+Note about some of the flags above:
+| Flag | Description |
+| ---- | ----------- |
+| `--runtime=nvidia` | Choose the NVIDIA docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker. |
+| `--gpus=all` | Specify which GPUs the container has access to.  Alternately a specific GPU could be chosen with `--gpus=<gpu-id>` |
+| `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
+
+Skip ahead to the [Launching Triton Server](#launching-triton-server) section.
 
 ## Building the Morpheus Container
 ### Clone the Repository
@@ -103,7 +117,7 @@ To assist in building the Morpheus container, several scripts have been provided
 ./docker/build_container_release.sh
 ```
 
-By default this will create an image named `nvcr.io/nvidia/morpheus/morpheus:${MORPHEUS_VERSION}-runtime` where `$MORPHEUS_VERSION` is replaced by the output of `git describe --tags --abbrev=0`. You can specify different Docker image names and tags by passing the script the `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables respectively.
+By default this will create an image named `nvcr.io/nvidia/morpheus/morpheus:${MORPHEUS_VERSION}-runtime` where `$MORPHEUS_VERSION` is replaced by the output of `git describe --tags --abbrev=0`. You can specify a different Docker image name and tag by passing the script the `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables respectively.
 
 To run the built "release" container, use the following:
 
@@ -117,35 +131,36 @@ The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NA
 DOCKER_IMAGE_TAG="v22.11.00a-runtime" ./docker/run_container_release.sh
 ```
 
-## Starting the Morpheus Container
-1. Ensure that [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
-1. Start the container downloaded from the previous section:
-```bash
-docker run --rm -ti --runtime=nvidia --gpus=all --net=host nvcr.io/nvidia/morpheus/morpheus:22.11-runtime bash
-```
-
-Note about some of the flags above:
-| Flag | Description |
-| ---- | ----------- |
-| `--runtime=nvidia` | Choose the NVIDIA docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker. |
-| `--gpus=all` | Specify which GPUs the container has access to.  Alternately a specific GPU could be chosen with `--gpus=<gpu-id>` |
-| `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
-
 ## Launching Triton Server
 
-Many of the validation tests and example workflows require a Triton server to function.
-In a new terminal, from the root of the Morpheus repo, use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
+Many of the validation tests and example workflows require a Triton server to function. In a new terminal, from the root of the Morpheus repo, use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
 
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
-	-v $PWD/models:/models \
-	nvcr.io/nvidia/tritonserver:22.08-py3 \
-	tritonserver --model-repository=/models/triton-model-repo \
-		--exit-on-error=false \
-		--log-info=true \
-		--strict-readiness=false
+  -v $PWD/models:/models \
+  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  tritonserver --model-repository=/models/triton-model-repo \
+    --exit-on-error=false \
+    --log-info=true \
+    --strict-readiness=false \
+    --disable-auto-complete-config
 ```
-This will launch Triton using the default network ports (8000 for HTTP, 8001 for GRPC, and 8002 for metrics).
+
+This will launch Triton using the default network ports (8000 for HTTP, 8001 for GRPC, and 8002 for metrics), loading all of the examples models in the Morpheus repo.
+
+Note: The above command is useful for testing out Morpheus, however it does load several models into GPU memory, which at time of writing consumes roughly 2GB of GPU memory. Production users should consider only loading the specific model(s) they plan on using with the `--model-control-mode=explicit` and `--load-model` flags. For example to launch Triton only loading the `abp-nvsmi-xgb` model:
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
+  -v $PWD/models:/models \
+  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  tritonserver --model-repository=/models/triton-model-repo \
+    --exit-on-error=false \
+    --log-info=true \
+    --strict-readiness=false \
+    --disable-auto-complete-config \
+    --model-control-mode=explicit \
+    --load-model abp-nvsmi-xgb
+```
 
 ## Running Morpheus
 
@@ -155,11 +170,11 @@ For full example pipelines using both the Python API and command line interface,
 
 ### Morpheus Python Interface
 
-The Morpheus Python interface allows users to configure their pipelines using a Python script file. This is ideal for users who are working in a Jupyter notebook, and users who need complex initialization logic. Documentation on using both the Morpheus Python & C++ APIs can be found in the [Morpheus Developer Guide](./developer_guide/guides.md).
+The Morpheus Python interface allows users to configure their pipelines using a Python script file. This is ideal for users who are working in a Jupyter Notebook, and users who need complex initialization logic. Documentation on using both the Morpheus Python & C++ APIs can be found in the [Morpheus Developer Guide](./developer_guide/guides.md).
 
 ### Morpheus Command Line Interface (CLI)
 
-The CLI allows users to completely configure a Morpheus pipeline directly from a terminal. This is ideal for users who do not need customized stages and for users configuring a pipeline in Kubernetes. The Morpheus CLI can be invoked using the `morpheus` command and is capable of running linear pipelines as well as additional tools. Instructions for using the CLI can be queried directly in the terminal using `morpheus --help`:
+The CLI allows users to completely configure a Morpheus pipeline directly from a terminal. This is ideal for users configuring a pipeline in Kubernetes. The Morpheus CLI can be invoked using the `morpheus` command and is capable of running linear pipelines as well as additional tools. Instructions for using the CLI can be queried directly in the terminal using `morpheus --help`:
 
 ```bash
 $ morpheus --help
