@@ -16,7 +16,7 @@
 
 # Example cyBERT Morpheus Pipeline for Apache Log Parsing
 
-Example Morpheus pipeline using Docker containers for Triton Inference server and Morpheus SDK/Client.
+Example Morpheus pipeline using Triton Inference server and Morpheus.
 
 ### Set up Triton Inference Server
 

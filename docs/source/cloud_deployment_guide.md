@@ -15,12 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Morpheus Quickstart Guide
+# Morpheus Cloud Deployment Guide
 
 ## Table of Contents
 - [Introduction](#introduction)
-- [Overview](#overview)
-  - [Features](#features)
 - [Setup](#setup)
   - [Prerequisites](#prerequisites)
   - [Set up NGC API Key and Install NGC Registry CLI](#set-up-ngc-api-key-and-install-ngc-registry-cli)
@@ -39,22 +37,17 @@ limitations under the License.
   - [Run NLP Sensitive Information Detection Pipeline](#run-nlp-sensitive-information-detection-pipeline)
   - [Run FIL Anomalous Behavior Profiling Pipeline](#run-fil-anomalous-behavior-profiling-pipeline)
   - [Verify Running Pipeline](#verify-running-pipeline)
-- [Appendix A](#appendix-a)
-  - [Prerequisites and Installation for AWS](#prerequisites-and-installation-for-aws)
-    - [Prerequisites](#prerequisites-1)
-    - [Install Cloud Native Core Stack for AWS](#install-cloud-native-core-stack-for-aws)
-  - [Prerequisites and Installation for Ubuntu](#prerequisites-and-installation-for-ubuntu)
-    - [Prerequisites](#prerequisites-2)
-  - [Installing Cloud Native Core Stack on NVIDIA Certified Systems](#installing-cloud-native-core-stack-on-nvidia-certified-systems)
-- [Appendix B](#appendix-b)
-  - [Kafka Topic Commands](#kafka-topic-commands)
-  - [Using Morpheus SDK Client to Run Pipelines](#using-morpheus-sdk-client-to-run-pipelines)
-- [Appendix C](#appendix-c)
-  - [Additional Documentation](#additional-documentation)
-  - [Troubleshooting](#troubleshooting)
-    - [Common Problems](#common-problems)
-  - [The dropna stage](#the-dropna-stage)
-- [Known Issues](#known-issues)
+- [Prerequisites and Installation for AWS](#prerequisites-and-installation-for-aws)
+  - [Prerequisites](#prerequisites-1)
+  - [Install Cloud Native Core Stack for AWS](#install-cloud-native-core-stack-for-aws)
+- [Prerequisites and Installation for Ubuntu](#prerequisites-and-installation-for-ubuntu)
+  - [Prerequisites](#prerequisites-2)
+- [Installing Cloud Native Core Stack on NVIDIA Certified Systems](#installing-cloud-native-core-stack-on-nvidia-certified-systems)
+- [Kafka Topic Commands](#kafka-topic-commands)
+- [Additional Documentation](#additional-documentation)
+- [Troubleshooting](#troubleshooting)
+  - [Common Problems](#common-problems)
+- [The dropna stage](#the-dropna-stage)
 
 
 ## Introduction
@@ -73,36 +66,6 @@ This quick start guide provides the necessary instructions to set up the minimum
 
 **Note**: This guide requires access to the NGC Public Catalog.
 
-## Overview
-
-Morpheus makes it easy to build and scale cybersecurity applications that harness adaptive pipelines supporting a wider range of model complexity than previously feasible. Morpheus makes it possible to analyze up to 100% of your data in real-time, for more accurate detection and faster remediation of threats as they occur. Morpheus also provides the ability to leverage AI to adjust to threats and compensate on the fly, at line rate.
-
-NVIDIA Morpheus enables organizations to attack the issue of cybersecurity head on. Rather than continuously chasing the cybersecurity problem, Morpheus provides the ability to propel you ahead of the breach and address the cybersecurity issue. With the world in a "discover and respond" state, where companies are finding breaches much too late, in a way that is way behind the curve, NVIDIA’s Morpheus cybersecurity AI framework enables any organization to warp to the present and begin to defend itself in real time.
-
-The Morpheus Developer Kit allows developers to quickly and easily set up example pipelines to run inference on different sample models provided by NVIDIA and experiment with the features and capabilities available within the Morpheus framework to address their cybersecurity and information security use cases.
-
-### Features
-
-- **Built on RAPIDS™**
-
-    Built on the RAPIDS™ libraries, deep learning frameworks, and NVIDIA Triton™ Inference Server, Morpheus simplifies the analysis of logs and telemetry to help detect and mitigate security threats.
-
-- **Massive Performance and Scale**
-
-    Enables AI inference and real-time monitoring of every server and packet across the entire network.
-
-- **Rapid Development and Deployment**
-
-    Integrates AI frameworks and tools that make it easier for developers to build cybersecurity solutions. Organizations that lack AI expertise can still leverage AI for cybersecurity because Morpheus leverages tools for every stage of the AI workflow, from data preparation to training, inference, and deploying at scale. 
-
-- **Real-time Telemetry**
-
-    The Morpheus native graph streaming engine can receive rich, real-time network telemetry from every NVIDIA BlueField DPU-accelerated server or NVIDIA AppShield in the data center without impacting performance. Integrating the framework into a third-party cybersecurity offering brings the world’s best AI computing to communication networks. 
-
-- **AI Cybersecurity Capabilities**
-
-    Deploy your own models using common deep learning frameworks. Or get a jump-start in building applications to identify leaked sensitive information, detect malware or fraud, do network mapping, flag user behavior changes, and identify errors via logs by using one of NVIDIA’s pre-trained and tested models.
-
 ## Setup
 
 ### Prerequisites
@@ -115,7 +78,7 @@ Continue with the setup steps below once the host system is installed, configure
 
 First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide].
 
-Once you’ve created your API key, create an environment variable containing your API key for use by the commands used further in this document:
+Once you've created your API key, create an environment variable containing your API key for use by the commands used further in this document:
 
 ```bash
 export API_KEY="<NGC_API_KEY>"
@@ -440,7 +403,7 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the Using Morpheus SDK Client to Run Pipelines section of the Appendix for more information regarding the commands.
+Refer to the [Using Morpheus to Run Pipelines](#using-morpheus-to-run-pipelines) section of the Appendix for more information regarding the commands.
 
 **Note**: Before running the example pipelines, ensure that the criteria below are met:
 -   Ensure that models specific to the pipeline are deployed.
@@ -726,7 +689,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 ### Verify Running Pipeline
-Once you’ve deployed the SDK client to run a pipeline, you can check the status of the pod using the following command:
+Once you've deployed the SDK client to run a pipeline, you can check the status of the pod using the following command:
 
 ```bash
 kubectl -n $NAMESPACE get pods sdk-cli-<RELEASE_NAME>
@@ -749,30 +712,26 @@ Preprocessing rate: 7051messages [00:09, 4372.75messages/s]
 Inference rate: 7051messages [00:04, 4639.40messages/s]
 ```
 
-## Appendix A
+## Prerequisites and Installation for AWS
 
-### Prerequisites and Installation for AWS
-
-#### Prerequisites
+### Prerequisites
 1.  AWS account with the ability to create/modify EC2 instances
 2.  AWS EC2 G4 instance with T4 or V100 GPU, at least 64GB RAM, 8 cores CPU, and 100 GB storage.
 
-#### Install Cloud Native Core Stack for AWS
-On your AWS EC2 G4 instance, follow the instructions in the linked document to install [NVIDIA’s Cloud Native Core Stack for AWS][NVIDIA’s Cloud Native Core Stack].
+### Install Cloud Native Core Stack for AWS
+On your AWS EC2 G4 instance, follow the instructions in the linked document to install [NVIDIA's Cloud Native Core Stack for AWS][NVIDIA's Cloud Native Core Stack].
 
-### Prerequisites and Installation for Ubuntu
+## Prerequisites and Installation for Ubuntu
 
-#### Prerequisites
+### Prerequisites
 1.  NVIDIA-Certified System
 2.  NVIDIA Pascal GPU or newer (Compute Capability >= 6.0)
 3.  Ubuntu 20.04 LTS or newer
 
-### Installing Cloud Native Core Stack on NVIDIA Certified Systems
-On your NVIDIA-Certified System, follow the instructions in the linked document to install [NVIDIA’s Cloud Native Core Stack].
+## Installing Cloud Native Core Stack on NVIDIA Certified Systems
+On your NVIDIA-Certified System, follow the instructions in the linked document to install [NVIDIA's Cloud Native Core Stack].
 
-## Appendix B
-
-### Kafka Topic Commands
+## Kafka Topic Commands
 
 List available Kafka topics.
 
@@ -821,229 +780,17 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
       --topic <YOUR_KAFKA_TOPIC>
 ```
 
-### Using Morpheus SDK Client to Run Pipelines
-
-The Morpheus SDK client allows you to configure several supported pipelines and provides flexibility to execute the pipeline in multithread mode.
-
-```bash
-(morpheus) root@sdk-cli:/workspace# morpheus run --help
-```
-```console
-Usage: morpheus run [OPTIONS] COMMAND [ARGS]...
-
-Options:
-  --num_threads INTEGER RANGE     Number of internal pipeline threads to use  [default: 8; x>=1]
-  --pipeline_batch_size INTEGER RANGE
-                                  Internal batch size for the pipeline.
-                                  Can be much larger than the model batch size.
-                                  Also used for Kafka consumers  [default: 256; x>=1]
-  --model_max_batch_size INTEGER RANGE
-                                  Max batch size to use for the model  [default: 8; x>=1]
-  --edge_buffer_size INTEGER RANGE
-                                  The size of buffered channels to use between nodes in a pipeline.
-                                  Larger values reduce backpressure at the cost of memory.
-                                  Smaller values will push messages through the pipeline quicker.
-                                  Must be greater than 1 and a power of 2 (i.e. 2, 4, 8, 16, etc.)  [default: 128; x>=2]
-  --use_cpp BOOLEAN               Whether or not to use C++ node and message types or to prefer python.
-                                  Only use as a last resort if bugs are encountered  [default: True]
-  --help                          Show this message and exit.
-
-Commands:
-  pipeline-ae     Run the inference pipeline with an AutoEncoder model
-  pipeline-fil    Run the inference pipeline with a FIL model
-  pipeline-nlp    Run the inference pipeline with a NLP model
-  pipeline-other  Run a custom inference pipeline without a specific model type
-```
-
-Four different pipelines are currently supported: a pipeline running an NLP model, a pipeline running a FIL model, a pipeline running an AutoEncoder model, and a generic pipeline.
-For details of running `pipeline-other`, please refer to the GNN Fraud Detection use case in the `examples` source directory.
-
-
-The Morpheus SDK Client provides the commands below to run the NLP pipeline:
-
-```bash
-(morpheus) root@sdk-cli:/workspace# morpheus run pipeline-nlp --help
-```
-
-```console
-Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
-
-  Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The output of each stage will become the input for the
-  next stage. For example, to read, classify and write to a file, the following stages could be used
-
-  pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
-  --server_url=localhost:8001 filter --threshold=0.5 to-file --filename=classifications.json
-
-  Pipelines must follow a few rules:
-  1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
-  2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
-  3. Only one inference stage can be used. Zero is also fine
-  4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
-
-Options:
-  --model_seq_length INTEGER RANGE
-                                  Limits the length of the sequence returned. If tokenized string is shorter than max_length, output will be padded with 0s.
-                                  If the tokenized string is longer than max_length and do_truncate == False,
-                                  there will be multiple returned sequences containing the overflowing
-                                  token-ids. Default value is 256  [default: 256; x>=1]
-  --label TEXT                    Specify output labels.
-  --labels_file DATA FILE         Specifies a file to read labels from in order to convert class IDs into labels.
-                                  A label file is a simple text file where each line corresponds to a label.
-                                  Ignored when --label is specified  [default: data/labels_nlp.txt]
-  --viz_file FILE                 Save a visualization of the pipeline at the specified location
-  --help                          Show this message and exit.
-
-Commands:
-  add-class     Add detected classifications to each message.
-  add-scores    Add probability scores to each message.
-  buffer        (Deprecated) Buffer results.
-  delay         (Deprecated) Delay results for a certain duration.
-  deserialize   Deserialize source data into Dataframes.
-  dropna        Drop null data entries from a DataFrame.
-  filter        Filter message by a classification threshold.
-  from-file     Load messages from a file.
-  from-kafka    Load messages from a Kafka cluster.
-  gen-viz       (Deprecated) Write out visualization DataFrames.
-  inf-identity  Perform inference for testing that performs a no-op.
-  inf-pytorch   Perform inference with PyTorch.
-  inf-triton    Perform inference with Triton Inference Server.
-  mlflow-drift  Report model drift statistics to ML Flow.
-  monitor       Display throughput numbers at a specific point in the pipeline.
-  preprocess    Prepare NLP input DataFrames for inference.
-  serialize     Include & exclude columns from messages.
-  to-file       Write all messages to a file.
-  to-kafka      Write all messages to a Kafka cluster.
-  trigger       Buffer data until previous stage has completed.
-  validate      Validate pipeline output for testing.
-```
-
-Morpheus SDK Client provides the commands below to run the FIL pipeline:
-
-```bash
-(morpheus) root@sdk-cli:/workspace# morpheus run pipeline-fil --help
-```
-
-```console
-Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
-
-  Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The output of each stage will become the input for the
-  next stage. For example, to read, classify and write to a file, the following stages could be used
-
-  pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
-  --server_url=localhost:8000 filter --threshold=0.5 to-file --filename=classifications.json
-
-  Pipelines must follow a few rules:
-  1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
-  2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
-  3. Only one inference stage can be used. Zero is also fine
-  4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
-
-Options:
-  --model_fea_length INTEGER RANGE
-                                  Number of features trained in the model  [default: 29; x>=1]
-  --label TEXT                    Specify output labels. Ignored when --labels_file is specified  [default: mining]
-  --labels_file DATA FILE         Specifies a file to read labels from in order to convert class IDs into labels. A label file is a simple text file where each line
-                                  corresponds to a label. If unspecified the value specified by the --label flag will be used.
-  --columns_file DATA FILE        Specifies a file to read column features.  [default: data/columns_fil.txt]
-  --viz_file FILE                 Save a visualization of the pipeline at the specified location
-  --help                          Show this message and exit.
-
-Commands:
-  add-class       Add detected classifications to each message.
-  add-scores      Add probability scores to each message.
-  buffer          (Deprecated) Buffer results.
-  delay           (Deprecated) Delay results for a certain duration.
-  deserialize     Deserialize source data into Dataframes.
-  dropna          Drop null data entries from a DataFrame.
-  filter          Filter message by a classification threshold.
-  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a dataframe. It normalizes nested json messages and arranges them into a
-                  dataframe by snapshot and source(Determine which source generated the plugin messages).
-  from-file       Load messages from a file.
-  from-kafka      Load messages from a Kafka cluster.
-  inf-identity    Perform inference for testing that performs a no-op.
-  inf-pytorch     Perform inference with PyTorch.
-  inf-triton      Perform inference with Triton Inference Server.
-  mlflow-drift    Report model drift statistics to ML Flow.
-  monitor         Display throughput numbers at a specific point in the pipeline.
-  preprocess      Prepare FIL input DataFrames for inference.
-  serialize       Include & exclude columns from messages.
-  to-file         Write all messages to a file.
-  to-kafka        Write all messages to a Kafka cluster.
-  trigger         Buffer data until previous stage has completed.
-  validate        Validate pipeline output for testing.
-```
-
-Morpheus SDK Client provides the commands below to run the AutoEncoder pipeline:
-
-```bash
-(morpheus) root@sdk-cli:/workspace# morpheus run pipeline-ae --help
-```
-
-```console
-Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
-
-  Configure and run the pipeline. To configure the pipeline, list the stages in the order that data should flow. The output of each stage will become the input for the
-  next stage. For example, to read, classify and write to a file, the following stages could be used
-
-  pipeline from-file --filename=my_dataset.json deserialize preprocess inf-triton --model_name=my_model
-  --server_url=localhost:8000 filter --threshold=0.5 to-file --filename=classifications.json
-
-  Pipelines must follow a few rules:
-  1. Data must originate in a source stage. Current options are `from-file` or `from-kafka`
-  2. A `deserialize` stage must be placed between the source stages and the rest of the pipeline
-  3. Only one inference stage can be used. Zero is also fine
-  4. The following stages must come after an inference stage: `add-class`, `filter`, `gen-viz`
-
-Options:
-  --columns_file DATA FILE        [required]
-  --labels_file DATA FILE         Specifies a file to read labels from in order to convert class IDs into labels. A label file is a simple text file where each line
-                                  corresponds to a label. If unspecified, only a single output label is created for FIL
-  --userid_column_name TEXT       Which column to use as the User ID.  [default: userIdentityaccountId; required]
-  --userid_filter TEXT            Specifying this value will filter all incoming data to only use rows with matching User IDs. Which column is used for the User ID is
-                                  specified by `userid_column_name`
-  --feature_scaler [none|standard|gauss_rank]
-                                  Autoencoder feature scaler  [default: standard]
-  --use_generic_model             Whether to use a generic model when user does not have minimum number of training rows
-  --viz_file FILE                 Save a visualization of the pipeline at the specified location
-  --help                          Show this message and exit.
-
-Commands:
-  add-class        Add detected classifications to each message.
-  add-scores       Add probability scores to each message.
-  buffer           (Deprecated) Buffer results.
-  delay            (Deprecated) Delay results for a certain duration.
-  filter           Filter message by a classification threshold.
-  from-azure       Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline immediately. Useful for testing performance
-                   and accuracy of a pipeline.
-  from-cloudtrail  Load messages from a Cloudtrail directory.
-  from-duo         Source stage is used to load AWS CloudTrail messages from a file and dumping the contents into the pipeline immediately. Useful for testing performance
-                   and accuracy of a pipeline.
-  inf-pytorch      Perform inference with PyTorch.
-  inf-triton       Perform inference with Triton Inference Server.
-  monitor          Display throughput numbers at a specific point in the pipeline.
-  preprocess       Prepare Autoencoder input DataFrames for inference.
-  serialize        Include & exclude columns from messages.
-  timeseries       Perform time series anomaly detection and add prediction.
-  to-file          Write all messages to a file.
-  to-kafka         Write all messages to a Kafka cluster.
-  train-ae         Train an Autoencoder model on incoming data.
-  trigger          Buffer data until previous stage has completed.
-  validate         Validate pipeline output for testing.
-```
-
-## Appendix C
-
-### Additional Documentation
+## Additional Documentation
 For more information on how to use the Morpheus CLI to customize and run your own optimized AI pipelines, Refer to below documentation.
 - [Morpheus Contribution]
 - [Morpheus Developer Guide]
 - [Morpheus Pipeline Examples]
 
 
-### Troubleshooting
+## Troubleshooting
 This section lists solutions to problems you might encounter with Morpheus or from it's supporting components.
 
-#### Common Problems
+### Common Problems
 
 - Models Unloaded After Reboot
   - When the pod is restarted, K8s will not automatically load the models. Since models are deployed to *ai-engine* in explicit mode using MLflow, we'd have to manually deploy them again using the [Model Deployment](#model-deployment) process.
@@ -1062,7 +809,7 @@ This section lists solutions to problems you might encounter with Morpheus or fr
 
   - Solution: Reinstall the Morpheus workflow and reduce the Kafka topic's message retention time and message producing rate.
 
-### The dropna stage
+## The dropna stage
 The Drop Null Attributes stage (dropna) requires the specification of a column name. This column will vary from use case (and its input data) to use case. These are the applicable columns for the pre-built pipelines provided by Morpheus.
 
 | Input | Columns |
@@ -1075,19 +822,3 @@ The Drop Null Attributes stage (dropna) requires the specification of a column n
 | Log Parsing | raw |
 | PCAP | data |
 | Ransomware | PID, Process, snapshot_id, timestamp, source |
-
-
-## Known Issues
-
-| Issue | Description |
-| ------ | ------ |
-| nv-morpheus/SRF#157 | Requesting more threads than CPU can lead to an abort in SRF, so reduce the number of pipeline threads to be equal to or less than available CPU. This applies to all environments including bare metal and cloud (vCPU). |
-
-
-
-[Morpheus Pipeline Examples]: https://github.com/nv-morpheus/Morpheus/tree/main/examples
-[Morpheus Contribution]: https://github.com/nv-morpheus/Morpheus/blob/main/CONTRIBUTING.md
-[Morpheus Developer Guide]: https://github.com/nv-morpheus/Morpheus/tree/main/docs/source/developer_guide/guides
-[Triton Inference Server Model Configuration]: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
-[NVIDIA’s Cloud Native Core Stack]: https://github.com/NVIDIA/cloud-native-core
-[NGC Registry CLI User Guide]: https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1
