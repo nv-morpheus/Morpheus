@@ -59,7 +59,7 @@ Once you have gotten your feet wet and are more comfortable with the code, you c
 
 Look at the unassigned issues, and find an issue to which you are comfortable contributing. Start with _Step 2_ above, commenting on the issue to let others know you are working on it. If you have any questions related to the implementation of the issue, ask them in the issue instead of the PR.
 
-## Setting Up Your Build Environment
+## Building from Source
 
 The following instructions are for developers who are getting started with the Morpheus repository. The Morpheus development environment is flexible (Docker, Conda and bare metal workflows) but has a high number of dependencies that can be difficult to setup. These instructions outline the steps for setting up a development environment inside a Docker container or on a host machine with Conda.
 

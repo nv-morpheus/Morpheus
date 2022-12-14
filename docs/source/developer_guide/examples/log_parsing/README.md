@@ -1,1 +1,0 @@
-../../../../../examples/log_parsing/README.md

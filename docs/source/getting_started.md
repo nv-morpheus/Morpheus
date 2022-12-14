@@ -1,26 +1,51 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Getting Started with Morpheus
+
 There are three ways to get started with Morpheus:
-- [Using pre-built Docker containers](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_)
-- Building the Morpheus Docker container
-- Building Morpheus from source
+- [Using pre-built Docker containers](#using-pre-built-docker-containers)
+- [Building the Morpheus Docker container](#building-the-morpheus-container)
+- [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
-The pre-built Docker containers are the easiest way to get started with the latest release of Morpheus. Instructions on how to download and run these containers, including the necessary data and models, can be found on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
+The [pre-built Docker containers](#using-pre-built-docker-containers) are the easiest way to get started with the latest release of Morpheus. Instructions on how to download and run these containers, including the necessary data and models, can be found on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
 
-More advanced users, or those who are interested in using the latest pre-release features, will need to build the Morpheus container or build from source. Step-by-step instructions for these users can be found in the following section.
+More advanced users, or those who are interested in using the latest pre-release features, will need to [build the Morpheus container](#building-the-morpheus-container) or [build from source](./developer_guide/contributing.md#building-from-source).
 
-### Prerequisites
-The following sections must be followed prior to building the Morpheus container or building Morpheus from source.
-
-#### Requirements
+## Requirements
 - Pascal architecture GPU or better
 - NVIDIA driver `450.80.02` or higher
 - [Docker](https://docs.docker.com/get-docker/)
 - [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `22.06` or higher
-- [Git LFS](https://git-lfs.github.com/)
 
+## Using pre-built Docker containers
+### Pulling the Morpheus Image
+1. Goto [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
+1. Choose a version
+1. Download the selected version, for example for `22.11`:
+```bash
+docker pull nvcr.io/nvidia/morpheus/morpheus:22.11-runtime
+```
 
-#### Clone the Repository
+Skip ahead to the [Starting the Morpheus Container](#starting-the-morpheus-container) section.
+
+## Building the Morpheus Container
+### Clone the Repository
 
 ```bash
 MORPHEUS_ROOT=$(pwd)/morpheus
@@ -28,7 +53,7 @@ git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
 
-#### Git LFS
+### Git LFS
 
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). Only those files which are strictly needed to run Morpheus are downloaded by default when the repository is cloned.
 
@@ -61,7 +86,7 @@ If `Git LFS` is not installed the before cloning the repository, the `scripts/fe
 git lfs install
 ```
 
-### Build Morpheus Container
+### Build the Container
 
 To assist in building the Morpheus container, several scripts have been provided in the `./docker` directory. To build the "release" container, run the following:
 
@@ -83,14 +108,24 @@ You can specify different Docker images and tags by passing the script the `DOCK
 DOCKER_IMAGE_TAG="v22.11.00a-runtime" ./docker/run_container_release.sh
 ```
 
-### Build from Source
+## Starting the Morpheus Container
+1. Ensure that [The NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) is installed.
+1. Start the container downloaded from the previous section:
+```bash
+docker run --rm -ti --runtime=nvidia --gpus=all --net=host nvcr.io/nvidia/morpheus/morpheus:22.11-runtime bash
+```
 
-It's possible to build from source outside of a container. However, due to the large number of dependencies, this can be complex and is only necessary for developers. Instructions for developers and contributors can be found in [contributing.md](./developer_guide/contributing.md).
+Note about some of the flags above:
+| Flag | Description |
+| ---- | ----------- |
+| `--runtime=nvidia` | Choose the Nvidia docker runtime, this enables access to the GPU inside the container. This flag isn't needed if the `nvidia` runtime is already set as the default runtime for Docker |
+| `--gpus=all` | Specify which GPUs the container has access to.  Alternately a specific GPU could be chosen with `--gpus=<gpu-id>` |
+| `--net=host` | Most of the Morpheus pipelines utilize [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver), which will be running in another container. For simplicity we will give the container access to the host system's network, production deployments may opt for an explicit network configuration. |
 
 ## Launching Triton Server
 
 Many of the validation tests and example workflows require a Triton server to function.
-Use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
+In a new terminal, from the root of the Morpheus repo, use the following command to launch a Docker container for Triton loading all of the included pre-trained models:
 
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
@@ -107,18 +142,18 @@ This will launch Triton using the default network ports (8000 for HTTP, 8001 for
 
 To run Morpheus, users will need to choose from the Morpheus Command Line Interface (CLI) or Python interface. Which interface to use depends on the user's needs, amount of customization, and operating environment. More information on each interface can be found below.
 
+For full example pipelines using both the Python API and command line interface, refer to the [Morpheus Examples](./examples.md).
+
 ### Morpheus Python Interface
 
-The Morpheus python interface allows users to configure their pipelines using a python script file. This is ideal for users who are working in a Jupyter notebook, users who need complex initialization logic or users who have customized stages. Documentation on using the Morpheus python interface can be found at [`developer_guide/guides.md`](./developer_guide/guides.md).
-
-For full example pipelines using the python interface, see the `./examples` directory.
+The Morpheus Python interface allows users to configure their pipelines using a Python script file. This is ideal for users who are working in a Jupyter notebook, and users who need complex initialization logic. Documentation on using both the Morpheus Python & C++ APIs can be found in the [Morpheus Developer Guide](./developer_guide/guides.md).
 
 ### Morpheus Command Line Interface (CLI)
 
 The CLI allows users to completely configure a Morpheus pipeline directly from a terminal. This is ideal for users who do not need customized stages and for users configuring a pipeline in Kubernetes. The Morpheus CLI can be invoked using the `morpheus` command and is capable of running linear pipelines as well as additional tools. Instructions for using the CLI can be queried directly in the terminal using `morpheus --help`:
 
 ```bash
-$ morpheus
+$ morpheus --help
 Usage: morpheus [OPTIONS] COMMAND [ARGS]...
 
 Options:
@@ -166,17 +201,17 @@ Options:
                                   False]
 ```
 
-Several examples on using the Morpheus CLI can be found at [`basics/examples.rst`](./basics/examples.rst).
+Several examples on using the Morpheus CLI can be found in the [Basic Usage](./examples/basic_usage/README.md) guide along with the other [Morpheus Examples](./examples.md).
 
 #### CLI Stage Configuration
 
 When configuring a pipeline via the CLI, you start with the command `morpheus run pipeline` and then list the stages in order from start to finish. The order that the commands are placed in will be the order that data flows from start to end. The output of each stage will be linked to the input of the next. For example, to build a simple pipeline that reads from Kafka, deserializes messages, serializes them, and then writes to a file, use the following:
 
 ```bash
-morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json
+morpheus run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json
 ```
 
-You should see some output similar to:
+The output should be similar to:
 
 ```
 ====Building Pipeline====
@@ -191,7 +226,7 @@ Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite
 ====Building Pipeline Complete!====
 ```
 
-This is important because it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, you will see the following:
+This is important because it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, Morpheus should ouput an error similar to:
 
 ```bash
 $ morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize to-file --filename .tmp/temp_out.json --overwrite
@@ -210,7 +245,7 @@ RuntimeError: The to-file stage cannot handle input of <class 'morpheus.pipeline
 
 This indicates that the `to-file` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write strings. To ensure you have a valid pipeline, look at the `Accepted input types: (typing.List[str],)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.pipeline.messages.MultiMessage`, to `typing.List[str]`, which is exactly what the `serialize` stage does.
 
-## Pipeline Stages
+#### Pipeline Stages
 
 A complete list of the pipeline stages will be added in the future. For now, you can query the available stages for each pipeline type via:
 
@@ -306,3 +341,7 @@ Commands:
   validate         Validate pipeline output for testing.
 ```
 Note: The available commands for different types of pipelines are not the same. This means that the same stage, when used in different pipelines, may have different options. Please check the CLI help for the most up-to-date information during development.
+
+## Next Steps
+* [Morpheus Examples](./examples.md) - Example pipelines using both the Python API and command line interface
+* [Morpheus Developer Guide](./developer_guide/guides.md) - Documentation on using the Morpheus Python & C++ APIs
