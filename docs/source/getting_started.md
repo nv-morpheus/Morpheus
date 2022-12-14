@@ -22,7 +22,7 @@ There are three ways to get started with Morpheus:
 - [Building the Morpheus Docker container](#building-the-morpheus-container)
 - [Building Morpheus from source](./developer_guide/contributing.md#building-from-source)
 
-The [pre-built Docker containers](#using-pre-built-docker-containers) are the easiest way to get started with the latest release of Morpheus. Instructions on how to download and run these containers, including the necessary data and models, can be found on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
+The [pre-built Docker containers](#using-pre-built-docker-containers) are the easiest way to get started with the latest release of Morpheus. Released versions of Morpheus containers can be found on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/collections/morpheus_).
 
 More advanced users, or those who are interested in using the latest pre-release features, will need to [build the Morpheus container](#building-the-morpheus-container) or [build from source](./developer_guide/contributing.md#building-from-source).
 
