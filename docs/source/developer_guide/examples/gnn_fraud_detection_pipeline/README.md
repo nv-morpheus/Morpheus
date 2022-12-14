@@ -1,1 +1,0 @@
-../../../../../examples/gnn_fraud_detection_pipeline/README.md
