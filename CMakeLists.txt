@@ -25,6 +25,7 @@ option(MORPHEUS_BUILD_BENCHMARKS "Whether or not to build benchmarks" OFF)
 option(MORPHEUS_BUILD_EXAMPLES "Whether or not to build examples" OFF)
 option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
 option(MORPHEUS_BUILD_PYTHON_STUBS "Whether or not to generated .pyi stub files for C++ Python modules. Disable to avoid requiring loading the NVIDIA GPU Driver during build" ON)
+option(MORPHEUS_ENABLE_DEBUG_INFO "Enable printing debug information" OFF)
 option(MORPHEUS_USE_CCACHE "Enable caching compilation results with ccache" OFF)
 option(MORPHEUS_USE_CLANG_TIDY "Enable running clang-tidy as part of the build process" OFF)
 option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcpkg.
@@ -188,6 +189,25 @@ install(
     PATTERN "py.typed"
     PATTERN "data/*"
 )
+
+if(MORPHEUS_ENABLE_DEBUG_INFO)
+  morpheus_utils_print_all_targets()
+
+  morpheus_utils_print_target_properties(
+      TARGETS
+        cuda_utils
+        morpheus
+        stages
+        messages
+        common
+        file_types
+      WRITE_TO_FILE
+  )
+
+  morpheus_utils_print_global_properties(
+      WRITE_TO_FILE
+  )
+endif()
 
 # Cleanup the environment after we exit this scope
 list(REMOVE_ITEM CMAKE_PREFIX_PATH "${MORPHEUS_CMAKE_PREFIX_PATH_EXTENSIONS}")
