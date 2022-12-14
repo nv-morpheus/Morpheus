@@ -33,11 +33,11 @@ More advanced users, or those who are interested in using the latest pre-release
 - [The NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 - [NVIDIA Triton Inference Server](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver) `22.06` or higher
 
-#### Note about Docker
+#### Note about Docker:
 > The Morpheus documentation and examples assume that the [Manage Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user) post install step has been performed allowing Docker commands to be executed by a non-root user. This is not strictly necessary so long as the current user has `sudo` privileges to execute Docker commands.
 
 ## Using pre-built Docker containers
-### Pulling the Morpheus Image
+### Pull the Morpheus Image
 1. Goto [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
 1. Choose a version
 1. Download the selected version, for example for `22.11`:
@@ -74,6 +74,7 @@ scripts/fetch_data.py fetch <dataset> [<dataset>...]
 
 At time of writing the defined datasets are:
 * all - Metaset includes all others
+* docs - Graphics needed for documentation
 * examples - Data needed by scripts in the `examples` subdir
 * models - Morpheus models (largest dataset)
 * tests - Data used by unittests
@@ -102,7 +103,7 @@ To assist in building the Morpheus container, several scripts have been provided
 ./docker/build_container_release.sh
 ```
 
-This will create an image named `nvcr.io/nvidia/morpheus/morpheus:${MORPHEUS_VERSION}-runtime` where `$MORPHEUS_VERSION` is replaced by the output of `git describe --tags --abbrev=0`.
+By default this will create an image named `nvcr.io/nvidia/morpheus/morpheus:${MORPHEUS_VERSION}-runtime` where `$MORPHEUS_VERSION` is replaced by the output of `git describe --tags --abbrev=0`. You can specify different Docker image names and tags by passing the script the `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables respectively.
 
 To run the built "release" container, use the following:
 
@@ -110,7 +111,7 @@ To run the built "release" container, use the following:
 ./docker/run_container_release.sh
 ```
 
-You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.11.00a` use the following:
+The `./docker/run_container_release.sh` script accepts the same `DOCKER_IMAGE_NAME`, and `DOCKER_IMAGE_TAG` environment variables that the `./docker/build_container_release.sh` script does. For example, to run version `v22.11.00a` use the following:
 
 ```bash
 DOCKER_IMAGE_TAG="v22.11.00a-runtime" ./docker/run_container_release.sh
