@@ -232,42 +232,33 @@ Several examples on using the Morpheus CLI can be found in the [Basic Usage](./e
 When configuring a pipeline via the CLI, you start with the command `morpheus run pipeline` and then list the stages in order from start to finish. The order that the commands are placed in will be the order that data flows from start to end. The output of each stage will be linked to the input of the next. For example, to build a simple pipeline that reads from Kafka, deserializes messages, serializes them, and then writes to a file, use the following:
 
 ```bash
-morpheus run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json
+morpheus --log_level=INFO run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topic test_pcap deserialize serialize to-file --filename .tmp/temp_out.json --overwrite
 ```
 
-The output should be similar to:
-
+The output should contain lines similar to:
 ```
-====Building Pipeline====
-Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=test_pcap, group_id=custreamz, poll_interval=10millis)>
+====Pipeline Started====
+Added source: <from-kafka-0; KafkaSourceStage(bootstrap_servers=localhost:9092, input_topic=test_pcap, group_id=morpheus, client_id=None, poll_interval=10millis, disable_commit=False, disable_pre_filtering=False, auto_offset_reset=AutoOffsetReset.LATEST, stop_after=0, async_commits=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage
-Added stage: <serialize-2; SerializeStage(include=[], exclude=['^ID$', '^_ts_'], output_type=pandas)>
-  └─ morpheus.MultiMessage -> pandas.DataFrame
-Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=False, file_type=auto)>
-  └─ pandas.DataFrame -> pandas.DataFrame
-====Building Pipeline Complete!====
+Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'), fixed_columns=True)>
+  └─ morpheus.MultiMessage -> morpheus.MessageMeta
+Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=False, file_type=FileTypes.Auto, include_index_col=True)>
+  └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ```
 
-This is important because it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, Morpheus should output an error similar to:
+This is important because, when the log level is set to `INFO` and above, it shows you the order of the stages and the output type of each one. Since some stages cannot accept all types of inputs, Morpheus will report an error if you have configured your pipeline incorrectly. For example, if we run the same command as above but forget the `serialize` stage, Morpheus should output an error similar to:
 
 ```bash
-$ morpheus run pipeline-nlp from-kafka --input_topic test_pcap deserialize to-file --filename .tmp/temp_out.json --overwrite
-
-====Building Pipeline====
-Added source: from-kafka -> <class 'cudf.core.dataframe.DataFrame'>
-Added stage: deserialize -> <class 'morpheus.pipeline.messages.MultiMessage'>
-
-Traceback (most recent call last):
-  File "morpheus/pipeline/pipeline.py", line 228, in build_and_start
-    current_stream_and_type = await s.build(current_stream_and_type)
-  File "morpheus/pipeline/pipeline.py", line 108, in build
-    raise RuntimeError("The {} stage cannot handle input of {}. Accepted input types: {}".format(
-RuntimeError: The to-file stage cannot handle input of <class 'morpheus.pipeline.messages.MultiMessage'>. Accepted input types: (typing.List[str],)
+$ morpheus run pipeline-nlp from-kafka --bootstrap_servers localhost:9092 --input_topic test_pcap deserialize to-file --filename .tmp/temp_out.json --overwrite
+Configuring Pipeline via CLI
+Starting pipeline via CLI... Ctrl+C to Quit
+E20221214 14:53:17.425515 452045 controller.cpp:62] exception caught while performing update - this is fatal - issuing kill
+E20221214 14:53:17.425714 452045 context.cpp:125] rank: 0; size: 1; tid: 140065439217216; fid: 0x7f6144041000: set_exception issued; issuing kill to current runnable. Exception msg: RuntimeError: The to-file stage cannot handle input of <class 'morpheus.messages.multi_message.MultiMessage'>. Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)
 ```
 
-This indicates that the `to-file` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write strings. To ensure you have a valid pipeline, look at the `Accepted input types: (typing.List[str],)` portion of the message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.pipeline.messages.MultiMessage`, to `typing.List[str]`, which is exactly what the `serialize` stage does.
+This indicates that the `to-file` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`. This is because the `to-file` stage has no idea how to write that class to a file; it only knows how to write messages of type `morpheus.messages.message_meta.MessageMeta`. To ensure you have a valid pipeline, look at the `Accepted input types: (<class 'morpheus.messages.message_meta.MessageMeta'>,)` portion of the error message. This indicates you need a stage that converts from the output type of the `deserialize` stage, `morpheus.pipeline.messages.MultiMessage`, to `morpheus.messages.message_meta.MessageMeta`, which is exactly what the `serialize` stage does.
 
 #### Pipeline Stages
 
@@ -275,71 +266,74 @@ A complete list of the pipeline stages will be added in the future. For now, you
 
 ```bash
 $ morpheus run pipeline-nlp --help
-Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-                               [ARGS]...]...
+Usage: morpheus run pipeline-nlp [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
 <Help Paragraph Omitted>
 
 Commands:
-  add-class     Add detected classifications to each message
-  add-scores    Add probability scores to each message
-  buffer        (Deprecated) Buffer results
-  delay         (Deprecated) Delay results for a certain duration
-  deserialize   Deserialize source data from JSON.
-  dropna        Drop null data entries from a DataFrame
-  filter        Filter message by a classification threshold
-  from-file     Load messages from a file
-  from-kafka    Load messages from a Kafka cluster
-  gen-viz       (Deprecated) Write out visualization data frames
-  inf-identity  Perform a no-op inference for testing
-  inf-pytorch   Perform inference with PyTorch
-  inf-triton    Perform inference with Triton
-  mlflow-drift  Report model drift statistics to ML Flow
-  monitor       Display throughput numbers at a specific point in the pipeline
-  preprocess    Convert messages to tokens
-  serialize     Serializes messages into a text format
-  to-file       Write all messages to a file
-  to-kafka      Write all messages to a Kafka cluster
-  validate      Validates pipeline output against an expected output
+  add-class     Add detected classifications to each message.
+  add-scores    Add probability scores to each message.
+  buffer        (Deprecated) Buffer results.
+  delay         (Deprecated) Delay results for a certain duration.
+  deserialize   Deserialize source data into Dataframes.
+  dropna        Drop null data entries from a DataFrame.
+  filter        Filter message by a classification threshold.
+  from-file     Load messages from a file.
+  from-kafka    Load messages from a Kafka cluster.
+  gen-viz       (Deprecated) Write out visualization DataFrames.
+  inf-identity  Perform inference for testing that performs a no-op.
+  inf-pytorch   Perform inference with PyTorch.
+  inf-triton    Perform inference with Triton Inference Server.
+  mlflow-drift  Report model drift statistics to ML Flow.
+  monitor       Display throughput numbers at a specific point in the pipeline.
+  preprocess    Prepare NLP input DataFrames for inference.
+  serialize     Include & exclude columns from messages.
+  to-file       Write all messages to a file.
+  to-kafka      Write all messages to a Kafka cluster.
+  trigger       Buffer data until the previous stage has completed.
+  validate      Validate pipeline output for testing.
 ```
 
 And for the FIL pipeline:
 
 ```bash
 $ morpheus run pipeline-fil --help
-Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-                               [ARGS]...]...
+Usage: morpheus run pipeline-fil [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
 <Help Paragraph Omitted>
 
 Commands:
-  add-class     Add detected classifications to each message
-  add-scores    Add probability scores to each message
-  buffer        (Deprecated) Buffer results
-  delay         (Deprecated) Delay results for a certain duration
-  deserialize   Deserialize source data from JSON.
-  dropna        Drop null data entries from a DataFrame
-  filter        Filter message by a classification threshold
-  from-file     Load messages from a file
-  from-kafka    Load messages from a Kafka cluster
-  inf-identity  Perform a no-op inference for testing
-  inf-pytorch   Perform inference with PyTorch
-  inf-triton    Perform inference with Triton
-  mlflow-drift  Report model drift statistics to ML Flow
-  monitor       Display throughput numbers at a specific point in the pipeline
-  preprocess    Convert messages to tokens
-  serialize     Serializes messages into a text format
-  to-file       Write all messages to a file
-  to-kafka      Write all messages to a Kafka cluster
-  validate      Validates pipeline output against an expected output
+  add-class       Add detected classifications to each message.
+  add-scores      Add probability scores to each message.
+  buffer          (Deprecated) Buffer results.
+  delay           (Deprecated) Delay results for a certain duration.
+  deserialize     Deserialize source data into Dataframes.
+  dropna          Drop null data entries from a DataFrame.
+  filter          Filter message by a classification threshold.
+  from-appshield  Source stage is used to load Appshield messages from one or more plugins into a
+                  dataframe. It normalizes nested json messages and arranges them into a dataframe by
+                  snapshot and source(Determine which source generated the plugin messages).
+  from-file       Load messages from a file.
+  from-kafka      Load messages from a Kafka cluster.
+  inf-identity    Perform inference for testing that performs a no-op.
+  inf-pytorch     Perform inference with PyTorch.
+  inf-triton      Perform inference with Triton Inference Server.
+  mlflow-drift    Report model drift statistics to ML Flow.
+  monitor         Display throughput numbers at a specific point in the pipeline.
+  preprocess      Prepare FIL input DataFrames for inference.
+  serialize       Include & exclude columns from messages.
+  to-file         Write all messages to a file.
+  to-kafka        Write all messages to a Kafka cluster.
+  trigger         Buffer data until the previous stage has completed.
+  validate        Validate pipeline output for testing.
+
 ```
 
 And for the AE pipeline:
 
 ```bash
 $ morpheus run pipeline-ae --help
-Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-                               [ARGS]...]...
+Usage: morpheus run pipeline-ae [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
 <Help Paragraph Omitted>
 
