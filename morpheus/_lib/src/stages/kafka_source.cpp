@@ -32,11 +32,11 @@
 #include <cudf/table/table.hpp>                  // for table
 #include <glog/logging.h>
 #include <librdkafka/rdkafkacpp.h>
-#include <nlohmann/json.hpp>
-#include <pymrc/node.hpp>
 #include <mrc/runnable/context.hpp>
 #include <mrc/segment/builder.hpp>
 #include <mrc/types.hpp>  // for SharedFuture
+#include <nlohmann/json.hpp>
+#include <pymrc/node.hpp>
 
 #include <algorithm>  // for find, min, transform
 #include <chrono>
@@ -77,7 +77,7 @@ class KafkaSourceStageStopAfter : public std::exception
 {};
 
 // ************ KafkaSourceStage__Rebalancer *************************//
-class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb //NOLINT
+class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb  // NOLINT
 {
   public:
     KafkaSourceStage__Rebalancer(std::function<int32_t()> batch_timeout_fn,

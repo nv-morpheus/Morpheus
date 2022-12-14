@@ -17,9 +17,9 @@
 
 #include "morpheus/stages/deserialize.hpp"
 
+#include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <mrc/segment/builder.hpp>
 
 #include <algorithm>  // for min
 #include <cstddef>

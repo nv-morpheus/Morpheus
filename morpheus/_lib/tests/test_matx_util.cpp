@@ -29,13 +29,13 @@
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>  // for data_type, size_type
 #include <gtest/gtest.h>
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
-#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 
 #include <cstdint>  // for int64_t, int32_t, uint8_t
 #include <cstdlib>  // for std::getenv
-#include <memory>  // for shared_ptr, make_shared, unique_ptr
+#include <memory>   // for shared_ptr, make_shared, unique_ptr
 #include <string>
 #include <vector>
 

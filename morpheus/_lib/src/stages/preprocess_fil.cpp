@@ -33,6 +33,8 @@
 #include <cudf/table/table_view.hpp>    // for table_view
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <mrc/segment/builder.hpp>
 #include <pybind11/cast.h>  // for object_api::operator(), operator""_a
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor, arg
@@ -40,8 +42,6 @@
 #include <pymrc/node.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
-#include <mrc/segment/builder.hpp>
 
 #include <array>
 #include <cstddef>

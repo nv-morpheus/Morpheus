@@ -29,10 +29,10 @@
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <pybind11/cast.h>
 #include <pybind11/pybind11.h>
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
-#include <mrc/cuda/common.hpp>                    // for MRC_CHECK_CUDA
 
 #include <algorithm>  // for transform
 #include <array>      // needed for pybind11::make_tuple

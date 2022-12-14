@@ -22,9 +22,9 @@
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 #include "morpheus/utilities/type_util.hpp"
 
-#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToHost
-#include <rmm/device_buffer.hpp>
+#include <cuda_runtime.h>       // for cudaMemcpy, cudaMemcpyDeviceToHost
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <rmm/device_buffer.hpp>
 
 #include <cstdint>
 #include <memory>

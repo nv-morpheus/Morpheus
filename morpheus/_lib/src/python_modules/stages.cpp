@@ -28,11 +28,11 @@
 #include "morpheus/stages/write_to_file.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <mrc/segment/object.hpp>
 #include <pybind11/attr.h>      // for multiple_inheritance
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>   // for dict, sequence
 #include <pymrc/utils.hpp>      // for pymrc::import
-#include <mrc/segment/object.hpp>
 
 #include <memory>
 
