@@ -89,7 +89,7 @@ To download the data needed for unittests:
 scripts/fetch_data.py fetch tests validation
 ```
 
-If `Git LFS` is not installed the before cloning the repository, the `scripts/fetch_data.py` script will fail. If this is the case follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
+If `Git LFS` is not installed before cloning the repository, the `scripts/fetch_data.py` script will fail. If this is the case follow the instructions for installing `Git LFS` from [here](https://git-lfs.github.com/), and then run the following command:
 ```bash
 git lfs install
 ```
