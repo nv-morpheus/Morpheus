@@ -43,7 +43,7 @@ export SKIP_YAPF=${SKIP_YAPF:-""}
 export BUILD_DIR=${BUILD_DIR:-"${REPO_DIR}/build"}
 
 # Speficy the clang-tools version to use. Default 14
-export CLANG_TOOLS_VERSION=${CLANG_TOOLS_VERSION:-15}
+export CLANG_TOOLS_VERSION=${CLANG_TOOLS_VERSION:-14}
 
 # Returns the `branch-YY.MM` that is used as the base for merging
 function get_base_branch() {
