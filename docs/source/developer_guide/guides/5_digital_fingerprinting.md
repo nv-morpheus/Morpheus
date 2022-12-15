@@ -632,6 +632,7 @@ Let's first look at the module implementation structure before diving deeper int
 
 ```py
 import srf
+import typing
 
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -684,6 +685,7 @@ module_config = {
 Module must be packaged as a stage, as illustrated below, in order to be used in the Morpheus pipeline.
 
 ```py
+from morpheus.config import Config
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 
 # Morpheus configuration
@@ -702,7 +704,7 @@ module_stage = LinearModulesStage(c,
 | Argument | Type | Description |
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
-| `module_config` | `dict` or `None` | module configuration |
+| `module_config` | `dict` or `None` | Module configuration |
 | `input_port_name` | `str` | Name of a module input port, as used during registration |
 | `output_port_name` | `str` | Name of a module output port, as used during registration |
 | `output_type` | default `typing.Any` | Module output data type |
@@ -712,6 +714,7 @@ A module can serve as a wrapper for a chain of complex constructs-containing chi
 
 ```py
 import srf
+import typing
 
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -751,7 +754,7 @@ Let's look at the DFP Training process based on modules. On a higher level, the 
 
 * [**DFPPipelinePreprocessing**](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_pipeline_preprocessing.py)
 
-   This module constructs a chaining module by combining the separate modules listed below into a single module that contains all of the internal components for preprocessing the Azure Active Directory and Duo Authentication logs.
+   This module constructs a chain module by combining the separate modules listed below into a single module that contains all of the internal components for preprocessing the Azure Active Directory and Duo Authentication logs.
    - [FileBatcher](/morpheus/modules/file_batcher.py)
    - [FileToDataFrame](/morpheus/modules/file_to_df.py)
    - [DFPSplitUsers](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_split_users.py)
@@ -759,7 +762,7 @@ Let's look at the DFP Training process based on modules. On a higher level, the 
    - [DFPPreprocessing](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_preprocessing.py)
 * [**DFPPipelineTraining**](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_pipeline_training.py)
 
-   This module creates a chaining module by integrating the individual modules described below into a single module that incorporates all of the internals for consuming preprocessed data, training the model, and writing the trained model to MLFLow server to serve inference requests.
+   This module creates a chain module by integrating the individual modules described below into a single module that incorporates all of the internals for consuming preprocessed data, training the model, and writing the trained model to MLFLow server to serve inference requests.
    - [DFPTraining](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training.py)
    - [MLFlowModelWriter](/morpheus/modules/mlflow_model_writer.py)
 
