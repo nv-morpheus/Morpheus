@@ -621,3 +621,157 @@ The `DFPPostprocessingStage` ([examples/digital_fingerprinting/production/morphe
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `z_score_threshold` | `float` | Optional, sets the threshold value above which values of `mean_abs_z` must be above in order to be considered  an anomaly, default is 2.0 |
+
+## Morpheus Pipeline with Modules
+
+A module is a type of work unit that can be utilized in the Morpheus stage and can be registered to a MRC segment module registry. Modules are beneficial when there is a possibility for the work-unit to be reused. We can load the module from the registry into a multiple contexts without having to be familiar with the inner workings of the Module; all that is needed is that we pass an input and it returns the output.
+
+Let's first look at the module implementation structure before diving deeper into the DFP Training pipeline as a module.
+
+> Note: Modules can be used for more than just creating middle nodes to connect sources and sinks. Additionally, it can be used to construct Source and Sink nodes.
+
+```py
+import srf
+
+from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_utils import register_module
+
+@register_module("SimpleModule", "morpheus_modules")
+def module_init(builder: srf.Builder):
+
+    module_id = "SimpleModule"
+
+    config: typing.Dict[str, str] = get_module_config(module_id, builder)
+
+    sep = config.get("sep", ",")
+
+    def on_data(message: str):
+
+        # Your implementation goes here...
+
+    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
+
+    # Here we are creating a node.
+    node = builder.make_node_full(module_id, node_fn)
+
+    # Register input and output port name for a module.
+    builder.register_module_input("<input port name>", node)
+    builder.register_module_output("<output port name>", node)
+
+```
+
+The `register_module` decorator on the module initializer function registers the module with the `SimpleModule` (module_id) and the `morpheus_modules` (namespace).
+
+> Note: While registering the module, the user has the opportunity to choose the input and output port names. When the module has been registered. To obtain the input /output port connection, the same names must be used.
+
+
+Required key meta fields for module configuration as shown below.
+   -  `module_id` : Unique identifier for a module in the module registry.
+   -  `module_name` : Specifies the module name.
+   -  `namespace` : Virtually cluster the modules.
+
+```py
+# Module configuration
+module_config = {
+   "module_id": "SimpleModule",
+   "module_name": "simple_module",
+   "namespace": "morpheus_modules",
+   "sep": ":"
+}
+```
+
+Module must be packaged as a stage, as illustrated below, in order to be used in the Morpheus pipeline.
+
+```py
+from morpheus.stages.general.linear_modules_stage import LinearModulesStage
+
+# Morpheus configuration
+c = Config()
+
+module_stage = LinearModulesStage(c,
+                                  module_config,
+                                  input_port_name="<input port name>",
+                                  output_port_name="<input port name>",
+                                  output_type="<module output type>")
+
+
+```
+[LinearModulesStage](/morpheus/stages/general/linear_modules_stage.py) is an utility stage that loads an existing, registered, MRC SegmentModule and wraps it as a Morpheus SinglePortStage.
+
+| Argument | Type | Description |
+| -------- | ---- | ----------- |
+| `c` | `morpheus.config.Config` | Morpheus config object |
+| `module_config` | `dict` or `None` | module configuration |
+| `input_port_name` | `str` | Name of a module input port, as used during registration |
+| `output_port_name` | `str` | Name of a module output port, as used during registration |
+| `output_type` | default `typing.Any` | Module output data type |
+
+
+A module can serve as a wrapper for a chain of complex constructs-containing child modules. The example below demonstrates how to establish a chain module, presuming `modules_1` through `module_n` are already registered.
+
+```py
+import srf
+
+from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_utils import register_module
+
+@register_module("ChainModule", "morpheus_modules")
+def simple_module(builder: srf.Builder):
+
+   module_id = "ChainModule"
+
+   config: typing.Dict[str, str] = get_module_config(module_id, builder)
+
+   # Get module configurations
+   module_1_config = config.get("module_1", None)
+         ...
+         ...
+   module_n_config = config.get("module_n", None)
+
+   # Load modules from the registry
+   module_1 = load_module(module_1_config, builder=builder)
+         ...
+         ...
+   module_n = load_module(module_n_config, builder=builder)
+
+   # Make an edge between the modules.
+   # input/output port names used at 'builder.register_module_input' and 'builder.register_module_output'.
+   builder.make_edge(module_1.output_port("<output port name>"), module_2.input_port("<input port name>"))
+         ...
+         ...
+   builder.make_edge(module_n-1.output_port("<output port name>"), module_n.input_port("<input port name>"))
+
+   # Register input and output port for a module.
+   builder.register_module_input("<your input port name>", module_1.input_port("<input port name>"))
+   builder.register_module_output("<your output port name>", module_n.output_port("<output port name>"))
+```
+
+Let's look at the DFP Training process based on modules. On a higher level, the complete DFP training process has been divided into two modules.
+
+* [**DFPPipelinePreprocessing**](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_pipeline_preprocessing.py)
+
+   This module constructs a chaining module by combining the separate modules listed below into a single module that contains all of the internal components for preprocessing the Azure Active Directory and Duo Authentication logs.
+   - [FileBatcher](/morpheus/modules/file_batcher.py)
+   - [FileToDataFrame](/morpheus/modules/file_to_df.py)
+   - [DFPSplitUsers](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_split_users.py)
+   - [DFPRollingWindow](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_rolling_window.py)
+   - [DFPPreprocessing](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_preprocessing.py)
+* [**DFPPipelineTraining**](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_pipeline_training.py)
+
+   This module creates a chaining module by integrating the individual modules described below into a single module that incorporates all of the internals for consuming preprocessed data, training the model, and writing the trained model to MLFLow server to serve inference requests.
+   - [DFPTraining](/examples/digital_fingerprinting/production/morpheus/dfp/modules/dfp_training.py)
+   - [MLFlowModelWriter](/morpheus/modules/mlflow_model_writer.py)
+
+
+#### Run DFP Training Pipeline with Modules
+To run the DFP pipelines using modules with the example datasets, within the container run:
+
+* Duo Training Pipeline
+   ```bash
+   python dfp_duo_modules_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/duo-training-data/*.json"
+   ```
+* Azure Training Pipeline
+   ```bash
+   python dfp_azure_modules_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/azure-training-data/*.json"
+   ```

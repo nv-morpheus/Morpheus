@@ -20,8 +20,8 @@ import dfp.modules.dfp_split_users  # noqa: F401
 import dfp.modules.dfp_training  # noqa: F401
 import srf
 
-import morpheus.modules.file_batcher_module  # noqa: F401
-import morpheus.modules.file_to_df_module  # noqa: F401
+import morpheus.modules.file_batcher  # noqa: F401
+import morpheus.modules.file_to_df  # noqa: F401
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module

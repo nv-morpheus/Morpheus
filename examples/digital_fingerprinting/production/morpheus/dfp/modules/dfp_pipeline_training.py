@@ -17,7 +17,7 @@ import logging
 import dfp.modules.dfp_training  # noqa: F401
 import srf
 
-import morpheus.modules.mlflow_model_writer_module  # noqa: F401
+import morpheus.modules.mlflow_model_writer  # noqa: F401
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module

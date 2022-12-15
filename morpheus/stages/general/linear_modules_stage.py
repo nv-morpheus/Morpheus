@@ -27,7 +27,8 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class LinearModulesStage(SinglePortStage):
     """
-Loads an existing, registered, MRC SegmentModule and wraps it as a Morpheus SinglePortStage.
+    Loads an existing, registered, MRC SegmentModule and wraps it as a Morpheus SinglePortStage.
+
     Parameters
     ----------
     c : `morpheus.config.Config`

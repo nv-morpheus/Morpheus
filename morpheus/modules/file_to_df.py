@@ -28,13 +28,10 @@ import pandas as pd
 import srf
 from srf.core import operators as ops
 
-import dask
-from dask.distributed import Client
-from dask.distributed import LocalCluster
-
 import cudf
 
 from morpheus._lib.file_types import FileTypes
+from morpheus.cli.utils import str_to_file_type
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_utils import get_module_config
@@ -68,20 +65,25 @@ def file_to_dataframe(builder: srf.Builder):
     cache_dir = config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
-                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "dask_thread")
+                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
     cache_dir = os.path.join(cache_dir, "file_cache")
 
     # Load input schema
     schema = pickle.loads(bytes(schema_str, encoding))
 
-    available_file_types = {"csv": FileTypes.CSV, "json": FileTypes.JSON}
-
     try:
-        file_type = available_file_types[file_type.lower()]
+        file_type = str_to_file_type(file_type.lower())
     except Exception:
         raise ValueError("Invalid input file type '{}'. Available file types are: CSV, JSON".format(file_type))
 
     def get_dask_cluster():
+
+        try:
+            import dask
+            from dask.distributed import LocalCluster
+        except ModuleNotFoundError:
+            raise Exception("Install 'dask' and 'distributed' to allow file downloads using dask mode.")
+
         logger.debug("Creating dask cluster...")
 
         # Up the heartbeat interval which can get violated with long download times
@@ -92,6 +94,16 @@ def file_to_dataframe(builder: srf.Builder):
         logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
 
         return dask_cluster
+
+    def get_dask_client(dask_cluster):
+
+        from dask.distributed import Client
+
+        logger.debug("Creating dask client...")
+        dask_client = Client(dask_cluster)
+        logger.debug("Creating dask client %s ... Done.", dask_client)
+
+        return dask_client
 
     def close_dask_cluster():
         if (dask_cluster is not None):
@@ -175,7 +187,7 @@ def file_to_dataframe(builder: srf.Builder):
             if (download_method.startswith("dask")):
                 # Create the client each time to ensure all connections to the cluster are
                 # closed (they can time out)
-                with Client(dask_cluster) as client:
+                with get_dask_client(dask_cluster) as client:
                     dfs = client.map(download_method_func, download_buckets)
 
                     dfs = client.gather(dfs)
@@ -239,8 +251,6 @@ def file_to_dataframe(builder: srf.Builder):
 
     def node_fn(obs: srf.Observable, sub: srf.Subscriber):
         obs.pipe(ops.map(convert_to_dataframe), ops.on_completed(close_dask_cluster)).subscribe(sub)
-
-    dask_cluster = None
 
     if (download_method.startswith("dask")):
         dask_cluster = get_dask_cluster()
