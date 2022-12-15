@@ -110,8 +110,8 @@ struct FilterDetectionStageInterfaceProxy
      * @param copy : Whether or not to perform a copy default=true
      * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder &builder,
-                                                                             const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,
+                                                                             const std::string& name,
                                                                              float threshold,
                                                                              bool copy = true);
 };

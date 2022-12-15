@@ -27,12 +27,11 @@ dependencies:
     - boost-cpp=1.74
     - cachetools=5.0.0
     - ccache>=3.7
-    - clangdev=14
+    - clangdev=15
     - click >=8
     - cmake=3.24
     - configargparse=1.5
     - cuda-nvml-dev=11.5
-    - nvcc_linux-64=11.5
     - cuda-python<=11.5.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.5
     - cudf 22.08
@@ -46,8 +45,8 @@ dependencies:
     - flatbuffers=2.0
     - gcc_linux-64=11.2
     - gflags=2.2
-    - git>=2.35.3 # Needed for wildcards on safe.directory
     - git-lfs=3.2
+    - git>=2.35.3 # Needed for wildcards on safe.directory
     - glog=0.6
     - gmock=1.10
     - gputil
@@ -55,16 +54,18 @@ dependencies:
     - grpcio
     - gtest=1.10
     - gxx_linux-64=11.2
-    - include-what-you-use=0.18
+    - include-what-you-use=0.19
     - isort
     - librdkafka=1.7.0
     - mlflow>1.29,<2
+    - mrc=23.01
     - myst-parser==0.17
     - networkx=2.8
     - ninja=1.10
     - nodejs=17.4.0
     - numba==0.55
     - numpydoc=1.4
+    - nvcc_linux-64=11.5
     - pandas=1.3
     - pip
     - pkg-config # for mrc cmake
@@ -82,7 +83,6 @@ dependencies:
     - scikit-build=0.13
     - sphinx
     - sphinx_rtd_theme
-    - mrc=23.01
     - sysroot_linux-64=2.17
     - tqdm=4
     - typing_utils=0.1

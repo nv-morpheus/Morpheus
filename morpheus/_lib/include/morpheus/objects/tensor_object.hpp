@@ -56,7 +56,7 @@ using RankType    = int;        // NOLINT
 namespace detail {
 
 template <typename IterT>
-std::string join(IterT begin, IterT end, std::string const &separator)
+std::string join(IterT begin, IterT end, std::string const& separator)
 {
     std::ostringstream result;
     if (begin != end)
@@ -73,7 +73,7 @@ std::string array_to_str(IterT begin, IterT end)
 }
 
 template <RankType R>
-void set_contiguous_stride(const std::array<TensorIndex, R> &shape, std::array<TensorIndex, R> &stride)
+void set_contiguous_stride(const std::array<TensorIndex, R>& shape, std::array<TensorIndex, R>& stride)
 {
     TensorIndex ttl = 1;
     auto rank       = shape.size();
@@ -85,7 +85,7 @@ void set_contiguous_stride(const std::array<TensorIndex, R> &shape, std::array<T
 }
 
 template <typename IndexT>
-void validate_stride(const std::vector<IndexT> &shape, std::vector<IndexT> &stride)
+void validate_stride(const std::vector<IndexT>& shape, std::vector<IndexT>& stride)
 {
     CHECK(stride.empty() || shape.size() == stride.size())
         << "Stride dimension should match shape dimension. Otherwise leave empty to auto calculate stride for "
@@ -126,7 +126,7 @@ struct ITensorStorage
 {
     virtual ~ITensorStorage() = default;
 
-    virtual void *data() const = 0;
+    virtual void* data() const = 0;
 
     // virtual const void* data() const                             = 0;
     virtual std::size_t bytes() const = 0;
@@ -139,14 +139,14 @@ struct ITensor;
 
 struct ITensorOperations
 {
-    virtual std::shared_ptr<ITensor> slice(const std::vector<TensorIndex> &min_dims,
-                                           const std::vector<TensorIndex> &max_dims) const = 0;
+    virtual std::shared_ptr<ITensor> slice(const std::vector<TensorIndex>& min_dims,
+                                           const std::vector<TensorIndex>& max_dims) const = 0;
 
-    virtual std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex> &dims) const = 0;
+    virtual std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex>& dims) const = 0;
 
     virtual std::shared_ptr<ITensor> deep_copy() const = 0;
 
-    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>> &selected_rows,
+    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
                                                TensorIndex num_rows) const = 0;
 
     virtual std::shared_ptr<ITensor> as_type(DataType dtype) const = 0;
@@ -201,16 +201,16 @@ struct TensorObject final
 
     TensorObject(std::shared_ptr<ITensor> tensor) : TensorObject(tensor->get_memory(), tensor) {}
 
-    TensorObject(const TensorObject &other) = default;
+    TensorObject(const TensorObject& other) = default;
 
-    TensorObject(TensorObject &&other) :
+    TensorObject(TensorObject&& other) :
       m_md(std::exchange(other.m_md, nullptr)),
       m_tensor(std::exchange(other.m_tensor, nullptr))
     {}
 
     ~TensorObject() = default;
 
-    void *data() const
+    void* data() const
     {
         return m_tensor->data();
     }
@@ -278,7 +278,7 @@ struct TensorObject final
         return {m_md, m_tensor->slice(min_dims, max_dims)};
     }
 
-    TensorObject reshape(const std::vector<TensorIndex> &dims) const
+    TensorObject reshape(const std::vector<TensorIndex>& dims) const
     {
         return {m_md, m_tensor->reshape(dims)};
     }
@@ -329,7 +329,7 @@ struct TensorObject final
         T output;
 
         MRC_CHECK_CUDA(
-            cudaMemcpy(&output, static_cast<uint8_t *>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
+            cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
     }
@@ -359,13 +359,13 @@ struct TensorObject final
         T output;
 
         MRC_CHECK_CUDA(
-            cudaMemcpy(&output, static_cast<uint8_t *>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
+            cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
     }
 
     // move assignment
-    TensorObject &operator=(TensorObject &&other) noexcept
+    TensorObject& operator=(TensorObject&& other) noexcept
     {
         // Guard self assignment
         if (this == &other)
@@ -377,7 +377,7 @@ struct TensorObject final
     }
 
     // copy assignment
-    TensorObject &operator=(const TensorObject &other)
+    TensorObject& operator=(const TensorObject& other)
     {
         // Guard self assignment
         if (this == &other)
@@ -443,7 +443,7 @@ struct TensorObject final
      * @param num_rows
      * @return TensorObject
      */
-    TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>> &selected_rows,
+    TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
                            TensorIndex num_rows) const
     {
         return {m_tensor->copy_rows(selected_rows, num_rows)};

@@ -90,8 +90,8 @@ struct AddScoresStageInterfaceProxy
      * @param idx2label : Index to classification labels map
      * @return std::shared_ptr<mrc::segment::Object<AddScoresStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(mrc::segment::Builder &builder,
-                                                                      const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(mrc::segment::Builder& builder,
+                                                                      const std::string& name,
                                                                       std::size_t num_class_labels,
                                                                       std::map<std::size_t, std::string> idx2label);
 };

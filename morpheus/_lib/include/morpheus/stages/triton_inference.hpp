@@ -136,8 +136,8 @@ struct InferenceClientStageInterfaceProxy
      * @return std::shared_ptr<mrc::segment::Object<InferenceClientStage>>
      */
     static std::shared_ptr<mrc::segment::Object<InferenceClientStage>> init(
-        mrc::segment::Builder &builder,
-        const std::string &name,
+        mrc::segment::Builder& builder,
+        const std::string& name,
         std::string model_name,
         std::string server_url,
         bool force_convert_inputs,

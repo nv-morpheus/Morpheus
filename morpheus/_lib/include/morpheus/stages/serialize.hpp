@@ -105,10 +105,10 @@ struct SerializeStageInterfaceProxy
      * the same columns as the first message received.
      * @return std::shared_ptr<mrc::segment::Object<SerializeStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<SerializeStage>> init(mrc::segment::Builder &builder,
-                                                                      const std::string &name,
-                                                                      const std::vector<std::string> &include,
-                                                                      const std::vector<std::string> &exclude,
+    static std::shared_ptr<mrc::segment::Object<SerializeStage>> init(mrc::segment::Builder& builder,
+                                                                      const std::string& name,
+                                                                      const std::vector<std::string>& include,
+                                                                      const std::vector<std::string>& exclude,
                                                                       bool fixed_columns = true);
 };
 
