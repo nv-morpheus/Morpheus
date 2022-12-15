@@ -25,8 +25,9 @@ From the root of the morpheus repo:
 mamba env update -f docs/conda_docs.yml
 ```
 
-## Build Morpheus and Documentation
+## To build the documentation run:
 ```
-CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON" ./scripts/compile.sh
+cmake -B build -DMORPHEUS_BUILD_DOCS=ON .
+cmake --build build --target morpheus_docs
 ```
 Outputs to `build/docs/html`
