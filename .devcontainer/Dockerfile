@@ -4,7 +4,7 @@ FROM nvidia/cuda:11.5.1-devel-ubuntu20.04 AS base
 
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
-        wget git-lfs gdb
+        wget git-lfs gdb iputils-ping
 
 ENV CONDA_DIR=/opt/conda
 
