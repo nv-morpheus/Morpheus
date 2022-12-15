@@ -18,8 +18,8 @@ from enum import Enum
 from io import StringIO
 
 import confluent_kafka as ck
+import mrc
 import pandas as pd
-import srf
 
 import cudf
 
@@ -216,7 +216,7 @@ class KafkaSourceStage(SingleOutputSource):
             if (consumer):
                 consumer.close()
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if (self._build_cpp_node()):
             source = _stages.KafkaSourceStage(builder,

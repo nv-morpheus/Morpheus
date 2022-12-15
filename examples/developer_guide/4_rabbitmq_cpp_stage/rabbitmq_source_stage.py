@@ -17,9 +17,9 @@ import logging
 import time
 from io import StringIO
 
+import mrc
 import pandas as pd
 import pika
-import srf
 
 import cudf
 
@@ -83,7 +83,7 @@ class RabbitMQSourceStage(SingleOutputSource):
     def supports_cpp_node(cls) -> bool:
         return True
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
         if self._build_cpp_node():
             node = morpheus_rabbit_cpp.RabbitMQSourceStage(builder,
                                                            self.unique_name,

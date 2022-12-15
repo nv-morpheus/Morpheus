@@ -22,7 +22,7 @@ morpheus_add_pybind11_module(
       "${MORPHEUS_LIB_ROOT}/include"
     LINK_TARGETS
       morpheus
-      srf::pysrf
+      mrc::pymrc
     OUTPUT_TARGET
       file_types_target
     INSTALL_DEST

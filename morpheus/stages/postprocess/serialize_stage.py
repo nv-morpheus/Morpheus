@@ -17,7 +17,7 @@ import re
 import typing
 from functools import partial
 
-import srf
+import mrc
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -124,7 +124,7 @@ class SerializeStage(SinglePortStage):
 
         return MessageMeta(df=df)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
             stream = _stages.SerializeStage(builder,
                                             self.unique_name,
