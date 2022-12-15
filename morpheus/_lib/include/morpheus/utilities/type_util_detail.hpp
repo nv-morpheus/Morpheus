@@ -105,47 +105,47 @@ struct DataType
     {
         if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 8)
         {
-            return DataType(TypeId::INT8);
+            return {TypeId::INT8};
         }
         else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 16)
         {
-            return DataType(TypeId::INT16);
+            return {TypeId::INT16};
         }
         else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 32)
         {
-            return DataType(TypeId::INT32);
+            return {TypeId::INT32};
         }
         else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 64)
         {
-            return DataType(TypeId::INT64);
+            return {TypeId::INT64};
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 8)
         {
-            return DataType(TypeId::UINT8);
+            return {TypeId::UINT8};
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 16)
         {
-            return DataType(TypeId::UINT16);
+            return {TypeId::UINT16};
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 32)
         {
-            return DataType(TypeId::UINT32);
+            return {TypeId::UINT32};
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 64)
         {
-            return DataType(TypeId::UINT64);
+            return {TypeId::UINT64};
         }
         else if constexpr (std::is_floating_point_v<T> && size_in_bits<T>() == 32)
         {
-            return DataType(TypeId::FLOAT32);
+            return {TypeId::FLOAT32};
         }
         else if constexpr (std::is_floating_point_v<T> && size_in_bits<T>() == 64)
         {
-            return DataType(TypeId::FLOAT64);
+            return {TypeId::FLOAT64};
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
-            return DataType(TypeId::BOOL8);
+            return {TypeId::BOOL8};
         }
         else
         {
@@ -153,7 +153,7 @@ struct DataType
         }
 
         // To hide compiler warnings
-        return DataType(TypeId::EMPTY);
+        return {TypeId::EMPTY};
     }
 
     // From numpy

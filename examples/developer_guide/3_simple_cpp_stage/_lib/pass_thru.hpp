@@ -18,9 +18,9 @@
 #pragma once
 
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <pysrf/node.hpp>               // for PythonNode
-#include <srf/segment/builder.hpp>      // for Segment Builder
-#include <srf/segment/object.hpp>       // for Segment Object
+#include <pymrc/node.hpp>               // for PythonNode
+#include <mrc/segment/builder.hpp>      // for Segment Builder
+#include <mrc/segment/object.hpp>       // for Segment Object
 
 #include <memory>
 #include <string>
@@ -32,10 +32,10 @@ namespace morpheus_example {
 
 using namespace morpheus;
 
-class PassThruStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
+class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
     using base_t::sink_type_t;
     using base_t::source_type_t;
     using base_t::subscribe_fn_t;
@@ -47,7 +47,7 @@ class PassThruStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage
 
 struct PassThruStageInterfaceProxy
 {
-    static std::shared_ptr<srf::segment::Object<PassThruStage>> init(srf::segment::Builder &builder,
+    static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder &builder,
                                                                      const std::string &name);
 };
 

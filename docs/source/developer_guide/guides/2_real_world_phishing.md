@@ -84,7 +84,7 @@ Our `_build_single` method remains unchanged; even though we are modifying the i
 ```python
 import typing
 
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.messages.message_meta import MessageMeta
@@ -125,7 +125,7 @@ class RecipientFeaturesStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 
@@ -455,7 +455,7 @@ In this example, we will create a source that reads messages from a [RabbitMQ](h
 The `_build_source` method is similar to the `_build_single` method; it receives an instance of the pipeline segment and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have parent stages and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
 
 ```python
-def _build_source(self, builder: srf.Builder) -> StreamPair:
+def _build_source(self, builder: mrc.Builder) -> StreamPair:
     node = builder.make_source(self.unique_name, self.source_generator)
     return node, MessageMeta
 ```
@@ -498,7 +498,7 @@ from io import StringIO
 import cudf
 import pandas as pd
 import pika
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -568,7 +568,7 @@ class RabbitMQSourceStage(SingleOutputSource):
 
         return super().stop()
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
         node = builder.make_source(self.unique_name, self.source_generator)
         return node, MessageMeta
 
@@ -605,7 +605,7 @@ class WriteToRabbitMQStage(SinglePortStage):
 
 In our `_build_single` we will be making use of the `make_sink` method rather than `make_node` or `make_source`
 ```python
-def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
     node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
     builder.make_edge(input_stream[0], node)
     return (node, input_stream[1])
@@ -647,7 +647,7 @@ import typing
 from io import StringIO
 
 import pika
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -697,7 +697,7 @@ class WriteToRabbitMQStage(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
         builder.make_edge(input_stream[0], node)
         return (node, input_stream[1])

@@ -15,7 +15,7 @@
 import logging
 import typing
 
-import srf
+import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
@@ -40,11 +40,11 @@ class SingleOutputSource(_pipeline.SourceStage):
 
         self._create_ports(0, 1)
 
-    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
         return out_pair
 
     @typing.final
-    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         ret_val = self._post_build_single(builder, out_ports_pair[0])
 

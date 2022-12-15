@@ -187,6 +187,6 @@ TableInfo TableInfo::get_slice(cudf::size_type start, cudf::size_type stop, std:
 
     auto slice_cols = slice_rows.select(col_indices);
 
-    return TableInfo(m_parent, slice_cols, m_index_names, new_column_names);
+    return {m_parent, slice_cols, m_index_names, new_column_names};
 }
 }  // namespace morpheus
