@@ -18,7 +18,3 @@ docker compose -f $COMPOSE_FILE up -d triton
 export TRITON_HOST=$(docker compose -f $COMPOSE_FILE exec triton hostname -i)
 sleep 1 # wait for triton to load models
 docker compose -f $COMPOSE_FILE logs triton
-
-echo "$TRITON_HOST triton" | sudo tee -a /etc/hosts
-
-echo "TRITON_HOST:       ${TRITON_HOST}"

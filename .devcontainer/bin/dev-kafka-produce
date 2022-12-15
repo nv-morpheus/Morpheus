@@ -2,4 +2,10 @@
 
 COMPOSE_FILE="${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml"
 
-echo "not implemented"
+
+if [[ $# -eq 2 ]]; then
+    docker compose -f $COMPOSE_FILE cp $2 kafka:/tmp/kafka-topic-input
+    docker compose -f $COMPOSE_FILE exec kafka bash -c "cat /tmp/kafka-topic-input | kafka-console-producer.sh --bootstrap-server kafka:9092 --topic $1"
+else
+    docker compose -f $COMPOSE_FILE exec -it kafka kafka-console-producer.sh --bootstrap-server kafka:9092 --topic $1
+fi

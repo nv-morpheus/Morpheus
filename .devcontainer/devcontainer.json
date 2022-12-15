@@ -9,6 +9,7 @@
     },
 
     "runArgs": [
+        "--network=morpheus",
         "--cap-add=SYS_NICE",
         "--cap-add=SYS_PTRACE"
     ],
@@ -20,9 +21,7 @@
 
     "postStartCommand": "${MORPHEUS_ROOT}/.devcontainer/bin/setup-morpheus-env",
 
-    "initializeCommand": [
-        "mkdir", "-p", "${localWorkspaceFolder}/.devcontainer/.conda"
-    ],
+    "initializeCommand": [ "./.devcontainer/init" ],
 
     "remoteUser": "coder",
 

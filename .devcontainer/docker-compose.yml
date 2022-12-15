@@ -6,7 +6,6 @@ services:
     runtime: nvidia
     image: nvcr.io/nvidia/tritonserver:22.08-py3
     command: tritonserver --model-repository=/models --exit-on-error=false ${TRITON_MODEL_ARGS}
-    network_mode: bridge
     ports:
       - 8000:8000
       - 8001:8001
@@ -18,7 +17,6 @@ services:
   zookeeper:
     image: bitnami/zookeeper:latest
     container_name: morpheus-zookeeper
-    network_mode: bridge
     ports:
       - "2181:2181"
     environment:
@@ -27,14 +25,18 @@ services:
   kafka:
     image: bitnami/kafka:latest
     container_name: morpheus-kafka
-    network_mode: bridge
     ports:
       - "9092:9092"
       - "29092:29092"
       - "9999:9999"
     environment:
       ALLOW_PLAINTEXT_LISTENER: yes
-      KAFKA_CFG_ZOOKEEPER_CONNECT: morpheus-zookeeper:2181
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
     depends_on:
       - zookeeper
+
+networks:
+  default:
+    external:
+      name: morpheus
