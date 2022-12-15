@@ -15,7 +15,7 @@
 
 import typing
 
-import srf
+import mrc
 
 from _lib import morpheus_example as morpheus_example_cpp
 from morpheus.cli.register_stage import register_stage
@@ -40,7 +40,7 @@ class PassThruStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         if self._build_cpp_node():
             node = morpheus_example_cpp.PassThruStage(builder, self.unique_name)
         else:

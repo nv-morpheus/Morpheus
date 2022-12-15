@@ -22,13 +22,13 @@
 #include "morpheus/objects/triton_in_out.hpp"
 
 #include <http_client.h>
-#include <pysrf/node.hpp>
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <map>
 #include <memory>
@@ -51,11 +51,11 @@ namespace morpheus {
  * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
  */
 class InferenceClientStage
-  : public srf::pysrf::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>
 {
   public:
     using base_t =
-        srf::pysrf::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -133,11 +133,11 @@ struct InferenceClientStageInterfaceProxy
      * @param needs_logits : Determines if logits are required.
      * @param inout_mapping : Dictionary used to map pipeline input/output names to Triton input/output names. Use this
      * if the Morpheus names do not match the model.
-     * @return std::shared_ptr<srf::segment::Object<InferenceClientStage>>
+     * @return std::shared_ptr<mrc::segment::Object<InferenceClientStage>>
      */
-    static std::shared_ptr<srf::segment::Object<InferenceClientStage>> init(
-        srf::segment::Builder &builder,
-        const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<InferenceClientStage>> init(
+        mrc::segment::Builder& builder,
+        const std::string& name,
         std::string model_name,
         std::string server_url,
         bool force_convert_inputs,

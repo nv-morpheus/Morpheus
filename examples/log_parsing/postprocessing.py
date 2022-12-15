@@ -17,9 +17,9 @@ import pathlib
 import typing
 from collections import defaultdict
 
+import mrc
 import numpy as np
 import pandas as pd
-import srf
 
 from messages import MultiPostprocLogParsingMessage
 from messages import MultiResponseLogParsingMessage
@@ -156,7 +156,7 @@ class LogParsingPostProcessingStage(SinglePortStage):
 
         return df
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Convert the messages to rows of strings
         stream = builder.make_node(self.unique_name, self._postprocess)

@@ -14,7 +14,7 @@
 
 import typing
 
-import srf
+import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -58,7 +58,7 @@ class WriteToS3Stage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
         node = builder.make_node(self.unique_name, self._s3_writer)

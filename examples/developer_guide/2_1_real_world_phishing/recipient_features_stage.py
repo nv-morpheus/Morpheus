@@ -15,7 +15,7 @@
 
 import typing
 
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -75,7 +75,7 @@ class RecipientFeaturesStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 
