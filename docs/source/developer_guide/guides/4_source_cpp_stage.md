@@ -38,7 +38,7 @@ Our includes section looks like:
 #include <string>
 ```
 
-The SRF includes bring in the definitions for SRF `Builder`, `SegmentObject` and `PythonSource`.
+The MRC includes bring in the definitions for MRC `Builder`, `SegmentObject` and `PythonSource`.
 
 Our namespace and class definition looks like this:
 
@@ -184,7 +184,7 @@ Our includes section looks like:
 
 The [Google Logging Library](https://github.com/google/glog) (glog) is used by Morpheus for logging; however, the choice of a logger is up to the individual developer.
 
-SRF uses the [Boost.Fiber](https://www.boost.org/doc/libs/1_77_0/libs/fiber/doc/html/fiber/overview.html) library to perform task scheduling. In the future, SRF will likely expose a configuration option to choose between fibers or `std::thread`.
+MRC uses the [Boost.Fiber](https://www.boost.org/doc/libs/1_77_0/libs/fiber/doc/html/fiber/overview.html) library to perform task scheduling. In the future, MRC will likely expose a configuration option to choose between fibers or `std::thread`.
 For now, all Morpheus stages, both Python and C++, are executed within a fiber. In general, authors of a stage don't need to be too concerned about this detail, with two notable exceptions:
 1. Rather than yielding or sleeping a thread, stage authors should instead call [boost::this_fiber::yield](https://www.boost.org/doc/libs/master/libs/fiber/doc/html/fiber/fiber_mgmt/this_fiber.html#this_fiber_yield) and [boost::this_fiber::sleep_for](https://www.boost.org/doc/libs/master/libs/fiber/doc/html/fiber/fiber_mgmt/this_fiber.html#this_fiber_sleep_for), respectively.
 1. In cases where thread-local storage is desired, [fiber local storage](https://www.boost.org/doc/libs/1_77_0/libs/fiber/doc/html/fiber/fls.html) should be used instead.

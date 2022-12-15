@@ -121,7 +121,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
     (morpheus) user@host:/workspace# conda list | grep python
     python                    3.8.13          py3.8.13_dbg_morpheus    local
    ```
-   1. Note: This does not build any Morpheus or SRF code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
+   1. Note: This does not build any Morpheus or MRC code and defers building the code until the entire repo can be mounted into a running container. This allows for faster incremental builds during development.
 2. Run the development container
    ```bash
    ./docker/run_container_dev.sh
