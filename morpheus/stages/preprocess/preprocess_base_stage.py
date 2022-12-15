@@ -16,7 +16,7 @@ import inspect
 import typing
 from abc import abstractmethod
 
-import srf
+import mrc
 import typing_utils
 
 from morpheus.config import Config
@@ -54,10 +54,10 @@ class PreprocessBaseStage(MultiMessageStage):
         pass
 
     @abstractmethod
-    def _get_preprocess_node(self, builder: srf.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder):
         pass
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiInferenceMessage

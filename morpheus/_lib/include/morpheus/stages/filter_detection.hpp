@@ -19,13 +19,13 @@
 
 #include "morpheus/messages/multi_response_probs.hpp"
 
-#include <pysrf/node.hpp>
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <cstddef>  // for size_t
 #include <map>
@@ -68,12 +68,12 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+class FilterDetectionsStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                             std::shared_ptr<MultiResponseProbsMessage>>
 {
   public:
     using base_t =
-        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -108,10 +108,10 @@ struct FilterDetectionStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
-     * @return std::shared_ptr<srf::segment::Object<FilterDetectionsStage>>
+     * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>
      */
-    static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &builder,
-                                                                             const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,
+                                                                             const std::string& name,
                                                                              float threshold,
                                                                              bool copy = true);
 };

@@ -20,9 +20,9 @@
 #include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
 #include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
 #include <morpheus/messages/meta.hpp>           // for MessageMeta
-#include <pysrf/node.hpp>                       // for srf::pysrf::PythonSource
-#include <srf/segment/builder.hpp>              // for Segment Builder
-#include <srf/segment/object.hpp>               // for Segment Object
+#include <pymrc/node.hpp>                       // for mrc::pymrc::PythonSource
+#include <mrc/segment/builder.hpp>              // for Segment Builder
+#include <mrc/segment/object.hpp>               // for Segment Object
 
 #include <chrono>  // for chrono::milliseconds
 #include <memory>  // for shared_ptr
@@ -36,10 +36,10 @@ namespace morpheus_rabbit {
 using namespace std::literals;
 using namespace morpheus;
 
-class RabbitMQSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
+class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
@@ -71,7 +71,7 @@ struct RabbitMQSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a RabbitMQSourceStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>> init(srf::segment::Builder &builder,
+    static std::shared_ptr<mrc::segment::Object<RabbitMQSourceStage>> init(mrc::segment::Builder &builder,
                                                                            const std::string &name,
                                                                            const std::string &host,
                                                                            const std::string &exchange,

@@ -28,11 +28,11 @@
 #include <cudf/table/table.hpp>                  // for table
 #include <cudf/types.hpp>
 #include <glog/logging.h>
+#include <mrc/segment/builder.hpp>
 #include <pybind11/cast.h>  // for object_api::operator()
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
-#include <srf/segment/builder.hpp>
 
 #include <algorithm>  // for find
 #include <cstddef>    // for size_t
@@ -114,8 +114,8 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 }
 
 // ************ FileSourceStageInterfaceProxy ************ //
-std::shared_ptr<srf::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, std::string filename, int repeat)
+std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder, const std::string& name, std::string filename, int repeat)
 {
     auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat);
 

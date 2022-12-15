@@ -106,8 +106,8 @@ void RabbitMQSourceStage::close()
     }
 }
 
-std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>> RabbitMQSourceStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
+std::shared_ptr<mrc::segment::Object<RabbitMQSourceStage>> RabbitMQSourceStageInterfaceProxy::init(
+    mrc::segment::Builder &builder,
     const std::string &name,
     const std::string &host,
     const std::string &exchange,
@@ -124,11 +124,11 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_rabbit, m)
 {
-    srf::pysrf::import(m, "morpheus._lib.messages");
+    mrc::pymrc::import(m, "morpheus._lib.messages");
 
-    py::class_<srf::segment::Object<RabbitMQSourceStage>,
-               srf::segment::ObjectProperties,
-               std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>>>(
+    py::class_<mrc::segment::Object<RabbitMQSourceStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<RabbitMQSourceStage>>>(
         m, "RabbitMQSourceStage", py::multiple_inheritance())
         .def(py::init<>(&RabbitMQSourceStageInterfaceProxy::init),
              py::arg("builder"),

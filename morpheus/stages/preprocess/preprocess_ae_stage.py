@@ -17,7 +17,7 @@ import typing
 from functools import partial
 
 import cupy as cp
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -125,5 +125,5 @@ class PreprocessAEStage(PreprocessBaseStage):
                        fea_len=self._fea_length,
                        feature_columns=self._feature_columns)
 
-    def _get_preprocess_node(self, builder: srf.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder):
         raise NotImplementedError("No C++ node for AE")

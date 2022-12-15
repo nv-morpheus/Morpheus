@@ -21,12 +21,12 @@
 
 #include <cudf/io/types.hpp>
 #include <librdkafka/rdkafkacpp.h>
-#include <pysrf/node.hpp>
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <cstddef>  // for size_t
 #include <cstdint>  // for int32_t, uint32_t
@@ -50,10 +50,10 @@ namespace morpheus {
 /**
  * This class loads messages from the Kafka cluster by serving as a Kafka consumer.
  */
-class KafkaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
+class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
@@ -171,8 +171,8 @@ struct KafkaSourceStageInterfaceProxy
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
-    static std::shared_ptr<srf::segment::Object<KafkaSourceStage>> init(srf::segment::Builder &builder,
-                                                                        const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init(mrc::segment::Builder& builder,
+                                                                        const std::string& name,
                                                                         size_t max_batch_size,
                                                                         std::string topic,
                                                                         int32_t batch_timeout_ms,

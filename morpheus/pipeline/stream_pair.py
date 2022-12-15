@@ -15,7 +15,7 @@
 
 import typing
 
-import srf
+import mrc
 
 StreamPair = typing.Tuple[srf.SegmentObject, typing.Type]
 """
