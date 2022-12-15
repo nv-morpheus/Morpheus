@@ -1,0 +1,15 @@
+#!/bin/bash
+
+COMPOSE_FILE="${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml"
+
+docker compose -f $COMPOSE_FILE up -d zookeeper kafka
+export ZOOKEEPER_HOST=$(docker compose -f $COMPOSE_FILE exec zookeper hostname -i)
+export KAFKA_HOST=$(docker compose -f $COMPOSE_FILE exec kafka hostname -i)
+sleep 1 # wait for triton to load models
+docker compose -f $COMPOSE_FILE logs zookeeper kafka
+
+echo "$ZOOKEEPER_HOST zookeeper" | sudo tee -a /etc/hosts
+echo "$KAFKA_HOST kafka" | sudo tee -a /etc/hosts
+
+echo "ZOOKEEPER_HOST:   ${ZOOKEEPER_HOST}"
+echo "KAFKA_HOST:       ${KAFKA_HOST}"

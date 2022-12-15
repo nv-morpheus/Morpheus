@@ -8,6 +8,11 @@
         "gpu": true
     },
 
+    "runArgs": [
+        "--cap-add=SYS_NICE",
+        "--cap-add=SYS_PTRACE"
+    ],
+
     "containerEnv": {
         "HOST_MORPHEUS_ROOT": "${localWorkspaceFolder}",
         "MORPHEUS_ROOT": "/workspaces/morpheus"
@@ -32,7 +37,6 @@
             "gid": "1000",
             "username": "coder"
         },
-        "ghcr.io/trxcllnt/devcontainer-features/cmake": {},
         "ghcr.io/devcontainers/features/docker-from-docker": {}
     },
 
