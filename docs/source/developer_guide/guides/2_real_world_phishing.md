@@ -514,7 +514,11 @@ In our previous examples, we didn't define a constructor for the Python classes 
 
 Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started.
 
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
+
+Note: Setting the pipline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
+
+Our refactored class definition now looks like:
 
 ```python
 from morpheus.config import Config
@@ -560,11 +564,11 @@ Options:
 
 ## Defining a New Source Stage
 
-Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource`. Second, the required methods are the `name` property method and the `_build_source` and `supports_cpp_node` methods.
+Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource`. Second, the required methods are the `name` property, `_build_source` and `supports_cpp_node` methods.
 
 In this example, we will create a source that reads messages from a [RabbitMQ](https://www.rabbitmq.com/) queue using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python. For simplicity, we will assume that authentication is not required for our RabbitMQ exchange and that the body of the RabbitMQ messages will be JSON formatted. Both authentication and support for other formats could be easily added later.
 
-The `_build_source` method is similar to the `_build_single` method; it receives an instance of the pipeline segment and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have parent stages and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
+The `_build_source` method is similar to the `_build_single` method; it receives an instance of the MRC segment builder (`mrc.Builder`) and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have a parent stage and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
 
 ```python
 def _build_source(self, builder: mrc.Builder) -> StreamPair:
@@ -706,7 +710,7 @@ class RabbitMQSourceStage(SingleOutputSource):
 
 In Morpheus, we define a stage to be a sink if it outputs the results of a pipeline to a destination external to the pipeline. Morpheus currently provides two sink stages:  `WriteToFileStage` and `WriteToKafkaStage`.
 
-Recall that in the previous section we wrote a `RabbitMQSourceStage`. We will now complement that by writing a sink stage that can output Morpheus data into RabbitMQ. For this example, we are again using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python.
+Recall that in the previous section we wrote a `RabbitMQSourceStage`. We will now complement that by writing a sink stage that can output Morpheus data into [RabbitMQ](https://www.rabbitmq.com/). For this example, we are again using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python.
 
 The code for our sink will be similar to other stages with a few changes. First, we will subclass `SinglePortStage`:
 
@@ -715,7 +719,7 @@ The code for our sink will be similar to other stages with a few changes. First,
 class WriteToRabbitMQStage(SinglePortStage):
 ```
 
-In our `_build_single` we will be making use of the `make_sink` method rather than `make_node` or `make_source`
+In our `_build_single` method we will be making use of the `make_sink` method rather than `make_node` or `make_source`.
 ```python
 def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
     node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
