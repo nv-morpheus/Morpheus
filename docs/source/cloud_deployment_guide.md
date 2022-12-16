@@ -788,7 +788,7 @@ For more information on how to use the Morpheus CLI to customize and run your ow
 
 
 ## Troubleshooting
-This section lists solutions to problems you might encounter with Morpheus or from it's supporting components.
+This section lists solutions to problems you might encounter with Morpheus or from its supporting components.
 
 ### Common Problems
 
