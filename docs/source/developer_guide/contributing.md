@@ -20,13 +20,13 @@ limitations under the License.
 Contributions to Morpheus fall into the following three categories.
 
 1. To report a bug, request a new feature, or report a problem with
-    documentation, please file an [issue](https://github.com/nv-morpheus/Morpheus/issues/new)
+    documentation, please file an [issue](https://github.com/nv-morpheus/Morpheus/issues/new/choose)
     describing in detail the problem or new feature. The Morpheus team evaluates
     and triages issues, and schedules them for a release. If you believe the
     issue needs priority attention, please comment on the issue to notify the
     team.
 2. To propose and implement a new Feature, please file a new feature request
-    [issue](https://github.com/nv-morpheus/Morpheus/issues/new). Describe the
+    [issue](https://github.com/nv-morpheus/Morpheus/issues/new/choose). Describe the
     intended feature and discuss the design and implementation with the team and
     community. Once the team agrees that the plan looks good, go ahead and
     implement it, using the [code contributions](#code-contributions) guide below.
@@ -106,7 +106,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    ```
    1. Note: When debugging Python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
    source path.
-   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine it's PyFrame_Object `f`, it might look like this:
+   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine its PyFrame_Object `f`, it might look like this:
    ```shell
     #4  0x000056498ce685f4 in gen_send_ex (gen=0x7f3ecc07ad40, arg=<optimized out>, exc=<optimized out>, closing=<optimized out>) at Objects/genobject.c:222
     (gdb) pyo f
@@ -160,7 +160,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
 
 If a Conda environment on the host machine is preferred over Docker, it is relatively easy to install the necessary dependencies (In reality, the Docker workflow creates a Conda environment inside the container).
 
-Note: These instructions assume the user is using `mamba` instead of `conda` since it's improved solver speed is very helpful when working with a large number of dependencies. If you are not familiar with `mamba` you can install it with `conda install -n base -c conda-forge mamba` (Make sure to only install into the base environment). `mamba` is a drop in replacement for `conda` and all Conda commands are compatible between the two.
+Note: These instructions assume the user is using `mamba` instead of `conda` since its improved solver speed is very helpful when working with a large number of dependencies. If you are not familiar with `mamba` you can install it with `conda install -n base -c conda-forge mamba` (Make sure to only install into the base environment). `mamba` is a drop in replacement for `conda` and all Conda commands are compatible between the two.
 
 #### Prerequisites
 
@@ -272,7 +272,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
    ```bash
    docker-compose up -d --scale kafka=3
    ```
-   In practice, 3 instances has been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
+   In practice, 3 instances have been shown to work well. Use as many instances as required. Keep in mind each instance takes about 1 Gb of memory.
 7. Launch the Kafka shell
    1. To configure the cluster, you will need to launch into a container that has the Kafka shell.
    2. You can do this with:
