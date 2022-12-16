@@ -28,7 +28,7 @@ For this task, we'll need to define a new stage, which we will call our `Recipie
 1. Count the number of recipients in the email's metadata.
 1. Construct a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
 
-For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method now looks like:
+For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
 
 ```python
 def accepted_types(self) -> typing.Tuple:
@@ -518,7 +518,7 @@ In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token.
 
 Note: Setting the pipline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
 
-Our refactored class definition now looks like:
+Our refactored class definition is now:
 
 ```python
 from morpheus.config import Config
