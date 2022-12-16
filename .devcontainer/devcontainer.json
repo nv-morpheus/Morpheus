@@ -42,14 +42,15 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "eamodio.gitlens",
-                "llvm-vs-code-extensions.vscode-clangd",
-                "ms-python.python",
-                "ms-vscode.cpptools",
-                "nvidia.nsight-vscode-edition",
-                "twxs.cmake",
-                "xaver.clang-format"
-            ]
+				"eamodio.gitlens",
+				"llvm-vs-code-extensions.vscode-clangd",
+				"ms-python.python",
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools",
+				"nvidia.nsight-vscode-edition",
+				"twxs.cmake",
+				"xaver.clang-format"
+			]
         }
     },
     "settings": {
