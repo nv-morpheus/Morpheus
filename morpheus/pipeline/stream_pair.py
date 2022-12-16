@@ -18,3 +18,7 @@ import typing
 import mrc
 
 StreamPair = typing.Tuple[mrc.SegmentObject, typing.Type]
+"""
+Tuple used during Pipeline construction representing a pipeline node (first element), and the node's output type
+(second element)
+"""

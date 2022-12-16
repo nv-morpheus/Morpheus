@@ -115,10 +115,10 @@ struct WriteToFileStageInterfaceProxy
      * @param include_index_col : Write out the index as a column, by default true
      * @return std::shared_ptr<mrc::segment::Object<WriteToFileStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<WriteToFileStage>> init(mrc::segment::Builder &builder,
-                                                                        const std::string &name,
-                                                                        const std::string &filename,
-                                                                        const std::string &mode = "w",
+    static std::shared_ptr<mrc::segment::Object<WriteToFileStage>> init(mrc::segment::Builder& builder,
+                                                                        const std::string& name,
+                                                                        const std::string& filename,
+                                                                        const std::string& mode = "w",
                                                                         FileTypes file_type     = FileTypes::Auto,
                                                                         bool include_index_col  = true);
 };

@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 @register_stage("trigger")
 class TriggerStage(SinglePortStage):
     """
-    Buffer data until previous stage has completed.
+    Buffer data until the previous stage has completed.
 
     This stage will buffer all inputs until the source stage is complete. At that point all messages
     will be dumped into downstream stages. Useful for testing performance of one stage at a time.

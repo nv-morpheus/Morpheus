@@ -475,8 +475,8 @@ bool InferenceClientStage::is_default_grpc_port(std::string &server_url)
 
 // ************ InferenceClientStageInterfaceProxy********* //
 std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
-    mrc::segment::Builder &builder,
-    const std::string &name,
+    mrc::segment::Builder& builder,
+    const std::string& name,
     std::string model_name,
     std::string server_url,
     bool force_convert_inputs,

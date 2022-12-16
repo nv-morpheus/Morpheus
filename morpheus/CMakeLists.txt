@@ -20,7 +20,7 @@ option(MORPHEUS_PYTHON_INPLACE_BUILD
 option(MORPHEUS_BUILD_PYTHON_STUBS
         "Whether or not to generate stubs for python files." ON)
 
-# TODO(Devin): Not currently using this, just adding to make module and lib creation
+morpheus_utils_python_modules_ensure_loaded()
 morpheus_utils_create_python_package(morpheus-package)
 
 # Save the root of the python for relative paths

@@ -115,7 +115,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 
 // ************ FileSourceStageInterfaceProxy ************ //
 std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
-    mrc::segment::Builder &builder, const std::string &name, std::string filename, int repeat)
+    mrc::segment::Builder& builder, const std::string& name, std::string filename, int repeat)
 {
     auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat);
 

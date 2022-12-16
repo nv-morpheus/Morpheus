@@ -54,7 +54,7 @@
 namespace morpheus {
 // Component public implementations
 // ************ PreprocessFILStage ************************* //
-PreprocessFILStage::PreprocessFILStage(const std::vector<std::string> &features) :
+PreprocessFILStage::PreprocessFILStage(const std::vector<std::string>& features) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_fea_cols(std::move(features))
 {}
@@ -113,7 +113,7 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                 {
                     auto curr_col = df_just_features.column(df_meta.num_indices() + i);
 
-                    auto curr_ptr = static_cast<float *>(packed_data->data()) + i * df_just_features.num_rows();
+                    auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_just_features.num_rows();
 
                     // Check if we are something other than float
                     if (curr_col.type().id() != cudf::type_id::FLOAT32)
@@ -170,7 +170,7 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
 
 // ************ PreprocessFILStageInterfaceProxy *********** //
 std::shared_ptr<mrc::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
-    mrc::segment::Builder &builder, const std::string &name, const std::vector<std::string> &features)
+    mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features)
 {
     auto stage = builder.construct_object<PreprocessFILStage>(name, features);
 

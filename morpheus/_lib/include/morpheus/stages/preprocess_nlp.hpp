@@ -124,8 +124,8 @@ struct PreprocessNLPStageInterfaceProxy
      * @param column : Name of the string column to operate on, defaults to "data".
      * @return std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> init(mrc::segment::Builder &builder,
-                                                                          const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> init(mrc::segment::Builder& builder,
+                                                                          const std::string& name,
                                                                           std::string vocab_hash_file,
                                                                           uint32_t sequence_length,
                                                                           bool truncation,

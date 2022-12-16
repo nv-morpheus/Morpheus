@@ -139,8 +139,8 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
 std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
-    mrc::segment::Builder &builder,
-    const std::string &name,
+    mrc::segment::Builder& builder,
+    const std::string& name,
     std::string vocab_hash_file,
     uint32_t sequence_length,
     bool truncation,

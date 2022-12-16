@@ -144,7 +144,7 @@ It's important to note here that Triton is a service that is external to the Mor
 
 Triton will need to be running while we execute our pipeline. For simplicity, we will launch it locally inside of a Docker container.
 
-Note: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [Nvidia container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
+Note: This step assumes you have both [Docker](https://docs.docker.com/engine/install/) and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#installation-guide) installed.
 
 From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
 
@@ -608,10 +608,10 @@ In our `_build_single` we will be making use of the `make_sink` method rather th
 def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
     node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
     builder.make_edge(input_stream[0], node)
-    return input_stream
+    return (node, input_stream[1])
 ```
 
-Note that in this case, while we created an edge from the parent node to our new node, we returned the `input_stream` unchanged. This allows for other sinks to be attached to our same parent node. We could hypothetically have a pipeline where we emit the results to both RabbitMQ and a file. In this situation, both would be children of the same upstream node.
+Note that in this case, while we created an edge from the parent node to our new node. The return tuple contains our newly constructed node, along with the unchanged input type. Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could hypothetically have a pipeline where we emit the results to both RabbitMQ and a file.
 
 ![Morpheus node dependency diagram](img/sink_deps.png)
 
@@ -700,14 +700,17 @@ class WriteToRabbitMQStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
         builder.make_edge(input_stream[0], node)
-        return input_stream
+        return (node, input_stream[1])
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
         df = message.df
+
         buffer = StringIO()
         df.to_json(buffer, orient='records', lines=True)
         body = buffer.getvalue().strip()
+
         self._channel.basic_publish(exchange=self._exchange, routing_key=self._routing_key, body=body)
+
         return message
 
     def on_error(self, ex: Exception):
@@ -719,4 +722,4 @@ class WriteToRabbitMQStage(SinglePortStage):
 ```
 
 ## Note
-For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to [examples/developer_guide/2_2_rabbitmq/README.md](../../../../examples/developer_guide/2_2_rabbitmq/README.md)
+For information about testing the `RabbitMQSourceStage` and `WriteToRabbitMQStage` stages refer to [`examples/developer_guide/2_2_rabbitmq/README.md`](../../../../examples/developer_guide/2_2_rabbitmq/README.md) in the root of the Morpheus repo.

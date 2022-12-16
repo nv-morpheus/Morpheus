@@ -171,8 +171,8 @@ struct KafkaSourceStageInterfaceProxy
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
-    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init(mrc::segment::Builder &builder,
-                                                                        const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init(mrc::segment::Builder& builder,
+                                                                        const std::string& name,
                                                                         size_t max_batch_size,
                                                                         std::string topic,
                                                                         int32_t batch_timeout_ms,

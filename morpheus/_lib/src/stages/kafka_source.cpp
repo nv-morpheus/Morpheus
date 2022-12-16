@@ -279,10 +279,10 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
             [this]() { return this->batch_timeout_ms(); },
             [this]() { return this->max_batch_size(); },
             [this](const std::string str_to_display) {
-                auto &ctx = mrc::runnable::Context::get_runtime_context();
+                auto& ctx = mrc::runnable::Context::get_runtime_context();
                 return MORPHEUS_CONCAT_STR(ctx.info() << " " << str_to_display);
             },
-            [sub, &records_emitted, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
+            [sub, &records_emitted, this](std::vector<std::unique_ptr<RdKafka::Message>>& message_batch) {
                 // If we are unsubscribed, throw an error to break the loops
                 if (!sub.is_subscribed())
                 {
@@ -316,7 +316,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 return m_requires_commit;
             });
 
-        auto &context = mrc::runnable::Context::get_runtime_context();
+        auto& context = mrc::runnable::Context::get_runtime_context();
 
         // Build consumer
         auto consumer = this->create_consumer(rebalancer);
@@ -463,7 +463,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
 
     std::map<std::string, std::vector<int32_t>> topic_parts;
 
-    auto &ctx = mrc::runnable::Context::get_runtime_context();
+    auto& ctx = mrc::runnable::Context::get_runtime_context();
     VLOG(10) << ctx.info() << MORPHEUS_CONCAT_STR(" Subscribed to " << md->topics()->size() << " topics:");
 
     for (auto const &topic : *(md->topics()))
@@ -510,7 +510,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
             return MORPHEUS_CONCAT_STR("(" << std::get<0>(x) << ", " << std::get<1>(x) << ")");
         });
 
-        auto &ctx = mrc::runnable::Context::get_runtime_context();
+        auto& ctx = mrc::runnable::Context::get_runtime_context();
         VLOG(10) << ctx.info()
                  << MORPHEUS_CONCAT_STR(
                         "   Topic: '" << topic->topic()
@@ -572,8 +572,8 @@ std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
 
 // ************ KafkaStageInterfaceProxy ************ //
 std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
-    mrc::segment::Builder &builder,
-    const std::string &name,
+    mrc::segment::Builder& builder,
+    const std::string& name,
     size_t max_batch_size,
     std::string topic,
     int32_t batch_timeout_ms,

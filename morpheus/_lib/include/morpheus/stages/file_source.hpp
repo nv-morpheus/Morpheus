@@ -83,8 +83,8 @@ struct FileSourceStageInterfaceProxy
      * @param repeat : Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
      * @return std::shared_ptr<mrc::segment::Object<FileSourceStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder &builder,
-                                                                       const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<FileSourceStage>> init(mrc::segment::Builder& builder,
+                                                                       const std::string& name,
                                                                        std::string filename,
                                                                        int repeat = 1);
 };

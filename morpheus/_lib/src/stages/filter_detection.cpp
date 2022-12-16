@@ -150,7 +150,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
-    mrc::segment::Builder &builder, const std::string &name, float threshold, bool copy)
+    mrc::segment::Builder& builder, const std::string& name, float threshold, bool copy)
 {
     auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy);
 

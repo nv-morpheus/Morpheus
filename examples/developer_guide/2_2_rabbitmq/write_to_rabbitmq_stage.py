@@ -71,7 +71,7 @@ class WriteToRabbitMQStage(SinglePortStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)
         builder.make_edge(input_stream[0], node)
-        return input_stream
+        return (node, input_stream[1])
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
         df = message.df

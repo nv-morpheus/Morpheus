@@ -108,10 +108,10 @@ WriteToFileStage::subscribe_fn_t WriteToFileStage::build_operator()
 
 // ************ WriteToFileStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
-    mrc::segment::Builder &builder,
-    const std::string &name,
-    const std::string &filename,
-    const std::string &mode,
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    const std::string& filename,
+    const std::string& mode,
     FileTypes file_type,
     bool include_index_col)
 {

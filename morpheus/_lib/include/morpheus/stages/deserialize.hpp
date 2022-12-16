@@ -87,8 +87,8 @@ struct DeserializeStageInterfaceProxy
      * @param batch_size : Number of messages to be divided into each batch
      * @return std::shared_ptr<mrc::segment::Object<DeserializeStage>>
      */
-    static std::shared_ptr<mrc::segment::Object<DeserializeStage>> init(mrc::segment::Builder &builder,
-                                                                        const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<DeserializeStage>> init(mrc::segment::Builder& builder,
+                                                                        const std::string& name,
                                                                         size_t batch_size);
 };
 #pragma GCC visibility pop

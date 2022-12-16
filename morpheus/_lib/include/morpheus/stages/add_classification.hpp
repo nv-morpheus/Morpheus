@@ -98,8 +98,8 @@ struct AddClassificationStageInterfaceProxy
      * @return std::shared_ptr<mrc::segment::Object<AddClassificationsStage>>
      */
     static std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> init(
-        mrc::segment::Builder &builder,
-        const std::string &name,
+        mrc::segment::Builder& builder,
+        const std::string& name,
         float threshold,
         std::size_t num_class_labels,
         std::map<std::size_t, std::string> idx2label);
