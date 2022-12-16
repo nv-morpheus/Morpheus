@@ -28,7 +28,7 @@ Contributions to Morpheus fall into the following three categories.
 2. To propose and implement a new Feature, please file a new feature request
     [issue](https://github.com/nv-morpheus/Morpheus/issues/new/choose). Describe the
     intended feature and discuss the design and implementation with the team and
-    community. Once the team agrees that the plan looks good, go ahead and
+    community. Once the team agrees that the plan is good, go ahead and
     implement it, using the [code contributions](#code-contributions) guide below.
 3. To implement a feature or bug-fix for an existing outstanding issue, please
     follow the [code contributions](#code-contributions) guide below. If you
@@ -42,7 +42,7 @@ More information can be found at: [Contributor Code of Conduct](CODE_OF_CONDUCT.
 
 ### Your first issue
 
-1. Find an issue to work on. The best way is to look for issues with the [good first issue](https://github.com/nv-morpheus/Morpheus/issues) label.
+1. Find an issue to work on. The best way is to search for issues with the [good first issue](https://github.com/nv-morpheus/Morpheus/issues) label.
 2. Comment on the issue stating that you are going to work on it.
 3. Code! Make sure to update unit tests! Ensure the [license headers are set properly](#Licensing).
 4. When done, [create your pull request](https://github.com/nv-morpheus/Morpheus/compare).
@@ -106,7 +106,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    ```
    1. Note: When debugging Python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
    source path.
-   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine its PyFrame_Object `f`, it might look like this:
+   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine its PyFrame_Object `f`, it might be similar to:
    ```shell
     #4  0x000056498ce685f4 in gen_send_ex (gen=0x7f3ecc07ad40, arg=<optimized out>, exc=<optimized out>, closing=<optimized out>) at Objects/genobject.c:222
     (gdb) pyo f
@@ -255,7 +255,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
          - "0.0.0.0::9092"
       ```
       This will prevent the containers from attempting to map IPv6 ports.
-   1. Change the value of `KAFKA_ADVERTISED_HOST_NAME` to match the value of the `KAFKA_ADVERTISED_HOST_NAME` environment variable from the previous step. For example, the line should look like:
+   1. Change the value of `KAFKA_ADVERTISED_HOST_NAME` to match the value of the `KAFKA_ADVERTISED_HOST_NAME` environment variable from the previous step. For example, the line should be similar to:
 
       ```yaml
       environment:

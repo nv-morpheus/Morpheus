@@ -23,7 +23,7 @@ For communicating with [RabbitMQ](https://www.rabbitmq.com/) we will be using th
 
 ## Header Definition
 
-Our includes section looks like:
+Our includes:
 
 ```cpp
 #include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
@@ -40,7 +40,7 @@ Our includes section looks like:
 
 The MRC includes bring in the definitions for MRC `Builder`, `SegmentObject` and `PythonSource`.
 
-Our namespace and class definition looks like this:
+Our namespace and class definition is:
 
 ```cpp
 namespace morpheus_rabbit {
@@ -61,7 +61,7 @@ class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Mess
 
 Our base class defines `source_type_t` as an alias for `std::shared_ptr<MessageMeta>` which we are going to use as it will appear in some of our function signatures. The way to think about `source_type_t` is that the stage we are writing emits objects of type `MessageMeta`. The `subscriber_fn_t` is an alias for a function which will receive an `rxcpp::subscriber` instance and emit messages into the pipeline.  The class we are deriving from, `PythonSource`, defines both of these to make writing function signatures easier.
 
-Our constructor looks similar to the constructor of our Python class with the majority of the parameters being specific to communicating with RabbitMQ. In this case the default destructor is sufficient.
+Our constructor is similar to the constructor of our Python class with the majority of the parameters being specific to communicating with RabbitMQ. In this case the default destructor is sufficient.
 
 ```cpp
 RabbitMQSourceStage(const std::string &host,
@@ -165,7 +165,7 @@ struct RabbitMQSourceStageInterfaceProxy
 
 ## Source Definition
 
-Our includes section looks like:
+Our includes section is:
 
 ```cpp
 #include "rabbitmq_source.hpp"
@@ -191,7 +191,7 @@ For now, all Morpheus stages, both Python and C++, are executed within a fiber. 
 
 Authors of stages that require concurrency are free to choose their own concurrency models. Launching new processes, threads, or fibers from within a stage is permissible as long as the management of those resources is contained within the stage. Newly launched threads are also free to use thread-local storage so long as it doesn't occur within the thread the stage is executed from.
 
-The definition for our constructor looks like this:
+The definition for our constructor is:
 
 ```cpp
 RabbitMQSourceStage::RabbitMQSourceStage(const std::string &host,
