@@ -256,9 +256,9 @@ class StreamWrapper(ABC, collections.abc.Hashable):
     @abstractmethod
     def supports_cpp_node(self):
         """
-        Specifies whether this Stage is even capable of creating C++ nodes. During the build phase, this value will be
-        combined with Config.get().use_cpp to determine whether or not a C++ node is created. This is an instance method
-        to allow runtime decisions and derived classes to override base implementations.
+        Specifies whether this Stage is capable of creating C++ nodes. During the build phase, this value will be
+        combined with `CppConfig.get_should_use_cpp()` to determine whether or not a C++ node is created. This is an
+        instance method to allow runtime decisions and derived classes to override base implementations.
         """
         # By default, return False unless otherwise specified
         # return False

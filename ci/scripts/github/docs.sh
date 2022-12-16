@@ -30,7 +30,7 @@ rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 git lfs install
-${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
 
 rapids-logger "Installing Documentation dependencies"
 mamba env update -f ${MORPHEUS_ROOT}/docs/conda_docs.yml

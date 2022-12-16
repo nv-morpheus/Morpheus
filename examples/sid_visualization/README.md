@@ -51,7 +51,7 @@ DOCKER_BUILDKIT=1 docker-compose up --build -d
 
 The following GUI should be displayed when all containers have completed launching:
 
-<img src="./img/initial_win.png" width=75% height=75%>
+![Initial Window](./img/initial_win.png)
 
 ### Build Morpheus
 
@@ -114,19 +114,19 @@ This launch will use all of the available datasets. Each dataset will show up as
 
 The following is a screenshot after all four batches have been processed:
 
-<img src="./img/full_win.png" width=75% height=75%>
+![Full Window](./img/full_win.png)
 
 Use the slider or the following buttons to step through the inferences batches in the visualization:
 |                              |                                                   |
 | ---------------------------- | ------------------------------------------------- |
-| <img src="./img/left.png">   | Step to previous inference batch                  |
-| <img src="./img/right.png">  | Step to next inference batch                      |
-| <img src="./img/replay.png"> | Step through all inference batches from beginning |
-| <img src="./img/pause.png">  | Pause animation                                   |
+| ![left](./img/left.png)      | Step to previous inference batch                  |
+| ![right](./img/right.png)    | Step to next inference batch                      |
+| ![replay](./img/replay.png)  | Step through all inference batches from beginning |
+| ![pause](./img/pause.png)    | Pause animation                                   |
 
 The visualization on the right shows nodes in the current inference batch represented as
 green spheres. White (benign) and red (SI) packets are shown flowing between the node connections.
-While the animation is running, you can click the pause button or toggle off `Simulating`. Once paused, 
+While the animation is running, you can click the pause button or toggle off `Simulating`. Once paused,
 you will be able to hover over an individual packet to view its contents.
 
 Changing the dataset does not require relaunching the GUI. Simply re-run Morpheus with the new dataset and the GUI will be updated.
