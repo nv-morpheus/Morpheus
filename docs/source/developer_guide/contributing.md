@@ -53,11 +53,11 @@ Remember, if you are unsure about anything, don't hesitate to comment on issues 
 
 ### Seasoned developers
 
-Once you have gotten your feet wet and are more comfortable with the code, you can look at the prioritized issues for our next release in our [project boards](https://github.com/nv-morpheus/Morpheus/projects).
+Once you have gotten your feet wet and are more comfortable with the code, you can review the prioritized issues for our next release in our [project boards](https://github.com/nv-morpheus/Morpheus/projects).
 
-> **Pro Tip:** Always look at the release board with the highest number for issues to work on. This is where Morpheus developers also focus their efforts.
+> **Pro Tip:** Always review the release board with the highest number for issues to work on. This is where Morpheus developers also focus their efforts.
 
-Look at the unassigned issues, and find an issue to which you are comfortable contributing. Start with _Step 2_ above, commenting on the issue to let others know you are working on it. If you have any questions related to the implementation of the issue, ask them in the issue instead of the PR.
+Review the unassigned issues, and find an issue to which you are comfortable contributing. Start with _Step 2_ above, commenting on the issue to let others know you are working on it. If you have any questions related to the implementation of the issue, ask them in the issue instead of the PR.
 
 ## Building from Source
 
