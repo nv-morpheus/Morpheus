@@ -1,6 +1,6 @@
-======
-Guides
-======
+================
+Developer Guides
+================
 
 .. toctree::
    :maxdepth: 20

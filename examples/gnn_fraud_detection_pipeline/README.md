@@ -18,7 +18,7 @@ limitations under the License.
 
 ## Requirements
 
-Prior to running the gnn fraud detection pipeline, additional requirements must be installed in to your conda environment. A supplemental requirements file has been provided in this example directory.
+Prior to running the gnn fraud detection pipeline, additional requirements must be installed in to your Conda environment. A supplemental requirements file has been provided in this example directory.
 
 ```bash
 mamba env update -n ${CONDA_DEFAULT_ENV} -f examples/gnn_fraud_detection_pipeline/requirements.yml

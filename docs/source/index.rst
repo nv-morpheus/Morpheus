@@ -23,6 +23,9 @@
 Welcome to Morpheus Documentation
 =================================
 
+.. image:: ./img/morpheus-banner.png
+  :alt: NVIDIA Morpheus
+
 NVIDIA Morpheus is an open AI application framework that provides cybersecurity developers with a highly optimized AI framework and pre-trained AI capabilities that allow them to instantaneously inspect all IP traffic across their data center fabric. The Morpheus developer framework allows teams to build their own optimized pipelines that address cybersecurity and information security use cases. Bringing a new level of security to data centers, Morpheus provides development capabilities around dynamic protection, real-time telemetry, adaptive policies, and cyber defenses for detecting and remediating cybersecurity threats.
 
 Features
@@ -48,15 +51,45 @@ Features
 Getting Started
 ---------------
 
-The best way to get started with Morpheus will vary depending on the goal of the user.
+Using Morpheus
+^^^^^^^^^^^^^^
  * :doc:`getting_started` - Using pre-built Docker containers, building Docker containers from source, and fetching models and datasets
+ * :doc:`basics/overview` - Brief overview of the command line interface
+ * :doc:`basics/building_a_pipeline` - Introduction to building a pipeline using the command line interface
  * :doc:`Morpheus Examples <examples>` - Example pipelines using both the Python API and command line interface
  * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
- * :doc:`cloud_deployment_guide` - Kubernetes and cloud based deployments
+
+Modifying Morpheus
+^^^^^^^^^^^^^^^^^^
  * :doc:`developer_guide/contributing` - Covers building from source, making changes and contributing to Morpheus
+
+Deploying Morpheus
+^^^^^^^^^^^^^^^^^^
+ * :doc:`cloud_deployment_guide` - Kubernetes and cloud based deployments
+
 
 
 .. toctree::
+   :caption: Using Morpheus
+   :maxdepth: 20
+   :hidden:
+
+   getting_started
+   basics/overview
+   basics/building_a_pipeline
+   examples/index
+   developer_guide/guides/index
+
+.. toctree::
+   :caption: Modifying Morpheus
+   :maxdepth: 20
+   :hidden:
+
+   developer_guide/architecture
+   developer_guide/contributing
+
+.. toctree::
+   :caption: Deploying Morpheus
    :maxdepth: 20
    :hidden:
 
@@ -64,27 +97,16 @@ The best way to get started with Morpheus will vary depending on the goal of the
    cloud_deployment_guide
 
 .. toctree::
-   :caption: Basic Usage via CLI
+   :caption: API
    :maxdepth: 20
    :hidden:
 
-   basics/overview
-   basics/building_a_pipeline
-   examples/index
-
-.. toctree::
-   :caption: Developer Guide:
-   :maxdepth: 20
-   :hidden:
-
-   developer_guide/architecture
-   developer_guide/guides/index
-   api
-   developer_guide/contributing
+   py_api
+   _lib/index
 
 .. toctree::
    :maxdepth: 20
-   :caption: Extra Information:
+   :caption: Extra Information
    :hidden:
 
    extra_info/performance
