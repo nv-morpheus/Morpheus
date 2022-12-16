@@ -61,7 +61,7 @@ Look at the unassigned issues, and find an issue to which you are comfortable co
 
 ## Building from Source
 
-The following instructions are for developers who are getting started with the Morpheus repository. The Morpheus development environment is flexible (Docker, Conda and bare metal workflows) but has a high number of dependencies that can be difficult to setup. These instructions outline the steps for setting up a development environment inside a Docker container or on a host machine with Conda.
+The following instructions are for developers who are getting started with the Morpheus repository. The Morpheus development environment is flexible (Docker, Conda and bare metal workflows) but has a high number of dependencies that can be difficult to set up. These instructions outline the steps for setting up a development environment inside a Docker container or on a host machine with Conda.
 
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
@@ -178,7 +178,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
   - **Note:** `mamba` should only be installed once in the base environment
 
-1. Setup env variables and clone the repo:
+1. Set up env variables and clone the repo:
    ```bash
    export PYTHON_VER=3.8
    export RAPIDS_VER=22.08
@@ -383,8 +383,8 @@ Morpheus is licensed under the Apache v2.0 license. All new source files includi
  */
  ```
 
-### Thirdparty code
-Thirdparty code included in the source tree (that is not pulled in as an external dependency) must be compatible with the Apache v2.0 license and should retain the original license along with a url to the source. If this code is modified, it should contain both the Apache v2.0 license followed by the original license of the code and the url to the original code.
+### Third-party code
+Third-party code included in the source tree (that is not pulled in as an external dependency) must be compatible with the Apache v2.0 license and should retain the original license along with a url to the source. If this code is modified, it should contain both the Apache v2.0 license followed by the original license of the code and the url to the original code.
 
 Ex:
 ```
