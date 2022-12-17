@@ -74,8 +74,6 @@ include(morpheus_utils/load)
 morpheus_utils_initialize_package_manager(
     MORPHEUS_USE_CONDA
     BUILD_SHARED_LIBS
-    MORPHEUS_VCPKG_TOOLCHAIN
-    MORPHEUS_VCPKG_DEFAULT_BINARY_CACHE
 )
 
 # Configure CUDA architecture
