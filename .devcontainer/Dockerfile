@@ -15,8 +15,6 @@
 
 FROM nvidia/cuda:11.5.1-devel-ubuntu20.04 AS base
 
-# FROM ghcr.io/trxcllnt/devcontainer-images/cmake-ninja-sccache-llvm-cuda-mambaforge:latest AS base
-
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         wget git-lfs gdb iputils-ping
