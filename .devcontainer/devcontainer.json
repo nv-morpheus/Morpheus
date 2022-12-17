@@ -27,7 +27,7 @@
 
     "mounts": [
         {"type":"bind", "source": "/var/run/docker.sock", "target": "/var/run/docker.sock"},
-        {"type":"bind", "source": "${localWorkspaceFolder}/.devcontainer/.conda", "target": "/home/coder/.conda"}
+        {"type":"bind", "source": "${localWorkspaceFolder}/.cache/conda", "target": "/home/coder/.conda"}
     ],
 
     "features": {

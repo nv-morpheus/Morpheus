@@ -26,7 +26,7 @@
                 "name": "(gdb) Attach",
                 "type": "cppdbg",
                 "request": "attach",
-                "program": "${workspaceRoot}/.devcontainer/.conda/envs/morpheus/bin/python",
+                "program": "${workspaceRoot}/.cache/conda/envs/morpheus/bin/python",
                 "processId": "${command:pickProcess}",
                 "MIMode": "gdb",
                 "setupCommands": [
