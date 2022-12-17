@@ -21,7 +21,7 @@
 
     "postStartCommand": "${MORPHEUS_ROOT}/.devcontainer/bin/setup-morpheus-env",
 
-    "initializeCommand": [ "./.devcontainer/init" ],
+    "initializeCommand": [ "./.devcontainer/init.sh" ],
 
     "remoteUser": "coder",
 
