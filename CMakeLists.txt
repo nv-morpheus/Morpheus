@@ -56,7 +56,9 @@ endif()
 # MRC CMake path and module extensions
 set(MORPHEUS_CMAKE_MODULE_PATH_EXTENSIONS
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake")
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/utilities/cmake/morpheus_utils/package_search"
+    )
 
 set(MORPHEUS_CMAKE_PREFIX_PATH_EXTENSIONS
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
@@ -98,7 +100,7 @@ include(dependencies)
 
 ####################################
 # - Post dependencies setup --------
-include(environment/init_compiler)
+morpheus_utils_compiler_set_defaults(MORPHEUS_USE_CLANG_TIDY)
 
 # Setup IWYU if enabled
 include(environment/init_iwyu)

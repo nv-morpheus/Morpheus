@@ -24,6 +24,4 @@ if(MORPHEUS_USE_CCACHE)
   morpheus_utils_initialize_ccache(MORPHEUS_CACHE_DIR)
 endif()
 
-morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
-
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
