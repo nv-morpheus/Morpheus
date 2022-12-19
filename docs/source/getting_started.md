@@ -38,7 +38,7 @@ More advanced users, or those who are interested in using the latest pre-release
 
 ## Using pre-built Docker containers
 ### Pull the Morpheus Image
-1. Goto [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
+1. Go to [https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/morpheus/containers/morpheus/tags)
 1. Choose a version
 1. Download the selected version, for example for `22.11`:
 ```bash
