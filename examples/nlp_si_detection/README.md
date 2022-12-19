@@ -203,7 +203,7 @@ The output file `detections.jsonlines` will contain the original PCAP messages w
 * secret_keys
 * user
 
-The value for these fields will either be a `1` indicating a decection and a `0` indicating no detection. An example row with a detection looks like:
+The value for these fields will either be a `1` indicating a decection and a `0` indicating no detection. An example row with a detection is:
 ```json
 {
   "timestamp": 1616381019580,

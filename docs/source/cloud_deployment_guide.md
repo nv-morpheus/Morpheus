@@ -225,7 +225,7 @@ kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
 `Important`: When (mlflow) is present, commands are directly within the container.
 
 First let's examine the syntax of the commands we will be using to communicate with the MLflow Triton plugin before we start deploying models.
-Publish models to MLflow server looks like:
+Publish models to MLflow server is in the form of:
 
 ```bash
 (mlflow) root@mlflow-6d98:/mlflow# python publish_model_to_mlflow.py \
@@ -415,7 +415,7 @@ Refer to the [Using Morpheus to Run Pipelines](#using-morpheus-to-run-pipelines)
 -   Replace **<YOUR_RELEASE_NAME>** with the name you want.
 
 
-For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
+For reference, the Morpheus SDK Client install pipeline command template is provided. We will examine this further in the [example workflows](#example-workflows) section, but for now, let's proceed to the next step.
 
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -788,7 +788,7 @@ For more information on how to use the Morpheus CLI to customize and run your ow
 
 
 ## Troubleshooting
-This section lists solutions to problems you might encounter with Morpheus or from it's supporting components.
+This section lists solutions to problems you might encounter with Morpheus or from its supporting components.
 
 ### Common Problems
 
