@@ -26,6 +26,14 @@ function get_version() {
    echo "$(git describe --tags | grep -o -E '^([^-]*?)')"
 }
 
+# Color variables
+export b="\033[0;36m"
+export g="\033[0;32m"
+export r="\033[0;31m"
+export e="\033[0;90m"
+export y="\033[0;33m"
+export x="\033[0m"
+
 # Change this to switch between build/mambabuild/debug
 export CONDA_COMMAND=${CONDA_COMMAND:-"mambabuild"}
 

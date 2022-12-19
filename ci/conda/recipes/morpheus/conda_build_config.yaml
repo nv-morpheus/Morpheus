@@ -14,10 +14,10 @@
 # limitations under the License.
 
 c_compiler_version:
-  - 9.4
+  - 11.2
 
 cxx_compiler_version:
-  - 9.4
+  - 11.2
 
 cuda_compiler:
   - nvcc
@@ -34,3 +34,4 @@ boost:
 
 rapids_version:
   - 22.08
+  - 22.10
