@@ -178,7 +178,7 @@ docker-compose build
 #### Donwloading the example datasets
 First we will need to install `s3fs` and then run the `examples/digital_fingerprinting/fetch_example_data.py` script.  This will download the example data into the `examples/data/dfp` dir.
 
-From the Morpheus repo and run:
+From the Morpheus repo run:
 ```bash
 pip install s3fs
 python examples/digital_fingerprinting/fetch_example_data.py all
