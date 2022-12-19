@@ -134,7 +134,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
       ```
       Then once the container is started you will need to install some extra packages to enable launching Docker containers:
       ```bash
-      ./docker/install_docker.sh
+      ./external/utilities/docker/install_docker.sh
 
       # Install utils for checking output
       apt install -y jq bc
