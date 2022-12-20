@@ -18,9 +18,9 @@ from collections import namedtuple
 
 import fsspec
 import fsspec.utils
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.module_utils import get_module_config
@@ -30,15 +30,15 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("FileBatcher", "morpheus_modules")
-def file_batcher(builder: srf.Builder):
+def file_batcher(builder: mrc.Builder):
     """
     This module loads the input files, removes files that are older than the chosen window of time,
     and then groups the remaining files by period that fall inside the window.
 
     Parameters
     ----------
-    builder : srf.Builder
-        SRF Builder object.
+    builder : mrc.Builder
+        mrc Builder object.
     """
 
     module_id = "FileBatcher"
@@ -123,7 +123,7 @@ def file_batcher(builder: srf.Builder):
 
         return output_batches
 
-    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
 
     node = builder.make_node_full(module_id, node_fn)

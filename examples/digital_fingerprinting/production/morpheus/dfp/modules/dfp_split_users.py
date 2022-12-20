@@ -15,10 +15,10 @@
 import logging
 import typing
 
+import mrc
 import numpy as np
-import srf
 from dfp.utils.logging_timer import log_time
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 import cudf
 
@@ -31,13 +31,13 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("DFPSplitUsers", "morpheus_modules")
-def dfp_split_users(builder: srf.Builder):
+def dfp_split_users(builder: mrc.Builder):
     """
     This module function split the data based on user Id's.
 
     Parameters
     ----------
-    builder : srf.Builder
+    builder : mrc.Builder
         Pipeline budler instance.
     """
 
@@ -119,7 +119,7 @@ def dfp_split_users(builder: srf.Builder):
 
             return output_messages
 
-    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(extract_users), ops.flatten()).subscribe(sub)
 
     node = builder.make_node_full(module_id, node_fn)

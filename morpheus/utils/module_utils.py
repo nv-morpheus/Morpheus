@@ -16,12 +16,12 @@ import functools
 import logging
 import typing
 
-import srf
+import mrc
 
 logger = logging.getLogger(f"morpheus.{__name__}")
 
-registry = srf.ModuleRegistry
-srf_version = [int(i) for i in srf.__version__.split('.')]
+registry = mrc.ModuleRegistry
+mrc_version = [int(i) for i in mrc.__version__.split('.')]
 
 
 def verify_module_registration(func):
@@ -77,7 +77,7 @@ def register_module(module_id, namespace):
     def inner_func(func):
         # Register a module if not exists in the registry.
         if not registry.contains(module_id, namespace):
-            registry.register_module(module_id, namespace, srf_version, func)
+            registry.register_module(module_id, namespace, mrc_version, func)
             logger.debug("Module '{}' was successfully registered with '{}' namespace.".format(module_id, namespace))
         else:
             logger.debug("Module: '{}' already exists in the given namespace '{}'".format(module_id, namespace))
@@ -88,7 +88,7 @@ def register_module(module_id, namespace):
 
 
 @verify_module_registration
-def load_module(config: typing.Dict, builder: srf.Builder):
+def load_module(config: typing.Dict, builder: mrc.Builder):
     """
     Loads a module that exists in the module registry.
 
@@ -96,8 +96,8 @@ def load_module(config: typing.Dict, builder: srf.Builder):
     ----------
     config : typing.Dict
         Module configuration.
-    builder : srf.Builder
-        SRF Builder object.
+    builder : mrc.Builder
+        MRC Builder object.
 
     Returns
     -------
@@ -134,7 +134,7 @@ def verify_module_meta_fields(config: typing.Dict):
         raise KeyError("Required attribute 'module_name' is missing in the module configuration.")
 
 
-def get_module_config(module_id: str, builder: srf.Builder):
+def get_module_config(module_id: str, builder: mrc.Builder):
     """
     Returns the module configuration for the specified module id.
 
@@ -142,8 +142,8 @@ def get_module_config(module_id: str, builder: srf.Builder):
     ----------
     module_id : str
         Unique identifier for a module in the module registry.
-    builder : srf.Builder
-        SRF Builder object.
+    builder : mrc.Builder
+        MRC Builder object.
 
     Returns
     -------
@@ -177,7 +177,7 @@ def make_nested_module(module_id: str, namespace: str, ordered_modules_meta: typ
     """
 
     @register_module(module_id, namespace)
-    def module_init(builder: srf.Builder):
+    def module_init(builder: mrc.Builder):
 
         prev_module = None
         head_module = None

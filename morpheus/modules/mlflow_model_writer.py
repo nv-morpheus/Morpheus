@@ -19,8 +19,8 @@ import typing
 import urllib.parse
 
 import mlflow
+import mrc
 import requests
-import srf
 from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
@@ -32,7 +32,7 @@ from mlflow.types import ColSpec
 from mlflow.types import Schema
 from mlflow.types.utils import _infer_pandas_column
 from mlflow.types.utils import _infer_schema
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_utils import get_module_config
@@ -42,14 +42,14 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("MLFlowModelWriter", "morpheus_modules")
-def module_init(builder: srf.Builder):
+def module_init(builder: mrc.Builder):
     """
     This module uploads trained models to the mlflow server.
 
     Parameters
     ----------
-    builder : srf.Builder
-        SRF Builder object.
+    builder : mrc.Builder
+        mrc Builder object.
     """
 
     module_id = "MLFlowModelWriter"
@@ -241,7 +241,7 @@ def module_init(builder: srf.Builder):
 
         return message
 
-    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
     node = builder.make_node_full(module_id, node_fn)

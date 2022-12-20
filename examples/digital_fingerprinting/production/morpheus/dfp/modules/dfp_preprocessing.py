@@ -16,8 +16,8 @@ import logging
 import pickle
 import time
 
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_utils import get_module_config
@@ -29,13 +29,13 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("DFPPreprocessing", "morpheus_modules")
-def dfp_preprocessing(builder: srf.Builder):
+def dfp_preprocessing(builder: mrc.Builder):
     """
     Preprocessed data are produced by this module function for either inference or model training.
 
     Parameters
     ----------
-    builder : srf.Builder
+    builder : mrc.Builder
         Pipeline budler instance.
     """
 
@@ -73,7 +73,7 @@ def dfp_preprocessing(builder: srf.Builder):
 
         return message
 
-    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(process_features)).subscribe(sub)
 
     node = builder.make_node_full(module_id, node_fn)

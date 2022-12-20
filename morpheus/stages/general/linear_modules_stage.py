@@ -15,7 +15,7 @@
 import logging
 import typing
 
-import srf
+import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -84,10 +84,10 @@ class LinearModulesStage(SinglePortStage):
         """
         return (self._input_type, )
 
-    def _get_cpp_module_node(self, builder: srf.Builder) -> srf.SegmentObject:
+    def _get_cpp_module_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this module type")
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Laod module from registry.
         module = load_module(self._module_config, builder=builder)

@@ -15,7 +15,7 @@
 import logging
 
 import dfp.modules.dfp_training  # noqa: F401
-import srf
+import mrc
 
 import morpheus.modules.mlflow_model_writer  # noqa: F401
 from morpheus.utils.module_utils import get_module_config
@@ -26,13 +26,13 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("DFPPipelineTraining", "morpheus_modules")
-def dfp_pipeline_training(builder: srf.Builder):
+def dfp_pipeline_training(builder: mrc.Builder):
     """
     This module function allows for the consolidation of multiple dfp pipeline training modules into a single module.
 
     Parameters
     ----------
-    builder : srf.Builder
+    builder : mrc.Builder
         Pipeline budler instance.
     """
 

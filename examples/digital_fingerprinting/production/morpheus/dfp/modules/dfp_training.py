@@ -14,9 +14,9 @@
 
 import logging
 
-import srf
+import mrc
 from dfencoder import AutoEncoder
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_utils import get_module_config
@@ -28,13 +28,13 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("DFPTraining", "morpheus_modules")
-def dfp_training(builder: srf.Builder):
+def dfp_training(builder: mrc.Builder):
     """
     Model training is done using this module function.
 
     Parameters
     ----------
-    builder : srf.Builder
+    builder : mrc.Builder
         Pipeline budler instance.
     """
 
@@ -69,7 +69,7 @@ def dfp_training(builder: srf.Builder):
 
         return output_message
 
-    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
     node = builder.make_node_full(module_id, node_fn)

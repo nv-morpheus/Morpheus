@@ -18,7 +18,7 @@ import dfp.modules.dfp_preprocessing  # noqa: F401
 import dfp.modules.dfp_rolling_window  # noqa: F401
 import dfp.modules.dfp_split_users  # noqa: F401
 import dfp.modules.dfp_training  # noqa: F401
-import srf
+import mrc
 
 import morpheus.modules.file_batcher  # noqa: F401
 import morpheus.modules.file_to_df  # noqa: F401
@@ -30,14 +30,14 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("DFPPipelinePreprocessing", "morpheus_modules")
-def dfp_pipeline_preprocessing(builder: srf.Builder):
+def dfp_pipeline_preprocessing(builder: mrc.Builder):
     """
     This module function allows for the consolidation of multiple dfp pipeline preprocessing modules
     into a single module.
 
     Parameters
     ----------
-    builder : srf.Builder
+    builder : mrc.Builder
         Pipeline budler instance.
     """
 

@@ -633,14 +633,14 @@ Let's first look at the module implementation structure before diving deeper int
 > Note: Modules can be used for more than just creating middle nodes to connect sources and sinks. Additionally, it can be used to construct Source and Sink nodes.
 
 ```py
-import srf
+import mrc
 import typing
 
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 @register_module("SimpleModule", "morpheus_modules")
-def module_init(builder: srf.Builder):
+def module_init(builder: mrc.Builder):
 
     module_id = "SimpleModule"
 
@@ -652,7 +652,7 @@ def module_init(builder: srf.Builder):
 
         # Your implementation goes here...
 
-    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
     # Here we are creating a node.
@@ -709,20 +709,20 @@ module_stage = LinearModulesStage(c,
 | `module_config` | `dict` or `None` | Module configuration |
 | `input_port_name` | `str` | Name of a module input port, as used during registration |
 | `output_port_name` | `str` | Name of a module output port, as used during registration |
-| `output_type` | default `typing.Any` | Module output data type |
+| `output_type` | `typing.Any` [default] | Module output data type |
 
 
 A module can serve as a wrapper for a chain of complex constructs-containing child modules. The example below demonstrates how to establish a chain module, presuming `modules_1` through `module_n` are already registered.
 
 ```py
-import srf
+import mrc
 import typing
 
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 @register_module("ChainModule", "morpheus_modules")
-def simple_module(builder: srf.Builder):
+def simple_module(builder: mrc.Builder):
 
    module_id = "ChainModule"
 

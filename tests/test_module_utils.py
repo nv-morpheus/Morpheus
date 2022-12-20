@@ -16,24 +16,24 @@
 
 from unittest import mock
 
+import mrc
 import pytest
-import srf
 
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import make_nested_module
+from morpheus.utils.module_utils import mrc_version
 from morpheus.utils.module_utils import register_module
-from morpheus.utils.module_utils import srf_version
 from morpheus.utils.module_utils import verify_module_registration
 
 
 @pytest.mark.use_python
-def test_srf_version():
+def test_mrc_version():
 
-    assert len(srf_version) == 3
-    assert isinstance(srf_version, list)
-    assert isinstance(srf_version[0], int)
-    assert isinstance(srf_version[1], int)
-    assert isinstance(srf_version[2], int)
+    assert len(mrc_version) == 3
+    assert isinstance(mrc_version, list)
+    assert isinstance(mrc_version[0], int)
+    assert isinstance(mrc_version[1], int)
+    assert isinstance(mrc_version[2], int)
 
 
 def test_register_module():
@@ -92,22 +92,22 @@ def test_load_module():
 
 
 def test_make_nested_module():
-    registry = srf.ModuleRegistry
+    registry = mrc.ModuleRegistry
 
     conf_module1 = {"module_id": "InnerModule1", "namespace": "test_morpheus_modules", "module_name": "inner_module1"}
     conf_module2 = {"module_id": "InnerModule2", "namespace": "test_morpheus_modules", "module_name": "inner_module2"}
     conf_module3 = {"module_id": "InnerModule3", "namespace": "test_morpheus_modules", "module_name": "inner_module3"}
 
     @register_module("InnerModule1", "test_morpheus_modules")
-    def module_init1(builde: srf.Builder):
+    def module_init1(builde: mrc.Builder):
         pass
 
     @register_module("InnerModule2", "test_morpheus_modules")
-    def module_init2(builde: srf.Builder):
+    def module_init2(builde: mrc.Builder):
         pass
 
     @register_module("InnerModule3", "test_morpheus_modules")
-    def module_init3(builde: srf.Builder):
+    def module_init3(builde: mrc.Builder):
         pass
 
     ordered_inner_modules_meta = [conf_module1, conf_module2, conf_module3]

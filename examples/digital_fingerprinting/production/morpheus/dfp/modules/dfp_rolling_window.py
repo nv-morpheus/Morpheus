@@ -17,11 +17,11 @@ import os
 import typing
 from contextlib import contextmanager
 
+import mrc
 import pandas as pd
-import srf
 from dfp.utils.cached_user_window import CachedUserWindow
 from dfp.utils.logging_timer import log_time
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -33,13 +33,13 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("DFPRollingWindow", "morpheus_modules")
-def dfp_rolling_window(builder: srf.Builder):
+def dfp_rolling_window(builder: mrc.Builder):
     """
     This module function establishes a rolling window to maintain history.
 
     Parameters
     ----------
-    builder : srf.Builder
+    builder : mrc.Builder
         Pipeline budler instance.
     """
 
@@ -155,7 +155,7 @@ def dfp_rolling_window(builder: srf.Builder):
 
             return result
 
-    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
     node = builder.make_node_full(module_id, node_fn)

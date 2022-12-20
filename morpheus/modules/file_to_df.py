@@ -24,9 +24,9 @@ from functools import partial
 
 import fsspec
 import fsspec.utils
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 import cudf
 
@@ -41,15 +41,15 @@ logger = logging.getLogger(f"morpheus.{__name__}")
 
 
 @register_module("FileToDataFrame", "morpheus_modules")
-def file_to_dataframe(builder: srf.Builder):
+def file_to_dataframe(builder: mrc.Builder):
     """
     This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module.
     In addition to loading data from the disk, it has ability to load the file content from S3 buckets.
 
     Parameters
     ----------
-    builder : srf.Builder
-        SRF Builder object.
+    builder : mrc.Builder
+        mrc Builder object.
     """
 
     module_id = "FileToDataFrame"
@@ -249,7 +249,7 @@ def file_to_dataframe(builder: srf.Builder):
             logger.exception("Error while converting S3 buckets to DF.")
             raise
 
-    def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(convert_to_dataframe), ops.on_completed(close_dask_cluster)).subscribe(sub)
 
     if (download_method.startswith("dask")):

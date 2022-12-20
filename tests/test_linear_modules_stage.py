@@ -17,11 +17,11 @@
 import typing
 from unittest import mock
 
+import mrc
 import pytest
-import srf
 
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
-from morpheus.utils.module_utils import srf_version
+from morpheus.utils.module_utils import mrc_version
 
 module_config = {
     "module_id": "TestSimpleModule", "module_name": "test_simple_module", "namespace": "test_morpheus_modules"
@@ -63,12 +63,12 @@ def test_build_single_before_module_registration(config):
 
 
 def register_test_module():
-    registry = srf.ModuleRegistry
+    registry = mrc.ModuleRegistry
 
-    def module_init_fn(builder: srf.Builder):
+    def module_init_fn(builder: mrc.Builder):
         pass
 
-    registry.register_module("TestSimpleModule", "test_morpheus_modules", srf_version, module_init_fn)
+    registry.register_module("TestSimpleModule", "test_morpheus_modules", mrc_version, module_init_fn)
 
 
 @pytest.mark.use_python
