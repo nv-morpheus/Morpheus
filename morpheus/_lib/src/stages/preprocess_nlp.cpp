@@ -29,10 +29,10 @@
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <mrc/segment/builder.hpp>
 #include <nvtext/subword_tokenize.hpp>
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rmm/device_buffer.hpp>  // for device_buffer
-#include <srf/segment/builder.hpp>
 
 #include <cstdint>
 #include <exception>
@@ -49,14 +49,16 @@ PreprocessNLPStage::PreprocessNLPStage(std::string vocab_hash_file,
                                        bool truncation,
                                        bool do_lower_case,
                                        bool add_special_token,
-                                       int stride) :
+                                       int stride,
+                                       std::string column) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_vocab_hash_file(std::move(vocab_hash_file)),
   m_sequence_length(sequence_length),
   m_truncation(truncation),
   m_do_lower_case(do_lower_case),
   m_add_special_token(add_special_token),
-  m_stride(stride)
+  m_stride(stride),
+  m_column(std::move(column))
 {}
 
 PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
@@ -74,7 +76,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, stride](sink_type_t x) {
                 // Convert to string view
-                auto string_col = cudf::strings_column_view{x->get_meta("data").get_column(0)};
+                auto string_col = cudf::strings_column_view{x->get_meta(this->m_column).get_column(0)};
 
                 // Create the hashed vocab
                 thread_local std::unique_ptr<nvtext::hashed_vocabulary> vocab =
@@ -136,18 +138,19 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
 }
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
-std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
     std::string vocab_hash_file,
     uint32_t sequence_length,
     bool truncation,
     bool do_lower_case,
     bool add_special_token,
-    int stride)
+    int stride,
+    std::string column)
 {
     auto stage = builder.construct_object<PreprocessNLPStage>(
-        name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride);
+        name, vocab_hash_file, sequence_length, truncation, do_lower_case, add_special_token, stride, column);
 
     return stage;
 }

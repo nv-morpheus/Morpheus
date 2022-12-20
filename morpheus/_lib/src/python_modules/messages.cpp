@@ -31,17 +31,17 @@
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <mrc/channel/status.hpp>  // for Status
+#include <mrc/node/edge_connector.hpp>
+#include <mrc/node/port_registry.hpp>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
-#include <pysrf/edge_adapter.hpp>
-#include <pysrf/node.hpp>
-#include <pysrf/port_builders.hpp>
-#include <pysrf/utils.hpp>         // for pysrf::import
-#include <srf/channel/status.hpp>  // for Status
-#include <srf/node/edge_connector.hpp>
-#include <srf/node/port_registry.hpp>
+#include <pymrc/edge_adapter.hpp>
+#include <pymrc/node.hpp>
+#include <pymrc/port_builders.hpp>
+#include <pymrc/utils.hpp>  // for pymrc::import
 
 #include <cstddef>
 #include <filesystem>
@@ -62,52 +62,52 @@ PYBIND11_MODULE(messages, m)
         .. currentmodule:: morpheus.messages
         .. autosummary::
            :toctree: _generate
-            TODO(Documentation)
+
         )pbdoc";
 
     // Load the cudf helpers
     load_cudf_helpers();
 
-    srf::pysrf::import(m, "cupy");
-    srf::pysrf::import(m, "morpheus._lib.common");
+    mrc::pymrc::import(m, "cupy");
+    mrc::pymrc::import(m, "morpheus._lib.common");
 
     // Required for SegmentObject
-    srf::pysrf::import(m, "srf.core.node");
+    mrc::pymrc::import(m, "mrc.core.node");
 
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
 
-    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
-    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
-    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
-    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
-    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
-    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseMessage>>();
-    srf::pysrf::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
-    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
-    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
-    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
+    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
 
-    srf::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")

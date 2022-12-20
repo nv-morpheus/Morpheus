@@ -20,13 +20,13 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/file_types.hpp"
 
-#include <pysrf/node.hpp>
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <fstream>
 #include <functional>  // for function
@@ -37,20 +37,33 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** WriteToFileStage********************************/
+
 /**
- * TODO(Documentation)
+ * @addtogroup stages
+ * @{
+ * @file
  */
+
 #pragma GCC visibility push(default)
-class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
+/**
+ * @brief Write all messages to a file. Messages are written to a file by this class.
+ * This class does not maintain an open file or buffer messages.
+ */
+class WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MessageMeta>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
     /**
-     * TODO(Documentation)
+     * @brief Construct a new Write To File Stage object
+     *
+     * @param filename : Reference to the name of the file to which the messages will be written
+     * @param mode : Reference to the mode for opening a file
+     * @param file_type : FileTypes
+     * @param include_index_col : Write out the index as a column, by default true
      */
     WriteToFileStage(const std::string &filename,
                      std::ios::openmode mode = std::ios::out,
@@ -59,17 +72,27 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 
   private:
     /**
-     * TODO(Documentation)
+     * @brief Close the file
      */
     void close();
 
+    /**
+     * @brief Write messages (rows in a DataFrame) to a JSON format
+     *
+     * @param msg
+     */
     void write_json(sink_type_t &msg);
 
+    /**
+     * @brief Write messages (rows in a DataFrame) to a CSV format
+     *
+     * @param msg
+     */
     void write_csv(sink_type_t &msg);
 
     subscribe_fn_t build_operator();
 
-    bool m_is_first;
+    bool m_is_first{};
     bool m_include_index_col;
     std::ofstream m_fstream;
     std::function<void(sink_type_t &)> m_write_func;
@@ -82,15 +105,24 @@ class WriteToFileStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMe
 struct WriteToFileStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a WriteToFileStage, and return the result.
+     * @brief Create and initialize a WriteToFileStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param filename : Reference to the name of the file to which the messages will be written
+     * @param mode : Reference to the mode for opening a file
+     * @param file_type : FileTypes
+     * @param include_index_col : Write out the index as a column, by default true
+     * @return std::shared_ptr<mrc::segment::Object<WriteToFileStage>>
      */
-    static std::shared_ptr<srf::segment::Object<WriteToFileStage>> init(srf::segment::Builder &builder,
-                                                                        const std::string &name,
-                                                                        const std::string &filename,
-                                                                        const std::string &mode = "w",
+    static std::shared_ptr<mrc::segment::Object<WriteToFileStage>> init(mrc::segment::Builder& builder,
+                                                                        const std::string& name,
+                                                                        const std::string& filename,
+                                                                        const std::string& mode = "w",
                                                                         FileTypes file_type     = FileTypes::Auto,
                                                                         bool include_index_col  = true);
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

@@ -19,13 +19,13 @@
 
 #include "morpheus/messages/multi_response_probs.hpp"
 
-#include <pysrf/node.hpp>
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <cstddef>  // for size_t
 #include <map>
@@ -36,8 +36,16 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** FilterDetectionStage********************************/
+
 /**
- * The FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
+ * @addtogroup stages
+ * @{
+ * @file
+ */
+
+#pragma GCC visibility push(default)
+/**
+ * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
  * criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
  * equal to `threshold`.
  *
@@ -60,17 +68,22 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-#pragma GCC visibility push(default)
-class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
+class FilterDetectionsStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
                                                             std::shared_ptr<MultiResponseProbsMessage>>
 {
   public:
     using base_t =
-        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
+    /**
+     * @brief Construct a new Filter Detections Stage object
+     *
+     * @param threshold : Threshold to classify
+     * @param copy : Whether or not to perform a copy default=true
+     */
     FilterDetectionsStage(float threshold, bool copy = true);
 
   private:
@@ -89,13 +102,20 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
 struct FilterDetectionStageInterfaceProxy
 {
     /**
-     * @brief Create and initialize a FilterDetectionStage, and return the result.
+     * @brief Create and initialize a FilterDetectionStage, and return the result
+     *
+     * @param builder : Pipeline context object reference
+     * @param name : Name of a stage reference
+     * @param threshold : Threshold to classify
+     * @param copy : Whether or not to perform a copy default=true
+     * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>
      */
-    static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &builder,
-                                                                             const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,
+                                                                             const std::string& name,
                                                                              float threshold,
                                                                              bool copy = true);
 };
 
 #pragma GCC visibility pop
+/** @} */  // end of group
 }  // namespace morpheus

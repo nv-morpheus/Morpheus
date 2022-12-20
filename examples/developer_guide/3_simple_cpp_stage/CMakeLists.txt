@@ -26,7 +26,7 @@ add_library(${PROJECT_NAME}::morpheus_example ALIAS morpheus_example)
 target_link_libraries(morpheus_example
     PUBLIC
       morpheus
-      srf::pysrf
+      mrc::pymrc
 )
 
 target_include_directories(morpheus_example

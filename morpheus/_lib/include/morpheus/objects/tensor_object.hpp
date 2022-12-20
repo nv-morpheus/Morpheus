@@ -22,8 +22,8 @@
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
+#include <mrc/cuda/common.hpp>
 #include <rmm/device_uvector.hpp>
-#include <srf/cuda/common.hpp>
 
 #include <algorithm>
 #include <array>
@@ -43,6 +43,12 @@
 // IWYU pragma: no_include <ext/new_allocator.h>
 
 namespace morpheus {
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
 
 using TensorIndex = long long;  // NOLINT
 using RankType    = int;        // NOLINT
@@ -118,10 +124,13 @@ struct MemoryDescriptor
 
 struct ITensorStorage
 {
-    virtual ~ITensorStorage()  = default;
+    virtual ~ITensorStorage() = default;
+
     virtual void* data() const = 0;
+
     // virtual const void* data() const                             = 0;
-    virtual std::size_t bytes() const                            = 0;
+    virtual std::size_t bytes() const = 0;
+
     virtual std::shared_ptr<MemoryDescriptor> get_memory() const = 0;
     // virtual TensorStorageType storage_type() const               = 0;
 };
@@ -147,11 +156,14 @@ struct ITensor : public ITensorStorage, public ITensorOperations
 {
     ~ITensor() override = default;
 
-    virtual RankType rank() const     = 0;
-    virtual std::size_t count() const = 0;
-    virtual DataType dtype() const    = 0;
+    virtual RankType rank() const = 0;
 
-    virtual std::size_t shape(std::size_t) const  = 0;
+    virtual std::size_t count() const = 0;
+
+    virtual DataType dtype() const = 0;
+
+    virtual std::size_t shape(std::size_t) const = 0;
+
     virtual std::size_t stride(std::size_t) const = 0;
 
     virtual bool is_compact() const = 0;
@@ -173,6 +185,11 @@ struct ITensor : public ITensorStorage, public ITensorOperations
     }
 };
 
+/**
+ * @brief Handle for interacting with Morpheus `Tensor` objects. Typically constructed using the `Tensor::create`
+ * factory method.
+ *
+ */
 struct TensorObject final
 {
     TensorObject() = default;
@@ -181,6 +198,7 @@ struct TensorObject final
       m_md(std::move(md)),
       m_tensor(std::move(tensor))
     {}
+
     TensorObject(std::shared_ptr<ITensor> tensor) : TensorObject(tensor->get_memory(), tensor) {}
 
     TensorObject(const TensorObject& other) = default;
@@ -206,6 +224,7 @@ struct TensorObject final
     {
         return m_tensor->count();
     }
+
     std::size_t bytes() const
     {
         return m_tensor->bytes();
@@ -215,6 +234,7 @@ struct TensorObject final
     {
         return m_tensor->rank();
     }
+
     std::size_t dtype_size() const
     {
         return m_tensor->dtype().item_size();
@@ -234,6 +254,7 @@ struct TensorObject final
     {
         return m_tensor->shape(idx);
     }
+
     TensorIndex stride(std::uint32_t idx) const
     {
         return m_tensor->stride(idx);
@@ -254,28 +275,31 @@ struct TensorObject final
                 return d < 0 ? s : d;
             });
 
-        return TensorObject(m_md, m_tensor->slice(min_dims, max_dims));
+        return {m_md, m_tensor->slice(min_dims, max_dims)};
     }
 
     TensorObject reshape(const std::vector<TensorIndex>& dims) const
     {
-        return TensorObject(m_md, m_tensor->reshape(dims));
+        return {m_md, m_tensor->reshape(dims)};
     }
 
     TensorObject deep_copy() const
     {
         std::shared_ptr<ITensor> copy = m_tensor->deep_copy();
 
-        return TensorObject(copy);
+        return {copy};
     }
 
-    std::vector<uint8_t> get_host_data() const
+    template <typename T = uint8_t>
+    std::vector<T> get_host_data() const
     {
-        std::vector<uint8_t> out_data;
+        std::vector<T> out_data;
 
-        out_data.resize(this->bytes());
+        CHECK_EQ(this->bytes() % sizeof(T), 0) << "Bytes isnt divisible by type. Check the types are correct";
 
-        SRF_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
+        out_data.resize(this->bytes() / sizeof(T));
+
+        MRC_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes(), cudaMemcpyDeviceToHost));
 
         return out_data;
     }
@@ -304,7 +328,7 @@ struct TensorObject final
 
         T output;
 
-        SRF_CHECK_CUDA(
+        MRC_CHECK_CUDA(
             cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
@@ -334,7 +358,7 @@ struct TensorObject final
 
         T output;
 
-        SRF_CHECK_CUDA(
+        MRC_CHECK_CUDA(
             cudaMemcpy(&output, static_cast<uint8_t*>(this->data()) + offset, sizeof(T), cudaMemcpyDeviceToHost));
 
         return output;
@@ -380,17 +404,17 @@ struct TensorObject final
         DCHECK(this->bytes() == other.bytes()) << "Left and right bytes should be the same if all other test passed";
 
         // Perform the copy operation
-        SRF_CHECK_CUDA(cudaMemcpy(this->data(), other.data(), this->bytes(), cudaMemcpyDeviceToDevice));
+        MRC_CHECK_CUDA(cudaMemcpy(this->data(), other.data(), this->bytes(), cudaMemcpyDeviceToDevice));
 
         return *this;
     }
 
-    std::shared_ptr<ITensor> get_tensor() const
+    [[maybe_unused]] std::shared_ptr<ITensor> get_tensor() const
     {
         return m_tensor;
     }
 
-    std::shared_ptr<MemoryDescriptor> get_memory() const
+    [[maybe_unused]] std::shared_ptr<MemoryDescriptor> get_memory() const
     {
         return m_md;
     }
@@ -405,10 +429,10 @@ struct TensorObject final
         if (dtype == m_tensor->dtype())
         {
             // Shallow copy
-            return TensorObject(*this);
+            return {*this};
         }
 
-        return TensorObject(m_tensor->as_type(dtype));
+        return {m_tensor->as_type(dtype)};
     }
 
     /**
@@ -422,15 +446,16 @@ struct TensorObject final
     TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
                            TensorIndex num_rows) const
     {
-        return TensorObject(m_tensor->copy_rows(selected_rows, num_rows));
+        return {m_tensor->copy_rows(selected_rows, num_rows)};
     }
 
   protected:
-    void throw_on_invalid_storage();
+    [[maybe_unused]] void throw_on_invalid_storage();
 
   private:
     std::shared_ptr<MemoryDescriptor> m_md;
     std::shared_ptr<ITensor> m_tensor;
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

@@ -17,6 +17,8 @@
 
 #include "morpheus/stages/file_source.hpp"
 
+#include "morpheus/io/deserializers.hpp"
+
 #include <cudf/column/column.hpp>  // for column
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
@@ -26,11 +28,11 @@
 #include <cudf/table/table.hpp>                  // for table
 #include <cudf/types.hpp>
 #include <glog/logging.h>
+#include <mrc/segment/builder.hpp>
 #include <pybind11/cast.h>  // for object_api::operator()
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
-#include <srf/segment/builder.hpp>
 
 #include <algorithm>  // for find
 #include <cstddef>    // for size_t
@@ -55,44 +57,33 @@ FileSourceStage::FileSourceStage(std::string filename, int repeat) :
 FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
-        auto data_table = this->load_table();
-
-        // Using 0 will default to creating a new range index
-        int index_col_count = 0;
-
-        // Check if we have a first column with INT64 data type
-        if (data_table.metadata.column_names.size() >= 1 &&
-            data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
-        {
-            std::regex index_regex(R"((unnamed: 0|id))",
-                                   std::regex_constants::ECMAScript | std::regex_constants::icase);
-
-            // Get the column name
-            auto col_name = data_table.metadata.column_names[0];
-
-            // Check it against some common terms
-            if (std::regex_search(col_name, index_regex))
-            {
-                // Also, if its the hideous 'Unnamed: 0', then just use an empty string
-                if (col_name == "Unnamed: 0")
-                {
-                    data_table.metadata.column_names[0] = "";
-                }
-
-                index_col_count = 1;
-            }
-        }
+        auto data_table     = load_table_from_file(m_filename);
+        int index_col_count = get_index_col_count(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
+        // When index_col_count is 0 this will cause a new range index to be created
         auto meta = MessageMeta::create_from_cpp(std::move(data_table), index_col_count);
 
-        // Always push at least 1
-        output.on_next(meta);
+        // next_meta stores a copy of the upcoming meta
+        std::shared_ptr<MessageMeta> next_meta = nullptr;
 
-        for (cudf::size_type repeat_idx = 1; repeat_idx < m_repeat; ++repeat_idx)
+        for (cudf::size_type repeat_idx = 0; repeat_idx < m_repeat; ++repeat_idx)
         {
-            // Clone the previous meta object
+            if (!output.is_subscribed())
             {
+                // Grab the GIL before disposing, just in case
+                pybind11::gil_scoped_acquire gil;
+
+                // Reset meta to allow the DCHECK after the loop to pass
+                meta.reset();
+
+                break;
+            }
+
+            // Clone the meta object before pushing while we still have access to it
+            if (repeat_idx + 1 < m_repeat)
+            {
+                // GIL must come after get_info
                 pybind11::gil_scoped_acquire gil;
 
                 // Use the copy function
@@ -104,67 +95,27 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 
                 df.attr("index") = index + df_len;
 
-                meta = MessageMeta::create_from_python(std::move(df));
+                next_meta = MessageMeta::create_from_python(std::move(df));
             }
 
-            output.on_next(meta);
+            DCHECK(meta) << "Cannot push null meta";
+
+            output.on_next(std::move(meta));
+
+            // Move next_meta into meta
+            std::swap(meta, next_meta);
         }
+
+        DCHECK(!meta) << "meta was not properly pushed";
+        DCHECK(!next_meta) << "next_meta was not properly pushed";
 
         output.on_completed();
     };
 }
 
-cudf::io::table_with_metadata FileSourceStage::load_table()
-{
-    auto file_path = std::filesystem::path(m_filename);
-
-    if (file_path.extension() == ".json" || file_path.extension() == ".jsonlines")
-    {
-        // First, load the file into json
-        auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{m_filename}).lines(true);
-
-        auto tbl = cudf::io::read_json(options.build());
-
-        auto found = std::find(tbl.metadata.column_names.begin(), tbl.metadata.column_names.end(), "data");
-
-        if (found == tbl.metadata.column_names.end())
-            return tbl;
-
-        // Super ugly but cudf cant handle newlines and add extra escapes. So we need to convert
-        // \\n -> \n
-        // \\/ -> \/
-        auto columns = tbl.tbl->release();
-
-        size_t idx = found - tbl.metadata.column_names.begin();
-
-        auto updated_data = cudf::strings::replace(
-            cudf::strings_column_view{columns[idx]->view()}, cudf::string_scalar("\\n"), cudf::string_scalar("\n"));
-
-        updated_data = cudf::strings::replace(
-            cudf::strings_column_view{updated_data->view()}, cudf::string_scalar("\\/"), cudf::string_scalar("/"));
-
-        columns[idx] = std::move(updated_data);
-
-        tbl.tbl = std::move(std::make_unique<cudf::table>(std::move(columns)));
-
-        return tbl;
-    }
-    else if (file_path.extension() == ".csv")
-    {
-        auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{m_filename});
-
-        return cudf::io::read_csv(options.build());
-    }
-    else
-    {
-        LOG(FATAL) << "Unknown extension for file: " << m_filename;
-        throw std::runtime_error("Unknown extension");
-    }
-}
-
 // ************ FileSourceStageInterfaceProxy ************ //
-std::shared_ptr<srf::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, std::string filename, int repeat)
+std::shared_ptr<mrc::segment::Object<FileSourceStage>> FileSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder, const std::string& name, std::string filename, int repeat)
 {
     auto stage = builder.construct_object<FileSourceStage>(name, filename, repeat);
 

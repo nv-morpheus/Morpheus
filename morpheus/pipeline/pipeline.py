@@ -21,8 +21,8 @@ import typing
 from collections import defaultdict
 from functools import partial
 
+import mrc
 import networkx
-import srf
 from tqdm import tqdm
 
 import cudf
@@ -66,12 +66,12 @@ class Pipeline():
         # Dictionary containing segment information for this pipeline
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
 
-        self._exec_options = srf.Options()
+        self._exec_options = mrc.Options()
         self._exec_options.topology.user_cpuset = "0-{}".format(c.num_threads - 1)
-        self._exec_options.engine_factories.default_engine_type = srf.core.options.EngineType.Thread
+        self._exec_options.engine_factories.default_engine_type = mrc.core.options.EngineType.Thread
 
         # Set the default channel size
-        srf.Config.default_channel_size = c.edge_buffer_size
+        mrc.Config.default_channel_size = c.edge_buffer_size
 
         self.batch_size = c.pipeline_batch_size
 
@@ -81,8 +81,8 @@ class Pipeline():
         self._is_build_complete = False
         self._is_started = False
 
-        self._srf_executor: srf.Executor = None
-        self._srf_pipeline: srf.Pipeline = None
+        self._mrc_executor: mrc.Executor = None
+        self._mrc_pipeline: mrc.Pipeline = None
 
     @property
     def is_built(self) -> bool:
@@ -172,11 +172,11 @@ class Pipeline():
 
         logger.info("====Registering Pipeline====")
 
-        self._srf_executor = srf.Executor(self._exec_options)
+        self._mrc_executor = mrc.Executor(self._exec_options)
 
-        self._srf_pipeline = srf.Pipeline()
+        self._mrc_pipeline = mrc.Pipeline()
 
-        def inner_build(builder: srf.Builder, segment_id: str):
+        def inner_build(builder: mrc.Builder, segment_id: str):
             segment_graph = self._segment_graphs[segment_id]
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
@@ -209,7 +209,7 @@ class Pipeline():
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
 
-            self._srf_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
+            self._mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
                                             segment_inner_build)
             logger.info("====Building Segment Complete!====")
@@ -220,7 +220,7 @@ class Pipeline():
         # Finally call _on_start
         self._on_start()
 
-        self._srf_executor.register_pipeline(self._srf_pipeline)
+        self._mrc_executor.register_pipeline(self._mrc_pipeline)
 
         self._is_built = True
 
@@ -231,7 +231,7 @@ class Pipeline():
 
         logger.info("====Starting Pipeline====")
 
-        self._srf_executor.start()
+        self._mrc_executor.start()
 
         logger.info("====Pipeline Started====")
 
@@ -241,26 +241,34 @@ class Pipeline():
         for s in list(self._sources) + list(self._stages):
             s.stop()
 
-        self._srf_executor.stop()
+        self._mrc_executor.stop()
 
         logger.info("====Pipeline Stopped====")
 
     async def join(self):
 
-        await self._srf_executor.join_async()
+        try:
+            await self._mrc_executor.join_async()
+        except Exception:
+            logger.exception("Exception occurred in pipeline. Rethrowing")
+            raise
+        finally:
+            # Make sure these are always shut down even if there was an error
+            for s in list(self._sources):
+                s.stop()
 
-        # First wait for all sources to stop. This only occurs after all messages have been processed fully
-        for s in list(self._sources):
-            await s.join()
+            # First wait for all sources to stop. This only occurs after all messages have been processed fully
+            for s in list(self._sources):
+                await s.join()
 
-        # Now that there is no more data, call stop on all stages to ensure shutdown (i.e., for stages that have their
-        # own worker loop thread)
-        for s in list(self._stages):
-            s.stop()
+            # Now that there is no more data, call stop on all stages to ensure shutdown (i.e., for stages that have
+            # their own worker loop thread)
+            for s in list(self._stages):
+                s.stop()
 
-        # Now call join on all stages
-        for s in list(self._stages):
-            await s.join()
+            # Now call join on all stages
+            for s in list(self._stages):
+                await s.join()
 
     async def build_and_start(self):
 

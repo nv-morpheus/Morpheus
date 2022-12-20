@@ -32,7 +32,7 @@ target_link_libraries(morpheus_rabbit
       morpheus
       rabbitmq
       SimpleAmqpClient
-      srf::pysrf
+      mrc::pymrc
 )
 
 target_include_directories(morpheus_rabbit

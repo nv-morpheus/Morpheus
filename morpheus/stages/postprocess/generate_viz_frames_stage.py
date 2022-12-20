@@ -19,11 +19,11 @@ import os
 import sys
 import typing
 
+import mrc
+import mrc.core.operators as ops
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import srf
-import srf.core.operators as ops
 import websockets.legacy.server
 from websockets.server import serve
 
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 @register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
 class GenerateVizFramesStage(SinglePortStage):
     """
-    Write out vizualization DataFrames.
+    Write out visualization DataFrames.
 
     Parameters
     ----------
@@ -225,7 +225,7 @@ class GenerateVizFramesStage(SinglePortStage):
         # Wait for it to
         await self._server_task
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 

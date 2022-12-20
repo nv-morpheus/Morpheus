@@ -15,23 +15,34 @@
  * limitations under the License.
  */
 
+#pragma once
 
 #include <cstdint>
 #include <string>
 
 namespace morpheus {
+
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
+
 #pragma GCC visibility push(default)
-    enum class FileTypes : int32_t {
-        Auto,
-        JSON,
-        CSV
-    };
+enum class FileTypes : int32_t
+{
+    Auto,
+    JSON,
+    CSV
+};
 
-    FileTypes determine_file_type(const std::string &filename);
+FileTypes determine_file_type(const std::string& filename);
 
-    struct FileTypesInterfaceProxy {
-        static FileTypes determine_file_type(const std::string& filename);
-    };
+struct FileTypesInterfaceProxy
+{
+    static FileTypes determine_file_type(const std::string& filename);
+};
 #pragma GCC visibility pop
 
+/** @} */  // end of group
 }  // namespace morpheus

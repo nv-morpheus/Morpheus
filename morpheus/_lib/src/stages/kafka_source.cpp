@@ -17,6 +17,7 @@
 
 #include "morpheus/stages/kafka_source.hpp"
 
+#include "morpheus/io/deserializers.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
@@ -31,11 +32,11 @@
 #include <cudf/table/table.hpp>                  // for table
 #include <glog/logging.h>
 #include <librdkafka/rdkafkacpp.h>
+#include <mrc/runnable/context.hpp>
+#include <mrc/segment/builder.hpp>
+#include <mrc/types.hpp>  // for SharedFuture
 #include <nlohmann/json.hpp>
-#include <pysrf/node.hpp>
-#include <srf/runnable/context.hpp>
-#include <srf/segment/builder.hpp>
-#include <srf/types.hpp>  // for SharedFuture
+#include <pymrc/node.hpp>
 
 #include <algorithm>  // for find, min, transform
 #include <chrono>
@@ -76,7 +77,7 @@ class KafkaSourceStageStopAfter : public std::exception
 {};
 
 // ************ KafkaSourceStage__Rebalancer *************************//
-class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
+class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb  // NOLINT
 {
   public:
     KafkaSourceStage__Rebalancer(std::function<int32_t()> batch_timeout_fn,
@@ -151,7 +152,7 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb
     std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> m_process_fn;
 
     boost::fibers::recursive_mutex m_mutex;
-    srf::SharedFuture<bool> m_partition_future;
+    mrc::SharedFuture<bool> m_partition_future;
 };
 
 KafkaSourceStage__Rebalancer::KafkaSourceStage__Rebalancer(
@@ -256,7 +257,8 @@ KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
                                    std::map<std::string, std::string> config,
                                    bool disable_commit,
                                    bool disable_pre_filtering,
-                                   size_t stop_after) :
+                                   size_t stop_after,
+                                   bool async_commits) :
   PythonSource(build()),
   m_max_batch_size(max_batch_size),
   m_topic(std::move(topic)),
@@ -264,7 +266,8 @@ KafkaSourceStage::KafkaSourceStage(std::size_t max_batch_size,
   m_config(std::move(config)),
   m_disable_commit(disable_commit),
   m_disable_pre_filtering(disable_pre_filtering),
-  m_stop_after{stop_after}
+  m_stop_after{stop_after},
+  m_async_commits(async_commits)
 {}
 
 KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
@@ -276,10 +279,10 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
             [this]() { return this->batch_timeout_ms(); },
             [this]() { return this->max_batch_size(); },
             [this](const std::string str_to_display) {
-                auto &ctx = srf::runnable::Context::get_runtime_context();
+                auto& ctx = mrc::runnable::Context::get_runtime_context();
                 return MORPHEUS_CONCAT_STR(ctx.info() << " " << str_to_display);
             },
-            [sub, &records_emitted, this](std::vector<std::unique_ptr<RdKafka::Message>> &message_batch) {
+            [sub, &records_emitted, this](std::vector<std::unique_ptr<RdKafka::Message>>& message_batch) {
                 // If we are unsubscribed, throw an error to break the loops
                 if (!sub.is_subscribed())
                 {
@@ -313,7 +316,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 return m_requires_commit;
             });
 
-        auto &context = srf::runnable::Context::get_runtime_context();
+        auto& context = mrc::runnable::Context::get_runtime_context();
 
         // Build consumer
         auto consumer = this->create_consumer(rebalancer);
@@ -333,7 +336,14 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
 
                 if (should_commit)
                 {
-                    CHECK_KAFKA(consumer->commitAsync(), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
+                    if (m_async_commits)
+                    {
+                        CHECK_KAFKA(consumer->commitAsync(), RdKafka::ERR_NO_ERROR, "Error during commitAsync");
+                    }
+                    else
+                    {
+                        CHECK_KAFKA(consumer->commitSync(), RdKafka::ERR_NO_ERROR, "Error during commit");
+                    }
                 }
             }
 
@@ -453,7 +463,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
 
     std::map<std::string, std::vector<int32_t>> topic_parts;
 
-    auto &ctx = srf::runnable::Context::get_runtime_context();
+    auto& ctx = mrc::runnable::Context::get_runtime_context();
     VLOG(10) << ctx.info() << MORPHEUS_CONCAT_STR(" Subscribed to " << md->topics()->size() << " topics:");
 
     for (auto const &topic : *(md->topics()))
@@ -500,7 +510,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
             return MORPHEUS_CONCAT_STR("(" << std::get<0>(x) << ", " << std::get<1>(x) << ")");
         });
 
-        auto &ctx = srf::runnable::Context::get_runtime_context();
+        auto& ctx = mrc::runnable::Context::get_runtime_context();
         VLOG(10) << ctx.info()
                  << MORPHEUS_CONCAT_STR(
                         "   Topic: '" << topic->topic()
@@ -519,31 +529,7 @@ cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string &bu
     auto options =
         cudf::io::json_reader_options::builder(cudf::io::source_info(buffer.c_str(), buffer.size())).lines(true);
 
-    auto tbl = cudf::io::read_json(options.build());
-
-    auto found = std::find(tbl.metadata.column_names.begin(), tbl.metadata.column_names.end(), "data");
-
-    if (found == tbl.metadata.column_names.end())
-        return tbl;
-
-    // Super ugly but cudf cant handle newlines and add extra escapes. So we need to convert
-    // \\n -> \n
-    // \\/ -> \/
-    auto columns = tbl.tbl->release();
-
-    size_t idx = found - tbl.metadata.column_names.begin();
-
-    auto updated_data = cudf::strings::replace(
-        cudf::strings_column_view{columns[idx]->view()}, cudf::string_scalar("\\n"), cudf::string_scalar("\n"));
-
-    updated_data = cudf::strings::replace(
-        cudf::strings_column_view{updated_data->view()}, cudf::string_scalar("\\/"), cudf::string_scalar("/"));
-
-    columns[idx] = std::move(updated_data);
-
-    tbl.tbl = std::move(std::make_unique<cudf::table>(std::move(columns)));
-
-    return tbl;
+    return load_json_table(options.build());
 }
 
 template <bool EnableFilter>
@@ -585,19 +571,27 @@ std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
 }
 
 // ************ KafkaStageInterfaceProxy ************ //
-std::shared_ptr<srf::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
+std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> KafkaSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
     size_t max_batch_size,
     std::string topic,
     int32_t batch_timeout_ms,
     std::map<std::string, std::string> config,
-    bool disable_commits,
+    bool disable_commit,
     bool disable_pre_filtering,
-    size_t stop_after)
+    size_t stop_after,
+    bool async_commits)
 {
-    auto stage = builder.construct_object<KafkaSourceStage>(
-        name, max_batch_size, topic, batch_timeout_ms, config, disable_commits, disable_pre_filtering, stop_after);
+    auto stage = builder.construct_object<KafkaSourceStage>(name,
+                                                            max_batch_size,
+                                                            topic,
+                                                            batch_timeout_ms,
+                                                            config,
+                                                            disable_commit,
+                                                            disable_pre_filtering,
+                                                            stop_after,
+                                                            async_commits);
 
     return stage;
 }

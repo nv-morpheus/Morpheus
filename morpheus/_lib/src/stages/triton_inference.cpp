@@ -17,9 +17,9 @@
 
 #include "morpheus/stages/triton_inference.hpp"
 
-#include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
-#include "morpheus/messages/memory/response_memory.hpp"   // for ResponseMemory
-#include "morpheus/messages/memory/tensor_memory.hpp"     // for TensorMemory::tensor_map_t
+#include "morpheus/messages/memory/inference_memory.hpp"       // for InferenceMemory
+#include "morpheus/messages/memory/response_memory_probs.hpp"  // for ResponseMemoryProbs
+#include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory::tensor_map_t
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/tensor.hpp"
@@ -34,11 +34,11 @@
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
 #include <http_client.h>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <nlohmann/json.hpp>
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
 
 #include <algorithm>  // for min
 #include <cstddef>
@@ -113,7 +113,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 // When our tensor lengths are longer than our dataframe we will need to use the seq_ids
                 // array to lookup how the values should map back into the dataframe
                 const bool needs_seq_ids = x->mess_count != x->count;
-                auto reponse_memory      = std::make_shared<ResponseMemory>(x->mess_count);
+                std::map<std::string, TensorObject> response_outputs;
 
                 // Create the output memory blocks
                 for (auto &model_output : m_model_outputs)
@@ -128,13 +128,19 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     auto output_buffer = std::make_shared<rmm::device_buffer>(
                         elem_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
 
-                    reponse_memory->tensors[model_output.mapped_name] = Tensor::create(
+                    response_outputs[model_output.mapped_name] = Tensor::create(
                         std::move(output_buffer), model_output.datatype, total_shape, std::vector<TensorIndex>{}, 0);
                 }
 
                 // This will be the final output of all mini-batches
-                auto response = std::make_shared<MultiResponseProbsMessage>(
-                    x->meta, x->mess_offset, x->mess_count, std::move(reponse_memory), 0, reponse_memory->count);
+                auto response_mem_probs =
+                    std::make_shared<ResponseMemoryProbs>(x->mess_count, std::move(response_outputs));
+                auto response = std::make_shared<MultiResponseProbsMessage>(x->meta,
+                                                                            x->mess_offset,
+                                                                            x->mess_count,
+                                                                            std::move(response_mem_probs),
+                                                                            0,
+                                                                            response_mem_probs->count);
 
                 std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
                 if (needs_seq_ids)
@@ -146,7 +152,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     const auto item_size = seq_ids.dtype().item_size();
 
                     host_seq_ids = std::make_unique<std::vector<int32_t>>(x->count);
-                    SRF_CHECK_CUDA(cudaMemcpy2D(host_seq_ids->data(),
+                    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids->data(),
                                                 item_size,
                                                 seq_ids.data(),
                                                 seq_ids.stride(0) * item_size,
@@ -184,7 +190,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     // Iterate on the model inputs in case the model takes less than what tensors are available
                     std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>>
                         saved_inputs = foreach_map(m_model_inputs, [this, &mini_batch_input](auto const &model_input) {
-                            DCHECK(mini_batch_input->memory->has_input(model_input.mapped_name))
+                            DCHECK(mini_batch_input->memory->has_tensor(model_input.mapped_name))
                                 << "Model input '" << model_input.mapped_name << "' not found in InferenceMemory";
 
                             auto const &inp_tensor = mini_batch_input->get_input(model_input.mapped_name);
@@ -252,7 +258,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         auto output_buffer =
                             std::make_shared<rmm::device_buffer>(output_ptr_size, rmm::cuda_stream_per_thread);
 
-                        SRF_CHECK_CUDA(
+                        MRC_CHECK_CUDA(
                             cudaMemcpy(output_buffer->data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
 
                         if (needs_seq_ids && output_shape[0] != mini_batch_output->count)
@@ -468,9 +474,9 @@ bool InferenceClientStage::is_default_grpc_port(std::string &server_url)
 }
 
 // ************ InferenceClientStageInterfaceProxy********* //
-std::shared_ptr<srf::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
+std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
     std::string model_name,
     std::string server_url,
     bool force_convert_inputs,

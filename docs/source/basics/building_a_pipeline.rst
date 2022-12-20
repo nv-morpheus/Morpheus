@@ -38,12 +38,12 @@ All pipelines configured with the CLI need to start with a source object. Curren
  * ``from-kafka``
     - Pulls messages from a Kafka cluster into the Pipeline
     - Kafka cluster can be remote or local
-    - See :py:obj:`~morpheus.pipeline.input.from_kafka.KafkaSourceStage` for more information
+    - Refer to :py:obj:`~morpheus.pipeline.input.from_kafka.KafkaSourceStage` for more information
  * ``from-file``
     - Reads from a local file into the Pipeline
     - Supports JSON lines format
     - All lines are read at the start and queued into the pipeline at one time. Useful for performance testing.
-    - See :py:obj:`~morpheus.pipeline.input.from_file.FileSourceStage` for more information
+    - Refer to :py:obj:`~morpheus.pipeline.input.from_file.FileSourceStage` for more information
 
 Stages
 ^^^^^^
@@ -74,7 +74,7 @@ After the ``====Building Pipeline====`` message, if logging is ``INFO`` or great
 stages and the type transformations of each stage. To be a valid Pipeline, the output type of one stage must match the
 input type of the next. Many stages are flexible and will determine their type at runtime but some stages require a
 specific input type. If your Pipeline is configured incorrectly, Morpheus will report the error. For example, if we run
-the same command as above but forget the ``serialize`` stage, you will see the following:
+the same command as above but forget the ``serialize`` stage, the following will be displayed:
 
 .. code-block:: console
 
@@ -94,12 +94,11 @@ the same command as above but forget the ``serialize`` stage, you will see the f
 
 This indicates that the ``to-file`` stage cannot accept the input type of `morpheus.pipeline.messages.MultiMessage`.
 This is because the ``to-file`` stage has no idea how to write that class to a file, it only knows how to write strings.
-To ensure you have a valid pipeline, look at the ``Accepted input types: (typing.List[str],)`` portion of the message.
+To ensure you have a valid pipeline, examine the ``Accepted input types: (typing.List[str],)`` portion of the message.
 This indicates you need a stage that converts from the output type of the ``deserialize`` stage,
 `morpheus.pipeline.messages.MultiMessage`, to `typing.List[str]`, which is exactly what the ``serialize`` stage does.
 
 Available Stages
 ^^^^^^^^^^^^^^^^
 
-For a complete list of available stages, please use the CLI help commands. Which stages are available can also be
-queried from the CLI using ``morpheus run pipeline-nlp --help`` or ``morpheus run pipeline-fil --help``.
+For a complete list of available stages, use the CLI help commands. The available stages can also be queried from the CLI using ``morpheus run pipeline-nlp --help`` or ``morpheus run pipeline-fil --help``.

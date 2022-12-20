@@ -16,9 +16,9 @@ import logging
 import pathlib
 import typing
 
-import srf
+import mrc
 import typing_utils
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.cli import register_stage
@@ -103,7 +103,7 @@ class FileSourceStage(SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if self._build_cpp_node():
             import morpheus._lib.stages as _stages
@@ -115,7 +115,7 @@ class FileSourceStage(SingleOutputSource):
 
         return out_stream, out_type
 
-    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
@@ -123,7 +123,7 @@ class FileSourceStage(SingleOutputSource):
         # Convert our list of dataframes into the desired type. Flatten if necessary
         if (typing_utils.issubtype(out_type, typing.List)):
 
-            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+            def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
                 obs.pipe(ops.flatten()).subscribe(sub)
 
@@ -143,19 +143,15 @@ class FileSourceStage(SingleOutputSource):
             df_type="cudf",
         )
 
-        count = 0
-
-        for _ in range(self._repeat_count):
+        for i in range(self._repeat_count):
 
             x = MessageMeta(df)
 
-            yield x
+            # If we are looping, copy the object. Do this before we push the object in case it changes
+            if (i + 1 < self._repeat_count):
+                df = df.copy()
 
-            count += 1
-
-            # If we are looping, copy and shift the index
-            if (self._repeat_count > 0):
-                prev_df = df
-                df = prev_df.copy()
-
+                # Shift the index to allow for unique indices without reading more data
                 df.index += len(df)
+
+            yield x

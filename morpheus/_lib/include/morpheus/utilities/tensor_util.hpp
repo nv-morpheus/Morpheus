@@ -20,12 +20,18 @@
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <algorithm>  // IWYU pragma: keep
-#include <iosfwd>  // for ostream
-#include <string>  // for string
-#include <vector>  // for vector
+#include <iosfwd>     // for ostream
+#include <string>     // for string
+#include <vector>     // for vector
 // <algorithm> is needed for copy, min_element & transform
 
 namespace morpheus {
+
+/**
+ * @addtogroup utilities
+ * @{
+ * @file
+ */
 
 /**
  * @brief Tensor Utilities
@@ -35,7 +41,7 @@ namespace morpheus {
  */
 struct TensorUtils
 {
-    using shape_type = std::vector<TensorIndex>;
+    using shape_type_t = std::vector<TensorIndex>;
 
     /**
      * @brief Write a formatted shape to a stream
@@ -43,7 +49,7 @@ struct TensorUtils
      * @param shape
      * @param os
      */
-    static void write_shape_to_stream(const shape_type& shape, std::ostream& os);
+    static void write_shape_to_stream(const shape_type_t& shape, std::ostream& os);
 
     /**
      * @brief Convenience method to get a string from write_shape_to_stream
@@ -51,7 +57,7 @@ struct TensorUtils
      * @param shape
      * @return std::string
      */
-    static std::string shape_to_string(const shape_type& shape);
+    static std::string shape_to_string(const shape_type_t& shape);
 
     /**
      * @brief Set stride to be contiguous with respect to row-major layouts
@@ -67,7 +73,7 @@ struct TensorUtils
      * @note A tensor whose values are laid out in the storage starting from the rightmost
      * dimension onward (that is, moving along rows for a 2D tensor) is defined as contiguous.
      */
-    static bool has_contiguous_stride(const std::vector<TensorIndex>& shape, const shape_type& stride);
+    static bool has_contiguous_stride(const std::vector<TensorIndex>& shape, const shape_type_t& stride);
 
     /**
      * @brief Validate the shape and stride are compatible
@@ -85,7 +91,7 @@ struct TensorUtils
      * elements.
      *
      * @param stride
-     * @return shape_type
+     * @return shape_type_t
      */
     template <typename IndexT, typename SrcIndexT = IndexT>
     static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride)
@@ -102,4 +108,5 @@ struct TensorUtils
     }
 };
 
+/** @} */  // end of group
 }  // namespace morpheus

@@ -18,10 +18,10 @@ limitations under the License.
 
 ## Requirements
 
-Prior to running the gnn fruad detection pipeline, additional requirements must be installed in to your conda environment. A supplemental requirements file has been provided in this example directory.
+Prior to running the gnn fraud detection pipeline, additional requirements must be installed in to your Conda environment. A supplemental requirements file has been provided in this example directory.
 
 ```bash
-mamba install -c rapidsai -c nvidia -c stellargraph -c conda-forge chardet cuml stellargraph tensorflow
+mamba env update -n ${CONDA_DEFAULT_ENV} -f examples/gnn_fraud_detection_pipeline/requirements.yml
 ```
 
 ## Running
@@ -90,7 +90,7 @@ Serialize rate[Complete]: 265messages [00:01, 142.31messages/s]
 ```
 
 ### CLI Example
-The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplush the same goal. To do this we must ensure that the `examples` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplish the same goal. To do this we must ensure that the `examples` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
 Note: Since the `gnn_fraud_detection_pipeline` module is visible to Python we can specify the plugins by their module name rather than the more verbose file path.
 
 From the root of the Morpheus repo run:

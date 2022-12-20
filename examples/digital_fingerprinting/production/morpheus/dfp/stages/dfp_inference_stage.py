@@ -16,7 +16,7 @@ import logging
 import time
 import typing
 
-import srf
+import mrc
 from mlflow.tracking.client import MlflowClient
 
 from morpheus.config import Config
@@ -108,7 +108,7 @@ class DFPInferenceStage(SinglePortStage):
 
         return output_message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 

@@ -21,14 +21,15 @@
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
+#include "morpheus/utilities/tensor_util.hpp"       // for TensorUtils::get_element_stride
 #include "morpheus/utilities/type_util.hpp"         // for DType
 #include "morpheus/utilities/type_util_detail.hpp"  // for DataType
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
 
 #include <algorithm>  // for min_element, transform
 #include <cstddef>
@@ -74,19 +75,11 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
                 auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
 
-                SRF_CHECK_CUDA(
+                MRC_CHECK_CUDA(
                     cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
-                // Depending on the input the stride is given in bytes or elements,
-                // divide the stride elements by the smallest item to ensure tensor_stride is defined in
-                // terms of elements
-                std::vector<TensorIndex> tensor_stride(stride.size());
-                auto min_stride = std::min_element(stride.cbegin(), stride.cend());
-
-                std::transform(stride.cbegin(),
-                               stride.cend(),
-                               tensor_stride.begin(),
-                               std::bind(std::divides<>(), std::placeholders::_1, *min_stride));
+                // Depending on the input the stride is given in bytes or elements, convert to elements
+                auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(stride);
 
                 // Now call the threshold function
                 auto thresh_bool_buffer =
@@ -127,8 +120,8 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
 }
 
 // ************ AddClassificationStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
-    srf::segment::Builder& builder,
+std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
     const std::string& name,
     float threshold,
     std::size_t num_class_labels,

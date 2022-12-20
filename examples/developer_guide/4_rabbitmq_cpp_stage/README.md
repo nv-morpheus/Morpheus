@@ -31,7 +31,7 @@ The image can be verified with the web management console by opening http://loca
 ## Launch the reader
 In a second terminal from the root of the morpheus repo execute:
 ```bash
-python examples/developer_guide/4_rabbitmq_cpp_Stage/read_simple.py
+python examples/developer_guide/4_rabbitmq_cpp_stage/read_simple.py
 ```
 
 This will read from a RabbitMQ exchange named 'logs', and write the results to `/tmp/results.json`.
@@ -41,7 +41,7 @@ If no exchange named 'logs' exists in RabbitMQ it will be created.
 ## Launch the writer
 In a third terminal from the root of the morpheus repo execute:
 ```bash
-python examples/developer_guide/4_rabbitmq_cpp_Stage/write_simple.py
+python examples/developer_guide/4_rabbitmq_cpp_stage/write_simple.py
 ```
 
 This will read json data from the `examples/data/email.jsonlines` file and publish the data into the 'logs' RabbitMQ exchange as a single message.

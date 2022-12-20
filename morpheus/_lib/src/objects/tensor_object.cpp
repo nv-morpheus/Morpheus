@@ -33,4 +33,6 @@ static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::ve
     }
 }
 
+void TensorObject::throw_on_invalid_storage() {}
+
 }  // namespace morpheus

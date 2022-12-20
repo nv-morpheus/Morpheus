@@ -14,12 +14,12 @@
 
 import logging
 import time
-import weakref
 from enum import Enum
+from io import StringIO
 
+import confluent_kafka as ck
+import mrc
 import pandas as pd
-import srf
-from cudf_kafka._lib.kafka import KafkaDatasource
 
 import cudf
 
@@ -57,6 +57,8 @@ class KafkaSourceStage(SingleOutputSource):
         Input kafka topic.
     group_id : str
         Specifies the name of the consumer group a Kafka consumer belongs to.
+    client_id : str, default = None
+        An optional identifier of the consumer.
     poll_interval : str
         Seconds that elapse between polling Kafka for new messages. Follows the pandas interval format.
     disable_commit : bool, default = False
@@ -70,68 +72,53 @@ class KafkaSourceStage(SingleOutputSource):
         information on the effects of each value."
     stop_after: int, default = 0
         Stops ingesting after emitting `stop_after` records (rows in the dataframe). Useful for testing. Disabled if `0`
+    async_commits: bool, default = True
+        Enable commits to be performed asynchronously. Ignored if `disable_commit` is `True`.
     """
 
     def __init__(self,
                  c: Config,
                  bootstrap_servers: str,
-                 input_topic: str,
+                 input_topic: str = "test_pcap",
                  group_id: str = "morpheus",
                  client_id: str = None,
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
                  auto_offset_reset: AutoOffsetReset = "latest",
-                 stop_after: int = 0):
+                 stop_after: int = 0,
+                 async_commits: bool = True):
         super().__init__(c)
 
         if isinstance(auto_offset_reset, AutoOffsetReset):
             auto_offset_reset = auto_offset_reset.value
 
-        self._consumer_conf = {
+        self._consumer_params = {
             'bootstrap.servers': bootstrap_servers,
             'group.id': group_id,
             'session.timeout.ms': "60000",
             "auto.offset.reset": auto_offset_reset
         }
         if client_id is not None:
-            self._consumer_conf['client.id'] = client_id
+            self._consumer_params['client.id'] = client_id
 
-        self._input_topic = input_topic
-        self._poll_interval = poll_interval
+        self._topic = input_topic
         self._max_batch_size = c.pipeline_batch_size
         self._max_concurrent = c.num_threads
         self._disable_commit = disable_commit
         self._disable_pre_filtering = disable_pre_filtering
         self._stop_after = stop_after
+        self._async_commits = async_commits
         self._client = None
 
         # Flag to indicate whether or not we should stop
         self._stop_requested = False
 
-        # What gets passed to streamz kafka
-        topic = self._input_topic
-        consumer_params = self._consumer_conf
-        poll_interval = self._poll_interval
-        npartitions = None
-        refresh_partitions = False
-        max_batch_size = self._max_batch_size
-        keys = False
-
-        self._consumer_params = consumer_params
-        # Override the auto-commit config to enforce custom streamz checkpointing
-        self._consumer_params['enable.auto.commit'] = 'false'
-        if 'auto.offset.reset' not in self._consumer_params.keys():
-            self._consumer_params['auto.offset.reset'] = 'earliest'
-        self._topic = topic
-        self._npartitions = npartitions
-        self._refresh_partitions = refresh_partitions
-        if self._npartitions is not None and self._npartitions <= 0:
-            raise ValueError("Number of Kafka topic partitions must be > 0.")
         self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
-        self._max_batch_size = max_batch_size
-        self._keys = keys
         self._started = False
+
+        self._records_emitted = 0
+        self._num_messages = 0
 
     @property
     def name(self) -> str:
@@ -147,222 +134,89 @@ class KafkaSourceStage(SingleOutputSource):
 
         return super().stop()
 
-    def _source_generator(self):
-        # Each invocation of this function makes a new thread so recreate the producers
+    def _process_batch(self, consumer, batch):
+        message_meta = None
+        if len(batch):
+            buffer = StringIO()
 
-        # Set some initial values
-        npartitions = self._npartitions
-        consumer = None
-        consumer_params = self._consumer_params
+            for msg in batch:
+                payload = msg.value()
+                if payload is not None:
+                    buffer.write(payload.decode("utf-8"))
+                    buffer.write("\n")
 
-        try:
-
-            # Now begin the script
-            import confluent_kafka as ck
-
-            consumer = ck.Consumer(consumer_params)
-
-            # weakref.finalize(self, lambda c=consumer: _close_consumer(c))
-            tp = ck.TopicPartition(self._topic, 0, 0)
-
-            attempts = 0
-            max_attempts = 5
-            records_emitted = 0
-
-            # Attempt to connect to the cluster. Try 5 times before giving up
-            while attempts < max_attempts:
-                try:
-                    # blocks for consumer thread to come up
-                    consumer.get_watermark_offsets(tp)
-
-                    logger.debug("Connected to Kafka source at '%s' on attempt #%d/%d",
-                                 self._consumer_conf["bootstrap.servers"],
-                                 attempts + 1,
-                                 max_attempts)
-
-                    break
-                except (RuntimeError, ck.KafkaException):
-                    attempts += 1
-
-                    # Raise the error if we hit the max
-                    if (attempts >= max_attempts):
-                        logger.exception(("Error while getting Kafka watermark offsets. Max attempts (%d) reached. "
-                                          "Check the bootstrap_servers parameter ('%s')"),
-                                         max_attempts,
-                                         self._consumer_conf["bootstrap.servers"])
-                        raise
-                    else:
-                        logger.warning("Error while getting Kafka watermark offsets. Attempt #%d/%d",
-                                       attempts,
-                                       max_attempts,
-                                       exc_info=True)
-
-                        # Exponential backoff
-                        time.sleep(2.0**attempts)
-
+            df = None
             try:
-                if npartitions is None:
+                buffer.seek(0)
+                df = cudf.io.read_json(buffer, engine='cudf', lines=True, orient='records')
+            except Exception as e:
+                logger.error("Error parsing payload into a dataframe : {}".format(e))
+            finally:
+                if (not self._disable_commit):
+                    for msg in batch:
+                        consumer.commit(message=msg, asynchronous=self._async_commits)
 
-                    kafka_cluster_metadata = consumer.list_topics(self._topic)
+            if df is not None:
+                num_records = len(df)
+                message_meta = MessageMeta(df)
+                self._records_emitted += num_records
+                self._num_messages += 1
 
-                    npartitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
+                if self._stop_after > 0 and self._records_emitted >= self._stop_after:
+                    self._stop_requested = True
 
-                positions = [0] * npartitions
+            batch.clear()
 
-                tps = []
-                for partition in range(npartitions):
-                    tps.append(ck.TopicPartition(self._topic, partition))
+        return message_meta
 
-                while not self._stop_requested:
-                    try:
-                        committed = consumer.committed(tps, timeout=1)
-                    except ck.KafkaException:
-                        pass
+    def _source_generator(self):
+        consumer = None
+        try:
+            consumer = ck.Consumer(self._consumer_params)
+            consumer.subscribe([self._topic])
+
+            batch = []
+
+            while not self._stop_requested:
+                do_process_batch = False
+                do_sleep = False
+
+                msg = consumer.poll(timeout=1.0)
+                if msg is None:
+                    do_process_batch = True
+                    do_sleep = True
+
+                else:
+                    msg_error = msg.error()
+                    if msg_error is None:
+                        batch.append(msg)
+                        if len(batch) == self._max_batch_size:
+                            do_process_batch = True
+
+                    elif msg_error == ck.KafkaError._PARTITION_EOF:
+                        do_process_batch = True
+                        do_sleep = True
                     else:
-                        for tp in committed:
-                            positions[tp.partition] = tp.offset
-                        break
+                        raise ck.KafkaException(msg_error)
 
-                while not self._stop_requested:
-                    out = []
+                if do_process_batch:
+                    message_meta = self._process_batch(consumer, batch)
+                    if message_meta is not None:
+                        yield message_meta
 
-                    if self._refresh_partitions:
-                        kafka_cluster_metadata = consumer.list_topics(self._topic)
+                if do_sleep and not self._stop_requested:
+                    time.sleep(self._poll_interval)
 
-                        new_partitions = len(kafka_cluster_metadata.topics[self._topic].partitions)
+            message_meta = self._process_batch(consumer, batch)
+            if message_meta is not None:
+                yield message_meta
 
-                        if new_partitions > npartitions:
-                            positions.extend([-1001] * (new_partitions - npartitions))
-                            npartitions = new_partitions
-
-                    for partition in range(npartitions):
-
-                        tp = ck.TopicPartition(self._topic, partition, 0)
-
-                        try:
-                            low, high = consumer.get_watermark_offsets(tp, timeout=0.1)
-                        except (RuntimeError, ck.KafkaException):
-                            continue
-
-                        if 'auto.offset.reset' in consumer_params.keys():
-                            if consumer_params['auto.offset.reset'] == 'latest' and positions[partition] == -1001:
-                                positions[partition] = high
-
-                        current_position = positions[partition]
-
-                        lowest = max(current_position, low)
-
-                        if high > lowest + self._max_batch_size:
-                            high = lowest + self._max_batch_size
-                        if high > lowest:
-                            out.append((consumer_params, self._topic, partition, self._keys, lowest, high - 1))
-                            positions[partition] = high
-
-                    consumer_params['auto.offset.reset'] = 'earliest'
-
-                    if (out):
-                        for part in out:
-
-                            meta = self._kafka_params_to_messagemeta(part)
-
-                            # Once the meta goes out of scope, commit it
-                            def commit(topic, part_no, keys, lowest, offset):
-                                # topic, part_no, _, _, offset = part[1:]
-                                try:
-                                    _tp = ck.TopicPartition(topic, part_no, offset + 1)
-                                    consumer.commit(offsets=[_tp], asynchronous=True)
-                                except Exception:
-                                    logger.exception(("Error occurred in `from-kafka` stage with "
-                                                      "broker '%s' while committing message: %d"),
-                                                     self._consumer_conf["bootstrap.servers"],
-                                                     offset)
-
-                            if (not self._disable_commit):
-                                weakref.finalize(meta, commit, *part[1:])
-
-                            # Push the message meta
-                            yield meta
-
-                            records_emitted += meta.count
-                            if self._stop_after > 0 and records_emitted >= self._stop_after:
-                                raise StopIteration()
-                    else:
-                        time.sleep(self._poll_interval)
-            except StopIteration:
-                raise
-            except Exception:
-                logger.exception(("Error occurred in `from-kafka` stage with broker '%s' while processing messages"),
-                                 self._consumer_conf["bootstrap.servers"])
-                raise
-        except StopIteration:
-            pass
         finally:
             # Close the consumer and call on_completed
             if (consumer):
                 consumer.close()
 
-    def _kafka_params_to_messagemeta(self, x: tuple):
-
-        # Unpack
-        kafka_params, topic, partition, keys, low, high = x
-
-        gdf = self._read_gdf(kafka_params, topic=topic, partition=partition, lines=True, start=low, end=high + 1)
-
-        return MessageMeta(gdf)
-
-    @staticmethod
-    def _read_gdf(kafka_configs,
-                  topic=None,
-                  partition=0,
-                  lines=True,
-                  start=0,
-                  end=0,
-                  batch_timeout=10000,
-                  delimiter="\n",
-                  message_format="json"):
-        """
-        Replicates `custreamz.Consumer.read_gdf` function which does not work for some reason.
-        """
-
-        if topic is None:
-            raise ValueError("ERROR: You must specifiy the topic "
-                             "that you want to consume from")
-
-        kafka_datasource = None
-
-        try:
-            kafka_datasource = KafkaDatasource(
-                kafka_configs,
-                topic.encode(),
-                partition,
-                start,
-                end,
-                batch_timeout,
-                delimiter.encode(),
-            )
-
-            cudf_readers = {
-                "json": cudf.io.read_json,
-                "csv": cudf.io.read_csv,
-                "orc": cudf.io.read_orc,
-                "avro": cudf.io.read_avro,
-                "parquet": cudf.io.read_parquet,
-            }
-
-            result = cudf_readers[message_format](kafka_datasource, engine="cudf", lines=lines)
-
-            return cudf.DataFrame._from_data(data=result._data, index=result._index)
-        except Exception:
-            logger.exception("Error occurred converting KafkaDatasource to Dataframe.")
-        finally:
-            if (kafka_datasource is not None):
-                # Close up the cudf datasource instance
-                # TODO: Ideally the C++ destructor should handle the
-                # unsubscribe and closing the socket connection.
-                kafka_datasource.unsubscribe()
-                kafka_datasource.close(batch_timeout)
-
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if (self._build_cpp_node()):
             source = _stages.KafkaSourceStage(builder,
@@ -373,7 +227,8 @@ class KafkaSourceStage(SingleOutputSource):
                                               self._consumer_params,
                                               self._disable_commit,
                                               self._disable_pre_filtering,
-                                              self._stop_after)
+                                              self._stop_after,
+                                              self._async_commits)
 
             # Only use multiple progress engines with C++. The python implementation will duplicate messages with
             # multiple threads
