@@ -24,7 +24,6 @@ dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
     - automake=1.16.5
     - benchmark=1.6.1
-    - breathe=4.34.0 # For Sphinx documentation
     - boost-cpp=1.74
     - cachetools=5.0.0
     - ccache>=3.7
@@ -41,7 +40,6 @@ dependencies:
     - datacompy=0.8
     - docker-compose=1.29.2
     - docker-py=5.0
-    - exhale=0.3.6 # For Sphinx documentation
     - faker=12.3.0
     - flake8
     - flatbuffers=2.0
@@ -62,7 +60,6 @@ dependencies:
     - mlflow>1.29,<2
     - mrc=23.01
     - myst-parser==0.17
-    - nbsphinx=0.8.10 # For Sphinx documentation
     - networkx=2.8
     - ninja=1.10
     - nodejs=17.4.0
