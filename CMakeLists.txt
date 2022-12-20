@@ -46,7 +46,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_INSTALL_RPATH "$ORIGIN")
 
-enable_language(C CXX) # TODO(Devin) Required for coverage import
 enable_testing()
 
 if (MORPHEUS_USE_IWYU AND MORPHEUS_USE_CCACHE)
@@ -121,7 +120,25 @@ add_custom_target(${PROJECT_NAME}_style_checks
 )
 
 # Include the main morpheus code
+morpheus_utils_create_python_package(morpheus
+    PROJECT_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/morpheus"
+)
+
 add_subdirectory(morpheus)
+
+# Complete the python package
+set(extra_args "")
+
+if(MORPHEUS_PYTHON_INPLACE_BUILD)
+  list(APPEND extra_args "IS_INPLACE")
+endif()
+
+if(MORPHEUS_PYTHON_PERFORM_INSTALL)
+  list(APPEND extra_args "INSTALL_WHEEL")
+endif()
+
+morpheus_utils_build_python_package(morpheus ${extra_args})
 
 if(MORPHEUS_BUILD_EXAMPLES)
   add_subdirectory(examples)
@@ -130,65 +147,6 @@ endif()
 if(MORPHEUS_BUILD_DOCS)
   add_subdirectory(docs)
 endif()
-
-# Get all of the python files to copy to the build directory
-file(GLOB_RECURSE MORPHEUS_PYTHON_FILES
-  RELATIVE ${PROJECT_SOURCE_DIR}
-  LIST_DIRECTORIES FALSE
-  CONFIGURE_DEPENDS
-  "morpheus/*.py"
-  "morpheus/py.typed"
-)
-
-set(MORPHEUS_ROOT_PYTHON_FILES
-  "pyproject.toml"
-  "setup.cfg"
-  "setup.py"
-  "versioneer.py"
-  "MANIFEST.in"
-)
-
-# Add the root python files to the list
-list(PREPEND MORPHEUS_PYTHON_FILES ${MORPHEUS_ROOT_PYTHON_FILES})
-
-set(OUTPUT_PYTHON_FILES "")
-
-# For each file, copy if its different
-foreach(py_file ${MORPHEUS_PYTHON_FILES})
-
-  add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/${py_file}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_SOURCE_DIR}/${py_file} ${PROJECT_BINARY_DIR}/${py_file}
-    DEPENDS ${PROJECT_SOURCE_DIR}/${py_file}
-    COMMENT "Copying ${py_file} to ${PROJECT_BINARY_DIR}/${py_file}"
-  )
-
-  list(APPEND OUTPUT_PYTHON_FILES ${PROJECT_BINARY_DIR}/${py_file})
-
-endforeach()
-
-add_custom_target(copy_python_source ALL
-  DEPENDS ${OUTPUT_PYTHON_FILES}
-)
-
-# Manually install the below files. install(DIRECTORY) doesn't work well and
-# makes it impossible to get these files and MORPHEUS_PYTHON_FILES in one command.
-install(
-  FILES ${MORPHEUS_ROOT_PYTHON_FILES}
-  DESTINATION ${MORPHEUS_PY_INSTALL_DIR}
-  COMPONENT Wheel
-)
-
-# Use the install(DIRECTORY) to keep the files tructure
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/morpheus
-  DESTINATION ${MORPHEUS_PY_INSTALL_DIR}
-  COMPONENT Wheel
-  FILES_MATCHING
-    PATTERN "*.py"
-    PATTERN "py.typed"
-    PATTERN "data/*"
-)
 
 if(MORPHEUS_ENABLE_DEBUG_INFO)
   morpheus_utils_print_all_targets()

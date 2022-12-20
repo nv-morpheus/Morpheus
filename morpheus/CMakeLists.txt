@@ -21,17 +21,13 @@ option(MORPHEUS_BUILD_PYTHON_STUBS
         "Whether or not to generate stubs for python files." ON)
 
 morpheus_utils_python_modules_ensure_loaded()
-morpheus_utils_create_python_package(morpheus)
 
 # Save the root of the python for relative paths
 set(MORPHEUS_PY_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # Determine the install directory for built modules
-file(RELATIVE_PATH python_relative_install ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} ${Python3_SITELIB})
 
 add_subdirectory(_lib)
 
-# TODO(Devin) : ninja: error: build.ninja:2024: multiple rules generate morpheus/__init__.py [-w dupbuild=err]
-# morpheus_utils_build_python_package(morpheus)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

@@ -23,15 +23,6 @@ endif()
 ########### morpheus ###########
 set(MORPHEUS_LIB_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
-file(RELATIVE_PATH install_relative ${MORPHEUS_PY_ROOT} ${CMAKE_CURRENT_SOURCE_DIR})
-set(MORPHEUS_LIB_INSTALL_DIR "${MORPHEUS_PY_INSTALL_DIR}/${install_relative}")
-unset(install_relative)
-
-# Must create a custom target to hold all python dependencies before first module call
-add_custom_target(all_python_targets ALL
-  DEPENDS copy_python_source # depend on copying the source so the full python package is built with this target
-)
-
 #----------cuda_utils---------
 include(cmake/libraries/cuda_utils.cmake)
 
@@ -53,19 +44,6 @@ include(cmake/python_modules/common.cmake)
 
 #----------morpheus._lib.file_types---------
 include(cmake/python_modules/file_types.cmake)
-
-#file(STRINGS
-#    "${CMAKE_SOURCE_DIR}/external/utilities/cmake/morpheus_utils/general/debug/cmake_target_properties.txt" PROPS_TO_GET)
-#morpheus_utils_print_target_properties (
-#    TARGETS
-#      cudf::cudf
-#      matx::matx
-#      mrc::pymrc
-#      cuda_utils_objs
-#      cuda_utils
-#    PROPERTIES
-#      ${PROPS_TO_GET}
-#    )
 
 if (MORPHEUS_BUILD_TESTS)
   add_subdirectory(tests)
