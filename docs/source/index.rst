@@ -109,6 +109,7 @@ Deploying Morpheus
    :caption: Extra Information
    :hidden:
 
+   extra_info/glossary
    extra_info/performance
    extra_info/troubleshooting
    extra_info/known_issues
