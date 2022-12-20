@@ -23,7 +23,7 @@ These examples illustrate how to use Morpheus to build a binary sequence classif
 
 Like any other Linux based machine, DGX's generate a vast amount of logs. Analysts spend hours trying to identify the root causes of each failure. There could be infinitely many types of root causes of the failures. Some patterns might help to narrow it down; however, regular expressions can only help to identify previously known patterns. Moreover, this creates another manual task of maintaining a search script.
 
-In this example, we show how we can use Morpheus to accelerate the analysis of the enormous amount of logs using machine learning. Another benefit of analyzing in a probabilistic way is that we can pin down previously undetected root causes. To achieve this, we will fine-tune a pre-trained BERT[^1] model with a classification layer using HuggingFace library.
+In this example, we demonstrate how using Morpheus can accelerate the analysis of the enormous amount of logs using machine learning. Another benefit of analyzing in a probabilistic way is that we can pin down previously undetected root causes. To achieve this, we will fine-tune a pre-trained BERT[^1] model with a classification layer using HuggingFace library.
 
 Once the model is capable of identifying even the new root causes, it can also be deployed as a process running in the machines to predict failures before they happen.
 
@@ -63,10 +63,11 @@ Once Triton has loaded the model, the following should be displayed:
 +------------------------+---------+--------+
 
 ```
+> **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
 
 #### ONNX->TensorRT Model Conversion
 
-To achieve optimized inference performance, Triton Inference Server provides option to convert our ONNX model to TensorRT. Simply add the following to the end of your `config.pbtxt`:
+To achieve optimized inference performance, Triton Inference Server provides an option to convert our ONNX model to TensorRT. Simply add the following to the end of your `config.pbtxt`:
 ```
 dynamic_batching {
   preferred_batch_size: [ 1, 4, 8, 16, 32 ]
