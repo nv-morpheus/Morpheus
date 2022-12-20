@@ -288,7 +288,7 @@ def run_pipeline(train_users,
     if (is_training):
 
         # Finally, perform training which will output a model
-        pipeline.add_stage(DFPTraining(config))
+        pipeline.add_stage(DFPTraining(config, validation_size=0.10))
 
         pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
 
