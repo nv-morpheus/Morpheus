@@ -55,7 +55,7 @@ MRC is built on top of [RxCpp](https://github.com/ReactiveX/RxCpp) which is an o
 A subgraph of a [pipeline](#pipeline). Segments allow for both logical grouping, and distribution across multiple processes and execution hosts.
 
 ## stage
-Fundamental building block in Morpheus representing a unit of work. Stages may consist of a single MRC node, a small collection of nodes, or an entire MRC subgraph. A stage can encapsulate any piece of functionality and is capable of integrating with any service or external library. Refer to [Simple Python Stage](./guides/1_simple_python_stage.md).
+Fundamental building block in Morpheus representing a unit of work. Stages may consist of a single MRC node, a small collection of nodes, or an entire MRC subgraph. A stage can encapsulate any piece of functionality and is capable of integrating with any service or external library. Refer to [Simple Python Stage](../guides/1_simple_python_stage.md).
 
 ## Triton Inference Server
 Triton Inference Server, part of the NVIDIA AI platform, streamlines and standardizes AI inference by enabling teams to deploy, run, and scale trained AI models from any framework on any GPU- or CPU-based infrastructure. Most Morpheus pipelines utilize Triton for inferencing via the `TritonInferenceStage`. Refer to [https://developer.nvidia.com/nvidia-triton-inference-server](https://developer.nvidia.com/nvidia-triton-inference-server)
