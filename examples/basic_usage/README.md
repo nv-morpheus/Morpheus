@@ -52,13 +52,17 @@ This example will report the throughput on the command line.
 
 ![img/monitor_throughput.png](img/monitor_throughput.png)
 
-```console
-$ morpheus run pipeline-nlp --viz_file=basic_usage_img/monitor_throughput.png  \
+```bash
+morpheus run pipeline-nlp --viz_file=basic_usage_img/monitor_throughput.png  \
    from-file --filename examples/data/pcap_dump.jsonlines \
    deserialize \
    monitor --description "Lines Throughput" --smoothing 0.1 --unit "lines" \
    serialize \
    to-file --overwrite --filename out.jsonlines
+```
+
+Output:
+```console
 Configuring Pipeline via CLI
 Starting pipeline via CLI... Ctrl+C to Quit
 Lines Throughput[Complete]: 93085 lines [00:04, 19261.06 lines/s]
@@ -71,8 +75,8 @@ This example will report the throughput for each stage independently.
 
 ![img/multi_monitor_throughput.png](img/multi_monitor_throughput.png)
 
-```console
-$ morpheus run pipeline-nlp --viz_file=basic_usage_img/multi_monitor_throughput.png  \
+```bash
+morpheus run pipeline-nlp --viz_file=basic_usage_img/multi_monitor_throughput.png  \
    from-file --filename examples/data/pcap_dump.jsonlines \
    monitor --description "From File Throughput" \
    deserialize \
@@ -80,6 +84,10 @@ $ morpheus run pipeline-nlp --viz_file=basic_usage_img/multi_monitor_throughput.
    serialize \
    monitor --description "Serialize Throughput" \
    to-file --filename out.jsonlines --overwrite
+```
+
+Output:
+```console
 Configuring Pipeline via CLI
 Starting pipeline via CLI... Ctrl+C to Quit
 From File Throughput[Complete]: 93085 messages [00:00, 93852.05 messages/s]
@@ -94,8 +102,8 @@ This example shows an NLP Pipeline which uses most stages available in Morpheus.
 
 ![img/nlp_kitchen_sink.png](img/nlp_kitchen_sink.png)
 
-```console
-$ morpheus run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+```bash
+morpheus run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
    pipeline-nlp --viz_file=basic_usage_img/nlp_kitchen_sink.png  \
    from-file --filename examples/data/pcap_dump.jsonlines \
    deserialize \
@@ -107,6 +115,10 @@ $ morpheus run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size
    serialize --include 'timestamp' --exclude '^_ts_' \
    to-kafka --bootstrap_servers localhost:9092 --output_topic "inference_output" \
    monitor --description "ToKafka Rate" --smoothing=0.001 --unit "msg"
+```
+
+Output:
+```console
 Configuring Pipeline via CLI
 Starting pipeline via CLI... Ctrl+C to Quit
 Inference Rate[Complete]: 93085 inf [00:07, 12334.49 inf/s]
