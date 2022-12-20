@@ -29,7 +29,7 @@ together. At a high level, the CLI is broken up into two main sections:
  * ``run``
     * For running AE, FIL, NLP or OTHER pipelines.
  * ``tools``
-    * Tools/Utilities to help setup, configure and run pipelines and external resources
+    * Tools/Utilities to help setup, configure and run pipelines and external resources.
 
 Users can get help on any command by passing ``--help`` to a command or sub-command. For example, to get help on the
 run:
@@ -59,14 +59,14 @@ run:
 
 Currently, Morpheus pipeline can be operated in four different modes.
 
-* ``pipeline-ae``
-     This pipeline mode is used to run training/inference on the AutoEncoder model.
-* ``pipeline-fil``
-     This pipeline mode is used for inference on FIL (Forest Inference Library) models like XGBoost.
-* ``pipeline-nlp``
-     This pipeline mode is used to run inference on NLP models, it offers the ability to tokenize the input data prior to submitting the inference requests.
-* ``pipeline-other``
-     Run a customized inference pipeline without using a specific model type.
+ * ``pipeline-ae``
+    * This pipeline mode is used to run training/inference on the AutoEncoder model.
+ * ``pipeline-fil``
+    * This pipeline mode is used to run inference on FIL (Forest Inference Library) models such as XGBoost, RandomForestClassifier, etc.
+ * ``pipeline-nlp``
+    * This pipeline mode is used to run inference on NLP models, it offers the ability to tokenize the input data prior to submitting the inference requests.
+ * ``pipeline-other``
+    * Run a customized inference pipeline without using a specific model type.
 
 Similar to the run command, we can get help on the tools:
 
