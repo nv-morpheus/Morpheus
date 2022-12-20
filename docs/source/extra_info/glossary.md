@@ -37,7 +37,7 @@ A Helm Chart that deploys the Morpheus container. Refer to [https://catalog.ngc.
 An individual node in the MRC graph. In Morpheus, MRC nodes are constructed by [stages](#stage).
 
 ## operator
-Refers to small-reusable MRC nodes contained in the `mrc.core.operators` package which perform common tasks such as:
+Refers to small-reusable MRC nodes contained in the `mrc.core.operators` Python module which perform common tasks such as:
 * `filter`
 * `flatten`
 * `map`
