@@ -21,7 +21,7 @@ import os
 
 import appdirs
 import click
-import srf
+import mrc
 from tqdm import tqdm
 
 
@@ -164,8 +164,8 @@ def configure_logging(log_level: int, log_config_file: str = None):
         <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`__). Defaults to None.
     """
 
-    # Start by initializing SRF logging
-    srf.logging.init_logging("morpheus")
+    # Start by initializing MRC logging
+    mrc.logging.init_logging("morpheus")
 
     if (log_config_file is not None):
         # Configure using log file
@@ -176,7 +176,7 @@ def configure_logging(log_level: int, log_config_file: str = None):
 
 def set_log_level(log_level: int):
     """
-    Set the Morpheus logging level. Also propagates the value to SRF's logging system to keep the logging levels in sync
+    Set the Morpheus logging level. Also propagates the value to MRC's logging system to keep the logging levels in sync
 
     Parameters
     ----------
@@ -191,10 +191,10 @@ def set_log_level(log_level: int):
     """
 
     # Get the old level and return it in case the user wants that
-    old_level = srf.logging.get_level()
+    old_level = mrc.logging.get_level()
 
-    # Set the SRF logging level to match
-    srf.logging.set_level(log_level)
+    # Set the MRC logging level to match
+    mrc.logging.set_level(log_level)
 
     # Get the root Morpheus logger
     morpheus_logger = logging.getLogger("morpheus")

@@ -15,7 +15,7 @@
 import logging
 import typing
 
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -65,7 +65,7 @@ class DelayStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         # This stage is no longer needed and is just a pass thru stage
         deprecated_stage_warning(logger, type(self), self.unique_name)

@@ -20,13 +20,13 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 
-#include <pysrf/node.hpp>
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <cstddef>  // for size_t
 #include <memory>
@@ -49,10 +49,10 @@ namespace morpheus {
  * from `FileSourceStage`/`KafkaSourceStage` stages breaking them up into into `MultiMessage`'s. This should be one of
  * the first stages after the `Source` object.
  */
-class DeserializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
+class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageMeta>, std::shared_ptr<MultiMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -85,10 +85,10 @@ struct DeserializeStageInterfaceProxy
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
      * @param batch_size : Number of messages to be divided into each batch
-     * @return std::shared_ptr<srf::segment::Object<DeserializeStage>>
+     * @return std::shared_ptr<mrc::segment::Object<DeserializeStage>>
      */
-    static std::shared_ptr<srf::segment::Object<DeserializeStage>> init(srf::segment::Builder &builder,
-                                                                        const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<DeserializeStage>> init(mrc::segment::Builder& builder,
+                                                                        const std::string& name,
                                                                         size_t batch_size);
 };
 #pragma GCC visibility pop

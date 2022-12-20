@@ -21,9 +21,9 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 
 #include <glog/logging.h>
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/object.hpp>          // for Object
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/object.hpp>          // for Object
 
 #include <cstddef>  // for size_t
 #include <exception>
@@ -86,8 +86,8 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
 }
 
 // ************ AddScoresStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
-    srf::segment::Builder& builder,
+std::shared_ptr<mrc::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
     const std::string& name,
     std::size_t num_class_labels,
     std::map<std::size_t, std::string> idx2label)

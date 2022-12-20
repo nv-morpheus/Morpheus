@@ -16,8 +16,8 @@ import logging
 import time
 import typing
 
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -70,9 +70,9 @@ class DFPPreprocessingStage(SinglePortStage):
 
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.process_features)).subscribe(sub)
 
         node = builder.make_node_full(self.unique_name, node_fn)

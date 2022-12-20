@@ -225,7 +225,7 @@ kubectl -n $NAMESPACE exec -it deploy/mlflow -- bash
 `Important`: When (mlflow) is present, commands are directly within the container.
 
 First let's examine the syntax of the commands we will be using to communicate with the MLflow Triton plugin before we start deploying models.
-Publish models to MLflow server looks like:
+Publish models to MLflow server is in the form of:
 
 ```bash
 (mlflow) root@mlflow-6d98:/mlflow# python publish_model_to_mlflow.py \
@@ -415,7 +415,7 @@ Refer to the [Using Morpheus to Run Pipelines](#using-morpheus-to-run-pipelines)
 -   Replace **<YOUR_RELEASE_NAME>** with the name you want.
 
 
-For reference, the Morpheus SDK Client install pipeline command template is provided. Let's take a closer look at this when running [example workflows](#example-workflows), but for now, let's proceed to the next step.
+For reference, the Morpheus SDK Client install pipeline command template is provided. We will examine this further in the [example workflows](#example-workflows) section, but for now, let's proceed to the next step.
 
 ```bash
 helm install --set ngc.apiKey="$API_KEY" \
@@ -620,7 +620,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
 **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 ### Run FIL Anomalous Behavior Profiling Pipeline
-The following Anomalous Behavior Profiling pipeline examples use a pre-trained FIL model to ingest and analyze Nvidia System Management Interface (nvidia-smi) logs, like the example below, as input sample data to identify crypto mining activity on GPU devices.
+The following Anomalous Behavior Profiling pipeline examples use a pre-trained FIL model to ingest and analyze NVIDIA System Management Interface (nvidia-smi) logs, like the example below, as input sample data to identify crypto mining activity on GPU devices.
 
 ```json
 {"nvidia_smi_log.gpu.pci.tx_util": "0 KB/s", "nvidia_smi_log.gpu.pci.rx_util": "0 KB/s", "nvidia_smi_log.gpu.fb_memory_usage.used": "3980 MiB", "nvidia_smi_log.gpu.fb_memory_usage.free": "12180 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.total": "16384 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.used": "11 MiB", "nvidia_smi_log.gpu.bar1_memory_usage.free": "16373 MiB", "nvidia_smi_log.gpu.utilization.gpu_util": "0 %", "nvidia_smi_log.gpu.utilization.memory_util": "0 %", "nvidia_smi_log.gpu.temperature.gpu_temp": "61 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_threshold": "90 C", "nvidia_smi_log.gpu.temperature.gpu_temp_slow_threshold": "87 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_gpu_threshold": "83 C", "nvidia_smi_log.gpu.temperature.memory_temp": "57 C", "nvidia_smi_log.gpu.temperature.gpu_temp_max_mem_threshold": "85 C", "nvidia_smi_log.gpu.power_readings.power_draw": "61.77 W", "nvidia_smi_log.gpu.clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.clocks.sm_clock": "1530 MHz", "nvidia_smi_log.gpu.clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.clocks.video_clock": "1372 MHz", "nvidia_smi_log.gpu.applications_clocks.graphics_clock": "1312 MHz", "nvidia_smi_log.gpu.applications_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.default_applications_clocks.graphics_clock": "1312 MHz", "nvidia_smi_log.gpu.default_applications_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.max_clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.max_clocks.sm_clock": "1530 MHz", "nvidia_smi_log.gpu.max_clocks.mem_clock": "877 MHz", "nvidia_smi_log.gpu.max_clocks.video_clock": "1372 MHz", "nvidia_smi_log.gpu.max_customer_boost_clocks.graphics_clock": "1530 MHz", "nvidia_smi_log.gpu.processes.process_info.0.process_name": "python", "nvidia_smi_log.gpu.processes.process_info.1.process_name": "tritonserver", "hostname": "ip-10-100-8-98", "timestamp": 1615542360.9566503}
@@ -788,7 +788,7 @@ For more information on how to use the Morpheus CLI to customize and run your ow
 
 
 ## Troubleshooting
-This section lists solutions to problems you might encounter with Morpheus or from it's supporting components.
+This section lists solutions to problems you might encounter with Morpheus or from its supporting components.
 
 ### Common Problems
 

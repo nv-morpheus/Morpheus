@@ -65,7 +65,7 @@ outputs:
         - python {{ python }}
         - rapidjson 1.1
         - scikit-build >=0.12
-        - srf {{ minor_version }}
+        - mrc {{ minor_version }}
         - versioneer-518
       run:
         # Runtime only requirements. This + setup.y is the definitive runtime requirement list

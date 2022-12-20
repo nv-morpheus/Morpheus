@@ -19,12 +19,12 @@ import pathlib
 import typing
 
 import dill
+import mrc
 import numpy as np
 import pandas as pd
-import srf
 import torch
 from dfencoder import AutoEncoder
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -247,7 +247,7 @@ class TrainAEStage(MultiMessageStage):
 
         return self._user_models[x.user_id].train(x.df)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
         get_model_fn = None
@@ -315,7 +315,7 @@ class TrainAEStage(MultiMessageStage):
         else:
             get_model_fn = self._train_model
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             def on_next(x: UserMessageMeta):
 

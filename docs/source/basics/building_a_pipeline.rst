@@ -101,5 +101,4 @@ This indicates you need a stage that converts from the output type of the ``dese
 Available Stages
 ^^^^^^^^^^^^^^^^
 
-For a complete list of available stages, please use the CLI help commands. Which stages are available can also be
-queried from the CLI using ``morpheus run pipeline-nlp --help`` or ``morpheus run pipeline-fil --help``.
+For a complete list of available stages, use the CLI help commands. The available stages can also be queried from the CLI using ``morpheus run pipeline-nlp --help`` or ``morpheus run pipeline-fil --help``.

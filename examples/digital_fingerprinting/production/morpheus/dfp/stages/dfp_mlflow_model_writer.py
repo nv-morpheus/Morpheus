@@ -19,8 +19,8 @@ import typing
 import urllib.parse
 
 import mlflow
+import mrc
 import requests
-import srf
 from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
@@ -32,7 +32,7 @@ from mlflow.types import ColSpec
 from mlflow.types import Schema
 from mlflow.types.utils import _infer_pandas_column
 from mlflow.types.utils import _infer_schema
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
@@ -248,9 +248,9 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.on_data)).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)
