@@ -221,4 +221,4 @@ The output file `detections.jsonlines` will contain a single boolean value for e
 ...
 ```
 
- We have stripped out the input data to make the detection's easier to identify. Omitting the argument `--include 'mining'` would show the input data in the detection's file.
+ We have stripped out the input data to make the detections easier to identify. Omitting the argument `--include 'mining'` would show the input data in the detections file.
