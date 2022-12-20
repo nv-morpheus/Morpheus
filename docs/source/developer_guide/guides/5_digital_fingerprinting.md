@@ -579,6 +579,8 @@ The `DFPTraining` ([examples/digital_fingerprinting/production/morpheus/dfp/stag
 | -------- | ---- | ----------- |
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `model_kwargs` | `dict` or `None` | Optional dictionary of keyword arguments to be used when constructing the model. Refer to [`AutoEncoder`](https://github.com/nv-morpheus/dfencoder/blob/master/dfencoder/autoencoder.py) for information on the available options.|
+| `epochs` | `int` | Number of training epochs. Default is 30.
+| `validation_size` | `float` | Proportion of the input dataset to use for training validation. Should be between 0.0 and 1.0. Default is 0.0.
 
 #### MLflow Model Writer Stage (`DFPMLFlowModelWriterStage`)
 The `DFPMLFlowModelWriterStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_mlflow_model_writer.py)) stage publishes trained models into MLflow, skipping any model which lacked sufficient training data (current required minimum is 300 log records).
