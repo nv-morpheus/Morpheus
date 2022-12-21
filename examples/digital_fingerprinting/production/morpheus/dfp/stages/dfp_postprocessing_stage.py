@@ -50,21 +50,34 @@ class DFPPostprocessingStage(SinglePortStage):
 
     def _extract_events(self, message: MultiAEMessage):
 
-        z_scores = message.get_meta("mean_abs_z")
+        z_scores = message.get_meta("mean_abs_z").values
 
-        above_threshold_df = message.get_meta()[z_scores > self._z_score_threshold]
+        detections = z_scores > self._z_score_threshold
 
-        if (not above_threshold_df.empty):
-            above_threshold_df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-            above_threshold_df = above_threshold_df.replace(np.nan, 'NaN', regex=True)
+        # Suround with `False` values to allow us to extract slice ranges
+        detections = np.concatenate([np.array([False]), detections, np.array([False])])
+        true_pairs = np.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-            return above_threshold_df
+        # set this here so that all rows above the threshold will receive the same value
+        event_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        above_threshold_messages = []
+        for pair in true_pairs:
+            pair = tuple(pair.tolist())
+            if ((pair[1] - pair[0]) > 0):
+                sliced_msg = message.get_slice(*pair)
 
-        return None
+                sliced_msg.set_meta('event_time', event_time)
+                sliced_df = sliced_msg.get_meta()
+                sliced_df.replace(np.nan, 'NaN', regex=True, inplace=True)
+                sliced_msg.set_meta(None, sliced_df)
+
+                above_threshold_messages.append(sliced_msg)
+
+        return above_threshold_messages
 
     def on_data(self, message: MultiAEMessage):
         if (not message):
-            return None
+            return []
 
         start_time = time.time()
 
@@ -76,21 +89,18 @@ class DFPPostprocessingStage(SinglePortStage):
             logger.debug("Completed postprocessing for user %s in %s ms. Event count: %s. Start: %s, End: %s",
                          message.meta.user_id,
                          duration,
-                         0 if extracted_events is None else len(extracted_events),
+                         len(extracted_events),
                          message.get_meta(self._config.ae.timestamp_column_name).min(),
                          message.get_meta(self._config.ae.timestamp_column_name).max())
 
-        if (extracted_events is None):
-            return None
-
-        return DFPMessageMeta(extracted_events, user_id=message.meta.user_id)
+        return extracted_events
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
+            obs.pipe(ops.map(self.on_data), ops.flatten()).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)
         builder.make_edge(input_stream[0], stream)
 
-        return stream, DFPMessageMeta
+        return stream, input_stream[1]
