@@ -14,9 +14,11 @@
 
 import logging
 import typing
+from enum import Enum
 
 import cupy as cp
 import mrc
+import numpy as np
 from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
@@ -27,6 +29,15 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
+
+
+class FilterSource(Enum):
+    """
+    Enum to indicate which source the FilterDetectionsStage should operate on.
+    """
+    AUTO = "auto"
+    TENSOR = "tensor"
+    DATAFRAME = "dataframe"
 
 
 @register_stage("filter")
@@ -63,17 +74,37 @@ class FilterDetectionsStage(SinglePortStage):
         Pipeline configuration instance.
     threshold : float
         Threshold to classify, default is 0.5.
-
     copy : bool
         Whether or not to perform a copy.
+    operate_on : `FilterSource`, default = FilterSource.AUTO, case_sensitive = False
+        Indicate if we are operating on is an output tensor or a field in the DataFrame.
+        Choosing `AUTO` will default to `TENSOR` and in a future release will change to `DATAFRAME`
+    field_name : str
+        Name of the tensor or DataFrame column to use as the filter criteria
     """
 
-    def __init__(self, c: Config, threshold: float = 0.5, copy: bool = True):
+    def __init__(self,
+                 c: Config,
+                 threshold: float = 0.5,
+                 copy: bool = True,
+                 operate_on: FilterSource = "auto",
+                 field_name: str = "probs"):
         super().__init__(c)
 
         # Probability to consider a detection
         self._threshold = threshold
         self._copy = copy
+
+        if isinstance(operate_on, FilterSource):
+            operate_on_val = operate_on.value
+        else:
+            operate_on_val = operate_on
+
+        if operate_on_val == FilterSource.AUTO.value:
+            operate_on_val = FilterSource.TENSOR.value
+
+        self._operate_on = operate_on_val
+        self._field_name = field_name
 
     @property
     def name(self) -> str:
@@ -95,14 +126,28 @@ class FilterDetectionsStage(SinglePortStage):
         # Enable support by default
         return True
 
-    def _find_detections(self, x: MultiResponseProbsMessage) -> cp.ndarray:
+    def _find_detections(self, x: MultiResponseProbsMessage) -> typing.Union[cp.ndarray, np.ndarray]:
+        # Determind the filter source
+        if self._operate_on == FilterSource.TENSOR.value:
+            filter_source = x.get_output(self._field_name)
+        else:
+            filter_source = x.get_meta(self._field_name).values
+
+        if (isinstance(filter_source, np.ndarray)):
+            array_mod = np
+        else:
+            array_mod = cp
+
         # Get per row detections
-        detections = (x.probs > self._threshold).any(axis=1)
+        detections = (filter_source > self._threshold)
+
+        if (len(detections.shape) > 1):
+            detections = detections.any(axis=1)
 
         # Surround in False to ensure we get an even number of pairs
-        detections = cp.concatenate([cp.array([False]), detections, cp.array([False])])
+        detections = array_mod.concatenate([array_mod.array([False]), detections, array_mod.array([False])])
 
-        return cp.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
+        return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
     def filter_copy(self, x: MultiResponseProbsMessage) -> MultiResponseProbsMessage:
         """
