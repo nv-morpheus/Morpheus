@@ -22,6 +22,7 @@ import numpy as np
 from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
+from morpheus._lib.filter_source import FilterSource
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
@@ -29,15 +30,6 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 logger = logging.getLogger(__name__)
-
-
-class FilterSource(Enum):
-    """
-    Enum to indicate which source the FilterDetectionsStage should operate on.
-    """
-    AUTO = "auto"
-    TENSOR = "tensor"
-    DATAFRAME = "dataframe"
 
 
 @register_stage("filter")
@@ -76,7 +68,7 @@ class FilterDetectionsStage(SinglePortStage):
         Threshold to classify, default is 0.5.
     copy : bool
         Whether or not to perform a copy.
-    operate_on : `FilterSource`, default = FilterSource.AUTO, case_sensitive = False
+    operate_on : `morpheus._lib.filter_source.FilterSource`, default = 'auto'
         Indicate if we are operating on is an output tensor or a field in the DataFrame.
         Choosing `AUTO` will default to `TENSOR` and in a future release will change to `DATAFRAME`
     field_name : str
@@ -87,7 +79,7 @@ class FilterDetectionsStage(SinglePortStage):
                  c: Config,
                  threshold: float = 0.5,
                  copy: bool = True,
-                 operate_on: FilterSource = "auto",
+                 operate_on: FilterSource = FilterSource.AUTO,
                  field_name: str = "probs"):
         super().__init__(c)
 
@@ -95,15 +87,10 @@ class FilterDetectionsStage(SinglePortStage):
         self._threshold = threshold
         self._copy = copy
 
-        if isinstance(operate_on, FilterSource):
-            operate_on_val = operate_on.value
-        else:
-            operate_on_val = operate_on
+        if operate_on == FilterSource.AUTO:
+            operate_on = FilterSource.TENSOR
 
-        if operate_on_val == FilterSource.AUTO.value:
-            operate_on_val = FilterSource.TENSOR.value
-
-        self._operate_on = operate_on_val
+        self._operate_on = operate_on
         self._field_name = field_name
 
     @property
@@ -128,7 +115,7 @@ class FilterDetectionsStage(SinglePortStage):
 
     def _find_detections(self, x: MultiResponseProbsMessage) -> typing.Union[cp.ndarray, np.ndarray]:
         # Determind the filter source
-        if self._operate_on == FilterSource.TENSOR.value:
+        if self._operate_on == FilterSource.TENSOR:
             filter_source = x.get_output(self._field_name)
         else:
             filter_source = x.get_meta(self._field_name).values
