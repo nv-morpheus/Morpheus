@@ -54,6 +54,7 @@ from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import get_log_levels
 from morpheus.utils.logger import parse_log_level
@@ -305,6 +306,8 @@ def run_pipeline(train_users,
 
         # Filter for only the anomalous logs
         pipeline.add_stage(DFPPostprocessingStage(config, z_score_threshold=2.0))
+
+        pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
 
         # Write all anomalies to a CSV file
         pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_azure.csv", overwrite=True))
