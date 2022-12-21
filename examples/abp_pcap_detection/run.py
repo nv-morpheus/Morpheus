@@ -138,7 +138,7 @@ def run_pipeline(
         ))
 
     # Add a deserialize stage.
-    # This stage deserializes source data into Dataframes.
+    # At this stage, the messages were logically partitioned based on the pipeline batch size.
     pipeline.add_stage(DeserializeStage(config))
 
     # Add the custom preprocessing stage.
@@ -172,7 +172,7 @@ def run_pipeline(
     pipeline.add_stage(MonitorStage(config, description="Add classification rate", unit="add-class"))
 
     # Add a serialize stage.
-    # This stage include & exclude columns from messages.
+    # This stage includes & excludes columns from messages.
     pipeline.add_stage(SerializeStage(config, **kwargs))
 
     # Add a monitor stage.

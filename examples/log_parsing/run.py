@@ -109,7 +109,7 @@ def run_pipeline(
     pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False, repeat=1))
 
     # Add a deserialize stage.
-    # This stage deserializes source data into Dataframes.
+    # At this stage, the messages were logically partitioned based on the pipeline batch size.
     pipeline.add_stage(DeserializeStage(config))
 
     # Add a preprocessing stage.

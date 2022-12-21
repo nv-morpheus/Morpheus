@@ -185,8 +185,8 @@ def run_pipeline(debug, use_cpp, num_threads, input_file, max_batch_size, model_
     # for a given source.
     pipeline.set_source(NLPVizFileSource(config, filenames=input_file))
 
-    # Add a serialize stage.
-    # This stage include & exclude columns from messages.
+    # Add a deserialize stage.
+    # At this stage, the messages were logically partitioned based on the pipeline batch size.
     pipeline.add_stage(DeserializeStage(config))
 
     # Add a preprocessing NLP stage.

@@ -215,7 +215,7 @@ def run_pipeline(debug,
     pipeline.add_stage(MonitorStage(config, description="AddScore rate"))
 
     # Add a serialize stage.
-    # This stage include & exclude columns from messages.
+    # This stage includes & excludes columns from messages.
     pipeline.add_stage(SerializeStage(config, exclude=[r'^ID$', r'^_ts_', r'source_pid_process']))
 
     # Add a monitor stage.
