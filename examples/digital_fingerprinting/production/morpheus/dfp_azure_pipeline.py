@@ -307,6 +307,7 @@ def run_pipeline(train_users,
         # Filter for only the anomalous logs
         pipeline.add_stage(DFPPostprocessingStage(config, z_score_threshold=2.0))
 
+        # Exclude the columns we don't want in our output
         pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
 
         # Write all anomalies to a CSV file

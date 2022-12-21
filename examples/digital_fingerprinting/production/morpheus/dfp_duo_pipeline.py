@@ -303,6 +303,7 @@ def run_pipeline(train_users,
 
         pipeline.add_stage(DFPPostprocessingStage(config, z_score_threshold=2.0))
 
+        # Exclude the columns we don't want in our output
         pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
 
         pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_duo.csv", overwrite=True))
