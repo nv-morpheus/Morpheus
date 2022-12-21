@@ -17,7 +17,7 @@ limitations under the License.
 
 # Anomalous Behavior Profiling with Forest Inference Library (FIL) Example
 
-This example illustrates how to use Morpheus to automatically detect abnormal behavior in NVIDIA SMI logs by utilizing a Forest Inference Library (FIL) model and Triton Inference Server. The particular behavior we will be looking for is cryptocurrency mining.
+This example illustrates how to use Morpheus to automatically detect abnormal behavior in NVIDIA SMI logs by utilizing a Forest Inference Library (FIL) model and Triton Inference Server. The particular behavior we will be searching for is cryptocurrency mining.
 
 ## Background
 
