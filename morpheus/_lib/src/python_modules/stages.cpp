@@ -52,10 +52,8 @@ PYBIND11_MODULE(stages, m)
 
     // Load the cudf helpers
     load_cudf_helpers();
-
-    mrc::pymrc::import(m, "cupy");
-    mrc::pymrc::import(m, "morpheus._lib.messages");
-    mrc::pymrc::import(m, "morpheus._lib.file_types");
+    
+    mrc::pymrc::from_import(m, "morpheus._lib.filter_source", "FilterSource");
 
     py::class_<mrc::segment::Object<AddClassificationsStage>,
                mrc::segment::ObjectProperties,
@@ -103,7 +101,9 @@ PYBIND11_MODULE(stages, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"),
-             py::arg("copy") = true);
+             py::arg("copy")       = true,
+             py::arg("operate_on") = m.attr("FilterSource").attr("AUTO"),
+             py::arg("field_name") = "probs");
 
     py::class_<mrc::segment::Object<InferenceClientStage>,
                mrc::segment::ObjectProperties,
