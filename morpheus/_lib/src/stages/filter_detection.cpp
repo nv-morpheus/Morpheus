@@ -17,7 +17,8 @@
 
 #include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
-#include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"       // for TensorUtils::get_element_stride
@@ -33,7 +34,8 @@
 #include <cstdint>  // for uint8_t
 #include <exception>
 #include <memory>
-#include <ostream>      // needed for glog
+#include <ostream>  // needed for glog
+#include <string>
 #include <type_traits>  // for declval (indirectly via templates)
 #include <utility>      // for pair
 // IWYU thinks we need ext/new_allocator.h for size_t for some reason
@@ -43,10 +45,15 @@ namespace morpheus {
 
 // Component public implementations
 // ************ FilterDetectionStage **************************** //
-FilterDetectionsStage::FilterDetectionsStage(float threshold, bool copy) :
+FilterDetectionsStage::FilterDetectionsStage(float threshold,
+                                             bool copy,
+                                             FilterSource operate_on,
+                                             std::string field_name) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_threshold(threshold),
-  m_copy(copy)
+  m_copy(copy),
+  m_operate_on(operate_on),
+  m_field_name(std::move(field_name))
 {}
 
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
@@ -55,9 +62,9 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
         [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
             return input.subscribe(rxcpp::make_observer<sink_type_t>(
                 [this, &output](sink_type_t x) {
-                    const auto &probs  = x->get_probs();
-                    const auto &shape  = probs.get_shape();
-                    const auto &stride = probs.get_stride();
+                    const auto& probs  = x->get_probs();
+                    const auto& shape  = probs.get_shape();
+                    const auto& stride = probs.get_stride();
 
                     CHECK(probs.rank() == 2)
                         << "C++ impl of the FilterDetectionsStage currently only supports two dimensional arrays";
@@ -150,9 +157,14 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
-    mrc::segment::Builder& builder, const std::string& name, float threshold, bool copy)
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    float threshold,
+    bool copy,
+    FilterSource operate_on,
+    std::string field_name)
 {
-    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy);
+    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy, operate_on, field_name);
 
     return stage;
 }

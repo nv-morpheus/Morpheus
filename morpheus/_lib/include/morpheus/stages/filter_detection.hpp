@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/objects/filter_source.hpp"
 
 #include <mrc/channel/status.hpp>          // for Status
 #include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
@@ -84,13 +85,18 @@ class FilterDetectionsStage : public mrc::pymrc::PythonNode<std::shared_ptr<Mult
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
      */
-    FilterDetectionsStage(float threshold, bool copy = true);
+    FilterDetectionsStage(float threshold,
+                          bool copy               = true,
+                          FilterSource operate_on = FilterSource::AUTO,
+                          std::string field_name  = "probs");
 
   private:
     subscribe_fn_t build_operator();
 
     float m_threshold;
     bool m_copy;
+    FilterSource m_operate_on;
+    std::string m_field_name;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
 };
@@ -113,7 +119,9 @@ struct FilterDetectionStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,
                                                                              const std::string& name,
                                                                              float threshold,
-                                                                             bool copy = true);
+                                                                             bool copy,
+                                                                             FilterSource operate_on,
+                                                                             std::string field_name);
 };
 
 #pragma GCC visibility pop
