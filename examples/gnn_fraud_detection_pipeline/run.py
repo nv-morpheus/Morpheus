@@ -132,7 +132,7 @@ def run_pipeline(
     ))
 
     # Add a deserialize stage.
-    # At this stage, the messages were logically partitioned based on the pipeline batch size.
+    # At this stage, messages were logically partitioned based on the 'pipeline_batch_size'.
     pipeline.add_stage(DeserializeStage(config))
 
     # Add the graph construction stage.

@@ -109,7 +109,7 @@ def run_pipeline(
     pipeline.set_source(FileSourceStage(config, filename=input_file, iterative=False, repeat=1))
 
     # Add a deserialize stage.
-    # At this stage, the messages were logically partitioned based on the pipeline batch size.
+    # At this stage, messages were logically partitioned based on the 'pipeline_batch_size'.
     pipeline.add_stage(DeserializeStage(config))
 
     # Add a preprocessing stage.
