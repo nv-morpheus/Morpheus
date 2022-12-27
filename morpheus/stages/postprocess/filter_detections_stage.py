@@ -117,7 +117,7 @@ class FilterDetectionsStage(SinglePortStage):
         # Enable support by default
         return True
 
-    def _find_detections(self, x: MultiResponseProbsMessage) -> typing.Union[cp.ndarray, np.ndarray]:
+    def _find_detections(self, x: MultiMessage) -> typing.Union[cp.ndarray, np.ndarray]:
         # Determind the filter source
         if self._operate_on == FilterSource.TENSOR:
             filter_source = x.get_output(self._field_name)
@@ -140,36 +140,36 @@ class FilterDetectionsStage(SinglePortStage):
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(self, x: MultiResponseProbsMessage) -> MultiResponseProbsMessage:
+    def filter_copy(self, x: MultiMessage) -> MultiMessage:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiResponseProbsMessage`
+        x : `morpheus.pipeline.messages.MultiMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
         -------
-        `morpheus.pipeline.messages.MultiResponseProbsMessage`
+        `morpheus.pipeline.messages.MultiMessage`
             A new message containing a copy of the rows above the threshold.
 
         """
         true_pairs = self._find_detections(x)
         return x.copy_ranges(true_pairs)
 
-    def filter_slice(self, x: MultiResponseProbsMessage) -> typing.List[MultiResponseProbsMessage]:
+    def filter_slice(self, x: MultiMessage) -> typing.List[MultiMessage]:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiResponseProbsMessage`
+        x : `morpheus.pipeline.messages.MultiMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.messages.MultiResponseProbsMessage`]
+        typing.List[`morpheus.pipeline.messages.MultiMessage`]
             List of filtered messages.
 
         """
