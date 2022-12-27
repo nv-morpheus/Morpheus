@@ -33,10 +33,8 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class DFPPostprocessingStage(SinglePortStage):
 
-    def __init__(self, c: Config, z_score_threshold=2.0):
+    def __init__(self, c: Config):
         super().__init__(c)
-
-        self._z_score_threshold = z_score_threshold
 
     @property
     def name(self) -> str:
@@ -48,40 +46,20 @@ class DFPPostprocessingStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiAEMessage, )
 
-    def _extract_events(self, message: MultiAEMessage):
-
-        z_scores = message.get_meta("mean_abs_z").values
-
-        detections = z_scores > self._z_score_threshold
-
-        # Suround with `False` values to allow us to extract slice ranges
-        detections = np.concatenate([np.array([False]), detections, np.array([False])])
-        true_pairs = np.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
-
-        # set this here so that all rows above the threshold will receive the same value
-        event_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-        above_threshold_messages = []
-        for pair in true_pairs:
-            pair = tuple(pair.tolist())
-            if ((pair[1] - pair[0]) > 0):
-                sliced_msg = message.get_slice(*pair)
-
-                sliced_msg.set_meta('event_time', event_time)
-                sliced_df = sliced_msg.get_meta()
-                sliced_df.replace(np.nan, 'NaN', regex=True, inplace=True)
-                sliced_msg.set_meta(None, sliced_df)
-
-                above_threshold_messages.append(sliced_msg)
-
-        return above_threshold_messages
+    def _process_events(self, message: MultiAEMessage):
+        # Assume that a filter stage preceedes this stage
+        df = message.get_meta()
+        df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        df.replace(np.nan, 'NaN', regex=True, inplace=True)
+        message.set_meta(None, df)
 
     def on_data(self, message: MultiAEMessage):
-        if (not message):
-            return []
+        if (not message or message.mess_count == 0):
+            return None
 
         start_time = time.time()
 
-        extracted_events = self._extract_events(message)
+        self._process_events(message)
 
         duration = (time.time() - start_time) * 1000.0
 
@@ -89,16 +67,16 @@ class DFPPostprocessingStage(SinglePortStage):
             logger.debug("Completed postprocessing for user %s in %s ms. Event count: %s. Start: %s, End: %s",
                          message.meta.user_id,
                          duration,
-                         len(extracted_events),
+                         message.mess_count,
                          message.get_meta(self._config.ae.timestamp_column_name).min(),
                          message.get_meta(self._config.ae.timestamp_column_name).max())
 
-        return extracted_events
+        return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-            obs.pipe(ops.map(self.on_data), ops.flatten()).subscribe(sub)
+            obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)
         builder.make_edge(input_stream[0], stream)
