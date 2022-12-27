@@ -122,7 +122,7 @@ def test_filter_column(config, do_copy, threshold, field_name):
                                 operate_on=FilterSource.DATAFRAME,
                                 field_name=field_name)
 
-    probs = cp.zeros(len(df), 'float')
+    probs = cp.zeros([len(df), 3], 'float')
     mock_message = _make_message(df, probs)
 
     # All values are at or below the threshold
