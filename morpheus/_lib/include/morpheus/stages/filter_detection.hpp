@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/filter_source.hpp"
 
 #include <mrc/channel/status.hpp>          // for Status
@@ -69,12 +69,11 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-class FilterDetectionsStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-                                                            std::shared_ptr<MultiResponseProbsMessage>>
+class FilterDetectionsStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
