@@ -194,7 +194,12 @@ class FilterDetectionsStage(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         if self._build_cpp_node():
-            stream = _stages.FilterDetectionsStage(builder, self.unique_name, self._threshold, self._copy)
+            stream = _stages.FilterDetectionsStage(builder,
+                                                   self.unique_name,
+                                                   self._threshold,
+                                                   self._copy,
+                                                   self._operate_on,
+                                                   self._field_name)
         else:
             if self._copy:
                 stream = builder.make_node(self.unique_name, self.filter_copy)
