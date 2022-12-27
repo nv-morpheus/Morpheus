@@ -33,17 +33,23 @@ from utils import ConvMsg
 
 
 @pytest.mark.slow
+@pytest.mark.parametrize('use_conv_msg', [True, False])
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
 @pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
-def test_filter_column(config, tmp_path, do_copy, threshold, field_name):
+def test_filter_column(config, tmp_path, use_conv_msg, do_copy, threshold, field_name):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, empty_probs=True))
+
+    # When `use_conv_msg` is true, ConvMsg will convert messages to MultiResponseProbs,
+    # when false, the filter stage will receive instances of MultiMessage
+    if use_conv_msg:
+        pipe.add_stage(ConvMsg(config, empty_probs=True))
+
     pipe.add_stage(
         FilterDetectionsStage(config,
                               threshold=threshold,
