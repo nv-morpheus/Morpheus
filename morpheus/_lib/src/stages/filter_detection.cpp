@@ -42,6 +42,59 @@
 // IWYU thinks we need ext/new_allocator.h for size_t for some reason
 // IWYU pragma: no_include <ext/new_allocator.h>
 
+namespace {
+
+/**
+ * @brief Simple container describing a 2d buffer
+ *
+ * TODO: Merge with DevMemInfo?
+ */
+struct BufferInfo
+{
+    std::vector<std::size_t> shape;
+    std::vector<std::size_t> stride;
+    std::size_t count;
+    std::size_t bytes;
+    morpheus::DType type;
+    const uint8_t* head;
+};
+
+BufferInfo get_tensor_buffer_info(const std::shared_ptr<morpheus::MultiResponseProbsMessage>& x,
+                                  const std::string& field_name)
+{
+    const auto& filter_source = x->get_output(field_name);
+    CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
+        << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
+           "arrays";
+
+    return BufferInfo{filter_source.get_shape(),
+                      filter_source.get_stride(),
+                      filter_source.count(),
+                      filter_source.bytes(),
+                      filter_source.dtype(),
+                      static_cast<const uint8_t*>(filter_source.data())};
+}
+
+BufferInfo get_column_buffer_info(const std::shared_ptr<morpheus::MultiResponseProbsMessage>& x,
+                                  const std::string& field_name)
+{
+    auto table_info = x->get_meta(field_name);
+
+    // since we only asked for one column, we know its the first
+    const auto& col = table_info.get_column(0);
+    auto dtype      = morpheus::DType::from_cudf(col.type().id());
+    auto num_rows   = static_cast<std::size_t>(col.size());
+
+    return BufferInfo{{num_rows, 1},
+                      {1},
+                      num_rows,
+                      num_rows * dtype.item_size(),
+                      dtype,
+                      col.head<uint8_t>() + col.offset() * dtype.item_size()};
+}
+
+};  // namespace
+
 namespace morpheus {
 
 // Component public implementations
@@ -62,69 +115,39 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
-                std::shared_ptr<rmm::device_buffer> tmp_buffer{nullptr};
-                std::size_t num_rows, num_columns, count;
-                std::vector<std::size_t> stride;
-                TypeId type_id;
-
+                BufferInfo buffer_info;
                 if (m_operate_on == FilterSource::TENSOR || m_operate_on == FilterSource::AUTO)
                 {
-                    const auto& filter_source = x->get_output(m_field_name);
-                    const auto& shape         = filter_source.get_shape();
-                    stride                    = filter_source.get_stride();
-
-                    CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
-                        << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
-                           "arrays";
-
-                    num_rows    = shape[0];
-                    num_columns = shape[1];
-                    count       = filter_source.count();
-                    type_id     = filter_source.dtype().type_id();
-
-                    // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
-                    tmp_buffer =
-                        std::make_shared<rmm::device_buffer>(filter_source.bytes(), rmm::cuda_stream_per_thread);
-
-                    MRC_CHECK_CUDA(cudaMemcpy(
-                        tmp_buffer->data(), filter_source.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
+                    buffer_info = get_tensor_buffer_info(x, m_field_name);
                 }
                 else
                 {
-                    auto table_info = x->get_meta(m_field_name);
-
-                    // since we only asked for one column, we know its the first
-                    const auto& col = table_info.get_column(0);
-
-                    num_columns = 1;
-                    num_rows    = col.size();
-                    count       = num_rows;
-
-                    auto dtype = DType::from_cudf(col.type().id());
-                    type_id    = dtype.type_id();
-
-                    tmp_buffer =
-                        std::make_shared<rmm::device_buffer>(num_rows * dtype.item_size(), rmm::cuda_stream_per_thread);
-
-                    // Dont use cv.data<>() here since that does not account for the size of each element
-                    auto data_start = col.head<uint8_t>() + col.offset() * dtype.item_size();
-
-                    MRC_CHECK_CUDA(
-                        cudaMemcpy(tmp_buffer->data(), data_start, tmp_buffer->size(), cudaMemcpyDeviceToDevice));
+                    buffer_info = get_column_buffer_info(x, m_field_name);
                 }
 
+                // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
+                auto tmp_buffer = std::make_shared<rmm::device_buffer>(buffer_info.count * buffer_info.type.item_size(),
+                                                                       rmm::cuda_stream_per_thread);
+
+                MRC_CHECK_CUDA(
+                    cudaMemcpy(tmp_buffer->data(), buffer_info.head, tmp_buffer->size(), cudaMemcpyDeviceToDevice));
+
                 // Depending on the input the stride is given in bytes or elements, convert to elements
-                auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(stride);
+                auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(buffer_info.stride);
+
+                const std::size_t num_rows    = buffer_info.shape[0];
+                const std::size_t num_columns = buffer_info.shape[1];
 
                 bool by_row = (num_columns > 1);
 
                 // Now call the threshold function
-                auto thresh_bool_buffer = MatxUtil::threshold(DevMemInfo{count, type_id, tmp_buffer, 0},
-                                                              num_rows,
-                                                              num_columns,
-                                                              tensor_stride,
-                                                              m_threshold,
-                                                              by_row);
+                auto thresh_bool_buffer =
+                    MatxUtil::threshold(DevMemInfo{buffer_info.count, buffer_info.type.type_id(), tmp_buffer, 0},
+                                        num_rows,
+                                        num_columns,
+                                        tensor_stride,
+                                        m_threshold,
+                                        by_row);
                 std::vector<uint8_t> host_bool_values(num_rows);
 
                 // Copy bools back to host
