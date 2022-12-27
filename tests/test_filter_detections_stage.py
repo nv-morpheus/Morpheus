@@ -21,6 +21,7 @@ import cupy as cp
 import pytest
 
 from morpheus._lib.file_types import FileTypes
+from morpheus._lib.filter_source import FilterSource
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
@@ -105,6 +106,31 @@ def test_filter_copy(config):
     mask[2] = True
     mask[4] = True
     assert output_message.get_meta().to_cupy().tolist() == df.loc[mask, :].to_cupy().tolist()
+
+
+@pytest.mark.use_python
+@pytest.mark.parametrize('do_copy', [True, False])
+@pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
+@pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
+def test_filter_column(config, do_copy, threshold, field_name):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+
+    fds = FilterDetectionsStage(config,
+                                threshold=threshold,
+                                copy=do_copy,
+                                operate_on=FilterSource.DATAFRAME,
+                                field_name=field_name)
+
+    probs = cp.zeros(len(df), 'float')
+    mock_message = _make_message(df, probs)
+
+    # All values are at or below the threshold
+    output_message = fds.filter_copy(mock_message)
+
+    expected_df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='pandas')
+    expected_df = expected_df[expected_df[field_name] > threshold]
+    output_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
 
 
 @pytest.mark.use_python
