@@ -181,6 +181,15 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
         return MultiResponseMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)
 
+    def get_slice(self, start, stop):
+        mess_count = stop - start
+        return MultiResponseMessage(meta=self.meta,
+                                    mess_offset=self.mess_offset + start,
+                                    mess_count=mess_count,
+                                    memory=self.memory,
+                                    offset=self.offset + start,
+                                    count=mess_count)
+
 
 @dataclasses.dataclass
 class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiResponseProbsMessage):
@@ -212,3 +221,13 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
     """
 
     user_id: str = None
+
+    def get_slice(self, start, stop):
+        slice = super().get_slice(start, stop)
+        return MultiResponseAEMessage(meta=slice.meta,
+                                      mess_offset=slice.mess_offset,
+                                      mess_count=slice.mess_count,
+                                      memory=slice.memory,
+                                      offset=slice.offset,
+                                      count=slice.mess_count,
+                                      user_id=self.user_id)
