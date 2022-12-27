@@ -63,6 +63,7 @@ class ConvMsg(SinglePortStage):
     Setting `expected_data_file` to `None` causes the probs array to be a copy of the incoming dataframe.
     Setting `columns` restricts the columns copied into probs to just the ones specified.
     Setting `order` specifies probs to be in either column or row major
+    Setting `empty_probs` will create an empty probs array with 3 columns, and the same number of rows as the dataframe
     """
 
     def __init__(self,
@@ -70,7 +71,7 @@ class ConvMsg(SinglePortStage):
                  expected_data_file: str = None,
                  columns: typing.List[str] = None,
                  order: str = 'K',
-                 empty_probs=False):
+                 empty_probs: bool = False):
         super().__init__(c)
         self._expected_data_file = expected_data_file
         self._columns = columns
@@ -97,7 +98,7 @@ class ConvMsg(SinglePortStage):
                 df = m.get_meta()
 
         if self._empty_probs:
-            probs = cp.zeros(len(df), 'float')
+            probs = cp.zeros([len(df), 3], 'float')
         else:
             probs = cp.array(df.values, copy=True, order=self._order)
 
