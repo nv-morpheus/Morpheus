@@ -14,7 +14,6 @@
 
 import logging
 import typing
-from enum import Enum
 
 import cupy as cp
 import mrc
@@ -25,6 +24,7 @@ import morpheus._lib.stages as _stages
 from morpheus._lib.filter_source import FilterSource
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -107,7 +107,11 @@ class FilterDetectionsStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MultiResponseProbsMessage, )
+
+        if self._operate_on == FilterSource.TENSOR:
+            return (MultiResponseProbsMessage, )
+        else:
+            return (MultiMessage, )
 
     def supports_cpp_node(self):
         # Enable support by default
@@ -175,20 +179,8 @@ class FilterDetectionsStage(SinglePortStage):
         true_pairs = self._find_detections(x)
         for pair in true_pairs:
             pair = tuple(pair.tolist())
-            mess_offset = x.mess_offset + pair[0]
-            mess_count = pair[1] - pair[0]
-
-            # Filter empty message groups
-            if (mess_count == 0):
-                continue
-
-            output_list.append(
-                MultiResponseProbsMessage(x.meta,
-                                          mess_offset=mess_offset,
-                                          mess_count=mess_count,
-                                          memory=x.memory,
-                                          offset=pair[0],
-                                          count=mess_count))
+            if ((pair[1] - pair[0]) > 0):
+                output_list.append(x.get_slice(*pair))
 
         return output_list
 
@@ -204,7 +196,7 @@ class FilterDetectionsStage(SinglePortStage):
             if self._copy:
                 stream = builder.make_node(self.unique_name, self.filter_copy)
             else:
-                # Convert list back to individual MultiResponseProbsMessage
+                # Convert list back to individual messages
                 def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
                     obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
 
@@ -212,4 +204,4 @@ class FilterDetectionsStage(SinglePortStage):
 
         builder.make_edge(input_stream[0], stream)
 
-        return stream, MultiResponseProbsMessage
+        return stream, input_stream[1]
