@@ -28,7 +28,7 @@ DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"morpheus"}
 DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"dev-$(date +'%y%m%d')"}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
-DOCKER_ARGS="--env WORKSPACE_VOLUME=${PWD} -v $PWD:/workspace --net=host --gpus=all --cap-add=sys_nice"
+DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} -v $PWD:/workspace --net=host --gpus=all --cap-add=sys_nice"
 
 if [[ -z "${SSH_AUTH_SOCK}" ]]; then
    echo -e "${y}No ssh-agent auth socket found. Dependencies in private git repos may fail during build.${x}"

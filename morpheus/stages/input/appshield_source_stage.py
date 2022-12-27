@@ -20,9 +20,9 @@ import typing
 from functools import partial
 from json.decoder import JSONDecodeError
 
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -40,7 +40,7 @@ class AppShieldSourceStage(SingleOutputSource):
     """
     Source stage is used to load Appshield messages from one or more plugins into a dataframe.
     It normalizes nested json messages and arranges them into a dataframe by snapshot
-    and source(Determine which source generated the plugin messages).
+    and source.
 
     Parameters
     ----------
@@ -349,7 +349,7 @@ class AppShieldSourceStage(SingleOutputSource):
 
         return metas
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         # The first source just produces filenames
         filename_source = self._watcher.build_node(self.unique_name, builder)
@@ -359,11 +359,11 @@ class AppShieldSourceStage(SingleOutputSource):
         # Supposed to just return a source here
         return filename_source, out_type
 
-    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(
                 # At this point, we have batches of filenames to process. Make a node for processing batches of
                 # filenames into batches of dataframes

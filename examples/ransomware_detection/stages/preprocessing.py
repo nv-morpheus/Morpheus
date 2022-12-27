@@ -15,8 +15,8 @@
 import typing
 
 import cupy as cp
+import mrc
 import pandas as pd
-import srf
 from common.data_models import SnapshotData
 
 from morpheus.cli.register_stage import register_stage
@@ -192,5 +192,5 @@ class PreprocessingRWStage(PreprocessBaseStage):
         pre_process_batch_fn = self._pre_process_batch
         return pre_process_batch_fn
 
-    def _get_preprocess_node(self, builder: srf.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder):
         raise NotImplementedError("No C++ node supported")

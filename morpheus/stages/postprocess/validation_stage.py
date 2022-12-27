@@ -18,9 +18,9 @@ import logging
 import os
 import typing
 
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 import cudf
 
@@ -148,10 +148,10 @@ class ValidationStage(MultiMessageStage):
         with open(self._results_file_name, "w") as f:
             json.dump(results, f, indent=2, sort_keys=True)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         # Store all messages until on_complete is called and then build the dataframe and compare
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             def do_compare(delayed_messages):
 
