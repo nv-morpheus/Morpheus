@@ -164,14 +164,14 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
     def copy_output_ranges(self, ranges, mask=None):
         if mask is None:
-            mask = self._ranges_to_mask(self.mess_count, ranges=ranges)
+            mask = self._ranges_to_mask(self.get_meta(), ranges=ranges)
 
         # The outputs property method returns a copy with the offsets applied
         outputs = self.outputs
         return {key: output[mask] for (key, output) in outputs.items()}
 
     def copy_ranges(self, ranges):
-        mask = self._ranges_to_mask(self.mess_count, ranges)
+        mask = self._ranges_to_mask(self.get_meta(), ranges)
         sliced_rows = self.copy_meta_ranges(ranges, mask=mask)
         sliced_count = len(sliced_rows)
         sliced_outputs = self.copy_output_ranges(ranges, mask=mask)
