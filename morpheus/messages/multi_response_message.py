@@ -222,6 +222,16 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
 
     user_id: str = None
 
+    def copy_ranges(self, ranges):
+        m = super().copy_ranges(ranges)
+        return MultiResponseAEMessage(meta=m.meta,
+                                      mess_offset=m.mess_offset,
+                                      mess_count=m.mess_count,
+                                      memory=m.memory,
+                                      offset=m.offset,
+                                      count=m.mess_count,
+                                      user_id=self.user_id)
+
     def get_slice(self, start, stop):
         slice = super().get_slice(start, stop)
         return MultiResponseAEMessage(meta=slice.meta,
