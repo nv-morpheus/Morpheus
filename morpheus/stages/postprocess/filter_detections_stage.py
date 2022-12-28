@@ -155,6 +155,9 @@ class FilterDetectionsStage(SinglePortStage):
             A new message containing a copy of the rows above the threshold.
 
         """
+        if x is None:
+            return None
+
         true_pairs = self._find_detections(x)
         return x.copy_ranges(true_pairs)
 
@@ -175,12 +178,12 @@ class FilterDetectionsStage(SinglePortStage):
         """
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
         output_list = []
-
-        true_pairs = self._find_detections(x)
-        for pair in true_pairs:
-            pair = tuple(pair.tolist())
-            if ((pair[1] - pair[0]) > 0):
-                output_list.append(x.get_slice(*pair))
+        if x is not None:
+            true_pairs = self._find_detections(x)
+            for pair in true_pairs:
+                pair = tuple(pair.tolist())
+                if ((pair[1] - pair[0]) > 0):
+                    output_list.append(x.get_slice(*pair))
 
         return output_list
 
