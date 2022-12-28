@@ -614,12 +614,15 @@ For any user without an associated model in MLflow, the model for the generic us
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `model_name_formatter` | `str` | Format string to control the name of models fetched from MLflow.  Currently available field names are: `user_id` and `user_md5` which is an md5 hexadecimal digest as returned by [`hash.hexdigest`](https://docs.python.org/3.8/library/hashlib.html?highlight=hexdigest#hashlib.hash.hexdigest). |
 
+#### Filter Detection Stage (`FilterDetectionsStage`)
+This stage filters the output from the inference stage for any anomalous messages. Logs which exceed the specified Z-Score will be passed onto the next stage. All remaining logs which are below the threshold will be dropped. For the purposes of the DFP pipeline, this stage is configured to use the `mean_abs_z` column of the DataFrame as the filter criteria.
 
+| Name | Type | Default | Description |
+| --- | --- | --- | :-- |
+| `threshold` | `float` | `0.5` | The threshold value above which logs are considered to be anomalous. The default is `0.5`, however the DFP pipeline uses a value of `2.0`. All normal logs will be filtered out and anomalous logs will be passed on. |
+| `copy` | `bool` | `True` | When the `copy` argument is `True` (default), rows that meet the filter criteria are copied into a new dataframe. When `False` sliced views are used instead. This is a performance optimization, and has no functional impact. |
+| `operate_on` | `FilterSource` | `FilterSource.AUTO` | Indicates if the filter criteria exists in an output tensor (`FilterSource.TENSOR`) or a column in a DataFrame (`FilterSource.DATAFRAME`). |
+| `field_name` | `str` | `probs` | Name of the tensor (`operate_on=FilterSource.TENSOR`) or DataFrame column (`operate_on=FilterSource.DATAFRAME`) to use as the filter criteria. |
 
 #### Post Processing Stage (`DFPPostprocessingStage`)
-The `DFPPostprocessingStage` ([examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py](/examples/digital_fingerprinting/production/morpheus/dfp/stages/dfp_postprocessing_stage.py)) stage filters the output from the inference stage for any anomalous messages. Logs which exceed the specified Z-Score will be passed onto the next stage.  All remaining logs which are below the threshold will be dropped.
-
-| Argument | Type | Description |
-| -------- | ---- | ----------- |
-| `c` | `morpheus.config.Config` | Morpheus config object |
-| `z_score_threshold` | `float` | Optional, sets the threshold value above which values of `mean_abs_z` must be above in order to be considered  an anomaly, default is 2.0 |
+This stage adds a new `event_time` column to the DataFrame indicating the time which Morpheus detected the anomalous messages, and replaces any `NAN` values with the a string value of `'NaN'`.
