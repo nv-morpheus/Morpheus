@@ -23,6 +23,7 @@ channels:
 dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
     - boto3
+    - dask
     - dill
     - kfp
     - librdkafka
