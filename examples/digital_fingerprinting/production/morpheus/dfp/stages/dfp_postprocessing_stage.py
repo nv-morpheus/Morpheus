@@ -65,7 +65,7 @@ class DFPPostprocessingStage(SinglePortStage):
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Completed postprocessing for user %s in %s ms. Event count: %s. Start: %s, End: %s",
-                         message.user_id,
+                         message.meta.user_id,
                          duration,
                          message.mess_count,
                          message.get_meta(self._config.ae.timestamp_column_name).min(),
