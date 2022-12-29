@@ -70,7 +70,7 @@ std::string df_to_json(MutableTableInfo& tbl, bool include_index_col = true);
  *
  * Requires MutableTableInfo since there is no C++ implementation of the JSON writer
  */
-void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col = true);
+void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col = true);
 
 /** @} */  // end of group
 }  // namespace morpheus
