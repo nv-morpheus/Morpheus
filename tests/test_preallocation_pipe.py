@@ -16,10 +16,10 @@
 
 import os
 
+import mrc
 import numpy as np
 import pandas as pd
 import pytest
-import srf
 
 import cudf
 
@@ -71,7 +71,7 @@ class CheckPreAlloc(SinglePortStage):
 
         return m
 
-    def _build_single(self, builder: srf.Builder, input_stream):
+    def _build_single(self, builder: mrc.Builder, input_stream):
         stream = builder.make_node(self.unique_name, self._check_prealloc)
         builder.make_edge(input_stream[0], stream)
 

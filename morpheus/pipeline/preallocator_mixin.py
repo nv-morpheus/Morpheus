@@ -18,9 +18,9 @@ from abc import ABC
 from collections import OrderedDict
 
 import cupy as cp
+import mrc
 import numpy as np
 import pandas as pd
-import srf
 
 import cudf
 
@@ -84,7 +84,7 @@ class PreallocatorMixin(ABC):
         self._preallocate_df(msg.meta.df)
         return msg
 
-    def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
         (out_stream, out_type) = out_pair
         pretty_type = pretty_print_type_name(out_type)
         logger.info("Added source: {}\n  └─> {}".format(str(self), pretty_type))
