@@ -113,23 +113,23 @@ class LinearPipeline(_pipeline.Pipeline):
         as_shared_pointer : `boolean`
             Whether the data type will be wrapped in a shared pointer.
 
-        Example
-        -------
-            # Create a config and pipeline
-            config = Config()
-            pipe = LinearPipeline(config)
-
-            # Add a source in Segment #1
-            pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
-
-            # Add a segment boundary
-            # [Current Segment] - [Egress Boundary] ---- [Ingress Boundary] - [Next Segment]
-            pipe.add_segment_boundary(MessageMeta)
-
-            # Add a sink in Segment #2
-            pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
-
-            pipe.run()
+        Examples
+        --------
+        >>> # Create a config and pipeline
+        >>> config = Config()
+        >>> pipe = LinearPipeline(config)
+        >>>
+        >>> # Add a source in Segment #1
+        >>> pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
+        >>>
+        >>> # Add a segment boundary
+        >>> # [Current Segment] - [Egress Boundary] ---- [Ingress Boundary] - [Next Segment]
+        >>> pipe.add_segment_boundary(MessageMeta)
+        >>>
+        >>> # Add a sink in Segment #2
+        >>> pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+        >>>
+        >>> pipe.run()
         """
         if (len(self._linear_stages) == 0):
             raise RuntimeError("Cannot create a segment boundary, current segment is empty.")
@@ -143,7 +143,7 @@ class LinearPipeline(_pipeline.Pipeline):
                                                       data_type=data_type)
 
         # TODO: update to use data_type once typeid is attached to registered objects out of band:
-        #  https://github.com/nv-morpheus/SRF/issues/176
+        #  https://github.com/nv-morpheus/MRC/issues/176
         port_id_tuple = (self._current_segment_id, object, False) if data_type else self._current_segment_id
 
         self.add_stage(boundary_egress)

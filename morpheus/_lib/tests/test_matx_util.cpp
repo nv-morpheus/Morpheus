@@ -28,13 +28,13 @@
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>  // for data_type, size_type
 #include <gtest/gtest.h>
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
-#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
 
 #include <cstdint>  // for int64_t, int32_t, uint8_t
 #include <cstdlib>  // for std::getenv
-#include <memory>  // for shared_ptr, make_shared, unique_ptr
+#include <memory>   // for shared_ptr, make_shared, unique_ptr
 #include <string>
 #include <vector>
 
@@ -54,7 +54,7 @@ TEST_F(TestMatxUtil, ReduceMax1d)
     auto input_buffer =
         std::make_shared<rmm::device_buffer>(input.size() * dtype.item_size(), rmm::cuda_stream_per_thread);
 
-    SRF_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
+    MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
     DevMemInfo dm{input.size(), dtype.type_id(), input_buffer, 0};
     std::vector<int64_t> input_shape{static_cast<int64_t>(input.size()), 1};
@@ -62,7 +62,7 @@ TEST_F(TestMatxUtil, ReduceMax1d)
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, {1, 0}, output_shape);
 
     std::vector<float> output(expected_output.size());
-    SRF_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
 
     EXPECT_EQ(output, expected_output);
 }
@@ -109,7 +109,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     std::size_t buff_size = input.size() * dtype.item_size();
     auto input_buffer     = std::make_shared<rmm::device_buffer>(buff_size, rmm::cuda_stream_per_thread);
 
-    SRF_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
+    MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
     DevMemInfo dm{input.size(), dtype.type_id(), input_buffer, 0};
     std::vector<int64_t> input_shape{static_cast<int64_t>(num_rows), static_cast<int64_t>(num_cols)};
@@ -120,7 +120,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
 
     std::vector<double> output(expected_rows * num_cols);
-    SRF_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
 
     EXPECT_EQ(output.size(), expected_output.size());
     for (std::size_t i = 0; i < output.size(); ++i)
@@ -152,7 +152,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     for (cudf::size_type i = 0; i < num_cols; ++i)
     {
         auto cv = table_m.tbl->get_column(i).view();
-        SRF_CHECK_CUDA(cudaMemcpy(static_cast<uint8_t*>(input_buffer->data()) + offset,
+        MRC_CHECK_CUDA(cudaMemcpy(static_cast<uint8_t*>(input_buffer->data()) + offset,
                                   cv.data<uint8_t>(),
                                   num_rows * dtype.item_size(),
                                   cudaMemcpyDeviceToDevice));
@@ -183,7 +183,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
 
     std::vector<double> output(expected_rows * num_cols);
-    SRF_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
 
     EXPECT_EQ(output.size(), expected_output.size());
     for (std::size_t i = 0; i < output.size(); ++i)

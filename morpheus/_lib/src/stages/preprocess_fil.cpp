@@ -33,16 +33,16 @@
 #include <cudf/table/table_view.hpp>    // for table_view
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <mrc/segment/builder.hpp>
 #include <pybind11/cast.h>  // for object_api::operator(), operator""_a
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor, arg
 #include <pybind11/pytypes.h>
-#include <pysrf/node.hpp>
-#include <pysrf/types.hpp>
+#include <pymrc/node.hpp>
+#include <pymrc/types.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
-#include <srf/segment/builder.hpp>
 
 #include <array>
 #include <cstddef>
@@ -55,7 +55,7 @@
 namespace morpheus {
 // Component public implementations
 // ************ PreprocessFILStage ************************* //
-PreprocessFILStage::PreprocessFILStage(const std::vector<std::string> &features) :
+PreprocessFILStage::PreprocessFILStage(const std::vector<std::string>& features) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_fea_cols(std::move(features))
 {}
@@ -75,7 +75,7 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                 {
                     auto curr_col = df_meta.get_column(i);
 
-                    auto curr_ptr = static_cast<float *>(packed_data->data()) + i * df_meta.num_rows();
+                    auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_meta.num_rows();
 
                     // Check if we are something other than float
                     if (curr_col.type().id() != cudf::type_id::FLOAT32)
@@ -83,14 +83,14 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                         auto float_data = cudf::cast(curr_col, cudf::data_type(cudf::type_id::FLOAT32))->release();
 
                         // Do the copy here before it goes out of scope
-                        SRF_CHECK_CUDA(cudaMemcpy(curr_ptr,
+                        MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
                                                   float_data.data->data(),
                                                   df_meta.num_rows() * sizeof(float),
                                                   cudaMemcpyDeviceToDevice));
                     }
                     else
                     {
-                        SRF_CHECK_CUDA(cudaMemcpy(curr_ptr,
+                        MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
                                                   curr_col.data<float>(),
                                                   df_meta.num_rows() * sizeof(float),
                                                   cudaMemcpyDeviceToDevice));
@@ -186,8 +186,8 @@ TableInfo PreprocessFILStage::fix_bad_columns(sink_type_t x)
 }
 
 // ************ PreprocessFILStageInterfaceProxy *********** //
-std::shared_ptr<srf::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, const std::vector<std::string> &features)
+std::shared_ptr<mrc::segment::Object<PreprocessFILStage>> PreprocessFILStageInterfaceProxy::init(
+    mrc::segment::Builder& builder, const std::string& name, const std::vector<std::string>& features)
 {
     auto stage = builder.construct_object<PreprocessFILStage>(name, features);
 

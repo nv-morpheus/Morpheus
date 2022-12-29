@@ -91,7 +91,7 @@ TableInfoData TableInfoData::get_slice(cudf::size_type start,
         std::transform(column_names.begin(),
                        column_names.end(),
                        std::back_inserter(col_indices),
-                       [this, &new_column_names](const std::string &c) {
+                       [this, &new_column_names](const std::string& c) {
                            auto found_col = std::find(this->column_names.begin(), this->column_names.end(), c);
 
                            if (found_col == this->column_names.end())
@@ -115,7 +115,7 @@ TableInfoData TableInfoData::get_slice(cudf::size_type start,
     }
 
     // Create a new TableInfoData
-    return TableInfoData{table_view_out, this->index_names, column_names};
+    return {table_view_out, this->index_names, column_names};
 }
 
 /****** Component public implementations *******************/
@@ -125,7 +125,7 @@ TableInfoBase::TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfo
   m_data(std::move(data))
 {}
 
-const cudf::table_view &TableInfoBase::get_view() const
+const cudf::table_view& TableInfoBase::get_view() const
 {
     return m_data.table_view;
 }
@@ -177,7 +177,7 @@ pybind11::object TableInfoBase::copy_to_py_object() const
     }
 }
 
-const cudf::column_view &TableInfoBase::get_column(cudf::size_type idx) const
+const cudf::column_view& TableInfoBase::get_column(cudf::size_type idx) const
 {
     if (idx < 0 || idx >= this->m_data.table_view.num_columns())
     {
@@ -187,17 +187,17 @@ const cudf::column_view &TableInfoBase::get_column(cudf::size_type idx) const
     return this->m_data.table_view.column(this->m_data.index_names.size() + idx);
 }
 
-const std::shared_ptr<const IDataTable> &TableInfoBase::get_parent() const
+const std::shared_ptr<const IDataTable>& TableInfoBase::get_parent() const
 {
     return m_parent;
 }
 
-TableInfoData &TableInfoBase::get_data()
+TableInfoData& TableInfoBase::get_data()
 {
     return m_data;
 }
 
-const TableInfoData &TableInfoBase::get_data() const
+const TableInfoData& TableInfoBase::get_data() const
 {
     return m_data;
 }
@@ -232,7 +232,7 @@ MutableTableInfo::~MutableTableInfo()
     }
 }
 
-void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>> &columns)
+void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
     const auto num_existing_cols = this->get_data().column_names.size();
     const auto num_rows          = this->get_data().table_view.num_rows();
@@ -254,10 +254,10 @@ void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, 
     }
 }
 
-void MutableTableInfo::insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DType>> &columns)
+void MutableTableInfo::insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
 {
     std::vector<std::tuple<std::string, morpheus::DType>> missing_columns;
-    for (const auto &column : columns)
+    for (const auto& column : columns)
     {
         if (std::find(this->get_data().column_names.begin(),
                       this->get_data().column_names.end(),
@@ -283,7 +283,7 @@ pybind11::object MutableTableInfo::checkout_obj()
     return checked_out_obj;
 }
 
-void MutableTableInfo::return_obj(pybind11::object &&obj)
+void MutableTableInfo::return_obj(pybind11::object&& obj)
 {
     CHECK_EQ(obj.ref_count(), m_checked_out_ref_count) << "Checked out object returned with different ref_count(). "
                                                           "Must not store copies of the checked out object";

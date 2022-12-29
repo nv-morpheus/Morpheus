@@ -246,7 +246,7 @@ DType DType::from_numpy(const std::string& numpy_str)
 
     CHECK(found_enum != found_type->second.end()) << "Type str '" << type_char << dtype_size << "' not supported";
 
-    return DType(found_enum->second);
+    return {found_enum->second};
 }
 
 // From triton

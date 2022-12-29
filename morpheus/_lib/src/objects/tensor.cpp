@@ -22,9 +22,9 @@
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
-#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToHost
+#include <cuda_runtime.h>       // for cudaMemcpy, cudaMemcpyDeviceToHost
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <rmm/device_buffer.hpp>
-#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
 
 #include <cstdint>
 #include <memory>
@@ -62,7 +62,7 @@ std::vector<uint8_t> Tensor::get_host_data() const
 
     out_data.resize(this->bytes_count());
 
-    SRF_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes_count(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(&out_data[0], this->data(), this->bytes_count(), cudaMemcpyDeviceToHost));
 
     return out_data;
 }
@@ -86,6 +86,6 @@ TensorObject Tensor::create(std::shared_ptr<rmm::device_buffer> buffer,
     }
     auto tensor = std::make_shared<RMMTensor>(buffer, offset, dtype, shape, strides);
 
-    return TensorObject(md, tensor);
+    return {md, tensor};
 }
 }  // namespace morpheus

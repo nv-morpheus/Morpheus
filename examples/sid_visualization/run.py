@@ -17,7 +17,7 @@ import os
 import typing
 
 import click
-import srf
+import mrc
 
 from morpheus._lib.file_types import FileTypes
 from morpheus._lib.messages import MessageMeta
@@ -97,7 +97,7 @@ class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")

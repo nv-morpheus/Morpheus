@@ -4,12 +4,12 @@
 
 ####### Pip-only runtime dependencies (keep sorted!) #######
 # Packages listed here should also be listed in setup.py
-git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder
+git+https://github.com/nv-morpheus/dfencoder.git@branch-23.01#egg=dfencoder
 ipywidgets
 jupyter-core>=4.11.2,<5.0
 jupyterlab
 nvidia-pyindex
 pytest-benchmark>=4.0
-torch==1.10.2+cu113
+torch==1.12.0+cu113
 tritonclient[all]==2.17.*
 websockets

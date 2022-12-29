@@ -93,8 +93,8 @@ constexpr std::size_t size_in_bits()
 struct DType  // TODO move to dtype.hpp
 {
     DType(TypeId tid);
-    DType(const DType &dtype) = default;
-    bool operator==(const DType &other) const;
+    DType(const DType& dtype) = default;
+    bool operator==(const DType& other) const;
 
     TypeId type_id() const;
 
@@ -117,10 +117,10 @@ struct DType  // TODO move to dtype.hpp
     static DType from_cudf(cudf::type_id tid);
 
     // From numpy
-    static DType from_numpy(const std::string &numpy_str);
+    static DType from_numpy(const std::string& numpy_str);
 
     // From triton
-    static DType from_triton(const std::string &type_str);
+    static DType from_triton(const std::string& type_str);
 
     // from template
     template <typename T>
@@ -128,47 +128,47 @@ struct DType  // TODO move to dtype.hpp
     {
         if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 8)
         {
-            return DType(TypeId::INT8);
+            return {TypeId::INT8};
         }
         else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 16)
         {
-            return DType(TypeId::INT16);
+            return {TypeId::INT16};
         }
         else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 32)
         {
-            return DType(TypeId::INT32);
+            return {TypeId::INT32};
         }
         else if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 64)
         {
-            return DType(TypeId::INT64);
+            return {TypeId::INT64};
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 8)
         {
-            return DType(TypeId::UINT8);
+            return {TypeId::UINT8};
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 16)
         {
-            return DType(TypeId::UINT16);
+            return {TypeId::UINT16};
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 32)
         {
-            return DType(TypeId::UINT32);
+            return {TypeId::UINT32};
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && size_in_bits<T>() == 64)
         {
-            return DType(TypeId::UINT64);
+            return {TypeId::UINT64};
         }
         else if constexpr (std::is_floating_point_v<T> && size_in_bits<T>() == 32)
         {
-            return DType(TypeId::FLOAT32);
+            return {TypeId::FLOAT32};
         }
         else if constexpr (std::is_floating_point_v<T> && size_in_bits<T>() == 64)
         {
-            return DType(TypeId::FLOAT64);
+            return {TypeId::FLOAT64};
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
-            return DType(TypeId::BOOL8);
+            return {TypeId::BOOL8};
         }
         else if constexpr (std::is_same_v<T, std::string>)
         {
@@ -180,7 +180,7 @@ struct DType  // TODO move to dtype.hpp
         }
 
         // To hide compiler warnings
-        return DType(TypeId::EMPTY);
+        return {TypeId::EMPTY};
     }
 
   private:

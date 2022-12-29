@@ -15,11 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# 1. A Simple Python Stage
+# Simple Python Stage
 
 ## Background
 
-Morpheus makes use of the SRF graph-execution framework. Morpheus pipelines are built on top of SRF pipelines. Pipelines in SRF are made up of segments; however, in many common cases, a SRF pipeline will consist of only a single segment. Our Morpheus stages will interact with the SRF segment to build nodes and add them to the SRF graph. In the common case, a Morpheus stage will add a single node to the graph, but in some cases it will add multiple nodes to the graph.
+Morpheus makes use of the MRC graph-execution framework. Morpheus pipelines are built on top of MRC pipelines, which are comprised of collections of nodes and edges, called segments (think sub-graphs),  which can in turn be connected by ingress/egress ports. In many common cases, an MRC pipeline will consist of only a single segment. Our Morpheus stages interact with the MRC segment to define, build, and add nodes to the MRC graph; the stages themselves can be thought of as packaged units of work to be applied to data flowing through the pipeline. These work units comprising an individual Morpheus stage may consist of a single MRC node, a small collection of nodes, or an entire MRC subgraph.
 
 ## The Pass Through Stage
 
@@ -34,7 +34,7 @@ We start our class definition with a few basic imports:
 ```python
 import typing
 
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -54,7 +54,7 @@ There are four methods that need to be defined in our new subclass to implement 
         return "pass-thru"
 ```
 
-The `accepted_types` method returns a tuple of message classes that this stage accepts as valid inputs. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as `MessageMeta` or `MultiMessage` (refer to the message classes defined in `morpheus.pipeline.messages` for a complete list).
+The `accepted_types` method returns a tuple of message classes that this stage is able to accept as input. Morpheus uses this to validate that the parent of this stage emits a message that this stage can accept. Since our stage is a pass through, we will declare that we can accept any incoming message type. Note that production stages will often declare only a single Morpheus message class such as `MessageMeta` or `MultiMessage` (refer to the message classes defined in `morpheus.pipeline.messages` for a complete list).
 ```python
     def accepted_types(self) -> typing.Tuple:
         return (typing.Any,)
@@ -66,23 +66,23 @@ The `supports_cpp_node` method returns a boolean indicating if the stage has a C
         return False
 ```
 
-Our `on_data` method accepts the incoming message and returns a message. The returned message can be the same message instance that we received as our input or it could be a new message instance. The method is named `on_data` by convention; however, it is not part of the API. In the next section, we will register it as a callback in Morpheus.
+Our `on_data` method accepts an incoming message and returns a message. The returned message can be the same message instance that we received as our input or it could be a new message instance. The method is named `on_data` by convention; however, it is not part of the API. In the next section, we will register it as a callback in Morpheus.
 ```python
     def on_data(self, message: typing.Any):
         # Return the message for the next stage
         return message
 ```
 
-Finally, the `_build_single` method will be used at build time to wire our stage into the pipeline. `_build_single` receives an instance of the SRF pipeline segment along with a `StreamPair` instance. We will be using the segment instance to build a node from our stage and add it to the pipeline segment. The `StreamPair` argument is a tuple; the first element is our parent node, and the second is our parent node's output type. The return type of this method is also a `StreamPair`. Typically, we will be returning our newly constructed node along with our output type.
+Finally, the `_build_single` method will be used at stage build time to construct our node and wire it into the pipeline. `_build_single` receives an instance of an MRC segment builder (`mrc.Builder`) along with a `StreamPair` instance, which is a tuple consisting of our parent node and its output type. We will be using the builder instance to construct a node from our stage and connecting it to the Morpheus pipeline. The return type of `_build_single` is also a `StreamPair` which will be comprised of our node along with its data type.
 ```python
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
 ```
 
-In most cases, a Morpheus stage will define and build a single SRF node. In some advanced cases, a stage can construct more than one node. For our purposes, a Morpheus _stage_ defines information about the type of node(s) it builds, while the _node_ is the instance of the stage that is wired into the SRF pipeline. To build the node, we will call the `make_node` method of the segment instance, passing to it our name and our `on_data` method. We used the `unique_name` property, which will take the name property which we already defined and append a unique id to it.
+For our purposes, a Morpheus _stage_ defines the input data type the stage will accept, the unit of work to be performed on that data, and the output data type. In contrast each individual node or nodes comprising a _stage_'s unit of work are wired into the underlying MRC execution graph. To build the node, we will call the `make_node` method of the builder instance, passing it our `unique_name` and `on_data` methods. We used the `unique_name` property, which will take the `name` property which we already defined and append a unique id to it.
 ```python
 node = builder.make_node(self.unique_name, self.on_data)
 ```
@@ -101,7 +101,7 @@ return node, input_stream[1]
 ```python
 import typing
 
-import srf
+import mrc
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -128,7 +128,7 @@ class PassThruStage(SinglePortStage):
         # Return the message for the next stage
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
         builder.make_edge(input_stream[0], node)
 
@@ -137,7 +137,7 @@ class PassThruStage(SinglePortStage):
 
 ## Testing our new Stage
 To start testing our new pass through stage, we are going to construct a simple pipeline and add our new stage to it. This pipeline will do the minimum work necessary to verify our pass through stage. Data will flow through our simple pipeline as follows:
-1. A source stage will produce data and inject it into the pipeline.
+1. A source stage will produce data and emit it into the pipeline.
 1. This data will be read and processed by our pass through stage, in this case simply forwarding on the data.
 1. A monitoring stage will record the messages from our pass through stage and terminate the pipeline.
 

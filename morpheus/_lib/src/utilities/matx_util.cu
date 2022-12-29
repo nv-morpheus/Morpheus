@@ -21,7 +21,7 @@
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <srf/cuda/sync.hpp>
+#include <mrc/cuda/sync.hpp>
 
 #include <matx.h>
 
@@ -299,7 +299,7 @@ namespace morpheus {
                                      input.data(),
                                      output->data());
 
-        srf::enqueue_stream_sync_event(output->stream()).get();
+        mrc::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
     }
@@ -372,7 +372,7 @@ namespace morpheus {
                               thresh_val,
                               stride);
 
-        srf::enqueue_stream_sync_event(output->stream()).get();
+        mrc::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
     }
@@ -426,7 +426,7 @@ namespace morpheus {
                               num_input_rows,
                               seq_ids[start+seq_id_offset]-output_offset);
 
-        srf::enqueue_stream_sync_event(output->stream()).get();
+        mrc::enqueue_stream_sync_event(output->stream()).get();
         return output;
     }
 }

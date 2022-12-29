@@ -16,8 +16,8 @@ import logging
 import typing
 
 import cupy as cp
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -160,7 +160,7 @@ class FilterDetectionsStage(SinglePortStage):
 
         return output_list
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         if self._build_cpp_node():
             stream = _stages.FilterDetectionsStage(builder, self.unique_name, self._threshold, self._copy)
         else:
@@ -168,7 +168,7 @@ class FilterDetectionsStage(SinglePortStage):
                 stream = builder.make_node(self.unique_name, self.filter_copy)
             else:
                 # Convert list back to individual MultiResponseProbsMessage
-                def flatten_fn(obs: srf.Observable, sub: srf.Subscriber):
+                def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
                     obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
 
                 stream = builder.make_node_full(self.unique_name, flatten_fn)

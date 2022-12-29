@@ -21,7 +21,7 @@ import typing
 from abc import ABC
 from abc import abstractmethod
 
-import srf
+import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
@@ -68,7 +68,7 @@ def _save_init_vals(func: _DecoratorType) -> _DecoratorType:
 
 class StreamWrapper(ABC, collections.abc.Hashable):
     """
-    This abstract class serves as the morpheus pipeline's base class. This class wraps a `srf.SegmentObject`
+    This abstract class serves as the morpheus pipeline's base class. This class wraps a `mrc.SegmentObject`
     object and aids in hooking stages up together.
 
     Parameters
@@ -259,9 +259,9 @@ class StreamWrapper(ABC, collections.abc.Hashable):
     @abstractmethod
     def supports_cpp_node(self):
         """
-        Specifies whether this Stage is even capable of creating C++ nodes. During the build phase, this value will be
-        combined with Config.get().use_cpp to determine whether or not a C++ node is created. This is an instance method
-        to allow runtime decisions and derived classes to override base implementations.
+        Specifies whether this Stage is capable of creating C++ nodes. During the build phase, this value will be
+        combined with `CppConfig.get_should_use_cpp()` to determine whether or not a C++ node is created. This is an
+        instance method to allow runtime decisions and derived classes to override base implementations.
         """
         # By default, return False unless otherwise specified
         # return False
@@ -307,13 +307,13 @@ class StreamWrapper(ABC, collections.abc.Hashable):
 
             return True
 
-    def build(self, builder: srf.Builder, do_propagate=True):
+    def build(self, builder: mrc.Builder, do_propagate=True):
         """Build this stage.
 
         Parameters
         ----------
-        builder : `srf.Builder`
-            SRF segment for this stage.
+        builder : `mrc.Builder`
+            MRC segment for this stage.
         do_propagate : bool, optional
             Whether to propagate to build output stages, by default True.
 
@@ -354,33 +354,33 @@ class StreamWrapper(ABC, collections.abc.Hashable):
         return in_pairs
 
     @abstractmethod
-    def _build(self, builder: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         """
-        This function is responsible for constructing this stage's internal `srf.SegmentObject` object. The input
+        This function is responsible for constructing this stage's internal `mrc.SegmentObject` object. The input
         of this function contains the returned value from the upstream stage.
 
-        The input values are the `srf.Builder` for this stage and a `StreamPair` tuple which contain the input
-        `srf.SegmentObject` object and the message data type.
+        The input values are the `mrc.Builder` for this stage and a `StreamPair` tuple which contain the input
+        `mrc.SegmentObject` object and the message data type.
 
         :meta public:
 
         Parameters
         ----------
-        builder : `srf.Builder`
-            `srf.Builder` object for the pipeline. This should be used to construct/attach the internal
-            `srf.SegmentObject`.
+        builder : `mrc.Builder`
+            `mrc.Builder` object for the pipeline. This should be used to construct/attach the internal
+            `mrc.SegmentObject`.
         in_ports_streams : `morpheus.pipeline.pipeline.StreamPair`
-            List of tuples containing the input `srf.SegmentObject` object and the message data type.
+            List of tuples containing the input `mrc.SegmentObject` object and the message data type.
 
         Returns
         -------
         `typing.List[morpheus.pipeline.pipeline.StreamPair]`
-            List of tuples containing the output `srf.SegmentObject` object from this stage and the message data type.
+            List of tuples containing the output `mrc.SegmentObject` object from this stage and the message data type.
 
         """
         pass
 
-    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
         return out_ports_pair
 
     def start(self):

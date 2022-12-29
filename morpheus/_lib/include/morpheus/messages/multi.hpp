@@ -321,6 +321,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     /**
      * @brief Applies the message offset to the elements in `ranges` casting the results to `TensorIndex`
      *
+     * @param offset
      * @param ranges
      * @return std::vector<std::pair<TensorIndex, TensorIndex>>
      */

@@ -18,9 +18,9 @@ import typing
 from abc import abstractmethod
 from functools import partial
 
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
@@ -233,7 +233,7 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return user_metas
 
-    def _build_source(self, seg: srf.Builder) -> StreamPair:
+    def _build_source(self, seg: mrc.Builder) -> StreamPair:
 
         # The first source just produces filenames
         filename_source = self._watcher.build_node(self.unique_name, seg)
@@ -243,12 +243,12 @@ class AutoencoderSourceStage(PreallocatorMixin, SingleOutputSource):
         # Supposed to just return a source here
         return filename_source, out_type
 
-    def _post_build_single(self, seg: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    def _post_build_single(self, seg: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
         out_stream = out_pair[0]
         out_type = out_pair[1]
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(input: mrc.Observable, output: mrc.Subscriber):
 
             input.pipe(
                 # At this point, we have batches of filenames to process. Make a node for processing batches of

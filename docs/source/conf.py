@@ -114,7 +114,7 @@ exhale_args = {
         BUILTIN_STL_SUPPORT = YES
         DOT_IMAGE_FORMAT = svg
         EXCLUDE_PATTERNS = */tests/* */include/nvtext/* */__pycache__/*
-        EXCLUDE_SYMBOLS = "@85" "cudf*" "py::literals" "RdKafka" "srf*" "std*"
+        EXCLUDE_SYMBOLS = "@85" "cudf*" "py::literals" "RdKafka" "mrc*" "std*"
         EXTENSION_MAPPING = cu=C++ cuh=C++
         EXTRACT_ALL = YES
         FILE_PATTERNS = *.c *.cc *.cpp *.h *.hpp *.cu *.cuh *.md
