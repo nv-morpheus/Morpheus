@@ -64,7 +64,7 @@ struct __attribute__((visibility("default"))) TableInfoBase
      *
      * @return cudf::table_view
      */
-    const cudf::table_view &get_view() const;
+    const cudf::table_view& get_view() const;
 
     /**
      * @brief Get index names of a data table
@@ -117,17 +117,17 @@ struct __attribute__((visibility("default"))) TableInfoBase
      * @param idx : The index of the desired column
      * @return cudf::column_view : A reference to the desired column
      */
-    const cudf::column_view &get_column(cudf::size_type idx) const;
+    const cudf::column_view& get_column(cudf::size_type idx) const;
 
   protected:
     TableInfoBase() = default;
 
     TableInfoBase(std::shared_ptr<const IDataTable> parent, TableInfoData data);
 
-    const std::shared_ptr<const IDataTable> &get_parent() const;
+    const std::shared_ptr<const IDataTable>& get_parent() const;
 
-    TableInfoData &get_data();
-    const TableInfoData &get_data() const;
+    TableInfoData& get_data();
+    const TableInfoData& get_data() const;
 
   private:
     std::shared_ptr<const IDataTable> m_parent;
@@ -162,17 +162,19 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
                      std::unique_lock<std::shared_mutex> lock,
                      TableInfoData data);
 
+    MutableTableInfo(MutableTableInfo&& other) = default;
+
     ~MutableTableInfo();
 
     /**
      * TODO(Documentation)
      */
-    void insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>> &columns);
+    void insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>>& columns);
 
     /**
      * TODO(Documentation)
      */
-    void insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DType>> &columns);
+    void insert_missing_columns(const std::vector<std::tuple<std::string, morpheus::DType>>& columns);
 
     /**
      * @brief Allows the python object to be "checked out" which gives exclusive access to the python object during the
@@ -189,7 +191,7 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
      *
      * @param obj
      */
-    void return_obj(pybind11::object &&obj);
+    void return_obj(pybind11::object&& obj);
 
   private:
     // We use a unique_lock here to enforce exclusive access

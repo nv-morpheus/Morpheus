@@ -107,14 +107,14 @@ MutableTableInfo MessageMeta::get_mutable_info() const
     return this->m_data->get_mutable_info();
 }
 
-std::shared_ptr<MessageMeta> MessageMeta::create_from_python(pybind11::object &&data_table)
+std::shared_ptr<MessageMeta> MessageMeta::create_from_python(pybind11::object&& data_table)
 {
     auto data = std::make_unique<PyDataTable>(std::move(data_table));
 
     return std::shared_ptr<MessageMeta>(new MessageMeta(std::move(data)));
 }
 
-std::shared_ptr<MessageMeta> MessageMeta::create_from_cpp(cudf::io::table_with_metadata &&data_table,
+std::shared_ptr<MessageMeta> MessageMeta::create_from_cpp(cudf::io::table_with_metadata&& data_table,
                                                           int index_col_count)
 {
     // Convert to py first
@@ -127,7 +127,7 @@ std::shared_ptr<MessageMeta> MessageMeta::create_from_cpp(cudf::io::table_with_m
 
 MessageMeta::MessageMeta(std::shared_ptr<IDataTable> data) : m_data(std::move(data)) {}
 
-pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata &&table, int index_col_count)
+pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count)
 {
     pybind11::gil_scoped_acquire gil;
 
@@ -145,18 +145,36 @@ pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata &&table, i
     return converted_table;
 }
 
+/********** MutableCtxMgr **********/
+MutableCtxMgr::MutableCtxMgr(MutableTableInfo&& table) : m_table{std::move(table)} {};
+
+pybind11::object MutableCtxMgr::enter()
+{
+    std::cout << "__enter__"
+              << " - " << std::flush;
+    m_py_table = m_table.checkout_obj();
+    return m_py_table;
+}
+
+void MutableCtxMgr::exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback)
+{
+    std::cout << " - "
+              << "__exit__" << std::endl;
+    m_table.return_obj(std::move(m_py_table));
+}
+
 /********** MessageMetaInterfaceProxy **********/
-std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(pybind11::object &&data_frame)
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(pybind11::object&& data_frame)
 {
     return MessageMeta::create_from_python(std::move(data_frame));
 }
 
-cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta &self)
+cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta& self)
 {
     return self.count();
 }
 
-pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta &self)
+pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 {
     // Release any GIL
     pybind11::gil_scoped_release no_gil;
@@ -165,7 +183,7 @@ pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta &self)
     return self.get_info().copy_to_py_object();
 }
 
-void MessageMetaInterfaceProxy::set_data_frame(MessageMeta &self, const pybind11::object &new_df)
+void MessageMetaInterfaceProxy::set_data_frame(MessageMeta& self, const pybind11::object& new_df)
 {
     // Release any GIL
     pybind11::gil_scoped_release no_gil;
@@ -189,7 +207,14 @@ void MessageMetaInterfaceProxy::set_data_frame(MessageMeta &self, const pybind11
     // return self.get_py_table();
 }
 
-std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::string &filename)
+MutableCtxMgr MessageMetaInterfaceProxy::mutable_dataframe(MessageMeta& self)
+{
+    // Release any GIL
+    pybind11::gil_scoped_release no_gil;
+    return {self.get_mutable_info()};
+}
+
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::string& filename)
 {
     // Load the file
     auto df_with_meta = CuDFTableUtil::load_table(filename);

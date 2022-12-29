@@ -122,6 +122,19 @@ class SlicedMessageMeta : public MessageMeta
     std::vector<std::string> m_column_names;
 };
 
+/****** Python Interface **************************/
+class MutableCtxMgr
+{
+  public:
+    MutableCtxMgr(MutableTableInfo&& table);
+    pybind11::object enter();
+    void exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback);
+
+  private:
+    MutableTableInfo m_table;
+    pybind11::object m_py_table;
+};
+
 /****** MessageMetaInterfaceProxy**************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -160,6 +173,8 @@ struct MessageMetaInterfaceProxy
      */
     static pybind11::object get_data_frame(MessageMeta& self);
 
+    static MutableCtxMgr mutable_dataframe(MessageMeta& self);
+
     /**
      * @brief Set a new python `DataFrame` object to the internal `IDataTable`
      *
@@ -168,6 +183,7 @@ struct MessageMetaInterfaceProxy
      */
     static void set_data_frame(MessageMeta& self, const pybind11::object& new_df);
 };
+
 #pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus
