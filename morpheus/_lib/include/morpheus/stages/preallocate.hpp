@@ -21,12 +21,12 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 
-#include <pysrf/node.hpp>
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <map>
 #include <memory>
@@ -43,15 +43,15 @@ namespace morpheus {
  * `PreallocateMultiMessageStage`
  */
 template <typename MessageT>
-class PreallocateStage : public srf::pysrf::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
+class PreallocateStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MessageT>, std::shared_ptr<MessageT>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
 
-    PreallocateStage(const std::vector<std::tuple<std::string, TypeId>> &needed_columns);
+    PreallocateStage(const std::vector<std::tuple<std::string, TypeId>>& needed_columns);
 
   private:
     subscribe_fn_t build_operator();
@@ -69,9 +69,9 @@ struct PreallocateStageInterfaceProxy
     /**
      * @brief Create and initialize a DeserializationStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<PreallocateStage<MessageT>>> init(
-        srf::segment::Builder &builder,
-        const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> init(
+        mrc::segment::Builder& builder,
+        const std::string& name,
         std::vector<std::tuple<std::string, TypeId>> needed_columns);
 };
 
