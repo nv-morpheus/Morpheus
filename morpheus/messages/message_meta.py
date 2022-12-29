@@ -13,12 +13,16 @@
 # limitations under the License.
 
 import dataclasses
+import threading
+import warnings
+from contextlib import contextmanager
 
 import pandas as pd
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
-'''
+
+
 @dataclasses.dataclass(init=False)
 class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
     """
@@ -34,23 +38,27 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
 
     def __init__(self, df: pd.DataFrame) -> None:
         super().__init__()
+        self._mutex = threading.RLock()
         self._df = df
 
-'''
+    @property
+    def df(self) -> pd.DataFrame:
+        msg = ("Warning the df property returns a copy, please use the copy_dataframe method or the mutable_dataframe "
+               "context manager to modify the DataFrame in-place instead.")
 
+        warnings.warn(msg, DeprecationWarning)
+        return self.copy_dataframe()
 
-@dataclasses.dataclass
-class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
-    """
-    This is a container class to hold batch deserialized messages metadata.
+    def copy_dataframe(self):
+        return self._df.copy(deep=True)
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Input rows in dataframe.
-
-    """
-    df: pd.DataFrame
+    @contextmanager
+    def mutable_dataframe(self):
+        self._mutex.acquire()
+        try:
+            yield self._df
+        finally:
+            self._mutex.release()
 
     @property
     def count(self) -> int:
@@ -64,7 +72,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
 
         """
 
-        return len(self.df)
+        return len(self._df)
 
 
 @dataclasses.dataclass
