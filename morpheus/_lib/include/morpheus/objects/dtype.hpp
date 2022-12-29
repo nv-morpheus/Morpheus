@@ -30,7 +30,7 @@
 namespace morpheus {
 
 /**
- * @addtogroup utilities
+ * @addtogroup objects
  * @{
  * @file
  */
@@ -80,14 +80,6 @@ enum class TypeId : int32_t
     // `NUM_TYPE_IDS` must be last!
     NUM_TYPE_IDS  ///< Total number of type ids
 };
-
-// Pulled from cuDF
-template <typename T>
-constexpr std::size_t size_in_bits()
-{
-    static_assert(CHAR_BIT == 8, "Size of a byte must be 8 bits.");
-    return sizeof(T) * CHAR_BIT;
-}
 
 /****** DType****************************************/
 struct DType  // TODO move to dtype.hpp
