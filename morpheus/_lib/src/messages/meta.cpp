@@ -24,6 +24,7 @@
 
 #include <cudf/io/types.hpp>
 #include <pybind11/gil.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 
 #include <memory>
@@ -150,16 +151,12 @@ MutableCtxMgr::MutableCtxMgr(MutableTableInfo&& table) : m_table{std::move(table
 
 pybind11::object MutableCtxMgr::enter()
 {
-    std::cout << "__enter__"
-              << " - " << std::flush;
     m_py_table = m_table.checkout_obj();
     return m_py_table;
 }
 
 void MutableCtxMgr::exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback)
 {
-    std::cout << " - "
-              << "__exit__" << std::endl;
     m_table.return_obj(std::move(m_py_table));
 }
 
@@ -181,6 +178,17 @@ pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 
     // return py_table;
     return self.get_info().copy_to_py_object();
+}
+
+pybind11::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)
+{
+    PyErr_WarnEx(
+        PyExc_DeprecationWarning,
+        "Warning the df property returns a copy, please use the copy_dataframe method or the mutable_dataframe "
+        "context manager to modify the DataFrame in-place instead.",
+        1);
+
+    return MessageMetaInterfaceProxy::get_data_frame(self);
 }
 
 void MessageMetaInterfaceProxy::set_data_frame(MessageMeta& self, const pybind11::object& new_df)

@@ -172,6 +172,7 @@ struct MessageMetaInterfaceProxy
      * @return pybind11::object A `DataFrame` object
      */
     static pybind11::object get_data_frame(MessageMeta& self);
+    static pybind11::object df_property(MessageMeta& self);
 
     static MutableCtxMgr mutable_dataframe(MessageMeta& self);
 
