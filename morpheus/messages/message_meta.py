@@ -34,7 +34,8 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         Input rows in dataframe.
 
     """
-    _df: pd.DataFrame
+    _df: pd.DataFrame = dataclasses.field(init=False)
+    _mutex: threading.RLock = dataclasses.field(init=False, repr=False)
 
     def __init__(self, df: pd.DataFrame) -> None:
         super().__init__()
@@ -75,7 +76,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         return len(self._df)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class UserMessageMeta(MessageMeta, cpp_class=None):
     """
     This class extends MessageMeta to also hold userid corresponding to batched metadata.
@@ -88,10 +89,14 @@ class UserMessageMeta(MessageMeta, cpp_class=None):
         User id.
 
     """
-    user_id: str
+    user_id: str = dataclasses.field(init=False)
+
+    def __init__(self, df: pd.DataFrame, user_id: str) -> None:
+        super().__init__(df)
+        self.user_id = user_id
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class AppShieldMessageMeta(MessageMeta, cpp_class=None):
     """
     This class extends MessageMeta to also hold source corresponding to batched metadata.
@@ -103,4 +108,8 @@ class AppShieldMessageMeta(MessageMeta, cpp_class=None):
     source : str
         Determines which source generated the snapshot messages.
     """
-    source: str
+    source: str = dataclasses.field(init=False)
+
+    def __init__(self, df: pd.DataFrame, source: str) -> None:
+        super().__init__(df)
+        self.source = source
