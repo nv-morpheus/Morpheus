@@ -16,6 +16,8 @@
 
 import os
 
+import pytest
+
 from morpheus._lib.file_types import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
@@ -27,10 +29,16 @@ def test_mutable_dataframe(config):
 
     meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
 
-    with meta.mutable_dataframe() as df:
-        df['v2'][3] = 47
+    with meta.mutable_dataframe() as ctx:
+        ctx.df['v2'][3] = 47
 
     assert meta.copy_dataframe()['v2'][3] == 47
+
+    pytest.raises(RuntimeError, getattr, ctx, 'df')
+
+    copied_df = meta.copy_dataframe()
+    with meta.mutable_dataframe() as ctx:
+        pytest.raises(AttributeError, setattr, ctx, 'df', copied_df)
 
 
 def test_copy_dataframe(config):

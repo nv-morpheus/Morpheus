@@ -28,6 +28,7 @@
 #include <pybind11/pytypes.h>
 
 #include <memory>
+#include <stdexcept>  // for runtime_error
 #include <utility>
 
 namespace morpheus {
@@ -149,15 +150,27 @@ pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, i
 /********** MutableCtxMgr **********/
 MutableCtxMgr::MutableCtxMgr(MutableTableInfo&& table) : m_table{std::move(table)} {};
 
-pybind11::object MutableCtxMgr::enter()
+std::shared_ptr<MutableCtxMgr> MutableCtxMgr::enter()
 {
-    m_py_table = m_table.checkout_obj();
-    return m_py_table;
+    m_py_table    = m_table.checkout_obj();
+    m_checked_out = true;
+    return shared_from_this();
 }
 
 void MutableCtxMgr::exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback)
 {
+    m_checked_out = false;
     m_table.return_obj(std::move(m_py_table));
+}
+
+pybind11::object& MutableCtxMgr::df_property()
+{
+    if (!m_checked_out)
+    {
+        throw std::runtime_error("Error accessing released mutable_dataframe outside of context manager");
+    }
+
+    return m_py_table;
 }
 
 /********** MessageMetaInterfaceProxy **********/

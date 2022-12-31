@@ -15,13 +15,32 @@
 import dataclasses
 import threading
 import warnings
-from contextlib import contextmanager
 
 import pandas as pd
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
 
+class MutableCtxMgr:
+    def __init__(self, df: pd.DataFrame, mutex: threading.RLock) -> None:
+        self.__df = df
+        self.__mutex = mutex
+        self.__acquired = False
+
+    def __enter__(self):
+        self.__acquired = self.__mutex.acquire()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.__acquired = False
+        self.__mutex.release()
+
+    @property
+    def df(self) -> pd.DataFrame:
+        if (not self.__acquired):
+            raise RuntimeError("Error accessing released mutable_dataframe outside of context manager")
+
+        return self.__df
 
 @dataclasses.dataclass(init=False)
 class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
@@ -53,13 +72,8 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
     def copy_dataframe(self):
         return self._df.copy(deep=True)
 
-    @contextmanager
     def mutable_dataframe(self):
-        self._mutex.acquire()
-        try:
-            yield self._df
-        finally:
-            self._mutex.release()
+        return MutableCtxMgr(self._df, self._mutex)
 
     @property
     def count(self) -> int:
