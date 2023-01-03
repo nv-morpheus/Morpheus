@@ -49,6 +49,9 @@ class RecipientFeaturesStage(SinglePortStage):
         else:
             raise ValueError("sep_token cannot be an empty string")
 
+        # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+        # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+        # stage defining this attribute.
         self._needed_columns.update({
             'to_count': TypeId.INT32,
             'bcc_count': TypeId.INT32,
