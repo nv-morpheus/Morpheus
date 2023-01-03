@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Data Preprocessing
 
-The previous example demonstated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
+The previous example demonstrated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
 
 As part of this process, we might want to use a classification model trained on various pieces of metadata, such as recipient count, in addition to the raw content of each email. If we suppose this is true for our example, we need to build and connect a pre-processing stage to attach this information to each record before applying our classifier.
 
@@ -74,7 +74,7 @@ def __init__(self, config: Config):
 
 Refer to the [Stage Constructors](#stage-constructors) section for more details.
 
-If instead mutating the dataframe in place is undesirable, we could make a copy of the dataframe with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
+If instead mutating the DataFrame in place is undesirable, we could make a copy of the DataFrame with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
     # Get a copy of the DataFrame from the incoming message
@@ -559,7 +559,7 @@ In our `RecipientFeaturesStage` example we added a constructor to our stage, how
 
 In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
-Note: Setting the pipline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
+Note: Setting the pipeline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
 
 Our refactored class definition is now:
 
@@ -648,11 +648,13 @@ Options:
 
 ## Defining a New Source Stage
 
-Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource`. Second, the required methods are the `name` property, `_build_source` and `supports_cpp_node` methods.
+Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource` including the `PreallocatorMixin`. Second, the required methods are the `name` property, `_build_source` and `supports_cpp_node` methods.
 
 In this example, we will create a source that reads messages from a [RabbitMQ](https://www.rabbitmq.com/) queue using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python. For simplicity, we will assume that authentication is not required for our RabbitMQ exchange and that the body of the RabbitMQ messages will be JSON formatted. Both authentication and support for other formats could be easily added later.
 
-The `_build_source` method is similar to the `_build_single` method; it receives an instance of the MRC segment builder (`mrc.Builder`) and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have a parent stage and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
+The `PreallocatorMixin` when added to a stage class, typically a source stage, indicates that the stage emits newly constructed DataFrames either directly or contained in a `MessageMeta` instance into the pipeline. Adding this mixin allows any columns needed by other stages to be inserted into the DataFrame.
+
+The `_build_source` method is similar to the `_build_single` method; it receives an instance of the MRC segment builder (`mrc.Builder`) and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have a parent stage and therefore do not receive a `StreamPair` as input. Instead of building our node with `make_node`, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
 
 ```python
 def _build_source(self, builder: mrc.Builder) -> StreamPair:
@@ -684,9 +686,7 @@ def source_generator(self):
         self._connection.close()
 ```
 
-Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed.
-
-Note also that we acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
+Note that we read messages as quickly as we can from the queue. When the queue is empty we call `time.sleep`, allowing for a context switch to occur if needed. We acknowledge the message (by calling `basic_ack`) only once we have successfully emitted the message or failed to deserialize the message. This means that if the pipeline shuts down while consuming the queue, we will not lose any messages. However, in that situation we may end up with a duplicate message (i.e., if the pipeline is shut down after we have yielded the message but before calling `basic_ack`).
 
 ### The Completed Source Stage
 
@@ -695,14 +695,16 @@ import logging
 import time
 from io import StringIO
 
-import cudf
+import mrc
 import pandas as pd
 import pika
-import mrc
+
+import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -710,7 +712,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_stage("from-rabbitmq")
-class RabbitMQSourceStage(SingleOutputSource):
+class RabbitMQSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Source stage used to load messages from a RabbitMQ queue.
 
@@ -777,7 +779,10 @@ class RabbitMQSourceStage(SingleOutputSource):
             while not self._stop_requested:
                 (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
-                    try:pip install -r examples/developer_guide/2_2_rabbitmq/requirements.txt
+                    try:
+                        buffer = StringIO(body.decode("utf-8"))
+                        df = cudf.io.read_json(buffer, orient='records', lines=True)
+                        yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
                     finally:
@@ -811,7 +816,7 @@ def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> Strea
     return (node, input_stream[1])
 ```
 
-Note that in this case, while we created an edge from the parent node to our new node. The return tuple contains our newly constructed node, along with the unchanged input type. Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could hypothetically have a pipeline where we emit the results to both RabbitMQ and a file.
+Note the return tuple contains our newly constructed node, along with the unchanged input type. Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could hypothetically have a pipeline where we emit the results to both RabbitMQ and a file.
 
 ![Morpheus node dependency diagram](img/sink_deps.png)
 
