@@ -816,7 +816,7 @@ def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> Strea
     return (node, input_stream[1])
 ```
 
-Note the return tuple contains our newly constructed node, along with the unchanged input type. Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could hypothetically have a pipeline where we emit the results to both RabbitMQ and a file.
+Note the return tuple contains our newly constructed node, along with the unchanged input type. Our sink will function as a pass-through allowing the possibility of other sinks to be added to the pipeline. We could, hypothetically, have a pipeline where we emit the results to both RabbitMQ and a file.
 
 ![Morpheus node dependency diagram](img/sink_deps.png)
 
