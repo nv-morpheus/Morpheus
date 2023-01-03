@@ -26,7 +26,7 @@ As part of this process, we might want to use a classification model trained on 
 For this task, we'll need to define a new stage, which we will call our `RecipientFeaturesStage`, that will:
 1. Receive an input corresponding to an email.
 1. Count the number of recipients in the email's metadata.
-1. Construct a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
+1. Emit a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
 
 For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
 
@@ -39,8 +39,46 @@ Next, we will update our `on_data` method to perform the actual work. We grab a 
 
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
+    # Open the DataFrame from the incoming message for in-place modification
+    with message.mutable_dataframe() as ctx:
+        ctx.df['to_count'] = ctx.df['To'].str.count('@')
+        ctx.df['bcc_count'] = ctx.df['BCC'].str.count('@')
+        ctx.df['cc_count'] = ctx.df['CC'].str.count('@')
+        ctx.df['total_recipients'] = ctx.df['to_count'] + ctx.df['bcc_count'] + ctx.df['cc_count']
+
+        # Attach features to string data
+        ctx.df['data'] = (ctx.df['to_count'].astype(str) + '[SEP]' + ctx.df['bcc_count'].astype(str) + '[SEP]' +
+                            ctx.df['cc_count'].astype(str) + '[SEP]' + ctx.df['total_recipients'].astype(str) +
+                            '[SEP]' + ctx.df['Message'])
+
+    # Return the message for the next stage
+    return message
+```
+
+In the above example we added five new fields to the DataFrame. Since these fields and their types are known to us ahead of time, as an optimization we can ask Morpheus to pre-allocate these new fields when the DataFrame is first constructed. To do this we populate the `_needed_columns` attribute in our constructor:
+```python
+def __init__(self, config: Config):
+    super().__init__(config)
+
+    # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+    # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+    # stage defining this attribute.
+    self._needed_columns.update({
+        'to_count': TypeId.INT32,
+        'bcc_count': TypeId.INT32,
+        'cc_count': TypeId.INT32,
+        'total_recipients': TypeId.INT32,
+        'data': TypeId.STRING
+    })
+```
+
+Refer to the [Stage Constructors](#stage-constructors) section for more details.
+
+If instead mutating the dataframe in place is undesirable, we could make a copy of the dataframe with the `MessageMeta.copy_dataframe` method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. We could do this by changing the `on_data` method to:
+```python
+def on_data(self, message: MessageMeta) -> MessageMeta:
     # Get a copy of the DataFrame from the incoming message
-    df = message.df
+    df = message.copy_dataframe()
 
     df['to_count'] = df['To'].str.count('@')
     df['bcc_count'] = df['BCC'].str.count('@')
@@ -52,19 +90,8 @@ def on_data(self, message: MessageMeta) -> MessageMeta:
                     df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
                     df['Message'])
 
-    # Return the message for the next stage
-    return message
-```
-
-If mutating the data frame in place is undesirable, we could make a call to the data frame's [copy](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.DataFrame.copy.html#cudf.DataFrame.copy) method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. We could do this by changing the first and last lines of the `on_data` method to:
-
-```python
-def on_data(self, message: MessageMeta) -> MessageMeta:
-    # Take a copy of the DataFrame from the incoming message
-    df = message.df.copy(True)
-    ...
-    # Construct and return a new message containing our DataFrame
-    return MessageMeta(df=df)
+    # Return a new message with our updated DataFrame for the next stage
+    return MessageMeta(df)
 ```
 
 Since the purpose of this stage is specifically tied to pre-processing text data for an NLP pipeline, when we register the stage, we will explicitly limit the stage to NLP pipelines:
@@ -82,7 +109,10 @@ import typing
 
 import mrc
 
+from morpheus._lib.type_id import TypeId
 from morpheus.cli.register_stage import register_stage
+from morpheus.config import Config
+from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
@@ -92,7 +122,25 @@ from morpheus.pipeline.stream_pair import StreamPair
 class RecipientFeaturesStage(SinglePortStage):
     """
     Pre-processing stage which counts the number of recipients in an email's metadata.
+
+    Parameters
+    ----------
+    config : morpheus.config.Config
+        Pipeline configuration instance.
     """
+
+    def __init__(self, config: Config):
+        super().__init__(config)
+        # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+        # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+        # stage defining this attribute.
+        self._needed_columns.update({
+            'to_count': TypeId.INT32,
+            'bcc_count': TypeId.INT32,
+            'cc_count': TypeId.INT32,
+            'total_recipients': TypeId.INT32,
+            'data': TypeId.STRING
+        })
 
     @property
     def name(self) -> str:
@@ -105,21 +153,20 @@ class RecipientFeaturesStage(SinglePortStage):
         return False
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
-        # Get a copy of the DataFrame from the incoming message
-        df = message.df
+        # Open the DataFrame from the incoming message for in-place modification
+        with message.mutable_dataframe() as ctx:
+            ctx.df['to_count'] = ctx.df['To'].str.count('@')
+            ctx.df['bcc_count'] = ctx.df['BCC'].str.count('@')
+            ctx.df['cc_count'] = ctx.df['CC'].str.count('@')
+            ctx.df['total_recipients'] = ctx.df['to_count'] + ctx.df['bcc_count'] + ctx.df['cc_count']
 
-        df['to_count'] = df['To'].str.count('@')
-        df['bcc_count'] = df['BCC'].str.count('@')
-        df['cc_count'] = df['CC'].str.count('@')
-        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
+            # Attach features to string data
+            ctx.df['data'] = (ctx.df['to_count'].astype(str) + '[SEP]' + ctx.df['bcc_count'].astype(str) + '[SEP]' +
+                              ctx.df['cc_count'].astype(str) + '[SEP]' + ctx.df['total_recipients'].astype(str) +
+                              '[SEP]' + ctx.df['Message'])
 
-        # Attach features to string data
-        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
-                      df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
-                      df['Message'])
-
-        # Return a new message with our updated DataFrame for the next stage
-        return MessageMeta(df)
+        # Return the message for the next stage
+        return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
@@ -508,19 +555,15 @@ morpheus --log_level=debug --plugin examples/developer_guide/2_1_real_world_phis
 
 ## Stage Constructors
 
-In our previous examples, we didn't define a constructor for the Python classes that we were building for our stages. However, there are many cases where we will need to receive configuration parameters. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments.
+In our `RecipientFeaturesStage` example we added a constructor to our stage, however we didn't go into much detail on the details. Every stage constructor must receive an instance of a `morpheus.config.Config` object as its first argument and is then free to define additional stage-specific arguments after that. The Morpheus config object will contain configuration parameters needed by multiple stages in the pipeline, and the constructor in each Morpheus stage is free to inspect these. In contrast, parameters specific to a single stage are typically defined as constructor arguments. It is a best practice to perform any necessary validation checks in the constructor, and raising an exception in the case of mis-configuration. This allows us to fail early rather than after the pipeline has started.
 
-Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started.
-
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument. This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users. Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
 Note: Setting the pipline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
 
 Our refactored class definition is now:
 
 ```python
-from morpheus.config import Config
-
 @register_stage("recipient-features", modes=[PipelineModes.NLP])
 class RecipientFeaturesStage(SinglePortStage):
     """
@@ -543,6 +586,49 @@ class RecipientFeaturesStage(SinglePortStage):
             self._sep_token = sep_token
         else:
             raise ValueError("sep_token cannot be an empty string")
+
+        # This stage adds new columns to the DataFrame, as an optimization we define the columns that are needed,
+        # ensuring that these columns are pre-allocated with null values. This action is performed by Morpheus for any
+        # stage defining this attribute.
+        self._needed_columns.update({
+            'to_count': TypeId.INT32,
+            'bcc_count': TypeId.INT32,
+            'cc_count': TypeId.INT32,
+            'total_recipients': TypeId.INT32,
+            'data': TypeId.STRING
+        })
+
+    @property
+    def name(self) -> str:
+        return "recipient-features"
+
+    def accepted_types(self) -> typing.Tuple:
+        return (MessageMeta, )
+
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    def on_data(self, message: MessageMeta) -> MessageMeta:
+        # Open the DataFrame from the incoming message for in-place modification
+        with message.mutable_dataframe() as ctx:
+            ctx.df['to_count'] = ctx.df['To'].str.count('@')
+            ctx.df['bcc_count'] = ctx.df['BCC'].str.count('@')
+            ctx.df['cc_count'] = ctx.df['CC'].str.count('@')
+            ctx.df['total_recipients'] = ctx.df['to_count'] + ctx.df['bcc_count'] + ctx.df['cc_count']
+
+            # Attach features to string data
+            ctx.df['data'] = (ctx.df['to_count'].astype(str) + self._sep_token + ctx.df['bcc_count'].astype(str) +
+                              self._sep_token + ctx.df['cc_count'].astype(str) + self._sep_token +
+                              ctx.df['total_recipients'].astype(str) + self._sep_token + ctx.df['Message'])
+
+        # Return the message for the next stage
+        return message
+
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+        node = builder.make_node(self.unique_name, self.on_data)
+        builder.make_edge(input_stream[0], node)
+
+        return node, input_stream[1]
 ```
 
 If we were to make the above changes, we can view the resulting help string with:
