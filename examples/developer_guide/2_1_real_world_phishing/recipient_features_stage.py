@@ -68,21 +68,20 @@ class RecipientFeaturesStage(SinglePortStage):
         return False
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
-        # Get a copy of the DataFrame from the incoming message
-        df = message.df
+        # Open the DataFrame from the incoming message for in-place modification
+        with message.mutable_dataframe() as ctx:
+            ctx.df['to_count'] = ctx.df['To'].str.count('@')
+            ctx.df['bcc_count'] = ctx.df['BCC'].str.count('@')
+            ctx.df['cc_count'] = ctx.df['CC'].str.count('@')
+            ctx.df['total_recipients'] = ctx.df['to_count'] + ctx.df['bcc_count'] + ctx.df['cc_count']
 
-        df['to_count'] = df['To'].str.count('@')
-        df['bcc_count'] = df['BCC'].str.count('@')
-        df['cc_count'] = df['CC'].str.count('@')
-        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
+            # Attach features to string data
+            ctx.df['data'] = (ctx.df['to_count'].astype(str) + '[SEP]' + ctx.df['bcc_count'].astype(str) + '[SEP]' +
+                              ctx.df['cc_count'].astype(str) + '[SEP]' + ctx.df['total_recipients'].astype(str) +
+                              '[SEP]' + ctx.df['Message'])
 
-        # Attach features to string data
-        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
-                      df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) + '[SEP]' +
-                      df['Message'])
-
-        # Return a new message with our updated DataFrame for the next stage
-        return MessageMeta(df)
+        # Return the message for the next stage
+        return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self.on_data)
