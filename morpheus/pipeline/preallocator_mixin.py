@@ -54,24 +54,28 @@ class PreallocatorMixin(ABC):
         """
         self._needed_columns = needed_columns
 
+    def _preallocate_df(self, df):
+        missing_columns = [col for col in self._needed_columns.keys() if col not in df.columns]
+        if len(missing_columns) > 0:
+            if isinstance(df, cudf.DataFrame):
+                alloc_func = cp.zeros
+            else:
+                alloc_func = np.zeros
+
+            num_rows = len(df)
+            for column_name in missing_columns:
+                column_type = self._needed_columns[column_name]
+                logger.debug("Preallocating column %s[%s]", column_name, column_type)
+                if column_type != TypeId.STRING:
+                    column_type_str = tyepid_to_numpy_str(column_type)
+                    df[column_name] = alloc_func(num_rows, column_type_str)
+                else:
+                    df[column_name] = ''
+
     def _preallocate_meta(self, msg: MessageMeta):
         with msg.mutable_dataframe() as ctx:
-            missing_columns = [col for col in self._needed_columns.keys() if col not in ctx.df.columns]
-            if len(missing_columns) > 0:
-                if isinstance(ctx.df, cudf.DataFrame):
-                    alloc_func = cp.zeros
-                else:
-                    alloc_func = np.zeros
+            self._preallocate_df(ctx.df)
 
-                num_rows = len(ctx.df)
-                for column_name in missing_columns:
-                    column_type = self._needed_columns[column_name]
-                    logger.debug("Preallocating column %s[%s]", column_name, column_type)
-                    if column_type != TypeId.STRING:
-                        column_type_str = tyepid_to_numpy_str(column_type)
-                        ctx.df[column_name] = alloc_func(num_rows, column_type_str)
-                    else:
-                        ctx.df[column_name] = ''
         return msg
 
     def _preallocate_multi(self, msg: MultiMessage):
