@@ -79,9 +79,9 @@ class RecipientFeaturesStage(SinglePortStage):
             ctx.df['total_recipients'] = ctx.df['to_count'] + ctx.df['bcc_count'] + ctx.df['cc_count']
 
             # Attach features to string data
-            ctx.df['data'] = (ctx.df['to_count'].astype(str) + '[SEP]' + ctx.df['bcc_count'].astype(str) + '[SEP]' +
-                              ctx.df['cc_count'].astype(str) + '[SEP]' + ctx.df['total_recipients'].astype(str) +
-                              '[SEP]' + ctx.df['Message'])
+            ctx.df['data'] = (ctx.df['to_count'].astype(str) + self._sep_token + ctx.df['bcc_count'].astype(str) +
+                              self._sep_token + ctx.df['cc_count'].astype(str) + self._sep_token +
+                              ctx.df['total_recipients'].astype(str) + self._sep_token + ctx.df['Message'])
 
         # Return the message for the next stage
         return message
