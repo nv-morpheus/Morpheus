@@ -98,7 +98,7 @@ Pipeline visualization saved to basic_usage_img/multi_monitor_throughput.png
 
 ## NLP Kitchen Sink
 
-This example shows an NLP Pipeline which uses most stages available in Morpheus.
+This example shows an NLP Pipeline which uses most stages available in Morpheus. This example requires [launching triton server](../../getting_started.md#launching-triton-server).
 
 ![img/nlp_kitchen_sink.png](img/nlp_kitchen_sink.png)
 
