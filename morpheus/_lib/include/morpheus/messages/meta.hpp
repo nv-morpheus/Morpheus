@@ -132,9 +132,8 @@ class MutableCtxMgr : public std::enable_shared_from_this<MutableCtxMgr>
     pybind11::object& df_property();
 
   private:
-    MutableTableInfo m_table;
-    bool m_checked_out{false};
-    pybind11::object m_py_table;
+    std::unique_ptr<MutableTableInfo> m_table;
+    std::unique_ptr<pybind11::object> m_py_table;
 };
 
 /****** MessageMetaInterfaceProxy**************************/
