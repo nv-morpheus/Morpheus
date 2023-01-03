@@ -121,9 +121,11 @@ def test_filter_detections_stage_pipe_slice(config, tmp_path, order, pipeline_ba
     return _test_filter_detections_stage_pipe(config, tmp_path, False, order, pipeline_batch_size, repeat)
 
 
+@pytest.mark.slow
 def test_filter_detections_stage_multi_segment_pipe_copy(config, tmp_path):
     return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, True)
 
 
+@pytest.mark.slow
 def test_filter_detections_stage_multi_segment_pipe_slice(config, tmp_path):
     return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, False)

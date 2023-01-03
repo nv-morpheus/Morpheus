@@ -32,6 +32,7 @@ from utils import TEST_DIRS
 from utils import assert_file_exists_with_timeout
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_serialize_pipe(tmp_path, config, output_type):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
@@ -61,6 +62,7 @@ def test_serialize_pipe(tmp_path, config, output_type):
     assert output_data.tolist() == input_data.tolist()
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_serialize_multi_segment_pipe(tmp_path, config, output_type):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")

@@ -29,6 +29,7 @@ from utils import TEST_DIRS
 from utils import assert_file_exists_with_timeout
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 @pytest.mark.parametrize("repeat", [1, 2, 5])
 def test_file_rw_pipe(tmp_path, config, output_type, repeat: int):
@@ -60,6 +61,7 @@ def test_file_rw_pipe(tmp_path, config, output_type, repeat: int):
     assert output_data.tolist() == input_data.tolist()
 
 
+@pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.usefixtures("chdir_tmpdir")
 def test_to_file_no_path(tmp_path, config):
@@ -80,6 +82,7 @@ def test_to_file_no_path(tmp_path, config):
     assert_file_exists_with_timeout(tmp_path / out_file)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_multi_segment_pipe(tmp_path, config, output_type):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")

@@ -18,6 +18,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -33,6 +34,7 @@ from utils import ConvMsg
 from utils import assert_file_exists_with_timeout
 
 
+@pytest.mark.slow
 def test_add_classifications_stage_pipe(config, tmp_path):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
@@ -67,6 +69,7 @@ def test_add_classifications_stage_pipe(config, tmp_path):
     assert output_np.tolist() == expected.tolist()
 
 
+@pytest.mark.slow
 def test_add_classifications_stage_multi_segment_pipe(config, tmp_path):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1

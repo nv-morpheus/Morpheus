@@ -79,6 +79,7 @@ def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size, rep
     assert output_np.tolist() == expected.tolist()
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('repeat', [1, 2, 5])
 def test_add_scores_stage_multi_segment_pipe(config, tmp_path, repeat):
     # Intentionally using FileSourceStage's repeat argument as this triggers a bug in #443
