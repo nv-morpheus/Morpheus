@@ -693,7 +693,10 @@ class RabbitMQSourceStage(SingleOutputSource):
             while not self._stop_requested:
                 (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
-                    try:pip install -r examples/developer_guide/2_2_rabbitmq/requirements.txt
+                    try:
+                        buffer = StringIO(body.decode("utf-8"))
+                        df = cudf.io.read_json(buffer, orient='records', lines=True)
+                        yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
                     finally:
