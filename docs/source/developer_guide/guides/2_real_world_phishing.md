@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Data Preprocessing
 
-The previous example demonstated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
+The previous example demonstrated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
 
 As part of this process, we might want to use a classification model trained on various pieces of metadata, such as recipient count, in addition to the raw content of each email. If we suppose this is true for our example, we need to build and connect a pre-processing stage to attach this information to each record before applying our classifier.
 
@@ -516,7 +516,7 @@ Note that it is a best practice to perform any necessary validation checks in th
 
 In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
-Note: Setting the pipline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
+Note: Setting the pipeline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
 
 Our refactored class definition is now:
 
