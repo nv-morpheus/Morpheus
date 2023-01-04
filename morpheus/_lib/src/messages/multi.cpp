@@ -127,7 +127,7 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
     try
     {
         table_meta = this->get_meta(column_names);
-    } catch (const std::runtime_error &e)
+    } catch (const std::runtime_error& e)
     {
         std::ostringstream err_msg;
         err_msg << e.what() << " Ensure that the stage that needs this column has populated the '_needed_columns' "
@@ -138,7 +138,7 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
 
     for (size_t i = 0; i < tensors.size(); ++i)
     {
-        const auto &cv            = table_meta.get_column(i);
+        const auto& cv            = table_meta.get_column(i);
         const auto table_type_id  = cv.type().id();
         const auto tensor_type    = DType(tensors[i].dtype());
         const auto tensor_type_id = tensor_type.cudf_type_id();

@@ -49,7 +49,7 @@ cudf::size_type PyDataTable::count() const
     return m_py_table.attr("_num_rows").cast<cudf::size_type>();
 }
 
-const pybind11::object &PyDataTable::get_py_object() const
+const pybind11::object& PyDataTable::get_py_object() const
 {
     return m_py_table;
 }

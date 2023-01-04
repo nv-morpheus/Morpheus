@@ -82,7 +82,7 @@ enum class TypeId : int32_t
 };
 
 /****** DType****************************************/
-struct DType  // TODO move to dtype.hpp
+struct DType  // TODO(dagardner): move to dtype.hpp
 {
     DType(TypeId tid);
     DType(const DType& dtype) = default;
@@ -164,7 +164,7 @@ struct DType  // TODO move to dtype.hpp
         }
         else if constexpr (std::is_same_v<T, std::string>)
         {
-            return DType(TypeId::STRING);
+            return {TypeId::STRING};
         }
         else
         {
