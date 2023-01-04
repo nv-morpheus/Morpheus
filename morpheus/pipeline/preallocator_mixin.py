@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import typing
 from abc import ABC
 from collections import OrderedDict
 
