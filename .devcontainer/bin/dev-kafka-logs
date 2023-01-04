@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#!/bin/bash
+# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,20 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: morpheus
-channels:
-    - rapidsai
-    - nvidia
-    - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
-    - nvidia/label/cuda-11.5.2 # For cuda-nvml-dev=11.5, which is not published under nvidia channel yet.
-    - conda-forge
-dependencies:
-    ####### Morpheus Dependencies (keep sorted!) #######
-    - boto3
-    - dask
-    - dill
-    - kfp
-    - librdkafka
-    - mlflow>1.29.0,<2
-    - papermill
-    - s3fs==2022.8.2
+COMPOSE_FILE="${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml"
+
+docker compose -f $COMPOSE_FILE logs zookeeper kafka
