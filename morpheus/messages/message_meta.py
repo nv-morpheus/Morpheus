@@ -21,7 +21,9 @@ import pandas as pd
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
 
+
 class MutableCtxMgr:
+
     def __init__(self, df: pd.DataFrame, mutex: threading.RLock) -> None:
         self.__df = df
         self.__mutex = mutex
@@ -41,6 +43,7 @@ class MutableCtxMgr:
             raise RuntimeError("Error accessing released mutable_dataframe outside of context manager")
 
         return self.__df
+
 
 @dataclasses.dataclass(init=False)
 class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
