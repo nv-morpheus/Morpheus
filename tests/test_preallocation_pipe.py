@@ -17,8 +17,6 @@
 import os
 
 import mrc
-import numpy as np
-import pandas as pd
 import pytest
 
 import cudf
