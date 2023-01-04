@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@ import dataclasses
 import logging
 import typing
 
+import pandas as pd
+
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
 logger = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class DFPMessageMeta(MessageMeta, cpp_class=None):
     """
     This class extends MessageMeta to also hold userid corresponding to batched metadata.
@@ -37,11 +39,15 @@ class DFPMessageMeta(MessageMeta, cpp_class=None):
     """
     user_id: str
 
+    def __init__(self, df: pd.DataFrame, user_id: str) -> None:
+        super().__init__(df)
+        self.user_id = user_id
+
     def get_df(self):
         return self.df
 
     def set_df(self, df):
-        self.df = df
+        self._df = df
 
 
 @dataclasses.dataclass
