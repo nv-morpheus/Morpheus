@@ -27,12 +27,48 @@ The Morpheus CLI is built on the Click Python package which allows for nested co
 together. At a high level, the CLI is broken up into two main sections:
 
  * ``run``
-    * For running NLP or FIL pipelines.
+    * For running AE, FIL, NLP or OTHER pipelines.
  * ``tools``
-    * Tools/Utilities to help set up, configure and run pipelines and external resources
+    * Tools/Utilities to help set up, configure and run pipelines and external resources.
 
 Users can get help on any command by passing ``--help`` to a command or sub-command. For example, to get help on the
-tools:
+run:
+
+.. code-block:: console
+
+   $ morpheus run --help
+   Usage: morpheus run [OPTIONS] COMMAND [ARGS]...
+
+   Options:
+   --num_threads INTEGER RANGE     Number of internal pipeline threads to use  [default: 12; x>=1]
+   --pipeline_batch_size INTEGER RANGE
+                                    Internal batch size for the pipeline. Can be much larger than the model batch size. Also used for Kafka consumers  [default: 256; x>=1]
+   --model_max_batch_size INTEGER RANGE
+                                    Max batch size to use for the model  [default: 8; x>=1]
+   --edge_buffer_size INTEGER RANGE
+                                    The size of buffered channels to use between nodes in a pipeline. Larger values reduce backpressure at the cost of memory. Smaller values will push
+                                    messages through the pipeline quicker. Must be greater than 1 and a power of 2 (i.e. 2, 4, 8, 16, etc.)  [default: 128; x>=2]
+   --use_cpp BOOLEAN               Whether or not to use C++ node and message types or to prefer python. Only use as a last resort if bugs are encountered  [default: True]
+   --help                          Show this message and exit.
+
+   Commands:
+   pipeline-ae     Run the inference pipeline with an AutoEncoder model
+   pipeline-fil    Run the inference pipeline with a FIL model
+   pipeline-nlp    Run the inference pipeline with a NLP model
+   pipeline-other  Run a custom inference pipeline without a specific model type
+
+Currently, Morpheus pipeline can be operated in four different modes.
+
+ * ``pipeline-ae``
+    * This pipeline mode is used to run training/inference on the AutoEncoder model.
+ * ``pipeline-fil``
+    * This pipeline mode is used to run inference on FIL (Forest Inference Library) models such as XGBoost, RandomForestClassifier, etc.
+ * ``pipeline-nlp``
+    * This pipeline mode is used to run inference on NLP models, it offers the ability to tokenize the input data prior to submitting the inference requests.
+ * ``pipeline-other``
+    * Run a customized inference pipeline without using a specific model type.
+
+Similar to the run command, we can get help on the tools:
 
 .. code-block:: console
 
