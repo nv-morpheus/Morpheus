@@ -219,8 +219,16 @@ Pipeline visualization saved to .tmp/multi_monitor_throughput.png
 ```
 
 ### NLP Kitchen Sink
+This example shows an NLP Pipeline which uses several stages available in Morpheus. This example utilizes the Triton Inference Server to perform inference, and writes the output to a Kafka topic named `inference_output`. Both of which need to be started prior to launching Morpheus.
 
-This example shows an NLP Pipeline which uses most stages available in Morpheus.
+#### Launching Triton
+From the Morpheus repo root directory, run the following to launch Triton and load the `sid-minibert` model:
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
+```
+
+#### Launching Kafka
+Follow steps 1-8 in [Quick Launch Kafka Cluster](../../docs/source/developer_guide/contributing.md#quick-launch-kafka-cluster) section of [contributing.md](../../docs/source/developer_guide/contributing.md), creating a topic named `inference_output` then replace port `9092` with the port your Kafka instance is listening on.
 
 ![../img/nlp_kitchen_sink.png](../img/nlp_kitchen_sink.png)
 
