@@ -97,7 +97,7 @@ kubectl create namespace ${NAMESPACE}
 
 ### Install Morpheus AI Engine
 
-The helm chart (`morpheus-ai-engine`) that offers the auxiliary components required to execute certain Morpheus workflows is referred to as the Morpheus AI Engine. It comprises of the following components
+The Helm chart (`morpheus-ai-engine`) that offers the auxiliary components required to execute certain Morpheus workflows is referred to as the Morpheus AI Engine. It comprises of the following components
 -   Triton Inference Server [ **ai-engine** ] from NVIDIA for processing inference requests.
 -   Kafka Broker [ **broker** ] to consume and publish messages.
 -   Zookeeper [ **zookeeper** ] to maintain coordination between the Kafka Brokers.
@@ -144,7 +144,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 ```
 
 ### Install Morpheus SDK Client
-Run the following command to pull the Morpheus SDK Client (referred to as helm chart `morpheus-sdk-client`) on to your instance:
+Run the following command to pull the Morpheus SDK Client (referred to as Helm chart `morpheus-sdk-client`) on to your instance:
 
 ```bash
 helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
@@ -182,7 +182,7 @@ kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 
 ### Install Morpheus MLflow
 
-The Morpheus MLflow helm chart offers MLFlow server with Triton plugin to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort `30500`. Follow the below steps to install the Morpheus MLflow:
+The Morpheus MLflow Helm chart offers MLFlow server with Triton plugin to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort `30500`. Follow the below steps to install the Morpheus MLflow:
 
 ```bash
 helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
@@ -194,7 +194,7 @@ helm install --set ngc.apiKey="$API_KEY" \
              morpheus-mlflow
 ```
 
-> **Note**: If the default port is already allocated, helm throws below error. Choose an alternative by adjusting the `dashboardPort` value in the `morpheus-mlflow/values.yaml` file, remove the previous release and reinstall it.
+> **Note**: If the default port is already allocated, Helm throws below error. Choose an alternative by adjusting the `dashboardPort` value in the `morpheus-mlflow/values.yaml` file, remove the previous release and reinstall it.
 
 ```console
 Error: Service "mlflow" is invalid: spec.ports[0].nodePort: Invalid value: 30500: provided port is already allocated
