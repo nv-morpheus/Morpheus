@@ -54,17 +54,18 @@ All pipelines configured with the CLI need to start with a source object. Two co
 
 From this point on, any number of stages can be sequentially added to the command line from start to finish. For example, we could build a trivial pipeline that reads from a file, deserializes messages, serializes them, and then writes to a file, use the following:
 ```bash
-morpheus --log_level=DEBUG run pipeline-nlp \
+morpheus --log_level=DEBUG run pipeline-nlp --viz_file=.tmp/simple_identity.png \
   from-file --filename=examples/data/pcap_dump.jsonlines \
   deserialize \
   serialize \
   to-file --overwrite --filename .tmp/temp_out.json
 ```
+![../img/simple_identity.png](../img/simple_identity.png)
 
 The output should be similar to:
-```
-Parameter, 'labels_file', with relative path, 'data/labels_nlp.txt', does not exist. Using package relative location: '/home/dagardner/work/morpheus/morpheus/data/labels_nlp.txt'
+```console
 Configuring Pipeline via CLI
+Parameter, 'labels_file', with relative path, 'data/labels_nlp.txt', does not exist. Using package relative location: '/home/dagardner/work/morpheus/morpheus/data/labels_nlp.txt'
 Loaded labels file. Current labels: [['address', 'bank_acct', 'credit_card', 'email', 'govt_id', 'name', 'password', 'phone_num', 'secret_keys', 'user']]
 Starting pipeline via CLI... Ctrl+C to Quit
 Config:
@@ -100,7 +101,7 @@ CPP Enabled: True
 ====Building Segment: linear_segment_0====
 ====Building Segment Complete!====
 ====Building Pipeline Complete!====
-Starting! Time: 1672956034.574697
+Starting! Time: 1672959248.7163541
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
 ====Pipeline Started====
@@ -113,6 +114,7 @@ Added stage: <serialize-2; SerializeStage(include=(), exclude=('^ID$', '^_ts_'),
 Added stage: <to-file-3; WriteToFileStage(filename=.tmp/temp_out.json, overwrite=True, file_type=FileTypes.Auto, include_index_col=True)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Pipeline Complete====
+Pipeline visualization saved to .tmp/simple_identity.png
 ```
 
 ### Pipeline Build Checks
@@ -149,3 +151,99 @@ morpheus --log_level=DEBUG run pipeline-nlp \
 
 ## Available Stages
 For a complete list of available stages, use the CLI help commands. The available stages can also be queried from the CLI using ``morpheus run pipeline-nlp --help`` or ``morpheus run pipeline-fil --help``.
+
+## Basic Usage Examples
+
+### Remove Fields from JSON Objects
+This example will only copy the fields 'timestamp', 'src_ip' and 'dest_ip' from `examples/data/pcap_dump.jsonlines` to
+`out.jsonlines`.
+
+![../img/remove_fields_from_json_objects.png](../img/remove_fields_from_json_objects.png)
+
+```bash
+morpheus run pipeline-nlp --viz_file=.tmp/remove_fields_from_json_objects.png \
+   from-file --filename examples/data/pcap_dump.jsonlines \
+   deserialize \
+   serialize --include 'timestamp' --include 'src_ip' --include 'dest_ip' \
+   to-file --overwrite --filename out.jsonlines
+```
+
+### Monitor Throughput
+
+This example will report the throughput on the command line.
+
+![../img/monitor_throughput.png](../img/monitor_throughput.png)
+
+```bash
+morpheus run pipeline-nlp --viz_file=.tmp/monitor_throughput.png  \
+   from-file --filename examples/data/pcap_dump.jsonlines \
+   deserialize \
+   monitor --description "Lines Throughput" --smoothing 0.1 --unit "lines" \
+   serialize \
+   to-file --overwrite --filename out.jsonlines
+```
+
+Output:
+```console
+Configuring Pipeline via CLI
+Starting pipeline via CLI... Ctrl+C to Quit
+Lines Throughput[Complete]: 93085 lines [00:03, 29446.18 lines/s]
+Pipeline visualization saved to .tmp/monitor_throughput.png
+```
+
+### Multi-Monitor Throughput
+
+This example will report the throughput for each stage independently.
+
+![../img/multi_monitor_throughput.png](../img/multi_monitor_throughput.png)
+
+```bash
+morpheus run pipeline-nlp --viz_file=.tmp/multi_monitor_throughput.png  \
+   from-file --filename examples/data/pcap_dump.jsonlines \
+   monitor --description "From File Throughput" \
+   deserialize \
+   monitor --description "Deserialize Throughput" \
+   serialize \
+   monitor --description "Serialize Throughput" \
+   to-file --filename out.jsonlines --overwrite
+```
+
+Output:
+```console
+Configuring Pipeline via CLI
+Starting pipeline via CLI... Ctrl+C to Quit
+From File Throughput[Complete]: 93085 messages [00:00, 168118.35 messages/s]
+Deserialize Throughput[Complete]: 93085 messages [00:04, 22584.37 messages/s]
+Serialize Throughput[Complete]: 93085 messages [00:06, 14095.36 messages/s]
+Pipeline visualization saved to .tmp/multi_monitor_throughput.png
+```
+
+### NLP Kitchen Sink
+
+This example shows an NLP Pipeline which uses most stages available in Morpheus.
+
+![../img/nlp_kitchen_sink.png](../img/nlp_kitchen_sink.png)
+
+```bash
+morpheus run --num_threads=8 --pipeline_batch_size=1024 --model_max_batch_size=32 \
+   pipeline-nlp --viz_file=.tmp/nlp_kitchen_sink.png  \
+   from-file --filename examples/data/pcap_dump.jsonlines \
+   deserialize \
+   preprocess \
+   inf-triton --model_name=sid-minibert-onnx --server_url=localhost:8001 \
+   monitor --description "Inference Rate" --smoothing=0.001 --unit "inf" \
+   add-class \
+   filter --threshold=0.8 \
+   serialize --include 'timestamp' --exclude '^_ts_' \
+   to-kafka --bootstrap_servers localhost:9092 --output_topic "inference_output" \
+   monitor --description "ToKafka Rate" --smoothing=0.001 --unit "msg"
+```
+
+Output:
+```console
+Configuring Pipeline via CLI
+Starting pipeline via CLI... Ctrl+C to Quit
+Inference Rate[Complete]: 93085 inf [00:07, 12334.49 inf/s]
+ToKafka Rate[Complete]: 93085 msg [00:07, 13297.85 msg/s]
+Pipeline visualization saved to .tmp/nlp_kitchen_sink.png
+```
