@@ -15,14 +15,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Prerequisites
-The following examples assume that the example dataset has been fetched, and that a `.tmp` directory has been created at the root of the Morpheus repo. `.tmp` has an entry in `.gitignore` and any files in that directory will be automatically ignored by git. From the root of the Morpheus repo run:
-```bash
-./scripts/fetch_data.py fetch examples
-mkdir -p .tmp
-```
-
 # Building a Pipeline
+> **Prerequisites**
+> The following examples assume that the example dataset has been fetched, and that a `.tmp` directory has been created at the root of the Morpheus repo. `.tmp` has an entry in `.gitignore` and any files in that directory will be automatically ignored by git. From the root of the Morpheus repo run:
+>```bash
+>./scripts/fetch_data.py fetch examples
+>mkdir -p .tmp
+>```
+
 To build a pipeline via the CLI, users must first specify the type of pipeline, a source object, followed by a sequential list of stages. For each stage, options can be specified to configure the particular stage. Since stages are listed sequentially the output of one stage becomes the input to the next. Unless heavily customized, pipelines will start with either:
 
 ```bash
