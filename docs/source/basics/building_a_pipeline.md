@@ -43,11 +43,11 @@ All pipelines configured with the CLI need to start with a source object. Two co
   - Reads from a local file into the Pipeline
   - Supports JSON lines format
   - All lines are read at the start and queued into the pipeline at one time. Useful for performance testing.
-  - Refer to `morpheus.pipeline.input.from_file.FileSourceStage` for more information
+  - Refer to `morpheus.stages.input.file_source_stage.FileSourceStage` for more information
 * `from-kafka`
   - Pulls messages from a Kafka cluster into the Pipeline
   - Kafka cluster can be remote or local
-  - Refer to `morpheus.pipeline.input.from_kafka.KafkaSourceStage` for more information
+  - Refer to `morpheus.stages.input.kafka_source_stage.KafkaSourceStage` for more information
 
 ## Stages
 
