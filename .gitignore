@@ -182,6 +182,7 @@ tags
 
 # End of https://www.gitignore.io/api/vim,c++,cmake,python,synology
 .tmp
+examples/data/dfp
 viz_frames*
 notebooks/output
 dask-worker-space
