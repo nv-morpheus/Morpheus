@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Data Preprocessing
 
-The previous example demonstated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
+The previous example demonstrated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
 
 As part of this process, we might want to use a classification model trained on various pieces of metadata, such as recipient count, in addition to the raw content of each email. If we suppose this is true for our example, we need to build and connect a pre-processing stage to attach this information to each record before applying our classifier.
 
@@ -28,15 +28,14 @@ For this task, we'll need to define a new stage, which we will call our `Recipie
 1. Count the number of recipients in the email's metadata.
 1. Construct a Morpheus `MessageMeta` object that will contain the record content along with the augmented metadata.
 
-For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on {py:obj}`~morpheus.pipeline.messages.MessageMeta` types, our new `accepted_types` method now looks like:
+For this stage, the code will be similar to the previous example with a few notable changes. We will be working with the `MessageMeta` class. This is a Morpheus message containing a [cuDF](https://docs.rapids.ai/api/cudf/stable/) [DataFrame](https://docs.rapids.ai/api/cudf/stable/api_docs/dataframe.html). Since we will expect our new stage to operate on `MessageMeta` types, our new `accepted_types` method is defined as:
 
 ```python
 def accepted_types(self) -> typing.Tuple:
     return (MessageMeta,)
 ```
 
-Next, we will update our `on_data` method to perform the actual work.
-We grab a reference to the incoming message's `df` attribute. It is important to note that `message` is a reference, and any changes made to it or its members (such as `df`) will be performed in place on the existing message instance.
+Next, we will update our `on_data` method to perform the actual work. We grab a reference to the incoming message's `df` attribute. It is important to note that `message` is a reference, and any changes made to it or its members (such as `df`) will be performed in place on the existing message instance.
 
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
@@ -59,7 +58,7 @@ def on_data(self, message: MessageMeta) -> MessageMeta:
     return message
 ```
 
-If mutating the data frame is undesirable, we could make a call to the data frame's [copy](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.DataFrame.copy.html#cudf.DataFrame.copy) method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. Changing the first and last lines of the `on_data` method to:
+If mutating the data frame in place is undesirable, we could make a call to the data frame's [copy](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.DataFrame.copy.html#cudf.DataFrame.copy) method and return a new `MessageMeta`. Note however that this would come at the cost of performance and increased memory usage. We could do this by changing the first and last lines of the `on_data` method to:
 
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
@@ -76,8 +75,7 @@ Since the purpose of this stage is specifically tied to pre-processing text data
 class RecipientFeaturesStage(SinglePortStage):
 ```
 
-
-Our `_build_single` method remains unchanged; even though we are modifying the incoming messages, our input and output types remain the same.
+Our `_build_single` method remains unchanged from the previous example; even though we are modifying the incoming messages, our input and output types remain the same.
 
 ### The Completed Preprocessing Stage
 
@@ -132,11 +130,9 @@ class RecipientFeaturesStage(SinglePortStage):
         return node, input_stream[1]
 ```
 
-### Testing the Preprocessing Stage
-
 ## Predicting Fraudulent Emails with Accelerated Machine Learning
 
-Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server framework](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus in the `models/triton-model-repo/` directory.
+Now we'll use the `RecipientFeaturesStage` that we just made in a real-world pipeline to detect fraudulent emails. The pipeline we will be building makes use of the `TritonInferenceStage` which is a pre-defined Morpheus stage designed to support the execution of Natural Language Processing (NLP) models via NVIDIA's [Triton Inference Server](https://developer.nvidia.com/nvidia-triton-inference-server). NVIDIA Triton Inference Server allows for GPU accelerated ML/DL and seamless co-location and execution of a wide variety of model frameworks. For our application, we will be using the `phishing-bert-onnx` model, which is included with Morpheus in the `models/triton-model-repo/` directory.
 
 It's important to note here that Triton is a service that is external to the Morpheus pipeline and often will not reside on the same machine(s) as the rest of the pipeline. The `TritonInferenceStage` will use HTTP and [gRPC](https://grpc.io/) network protocols to allow us to interact with the machine learning models that are hosted by the Triton server.
 
@@ -149,7 +145,16 @@ Note: This step assumes you have both [Docker](https://docs.docker.com/engine/in
 From the root of the Morpheus project we will launch a Triton Docker container with the `models` directory mounted into the container:
 
 ```shell
-docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.06-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --log-info=true
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
+  -v $PWD/models:/models \
+  nvcr.io/nvidia/tritonserver:22.08-py3 \
+  tritonserver --model-repository=/models/triton-model-repo \
+    --exit-on-error=false \
+    --log-info=true \
+    --strict-readiness=false \
+    --disable-auto-complete-config \
+    --model-control-mode=explicit \
+    --load-model=phishing-bert-onnx
 ```
 
 Once we have Triton running, we can verify that it is healthy using [curl](https://curl.se/). The `/v2/health/live` endpoint should return a 200 status code:
@@ -164,18 +169,125 @@ We can also query Triton for the available models:
 curl -X POST "localhost:8000/v2/repository/index"
 ```
 
-Let's ask Triton for some information about the `phishing-bert-onnx` model which we are going to be using:
+Let's ask Triton for some information about the `phishing-bert-onnx` model which we are going to be using, parsing the large JSON output with [jq](https://stedolan.github.io/jq/):
 
 ```shell
-curl "localhost:8000/v2/models/phishing-bert-onnx/config"
+curl "localhost:8000/v2/models/phishing-bert-onnx/config" | jq
 ```
 
 Output:
-```
-{"name":"phishing-bert-onnx","versions":["1"],"platform":"onnxruntime_onnx","inputs":[{"name":"input_ids","datatype":"INT64","shape":[-1,128]},{"name":"attention_mask","datatype":"INT64","shape":[-1,128]}],"outputs":[{"name":"output","datatype":"FP32","shape":[-1,2]}]}
+```json
+{
+  "name": "phishing-bert-onnx",
+  "platform": "onnxruntime_onnx",
+  "backend": "onnxruntime",
+  "version_policy": {
+    "latest": {
+      "num_versions": 1
+    }
+  },
+  "max_batch_size": 32,
+  "input": [
+    {
+      "name": "input_ids",
+      "data_type": "TYPE_INT64",
+      "format": "FORMAT_NONE",
+      "dims": [
+        128
+      ],
+      "is_shape_tensor": false,
+      "allow_ragged_batch": false,
+      "optional": false
+    },
+    {
+      "name": "attention_mask",
+      "data_type": "TYPE_INT64",
+      "format": "FORMAT_NONE",
+      "dims": [
+        128
+      ],
+      "is_shape_tensor": false,
+      "allow_ragged_batch": false,
+      "optional": false
+    }
+  ],
+  "output": [
+    {
+      "name": "output",
+      "data_type": "TYPE_FP32",
+      "dims": [
+        2
+      ],
+      "label_filename": "",
+      "is_shape_tensor": false
+    }
+  ],
+  "batch_input": [],
+  "batch_output": [],
+  "optimization": {
+    "priority": "PRIORITY_DEFAULT",
+    "execution_accelerators": {
+      "gpu_execution_accelerator": [
+        {
+          "name": "tensorrt",
+          "parameters": {
+            "max_workspace_size_bytes": "1073741824",
+            "precision_mode": "FP16"
+          }
+        }
+      ],
+      "cpu_execution_accelerator": []
+    },
+    "input_pinned_memory": {
+      "enable": true
+    },
+    "output_pinned_memory": {
+      "enable": true
+    },
+    "gather_kernel_buffer_threshold": 0,
+    "eager_batching": false
+  },
+  "dynamic_batching": {
+    "preferred_batch_size": [
+      1,
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      28,
+      32
+    ],
+    "max_queue_delay_microseconds": 50000,
+    "preserve_ordering": false,
+    "priority_levels": 0,
+    "default_priority_level": 0,
+    "priority_queue_policy": {}
+  },
+  "instance_group": [
+    {
+      "name": "phishing-bert-onnx",
+      "kind": "KIND_GPU",
+      "count": 1,
+      "gpus": [
+        0
+      ],
+      "secondary_devices": [],
+      "profile": [],
+      "passive": false,
+      "host_policy": ""
+    }
+  ],
+  "default_model_filename": "model.onnx",
+  "cc_model_filenames": {},
+  "metric_tags": {},
+  "parameters": {},
+  "model_warmup": []
+}
 ```
 
-From this information, we note that the expected shape of the model inputs is `"shape":[-1,128]}`.
+From this information, we note that the expected dimensions of the model inputs is `"dims": [128]`.
 
 ### Defining our Pipeline
 Let's set up the paths for our input and output files. For simplicity, we assume that the `MORPHEUS_ROOT` environment variable is set to the root of the Morpheus project repository. In a production deployment, it may be more prudent to replace our usage of environment variables with command-line flags or a dedicated configuration management library.
@@ -202,7 +314,7 @@ def run_pipeline():
     results_file = os.path.join(out_dir, 'detections.jsonlines')
 ```
 
-To start, we will need to instantiate and set a few members of the `Config` class. This object is used for configuration options that are global to the pipeline as a whole. We will provide this object to each stage along with stage-specific configuration parameters.
+To start, we will need to instantiate and set a few attributes of the `Config` class. This object is used for configuration options that are global to the pipeline as a whole. We will provide this object to each stage along with stage-specific configuration parameters.
 
 ```python
 config = Config()
@@ -217,11 +329,11 @@ with open(labels_file) as fh:
 
 First we set our pipeline mode to NLP. Next, we set the `num_threads` property to match the number of cores in our system.
 
-The `feature_length` property needs to match the length of the model inputs, which we got from Triton in the previous section using the model's `/config` endpoint.
+The `feature_length` property needs to match the dimensions of the model inputs, which we got from Triton in the previous section using the model's `/config` endpoint.
 
 Ground truth classification labels are read from the `morpheus/data/labels_phishing.txt` file included in Morpheus.
 
-Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous examples, and to tokenize the input data we will use Morpheus' `PreprocessNLPStage`.
+Now that our config object is populated, we move on to the pipeline itself. We will be using the same input file from the previous example, and to tokenize the input data we will use Morpheus' `PreprocessNLPStage`.
 
 This stage uses the [cudf subword tokenizer](https://docs.rapids.ai/api/cudf/stable/api_docs/api/cudf.core.subword_tokenizer.SubwordTokenizer.__call__.html) to transform strings into a tensor of numbers to be fed into the neural network model. Rather than split the string by characters or whitespaces, we split them into meaningful subwords based upon the occurrence of the subwords in a large training corpus. You can find more details here: [https://arxiv.org/abs/1810.04805v2](https://arxiv.org/abs/1810.04805v2). All we need to know for now is that the text will be converted to subword token ids based on the vocabulary file that we provide (`vocab_hash_file=vocab file`).
 
@@ -245,7 +357,7 @@ In addition to providing the `Config` object that we defined above, we also conf
 
 Note that the tokenizer parameters and vocabulary hash file should exactly match what was used for tokenization during the training of the NLP model.
 
-At this point, we have a pipeline that reads in a set of records and preprocesses them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage` class. This class will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
+At this point, we have a pipeline that reads in a set of records and preprocesses them with the metadata required for our classifier to make predictions. Our next step is to define a stage that applies a machine learning model to our `MessageMeta` object. To accomplish this, we will be using Morpheus' `TritonInferenceStage`. This stage will handle communication with the `phishing-bert-onnx` model, which we provided to the Triton Docker container via the `models` directory mount.
 
 Next we will add a monitor stage to measure the inference rate as well as a filter stage to filter out any results below a probability threshold of `0.9`.
 ```python
@@ -402,7 +514,11 @@ In our previous examples, we didn't define a constructor for the Python classes 
 
 Note that it is a best practice to perform any necessary validation checks in the constructor. This allows us to fail early rather than after the pipeline has started.
 
-In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`. Our refactored class definition now looks like:
+In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
+
+Note: Setting the pipeline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
+
+Our refactored class definition is now:
 
 ```python
 from morpheus.config import Config
@@ -448,11 +564,11 @@ Options:
 
 ## Defining a New Source Stage
 
-Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource`. Second, the required methods are the `name` property method and the `_build_source` and `supports_cpp_node` methods.
+Creating a new source stage is similar to defining any other stage with a few differences. First, we will be subclassing `SingleOutputSource`. Second, the required methods are the `name` property, `_build_source` and `supports_cpp_node` methods.
 
 In this example, we will create a source that reads messages from a [RabbitMQ](https://www.rabbitmq.com/) queue using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python. For simplicity, we will assume that authentication is not required for our RabbitMQ exchange and that the body of the RabbitMQ messages will be JSON formatted. Both authentication and support for other formats could be easily added later.
 
-The `_build_source` method is similar to the `_build_single` method; it receives an instance of the pipeline segment and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have parent stages and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
+The `_build_source` method is similar to the `_build_single` method; it receives an instance of the MRC segment builder (`mrc.Builder`) and returns a `StreamPair`. However, unlike in the previous examples, source stages do not have a parent stage and therefore do not receive a `StreamPair` as input. We also will no longer build our node by calling `make_node`. Instead, we will call `make_source` with the parameter `self.source_generator`, which is a method that we will define next.
 
 ```python
 def _build_source(self, builder: mrc.Builder) -> StreamPair:
@@ -577,7 +693,10 @@ class RabbitMQSourceStage(SingleOutputSource):
             while not self._stop_requested:
                 (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
-                    try:pip install -r examples/developer_guide/2_2_rabbitmq/requirements.txt
+                    try:
+                        buffer = StringIO(body.decode("utf-8"))
+                        df = cudf.io.read_json(buffer, orient='records', lines=True)
+                        yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
                     finally:
@@ -594,7 +713,7 @@ class RabbitMQSourceStage(SingleOutputSource):
 
 In Morpheus, we define a stage to be a sink if it outputs the results of a pipeline to a destination external to the pipeline. Morpheus currently provides two sink stages:  `WriteToFileStage` and `WriteToKafkaStage`.
 
-Recall that in the previous section we wrote a `RabbitMQSourceStage`. We will now complement that by writing a sink stage that can output Morpheus data into RabbitMQ. For this example, we are again using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python.
+Recall that in the previous section we wrote a `RabbitMQSourceStage`. We will now complement that by writing a sink stage that can output Morpheus data into [RabbitMQ](https://www.rabbitmq.com/). For this example, we are again using the [pika](https://pika.readthedocs.io/en/stable/#) client for Python.
 
 The code for our sink will be similar to other stages with a few changes. First, we will subclass `SinglePortStage`:
 
@@ -603,7 +722,7 @@ The code for our sink will be similar to other stages with a few changes. First,
 class WriteToRabbitMQStage(SinglePortStage):
 ```
 
-In our `_build_single` we will be making use of the `make_sink` method rather than `make_node` or `make_source`
+In our `_build_single` method we will be making use of the `make_sink` method rather than `make_node` or `make_source`.
 ```python
 def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
     node = builder.make_sink(self.unique_name, self.on_data, self.on_error, self.on_complete)

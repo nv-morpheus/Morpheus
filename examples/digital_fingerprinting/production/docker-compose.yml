@@ -40,13 +40,13 @@ services:
       dockerfile: ./Dockerfile
       target: jupyter
       args:
-        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v23.01.00-runtime}
     deploy:
       resources:
         reservations:
           devices:
           - driver: nvidia
-            capabilities: [gpu]    
+            capabilities: [gpu]
     image: dfp_morpheus_jupyter
     container_name: jupyter
     ports:
@@ -71,7 +71,7 @@ services:
       dockerfile: ./Dockerfile
       target: runtime
       args:
-        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v22.09.00-runtime}
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v23.01.00-runtime}
     image: dfp_morpheus
     container_name: morpheus_pipeline
     deploy:

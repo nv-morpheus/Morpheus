@@ -28,7 +28,7 @@ Contributions to Morpheus fall into the following three categories.
 2. To propose and implement a new Feature, please file a new feature request
     [issue](https://github.com/nv-morpheus/Morpheus/issues/new/choose). Describe the
     intended feature and discuss the design and implementation with the team and
-    community. Once the team agrees that the plan looks good, go ahead and
+    community. Once the team agrees that the plan is good, go ahead and
     implement it, using the [code contributions](#code-contributions) guide below.
 3. To implement a feature or bug-fix for an existing outstanding issue, please
     follow the [code contributions](#code-contributions) guide below. If you
@@ -42,7 +42,7 @@ More information can be found at: [Contributor Code of Conduct](CODE_OF_CONDUCT.
 
 ### Your first issue
 
-1. Find an issue to work on. The best way is to look for issues with the [good first issue](https://github.com/nv-morpheus/Morpheus/issues) label.
+1. Find an issue to work on. The best way is to search for issues with the [good first issue](https://github.com/nv-morpheus/Morpheus/issues) label.
 2. Comment on the issue stating that you are going to work on it.
 3. Code! Make sure to update unit tests! Ensure the [license headers are set properly](#Licensing).
 4. When done, [create your pull request](https://github.com/nv-morpheus/Morpheus/compare).
@@ -53,15 +53,15 @@ Remember, if you are unsure about anything, don't hesitate to comment on issues 
 
 ### Seasoned developers
 
-Once you have gotten your feet wet and are more comfortable with the code, you can look at the prioritized issues for our next release in our [project boards](https://github.com/nv-morpheus/Morpheus/projects).
+Once you have gotten your feet wet and are more comfortable with the code, you can review the prioritized issues for our next release in our [project boards](https://github.com/nv-morpheus/Morpheus/projects).
 
-> **Pro Tip:** Always look at the release board with the highest number for issues to work on. This is where Morpheus developers also focus their efforts.
+> **Pro Tip:** Always review the release board with the highest number for issues to work on. This is where Morpheus developers also focus their efforts.
 
-Look at the unassigned issues, and find an issue to which you are comfortable contributing. Start with _Step 2_ above, commenting on the issue to let others know you are working on it. If you have any questions related to the implementation of the issue, ask them in the issue instead of the PR.
+Review the unassigned issues, and find an issue to which you are comfortable contributing. Start with _Step 2_ above, commenting on the issue to let others know you are working on it. If you have any questions related to the implementation of the issue, ask them in the issue instead of the PR.
 
 ## Building from Source
 
-The following instructions are for developers who are getting started with the Morpheus repository. The Morpheus development environment is flexible (Docker, Conda and bare metal workflows) but has a high number of dependencies that can be difficult to setup. These instructions outline the steps for setting up a development environment inside a Docker container or on a host machine with Conda.
+The following instructions are for developers who are getting started with the Morpheus repository. The Morpheus development environment is flexible (Docker, Conda and bare metal workflows) but has a high number of dependencies that can be difficult to set up. These instructions outline the steps for setting up a development environment inside a Docker container or on a host machine with Conda.
 
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
@@ -106,7 +106,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
    ```
    1. Note: When debugging Python code, you just need to add `ci/conda/recipes/python-dbg/source` to your debugger's
    source path.
-   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine its PyFrame_Object `f`, it might look like this:
+   1. Once created, you will be able to introspect Python objects from within GDB. For example, if we were to break within a generator setup call and examine its PyFrame_Object `f`, it might be similar to:
    ```shell
     #4  0x000056498ce685f4 in gen_send_ex (gen=0x7f3ecc07ad40, arg=<optimized out>, exc=<optimized out>, closing=<optimized out>) at Objects/genobject.c:222
     (gdb) pyo f
@@ -178,7 +178,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
   - **Note:** `mamba` should only be installed once in the base environment
 
-1. Setup env variables and clone the repo:
+1. Set up env variables and clone the repo:
    ```bash
    export PYTHON_VER=3.8
    export RAPIDS_VER=22.08
@@ -255,7 +255,7 @@ Launching a full production Kafka cluster is outside the scope of this project. 
          - "0.0.0.0::9092"
       ```
       This will prevent the containers from attempting to map IPv6 ports.
-   1. Change the value of `KAFKA_ADVERTISED_HOST_NAME` to match the value of the `KAFKA_ADVERTISED_HOST_NAME` environment variable from the previous step. For example, the line should look like:
+   1. Change the value of `KAFKA_ADVERTISED_HOST_NAME` to match the value of the `KAFKA_ADVERTISED_HOST_NAME` environment variable from the previous step. For example, the line should be similar to:
 
       ```yaml
       environment:
@@ -383,8 +383,8 @@ Morpheus is licensed under the Apache v2.0 license. All new source files includi
  */
  ```
 
-### Thirdparty code
-Thirdparty code included in the source tree (that is not pulled in as an external dependency) must be compatible with the Apache v2.0 license and should retain the original license along with a url to the source. If this code is modified, it should contain both the Apache v2.0 license followed by the original license of the code and the url to the original code.
+### Third-party code
+Third-party code included in the source tree (that is not pulled in as an external dependency) must be compatible with the Apache v2.0 license and should retain the original license along with a url to the source. If this code is modified, it should contain both the Apache v2.0 license followed by the original license of the code and the url to the original code.
 
 Ex:
 ```
