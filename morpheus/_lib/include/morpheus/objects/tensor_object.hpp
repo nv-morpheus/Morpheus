@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -146,7 +146,7 @@ struct ITensorOperations
 
     virtual std::shared_ptr<ITensor> deep_copy() const = 0;
 
-    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>> &selected_rows,
+    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
                                                TensorIndex num_rows) const = 0;
 
     virtual std::shared_ptr<ITensor> as_type(DataType dtype) const = 0;
