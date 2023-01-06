@@ -46,7 +46,7 @@ All pipelines configured with the CLI need to start with a source object. Two co
   - Refer to `morpheus.stages.input.file_source_stage.FileSourceStage` for more information
 * `from-kafka`
   - Pulls messages from a Kafka cluster into the Pipeline
-  - Kafka cluster can be remote or local
+  - Kafka cluster can be running on the localhost or remotely
   - Refer to `morpheus.stages.input.kafka_source_stage.KafkaSourceStage` for more information
 
 ## Stages
