@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # SID Visualization Example
 
 ## Prerequisites
@@ -31,7 +48,7 @@ We will use docker-compose to build and run the entire demo. To launch everythin
 
 Save the Morpheus repo directory:
 ```bash
-export MORPHEUS_HOME=$(git rev-parse --show-toplevel)
+export MORPHEUS_ROOT=$(git rev-parse --show-toplevel)
 ```
 
 Ensure SID model is downloaded for deployment to Triton:
@@ -41,7 +58,7 @@ Ensure SID model is downloaded for deployment to Triton:
 
 Change to the example directory:
 ```bash
-cd ${MORPHEUS_HOME}/examples/sid_visualization
+cd ${MORPHEUS_ROOT}/examples/sid_visualization
 ```
 
 Launch the containers:
