@@ -32,9 +32,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-file",
-                modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
-                ignore_args=["cudf_kwargs"])
+@register_stage("from-file", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class FileSourceStage(SingleOutputSource):
     """
     Load messages from a file.
@@ -59,10 +57,6 @@ class FileSourceStage(SingleOutputSource):
     filter_null : bool, default = True
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
-    cudf_kwargs : dict, default = None
-        keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
-        `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
-        and with `file_type` == 'csv', this defaults to ``{}``.
     """
 
     def __init__(self,
@@ -71,8 +65,7 @@ class FileSourceStage(SingleOutputSource):
                  iterative: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
-                 filter_null: bool = True,
-                 cudf_kwargs: dict = None):
+                 filter_null: bool = True):
 
         super().__init__(c)
 
@@ -81,7 +74,6 @@ class FileSourceStage(SingleOutputSource):
         self._filename = filename
         self._file_type = file_type
         self._filter_null = filter_null
-        self._cudf_kwargs = {} if cudf_kwargs is None else cudf_kwargs
 
         self._input_count = None
         self._max_concurrent = c.num_threads
