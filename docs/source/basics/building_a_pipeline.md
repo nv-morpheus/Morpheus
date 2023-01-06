@@ -138,7 +138,7 @@ The above example essentially just copies a file. However it is an important to 
 
 We could also easily swap out the source or sink stages in the above example without any impact to the pipeline as a whole. For example, to read from a Kafka topic, simply replace the `from-file` stage with `from-kafka`:
 
-> **Note**: This assumes a Kafka broker running on the localhost listening to port 9092. For testing Morpheus with Kafka refer to the [Quick Launch Kafka Cluster](../../docs/source/developer_guide/contributing.md#quick-launch-kafka-cluster) section of [contributing.md](../../docs/source/developer_guide/contributing.md) following steps 1-6 and then replace port `9092` with the port your Kafka instance is listening on.
+> **Note**: This assumes a Kafka broker running on the localhost listening to port 9092. For testing Morpheus with Kafka follow steps 1-8 in [Quick Launch Kafka Cluster](../developer_guide/contributing.md#quick-launch-kafka-cluster) section of [contributing.md](../developer_guide/contributing.md), creating a topic named `test_pcap` then replace port `9092` with the port your Kafka instance is listening on.
 
 ```bash
 morpheus --log_level=DEBUG run pipeline-nlp \
@@ -227,7 +227,7 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/model
 ```
 
 #### Launching Kafka
-Follow steps 1-8 in [Quick Launch Kafka Cluster](../../docs/source/developer_guide/contributing.md#quick-launch-kafka-cluster) section of [contributing.md](../../docs/source/developer_guide/contributing.md), creating a topic named `inference_output` then replace port `9092` with the port your Kafka instance is listening on.
+Follow steps 1-8 in [Quick Launch Kafka Cluster](../developer_guide/contributing.md#quick-launch-kafka-cluster) section of [contributing.md](../developer_guide/contributing.md), creating a topic named `inference_output` then replace port `9092` with the port your Kafka instance is listening on.
 
 ![../img/nlp_kitchen_sink.png](../img/nlp_kitchen_sink.png)
 
