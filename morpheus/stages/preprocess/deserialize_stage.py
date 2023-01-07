@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @register_stage("deserialize", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class DeserializeStage(MultiMessageStage):
     """
-    Deserialize source data into Dataframes.
+    Messages are logically partitioned based on the specified `c.pipeline_batch_size`.
 
     This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. This
     should be one of the first stages after the `Source` object.
