@@ -306,7 +306,7 @@
 					"--input_file",
 					"../data/pcap_dump.jsonlines",
 					"--output_file",
-					"./pcap_output.jsonlines",
+					"./.tmp/pcap_output.jsonlines",
 					"--server_url",
 					"localhost:8001",
 					"--model_name",

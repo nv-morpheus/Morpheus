@@ -19,7 +19,7 @@ limitations under the License.
 
 ## Data Preprocessing
 
-The previous example demonstated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
+The previous example demonstrated how to create a simple stage and use it in the context of a pipeline, we'll move on to a more advanced example that is representative of what we might want to do in a real-world situation. Given a set of records, each of which represents an email, suppose we want to predict which records correspond to fraudulent emails.
 
 As part of this process, we might want to use a classification model trained on various pieces of metadata, such as recipient count, in addition to the raw content of each email. If we suppose this is true for our example, we need to build and connect a pre-processing stage to attach this information to each record before applying our classifier.
 
@@ -154,7 +154,7 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
     --strict-readiness=false \
     --disable-auto-complete-config \
     --model-control-mode=explicit \
-    --load-model phishing-bert-onnx
+    --load-model=phishing-bert-onnx
 ```
 
 Once we have Triton running, we can verify that it is healthy using [curl](https://curl.se/). The `/v2/health/live` endpoint should return a 200 status code:
@@ -516,7 +516,7 @@ Note that it is a best practice to perform any necessary validation checks in th
 
 In our `RecipientFeaturesStage` example, we hard-coded the Bert separator token. Let's instead refactor the code to receive that as a constructor argument.  This new constructor argument is documented following the [numpydoc](https://numpydoc.readthedocs.io/en/latest/format.html#parameters) formatting style allowing it to be documented properly for both API and CLI users.  Let's also take the opportunity to verify that the pipeline mode is set to `morpheus.config.PipelineModes.NLP`.
 
-Note: Setting the pipline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
+Note: Setting the pipeline mode in the `register_stage` decorator restricts usage of our stage to NLP pipelines when using the Morpheus command line tool, however there is no such enforcement with the Python API.
 
 Our refactored class definition is now:
 
@@ -693,7 +693,10 @@ class RabbitMQSourceStage(SingleOutputSource):
             while not self._stop_requested:
                 (method_frame, header_frame, body) = self._channel.basic_get(self._queue_name)
                 if method_frame is not None:
-                    try:pip install -r examples/developer_guide/2_2_rabbitmq/requirements.txt
+                    try:
+                        buffer = StringIO(body.decode("utf-8"))
+                        df = cudf.io.read_json(buffer, orient='records', lines=True)
+                        yield MessageMeta(df=df)
                     except Exception as ex:
                         logger.exception("Error occurred converting RabbitMQ message to Dataframe: {}".format(ex))
                     finally:
