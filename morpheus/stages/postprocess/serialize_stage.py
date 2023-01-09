@@ -31,7 +31,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 @register_stage("serialize")
 class SerializeStage(SinglePortStage):
     """
-    Include & exclude columns from messages.
+    Includes & excludes columns from messages.
 
     This class filters columns from a `MultiMessage` object emitting a `MessageMeta`.
 
