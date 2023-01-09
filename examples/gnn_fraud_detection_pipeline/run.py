@@ -37,54 +37,54 @@ from stages.graph_sage_stage import GraphSAGEStage
     "--num_threads",
     default=os.cpu_count(),
     type=click.IntRange(min=1),
-    help="Number of internal pipeline threads to use",
+    help="Number of internal pipeline threads to use.",
 )
 @click.option(
     "--pipeline_batch_size",
     default=1024,
     type=click.IntRange(min=1),
     help=("Internal batch size for the pipeline. Can be much larger than the model batch size. "
-          "Also used for Kafka consumers"),
+          "Also used for Kafka consumers."),
 )
 @click.option(
     "--model_max_batch_size",
     default=32,
     type=click.IntRange(min=1),
-    help="Max batch size to use for the model",
+    help="Max batch size to use for the model.",
 )
 @click.option(
     "--model_fea_length",
     default=70,
     type=click.IntRange(min=1),
-    help="Features length to use for the model",
+    help="Features length to use for the model.",
 )
 @click.option(
     "--input_file",
     type=click.Path(exists=True, readable=True),
     default="validation.csv",
     required=True,
-    help="Input data filepath",
+    help="Input data filepath.",
 )
 @click.option(
     "--training_file",
     type=click.Path(exists=True, readable=True),
     default="training.csv",
     required=True,
-    help="Training data filepath",
+    help="Training data filepath.",
 )
 @click.option(
     "--model-hinsage-file",
     type=click.Path(exists=True, readable=True),
     default="model/hinsage-model.pt",
     required=True,
-    help="Trained hinsage model filepath",
+    help="Trained hinsage model filepath.",
 )
 @click.option(
     "--model-xgb-file",
     type=click.Path(exists=True, readable=True),
     default="model/xgb-model.pt",
     required=True,
-    help="Trained xgb model filepath",
+    help="Trained xgb model filepath.",
 )
 @click.option(
     "--output_file",
@@ -102,16 +102,16 @@ def run_pipeline(
     model_xgb_file,
     output_file,
 ):
-    # Enable the default logger
+    # Enable the default logger.
     configure_logging(log_level=logging.INFO)
 
     CppConfig.set_should_use_cpp(False)
 
-    # Its necessary to get the global config object and configure it for FIL mode
+    # Its necessary to get the global config object and configure it for FIL mode.
     config = Config()
     config.mode = PipelineModes.OTHER
 
-    # Below properties are specified by the command line
+    # Below properties are specified by the command line.
     config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
@@ -120,39 +120,44 @@ def run_pipeline(
     config.class_labels = ["probs"]
     config.edge_buffer_size = 4
 
-    # Create a linear pipeline object
+    # Create a linear pipeline object.
     pipeline = LinearPipeline(config)
 
-    # # Set source stage
+    # Set source stage.
+    # In this stage, messages were loaded from a file.
     pipeline.set_source(FileSourceStage(
         config,
         filename=input_file,
         filter_null=False,
     ))
 
-    # Add a deserialize stage
+    # Add a deserialize stage.
+    # At this stage, messages were logically partitioned based on the 'pipeline_batch_size'.
     pipeline.add_stage(DeserializeStage(config))
 
-    # Add the graph construction stage
+    # Add the graph construction stage.
     pipeline.add_stage(FraudGraphConstructionStage(config, training_file))
     pipeline.add_stage(MonitorStage(config, description="Graph construction rate"))
 
-    # add sage inference stage
+    # Add a sage inference stage.
     pipeline.add_stage(GraphSAGEStage(config, model_hinsage_file))
     pipeline.add_stage(MonitorStage(config, description="Inference rate"))
 
-    # Add classification stage
+    # Add classification stage.
+    # This stage adds detected classifications to each message.
     pipeline.add_stage(ClassificationStage(config, model_xgb_file))
     pipeline.add_stage(MonitorStage(config, description="Add classification rate"))
 
-    # Convert the probabilities to serialized JSON strings using the custom serialization stage
+    # Add a serialize stage.
+    # This stage includes & excludes columns from messages.
     pipeline.add_stage(SerializeStage(config))
     pipeline.add_stage(MonitorStage(config, description="Serialize rate"))
 
-    # # Write the file to the output
+    # Add a write to file stage.
+    # This stage writes all messages to a file.
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
 
-    # Run the pipeline
+    # Run the pipeline.
     pipeline.run()
 
 
