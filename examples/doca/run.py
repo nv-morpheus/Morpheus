@@ -107,7 +107,7 @@ def run_pipeline(
 
     pipeline.add_stage(MonitorStage(config, description="Serialize rate"))
 
-    pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
+    pipeline.add_stage(WriteToFileStage(config, filename=".tmp/doca_test.csv", overwrite=True))
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

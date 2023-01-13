@@ -67,6 +67,23 @@ uint32_t const PACKETS_PER_BLOCK = PACKETS_PER_THREAD * THREADS_PER_BLOCK;
 // uint32_t const PACKET_RX_TIMEOUT_NS = 5000000; // 5ms
 uint32_t const PACKET_RX_TIMEOUT_NS = 50000000; // 50ms
 
+__device__ __forceinline__ uint8_t
+gpu_ipv4_hdr_len(const struct rte_ipv4_hdr *ipv4_hdr)
+{
+	return (uint8_t)((ipv4_hdr->version_ihl & RTE_IPV4_HDR_IHL_MASK) * RTE_IPV4_IHL_MULTIPLIER);
+};
+
+__device__ __forceinline__ uint8_t
+get_payload_size(rte_ipv4_hdr* packet_l3, rte_tcp_hdr* packet_l4, uint8_t* payload)
+{
+  auto total_length      = static_cast<int32_t>(BYTE_SWAP16(packet_l3->total_length));
+  auto ip_header_length  = gpu_ipv4_hdr_len(packet_l3);
+  auto tcp_header_length = static_cast<int32_t>(packet_l4->dt_off * sizeof(int32_t));
+  auto data_size         = total_length - ip_header_length - tcp_header_length;
+
+  return data_size;
+}
+
 __global__ void _packet_receive_kernel(
   doca_gpu_rxq_info*     rxq_info,
   doca_gpu_semaphore_in* sem_in,
@@ -164,8 +181,7 @@ __global__ void _packet_receive_kernel(
       &packet_data
     );
 
-    auto total_length = static_cast<int32_t>(BYTE_SWAP16(packet_l3->total_length));
-    auto data_size = total_length - static_cast<int32_t>(packet_l4->dt_off * sizeof(int32_t));
+    auto data_size = get_payload_size(packet_l3, packet_l4, packet_data);
 
     atomicAdd(packet_data_size_out, data_size);
 
@@ -305,9 +321,7 @@ __global__ void _packet_gather_kernel(
       &packet_data
     );
 
-    auto total_length = static_cast<int32_t>(BYTE_SWAP16(packet_l3->total_length));
-    auto header_length = static_cast<int32_t>(packet_l4->dt_off * sizeof(int32_t));
-    auto data_size = total_length - header_length;
+    auto data_size = get_payload_size(packet_l3, packet_l4, packet_data);
 
     data_offsets[i] = data_size;
 
