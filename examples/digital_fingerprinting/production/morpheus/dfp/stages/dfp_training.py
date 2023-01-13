@@ -56,7 +56,7 @@ class DFPTraining(SinglePortStage):
 
         self._epochs = epochs
 
-        if (validation_size > 0 and validation_size < 1):
+        if (validation_size > 0.0 and validation_size < 1.0):
             self._validation_size = validation_size
         else:
             raise ValueError("validation_size={0} should be a positive float in the "
