@@ -392,10 +392,7 @@ __global__ void _packet_gather_kernel(
       &packet_data
     );
 
-    auto total_length = static_cast<int32_t>(BYTE_SWAP16(packet_l3->total_length));
-    auto data_size = total_length - static_cast<int32_t>(packet_l4->dt_off * sizeof(int32_t));
-
-    // printf("packet_idx(%d) data_offset(%d)\n", packet_idx, data_offsets[i]);
+    auto data_size = get_payload_size(packet_l3, packet_l4, packet_data);
 
     data_offsets_out[packet_idx] = data_offsets[i];
 
