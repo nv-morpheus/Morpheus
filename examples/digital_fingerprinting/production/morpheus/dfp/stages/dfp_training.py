@@ -55,7 +55,12 @@ class DFPTraining(SinglePortStage):
         self._model_kwargs.update(model_kwargs if model_kwargs is not None else {})
 
         self._epochs = epochs
-        self._validation_size = validation_size
+
+        if (validation_size > 0 and validation_size < 1):
+            self._validation_size = validation_size
+        else:
+            raise ValueError("validation_size={0} should be a positive float in the "
+                             "(0, 1) range".format(validation_size))
 
     @property
     def name(self) -> str:
@@ -82,7 +87,7 @@ class DFPTraining(SinglePortStage):
         validation_df = None
 
         # Split into training and validation sets
-        if int(self._validation_size * 100) in range(1, 100):
+        if self._validation_size > 0.0:
             train_df, validation_df = train_test_split(train_df, test_size=self._validation_size, shuffle=False)
 
         logger.debug("Training AE model for user: '%s'...", user_id)
