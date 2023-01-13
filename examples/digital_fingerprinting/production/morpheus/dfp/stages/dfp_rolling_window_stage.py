@@ -69,11 +69,11 @@ class CachedUserWindow:
         # row_hashes = pd.util.hash_pandas_object(incoming_df)
 
         # Filter the incoming df by epochs later than the current max_epoch
-        filtered_df = incoming_df[incoming_df["timestamp"] > self.max_epoch]
+        filtered_df = incoming_df[incoming_df[self.timestamp_column] > self.max_epoch]
 
         if (len(filtered_df) == 0):
             # We have nothing new to add. Double check that we fit within the window
-            before_history = incoming_df[incoming_df["timestamp"] < self.min_epoch]
+            before_history = incoming_df[incoming_df[self.timestamp_column] < self.min_epoch]
 
             return len(before_history) == 0
 

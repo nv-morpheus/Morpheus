@@ -205,7 +205,7 @@ class DFPFileToDataFrameStage(SinglePortStage):
         output_df: pd.DataFrame = pd.concat(dfs)
 
         # Finally sort by timestamp and then reset the index
-        output_df.sort_values(by=["timestamp"], inplace=True)
+        output_df.sort_values(by=[self._config.ae.timestamp_column_name], inplace=True)
 
         output_df.reset_index(drop=True, inplace=True)
 

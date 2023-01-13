@@ -86,7 +86,7 @@ class DFPSplitUsersStage(SinglePortStage):
 
                 split_dataframes.update(
                     {username: user_df
-                     for username, user_df in message.groupby("username", sort=False)})
+                     for username, user_df in message.groupby(self._config.ae.userid_column_name, sort=False)})
 
             output_messages: typing.List[DFPMessageMeta] = []
 
