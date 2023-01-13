@@ -154,7 +154,7 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
     --strict-readiness=false \
     --disable-auto-complete-config \
     --model-control-mode=explicit \
-    --load-model phishing-bert-onnx
+    --load-model=phishing-bert-onnx
 ```
 
 Once we have Triton running, we can verify that it is healthy using [curl](https://curl.se/). The `/v2/health/live` endpoint should return a 200 status code:

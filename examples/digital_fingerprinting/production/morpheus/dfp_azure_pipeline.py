@@ -155,6 +155,7 @@ def run_pipeline(train_users,
 
     # Enable the Morpheus logger
     configure_logging(log_level=log_level)
+    logging.getLogger("mlflow").setLevel(log_level)
 
     if (len(skip_users) > 0 and len(only_users) > 0):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
