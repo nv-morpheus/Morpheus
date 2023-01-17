@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -180,12 +180,6 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
                     metrics_dict[f"embedding-{k}-num_embeddings"] = embedding.num_embeddings
                     metrics_dict[f"embedding-{k}-embedding_dim"] = embedding.embedding_dim
-
-                # Add metrics for all of the loss stats
-                if (hasattr(model, "feature_loss_stats")):
-                    for k, v in model.feature_loss_stats.items():
-                        metrics_dict[f"loss-{k}-mean"] = v.get("mean", "unknown")
-                        metrics_dict[f"loss-{k}-std"] = v.get("std", "unknown")
 
                 mlflow.log_metrics(metrics_dict)
 
