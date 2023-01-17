@@ -54,7 +54,7 @@ def test_filter_column(config, tmp_path, use_conv_msg, do_copy, threshold, field
         FilterDetectionsStage(config,
                               threshold=threshold,
                               copy=do_copy,
-                              operate_on=FilterSource.DATAFRAME,
+                              data_source=FilterSource.DATAFRAME,
                               field_name=field_name))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))

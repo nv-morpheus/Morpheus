@@ -309,7 +309,7 @@ def run_pipeline(train_users,
 
         # Filter for only the anomalous logs
         pipeline.add_stage(
-            FilterDetectionsStage(config, threshold=2.0, operate_on=FilterSource.DATAFRAME, field_name='mean_abs_z'))
+            FilterDetectionsStage(config, threshold=2.0, data_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
         pipeline.add_stage(DFPPostprocessingStage(config))
 
         # Exclude the columns we don't want in our output

@@ -86,7 +86,7 @@ class FilterDetectionsStage
      */
     FilterDetectionsStage(float threshold,
                           bool copy               = true,
-                          FilterSource operate_on = FilterSource::AUTO,
+                          FilterSource data_source = FilterSource::AUTO,
                           std::string field_name  = "probs");
 
   private:
@@ -94,7 +94,7 @@ class FilterDetectionsStage
 
     float m_threshold;
     bool m_copy;
-    FilterSource m_operate_on;
+    FilterSource m_data_source;
     std::string m_field_name;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
@@ -119,7 +119,7 @@ struct FilterDetectionStageInterfaceProxy
                                                                              const std::string& name,
                                                                              float threshold,
                                                                              bool copy,
-                                                                             FilterSource operate_on,
+                                                                             FilterSource data_source,
                                                                              std::string field_name);
 };
 

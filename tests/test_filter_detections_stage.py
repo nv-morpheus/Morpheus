@@ -119,7 +119,7 @@ def test_filter_column(config, do_copy, threshold, field_name):
     fds = FilterDetectionsStage(config,
                                 threshold=threshold,
                                 copy=do_copy,
-                                operate_on=FilterSource.DATAFRAME,
+                                data_source=FilterSource.DATAFRAME,
                                 field_name=field_name)
 
     probs = cp.zeros([len(df), 3], 'float')
