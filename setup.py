@@ -21,9 +21,9 @@ import os
 # Note: this is order dependent
 os.environ["PIP_FIND_LINKS"] = "https://download.pytorch.org/whl/cu113/torch_stable.html"
 
-import versioneer
-from setuptools import find_packages
-from setuptools import setup
+import versioneer                       # noqa: E402
+from setuptools import find_packages    # noqa: E402
+from setuptools import setup            # noqa: E402
 
 setup(
     name="morpheus",
