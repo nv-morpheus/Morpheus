@@ -25,7 +25,7 @@ from morpheus._lib.common import FilterSource
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -109,7 +109,7 @@ class FilterDetectionsStage(SinglePortStage):
         """
 
         if self._filter_source == FilterSource.TENSOR:
-            return (MultiResponseProbsMessage, )
+            return (MultiResponseMessage, )
         else:
             return (MultiMessage, )
 
