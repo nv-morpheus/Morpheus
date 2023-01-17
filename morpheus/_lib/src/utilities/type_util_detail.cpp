@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -127,7 +127,7 @@ DataType DataType::from_numpy(const std::string& numpy_str)
 
     CHECK(found_enum != found_type->second.end()) << "Type str '" << type_char << dtype_size << "' not supported";
 
-    return DataType(found_enum->second);
+    return {found_enum->second};
 }
 
 char DataType::type_char() const

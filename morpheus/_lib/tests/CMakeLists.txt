@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ add_executable(test_libmorpheus
   # test_cuda.cu
   test_main.cpp
   test_matx_util.cpp
+  test_morpheus.cpp
   test_multi_slices.cpp
   test_tensor.cpp
   test_type_util_detail.cpp
@@ -29,7 +30,7 @@ target_link_libraries(test_libmorpheus
   PRIVATE
     morpheus
     cuda_utils
-    srf::pysrf
+    mrc::pysrf
     GTest::gtest
     matx::matx
     pybind11::embed

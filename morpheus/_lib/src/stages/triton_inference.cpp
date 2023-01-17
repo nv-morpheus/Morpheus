@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,11 +34,11 @@
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
 #include <http_client.h>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <nlohmann/json.hpp>
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
 
 #include <algorithm>  // for min
 #include <cstddef>
@@ -152,7 +152,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     const auto item_size = seq_ids.dtype().item_size();
 
                     host_seq_ids = std::make_unique<std::vector<int32_t>>(x->count);
-                    SRF_CHECK_CUDA(cudaMemcpy2D(host_seq_ids->data(),
+                    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids->data(),
                                                 item_size,
                                                 seq_ids.data(),
                                                 seq_ids.stride(0) * item_size,
@@ -258,7 +258,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         auto output_buffer =
                             std::make_shared<rmm::device_buffer>(output_ptr_size, rmm::cuda_stream_per_thread);
 
-                        SRF_CHECK_CUDA(
+                        MRC_CHECK_CUDA(
                             cudaMemcpy(output_buffer->data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
 
                         if (needs_seq_ids && output_shape[0] != mini_batch_output->count)
@@ -474,9 +474,9 @@ bool InferenceClientStage::is_default_grpc_port(std::string &server_url)
 }
 
 // ************ InferenceClientStageInterfaceProxy********* //
-std::shared_ptr<srf::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
+std::shared_ptr<mrc::segment::Object<InferenceClientStage>> InferenceClientStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
     std::string model_name,
     std::string server_url,
     bool force_convert_inputs,

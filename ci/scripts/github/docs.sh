@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,18 +30,19 @@ rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
 
 git lfs install
-${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs
+${MORPHEUS_ROOT}/scripts/fetch_data.py fetch docs examples
 
-cd ${MORPHEUS_ROOT}/docs
 rapids-logger "Installing Documentation dependencies"
-pip install -r requirement.txt
+mamba env update -f ${MORPHEUS_ROOT}/docs/conda_docs.yml
+
+rapids-logger "Configuring for docs"
+cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} -DMORPHEUS_BUILD_DOCS=ON .
 
 rapids-logger "Building docs"
+cmake --build build --target morpheus_docs
 
-make -j ${PARALLEL_LEVEL} html
-
-rapids-logger "Tarring the docs"
-tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/html
+rapids-logger "Archiving the docs"
+tar cfj "${WORKSPACE_TMP}/docs.tar.bz" build/docs/html
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/docs.tar.bz" "${ARTIFACT_URL}/docs.tar.bz"

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ def get_package_relative_file(filename: str):
         does_exist = os.path.exists(filename)
 
         if (not does_exist):
-            # If it doesnt exist, then try to make it relative to the morpheus library root
+            # If it doesn't exist, then try to make it relative to the morpheus library root
             morpheus_root = os.path.dirname(morpheus.__file__)
 
             value_abs_to_root = os.path.join(morpheus_root, filename)

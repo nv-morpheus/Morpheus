@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +25,9 @@
 
 #include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
 #include <glog/logging.h>            // for CHECK
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
 
 #include <cstddef>
 #include <cstdint>  // for uint8_t
@@ -69,7 +69,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.count() * probs.dtype_size(),
                                                                            rmm::cuda_stream_per_thread);
 
-                    SRF_CHECK_CUDA(
+                    MRC_CHECK_CUDA(
                         cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
                     // Depending on the input the stride is given in bytes or elements, convert to elements
@@ -86,7 +86,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                     std::vector<uint8_t> host_bool_values(num_rows);
 
                     // Copy bools back to host
-                    SRF_CHECK_CUDA(cudaMemcpy(host_bool_values.data(),
+                    MRC_CHECK_CUDA(cudaMemcpy(host_bool_values.data(),
                                               thresh_bool_buffer->data(),
                                               thresh_bool_buffer->size(),
                                               cudaMemcpyDeviceToHost));
@@ -149,8 +149,8 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 }
 
 // ************ FilterDetectionStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
-    srf::segment::Builder &builder, const std::string &name, float threshold, bool copy)
+std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> FilterDetectionStageInterfaceProxy::init(
+    mrc::segment::Builder& builder, const std::string& name, float threshold, bool copy)
 {
     auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy);
 

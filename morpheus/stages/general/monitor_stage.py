@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@ import logging
 import typing
 from functools import reduce
 
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 from tqdm import TMonitor
 from tqdm import TqdmSynchronisationWarning
 from tqdm import tqdm
@@ -220,7 +220,7 @@ class MonitorStage(SinglePortStage):
 
             self._progress.reset()
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         def sink_on_completed():
             # Set the name to complete. This refreshes the display
@@ -235,7 +235,7 @@ class MonitorStage(SinglePortStage):
                 MorpheusTqdm.monitor.exit()
                 MorpheusTqdm.monitor = None
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             obs.pipe(ops.map(self._progress_sink), ops.on_completed(sink_on_completed)).subscribe(sub)
 

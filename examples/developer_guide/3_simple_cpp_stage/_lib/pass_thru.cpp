@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@
 #include "pass_thru.hpp"
 
 #include <pybind11/pybind11.h>
-#include <pysrf/utils.hpp>  // for pysrf::import
+#include <pymrc/utils.hpp>  // for pymrc::import
 
 #include <exception>
 
@@ -36,7 +36,7 @@ PassThruStage::subscribe_fn_t PassThruStage::build_operator()
     };
 }
 
-std::shared_ptr<srf::segment::Object<PassThruStage>> PassThruStageInterfaceProxy::init(srf::segment::Builder& builder,
+std::shared_ptr<mrc::segment::Object<PassThruStage>> PassThruStageInterfaceProxy::init(mrc::segment::Builder& builder,
                                                                                        const std::string& name)
 {
     return builder.construct_object<PassThruStage>(name);
@@ -47,11 +47,11 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_example, m)
 {
-    srf::pysrf::import(m, "morpheus._lib.messages");
+    mrc::pymrc::import(m, "morpheus._lib.messages");
 
-    py::class_<srf::segment::Object<PassThruStage>,
-               srf::segment::ObjectProperties,
-               std::shared_ptr<srf::segment::Object<PassThruStage>>>(m, "PassThruStage", py::multiple_inheritance())
+    py::class_<mrc::segment::Object<PassThruStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PassThruStage>>>(m, "PassThruStage", py::multiple_inheritance())
         .def(py::init<>(&PassThruStageInterfaceProxy::init), py::arg("builder"), py::arg("name"));
 }
 

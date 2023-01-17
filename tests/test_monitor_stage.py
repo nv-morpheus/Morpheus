@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -117,7 +117,7 @@ def test_build_single(mock_morph_tqdm, mock_operators, config):
     mock_operators.on_completed.assert_called_once()
     sink_on_completed = mock_operators.on_completed.call_args.args[0]
 
-    # Verify we close tqdm propperly on complete
+    # Verify we close tqdm properly on complete
     sink_on_completed()
     mock_morph_tqdm.stop.assert_called_once()
 

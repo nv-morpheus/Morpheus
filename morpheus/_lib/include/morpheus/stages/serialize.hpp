@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,13 +21,13 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 
-#include <pysrf/node.hpp>
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <memory>
 #include <regex>
@@ -49,10 +49,10 @@ namespace morpheus {
  * @brief Include & exclude columns from messages. This class filters columns from a `MultiMessage` object emitting a
  * `MessageMeta`.
  */
-class SerializeStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>
+class SerializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MessageMeta>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -103,12 +103,12 @@ struct SerializeStageInterfaceProxy
      * @param exclude : Reference to the attributes that are not required send to downstream stage.
      * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain
      * the same columns as the first message received.
-     * @return std::shared_ptr<srf::segment::Object<SerializeStage>>
+     * @return std::shared_ptr<mrc::segment::Object<SerializeStage>>
      */
-    static std::shared_ptr<srf::segment::Object<SerializeStage>> init(srf::segment::Builder &builder,
-                                                                      const std::string &name,
-                                                                      const std::vector<std::string> &include,
-                                                                      const std::vector<std::string> &exclude,
+    static std::shared_ptr<mrc::segment::Object<SerializeStage>> init(mrc::segment::Builder& builder,
+                                                                      const std::string& name,
+                                                                      const std::vector<std::string>& include,
+                                                                      const std::vector<std::string>& exclude,
                                                                       bool fixed_columns = true);
 };
 

@@ -21,7 +21,7 @@ This example illustrates how to use Morpheus to automatically detect Sensitive I
 
 ## Background
 
-The goal of this example is to identify potentially sensitive information in network packet data as quickly as possible to limit exposure and take corrective action. Sensitive information is a broad term but can be generalized to any data that should be guarded from unautorized access. Credit card numbers, passwords, authorization keys, and emails are all examples of sensitive information.
+The goal of this example is to identify potentially sensitive information in network packet data as quickly as possible to limit exposure and take corrective action. Sensitive information is a broad term but can be generalized to any data that should be guarded from unauthorized access. Credit card numbers, passwords, authorization keys, and emails are all examples of sensitive information.
 
 In this example, we will be using Morpheus' provided NLP SI Detection model. This model is capable of detecting 10 different categories of sensitive information:
 
@@ -80,11 +80,11 @@ From the Morpheus repo root directory, run the following to launch Triton and lo
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model sid-minibert-onnx
 ```
 
-Where `22.02-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (see [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
+Where `22.02-py3` can be replaced with the current year and month of the Triton version to use. For example, to use May 2021, specify `nvcr.io/nvidia/tritonserver:21.05-py3`. Ensure that the version of TensorRT that is used in Triton matches the version of TensorRT elsewhere (refer to [NGC Deep Learning Frameworks Support Matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html)).
 
 This will launch Triton and only load the `sid-minibert-onnx` model. This model has been configured with a max batch size of 32, and to use dynamic batching for increased performance.
 
-Once Triton has loaded the model, you should see the following in the output:
+Once Triton has loaded the model, the following should be displayed:
 
 ```
 +-------------------+---------+--------+
@@ -93,7 +93,7 @@ Once Triton has loaded the model, you should see the following in the output:
 | sid-minibert-onnx | 1       | READY  |
 +-------------------+---------+--------+
 ```
-
+> **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
 
 ## Running the Pipeline
 
@@ -130,7 +130,7 @@ morpheus --log_level=DEBUG \
    to-file --filename=detections.jsonlines --overwrite
 ```
 
-If successful, you should see the following output:
+If successful, the following should be displayed:
 
 ```bash
 Configuring Pipeline via CLI
@@ -203,7 +203,7 @@ The output file `detections.jsonlines` will contain the original PCAP messages w
 * secret_keys
 * user
 
-The value for these fields will either be a `1` indicating a decection and a `0` indicating no detection. An example row with a detection looks like:
+The value for these fields will either be a `1` indicating a detection and a `0` indicating no detection. An example row with a detection is:
 ```json
 {
   "timestamp": 1616381019580,

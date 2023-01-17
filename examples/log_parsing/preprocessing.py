@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import string
 import typing
 from functools import partial
 
-import srf
+import mrc
 
 import cudf
 
@@ -180,7 +180,7 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
                        add_special_tokens=self._add_special_tokens,
                        column=self._column)
 
-    def _get_preprocess_node(self, builder: srf.Builder):
+    def _get_preprocess_node(self, builder: mrc.Builder):
         return _stages.PreprocessNLPStage(builder,
                                           self.unique_name,
                                           self._vocab_hash_file,

@@ -1,5 +1,5 @@
 # =============================================================================
-# Copyright (c) 2020-2022, NVIDIA CORPORATION.
+# Copyright (c) 2020-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -62,22 +62,5 @@ endif()
 if (MORPHEUS_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
-
-#----------make documentation---------
-
-# doc targets for libmorpheus
-add_custom_command(
-  OUTPUT MORPHEUS_DOXYGEN
-  WORKING_DIRECTORY ${MORPHEUS_LIB_ROOT}/doxygen
-  COMMAND doxygen Doxyfile
-  VERBATIM
-  COMMENT "Custom command for building morpheus doxygen docs."
-)
-
-add_custom_target(
-  docs_morpheus
-  DEPENDS MORPHEUS_DOXYGEN
-  COMMENT "Custom command for building morpheus doxygen docs."
-)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

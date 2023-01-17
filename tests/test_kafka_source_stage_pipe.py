@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,9 @@ import json
 import os
 import typing
 
+import mrc
 import numpy as np
 import pytest
-import srf
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.config import Config
@@ -130,7 +130,7 @@ class OffsetChecker(SinglePortStage):
 
         return x
 
-    def _build_single(self, builder: srf.Builder, input_stream):
+    def _build_single(self, builder: mrc.Builder, input_stream):
         node = builder.make_node(self.unique_name, self._offset_checker)
         builder.make_edge(input_stream[0], node)
 

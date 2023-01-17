@@ -181,7 +181,7 @@ CheckOptions:
   - key:             readability-identifier-naming.TypeTemplateParameterCase
     value:           CamelCase
   - key:             readability-identifier-naming.TypeTemplateParameterIgnoredRegexp
-    value:           ^[A-Z]$
+    value:           '^([A-Z]|expr-type)$'
   - key:             readability-identifier-naming.TypeTemplateParameterPrefix
     value:           ''
   - key:             readability-identifier-naming.TypeTemplateParameterSuffix

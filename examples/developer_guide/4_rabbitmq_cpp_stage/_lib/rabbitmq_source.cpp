@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,6 @@
 
 #include "rabbitmq_source.hpp"
 
-#include <boost/fiber/operations.hpp>  // for this_fiber::sleep_for
 #include <cudf/io/json.hpp>
 #include <cudf/table/table.hpp>
 #include <glog/logging.h>
@@ -26,14 +25,15 @@
 
 #include <exception>
 #include <sstream>
+#include <thread>  // for std::this_thread::sleep_for
 #include <vector>
 
 namespace morpheus_rabbit {
 
-RabbitMQSourceStage::RabbitMQSourceStage(const std::string &host,
-                                         const std::string &exchange,
-                                         const std::string &exchange_type,
-                                         const std::string &queue_name,
+RabbitMQSourceStage::RabbitMQSourceStage(const std::string& host,
+                                         const std::string& exchange,
+                                         const std::string& exchange_type,
+                                         const std::string& queue_name,
                                          std::chrono::milliseconds poll_interval) :
   PythonSource(build()),
   m_channel{AmqpClient::Channel::Create(host)},
@@ -50,7 +50,7 @@ RabbitMQSourceStage::subscriber_fn_t RabbitMQSourceStage::build()
         try
         {
             this->source_generator(subscriber);
-        } catch (const std::exception &e)
+        } catch (const std::exception& e)
         {
             LOG(ERROR) << "Encountered error while polling RabbitMQ: " << e.what() << std::endl;
             subscriber.on_error(std::make_exception_ptr(e));
@@ -76,7 +76,7 @@ void RabbitMQSourceStage::source_generator(rxcpp::subscriber<RabbitMQSourceStage
                 auto table   = from_json(envelope->Message()->Body());
                 auto message = MessageMeta::create_from_cpp(std::move(table), 0);
                 subscriber.on_next(std::move(message));
-            } catch (const std::exception &e)
+            } catch (const std::exception& e)
             {
                 LOG(ERROR) << "Error occurred converting RabbitMQ message to Dataframe: " << e.what();
             }
@@ -85,12 +85,12 @@ void RabbitMQSourceStage::source_generator(rxcpp::subscriber<RabbitMQSourceStage
         else
         {
             // Sleep when there are no messages
-            boost::this_fiber::sleep_for(m_poll_interval);
+            std::this_thread::sleep_for(m_poll_interval);
         }
     }
 }
 
-cudf::io::table_with_metadata RabbitMQSourceStage::from_json(const std::string &body) const
+cudf::io::table_with_metadata RabbitMQSourceStage::from_json(const std::string& body) const
 {
     cudf::io::source_info source{body.c_str(), body.size()};
     auto options = cudf::io::json_reader_options::builder(source).lines(true);
@@ -106,13 +106,13 @@ void RabbitMQSourceStage::close()
     }
 }
 
-std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>> RabbitMQSourceStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
-    const std::string &host,
-    const std::string &exchange,
-    const std::string &exchange_type,
-    const std::string &queue_name,
+std::shared_ptr<mrc::segment::Object<RabbitMQSourceStage>> RabbitMQSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    const std::string& host,
+    const std::string& exchange,
+    const std::string& exchange_type,
+    const std::string& queue_name,
     std::chrono::milliseconds poll_interval)
 {
     return builder.construct_object<RabbitMQSourceStage>(
@@ -124,11 +124,11 @@ namespace py = pybind11;
 // Define the pybind11 module m.
 PYBIND11_MODULE(morpheus_rabbit, m)
 {
-    srf::pysrf::import(m, "morpheus._lib.messages");
+    mrc::pymrc::import(m, "morpheus._lib.messages");
 
-    py::class_<srf::segment::Object<RabbitMQSourceStage>,
-               srf::segment::ObjectProperties,
-               std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>>>(
+    py::class_<mrc::segment::Object<RabbitMQSourceStage>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<RabbitMQSourceStage>>>(
         m, "RabbitMQSourceStage", py::multiple_inheritance())
         .def(py::init<>(&RabbitMQSourceStageInterfaceProxy::init),
              py::arg("builder"),

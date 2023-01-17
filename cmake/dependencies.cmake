@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -101,10 +101,10 @@ include(deps/Configure_pybind11)
 set(RDKAFKA_VERSION 1.6.2)
 include(deps/Configure_rdkafka)
 
-# SRF (Should come after all third party but before NVIDIA repos)
+# MRC (Should come after all third party but before NVIDIA repos)
 # =====
-set(SRF_VERSION 22.11 CACHE STRING "Which version of SRF to use")
-include(deps/Configure_srf)
+set(MRC_VERSION 23.01 CACHE STRING "Which version of MRC to use")
+include(deps/Configure_mrc)
 
 # CuDF
 # =====

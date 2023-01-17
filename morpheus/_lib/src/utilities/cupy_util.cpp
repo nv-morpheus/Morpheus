@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,7 +49,7 @@ pybind11::module_ CupyUtil::get_cp()
         cp_module = pybind11::module_::import("cupy");
     }
 
-    pybind11::module_ m = pybind11::cast<pybind11::module_>(cp_module);
+    auto m = pybind11::cast<pybind11::module_>(cp_module);
 
     return m;
 }
@@ -102,11 +102,11 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
     pybind11::print(shape_tup);
     auto shape = shape_tup.cast<std::vector<TensorIndex>>();
 
-    std::string typestr = arr_interface["typestr"].cast<std::string>();
+    auto typestr = arr_interface["typestr"].cast<std::string>();
 
     pybind11::tuple data_tup = arr_interface["data"];
 
-    uintptr_t data_ptr = data_tup[0].cast<uintptr_t>();
+    auto data_ptr = data_tup[0].cast<uintptr_t>();
 
     std::vector<TensorIndex> strides{};
 

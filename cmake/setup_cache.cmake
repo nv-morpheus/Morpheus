@@ -1,5 +1,5 @@
 #=============================================================================
-# SPDX-FileCopyrightText: Copyright (c) 2020-2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,11 +44,11 @@ function(configure_ccache cache_dir_name)
   # Set the ccache options we need
   set(CCACHE_CONFIGPATH "${CCACHE_DIR}/ccache.conf")
 
-  # Because CMake doesnt allow settings variables `CCACHE_COMPILERTYPE=gcc
+  # Because CMake doesn't allow settings variables `CCACHE_COMPILERTYPE=gcc
   # ccache` in CMAKE_C_COMPILER_LAUNCHER, we need to put everything into a
   # single script and use that for CMAKE_C_COMPILER_LAUNCHER. Also, since
   # gxx_linux-64 sets the compiler to c++ instead of g++, we need to set the
-  # value of CCACHE_COMPILERTYPE otherwise caching doesnt work correctly. So
+  # value of CCACHE_COMPILERTYPE otherwise caching doesn't work correctly. So
   # we need to make separate runners for each language with specific ccache
   # settings for each
   if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")

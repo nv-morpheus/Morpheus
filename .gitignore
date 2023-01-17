@@ -182,6 +182,7 @@ tags
 
 # End of https://www.gitignore.io/api/vim,c++,cmake,python,synology
 .tmp
+examples/data/dfp
 viz_frames*
 notebooks/output
 dask-worker-space
@@ -189,6 +190,7 @@ dask-worker-space
 *.lock
 triton_models/**/*.onnx
 triton_models/**/*.engine
+docs/source/_lib
 docs/source/_modules
 data/*
 mlruns/*

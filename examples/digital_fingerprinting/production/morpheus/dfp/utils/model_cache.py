@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -271,7 +271,7 @@ class ModelManager:
                     latest_versions = client.get_latest_versions(reg_model_name)
 
                     if (len(latest_versions) == 0):
-                        # Databricks doesnt like the `get_latest_versions` method for some reason. Before failing, try
+                        # Databricks doesn't like the `get_latest_versions` method for some reason. Before failing, try
                         # to just get the model and then use latest versions
                         reg_model_obj = client.get_registered_model(reg_model_name)
 

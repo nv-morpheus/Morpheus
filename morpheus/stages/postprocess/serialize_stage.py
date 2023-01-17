@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import re
 import typing
 from functools import partial
 
-import srf
+import mrc
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -31,7 +31,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 @register_stage("serialize")
 class SerializeStage(SinglePortStage):
     """
-    Include & exclude columns from messages.
+    Includes & excludes columns from messages.
 
     This class filters columns from a `MultiMessage` object emitting a `MessageMeta`.
 
@@ -124,7 +124,7 @@ class SerializeStage(SinglePortStage):
 
         return MessageMeta(df=df)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         if (self._build_cpp_node()):
             stream = _stages.SerializeStage(builder,
                                             self.unique_name,

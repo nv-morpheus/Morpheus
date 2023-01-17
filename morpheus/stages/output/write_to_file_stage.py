@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 import os
 import typing
 
+import mrc
+import mrc.core.operators as ops
 import pandas as pd
-import srf
-import srf.core.operators as ops
 
 import cudf
 
@@ -117,7 +117,7 @@ class WriteToFileStage(SinglePortStage):
 
         return output_strs
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
@@ -131,7 +131,7 @@ class WriteToFileStage(SinglePortStage):
                                                self._include_index_col)
         else:
 
-            def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+            def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
                 # Ensure our directory exists
                 os.makedirs(os.path.realpath(os.path.dirname(self._output_file)), exist_ok=True)

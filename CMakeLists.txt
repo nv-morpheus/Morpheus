@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2018-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,12 +31,13 @@ option(MORPHEUS_USE_CONDA "Enables finding dependencies via conda instead of vcp
   Note: This will disable vcpkg. All dependencies must be installed first in the conda environment" OFF)
 option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the build process" OFF)
 option(MORPHEUS_SUPPORT_DOCA "Whether or not to build doca-related elements of morpheus" OFF)
+option(MORPHEUS_BUILD_DOCS "Enable building of API documentation" OFF)
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 
 set(MORPHEUS_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")
 mark_as_advanced(MORPHEUS_CACHE_DIR)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -100,6 +101,10 @@ if(MORPHEUS_BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
 
+if(MORPHEUS_BUILD_DOCS)
+  add_subdirectory(docs)
+endif()
+
 # Get all of the python files to copy to the build directory
 file(GLOB_RECURSE MORPHEUS_PYTHON_FILES
   RELATIVE ${PROJECT_SOURCE_DIR}
@@ -140,7 +145,7 @@ add_custom_target(copy_python_source ALL
   DEPENDS ${OUTPUT_PYTHON_FILES}
 )
 
-# Manually install the below files. install(DIRECTORY) doesnt work well and
+# Manually install the below files. install(DIRECTORY) doesn't work well and
 # makes it impossible to get these files and MORPHEUS_PYTHON_FILES in one command.
 install(
   FILES ${MORPHEUS_ROOT_PYTHON_FILES}

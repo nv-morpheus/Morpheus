@@ -17,7 +17,7 @@ limitations under the License.
 
 # "Production" Digital Fingerprinting Pipeline
 
-This example is designed to show what a full scale, production ready, DFP deployment in Morpheus would look like. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
+This example is designed to illustrate a full-scale, production-ready, DFP deployment in Morpheus. It contains all of the necessary components (such as a model store), to allow multiple Morpheus pipelines to communicate at a scale that can handle the workload of an entire company.
 
 Key Differences:
  * Multiple pipelines are specialized to perform either training or inference
@@ -48,7 +48,7 @@ From the `examples/digital_fingerprinting/production` dir run:
 docker-compose up jupyter
 ```
 
-Once the build is complete and the service has started you will be prompted with a message that should look something like:
+Once the build is complete and the service has started, a message similar to the following should display:
 ```
 jupyter  |     To access the server, open this file in a browser:
 jupyter  |         file:///root/.local/share/jupyter/runtime/jpserver-7-open.html
@@ -93,7 +93,7 @@ Both scripts are capable of running either a training or inference pipeline for 
 | `--cache_dir` | TEXT | The location to cache data such as S3 downloads and pre-processed data  [env var: `DFP_CACHE_DIR`; default: `./.cache/dfp`] |
 | `--log_level` | One of: `CRITICAL`, `FATAL`, `ERROR`, `WARN`, `WARNING`, `INFO`, `DEBUG` | Specify the logging level to use.  [default: `WARNING`] |
 | `--sample_rate_s` | INTEGER | Minimum time step, in milliseconds, between object logs.  [env var: `DFP_SAMPLE_RATE_S`; default: 0] |
-| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. See [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
+| `-f`, `--input_file` | TEXT | List of files to process. Can specify multiple arguments for multiple files. Also accepts glob (*) wildcards and schema prefixes such as `s3://`. For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. Refer to [fsspec documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html?highlight=open_files#fsspec.open_files) for list of possible options. |
 | `--tracking_uri` | TEXT | The MLflow tracking URI to connect to the tracking backend. [default: `http://localhost:5000`] |
 | `--help` | | Show this message and exit. |
 
@@ -124,7 +124,7 @@ python $DFP_HOME/fetch_example_data.py all
 
 Run Duo Training Pipeline:
 ```bash
-python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="./examples/data/dfp/duo-training-data/*.json" 
+python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="./examples/data/dfp/duo-training-data/*.json"
 ```
 
 Run Duo Inference Pipeline:
@@ -162,13 +162,13 @@ The Morpheus project also maintains Helm charts and container images for Kuberne
 
 ### MLflow Helm chart
 
-MLflow for this production digital fingerprint use case can be installed from NGC using these same instructions for the [MLflow Triton Plugin from the Morpheus Quick Start Guide](../../../docs/source/morpheus_quickstart_guide.md#install-morpheus-mlflow-triton-plugin). The chart and image can be used for both the Triton plugin and also MLflow server.
+MLflow for this production digital fingerprint use case can be installed from NGC using these same instructions for the [MLflow Triton Plugin from the Morpheus Cloud Deployment Guide](../../../docs/source/cloud_deployment_guide.md#install-morpheus-mlflow-triton-plugin). The chart and image can be used for both the Triton plugin and also MLflow server.
 
 ### Production DFP Helm chart
 
-The deployment of the [Morpheus SDK Client](../../../docs/source/morpheus_quickstart_guide.md#install-morpheus-sdk-client) is also done _almost_ the same way as what's specified in the Quick Start Guide. However, you would specify command arguments differently for this production DFP use case.
+The deployment of the [Morpheus SDK Client](../../../docs/source/cloud_deployment_guide.md#install-morpheus-sdk-client) is also done _almost_ the same way as what's specified in the Cloud Deployment Guide. However, you would specify command arguments differently for this production DFP use case.
 
-NOTE: The published SDK image includes a minimal set of packages for launching JupyterLab but you will likely still want to update the conda environment inside the running pod with the `conda_env.yml` file in this same directory to install other use case dependencies such as boto3 and s3fs.
+NOTE: The published Morpheus image includes a minimal set of packages for launching JupyterLab but you will likely still want to update the conda environment inside the running pod with the `conda_env.yml` file in this same directory to install other use case dependencies such as boto3 and s3fs.
 
 #### Notebooks
 
@@ -181,7 +181,7 @@ Make note of the Jupyter token by examining the logs of the SDK pod:
 kubectl logs sdk-cli-<sdk-release-name>
 ```
 
-You should see something similar to this:
+The output should contain something similar to:
 
 ```
     Or copy and paste one of these URLs:

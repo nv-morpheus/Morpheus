@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ CMAKE_ARGS=${CMAKE_ARGS:-""}
 export CCACHE_BASEDIR=$(realpath ${SRC_DIR}/..)
 export USE_SCCACHE=${USE_SCCACHE:-""}
 
-# Check for some srf environment variables. Append to front of args to allow users to overwrite them
+# Check for some mrc environment variables. Append to front of args to allow users to overwrite them
 if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
    # Set the cache variable, then set the Staging prefix to allow for host searching
    CMAKE_ARGS="-DMORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR} ${CMAKE_ARGS}"

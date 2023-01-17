@@ -17,17 +17,17 @@ limitations under the License.
 
 # Anomalous Behavior Profiling with Forest Inference Library (FIL) Example
 
-This example illustrates how to use Morpheus to automatically detect abnormal behavior in NVIDIA SMI logs by utilizing a Forest Inference Library (FIL) model and Triton Inference Server. The particular behavior we will be looking for is cryptocurrency mining.
+This example illustrates how to use Morpheus to automatically detect abnormal behavior in NVIDIA SMI logs by utilizing a Forest Inference Library (FIL) model and Triton Inference Server. The particular behavior we will be searching for is cryptocurrency mining.
 
 ## Background
 
-The goal of this example is to identify whether or not a monitored NVIDIA GPU is actively mining for cryptocurrencies and take corrective action if detected. Cryptocurrency mining can be a large resource drain on GPU clusters and detecting mining can be difficult since mining workloads look similar to other valid workloads.
+The goal of this example is to identify whether or not a monitored NVIDIA GPU is actively mining for cryptocurrencies and take corrective action if detected. Cryptocurrency mining can be a large resource drain on GPU clusters and detecting mining can be difficult since mining workloads appear similar to other valid workloads.
 
 In this example, we will be using Morpheus' provided ABP NVSMI Detection model. This model is capable of detecting the signature of cryptocurrency mining from the output of `nvidia-smi` logs. For each timestamp that `nvidia-smi` log data is available, the model will output a single probability indicating whether mining was detected or not.
 
 ### The Dataset
 
-The dataset that this workflow was designed to process contains NVIDIA GPU metrics at regular time intervals and is extracted by a NetQ agent and serialized into JSON. Each line in the dataset contains much of the same information that is returned by the `nvidia-smi` utility. We won't look at a full message directly since each line contains 176 different columns, but it's possible to get a idea of how the dataset was generated using the `nvidia-smi dmon` command. If you run this yourself, you will see output similar to the following:
+The dataset that this workflow was designed to process contains NVIDIA GPU metrics at regular time intervals and is extracted by a NetQ agent and serialized into JSON. Each line in the dataset contains much of the same information that is returned by the `nvidia-smi` utility. We won't examine at a full message directly since each line contains 176 different columns, but it's possible to get an idea of how the dataset was generated using the `nvidia-smi dmon` command. If you run this yourself, the output similar to the following:
 
 ```bash
 $ nvidia-smi dmon
@@ -44,7 +44,7 @@ $ nvidia-smi dmon
     0   281    57     -    85    54     0     0  7000  1740
 ```
 
-Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and you can see the SM% and Mem% increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurriences without needing additional information from the host machine.
+Each line in the output represents the GPU metrics at a single point in time. As the tool progresses the GPU begins to be utilized and the SM% and Mem% values increase as memory is loaded into the GPU and computations are performed. The model we will be using can ingest this information and determine whether or not the GPU is mining cryptocurrencies without needing additional information from the host machine.
 
 In this example we will be using the `examples/data/nvsmi.jsonlines` dataset that is known to contain mining behavior profiles. The dataset is in the `.jsonlines` format which means each new line represents a new JSON object. In order to parse this data, it must be ingested, split by lines into individual JSON objects, and parsed into cuDF dataframes. This will all be handled by Morpheus.
 
@@ -75,7 +75,7 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/model
 
 This will launch Triton and only load the `abp-nvsmi-xgb` model. This model has been configured with a max batch size of 32768, and to use dynamic batching for increased performance.
 
-Once Triton has loaded the model, you should see the following in the output:
+Once Triton has loaded the model, the following will be displayed:
 
 ```
 +-------------------+---------+--------+
@@ -85,7 +85,7 @@ Once Triton has loaded the model, you should see the following in the output:
 +-------------------+---------+--------+
 ```
 
-If you do not see this in the output, check the Triton log for any error messages related to loading the model.
+> **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
 
 ## Running the Pipeline
 
@@ -120,7 +120,7 @@ morpheus --log_level=DEBUG \
    to-file --filename=detections.jsonlines --overwrite
 ```
 
-If successful, you should see the following output:
+If successful, the following should be displayed:
 ```bash
 Configuring Pipeline via CLI
 Loaded columns. Current columns: [['nvidia_smi_log.gpu.pci.tx_util', 'nvidia_smi_log.gpu.pci.rx_util', 'nvidia_smi_log.gpu.fb_memory_usage.used', 'nvidia_smi_log.gpu.fb_memory_usage.free', 'nvidia_smi_log.gpu.bar1_memory_usage.total', 'nvidia_smi_log.gpu.bar1_memory_usage.used', 'nvidia_smi_log.gpu.bar1_memory_usage.free', 'nvidia_smi_log.gpu.utilization.gpu_util', 'nvidia_smi_log.gpu.utilization.memory_util', 'nvidia_smi_log.gpu.temperature.gpu_temp', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_threshold', 'nvidia_smi_log.gpu.temperature.gpu_temp_slow_threshold', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_gpu_threshold', 'nvidia_smi_log.gpu.temperature.memory_temp', 'nvidia_smi_log.gpu.temperature.gpu_temp_max_mem_threshold', 'nvidia_smi_log.gpu.power_readings.power_draw', 'nvidia_smi_log.gpu.clocks.graphics_clock', 'nvidia_smi_log.gpu.clocks.sm_clock', 'nvidia_smi_log.gpu.clocks.mem_clock', 'nvidia_smi_log.gpu.clocks.video_clock', 'nvidia_smi_log.gpu.applications_clocks.graphics_clock', 'nvidia_smi_log.gpu.applications_clocks.mem_clock', 'nvidia_smi_log.gpu.default_applications_clocks.graphics_clock', 'nvidia_smi_log.gpu.default_applications_clocks.mem_clock', 'nvidia_smi_log.gpu.max_clocks.graphics_clock', 'nvidia_smi_log.gpu.max_clocks.sm_clock', 'nvidia_smi_log.gpu.max_clocks.mem_clock', 'nvidia_smi_log.gpu.max_clocks.video_clock', 'nvidia_smi_log.gpu.max_customer_boost_clocks.graphics_clock']]
@@ -202,7 +202,7 @@ Inference Rate[Complete]: 1242inf [00:00, 1863.04inf/s]
 ====Pipeline Complete====
 ```
 
-The output file `detections.jsonlines` will contain a single boolean value for each input line. At some point you should see it switch from `0` to `1`:
+The output file `detections.jsonlines` will contain a single boolean value for each input line. At some point the values will switch from `0` to `1`:
 
 ```json
 ...
@@ -221,4 +221,4 @@ The output file `detections.jsonlines` will contain a single boolean value for e
 ...
 ```
 
- We have stripped out the input data to make the detections easier to see. Ommitting the argument `--include 'mining'` would show the input data in the detections file.
+ We have stripped out the input data to make the detections easier to identify. Omitting the argument `--include 'mining'` would show the input data in the detections file.

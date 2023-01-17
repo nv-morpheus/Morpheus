@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,7 @@ DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME:-"nvcr.io/nvidia/morpheus/morpheus"}
 DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG:-"$(git describe --tags --abbrev=0)-runtime"}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
-DOCKER_ARGS="--env WORKSPACE_VOLUME=${PWD} -v $PWD/models:/workspace/models --net=host --gpus=all --cap-add=sys_nice ${DOCKER_EXTRA_ARGS}"
+DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} -v $PWD/models:/workspace/models --net=host --gpus=all --cap-add=sys_nice ${DOCKER_EXTRA_ARGS}"
 
 if [[ -z "${SSH_AUTH_SOCK}" ]]; then
    echo -e "${y}No ssh-agent auth socket found. Dependencies in private git repos may fail during build.${x}"

@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@ import logging
 import os
 import typing
 
+import mrc
 import pandas as pd
-import srf
 
 from morpheus.config import Config
 from morpheus.io import serializers
@@ -92,7 +92,7 @@ class DFPVizPostprocStage(SinglePortStage):
 
         return MessageMeta(df=viz_pdf)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 

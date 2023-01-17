@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import typing
 
 import fsspec
 import fsspec.utils
-import srf
+import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -77,7 +77,7 @@ class MultiFileSource(SingleOutputSource):
 
         yield files
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if self._build_cpp_node():
             raise RuntimeError("Does not support C++ nodes")

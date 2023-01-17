@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +25,9 @@
 
 #include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>            // for DCHECK_LT, COMPACT_GOOGLE_LOG_FATAL, DCHECK, DCHECK_EQ, LogMessageFatal
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
-#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
 
 #include <algorithm>  // for copy, transform
 #include <cstdint>
@@ -205,12 +205,12 @@ std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<Tensor
         if (row_stride == 1)
         {
             // column major just use cudaMemcpy
-            SRF_CHECK_CUDA(
+            MRC_CHECK_CUDA(
                 cudaMemcpy(output_offset, sliced_input_tensor->data(), slice_size, cudaMemcpyDeviceToDevice));
         }
         else
         {
-            SRF_CHECK_CUDA(cudaMemcpy2D(output_offset,
+            MRC_CHECK_CUDA(cudaMemcpy2D(output_offset,
                                         item_size,
                                         sliced_input_tensor->data(),
                                         row_stride * item_size,

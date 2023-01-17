@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,10 @@
 
 import typing
 
-import srf
+import mrc
 
-StreamPair = typing.Tuple[srf.SegmentObject, typing.Type]
+StreamPair = typing.Tuple[mrc.SegmentObject, typing.Type]
+"""
+Tuple used during Pipeline construction representing a pipeline node (first element), and the node's output type
+(second element)
+"""

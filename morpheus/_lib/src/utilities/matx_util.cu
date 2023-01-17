@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@
 #include "morpheus/utilities/type_util.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <srf/cuda/sync.hpp>
+#include <mrc/cuda/sync.hpp>
 
 #include <matx.h>
 
@@ -299,7 +299,7 @@ namespace morpheus {
                                      input.data(),
                                      output->data());
 
-        srf::enqueue_stream_sync_event(output->stream()).get();
+        mrc::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
     }
@@ -372,7 +372,7 @@ namespace morpheus {
                               thresh_val,
                               stride);
 
-        srf::enqueue_stream_sync_event(output->stream()).get();
+        mrc::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
     }
@@ -426,7 +426,7 @@ namespace morpheus {
                               num_input_rows,
                               seq_ids[start+seq_id_offset]-output_offset);
 
-        srf::enqueue_stream_sync_event(output->stream()).get();
+        mrc::enqueue_stream_sync_event(output->stream()).get();
         return output;
     }
 }

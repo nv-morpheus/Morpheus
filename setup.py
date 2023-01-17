@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -42,8 +42,8 @@ setup(
     install_requires=[
         # Only list the packages which cannot be installed via conda here. Should mach the requirements in
         # docker/conda/environments/requirements.txt
-        "dfencoder @ git+https://github.com/nv-morpheus/dfencoder.git@branch-22.09#egg=dfencoder",
-        "torch==1.10.2+cu113",
+        "dfencoder @ git+https://github.com/nv-morpheus/dfencoder.git@branch-23.01#egg=dfencoder",
+        "torch==1.12.0+cu113",
         "tritonclient[all]==2.17.*",  # Force to 2.17 since they require grpcio==1.41 for newer versions
     ],
     license="Apache",
