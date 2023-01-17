@@ -79,6 +79,10 @@ morpheus_utils_initialize_package_manager(
 
 # Configure CUDA architecture
 # NOTE: This MUST occur before any 'project' calls because of rapids_cmake requirements.
+if (DEFINED MORPHEUS_CUDA_ARCHITECTURES)
+  set(CMAKE_CUDA_ARCHITECTURES "${MORPHEUS_CUDA_ARCHITECTURES}")
+endif()
+
 morpheus_utils_initialize_cuda_arch(morpheus)
 
 # Set a default build type if none was specified
