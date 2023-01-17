@@ -101,12 +101,12 @@ namespace morpheus {
 // ************ FilterDetectionStage **************************** //
 FilterDetectionsStage::FilterDetectionsStage(float threshold,
                                              bool copy,
-                                             FilterSource data_source,
+                                             FilterSource filter_source,
                                              std::string field_name) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_threshold(threshold),
   m_copy(copy),
-  m_data_source(data_source),
+  m_filter_source(filter_source),
   m_field_name(std::move(field_name))
 {}
 
@@ -116,7 +116,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
                 BufferInfo buffer_info;
-                if (m_data_source == FilterSource::TENSOR || m_data_source == FilterSource::Auto)
+                if (m_filter_source == FilterSource::TENSOR || m_filter_source == FilterSource::Auto)
                 {
                     buffer_info = get_tensor_buffer_info(x, m_field_name);
                 }
@@ -219,10 +219,10 @@ std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> FilterDetectionStag
     const std::string& name,
     float threshold,
     bool copy,
-    FilterSource data_source,
+    FilterSource filter_source,
     std::string field_name)
 {
-    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy, data_source, field_name);
+    auto stage = builder.construct_object<FilterDetectionsStage>(name, threshold, copy, filter_source, field_name);
 
     return stage;
 }

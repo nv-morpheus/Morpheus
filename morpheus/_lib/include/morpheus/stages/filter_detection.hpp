@@ -85,16 +85,16 @@ class FilterDetectionsStage
      * @param copy : Whether or not to perform a copy default=true
      */
     FilterDetectionsStage(float threshold,
-                          bool copy                = true,
-                          FilterSource data_source = FilterSource::Auto,
-                          std::string field_name   = "probs");
+                          bool copy                  = true,
+                          FilterSource filter_source = FilterSource::Auto,
+                          std::string field_name     = "probs");
 
   private:
     subscribe_fn_t build_operator();
 
     float m_threshold;
     bool m_copy;
-    FilterSource m_data_source;
+    FilterSource m_filter_source;
     std::string m_field_name;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
@@ -119,7 +119,7 @@ struct FilterDetectionStageInterfaceProxy
                                                                              const std::string& name,
                                                                              float threshold,
                                                                              bool copy,
-                                                                             FilterSource data_source,
+                                                                             FilterSource filter_source,
                                                                              std::string field_name);
 };
 

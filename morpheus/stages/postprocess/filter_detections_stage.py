@@ -68,7 +68,7 @@ class FilterDetectionsStage(SinglePortStage):
         Threshold to classify, default is 0.5.
     copy : bool
         Whether or not to perform a copy.
-    data_source : `morpheus._lib.filter_source.FilterSource`, default = 'auto'
+    filter_source : `morpheus._lib.filter_source.FilterSource`, default = 'auto'
         Indicate if we are operating on is an output tensor or a field in the DataFrame.
         Choosing `Auto` will default to `TENSOR` and in a future release will change to `DATAFRAME`
     field_name : str
@@ -79,7 +79,7 @@ class FilterDetectionsStage(SinglePortStage):
                  c: Config,
                  threshold: float = 0.5,
                  copy: bool = True,
-                 data_source: FilterSource = FilterSource.Auto,
+                 filter_source: FilterSource = FilterSource.Auto,
                  field_name: str = "probs"):
         super().__init__(c)
 
@@ -87,10 +87,10 @@ class FilterDetectionsStage(SinglePortStage):
         self._threshold = threshold
         self._copy = copy
 
-        if data_source == FilterSource.Auto:
-            data_source = FilterSource.TENSOR
+        if filter_source == FilterSource.Auto:
+            filter_source = FilterSource.TENSOR
 
-        self._data_source = data_source
+        self._filter_source = filter_source
         self._field_name = field_name
 
     @property
@@ -108,7 +108,7 @@ class FilterDetectionsStage(SinglePortStage):
 
         """
 
-        if self._data_source == FilterSource.TENSOR:
+        if self._filter_source == FilterSource.TENSOR:
             return (MultiResponseProbsMessage, )
         else:
             return (MultiMessage, )
@@ -119,7 +119,7 @@ class FilterDetectionsStage(SinglePortStage):
 
     def _find_detections(self, x: MultiMessage) -> typing.Union[cp.ndarray, np.ndarray]:
         # Determind the filter source
-        if self._data_source == FilterSource.TENSOR:
+        if self._filter_source == FilterSource.TENSOR:
             filter_source = x.get_output(self._field_name)
         else:
             filter_source = x.get_meta(self._field_name).values
@@ -193,7 +193,7 @@ class FilterDetectionsStage(SinglePortStage):
                                                    self.unique_name,
                                                    self._threshold,
                                                    self._copy,
-                                                   self._data_source,
+                                                   self._filter_source,
                                                    self._field_name)
         else:
             if self._copy:
