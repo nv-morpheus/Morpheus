@@ -24,7 +24,7 @@ import mrc
 import pandas as pd
 
 import morpheus
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df

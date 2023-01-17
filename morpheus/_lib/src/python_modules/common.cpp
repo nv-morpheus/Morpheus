@@ -16,6 +16,7 @@
  */
 
 #include "morpheus/objects/fiber_queue.hpp"
+#include "morpheus/objects/file_types.hpp"
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
@@ -48,6 +49,16 @@ PYBIND11_MODULE(common, m)
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("close", &FiberQueueInterfaceProxy::close);
+
+    py::enum_<FileTypes>(m,
+                         "FileTypes",
+                         "The type of files that the `FileSourceStage` can read and `WriteToFileStage` can write. Use "
+                         "'auto' to determine from the file extension.")
+        .value("Auto", FileTypes::Auto)
+        .value("JSON", FileTypes::JSON)
+        .value("CSV", FileTypes::CSV);
+
+    m.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
 
     py::enum_<FilterSource>(
         m, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")

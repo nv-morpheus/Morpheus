@@ -20,8 +20,8 @@ from unittest import mock
 import cupy as cp
 import pytest
 
+from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
-from morpheus._lib.file_types import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs

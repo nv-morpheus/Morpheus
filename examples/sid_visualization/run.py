@@ -19,7 +19,7 @@ import typing
 import click
 import mrc
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus._lib.messages import MessageMeta
 from morpheus.config import Config
 from morpheus.config import CppConfig
@@ -53,7 +53,7 @@ class NLPVizFileSource(SingleOutputSource):
     iterative: boolean
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
-    file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
+    file_type : `morpheus._lib.common.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1

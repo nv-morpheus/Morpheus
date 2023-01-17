@@ -25,7 +25,7 @@ import pandas
 import pandas as pd
 import pytest
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.cli import commands
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import PipelineModes
