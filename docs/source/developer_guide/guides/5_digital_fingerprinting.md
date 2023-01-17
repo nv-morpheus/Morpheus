@@ -641,7 +641,7 @@ This stage filters the output from the inference stage for any anomalous message
 | --- | --- | --- | :-- |
 | `threshold` | `float` | `0.5` | The threshold value above which logs are considered to be anomalous. The default is `0.5`, however the DFP pipeline uses a value of `2.0`. All normal logs will be filtered out and anomalous logs will be passed on. |
 | `copy` | `bool` | `True` | When the `copy` argument is `True` (default), rows that meet the filter criteria are copied into a new dataframe. When `False` sliced views are used instead. This is a performance optimization, and has no functional impact. |
-| `data_source` | `FilterSource` | `FilterSource.AUTO` | Indicates if the filter criteria exists in an output tensor (`FilterSource.TENSOR`) or a column in a DataFrame (`FilterSource.DATAFRAME`). |
+| `data_source` | `FilterSource` | `FilterSource.Auto` | Indicates if the filter criteria exists in an output tensor (`FilterSource.TENSOR`) or a column in a DataFrame (`FilterSource.DATAFRAME`). |
 | `field_name` | `str` | `probs` | Name of the tensor (`data_source=FilterSource.TENSOR`) or DataFrame column (`data_source=FilterSource.DATAFRAME`) to use as the filter criteria. |
 
 #### Post Processing Stage (`DFPPostprocessingStage`)

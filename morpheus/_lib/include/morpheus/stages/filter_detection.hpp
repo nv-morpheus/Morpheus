@@ -85,9 +85,9 @@ class FilterDetectionsStage
      * @param copy : Whether or not to perform a copy default=true
      */
     FilterDetectionsStage(float threshold,
-                          bool copy               = true,
-                          FilterSource data_source = FilterSource::AUTO,
-                          std::string field_name  = "probs");
+                          bool copy                = true,
+                          FilterSource data_source = FilterSource::Auto,
+                          std::string field_name   = "probs");
 
   private:
     subscribe_fn_t build_operator();

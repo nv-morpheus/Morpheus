@@ -31,7 +31,7 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 enum class FilterSource : int32_t
 {
-    AUTO,
+    Auto,
     TENSOR,
     DATAFRAME
 };

@@ -101,9 +101,9 @@ PYBIND11_MODULE(stages, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("threshold"),
-             py::arg("copy")       = true,
-             py::arg("data_source") = m.attr("FilterSource").attr("AUTO"),
-             py::arg("field_name") = "probs");
+             py::arg("copy")        = true,
+             py::arg("data_source") = m.attr("FilterSource").attr("Auto"),
+             py::arg("field_name")  = "probs");
 
     py::class_<mrc::segment::Object<InferenceClientStage>,
                mrc::segment::ObjectProperties,

@@ -70,7 +70,7 @@ class FilterDetectionsStage(SinglePortStage):
         Whether or not to perform a copy.
     data_source : `morpheus._lib.filter_source.FilterSource`, default = 'auto'
         Indicate if we are operating on is an output tensor or a field in the DataFrame.
-        Choosing `AUTO` will default to `TENSOR` and in a future release will change to `DATAFRAME`
+        Choosing `Auto` will default to `TENSOR` and in a future release will change to `DATAFRAME`
     field_name : str
         Name of the tensor or DataFrame column to use as the filter criteria
     """
@@ -79,7 +79,7 @@ class FilterDetectionsStage(SinglePortStage):
                  c: Config,
                  threshold: float = 0.5,
                  copy: bool = True,
-                 data_source: FilterSource = FilterSource.AUTO,
+                 data_source: FilterSource = FilterSource.Auto,
                  field_name: str = "probs"):
         super().__init__(c)
 
@@ -87,7 +87,7 @@ class FilterDetectionsStage(SinglePortStage):
         self._threshold = threshold
         self._copy = copy
 
-        if data_source == FilterSource.AUTO:
+        if data_source == FilterSource.Auto:
             data_source = FilterSource.TENSOR
 
         self._data_source = data_source

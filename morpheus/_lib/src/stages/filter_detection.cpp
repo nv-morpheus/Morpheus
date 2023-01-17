@@ -116,7 +116,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
                 BufferInfo buffer_info;
-                if (m_data_source == FilterSource::TENSOR || m_data_source == FilterSource::AUTO)
+                if (m_data_source == FilterSource::TENSOR || m_data_source == FilterSource::Auto)
                 {
                     buffer_info = get_tensor_buffer_info(x, m_field_name);
                 }

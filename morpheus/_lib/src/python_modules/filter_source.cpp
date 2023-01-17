@@ -27,7 +27,7 @@ PYBIND11_MODULE(filter_source, m)
 {
     py::enum_<FilterSource>(
         m, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
-        .value("AUTO", FilterSource::AUTO)
+        .value("Auto", FilterSource::Auto)
         .value("TENSOR", FilterSource::TENSOR)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
