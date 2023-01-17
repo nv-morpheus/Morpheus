@@ -17,7 +17,7 @@
 
 #include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
-#include "morpheus/messages/multi_response.hpp"
+#include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
@@ -62,8 +62,8 @@ struct BufferInfo
 
 BufferInfo get_tensor_buffer_info(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)
 {
-    // The pipeline build will check to ensure that our inpt is a MultiResponseMessage
-    const auto& filter_source = std::static_pointer_cast<morpheus::MultiResponseMessage>(x)->get_output(field_name);
+    // The pipeline build will check to ensure that our input is a MultiResponseMessage
+    const auto& filter_source = std::static_pointer_cast<morpheus::MultiTensorMessage>(x)->get_tensor(field_name);
     CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
         << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
            "arrays";
