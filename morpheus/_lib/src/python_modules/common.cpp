@@ -16,6 +16,7 @@
  */
 
 #include "morpheus/objects/fiber_queue.hpp"
+#include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
@@ -47,6 +48,12 @@ PYBIND11_MODULE(common, m)
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("close", &FiberQueueInterfaceProxy::close);
+
+    py::enum_<FilterSource>(
+        m, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
+        .value("Auto", FilterSource::Auto)
+        .value("TENSOR", FilterSource::TENSOR)
+        .value("DATAFRAME", FilterSource::DATAFRAME);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

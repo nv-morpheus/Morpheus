@@ -19,8 +19,8 @@ import os
 import numpy as np
 import pytest
 
+from morpheus._lib.common import FilterSource
 from morpheus._lib.file_types import FileTypes
-from morpheus._lib.filter_source import FilterSource
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
