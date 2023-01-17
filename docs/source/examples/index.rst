@@ -5,7 +5,6 @@ Examples
 .. toctree::
    :maxdepth: 20
 
-   basic_usage/README.md
    abp_nvsmi_detection/README.md
    abp_pcap_detection/README.md
    gnn_fraud_detection_pipeline/README.md
