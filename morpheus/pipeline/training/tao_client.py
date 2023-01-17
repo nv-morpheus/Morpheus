@@ -24,7 +24,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 _KIND = typing.Literal["model", "dataset"]
 _DATASET_ACTIONS = typing.Literal["convert", "convert_index", "convert_efficientdet"]
-_MODEL_ACTIONS =  typing.Literal["train", "evaluate", "prune", "retrain", "export", "inference"]
+_MODEL_ACTIONS = typing.Literal["train", "evaluate", "prune", "retrain", "export", "inference"]
 
 
 def validate_kind(func):
@@ -47,12 +47,13 @@ def validate_kind(func):
         kind = args[1]
 
         if kind is None:
-            raise TypeError("TypeError: a string-like object is required for kind, not 'NoneType'") 
+            raise TypeError("TypeError: a string-like object is required for kind, not 'NoneType'")
         if kind not in typing.get_args(_KIND):
             raise ValueError("Invalid kind '{}'. Available kinds are {}".format(kind, _KIND))
         return func(*args, **kwargs)
 
     return inner_func
+
 
 def validate_actions(func):
     """
@@ -69,24 +70,25 @@ def validate_actions(func):
 
     @functools.wraps(func)
     def inner_func(*args, **kwargs):
-        
+
         actions_by_kind = _DATASET_ACTIONS
         if args[1] == "model":
             actions_by_kind = _MODEL_ACTIONS
-        
+
         if len(args) < 3:
             raise ValueError("Actions not found. Select from available actions: {}".format(actions_by_kind))
-        
+
         actions = args[2]
 
         if actions is None:
             raise TypeError("TypeError: a string-like object is required for an action, not 'NoneType'")
-        
+
         availablestr = typing.get_args(actions_by_kind)
-        
+
         if isinstance(actions, list):
             if not set(actions).issubset(availablestr):
-                raise ValueError("One or more actions are not valid actions '{}'. Available actions are {}".format(actions, actions_by_kind))
+                raise ValueError("One or more actions are not valid actions '{}'. Available actions are {}".format(
+                    actions, actions_by_kind))
         else:
             if actions not in availablestr:
                 raise ValueError("Invalid action '{}'. Available actions are {}".format(actions, actions_by_kind))
@@ -133,7 +135,7 @@ class TaoApiClient():
         self._user_uri = None
 
         self._session = requests.Session()
-        
+
         if server_side_cert:
             self._session.verify = cert
         self._session.cert = cert
@@ -158,7 +160,7 @@ class TaoApiClient():
         self._user_uri = self._base_uri + "/user/" + json_resp.get("user_id")
 
         if not self._ssl:
-          self._session.headers.update({'Authorization': 'Bearer ' + json_resp.get("token")})
+            self._session.headers.update({'Authorization': 'Bearer ' + json_resp.get("token")})
 
     @property
     def base_uri(self):
@@ -171,7 +173,7 @@ class TaoApiClient():
     @property
     def session(self):
         return self._session
-    
+
     @validate_kind
     def create_resource(self, kind: _KIND, data: typing.Dict, **kwargs) -> str:
         """
@@ -207,7 +209,7 @@ class TaoApiClient():
         resource_id = json_resp.get("id")
 
         return resource_id
-    
+
     @validate_kind
     def partial_update_resource(self, kind: _KIND, data: typing.Dict, resource_id: str, **kwargs) -> typing.Dict:
         """
@@ -242,7 +244,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     def update_resource(self, kind: _KIND, data: typing.Dict, resource_id: str, **kwargs) -> typing.Dict:
         """
@@ -277,7 +279,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     def upload_resource(self, kind: _KIND, resource_path: str, resource_id: str, **kwargs) -> typing.Dict:
         """
@@ -318,7 +320,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     def list_resources(self, kind: _KIND, **kwargs) -> typing.Dict:
         """
@@ -347,7 +349,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     @validate_actions
     def get_specs_schema(self, kind: _KIND, action: str, resource_id: str, **kwargs) -> typing.Dict:
@@ -381,7 +383,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     @validate_actions
     def get_specs(self, kind: _KIND, action: str, resource_id: str, **kwargs) -> typing.Dict:
@@ -415,11 +417,10 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     @validate_actions
-    def update_specs(self, kind: _KIND, action: str, specs: typing.Dict, resource_id: str,
-                     **kwargs) -> typing.Dict:
+    def update_specs(self, kind: _KIND, action: str, specs: typing.Dict, resource_id: str, **kwargs) -> typing.Dict:
         """
         Update specs by kind and action.
 
@@ -454,7 +455,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     @validate_actions
     def save_specs(self, kind: _KIND, action: str, resource_id: str, **kwargs) -> typing.Dict:
@@ -488,7 +489,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     @validate_actions
     def run_job(self,
@@ -515,7 +516,7 @@ class TaoApiClient():
         Returns
         -------
         job_ids : typing.List[str]
-            List of job id's by actions. 
+            List of job id's by actions.
         """
 
         data = json.dumps({"job": parent_job_id, "actions": actions})
@@ -531,7 +532,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(job_ids))
 
         return job_ids
-    
+
     @validate_kind
     def get_job_status(self, kind: _KIND, resource_id: str, job_id: str, **kwargs) -> typing.Dict:
         """
@@ -564,7 +565,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     def list_jobs(self, kind: _KIND, resource_id: str, **kwargs) -> typing.Dict:
         """
@@ -596,7 +597,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     def delete_job(self, kind: _KIND, resource_id: str, job_id: str, **kwargs) -> typing.Dict:
         """
@@ -629,7 +630,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     def cancel_job(self, kind: _KIND, resource_id: str, job_id: str, **kwargs) -> typing.Dict:
         """
@@ -694,7 +695,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     def download_resource(self, kind: _KIND, resource_id, job_id, output_dir: str, **kwargs) -> str:
         """
@@ -747,7 +748,7 @@ class TaoApiClient():
             return downloaded_path
 
         logger.info("Resource can be downloaded only when the job is completed. Current status is in {}".format(status))
-    
+
     @validate_kind
     def delete_resource(self, kind: _KIND, resource_id: str, **kwargs) -> typing.Dict:
         """
@@ -778,7 +779,7 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-    
+
     @validate_kind
     def retrieve_resource(self, kind: _KIND, resource_id: str, **kwargs) -> typing.Dict:
         """
