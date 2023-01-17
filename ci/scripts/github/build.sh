@@ -33,6 +33,7 @@ cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
     -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON .
 
 rapids-logger "Building Morpheus"
+git submodule update --init --recursive
 cmake --build build --parallel ${PARALLEL_LEVEL}
 
 rapids-logger "sccache usage for morpheus build:"
