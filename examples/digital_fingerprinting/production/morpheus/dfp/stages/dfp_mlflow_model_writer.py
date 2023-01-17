@@ -181,12 +181,6 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                     metrics_dict[f"embedding-{k}-num_embeddings"] = embedding.num_embeddings
                     metrics_dict[f"embedding-{k}-embedding_dim"] = embedding.embedding_dim
 
-                # Add metrics for all of the loss stats
-                if (hasattr(model, "feature_loss_stats")):
-                    for k, v in model.feature_loss_stats.items():
-                        metrics_dict[f"loss-{k}-mean"] = v.get("mean", "unknown")
-                        metrics_dict[f"loss-{k}-std"] = v.get("std", "unknown")
-
                 mlflow.log_metrics(metrics_dict)
 
                 # Use the prepare_df function to setup the direct inputs to the model. Only include features returned by
