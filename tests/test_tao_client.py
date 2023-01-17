@@ -18,12 +18,13 @@ from unittest.mock import MagicMock
 
 import pytest
 from requests.models import Response
+from requests.sessions import Session
 
 from morpheus.pipeline.training.tao_client import TaoApiClient
 from morpheus.pipeline.training.tao_client import generate_schema_url
 from morpheus.pipeline.training.tao_client import vaildate_apikey
 
-
+@pytest.mark.use_python
 def test_generate_schema_url():
 
     actual = generate_schema_url(url="localhost:32080", ssl=False)
@@ -45,7 +46,7 @@ def test_generate_schema_url():
     expected = "https://localhost:32080"
     assert actual == expected
 
-
+@pytest.mark.use_python
 def test_vaildate_apikey():
 
     vaildate_apikey("test_api_key")
@@ -56,23 +57,172 @@ def test_vaildate_apikey():
     with pytest.raises(ValueError):
         vaildate_apikey(123459)
 
-
-def test_create_resource():
-    tao_client = TaoApiClient("test_api_key", "localhost:32080")
-
+@pytest.mark.use_python
+def get_tao_client():
     mock_creds = {"user_id": "X20109876", "token": "TOkJJTkw6WkxKRDpNWk9ZOkRVN0o6"}
+    tao_client = TaoApiClient("test_api_key", "localhost:32080")
+    tao_client.authorize = MagicMock(return_value=mock_creds)
+
+    return tao_client
+
+@pytest.mark.use_python
+def test_create_dataset_resource():
+    tao_client = get_tao_client()
 
     mock_response = Response()
     mock_response.status_code = 201
     mock_response._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "created_on": "2023-01-17T15:35:08.014463"}'
 
-    tao_client.get_login_creds = MagicMock(return_value=mock_creds)
-    tao_client.session.post = MagicMock(return_value=Response())
+    tao_client.session.post = MagicMock(return_value=mock_response)
+
     ds_type = "object_detection"
     ds_format = "kitti"
 
     data = {"type": ds_type, "format": ds_format}
 
-    actual_resource_id = tao_client.create_resource(kind="dataset", data=data)
+    resource_id = tao_client.create_resource("dataset", data)
 
-    assert actual_resource_id == "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+    with pytest.raises(ValueError):
+        tao_client.create_resource("test", data=data)
+
+    assert resource_id == "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+
+    mock_response2 = Response()
+    mock_response2.status_code = 400
+    mock_response2._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "created_on": "2023-01-17T15:35:08.014463"}'
+    
+    tao_client.session.post = MagicMock(return_value=mock_response2)
+
+    with pytest.raises(Exception):
+        tao_client.create_resource("dataset", data=data)
+
+@pytest.mark.use_python
+def test_create_model_resource():
+    tao_client = get_tao_client()
+
+    mock_response = Response()
+    mock_response.status_code = 201
+    mock_response._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "created_on": "2023-01-17T15:35:08.014463"}'
+
+    tao_client.session.post = MagicMock(return_value=mock_response)
+
+    network_arch = "detectnet_v2"
+    encode_key = "tlt_encode"
+    data = {"network_arch":network_arch,"encryption_key":encode_key, "description": "My model"}
+
+    resource_id = tao_client.create_resource("model", data)
+
+    assert resource_id == "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+
+    with pytest.raises(ValueError):
+        tao_client.create_resource("random_kind", data=data)
+
+@pytest.mark.use_python
+def test_partial_update_resource():
+    
+    tao_client = get_tao_client()
+
+    mock_response = Response()
+    mock_response.status_code = 200
+    mock_response._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "created_on": "2023-01-17T15:35:08.014463"}'
+
+    tao_client.session.patch = MagicMock(return_value=mock_response)
+
+    data = {"name":"Train dataset", "description":"My train dataset with kitti"}
+
+    resp_json = tao_client.partial_update_resource("dataset", resource_id="eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", data=data)
+
+    assert resp_json.get("id") == "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+
+    mock_response.status_code = 401
+    tao_client.session.patch = MagicMock(return_value=mock_response)
+
+    with pytest.raises(Exception):
+        tao_client.create_resource("dataset", data=data)
+
+def test_update_resource():
+    
+    tao_client = get_tao_client()
+
+    mock_response = Response()
+    mock_response.status_code = 200
+    mock_response._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "created_on": "2023-01-17T15:35:08.014463"}'
+
+    tao_client.session.put = MagicMock(return_value=mock_response)
+
+    data = {"name":"Train dataset", "description":"My train dataset with kitti"}
+
+    resp_json = tao_client.update_resource("dataset", resource_id="eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", data=data)
+
+    assert resp_json.get("id") == "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+    assert isinstance(resp_json, dict)
+
+@pytest.mark.use_python
+def test_get_specs_schema():
+    tao_client = get_tao_client()
+
+    mock_response = Response()
+    mock_response.status_code = 200
+
+    mock_response._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "created_on": "2023-01-17T15:35:08.014463"}'
+    
+    resource_id="eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+    
+    tao_client.session.get = MagicMock(return_value=mock_response)
+
+    resp_json = tao_client.get_specs_schema("dataset", "convert", resource_id=resource_id)
+
+    with pytest.raises(ValueError):
+        tao_client.get_specs_schema("dataset",  "tmp_convert", resource_id=resource_id)
+
+    assert resp_json.get("id") == "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+    assert isinstance(resp_json, dict)
+
+
+@pytest.mark.use_python
+def test_close():
+    tao_client = get_tao_client()
+
+    session =  tao_client.session
+    assert isinstance(session, Session)
+
+    tao_client.close()
+    assert tao_client.session is None
+
+@pytest.mark.use_python
+def test_upload_resource(tmpdir):
+    input_data = tmpdir.join("input_dataset.txt")
+
+    with open(input_data, 'w') as fh:
+        fh.write("This is a training data.")
+
+    tao_client = get_tao_client()
+
+    mock_response = Response()
+    mock_response.status_code = 201
+    mock_response._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "created_on": "2023-01-17T15:35:08.014463"}'
+
+    resource_id="eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+
+    tao_client.session.post = MagicMock(return_value=mock_response)
+
+    resp_json = tao_client.upload_resource("dataset", resource_path=input_data, resource_id=resource_id)
+
+    assert resp_json.get("id") == "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+    assert isinstance(resp_json, dict)
+
+@pytest.mark.use_python
+def test_download_resource(tmpdir):
+    tao_client = get_tao_client()
+
+    mock_response = Response()
+    mock_response.status_code = 200
+    mock_response._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "parent_id" : "None", "status": "Pending", "created_on": "2023-01-17T15:35:08.014463"}'
+
+    resource_id="eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
+
+    tao_client.session.get = MagicMock(return_value=mock_response)
+
+    resp_json = tao_client.download_resource("dataset", resource_id=resource_id, job_id="test_235678", output_dir=tmpdir)
+
+    assert resp_json is None

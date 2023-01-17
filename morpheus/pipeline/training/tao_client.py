@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import json
 import logging
 import os
@@ -22,7 +23,77 @@ import requests
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 _KIND = typing.Literal["model", "dataset"]
-_ACTIONS = typing.Literal["convert", "train", "evaluate", "prune", "retrain", "export", "inference"]
+_DATASET_ACTIONS = typing.Literal["convert", "convert_index", "convert_efficientdet"]
+_MODEL_ACTIONS =  typing.Literal["train", "evaluate", "prune", "retrain", "export", "inference"]
+
+
+def validate_kind(func):
+    """
+    Validates given endpoint category.
+
+    Parameters
+    ----------
+    func : Function that requires wrapping.
+    Returns
+    -------
+    inner_func
+        Encapsulated function.
+    """
+
+    @functools.wraps(func)
+    def inner_func(*args, **kwargs):
+        if len(args) < 2:
+            raise ValueError("Kind not found. Select from available kinds: {}".format(_KIND))
+        kind = args[1]
+
+        if kind is None:
+            raise TypeError("TypeError: a string-like object is required for kind, not 'NoneType'") 
+        if kind not in typing.get_args(_KIND):
+            raise ValueError("Invalid kind '{}'. Available kinds are {}".format(kind, _KIND))
+        return func(*args, **kwargs)
+
+    return inner_func
+
+def validate_actions(func):
+    """
+    Validates TAO actions.
+
+    Parameters
+    ----------
+    func : Function that requires wrapping.
+    Returns
+    -------
+    inner_func
+        Encapsulated function.
+    """
+
+    @functools.wraps(func)
+    def inner_func(*args, **kwargs):
+        
+        actions_by_kind = _DATASET_ACTIONS
+        if args[1] == "model":
+            actions_by_kind = _MODEL_ACTIONS
+        
+        if len(args) < 3:
+            raise ValueError("Actions not found. Select from available actions: {}".format(actions_by_kind))
+        
+        actions = args[2]
+
+        if actions is None:
+            raise TypeError("TypeError: a string-like object is required for an action, not 'NoneType'")
+        
+        availablestr = typing.get_args(actions_by_kind)
+        
+        if isinstance(actions, list):
+            if not set(actions).issubset(availablestr):
+                raise ValueError("One or more actions are not valid actions '{}'. Available actions are {}".format(actions, actions_by_kind))
+        else:
+            if actions not in availablestr:
+                raise ValueError("Invalid action '{}'. Available actions are {}".format(actions, actions_by_kind))
+
+        return func(*args, **kwargs)
+
+    return inner_func
 
 
 def generate_schema_url(url, ssl):
@@ -57,39 +128,37 @@ class TaoApiClient():
 
         self._apikey = vaildate_apikey(apikey)
         self._parsed_url = generate_schema_url(url, ssl)
-        base_uri = self._parsed_url.rstrip('/')
-        self._base_uri = f"{base_uri}/api/v1"
+        self._base_uri = f"{self._parsed_url}/api/v1"
+        self._ssl = ssl
+        self._user_uri = None
 
         self._session = requests.Session()
-
-        login_creds = self._login()
-
-        self._user_uri = self._base_uri + "/user/" + login_creds.get("user_id")
-
-        if not ssl:
-            self._session.headers.update({'Authorization': 'Bearer ' + login_creds.get("token")})
-
-        else:
-            if server_side_cert:
-                self._session.verify = cert
-            self._session.cert = cert
+        
+        if server_side_cert:
+            self._session.verify = cert
+        self._session.cert = cert
 
         if proxies:
             self._session.proxies.update(proxies)
 
-    def _login(self):
+    def authorize(self):
 
         endpoint = f"{self._base_uri}/login/{self._apikey}"
 
         logger.debug("Login endpoint: {}".format(endpoint))
 
-        resp = self._session.get(endpoint)
+        resp = self.session.get(endpoint)
         if not resp.status_code == 200:
             raise Exception("Login failed: {}".format(resp.reason))
 
         logger.info("Login has been successful!")
 
-        return json.loads(resp.content)
+        json_resp = resp.json()
+
+        self._user_uri = self._base_uri + "/user/" + json_resp.get("user_id")
+
+        if not self._ssl:
+          self._session.headers.update({'Authorization': 'Bearer ' + json_resp.get("token")})
 
     @property
     def base_uri(self):
@@ -102,8 +171,9 @@ class TaoApiClient():
     @property
     def session(self):
         return self._session
-
-    def create_resource(self, data: typing.Dict, kind: _KIND, **kwargs) -> str:
+    
+    @validate_kind
+    def create_resource(self, kind: _KIND, data: typing.Dict, **kwargs) -> str:
         """
         Create new resource.
 
@@ -125,7 +195,7 @@ class TaoApiClient():
 
         endpoint = f"{self.user_uri}/{kind}"
 
-        logger.debug("reate resource with endpoint: {}".format(endpoint))
+        logger.debug("create resource with endpoint: {}".format(endpoint))
 
         resp = self.session.post(endpoint, data=data, **kwargs)
         if not resp.status_code == 201:
@@ -137,8 +207,9 @@ class TaoApiClient():
         resource_id = json_resp.get("id")
 
         return resource_id
-
-    def partial_update_resource(self, data: typing.Dict, resource_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    def partial_update_resource(self, kind: _KIND, data: typing.Dict, resource_id: str, **kwargs) -> typing.Dict:
         """
         Partially update the resource.
 
@@ -171,8 +242,9 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def update_resource(self, data: typing.Dict, resource_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    def update_resource(self, kind: _KIND, data: typing.Dict, resource_id: str, **kwargs) -> typing.Dict:
         """
         Update the resource.
 
@@ -205,8 +277,9 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def upload_resource(self, resource_path: str, resource_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    def upload_resource(self, kind: _KIND, resource_path: str, resource_id: str, **kwargs) -> typing.Dict:
         """
         Upload the resource.
 
@@ -245,7 +318,8 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
+    
+    @validate_kind
     def list_resources(self, kind: _KIND, **kwargs) -> typing.Dict:
         """
         List available resources by kind.
@@ -273,8 +347,10 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def get_specs_schema(self, resource_id: str, kind: _KIND, action: _ACTIONS, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    @validate_actions
+    def get_specs_schema(self, kind: _KIND, action: str, resource_id: str, **kwargs) -> typing.Dict:
         """
         Get specs schema by kind and action.
 
@@ -284,7 +360,7 @@ class TaoApiClient():
             Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
-        action: _ACTIONS
+        action: str
             TAO actions.
         **kwargs :
             Additional arguments.
@@ -305,8 +381,10 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def get_specs(self, resource_id: str, kind: _KIND, action: _ACTIONS, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    @validate_actions
+    def get_specs(self, kind: _KIND, action: str, resource_id: str, **kwargs) -> typing.Dict:
         """
         Get specs by kind and action.
 
@@ -316,7 +394,7 @@ class TaoApiClient():
             Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
-        action: _ACTIONS
+        action: str
             TAO actions.
         **kwargs :
             Additional arguments.
@@ -337,8 +415,10 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def update_specs(self, specs: typing.Dict, resource_id: str, kind: _KIND, action: _ACTIONS,
+    
+    @validate_kind
+    @validate_actions
+    def update_specs(self, kind: _KIND, action: str, specs: typing.Dict, resource_id: str,
                      **kwargs) -> typing.Dict:
         """
         Update specs by kind and action.
@@ -351,7 +431,7 @@ class TaoApiClient():
             Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
-        action: _ACTIONS
+        action: str
             TAO actions.
         **kwargs :
             Additional arguments.
@@ -374,8 +454,10 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def save_specs(self, resource_id: str, kind: _KIND, action: _ACTIONS, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    @validate_actions
+    def save_specs(self, kind: _KIND, action: str, resource_id: str, **kwargs) -> typing.Dict:
         """
         Save specs by kind and action.
 
@@ -385,7 +467,7 @@ class TaoApiClient():
             Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
-        action: _ACTIONS
+        action: str
             TAO actions.
         **kwargs :
             Additional arguments.
@@ -406,11 +488,13 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
+    
+    @validate_kind
+    @validate_actions
     def run_job(self,
-                resource_id: str,
                 kind: _KIND,
                 actions: typing.List[str],
+                resource_id: str,
                 parent_job_id: str = None,
                 **kwargs) -> typing.Dict:
         """
@@ -422,7 +506,7 @@ class TaoApiClient():
             Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
-        action: _ACTIONS
+        action: str
             TAO actions.
         parent_job_id: str
             Parent job id.
@@ -430,8 +514,8 @@ class TaoApiClient():
             Additional arguments.
         Returns
         -------
-        json_resp : typing.Dict
-            JSON response.
+        job_ids : typing.List[str]
+            List of job id's by actions. 
         """
 
         data = json.dumps({"job": parent_job_id, "actions": actions})
@@ -443,12 +527,13 @@ class TaoApiClient():
         if not resp.status_code == 201:
             raise Exception("Unable to run the job: {}".format(resp.content))
 
-        json_resp = resp.json()
-        logger.debug("Response: {}".format(json_resp))
+        job_ids = resp.json()
+        logger.debug("Response: {}".format(job_ids))
 
-        return json_resp
-
-    def get_job_status(self, job_id: str, resource_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+        return job_ids
+    
+    @validate_kind
+    def get_job_status(self, kind: _KIND, resource_id: str, job_id: str, **kwargs) -> typing.Dict:
         """
         Get job status.
 
@@ -479,8 +564,9 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def list_jobs(self, resource_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    def list_jobs(self, kind: _KIND, resource_id: str, **kwargs) -> typing.Dict:
         """
         List jobs for a given resource by kind.
 
@@ -510,8 +596,9 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def delete_job(self, resource_id: str, job_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    def delete_job(self, kind: _KIND, resource_id: str, job_id: str, **kwargs) -> typing.Dict:
         """
         Delete job for a given kind and resource identifier.
 
@@ -542,8 +629,9 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def cancel_job(self, resource_id: str, job_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    def cancel_job(self, kind: _KIND, resource_id: str, job_id: str, **kwargs) -> typing.Dict:
         """
         Cancel job for a given kind and resource identifier.
 
@@ -606,8 +694,9 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def download_resource(self, resource_id, job_id, kind: _KIND, output_dir: str, **kwargs) -> str:
+    
+    @validate_kind
+    def download_resource(self, kind: _KIND, resource_id, job_id, output_dir: str, **kwargs) -> str:
         """
         Download resources.
 
@@ -628,7 +717,7 @@ class TaoApiClient():
         downloaded_path : str
             The download location's path.
         """
-        job_status = self.get_job_status(resource_id=resource_id, job_id=job_id, kind=kind)
+        job_status = self.get_job_status(kind, resource_id=resource_id, job_id=job_id)
 
         status = job_status.get("status")
 
@@ -642,15 +731,15 @@ class TaoApiClient():
             if not resp.status_code == 200:
                 raise Exception("Error downloading the job content: {}".format(resp.content))
 
-            temptar = f'{job_id}.tar.gz'
+            temp_tar = f'{job_id}.tar.gz'
 
-            with open(temptar, 'wb') as f:
+            with open(temp_tar, 'wb') as f:
                 f.write(resp.content)
-            logger.debug("Untarring {}...".format(temptar))
-            tar_command = f"tar -xvf {temptar} -C {output_dir}/"
+            logger.debug("Untarring {}...".format(temp_tar))
+            tar_command = f"tar -xvf {temp_tar} -C {output_dir}/"
             os.system(tar_command)
-            logger.debug("Untarring {}... Done".format(temptar))
-            os.remove(temptar)
+            logger.debug("Untarring {}... Done".format(temp_tar))
+            os.remove(temp_tar)
             downloaded_path = f"{output_dir}/{job_id}"
 
             logger.debug("Results at location {}".format(downloaded_path))
@@ -658,8 +747,9 @@ class TaoApiClient():
             return downloaded_path
 
         logger.info("Resource can be downloaded only when the job is completed. Current status is in {}".format(status))
-
-    def delete_resource(self, resource_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    def delete_resource(self, kind: _KIND, resource_id: str, **kwargs) -> typing.Dict:
         """
         Delete resource.
 
@@ -688,8 +778,9 @@ class TaoApiClient():
         logger.debug("Response: {}".format(json_resp))
 
         return json_resp
-
-    def retrieve_resource(self, resource_id: str, kind: _KIND, **kwargs) -> typing.Dict:
+    
+    @validate_kind
+    def retrieve_resource(self, kind: _KIND, resource_id: str, **kwargs) -> typing.Dict:
         """
         Retrieve resource metadata.
 
