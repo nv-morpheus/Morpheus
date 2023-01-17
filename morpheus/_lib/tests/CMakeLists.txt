@@ -30,7 +30,7 @@ target_link_libraries(test_libmorpheus
   PRIVATE
     morpheus
     cuda_utils
-    mrc::pysrf
+    mrc::pymrc
     GTest::gtest
     matx::matx
     pybind11::embed

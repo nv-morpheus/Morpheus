@@ -21,12 +21,12 @@
 #include <morpheus/messages/meta.hpp>
 
 #include <cudf/io/types.hpp>  // for table_with_metadata
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
 
 #include <memory>
 #include <string>
@@ -39,10 +39,10 @@ namespace morpheus {
  * TODO(Documentation)
  */
 #pragma GCC visibility push(default)
-class DocaSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
+class DocaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
@@ -70,8 +70,8 @@ struct DocaSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a DocaSourceStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<DocaSourceStage>> init(
-      srf::segment::Builder& builder,
+    static std::shared_ptr<mrc::segment::Object<DocaSourceStage>> init(
+      mrc::segment::Builder& builder,
       std::string const& name,
       std::string const& nic_pci_address,
       std::string const& gpu_pci_address,

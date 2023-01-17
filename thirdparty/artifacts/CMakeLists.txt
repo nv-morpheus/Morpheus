@@ -54,7 +54,7 @@ rapids_cmake_build_type(Release)
 # Add conda environment to path
 include(cmake/setup_conda_toolchain.cmake)
 
-project(srf_third_party_libs LANGUAGES C CXX)
+project(mrc_third_party_libs LANGUAGES C CXX)
 
 # Needed force rapids cpm to use our source directory.
 set(CPM_SOURCE_CACHE "${CMAKE_SOURCE_DIR}/.cache/cpm")

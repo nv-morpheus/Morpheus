@@ -16,9 +16,9 @@ import logging
 import pathlib
 import typing
 
-import srf
+import mrc
 import typing_utils
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus._lib.file_types import FileTypes
 from morpheus.cli import register_stage
@@ -102,7 +102,7 @@ class DocaSourceStage(SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if self._build_cpp_node():
             import morpheus._lib.doca as _doca
@@ -120,7 +120,7 @@ class DocaSourceStage(SingleOutputSource):
 
         return out_stream, out_type
 
-    # def _post_build_single(self, builder: srf.Builder, out_pair: StreamPair) -> StreamPair:
+    # def _post_build_single(self, builder: mrc.Builder, out_pair: StreamPair) -> StreamPair:
 
     #     out_stream = out_pair[0]
     #     out_type = out_pair[1]
@@ -128,7 +128,7 @@ class DocaSourceStage(SingleOutputSource):
     #     # Convert our list of dataframes into the desired type. Flatten if necessary
     #     if (typing_utils.issubtype(out_type, typing.List)):
 
-    #         def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+    #         def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
     #             obs.pipe(ops.flatten()).subscribe(sub)
 

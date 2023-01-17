@@ -284,8 +284,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 }
 
 // ************ DocaSourceStageInterfaceProxy ************ //
-std::shared_ptr<srf::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceProxy::init(
-    srf::segment::Builder& builder,
+std::shared_ptr<mrc::segment::Object<DocaSourceStage>> DocaSourceStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
     std::string const& name,
     std::string const& nic_pci_address,
     std::string const& gpu_pci_address,
