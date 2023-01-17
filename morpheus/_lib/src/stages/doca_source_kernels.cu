@@ -74,7 +74,7 @@ gpu_ipv4_hdr_len(const struct rte_ipv4_hdr *ipv4_hdr)
 };
 
 __device__ __forceinline__ uint8_t
-get_payload_size(rte_ipv4_hdr* packet_l3, rte_tcp_hdr* packet_l4, uint8_t* payload)
+get_payload_size(rte_ipv4_hdr* packet_l3, rte_tcp_hdr* packet_l4)
 {
   auto total_length      = static_cast<int32_t>(BYTE_SWAP16(packet_l3->total_length));
   auto ip_header_length  = gpu_ipv4_hdr_len(packet_l3);
@@ -82,6 +82,29 @@ get_payload_size(rte_ipv4_hdr* packet_l3, rte_tcp_hdr* packet_l4, uint8_t* paylo
   auto data_size         = total_length - ip_header_length - tcp_header_length;
 
   return data_size;
+}
+
+__device__ bool
+is_http_packet(uint8_t* payload, uint8_t payload_size)
+{
+  if (payload_size < 3)
+  {
+    return false;
+  }
+
+  if (payload[0] == 'G' and payload[1] == 'E' and payload[2] == 'T') {
+    return true;
+  }
+
+  if (payload_size < 4) {
+    return false;
+  }
+
+  if (payload[0] == 'P' and payload[1] == 'O' and payload[2] == 'S' and payload[3] == 'T') {
+    return true;
+  }
+
+  return false;
 }
 
 __global__ void _packet_receive_kernel(
@@ -146,7 +169,6 @@ __global__ void _packet_receive_kernel(
   __shared__ uint32_t stride_start_idx;
 
   if (threadIdx.x == 0) {
-    *packet_count_out = packet_count;
     stride_start_idx = doca_gpu_device_comm_buf_get_stride_idx(
       &(rxq_info->comm_buf),
       packet_address
@@ -181,9 +203,12 @@ __global__ void _packet_receive_kernel(
       &packet_data
     );
 
-    auto data_size = get_payload_size(packet_l3, packet_l4, packet_data);
+    auto data_size = get_payload_size(packet_l3, packet_l4);
 
-    atomicAdd(packet_data_size_out, data_size);
+    if (is_http_packet(packet_data, data_size)) {
+      atomicAdd(packet_data_size_out, data_size);
+      atomicAdd(packet_count_out, 1);
+    }
 
     // printf("packet_idx(%d) data_size(%d) atom\n", packet_idx, data_size);
   }
@@ -192,16 +217,19 @@ __global__ void _packet_receive_kernel(
 
   if (threadIdx.x == 0)
   {
-    doca_gpu_device_semaphore_update(
-      sem_in + *sem_idx,
-      DOCA_GPU_SEM_STATUS_HOLD,
-      packet_count,
-      packet_address
-    );
-    // doca_gpu_device_semaphore_update_status(
-    //   sem_in + *sem_idx,
-    //   DOCA_GPU_SEM_STATUS_HOLD
-    // );
+    if (*packet_count_out > 0) {
+      doca_gpu_device_semaphore_update(
+        sem_in + *sem_idx,
+        DOCA_GPU_SEM_STATUS_HOLD,
+        packet_count,
+        packet_address
+      );
+    } else {
+      doca_gpu_device_semaphore_update_status(
+        sem_in + *sem_idx,
+        DOCA_GPU_SEM_STATUS_FREE
+      );
+    }
   }
 
   __threadfence();
@@ -292,6 +320,7 @@ __global__ void _packet_gather_kernel(
 
   __syncthreads();
 
+  int32_t data_capture[PACKETS_PER_THREAD];
   int32_t data_offsets[PACKETS_PER_THREAD];
 
   for (auto i = 0; i < PACKETS_PER_THREAD; i++)
@@ -300,7 +329,6 @@ __global__ void _packet_gather_kernel(
 
     if (packet_idx >= packet_count) {
       continue;
-      data_offsets[i] = 0;
     }
 
     uint8_t *packet = doca_gpu_device_comm_buf_get_stride_addr(
@@ -321,19 +349,81 @@ __global__ void _packet_gather_kernel(
       &packet_data
     );
 
-    auto data_size = get_payload_size(packet_l3, packet_l4, packet_data);
+    auto data_size = get_payload_size(packet_l3, packet_l4);
 
-    data_offsets[i] = data_size;
+    if (is_http_packet(packet_data, data_size))
+    {
+      data_capture[i] = 1;
+      data_offsets[i] = data_size;
+    }
+    else
+    {
+      data_capture[i] = 0;
+      data_offsets[i] = 0;
+    }
+  }
+
+  __syncthreads();
+
+  BlockScan(temp_storage).ExclusiveSum(data_offsets, data_offsets);
+
+  __syncthreads();
+
+  BlockScan(temp_storage).ExclusiveSum(data_capture, data_capture);
+
+  __syncthreads();
+
+  for (auto i = 0; i < PACKETS_PER_THREAD; i++)
+  {
+    auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
+
+    if (packet_idx >= packet_count) {
+      continue;
+    }
+
+    uint8_t *packet = doca_gpu_device_comm_buf_get_stride_addr(
+      &(rxq_info->comm_buf),
+      stride_start_idx + packet_idx
+    );
+
+    rte_ether_hdr* packet_l2;
+    rte_ipv4_hdr*  packet_l3;
+    rte_tcp_hdr*   packet_l4;
+    uint8_t*       packet_data;
+
+    get_packet_tcp_headers(
+      packet,
+      &packet_l2,
+      &packet_l3,
+      &packet_l4,
+      &packet_data
+    );
+
+    auto data_size = get_payload_size(packet_l3, packet_l4);
+
+    if (not is_http_packet(packet_data, data_size))
+    {
+      continue;
+    }
+
+    auto packet_idx_out = data_capture[i];
+
+    data_offsets_out[packet_idx_out] = data_offsets[i];
+
+    for (auto data_idx = 0; data_idx < data_size; data_idx++)
+    {
+      data_out[data_offsets[i] + data_idx] = packet_data[data_idx];
+    }
 
     // TCP timestamp option
-    timestamp_out[packet_idx] = tcp_parse_timestamp(packet_l4);
+    timestamp_out[packet_idx_out] = tcp_parse_timestamp(packet_l4);
 
     // mac address
     auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
     auto dst_mac = packet_l2->d_addr.addr_bytes; // 6 bytes
 
-    src_mac_out[packet_idx] = mac_bytes_to_int64(src_mac);
-    dst_mac_out[packet_idx] = mac_bytes_to_int64(dst_mac);
+    src_mac_out[packet_idx_out] = mac_bytes_to_int64(src_mac);
+    dst_mac_out[packet_idx_out] = mac_bytes_to_int64(dst_mac);
 
     // ip address
     auto src_address  = packet_l3->src_addr;
@@ -349,57 +439,15 @@ __global__ void _packet_gather_kernel(
                           | (dst_address & 0x00ff0000) >> 8
                           | (dst_address & 0xff000000) >> 24;
 
-    src_ip_out[packet_idx] = src_address_rev;
-    dst_ip_out[packet_idx] = dst_address_rev;
+    src_ip_out[packet_idx_out] = src_address_rev;
+    dst_ip_out[packet_idx_out] = dst_address_rev;
 
     // ports
     auto src_port     = BYTE_SWAP16(packet_l4->src_port);
     auto dst_port     = BYTE_SWAP16(packet_l4->dst_port);
 
-    src_port_out[packet_idx] = src_port;
-    dst_port_out[packet_idx] = dst_port;
-  }
-
-  __syncthreads();
-
-  BlockScan(temp_storage).ExclusiveSum(data_offsets, data_offsets);
-
-  __syncthreads();
-
-  for (auto i = 0; i < PACKETS_PER_THREAD; i++)
-  {
-    auto packet_idx = threadIdx.x * PACKETS_PER_THREAD + i;
-
-    if (packet_idx >= packet_count) {
-      continue;
-    }
-
-    uint8_t *packet = doca_gpu_device_comm_buf_get_stride_addr(
-      &(rxq_info->comm_buf),
-      stride_start_idx + packet_idx
-    );
-
-    rte_ether_hdr* packet_l2;
-    rte_ipv4_hdr*  packet_l3;
-    rte_tcp_hdr*   packet_l4;
-    uint8_t*       packet_data;
-
-    get_packet_tcp_headers(
-      packet,
-      &packet_l2,
-      &packet_l3,
-      &packet_l4,
-      &packet_data
-    );
-
-    auto data_size = get_payload_size(packet_l3, packet_l4, packet_data);
-
-    data_offsets_out[packet_idx] = data_offsets[i];
-
-    for (auto data_idx = 0; data_idx < data_size; data_idx++)
-    {
-      data_out[data_offsets[i] + data_idx] = packet_data[data_idx];
-    }
+    src_port_out[packet_idx_out] = src_port;
+    dst_port_out[packet_idx_out] = dst_port;
   }
 
   __syncthreads();
