@@ -81,14 +81,14 @@ class DevMemInfo
     std::shared_ptr<rmm::device_buffer> m_buffer;
 
     // Type of elements in the buffer
-    DType m_dtype;
+    const DType m_dtype;
 
     // Shape & stride of the data in the buffer
-    std::vector<std::size_t> m_shape;
-    std::vector<std::size_t> m_stride;
+    const std::vector<std::size_t> m_shape;
+    const std::vector<std::size_t> m_stride;
 
     // Offset from head of data in bytes
-    size_t m_offset_bytes;
+    const size_t m_offset_bytes;
 };
 
 /** @} */  // end of group
