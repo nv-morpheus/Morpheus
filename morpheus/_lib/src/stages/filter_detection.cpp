@@ -109,7 +109,7 @@ FilterDetectionsStage::FilterDetectionsStage(float threshold,
   m_filter_source(filter_source),
   m_field_name(std::move(field_name))
 {
-    CHECK_NE(m_filter_source, FilterSource::Auto);  // The python stage should determine this
+    CHECK(m_filter_source != FilterSource::Auto);  // The python stage should determine this
 }
 
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
