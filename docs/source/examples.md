@@ -16,7 +16,6 @@ limitations under the License.
 -->
 
 # Examples
-* [Basic CLI Usage](./examples/basic_usage/README.md)
 * [Anomalous Behavior Profiling with Forest Inference Library (FIL) Example](./examples/abp_nvsmi_detection/README.md)
 * [ABP Detection Example Using Morpheus](./examples/abp_pcap_detection/README.md)
 * [GNN Fraud Detection Pipeline](./examples/gnn_fraud_detection_pipeline/README.md)

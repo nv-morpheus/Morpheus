@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @register_stage("deserialize", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class DeserializeStage(MultiMessageStage):
     """
-    Deserialize source data into Dataframes.
+    Messages are logically partitioned based on the specified `c.pipeline_batch_size`.
 
     This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. This
     should be one of the first stages after the `Source` object.
