@@ -22,7 +22,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.module_utils import load_module
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(__name__)
 
 
 class LinearModulesStage(SinglePortStage):

@@ -58,6 +58,7 @@ from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import get_log_levels
 from morpheus.utils.logger import parse_log_level
+from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DATAFRAME
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
@@ -250,8 +251,8 @@ def run_pipeline(train_users,
         "module_id": DFP_PREPROCESSING,
         "module_name": "dfp_preprocessing",
         "namespace": MODULE_NAMESPACE,
-        "FileBatcher": {
-            "module_id": "FileBatcher",
+        FILE_BATCHER: {
+            "module_id": FILE_BATCHER,
             "module_name": "file_batcher",
             "namespace": MODULE_NAMESPACE,
             "period": "D",
