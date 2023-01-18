@@ -373,21 +373,26 @@ namespace morpheus {
                          const std::vector<int64_t> &output_shape)
     {
         const auto&  dtype = input.dtype();
-        auto elem_size = dtype.item_size();
         auto cudf_type = cudf::data_type{dtype.cudf_type_id()};
         auto num_input_rows = input.shape(0);
         auto num_input_cols = input.shape(1);
 
-        std::vector<matx::index_t>matx_stride{static_cast<matx::index_t>(input.stride(0)), static_cast<matx::index_t>(input.stride(1))};
+        std::vector<matx::index_t> matx_stride{static_cast<matx::index_t>(input.stride(0)), static_cast<matx::index_t>(input.stride(1))};
         std::size_t output_element_count = output_shape[0] * output_shape[1];
-        std::size_t output_buff_size = elem_size * output_element_count;
+        std::size_t output_buff_size = dtype.item_size() * output_element_count;
 
         DCHECK(output_element_count <= input.count()) << "Output buffer size should be less than or equal to the input";
         DCHECK(num_input_cols == output_shape[1]) << "Number of input and output columns must match";
 
         auto output = input.make_new_buffer(output_buff_size);
 
-        MatxUtil__MatxReduceMax matx_reduce_max{static_cast<matx::index_t>(num_input_rows), static_cast<matx::index_t>(num_input_cols), matx_stride, output_shape[0], input.data(), output->data(), output->stream()};
+        MatxUtil__MatxReduceMax matx_reduce_max{static_cast<matx::index_t>(num_input_rows),
+                                                static_cast<matx::index_t>(num_input_cols),
+                                                matx_stride,
+                                                output_shape[0],
+                                                input.data(),
+                                                output->data(),
+                                                output->stream()};
 
         std::size_t start = 0;
         auto output_offset = seq_ids[seq_id_offset];
