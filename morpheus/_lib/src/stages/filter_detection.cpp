@@ -115,17 +115,21 @@ FilterDetectionsStage::FilterDetectionsStage(float threshold,
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+        std::function<BufferInfo(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)>
+            get_buffer_info;
+
+        if (m_filter_source == FilterSource::TENSOR)
+        {
+            get_buffer_info = &get_tensor_buffer_info;
+        }
+        else
+        {
+            get_buffer_info = &get_column_buffer_info;
+        }
+
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output](sink_type_t x) {
-                BufferInfo buffer_info;
-                if (m_filter_source == FilterSource::TENSOR)
-                {
-                    buffer_info = get_tensor_buffer_info(x, m_field_name);
-                }
-                else
-                {
-                    buffer_info = get_column_buffer_info(x, m_field_name);
-                }
+            [this, &output, &get_buffer_info](sink_type_t x) {
+                BufferInfo buffer_info = get_tensor_buffer_info(x, m_field_name);
 
                 // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
                 auto tmp_buffer = std::make_shared<rmm::device_buffer>(buffer_info.count * buffer_info.type.item_size(),
