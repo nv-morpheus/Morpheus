@@ -486,7 +486,7 @@ For input files containing an ISO 8601 formatted date string the `iso_date_regex
 ```python
 from functools import partial
 
-from morpheus.file_utils import date_extractor
+from morpheus.utils.file_utils import date_extractor
 from dfp.utils.regex_utils import iso_date_regex
 ```
 ```python
