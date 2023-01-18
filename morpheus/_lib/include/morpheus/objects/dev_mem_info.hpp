@@ -23,7 +23,7 @@
 #include <rmm/device_buffer.hpp>
 
 #include <cstddef>  // for size_t
-#include <memory>   // for shared_ptr
+#include <memory>   // for shared_ptr, unique_ptr & make_unique
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -67,8 +67,14 @@ class DevMemInfo
      * @return void*
      */
     void* data() const;
-    rmm::cuda_stream_view stream () const;
-    rmm::mr::device_memory_resource* memory_resource() const;
+
+    /**
+     * @brief Constructs a new rmm buffer with the same stream and memory resource as the current buffer
+     *
+     * @param bytes
+     * @return std::unique_ptr<rmm::device_buffer>
+     */
+    std::unique_ptr<rmm::device_buffer> make_new_buffer(std::size_t bytes) const;
 
   private:
     // Buffer of data

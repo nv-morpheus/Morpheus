@@ -88,14 +88,9 @@ std::size_t DevMemInfo::stride(std::size_t idx) const
     return m_stride.at(idx);
 }
 
-rmm::cuda_stream_view DevMemInfo::stream() const
+std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(std::size_t bytes) const
 {
-    return m_buffer->stream();
-}
-
-rmm::mr::device_memory_resource* DevMemInfo::memory_resource() const
-{
-    return m_buffer->memory_resource();
+    return std::make_unique<rmm::device_buffer>(bytes, m_buffer->stream(), m_buffer->memory_resource());
 }
 
 void* DevMemInfo::data() const
