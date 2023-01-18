@@ -274,8 +274,6 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                             std::vector<std::size_t> input_shape(output_shape.size());
                             std::copy(output_shape.cbegin(), output_shape.cend(), input_shape.begin());
 
-                            size_t element_count = get_elem_count(output_shape);
-
                             // Triton results are always in row-major as required by the KServe protocol
                             // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
                             std::vector<std::size_t> stride{static_cast<std::size_t>(output_shape[1]), 1};
