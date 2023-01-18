@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,17 @@ from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 from ..messages.multi_dfp_message import MultiDFPMessage
+from ..utils.module_ids import DFP_TRAINING
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
-@register_module("DFPTraining", "morpheus_modules")
+@register_module(DFP_TRAINING, MODULE_NAMESPACE)
 def dfp_training(builder: mrc.Builder):
     """
     Model training is done using this module function.
@@ -38,9 +40,7 @@ def dfp_training(builder: mrc.Builder):
         Pipeline budler instance.
     """
 
-    module_id = "DFPTraining"
-
-    config = get_module_config(module_id, builder)
+    config = get_module_config(DFP_TRAINING, builder)
 
     feature_columns = config.get("feature_columns", None)
     model_kwargs = config.get("model_kwargs", None)
@@ -72,7 +72,7 @@ def dfp_training(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(module_id, node_fn)
+    node = builder.make_node_full(DFP_TRAINING, node_fn)
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

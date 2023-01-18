@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,15 +22,17 @@ from mrc.core import operators as ops
 
 import cudf
 
+from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 from ..messages.multi_dfp_message import DFPMessageMeta
+from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
-@register_module("DFPSplitUsers", "morpheus_modules")
+@register_module(DFP_SPLIT_USERS, MODULE_NAMESPACE)
 def dfp_split_users(builder: mrc.Builder):
     """
     This module function split the data based on user Id's.
@@ -41,9 +43,7 @@ def dfp_split_users(builder: mrc.Builder):
         Pipeline budler instance.
     """
 
-    module_id = "DFPSplitUsers"
-
-    config = get_module_config(module_id, builder)
+    config = get_module_config(DFP_SPLIT_USERS, builder)
 
     skip_users = config.get("skip_users", [])
     only_users = config.get("only_users", [])
@@ -122,7 +122,7 @@ def dfp_split_users(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(extract_users), ops.flatten()).subscribe(sub)
 
-    node = builder.make_node_full(module_id, node_fn)
+    node = builder.make_node_full(DFP_SPLIT_USERS, node_fn)
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,13 +34,15 @@ from morpheus._lib.file_types import FileTypes
 from morpheus.cli.utils import str_to_file_type
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import process_dataframe
+from morpheus.utils.module_ids import FILE_TO_DATAFRAME
+from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
-@register_module("FileToDataFrame", "morpheus_modules")
+@register_module(FILE_TO_DATAFRAME, MODULE_NAMESPACE)
 def file_to_dataframe(builder: mrc.Builder):
     """
     This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module.
@@ -52,9 +54,7 @@ def file_to_dataframe(builder: mrc.Builder):
         mrc Builder object.
     """
 
-    module_id = "FileToDataFrame"
-
-    config = get_module_config(module_id, builder)
+    config = get_module_config(FILE_TO_DATAFRAME, builder)
 
     schema_config = config.get("schema", None)
     schema_str = schema_config.get("schema_str", None)
@@ -132,7 +132,6 @@ def file_to_dataframe(builder: mrc.Builder):
             except Exception as e:
                 if (retries < 2):
                     logger.warning("Refreshing S3 credentials")
-                    # cred_refresh()
                     retries += 1
                 else:
                     raise e
@@ -255,7 +254,7 @@ def file_to_dataframe(builder: mrc.Builder):
     if (download_method.startswith("dask")):
         dask_cluster = get_dask_cluster()
 
-    node = builder.make_node_full(module_id, node_fn)
+    node = builder.make_node_full(FILE_TO_DATAFRAME, node_fn)
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

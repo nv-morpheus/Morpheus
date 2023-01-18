@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,14 +22,20 @@ from datetime import timezone
 from functools import partial
 
 import click
-import dfp.modules.dfp_pipeline_preprocessing  # noqa: F401
-import dfp.modules.dfp_pipeline_training  # noqa: F401
+import dfp.modules.dfp_model_train_deploy  # noqa: F401
+import dfp.modules.dfp_preprocessing  # noqa: F401
 import mlflow
 import pandas as pd
 from dfp.messages.multi_dfp_message import MultiDFPMessage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.multi_file_source import MultiFileSource
+from dfp.utils.module_ids import DFP_DATA_PREP
+from dfp.utils.module_ids import DFP_MODEL_TRAIN_DEPLOY
+from dfp.utils.module_ids import DFP_PREPROCESSING
+from dfp.utils.module_ids import DFP_ROLLING_WINDOW
+from dfp.utils.module_ids import DFP_SPLIT_USERS
+from dfp.utils.module_ids import DFP_TRAINING
 from dfp.utils.regex_utils import iso_date_regex_pattern
 
 from morpheus.cli.utils import get_package_relative_file
@@ -52,6 +58,9 @@ from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import get_log_levels
 from morpheus.utils.logger import parse_log_level
+from morpheus.utils.module_ids import FILE_TO_DATAFRAME
+from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
+from morpheus.utils.module_ids import MODULE_NAMESPACE
 
 
 @click.command()
@@ -150,6 +159,7 @@ def run_pipeline(train_users,
 
     # Enable the Morpheus logger
     configure_logging(log_level=log_level)
+    logging.getLogger("mlflow").setLevel(log_level)
 
     if (len(skip_users) > 0 and len(only_users) > 0):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
@@ -237,23 +247,23 @@ def run_pipeline(train_users,
     preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
 
     preprocessing_module_config = {
-        "module_id": "DFPPipelinePreprocessing",
-        "module_name": "dfp_pipeline_preprocessing",
-        "namespace": "morpheus_modules",
+        "module_id": DFP_PREPROCESSING,
+        "module_name": "dfp_preprocessing",
+        "namespace": MODULE_NAMESPACE,
         "FileBatcher": {
             "module_id": "FileBatcher",
             "module_name": "file_batcher",
-            "namespace": "morpheus_modules",
+            "namespace": MODULE_NAMESPACE,
             "period": "D",
             "sampling_rate_s": sample_rate_s,
             "start_time": start_time,
             "end_time": end_time,
             "iso_date_regex_pattern": iso_date_regex_pattern
         },
-        "FileToDataFrame": {
-            "module_id": "FileToDataFrame",
+        FILE_TO_DATAFRAME: {
+            "module_id": FILE_TO_DATAFRAME,
             "module_name": "file_to_dataframe",
-            "namespace": "morpheus_modules",
+            "namespace": MODULE_NAMESPACE,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
             "parser_kwargs": {
@@ -266,10 +276,10 @@ def run_pipeline(train_users,
                 "schema_str": source_schema_str, "encoding": encoding
             }
         },
-        "DFPSplitUsers": {
-            "module_id": "DFPSplitUsers",
-            "module_name": "dfp_fsplit_users",
-            "namespace": "morpheus_modules",
+        DFP_SPLIT_USERS: {
+            "module_id": DFP_SPLIT_USERS,
+            "module_name": "dfp_split_users",
+            "namespace": MODULE_NAMESPACE,
             "include_generic": include_generic,
             "include_individual": include_individual,
             "skip_users": skip_users,
@@ -278,20 +288,20 @@ def run_pipeline(train_users,
             "userid_column_name": config.ae.userid_column_name,
             "fallback_username": config.ae.fallback_username
         },
-        "DFPRollingWindow": {
-            "module_id": "DFPRollingWindow",
+        DFP_ROLLING_WINDOW: {
+            "module_id": DFP_ROLLING_WINDOW,
             "module_name": "dfp_rolling_window",
-            "namespace": "morpheus_modules",
+            "namespace": MODULE_NAMESPACE,
             "min_history": 300 if is_training else 1,
             "min_increment": 300 if is_training else 0,
             "max_history": "60d" if is_training else "1d",
             "cache_dir": cache_dir,
             "timestamp_column_name": config.ae.timestamp_column_name
         },
-        "DFPPreprocessing": {
-            "module_id": "DFPPreprocessing",
-            "module_name": "dfp_preprocessing",
-            "namespace": "morpheus_modules",
+        DFP_DATA_PREP: {
+            "module_id": DFP_DATA_PREP,
+            "module_name": "dfp_data_prep",
+            "namespace": MODULE_NAMESPACE,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
             "schema": {
@@ -322,13 +332,13 @@ def run_pipeline(train_users,
 
         # Module configuration
         training_module_config = {
-            "module_id": "DFPPipelineTraining",
-            "module_name": "dfp_pipeline_training",
-            "namespace": "morpheus_modules",
-            "DFPTraining": {
-                "module_id": "DFPTraining",
+            "module_id": DFP_MODEL_TRAIN_DEPLOY,
+            "module_name": "dfp_model_train_deploy",
+            "namespace": MODULE_NAMESPACE,
+            DFP_TRAINING: {
+                "module_id": DFP_TRAINING,
                 "module_name": "dfp_training",
-                "namespace": "morpheus_modules",
+                "namespace": MODULE_NAMESPACE,
                 "model_kwargs": {
                     "encoder_layers": [512, 500],  # layers of the encoding part
                     "decoder_layers": [512],  # layers of the decoding part
@@ -346,10 +356,10 @@ def run_pipeline(train_users,
                 },
                 "feature_columns": config.ae.feature_columns,
             },
-            "MLFlowModelWriter": {
-                "module_id": "MLFlowModelWriter",
+            MLFLOW_MODEL_WRITER: {
+                "module_id": MLFLOW_MODEL_WRITER,
                 "module_name": "mlflow_model_writer",
-                "namespace": "morpheus_modules",
+                "namespace": MODULE_NAMESPACE,
                 "model_name_formatter": model_name_formatter,
                 "experiment_name_formatter": experiment_name_formatter,
                 "timestamp_column_name": config.ae.timestamp_column_name,

@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,25 +13,35 @@
 # limitations under the License.
 
 import logging
-import pickle
-import time
 
+import dfp.modules.dfp_data_prep  # noqa: F401
+import dfp.modules.dfp_rolling_window  # noqa: F401
+import dfp.modules.dfp_split_users  # noqa: F401
+import dfp.modules.dfp_training  # noqa: F401
 import mrc
-from mrc.core import operators as ops
 
-from morpheus.utils.column_info import process_dataframe
+import morpheus.modules.file_batcher  # noqa: F401
+import morpheus.modules.file_to_df  # noqa: F401
+from morpheus.utils.module_ids import FILE_BATCHER
+from morpheus.utils.module_ids import FILE_TO_DATAFRAME
+from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
 
-from ..messages.multi_dfp_message import MultiDFPMessage
+from ..utils.module_ids import DFP_DATA_PREP
+from ..utils.module_ids import DFP_PREPROCESSING
+from ..utils.module_ids import DFP_ROLLING_WINDOW
+from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
-@register_module("DFPPreprocessing", "morpheus_modules")
-def dfp_preprocessing(builder: mrc.Builder):
+@register_module(DFP_PREPROCESSING, MODULE_NAMESPACE)
+def dfp_pipeline_preprocessing(builder: mrc.Builder):
     """
-    Preprocessed data are produced by this module function for either inference or model training.
+    This module function allows for the consolidation of multiple dfp pipeline preprocessing modules
+    into a single module.
 
     Parameters
     ----------
@@ -39,44 +49,27 @@ def dfp_preprocessing(builder: mrc.Builder):
         Pipeline budler instance.
     """
 
-    module_id = "DFPPreprocessing"
+    config = get_module_config(DFP_PREPROCESSING, builder)
 
-    config = get_module_config(module_id, builder)
+    file_batcher_conf = config.get(FILE_BATCHER, None)
+    file_to_df_conf = config.get(FILE_TO_DATAFRAME, None)
+    dfp_split_users_conf = config.get(DFP_SPLIT_USERS, None)
+    dfp_rolling_window_conf = config.get(DFP_ROLLING_WINDOW, None)
+    dfp_data_prep_conf = config.get(DFP_DATA_PREP, None)
 
-    schema_config = config.get("schema", None)
-    schema_str = schema_config.get("schema_str", None)
-    encoding = schema_config.get("encoding", None)
-    timestamp_column_name = config.get("timestamp_column_name", None)
+    # Load modules
+    file_batcher_module = load_module(file_batcher_conf, builder=builder)
+    file_to_dataframe_module = load_module(file_to_df_conf, builder=builder)
+    dfp_split_users_modules = load_module(dfp_split_users_conf, builder=builder)
+    dfp_rolling_window_module = load_module(dfp_rolling_window_conf, builder=builder)
+    dfp_data_prep_module = load_module(dfp_data_prep_conf, builder=builder)
 
-    schema = pickle.loads(bytes(schema_str, encoding))
+    # Make edge between the modules.
+    builder.make_edge(file_batcher_module.output_port("output"), file_to_dataframe_module.input_port("input"))
+    builder.make_edge(file_to_dataframe_module.output_port("output"), dfp_split_users_modules.input_port("input"))
+    builder.make_edge(dfp_split_users_modules.output_port("output"), dfp_rolling_window_module.input_port("input"))
+    builder.make_edge(dfp_rolling_window_module.output_port("output"), dfp_data_prep_module.input_port("input"))
 
-    def process_features(message: MultiDFPMessage):
-        if (message is None):
-            return None
-
-        start_time = time.time()
-
-        # Process the columns
-        df_processed = process_dataframe(message.get_meta_dataframe(), schema)
-
-        # Apply the new dataframe, only the rows in the offset
-        message.set_meta_dataframe(list(df_processed.columns), df_processed)
-
-        if logger.isEnabledFor(logging.DEBUG):
-            duration = (time.time() - start_time) * 1000.0
-
-            logger.debug("Preprocessed %s data for logs in %s to %s in %s ms",
-                         message.mess_count,
-                         message.get_meta(timestamp_column_name).min(),
-                         message.get_meta(timestamp_column_name).max(),
-                         duration)
-
-        return message
-
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(process_features)).subscribe(sub)
-
-    node = builder.make_node_full(module_id, node_fn)
-
-    builder.register_module_input("input", node)
-    builder.register_module_output("output", node)
+    # Register input and output port for a module.
+    builder.register_module_input("input", file_batcher_module.input_port("input"))
+    builder.register_module_output("output", dfp_data_prep_module.output_port("output"))

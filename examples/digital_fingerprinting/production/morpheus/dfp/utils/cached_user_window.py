@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,9 +42,6 @@ class CachedUserWindow:
     _df: pd.DataFrame = dataclasses.field(init=False, repr=False, default_factory=pd.DataFrame)
 
     def append_dataframe(self, incoming_df: pd.DataFrame) -> bool:
-
-        # # Get the row hashes
-        # row_hashes = pd.util.hash_pandas_object(incoming_df)
 
         # Filter the incoming df by epochs later than the current max_epoch
         filtered_df = incoming_df[incoming_df["timestamp"] > self.max_epoch]

@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,13 +23,15 @@ import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.utils.file_utils import date_extractor
+from morpheus.utils.module_ids import FILE_BATCHER
+from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
-@register_module("FileBatcher", "morpheus_modules")
+@register_module(FILE_BATCHER, MODULE_NAMESPACE)
 def file_batcher(builder: mrc.Builder):
     """
     This module loads the input files, removes files that are older than the chosen window of time,
@@ -41,9 +43,7 @@ def file_batcher(builder: mrc.Builder):
         mrc Builder object.
     """
 
-    module_id = "FileBatcher"
-
-    config = get_module_config(module_id, builder)
+    config = get_module_config(FILE_BATCHER, builder)
 
     TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_object"])
 
@@ -126,7 +126,7 @@ def file_batcher(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
 
-    node = builder.make_node_full(module_id, node_fn)
+    node = builder.make_node_full(FILE_BATCHER, node_fn)
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

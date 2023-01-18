@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,13 +35,15 @@ from mlflow.types.utils import _infer_schema
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
+from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
-logger = logging.getLogger(f"morpheus.{__name__}")
+logger = logging.getLogger(__name__)
 
 
-@register_module("MLFlowModelWriter", "morpheus_modules")
+@register_module(MLFLOW_MODEL_WRITER, MODULE_NAMESPACE)
 def module_init(builder: mrc.Builder):
     """
     This module uploads trained models to the mlflow server.
@@ -52,9 +54,7 @@ def module_init(builder: mrc.Builder):
         mrc Builder object.
     """
 
-    module_id = "MLFlowModelWriter"
-
-    config = get_module_config(module_id, builder)
+    config = get_module_config(MLFLOW_MODEL_WRITER, builder)
 
     model_name_formatter = config.get("model_name_formatter", None)
     experiment_name_formatter = config.get("experiment_name_formatter", None)
@@ -174,12 +174,6 @@ def module_init(builder: mrc.Builder):
                     metrics_dict[f"embedding-{k}-num_embeddings"] = embedding.num_embeddings
                     metrics_dict[f"embedding-{k}-embedding_dim"] = embedding.embedding_dim
 
-                # Add metrics for all of the loss stats
-                if (hasattr(model, "feature_loss_stats")):
-                    for k, v in model.feature_loss_stats.items():
-                        metrics_dict[f"loss-{k}-mean"] = v.get("mean", "unknown")
-                        metrics_dict[f"loss-{k}-std"] = v.get("std", "unknown")
-
                 mlflow.log_metrics(metrics_dict)
 
                 # Use the prepare_df function to setup the direct inputs to the model. Only include features
@@ -244,7 +238,7 @@ def module_init(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(module_id, node_fn)
+    node = builder.make_node_full(MLFLOW_MODEL_WRITER, node_fn)
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)
