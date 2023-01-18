@@ -45,22 +45,7 @@
 
 namespace {
 
-/**
- * @brief Simple container describing a 2d buffer
- *
- * TODO: Merge with DevMemInfo?
- */
-struct BufferInfo
-{
-    std::vector<std::size_t> shape;
-    std::vector<std::size_t> stride;
-    std::size_t count;
-    std::size_t bytes;
-    morpheus::DType type;
-    const uint8_t* head;
-};
-
-BufferInfo get_tensor_buffer_info(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)
+morpheus::DevMemInfo get_tensor_source(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)
 {
     // The pipeline build will check to ensure that our input is a MultiResponseMessage
     const auto& filter_source = std::static_pointer_cast<morpheus::MultiTensorMessage>(x)->get_tensor(field_name);
@@ -68,15 +53,17 @@ BufferInfo get_tensor_buffer_info(const std::shared_ptr<morpheus::MultiMessage>&
         << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
            "arrays";
 
-    return BufferInfo{filter_source.get_shape(),
-                      filter_source.get_stride(),
-                      filter_source.count(),
-                      filter_source.bytes(),
-                      filter_source.dtype(),
-                      static_cast<const uint8_t*>(filter_source.data())};
+    auto buffer = std::make_shared<rmm::device_buffer>(filter_source.bytes(), rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(
+        buffer->data(), static_cast<const uint8_t*>(filter_source.data()), buffer->size(), cudaMemcpyDeviceToDevice));
+
+    // Depending on the input the stride is given in bytes or elements, convert to elements
+    auto stride = morpheus::TensorUtils::get_element_stride<std::size_t, std::size_t>(filter_source.get_stride());
+    return {buffer, filter_source.dtype(), filter_source.get_shape(), stride};
 }
 
-BufferInfo get_column_buffer_info(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)
+morpheus::DevMemInfo get_column_source(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)
 {
     auto table_info = x->get_meta(field_name);
 
@@ -85,12 +72,19 @@ BufferInfo get_column_buffer_info(const std::shared_ptr<morpheus::MultiMessage>&
     auto dtype      = morpheus::DType::from_cudf(col.type().id());
     auto num_rows   = static_cast<std::size_t>(col.size());
 
-    return BufferInfo{{num_rows, 1},
-                      {1},
-                      num_rows,
-                      num_rows * dtype.item_size(),
-                      dtype,
-                      col.head<uint8_t>() + col.offset() * dtype.item_size()};
+    auto buffer = std::make_shared<rmm::device_buffer>(num_rows * dtype.item_size(), rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(buffer->data(),
+                              static_cast<const uint8_t*>(col.head<uint8_t>() + col.offset() * dtype.item_size()),
+                              buffer->size(),
+                              cudaMemcpyDeviceToDevice));
+
+    return {
+        buffer,
+        std::move(dtype),
+        {num_rows, 1},
+        {1, 0},
+    };
 }
 
 };  // namespace
@@ -115,45 +109,29 @@ FilterDetectionsStage::FilterDetectionsStage(float threshold,
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        std::function<BufferInfo(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)>
-            get_buffer_info;
+        std::function<DevMemInfo(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)>
+            get_buffer_source;
 
         if (m_filter_source == FilterSource::TENSOR)
         {
-            get_buffer_info = &get_tensor_buffer_info;
+            get_buffer_source = &get_tensor_source;
         }
         else
         {
-            get_buffer_info = &get_column_buffer_info;
+            get_buffer_source = &get_column_source;
         }
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output, &get_buffer_info](sink_type_t x) {
-                BufferInfo buffer_info = get_buffer_info(x, m_field_name);
+            [this, &output, &get_buffer_source](sink_type_t x) {
+                auto tmp_buffer = get_buffer_source(x, m_field_name);
 
-                // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
-                auto tmp_buffer = std::make_shared<rmm::device_buffer>(buffer_info.count * buffer_info.type.item_size(),
-                                                                       rmm::cuda_stream_per_thread);
-
-                MRC_CHECK_CUDA(
-                    cudaMemcpy(tmp_buffer->data(), buffer_info.head, tmp_buffer->size(), cudaMemcpyDeviceToDevice));
-
-                // Depending on the input the stride is given in bytes or elements, convert to elements
-                auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(buffer_info.stride);
-
-                const std::size_t num_rows    = buffer_info.shape[0];
-                const std::size_t num_columns = buffer_info.shape[1];
+                const std::size_t num_rows    = tmp_buffer.shape(0);
+                const std::size_t num_columns = tmp_buffer.shape(1);
 
                 bool by_row = (num_columns > 1);
 
                 // Now call the threshold function
-                auto thresh_bool_buffer =
-                    MatxUtil::threshold(DevMemInfo{tmp_buffer,
-                                                   buffer_info.type,
-                                                   buffer_info.shape,
-                                                   TensorUtils::get_element_stride<std::size_t>(buffer_info.stride)},
-                                        m_threshold,
-                                        by_row);
+                auto thresh_bool_buffer = MatxUtil::threshold(tmp_buffer, m_threshold, by_row);
 
                 std::vector<uint8_t> host_bool_values(num_rows);
 
