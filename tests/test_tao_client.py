@@ -93,7 +93,8 @@ def test_create_dataset_resource():
 
     mock_response2 = Response()
     mock_response2.status_code = 400
-    mock_response2._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "created_on": "2023-01-17T15:35:08.014463"}'
+    mock_response2._content = b'''{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx",
+    "created_on": "2023-01-17T15:35:08.014463"}'''
 
     tao_client.session.post = MagicMock(return_value=mock_response2)
 
@@ -227,7 +228,8 @@ def test_download_resource(tmpdir):
 
     mock_response = Response()
     mock_response.status_code = 200
-    mock_response._content = b'{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "parent_id" : "None", "status": "Pending", "created_on": "2023-01-17T15:35:08.014463"}'
+    mock_response._content = b'''{ "id" : "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx", "parent_id" : "None",
+    "status": "Pending", "created_on": "2023-01-17T15:35:08.014463"}'''
 
     resource_id = "eyJzdWIiOiJwOTltOTh0NzBzdDFsa3Zx"
 
