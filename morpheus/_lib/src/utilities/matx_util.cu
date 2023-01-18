@@ -285,17 +285,17 @@ namespace morpheus {
     // Component public implementations
     // ************ MatxUtil************************* //
     std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo &input, TypeId output_type) {
-        auto input_dtype = DType(input.type_id);
+        const auto& input_dtype = input.dtype();
         auto output_dtype = DType(output_type);
 
         // Create the output
         auto output = std::make_shared<rmm::device_buffer>(
-                output_dtype.item_size() * input.element_count, input.buffer->stream(),
-                input.buffer->memory_resource());
+                output_dtype.item_size() * input.count(), input.stream(),
+                input.memory_resource());
 
         cudf::double_type_dispatcher(cudf::data_type{input_dtype.cudf_type_id()},
                                      cudf::data_type{output_dtype.cudf_type_id()},
-                                     MatxUtil__MatxCast{input.element_count, output->stream()},
+                                     MatxUtil__MatxCast{input.count(), output->stream()},
                                      input.data(),
                                      output->data());
 
@@ -321,14 +321,14 @@ namespace morpheus {
     }
 
     std::shared_ptr<rmm::device_buffer> MatxUtil::logits(const DevMemInfo &input) {
-        auto input_dtype = DType(input.type_id);
+        const auto& input_dtype = input.dtype();
 
         // Now create the output
         auto output = std::make_shared<rmm::device_buffer>(
-                input_dtype.item_size() * input.element_count, input.buffer->stream(), input.buffer->memory_resource());
+                input_dtype.item_size() * input.count(), input.stream(), input.memory_resource());
 
         cudf::type_dispatcher(cudf::data_type{input_dtype.cudf_type_id()},
-                              MatxUtil__MatxLogits{input.element_count, output->stream()},
+                              MatxUtil__MatxLogits{input.count(), output->stream()},
                               input.data(),
                               output->data());
 
@@ -336,14 +336,14 @@ namespace morpheus {
     }
 
     std::shared_ptr<rmm::device_buffer> MatxUtil::transpose(const DevMemInfo &input, size_t rows, size_t cols) {
-        auto input_dtype = DType(input.type_id);
+        const auto& input_dtype = input.dtype();
 
         // Now create the output
         auto output = std::make_shared<rmm::device_buffer>(
-                input_dtype.item_size() * input.element_count, input.buffer->stream(), input.buffer->memory_resource());
+                input_dtype.item_size() * input.count(), input.stream(), input.memory_resource());
 
         cudf::type_dispatcher(cudf::data_type{input_dtype.cudf_type_id()},
-                              MatxUtil__MatxTranspose{input.element_count, output->stream(), rows, cols},
+                              MatxUtil__MatxTranspose{input.count(), output->stream(), rows, cols},
                               input.data(),
                               output->data());
 
@@ -354,7 +354,7 @@ namespace morpheus {
     MatxUtil::threshold(const DevMemInfo &input, size_t rows, size_t cols,
                         const std::vector<TensorIndex> &stride,
                         double thresh_val, bool by_row) {
-        auto input_dtype = DType(input.type_id);
+        const auto& input_dtype = input.dtype();
 
         std::size_t output_size = sizeof(bool) * rows;
         if (!by_row) {
@@ -362,8 +362,8 @@ namespace morpheus {
         }
 
         // Now create the output array of bools
-        auto output = std::make_shared<rmm::device_buffer>(output_size, input.buffer->stream(),
-                                                           input.buffer->memory_resource());
+        auto output = std::make_shared<rmm::device_buffer>(output_size, input.stream(),
+                                                           input.memory_resource());
 
         cudf::type_dispatcher(cudf::data_type{input_dtype.cudf_type_id()},
                               MatxUtil__MatxThreshold{rows, cols, by_row, output->stream()},
@@ -385,7 +385,7 @@ namespace morpheus {
                          const std::vector<int64_t> &input_stride,
                          const std::vector<int64_t> &output_shape)
     {
-        auto dtype = DType(input.type_id);
+        const auto&  dtype = input.dtype();
         auto elem_size = dtype.item_size();
         auto cudf_type = cudf::data_type{dtype.cudf_type_id()};
         auto num_input_rows = input_shape[0];
@@ -395,12 +395,12 @@ namespace morpheus {
         std::size_t output_element_count = output_shape[0] * output_shape[1];
         std::size_t output_buff_size = elem_size * output_element_count;
 
-        DCHECK(output_element_count <= input.element_count) << "Output buffer size should be less than or equal to the input";
+        DCHECK(output_element_count <= input.count()) << "Output buffer size should be less than or equal to the input";
         DCHECK(num_input_cols == output_shape[1]) << "Number of input and output columns must match";
 
         auto output = std::make_shared<rmm::device_buffer>(output_buff_size,
-                                                           input.buffer->stream(),
-                                                           input.buffer->memory_resource());
+                                                           input.stream(),
+                                                           input.memory_resource());
 
         MatxUtil__MatxReduceMax matx_reduce_max{num_input_rows, num_input_cols, matx_stride, output_shape[0], input.data(), output->data(), output->stream()};
 

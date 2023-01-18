@@ -136,10 +136,10 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                 }
 
                 // Need to do a transpose here
-                auto transposed_data =
-                    MatxUtil::transpose(DevMemInfo{x->mess_count * m_fea_cols.size(), TypeId::FLOAT32, packed_data, 0},
-                                        m_fea_cols.size(),
-                                        x->mess_count);
+                auto transposed_data = MatxUtil::transpose(
+                    DevMemInfo{packed_data, TypeId::FLOAT32, {x->mess_count, m_fea_cols.size()}, {1, x->mess_count}},
+                    m_fea_cols.size(),
+                    x->mess_count);
 
                 auto input__0 = Tensor::create(transposed_data,
                                                DType::create<float>(),

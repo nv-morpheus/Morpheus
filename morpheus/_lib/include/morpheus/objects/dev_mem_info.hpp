@@ -17,12 +17,13 @@
 
 #pragma once
 
+#include "morpheus/utilities/type_util.hpp"  // for DType
 #include "morpheus/utilities/type_util_detail.hpp"
 
 #include <rmm/device_buffer.hpp>
 
-#include <cstddef>
-#include <memory>
+#include <cstddef>  // for size_t
+#include <memory>   // for shared_ptr
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -35,25 +36,53 @@ namespace morpheus {
  */
 
 /**
- * @brief Simple object that just holds 4 things: element count, element dtype, device_buffer, and bytes_offset
+ * @brief Simple object that describes a buffer in device memory
  */
-struct DevMemInfo
+class DevMemInfo
 {
-    // Number of elements in the buffer
-    size_t element_count;
-    // Type of elements in the buffer
-    TypeId type_id;
-    // Buffer of data
-    std::shared_ptr<rmm::device_buffer> buffer;
-    // Offset from head of data in bytes
-    size_t offset;
+  public:
+    DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
+               DType dtype,
+               std::vector<std::size_t> shape,
+               std::vector<std::size_t> stride,
+               size_t offset_bytes = 0);
+    DevMemInfo(DevMemInfo&& other) = default;
+
+    std::size_t bytes() const;
+    std::size_t count() const;
+    std::size_t offset_bytes() const;
+    const DType& dtype() const;
+    TypeId type_id() const;
+
+    const std::vector<std::size_t>& shape() const;
+    std::size_t shape(std::size_t idx) const;
+
+    // Stride in elements
+    const std::vector<std::size_t>& stride() const;
+    std::size_t stride(std::size_t idx) const;
 
     /**
      * @brief Returns raw pointer to underlying buffer offset by the `offset`
      *
      * @return void*
      */
-    void *data() const;
+    void* data() const;
+    rmm::cuda_stream_view stream () const;
+    rmm::mr::device_memory_resource* memory_resource() const;
+
+  private:
+    // Buffer of data
+    std::shared_ptr<rmm::device_buffer> m_buffer;
+
+    // Type of elements in the buffer
+    DType m_dtype;
+
+    // Shape & stride of the data in the buffer
+    std::vector<std::size_t> m_shape;
+    std::vector<std::size_t> m_stride;
+
+    // Offset from head of data in bytes
+    size_t m_offset_bytes;
 };
 
 /** @} */  // end of group

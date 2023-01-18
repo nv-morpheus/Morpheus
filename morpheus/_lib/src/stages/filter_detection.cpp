@@ -148,12 +148,13 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
                 // Now call the threshold function
                 auto thresh_bool_buffer =
-                    MatxUtil::threshold(DevMemInfo{buffer_info.count, buffer_info.type.type_id(), tmp_buffer, 0},
+                    MatxUtil::threshold(DevMemInfo{tmp_buffer, buffer_info.type, buffer_info.shape, buffer_info.stride},
                                         num_rows,
                                         num_columns,
                                         tensor_stride,
                                         m_threshold,
                                         by_row);
+
                 std::vector<uint8_t> host_bool_values(num_rows);
 
                 // Copy bools back to host

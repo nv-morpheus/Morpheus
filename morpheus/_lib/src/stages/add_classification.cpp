@@ -82,13 +82,12 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(stride);
 
                 // Now call the threshold function
-                auto thresh_bool_buffer =
-                    MatxUtil::threshold(DevMemInfo{probs.count(), probs.dtype().type_id(), tmp_buffer, 0},
-                                        num_rows,
-                                        num_columns,
-                                        tensor_stride,
-                                        m_threshold,
-                                        false);
+                auto thresh_bool_buffer = MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride},
+                                                              num_rows,
+                                                              num_columns,
+                                                              tensor_stride,
+                                                              m_threshold,
+                                                              false);
 
                 auto tensor_obj = Tensor::create(
                     thresh_bool_buffer,
