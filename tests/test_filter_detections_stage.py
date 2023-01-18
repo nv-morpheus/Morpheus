@@ -54,7 +54,7 @@ def test_filter_copy(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
 
-    fds = FilterDetectionsStage(config, threshold=0.5)
+    fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
     mock_message = _make_message(df, probs)
@@ -138,7 +138,7 @@ def test_filter_slice(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
 
-    fds = FilterDetectionsStage(config, threshold=0.5)
+    fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
     mock_message = _make_message(df, probs)
@@ -209,10 +209,10 @@ def test_build_single(config):
     mock_stream = mock.MagicMock()
     mock_builder = mock.MagicMock()
     mock_builder.make_node.return_value = mock_stream
-    mock_input = mock.MagicMock()
+    mock_stream_pair = (mock.MagicMock(), mock.MagicMock())
 
     fds = FilterDetectionsStage(config)
-    fds._build_single(mock_builder, mock_input)
+    fds._build_single(mock_builder, mock_stream_pair)
 
     mock_builder.make_node.assert_called_once()
     mock_builder.make_edge.assert_called_once()

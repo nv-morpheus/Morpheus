@@ -27,7 +27,7 @@
 #include "morpheus/utilities/type_util_detail.hpp"  // for DataType
 
 #include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
-#include <glog/logging.h>            // for CHECK
+#include <glog/logging.h>            // for CHECK, CHECK_NE
 #include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
@@ -108,7 +108,9 @@ FilterDetectionsStage::FilterDetectionsStage(float threshold,
   m_copy(copy),
   m_filter_source(filter_source),
   m_field_name(std::move(field_name))
-{}
+{
+    CHECK_NE(m_filter_source, FilterSource::Auto);  // The python stage should determine this
+}
 
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 {
@@ -116,7 +118,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
                 BufferInfo buffer_info;
-                if (m_filter_source == FilterSource::TENSOR || m_filter_source == FilterSource::Auto)
+                if (m_filter_source == FilterSource::TENSOR)
                 {
                     buffer_info = get_tensor_buffer_info(x, m_field_name);
                 }

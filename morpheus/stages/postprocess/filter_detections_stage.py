@@ -18,6 +18,7 @@ import typing
 import cupy as cp
 import mrc
 import numpy as np
+import typing_utils
 from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
@@ -70,7 +71,8 @@ class FilterDetectionsStage(SinglePortStage):
         Whether or not to perform a copy.
     filter_source : `from morpheus._lib.common.FilterSource`, default = 'auto'
         Indicate if we are operating on is an output tensor or a field in the DataFrame.
-        Choosing `Auto` will default to `TENSOR` and in a future release will change to `DATAFRAME`
+        Choosing `Auto` will default to `TENSOR` when the incoming message contains output tensorts and `DATAFRAME`
+        otherwise.
     field_name : str
         Name of the tensor or DataFrame column to use as the filter criteria
     """
@@ -87,9 +89,6 @@ class FilterDetectionsStage(SinglePortStage):
         self._threshold = threshold
         self._copy = copy
 
-        if filter_source == FilterSource.Auto:
-            filter_source = FilterSource.TENSOR
-
         self._filter_source = filter_source
         self._field_name = field_name
 
@@ -103,11 +102,10 @@ class FilterDetectionsStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseProbsMessage`, ]
+        typing.Tuple[`morpheus.pipeline.messages.MultiMessage`, ]
             Accepted input types.
 
         """
-
         if self._filter_source == FilterSource.TENSOR:
             return (MultiResponseMessage, )
         else:
@@ -188,23 +186,34 @@ class FilterDetectionsStage(SinglePortStage):
         return output_list
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+        (parent_node, message_type) = input_stream
+        if self._filter_source == FilterSource.Auto:
+            if (typing_utils.issubtype(message_type, MultiResponseMessage)):
+                self._filter_source = FilterSource.TENSOR
+            else:
+                self._filter_source = FilterSource.DATAFRAME
+
+            logger.debug(
+                f"filter_source was set to Auto, infering a filter source of {self._filter_source} based on an input "
+                "message type of {message_type}")
+
         if self._build_cpp_node():
-            stream = _stages.FilterDetectionsStage(builder,
-                                                   self.unique_name,
-                                                   self._threshold,
-                                                   self._copy,
-                                                   self._filter_source,
-                                                   self._field_name)
+            node = _stages.FilterDetectionsStage(builder,
+                                                 self.unique_name,
+                                                 self._threshold,
+                                                 self._copy,
+                                                 self._filter_source,
+                                                 self._field_name)
         else:
             if self._copy:
-                stream = builder.make_node(self.unique_name, self.filter_copy)
+                node = builder.make_node(self.unique_name, self.filter_copy)
             else:
                 # Convert list back to individual messages
                 def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
                     obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
 
-                stream = builder.make_node_full(self.unique_name, flatten_fn)
+                node = builder.make_node_full(self.unique_name, flatten_fn)
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(parent_node, node)
 
-        return stream, input_stream[1]
+        return node, message_type
