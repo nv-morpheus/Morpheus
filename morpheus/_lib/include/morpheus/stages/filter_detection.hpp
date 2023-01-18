@@ -18,8 +18,8 @@
 #pragma once
 
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/filter_source.hpp"
 
 #include <mrc/channel/status.hpp>          // for Status
 #include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
@@ -85,10 +85,7 @@ class FilterDetectionsStage
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
      */
-    FilterDetectionsStage(float threshold,
-                          bool copy                  = true,
-                          FilterSource filter_source = FilterSource::Auto,
-                          std::string field_name     = "probs");
+    FilterDetectionsStage(float threshold, bool copy, FilterSource filter_source, std::string field_name = "probs");
 
   private:
     subscribe_fn_t build_operator();
