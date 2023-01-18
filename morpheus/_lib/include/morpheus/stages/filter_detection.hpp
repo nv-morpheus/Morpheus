@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/filter_source.hpp"
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 
 #include <mrc/channel/status.hpp>          // for Status
 #include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
@@ -91,6 +92,8 @@ class FilterDetectionsStage
 
   private:
     subscribe_fn_t build_operator();
+    DevMemInfo get_tensor_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
+    DevMemInfo get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
 
     float m_threshold;
     bool m_copy;

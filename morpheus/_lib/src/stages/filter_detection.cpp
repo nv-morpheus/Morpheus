@@ -18,8 +18,6 @@
 #include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
 #include "morpheus/messages/multi_tensor.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
@@ -43,12 +41,27 @@
 // IWYU thinks we need ext/new_allocator.h for size_t for some reason
 // IWYU pragma: no_include <ext/new_allocator.h>
 
-namespace {
+namespace morpheus {
 
-morpheus::DevMemInfo get_tensor_source(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)
+// Component public implementations
+// ************ FilterDetectionStage **************************** //
+FilterDetectionsStage::FilterDetectionsStage(float threshold,
+                                             bool copy,
+                                             FilterSource filter_source,
+                                             std::string field_name) :
+  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
+  m_threshold(threshold),
+  m_copy(copy),
+  m_filter_source(filter_source),
+  m_field_name(std::move(field_name))
+{
+    CHECK(m_filter_source != FilterSource::Auto);  // The python stage should determine this
+}
+
+DevMemInfo FilterDetectionsStage::get_tensor_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x)
 {
     // The pipeline build will check to ensure that our input is a MultiResponseMessage
-    const auto& filter_source = std::static_pointer_cast<morpheus::MultiTensorMessage>(x)->get_tensor(field_name);
+    const auto& filter_source = std::static_pointer_cast<morpheus::MultiTensorMessage>(x)->get_tensor(m_field_name);
     CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
         << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
            "arrays";
@@ -63,9 +76,9 @@ morpheus::DevMemInfo get_tensor_source(const std::shared_ptr<morpheus::MultiMess
     return {buffer, filter_source.dtype(), filter_source.get_shape(), stride};
 }
 
-morpheus::DevMemInfo get_column_source(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)
+DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x)
 {
-    auto table_info = x->get_meta(field_name);
+    auto table_info = x->get_meta(m_field_name);
 
     // since we only asked for one column, we know its the first
     const auto& col = table_info.get_column(0);
@@ -87,43 +100,23 @@ morpheus::DevMemInfo get_column_source(const std::shared_ptr<morpheus::MultiMess
     };
 }
 
-};  // namespace
-
-namespace morpheus {
-
-// Component public implementations
-// ************ FilterDetectionStage **************************** //
-FilterDetectionsStage::FilterDetectionsStage(float threshold,
-                                             bool copy,
-                                             FilterSource filter_source,
-                                             std::string field_name) :
-  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_threshold(threshold),
-  m_copy(copy),
-  m_filter_source(filter_source),
-  m_field_name(std::move(field_name))
-{
-    CHECK(m_filter_source != FilterSource::Auto);  // The python stage should determine this
-}
-
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        std::function<DevMemInfo(const std::shared_ptr<morpheus::MultiMessage>& x, const std::string& field_name)>
-            get_buffer_source;
+        std::function<DevMemInfo(const std::shared_ptr<morpheus::MultiMessage>& x)> get_filter_source;
 
         if (m_filter_source == FilterSource::TENSOR)
         {
-            get_buffer_source = &get_tensor_source;
+            get_filter_source = [this](auto x) { return get_tensor_filter_source(x); };
         }
         else
         {
-            get_buffer_source = &get_column_source;
+            get_filter_source = [this](auto x) { return get_column_filter_source(x); };
         }
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output, &get_buffer_source](sink_type_t x) {
-                auto tmp_buffer = get_buffer_source(x, m_field_name);
+            [this, &output, &get_filter_source](sink_type_t x) {
+                auto tmp_buffer = get_filter_source(x);
 
                 const std::size_t num_rows    = tmp_buffer.shape(0);
                 const std::size_t num_columns = tmp_buffer.shape(1);
