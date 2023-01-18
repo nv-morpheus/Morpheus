@@ -31,7 +31,6 @@
 #include "morpheus/utilities/type_util.hpp"
 #include "morpheus/utilities/type_util_detail.hpp"  // for DataType
 
-#include <bits/c++config.h>
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
 #include <http_client.h>

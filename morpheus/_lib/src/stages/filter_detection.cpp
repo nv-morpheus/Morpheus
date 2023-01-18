@@ -118,8 +118,8 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
             [this, &output, &get_filter_source](sink_type_t x) {
                 auto tmp_buffer = get_filter_source(x);
 
-                const std::size_t num_rows    = tmp_buffer.shape(0);
-                const std::size_t num_columns = tmp_buffer.shape(1);
+                const auto num_rows    = tmp_buffer.shape(0);
+                const auto num_columns = tmp_buffer.shape(1);
 
                 bool by_row = (num_columns > 1);
 

@@ -84,14 +84,14 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 auto thresh_bool_buffer =
                     MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride}, m_threshold, false);
 
+                std::vector<TensorIndex> tensor_shape(shape.size());
+                std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());
+
                 std::vector<TensorIndex> tensor_stride(stride.size());
                 std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
 
-                auto tensor_obj = Tensor::create(
-                    thresh_bool_buffer,
-                    DType::create<bool>(),
-                    std::vector<TensorIndex>{static_cast<long long>(shape[0]), static_cast<long long>(shape[1])},
-                    tensor_stride);
+                auto tensor_obj =
+                    Tensor::create(thresh_bool_buffer, DType::create<bool>(), tensor_shape, tensor_stride);
 
                 std::vector<std::string> columns(m_idx2label.size());
                 std::vector<TensorObject> tensors(m_idx2label.size());
