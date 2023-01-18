@@ -129,7 +129,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, &get_buffer_info](sink_type_t x) {
-                BufferInfo buffer_info = get_tensor_buffer_info(x, m_field_name);
+                BufferInfo buffer_info = get_buffer_info(x, m_field_name);
 
                 // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
                 auto tmp_buffer = std::make_shared<rmm::device_buffer>(buffer_info.count * buffer_info.type.item_size(),
