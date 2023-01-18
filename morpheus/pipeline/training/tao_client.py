@@ -20,7 +20,7 @@ import typing
 
 import requests
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(__name__)
 
 _KIND = typing.Literal["model", "dataset"]
 _DATASET_ACTIONS = typing.Literal["convert", "convert_index", "convert_efficientdet"]
@@ -83,14 +83,14 @@ def validate_actions(func):
         if actions is None:
             raise TypeError("TypeError: a string-like object is required for an action, not 'NoneType'")
 
-        availablestr = typing.get_args(actions_by_kind)
+        available_actions = typing.get_args(actions_by_kind)
 
         if isinstance(actions, list):
-            if not set(actions).issubset(availablestr):
+            if not set(actions).issubset(available_actions):
                 raise ValueError("One or more actions are not valid actions '{}'. Available actions are {}".format(
                     actions, actions_by_kind))
         else:
-            if actions not in availablestr:
+            if actions not in available_actions:
                 raise ValueError("Invalid action '{}'. Available actions are {}".format(actions, actions_by_kind))
 
         return func(*args, **kwargs)
@@ -151,7 +151,7 @@ class TaoApiClient():
 
         resp = self.session.get(endpoint)
         if not resp.status_code == 200:
-            raise Exception("Login failed: {}".format(resp.reason))
+            raise Exception("Login failed: {}".format(resp.content))
 
         logger.info("Login has been successful!")
 
