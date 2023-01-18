@@ -283,8 +283,6 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                                 DevMemInfo{output_buffer, model_output.datatype, input_shape, stride},
                                 *host_seq_ids,
                                 mini_batch_input->offset,
-                                output_shape,
-                                {output_shape[1], 1},
                                 mapped_output_shape);
                             output_shape = std::move(mapped_output_shape);
                         }

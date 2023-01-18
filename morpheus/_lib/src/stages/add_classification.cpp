@@ -61,9 +61,11 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
-                const auto& probs  = x->get_probs();
-                const auto& shape  = probs.get_shape();
-                const auto& stride = probs.get_stride();
+                const auto& probs = x->get_probs();
+                const auto& shape = probs.get_shape();
+
+                // Depending on the input the stride is given in bytes or elements, convert to elements
+                auto stride = TensorUtils::get_element_stride<std::size_t>(probs.get_stride());
 
                 CHECK(shape.size() == 2 && shape[1] == m_num_class_labels)
                     << "Label count does not match output of model. Label count: " << m_num_class_labels
@@ -78,16 +80,12 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 MRC_CHECK_CUDA(
                     cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
 
-                // Depending on the input the stride is given in bytes or elements, convert to elements
-                auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(stride);
-
                 // Now call the threshold function
-                auto thresh_bool_buffer = MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride},
-                                                              num_rows,
-                                                              num_columns,
-                                                              tensor_stride,
-                                                              m_threshold,
-                                                              false);
+                auto thresh_bool_buffer =
+                    MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride}, m_threshold, false);
+
+                std::vector<TensorIndex> tensor_stride(stride.size());
+                std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
 
                 auto tensor_obj = Tensor::create(
                     thresh_bool_buffer,

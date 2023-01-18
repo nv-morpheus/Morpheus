@@ -148,10 +148,10 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 
                 // Now call the threshold function
                 auto thresh_bool_buffer =
-                    MatxUtil::threshold(DevMemInfo{tmp_buffer, buffer_info.type, buffer_info.shape, buffer_info.stride},
-                                        num_rows,
-                                        num_columns,
-                                        tensor_stride,
+                    MatxUtil::threshold(DevMemInfo{tmp_buffer,
+                                                   buffer_info.type,
+                                                   buffer_info.shape,
+                                                   TensorUtils::get_element_stride<std::size_t>(buffer_info.stride)},
                                         m_threshold,
                                         by_row);
 
