@@ -126,12 +126,13 @@ class SlicedMessageMeta : public MessageMeta
 class MutableTableCtxMgr : public std::enable_shared_from_this<MutableTableCtxMgr>
 {
   public:
-    MutableTableCtxMgr(MutableTableInfo&& table);
+    MutableTableCtxMgr(MessageMeta& meta_msg);
     std::shared_ptr<MutableTableCtxMgr> enter();
     void exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback);
     pybind11::object& df_property();
 
   private:
+    MessageMeta& m_meta_msg;
     std::unique_ptr<MutableTableInfo> m_table;
     std::unique_ptr<pybind11::object> m_py_table;
 };

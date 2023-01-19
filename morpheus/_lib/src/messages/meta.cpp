@@ -148,16 +148,16 @@ pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, i
 }
 
 /********** MutableTableCtxMgr **********/
-MutableTableCtxMgr::MutableTableCtxMgr(MutableTableInfo&& table) :
-  m_table{std::make_unique<MutableTableInfo>(std::move(table))} {};
+MutableTableCtxMgr::MutableTableCtxMgr(MessageMeta& meta_msg) :
+  m_meta_msg{meta_msg},
+  m_table{nullptr},
+  m_py_table{nullptr} {};
 
 std::shared_ptr<MutableTableCtxMgr> MutableTableCtxMgr::enter()
 {
-    if (m_table == nullptr)
-    {
-        throw std::runtime_error("Error MutableTableCtxMgr does not have an instance of MutableTableInfo");
-    }
-
+    // Release any GIL
+    pybind11::gil_scoped_release no_gil;
+    m_table    = std::make_unique<MutableTableInfo>(std::move(m_meta_msg.get_mutable_info()));
     m_py_table = std::make_unique<pybind11::object>(std::move(m_table->checkout_obj()));
     return shared_from_this();
 }
@@ -239,7 +239,7 @@ MutableTableCtxMgr MessageMetaInterfaceProxy::mutable_dataframe(MessageMeta& sel
 {
     // Release any GIL
     pybind11::gil_scoped_release no_gil;
-    return {self.get_mutable_info()};
+    return {self};
 }
 
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::string& filename)
