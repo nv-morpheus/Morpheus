@@ -17,7 +17,6 @@ import logging
 import dfp.modules.dfp_data_prep  # noqa: F401
 import dfp.modules.dfp_rolling_window  # noqa: F401
 import dfp.modules.dfp_split_users  # noqa: F401
-import dfp.modules.dfp_training  # noqa: F401
 import mrc
 
 import morpheus.modules.file_batcher  # noqa: F401
@@ -64,7 +63,7 @@ def dfp_pipeline_preprocessing(builder: mrc.Builder):
     dfp_rolling_window_module = load_module(dfp_rolling_window_conf, builder=builder)
     dfp_data_prep_module = load_module(dfp_data_prep_conf, builder=builder)
 
-    # Make edge between the modules.
+    # Make an edge between the modules.
     builder.make_edge(file_batcher_module.output_port("output"), file_to_dataframe_module.input_port("input"))
     builder.make_edge(file_to_dataframe_module.output_port("output"), dfp_split_users_modules.input_port("input"))
     builder.make_edge(dfp_split_users_modules.output_port("output"), dfp_rolling_window_module.input_port("input"))
