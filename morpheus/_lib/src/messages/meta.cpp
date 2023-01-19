@@ -147,28 +147,30 @@ pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, i
     return converted_table;
 }
 
-/********** MutableCtxMgr **********/
-MutableCtxMgr::MutableCtxMgr(MutableTableInfo&& table) :
+/********** MutableTableCtxMgr **********/
+MutableTableCtxMgr::MutableTableCtxMgr(MutableTableInfo&& table) :
   m_table{std::make_unique<MutableTableInfo>(std::move(table))} {};
 
-std::shared_ptr<MutableCtxMgr> MutableCtxMgr::enter()
+std::shared_ptr<MutableTableCtxMgr> MutableTableCtxMgr::enter()
 {
     if (m_table == nullptr)
     {
-        throw std::runtime_error("Error MutableCtxMgr does not have an instance of MutableTableInfo");
+        throw std::runtime_error("Error MutableTableCtxMgr does not have an instance of MutableTableInfo");
     }
 
     m_py_table = std::make_unique<pybind11::object>(std::move(m_table->checkout_obj()));
     return shared_from_this();
 }
 
-void MutableCtxMgr::exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback)
+void MutableTableCtxMgr::exit(const pybind11::object& type,
+                              const pybind11::object& value,
+                              const pybind11::object& traceback)
 {
     m_table->return_obj(std::move(*m_py_table.release()));
     m_table.reset(nullptr);
 }
 
-pybind11::object& MutableCtxMgr::df_property()
+pybind11::object& MutableTableCtxMgr::df_property()
 {
     if (m_table == nullptr)
     {
@@ -233,7 +235,7 @@ void MessageMetaInterfaceProxy::set_data_frame(MessageMeta& self, const pybind11
     // return self.get_py_table();
 }
 
-MutableCtxMgr MessageMetaInterfaceProxy::mutable_dataframe(MessageMeta& self)
+MutableTableCtxMgr MessageMetaInterfaceProxy::mutable_dataframe(MessageMeta& self)
 {
     // Release any GIL
     pybind11::gil_scoped_release no_gil;

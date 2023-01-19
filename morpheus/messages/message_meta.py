@@ -22,7 +22,7 @@ import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
 
 
-class MutableCtxMgr:
+class MutableTableCtxMgr:
 
     def __init__(self, df: pd.DataFrame, mutex: threading.RLock) -> None:
         self.__df = df
@@ -76,7 +76,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         return self._df.copy(deep=True)
 
     def mutable_dataframe(self):
-        return MutableCtxMgr(self._df, self._mutex)
+        return MutableTableCtxMgr(self._df, self._mutex)
 
     @property
     def count(self) -> int:

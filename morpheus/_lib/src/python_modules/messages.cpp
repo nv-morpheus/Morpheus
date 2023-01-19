@@ -110,10 +110,10 @@ PYBIND11_MODULE(messages, m)
     mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    py::class_<MutableCtxMgr, std::shared_ptr<MutableCtxMgr>>(m, "MutableCtxMgr")
-        .def("__enter__", &MutableCtxMgr::enter, py::return_value_policy::reference)
-        .def("__exit__", &MutableCtxMgr::exit)
-        .def_property_readonly("df", &MutableCtxMgr::df_property, py::return_value_policy::reference);
+    py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")
+        .def("__enter__", &MutableTableCtxMgr::enter, py::return_value_policy::reference)
+        .def("__exit__", &MutableTableCtxMgr::exit)
+        .def_property_readonly("df", &MutableTableCtxMgr::df_property, py::return_value_policy::reference);
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
