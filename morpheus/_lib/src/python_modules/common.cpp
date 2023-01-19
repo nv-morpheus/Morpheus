@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "morpheus/objects/dtype.hpp"  // for TypeId
 #include "morpheus/objects/fiber_queue.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
@@ -47,6 +48,23 @@ PYBIND11_MODULE(common, m)
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("close", &FiberQueueInterfaceProxy::close);
+
+    py::enum_<TypeId>(m, "TypeId", "Supported Morpheus types")
+        .value("EMPTY", TypeId::EMPTY)
+        .value("INT8", TypeId::INT8)
+        .value("INT16", TypeId::INT16)
+        .value("INT32", TypeId::INT32)
+        .value("INT64", TypeId::INT64)
+        .value("UINT8", TypeId::UINT8)
+        .value("UINT16", TypeId::UINT16)
+        .value("UINT32", TypeId::UINT32)
+        .value("UINT64", TypeId::UINT64)
+        .value("FLOAT32", TypeId::FLOAT32)
+        .value("FLOAT64", TypeId::FLOAT64)
+        .value("BOOL8", TypeId::BOOL8)
+        .value("STRING", TypeId::STRING);
+
+    m.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

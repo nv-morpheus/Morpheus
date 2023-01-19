@@ -23,8 +23,8 @@ import pandas as pd
 
 import cudf
 
-from morpheus._lib.type_id import TypeId
-from morpheus._lib.type_id import tyepid_to_numpy_str
+from morpheus._lib.common import TypeId
+from morpheus._lib.common import tyepid_to_numpy_str
 from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
