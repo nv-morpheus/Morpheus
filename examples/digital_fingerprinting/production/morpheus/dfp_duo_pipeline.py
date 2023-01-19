@@ -305,7 +305,7 @@ def run_pipeline(train_users,
         pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
 
         pipeline.add_stage(
-            FilterDetectionsStage(config, threshold=2.0, data_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
+            FilterDetectionsStage(config, threshold=2.0, filter_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
         pipeline.add_stage(DFPPostprocessingStage(config))
 
         # Exclude the columns we don't want in our output
