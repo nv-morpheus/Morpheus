@@ -40,16 +40,16 @@ Next, we will update our `on_data` method to perform the actual work. We grab a 
 ```python
 def on_data(self, message: MessageMeta) -> MessageMeta:
     # Open the DataFrame from the incoming message for in-place modification
-    with message.mutable_dataframe() as ctx:
-        ctx.df['to_count'] = ctx.df['To'].str.count('@')
-        ctx.df['bcc_count'] = ctx.df['BCC'].str.count('@')
-        ctx.df['cc_count'] = ctx.df['CC'].str.count('@')
-        ctx.df['total_recipients'] = ctx.df['to_count'] + ctx.df['bcc_count'] + ctx.df['cc_count']
+    with message.mutable_dataframe() as df:
+        df['to_count'] = df['To'].str.count('@')
+        df['bcc_count'] = df['BCC'].str.count('@')
+        df['cc_count'] = df['CC'].str.count('@')
+        df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
         # Attach features to string data
-        ctx.df['data'] = (ctx.df['to_count'].astype(str) + '[SEP]' + ctx.df['bcc_count'].astype(str) + '[SEP]' +
-                            ctx.df['cc_count'].astype(str) + '[SEP]' + ctx.df['total_recipients'].astype(str) +
-                            '[SEP]' + ctx.df['Message'])
+        df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
+                            df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) +
+                            '[SEP]' + df['Message'])
 
     # Return the message for the next stage
     return message
@@ -154,16 +154,16 @@ class RecipientFeaturesStage(SinglePortStage):
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
         # Open the DataFrame from the incoming message for in-place modification
-        with message.mutable_dataframe() as ctx:
-            ctx.df['to_count'] = ctx.df['To'].str.count('@')
-            ctx.df['bcc_count'] = ctx.df['BCC'].str.count('@')
-            ctx.df['cc_count'] = ctx.df['CC'].str.count('@')
-            ctx.df['total_recipients'] = ctx.df['to_count'] + ctx.df['bcc_count'] + ctx.df['cc_count']
+        with message.mutable_dataframe() as df:
+            df['to_count'] = df['To'].str.count('@')
+            df['bcc_count'] = df['BCC'].str.count('@')
+            df['cc_count'] = df['CC'].str.count('@')
+            df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
             # Attach features to string data
-            ctx.df['data'] = (ctx.df['to_count'].astype(str) + '[SEP]' + ctx.df['bcc_count'].astype(str) + '[SEP]' +
-                              ctx.df['cc_count'].astype(str) + '[SEP]' + ctx.df['total_recipients'].astype(str) +
-                              '[SEP]' + ctx.df['Message'])
+            df['data'] = (df['to_count'].astype(str) + '[SEP]' + df['bcc_count'].astype(str) + '[SEP]' +
+                              df['cc_count'].astype(str) + '[SEP]' + df['total_recipients'].astype(str) +
+                              '[SEP]' + df['Message'])
 
         # Return the message for the next stage
         return message
@@ -610,16 +610,16 @@ class RecipientFeaturesStage(SinglePortStage):
 
     def on_data(self, message: MessageMeta) -> MessageMeta:
         # Open the DataFrame from the incoming message for in-place modification
-        with message.mutable_dataframe() as ctx:
-            ctx.df['to_count'] = ctx.df['To'].str.count('@')
-            ctx.df['bcc_count'] = ctx.df['BCC'].str.count('@')
-            ctx.df['cc_count'] = ctx.df['CC'].str.count('@')
-            ctx.df['total_recipients'] = ctx.df['to_count'] + ctx.df['bcc_count'] + ctx.df['cc_count']
+        with message.mutable_dataframe() as df:
+            df['to_count'] = df['To'].str.count('@')
+            df['bcc_count'] = df['BCC'].str.count('@')
+            df['cc_count'] = df['CC'].str.count('@')
+            df['total_recipients'] = df['to_count'] + df['bcc_count'] + df['cc_count']
 
             # Attach features to string data
-            ctx.df['data'] = (ctx.df['to_count'].astype(str) + self._sep_token + ctx.df['bcc_count'].astype(str) +
-                              self._sep_token + ctx.df['cc_count'].astype(str) + self._sep_token +
-                              ctx.df['total_recipients'].astype(str) + self._sep_token + ctx.df['Message'])
+            df['data'] = (df['to_count'].astype(str) + self._sep_token + df['bcc_count'].astype(str) +
+                              self._sep_token + df['cc_count'].astype(str) + self._sep_token +
+                              df['total_recipients'].astype(str) + self._sep_token + df['Message'])
 
         # Return the message for the next stage
         return message
