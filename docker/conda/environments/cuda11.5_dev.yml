@@ -32,9 +32,9 @@ dependencies:
     - cmake=3.24
     - configargparse=1.5
     - cuda-nvml-dev=11.5
-    - cuda-python<=11.5.0 # Remove when Issue #251 is closed
+    - cuda-python>=11.6 # Remove when Issue #251 is closed
     - cudatoolkit=11.5
-    - cudf 22.08
+    - cudf 22.10
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
@@ -63,7 +63,7 @@ dependencies:
     - networkx=2.8
     - ninja=1.10
     - nodejs=17.4.0
-    - numba==0.55
+    - numba>=0.56.2
     - numpydoc=1.4
     - nvcc_linux-64=11.5
     - pandas=1.3

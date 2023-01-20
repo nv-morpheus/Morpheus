@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-set(MORPHEUS_RAPIDS_VERSION "22.08" CACHE STRING "Global default version for all Rapids project dependencies")
+set(MORPHEUS_RAPIDS_VERSION "22.10" CACHE STRING "Global default version for all Rapids project dependencies")
 set(RAPIDS_CMAKE_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Version of rapids-cmake to use")
 
 # Download and load the repo according to the rapids-cmake instructions if it does not exist
