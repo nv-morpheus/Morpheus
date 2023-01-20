@@ -127,9 +127,11 @@ class MutableTableCtxMgr : public std::enable_shared_from_this<MutableTableCtxMg
 {
   public:
     MutableTableCtxMgr(MessageMeta& meta_msg);
-    std::shared_ptr<MutableTableCtxMgr> enter();
+    pybind11::object enter();
     void exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback);
-    pybind11::object& df_property();
+
+    // Throws a useful exception when a user attempts to use this object as if it were the dataframe itself
+    void throw_usage_error(pybind11::args args, const pybind11::kwargs& kwargs);
 
   private:
     MessageMeta& m_meta_msg;
@@ -177,14 +179,6 @@ struct MessageMetaInterfaceProxy
     static pybind11::object df_property(MessageMeta& self);
 
     static MutableTableCtxMgr mutable_dataframe(MessageMeta& self);
-
-    /**
-     * @brief Set a new python `DataFrame` object to the internal `IDataTable`
-     *
-     * @param self The MessageMeta instance
-     * @param new_df A `DataFrame` object in python
-     */
-    static void set_data_frame(MessageMeta& self, const pybind11::object& new_df);
 };
 
 #pragma GCC visibility pop

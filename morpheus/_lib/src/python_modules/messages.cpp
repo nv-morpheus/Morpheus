@@ -110,10 +110,14 @@ PYBIND11_MODULE(messages, m)
     mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
+    // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
     py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")
         .def("__enter__", &MutableTableCtxMgr::enter, py::return_value_policy::reference)
         .def("__exit__", &MutableTableCtxMgr::exit)
-        .def_property_readonly("df", &MutableTableCtxMgr::df_property, py::return_value_policy::reference);
+        .def("__getattr__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__getitem__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__setattr__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__setitem__", &MutableTableCtxMgr::throw_usage_error);
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))

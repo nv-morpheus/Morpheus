@@ -28,68 +28,13 @@
 #include <pybind11/pytypes.h>
 
 #include <memory>
+#include <sstream>    // for ostringstream
 #include <stdexcept>  // for runtime_error
 #include <utility>
 
 namespace morpheus {
-/******* Component-private Classes *********************/
-/******* MessageMetaImpl *******************************/
-/*
-struct MessageMetaImpl {
-    virtual pybind11::object get_py_table() const = 0;
 
-    virtual TableInfo get_info() const = 0;
-};
-*/
-
-/******* MessageMetaPyImpl *****************************/
-// struct MessageMetaPyImpl : public MessageMetaImpl
-// {
-//     MessageMetaPyImpl(pybind11::object&& pydf) : m_pydf(std::move(pydf)) {}
-
-//     MessageMetaPyImpl(cudf::io::table_with_metadata&& table) : m_pydf(std::move(cpp_to_py(std::move(table)))) {}
-
-//     pybind11::object get_py_table() const override
-//     {
-//         return m_pydf;
-//     }
-
-//     TableInfo get_info() const override
-//     {
-//         pybind11::gil_scoped_acquire gil;
-
-//         return make_table_info_from_table((PyTable*)this->m_pydf.ptr());
-//     }
-
-//     pybind11::object m_pydf;
-// };
-
-// struct MessageMetaCppImpl : public MessageMetaImpl
-// {
-//     MessageMetaCppImpl(cudf::io::table_with_metadata&& table) : m_table(std::move(table)) {}
-
-//     pybind11::object get_py_table() const override
-//     {
-//         pybind11::gil_scoped_acquire gil;
-
-//         // Get a python object from this data table
-//         pybind11::object py_datatable = pybind11::cast(m_data_table);
-
-//         // Now convert to a python TableInfo object
-//         auto converted_table = pybind11::reinterpret_steal<pybind11::object>(
-//             (PyObject*)make_table_from_datatable(m_data_table, (PyObject*)py_datatable.ptr()));
-
-//         return converted_table;
-//     }
-//     TableInfo get_info() const override
-//     {
-//         return TableInfo(m_data_table);
-//     }
-
-//     std::shared_ptr<DataTable> m_data_table;
-// };
-
-// std::unique_ptr<MessageMetaImpl> m_data;
+namespace py = pybind11;
 
 /****** Component public implementations *******************/
 /****** MessageMeta ****************************************/
@@ -109,7 +54,7 @@ MutableTableInfo MessageMeta::get_mutable_info() const
     return this->m_data->get_mutable_info();
 }
 
-std::shared_ptr<MessageMeta> MessageMeta::create_from_python(pybind11::object&& data_table)
+std::shared_ptr<MessageMeta> MessageMeta::create_from_python(py::object&& data_table)
 {
     auto data = std::make_unique<PyDataTable>(std::move(data_table));
 
@@ -120,7 +65,7 @@ std::shared_ptr<MessageMeta> MessageMeta::create_from_cpp(cudf::io::table_with_m
                                                           int index_col_count)
 {
     // Convert to py first
-    pybind11::object py_dt = cpp_to_py(std::move(data_table), index_col_count);
+    py::object py_dt = cpp_to_py(std::move(data_table), index_col_count);
 
     auto data = std::make_unique<PyDataTable>(std::move(py_dt));
 
@@ -129,9 +74,9 @@ std::shared_ptr<MessageMeta> MessageMeta::create_from_cpp(cudf::io::table_with_m
 
 MessageMeta::MessageMeta(std::shared_ptr<IDataTable> data) : m_data(std::move(data)) {}
 
-pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count)
+py::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count)
 {
-    pybind11::gil_scoped_acquire gil;
+    py::gil_scoped_acquire gil;
 
     // Now convert to a python TableInfo object
     auto converted_table = proxy_table_from_table_with_metadata(std::move(table), index_col_count);
@@ -139,7 +84,7 @@ pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, i
     // VLOG(10) << "Table. Num Col: " << converted_table.attr("_num_columns").str().cast<std::string>()
     //          << ", Num Ind: " << converted_table.attr("_num_columns").cast<std::string>()
     //          << ", Rows: " << converted_table.attr("_num_rows").cast<std::string>();
-    // pybind11::print("Table Created. Num Rows: {}, Num Cols: {}, Num Ind: {}",
+    // py::print("Table Created. Num Rows: {}, Num Cols: {}, Num Ind: {}",
     //           converted_table.attr("_num_rows"),
     //           converted_table.attr("_num_columns"),
     //           converted_table.attr("_num_indices"));
@@ -153,35 +98,32 @@ MutableTableCtxMgr::MutableTableCtxMgr(MessageMeta& meta_msg) :
   m_table{nullptr},
   m_py_table{nullptr} {};
 
-std::shared_ptr<MutableTableCtxMgr> MutableTableCtxMgr::enter()
+py::object MutableTableCtxMgr::enter()
 {
     // Release any GIL
-    pybind11::gil_scoped_release no_gil;
+    py::gil_scoped_release no_gil;
     m_table    = std::make_unique<MutableTableInfo>(std::move(m_meta_msg.get_mutable_info()));
-    m_py_table = std::make_unique<pybind11::object>(std::move(m_table->checkout_obj()));
-    return shared_from_this();
+    m_py_table = std::make_unique<py::object>(std::move(m_table->checkout_obj()));
+    return *m_py_table;
 }
 
-void MutableTableCtxMgr::exit(const pybind11::object& type,
-                              const pybind11::object& value,
-                              const pybind11::object& traceback)
+void MutableTableCtxMgr::exit(const py::object& type, const py::object& value, const py::object& traceback)
 {
     m_table->return_obj(std::move(*m_py_table.release()));
     m_table.reset(nullptr);
 }
 
-pybind11::object& MutableTableCtxMgr::df_property()
+void MutableTableCtxMgr::throw_usage_error(pybind11::args args, const pybind11::kwargs& kwargs)
 {
-    if (m_table == nullptr)
-    {
-        throw std::runtime_error("Error accessing released mutable_dataframe outside of context manager");
-    }
-
-    return *m_py_table;
+    std::ostringstream err_msg;
+    err_msg << "Error attempting to use mutable_dataframe outside of context manager. Intended usage :\n";
+    err_msg << "with message_meta.mutable_dataframe() as df:\n";
+    err_msg << "    df['col'] = 5";
+    throw std::runtime_error(err_msg.str());
 }
 
 /********** MessageMetaInterfaceProxy **********/
-std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(pybind11::object&& data_frame)
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&& data_frame)
 {
     return MessageMeta::create_from_python(std::move(data_frame));
 }
@@ -191,16 +133,16 @@ cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta& self)
     return self.count();
 }
 
-pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
+py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 {
     // Release any GIL
-    pybind11::gil_scoped_release no_gil;
+    py::gil_scoped_release no_gil;
 
     // return py_table;
     return self.get_info().copy_to_py_object();
 }
 
-pybind11::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)
+py::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)
 {
     PyErr_WarnEx(
         PyExc_DeprecationWarning,
@@ -211,34 +153,10 @@ pybind11::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)
     return MessageMetaInterfaceProxy::get_data_frame(self);
 }
 
-void MessageMetaInterfaceProxy::set_data_frame(MessageMeta& self, const pybind11::object& new_df)
-{
-    // Release any GIL
-    pybind11::gil_scoped_release no_gil;
-
-    auto mutable_info = self.get_mutable_info();
-
-    LOG(FATAL) << "Not implemented yet";
-
-    // mutable_info.py_obj() = new_df;
-
-    // pybind11::object obj = mutable_info.py_obj();
-
-    // // // Get the column and convert to cudf
-    // // auto py_table_struct = make_table_from_view_and_meta(self.m_pydf;.tbl->view(),
-    // // self.m_pydf;.metadata); py::object py_table  =
-    // // py::reinterpret_steal<py::object>((PyObject*)py_table_struct);
-
-    // // // py_col.inc_ref();
-
-    // // return py_table;
-    // return self.get_py_table();
-}
-
 MutableTableCtxMgr MessageMetaInterfaceProxy::mutable_dataframe(MessageMeta& self)
 {
     // Release any GIL
-    pybind11::gil_scoped_release no_gil;
+    py::gil_scoped_release no_gil;
     return {self};
 }
 

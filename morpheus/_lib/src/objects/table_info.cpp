@@ -285,11 +285,6 @@ pybind11::object MutableTableInfo::checkout_obj()
 
 void MutableTableInfo::return_obj(pybind11::object&& obj)
 {
-    CHECK_EQ(obj.ref_count(), m_checked_out_ref_count) << "Checked out object returned with different ref_count(). "
-                                                          "Must not store copies of the checked out object";
-
-    // m_parent->get_py_object() = std::move(obj);
-
     m_checked_out_ref_count = -1;
 }
 
