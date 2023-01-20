@@ -20,9 +20,10 @@
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 
-#include <pybind11/pytypes.h>
+#include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>  // for size_t
+#include <map>
 #include <string>
 
 namespace morpheus {
@@ -53,7 +54,7 @@ class ResponseMemory : public TensorMemory
      * @param count
      * @param tensors
      */
-    ResponseMemory(size_t count, tensor_map_t &&tensors);
+    ResponseMemory(size_t count, tensor_map_t&& tensors);
 
     /**
      * @brief Checks if a tensor named `name` exists in `tensors`
@@ -62,7 +63,7 @@ class ResponseMemory : public TensorMemory
      * @return true
      * @return false
      */
-    bool has_output(const std::string &name) const;
+    bool has_output(const std::string& name) const;
 };
 
 /****** ResponseMemoryInterfaceProxy *************************/
@@ -74,13 +75,24 @@ class ResponseMemory : public TensorMemory
 struct ResponseMemoryInterfaceProxy
 {
     /**
+     * @brief Create and initialize a ResponseMemory object, and return a shared pointer to the result. Each array in
+     * `cupy_tensors` should be of length `count`.
+     *
+     * @param count : Lenght of each array in `cupy_tensors`
+     * @param cupy_tensors : Map of string on to cupy arrays
+     * @return std::shared_ptr<ResponseMemory>
+     */
+    static std::shared_ptr<ResponseMemory> init(std::size_t count,
+                                                std::map<std::string, pybind11::object> cupy_tensors);
+
+    /**
      * @brief Get the output object
      *
      * @param self
      * @param name
      * @return pybind11::object
      */
-    static pybind11::object get_output(ResponseMemory &self, const std::string &name);
+    static pybind11::object get_output(ResponseMemory& self, const std::string& name);
 
     /**
      * @brief Get the output tensor object
@@ -89,7 +101,7 @@ struct ResponseMemoryInterfaceProxy
      * @param name
      * @return TensorObject
      */
-    static TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
+    static TensorObject get_output_tensor(ResponseMemory& self, const std::string& name);
 };
 #pragma GCC visibility pop
 

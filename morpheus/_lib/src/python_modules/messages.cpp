@@ -45,6 +45,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -125,13 +126,13 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
         .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &)>(&MultiMessageInterfaceProxy::get_meta),
+             static_cast<pybind11::object (*)(MultiMessage&)>(&MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &, std::string)>(&MultiMessageInterfaceProxy::get_meta),
+             static_cast<pybind11::object (*)(MultiMessage&, std::string)>(&MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &, std::vector<std::string>)>(
+             static_cast<pybind11::object (*)(MultiMessage&, std::vector<std::string>)>(
                  &MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("set_meta", &MultiMessageInterfaceProxy::set_meta, py::return_value_policy::move)
@@ -144,6 +145,9 @@ PYBIND11_MODULE(messages, m)
         .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
     py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
+        .def(py::init<>(&InferenceMemoryInterfaceProxy::init),
+             py::arg("count"),
+             py::arg("tensors") = std::map<std::string, py::object>())
         .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count);
 
     py::class_<InferenceMemoryNLP, InferenceMemory, std::shared_ptr<InferenceMemoryNLP>>(m, "InferenceMemoryNLP")
@@ -219,9 +223,15 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
 
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
+        .def(py::init<>(&TensorMemoryInterfaceProxy::init),
+             py::arg("count"),
+             py::arg("tensors") = std::map<std::string, py::object>())
         .def_readonly("count", &TensorMemory::count);
 
     py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
+        .def(py::init<>(&ResponseMemoryInterfaceProxy::init),
+             py::arg("count"),
+             py::arg("tensors") = std::map<std::string, py::object>())
         .def_readonly("count", &ResponseMemory::count)
         .def("get_output", &ResponseMemoryInterfaceProxy::get_output, py::return_value_policy::reference_internal)
         .def("get_output_tensor",

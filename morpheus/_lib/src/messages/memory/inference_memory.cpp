@@ -32,6 +32,12 @@ bool InferenceMemory::has_input(const std::string& name) const
 }
 
 /****** InferenceMemoryInterfaceProxy *************************/
+std::shared_ptr<InferenceMemory> InferenceMemoryInterfaceProxy::init(std::size_t count,
+                                                                     std::map<std::string, pybind11::object> tensors)
+{
+    return std::make_shared<InferenceMemory>(count, std::move(TensorMemoryInterfaceProxy::cupy_to_tensors(tensors)));
+}
+
 std::size_t InferenceMemoryInterfaceProxy::get_count(InferenceMemory& self)
 {
     return self.count;

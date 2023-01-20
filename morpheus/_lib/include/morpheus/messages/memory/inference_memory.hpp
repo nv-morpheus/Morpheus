@@ -19,7 +19,10 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 
-#include <cstddef>
+#include <pybind11/pytypes.h>  // for object
+
+#include <cstddef>  // for size_t
+#include <map>
 #include <string>
 
 namespace morpheus {
@@ -68,6 +71,16 @@ class InferenceMemory : public TensorMemory
  */
 struct InferenceMemoryInterfaceProxy
 {
+    /**
+     * @brief Create and initialize a InferenceMemory object, and return a shared pointer to the result. Each array in
+     * `tensors` should be of length `count`.
+     *
+     * @param count : Lenght of each array in `tensors`
+     * @param tensors : Map of string on to cupy arrays
+     * @return std::shared_ptr<InferenceMemory>
+     */
+    static std::shared_ptr<InferenceMemory> init(std::size_t count, std::map<std::string, pybind11::object> tensors);
+
     /**
      * @brief Get the count object
      *
