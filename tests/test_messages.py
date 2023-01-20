@@ -22,6 +22,7 @@ import pytest
 import morpheus._lib.messages as _messages
 import morpheus.config
 from morpheus import messages
+from morpheus.messages import tensor_memory
 
 
 def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp_class: bool, args: tuple):
@@ -49,10 +50,8 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 
     check_message(messages.MultiMessage, _messages.MultiMessage, should_be_cpp, no_cpp_class, (None, 0, 1))
 
-    assert messages.InferenceMemory._cpp_class is None if no_cpp_class else _messages.InferenceMemory
-    # C++ impl for InferenceMemory doesn't have a constructor
-    if (should_be_cpp):
-        pytest.raises(TypeError, messages.InferenceMemory, 1)
+    check_message(tensor_memory.TensorMemory, _messages.TensorMemory, should_be_cpp, no_cpp_class, (1, ))
+    check_message(messages.InferenceMemory, _messages.InferenceMemory, should_be_cpp, no_cpp_class, (1, ))
 
     cp_array = cp.zeros((1, 2))
 
@@ -84,10 +83,7 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                   should_be_cpp,
                   no_cpp_class, (None, 0, 1, None, 0, 1))
 
-    assert messages.ResponseMemory._cpp_class is None if no_cpp_class else _messages.ResponseMemory
-    # C++ impl doesn't have a constructor
-    if (should_be_cpp):
-        pytest.raises(TypeError, messages.ResponseMemory, 1)
+    check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, (1, ))
 
     check_message(messages.ResponseMemoryProbs,
                   _messages.ResponseMemoryProbs,
