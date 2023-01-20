@@ -111,6 +111,9 @@ struct TensorMemoryInterfaceProxy
      */
     static std::size_t get_count(TensorMemory& self);
 
+    static pybind11::object get_tensors(TensorMemory& self);
+    static void set_tensors(TensorMemory& self, std::map<std::string, pybind11::object> tensors);
+
     /**
      * @brief
      *
@@ -118,6 +121,8 @@ struct TensorMemoryInterfaceProxy
      * @return TensorMemory::tensor_map_t
      */
     static TensorMemory::tensor_map_t cupy_to_tensors(const std::map<std::string, pybind11::object>& cupy_tensors);
+
+    static pybind11::object tensors_to_cupy(const TensorMemory::tensor_map_t& tensors);
 };
 
 #pragma GCC visibility pop

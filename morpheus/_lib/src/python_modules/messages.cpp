@@ -226,7 +226,8 @@ PYBIND11_MODULE(messages, m)
         .def(py::init<>(&TensorMemoryInterfaceProxy::init),
              py::arg("count"),
              py::arg("tensors") = std::map<std::string, py::object>())
-        .def_readonly("count", &TensorMemory::count);
+        .def_readonly("count", &TensorMemory::count)
+        .def_property("tensors", &TensorMemoryInterfaceProxy::get_tensors, &TensorMemoryInterfaceProxy::set_tensors);
 
     py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def(py::init<>(&ResponseMemoryInterfaceProxy::init),

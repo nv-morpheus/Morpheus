@@ -17,7 +17,7 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 
-#include "morpheus/utilities/cupy_util.hpp"  // for cupy_to_tensor
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
 #include <string>
 #include <vector>
@@ -46,8 +46,9 @@ TensorMemory::tensor_map_t TensorMemory::copy_tensor_ranges(
 }
 
 /****** TensorMemoryInterfaceProxy *************************/
+namespace py = pybind11;
 std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count,
-                                                               std::map<std::string, pybind11::object> tensors)
+                                                               std::map<std::string, py::object> tensors)
 {
     return std::make_shared<TensorMemory>(count, std::move(cupy_to_tensors(tensors)));
 }
@@ -57,16 +58,37 @@ std::size_t TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
     return self.count;
 }
 
+py::object TensorMemoryInterfaceProxy::get_tensors(TensorMemory& self)
+{
+    return tensors_to_cupy(self.tensors);
+}
+
+void TensorMemoryInterfaceProxy::set_tensors(TensorMemory& self, std::map<std::string, py::object> tensors)
+{
+    self.tensors = std::move(cupy_to_tensors(tensors));
+}
+
 TensorMemory::tensor_map_t TensorMemoryInterfaceProxy::cupy_to_tensors(
-    const std::map<std::string, pybind11::object>& cupy_tensors)
+    const std::map<std::string, py::object>& cupy_tensors)
 {
     TensorMemory::tensor_map_t tensors;
-    for (const auto tensor : cupy_tensors)
+    for (const auto& tensor : cupy_tensors)
     {
         tensors[tensor.first] = std::move(CupyUtil::cupy_to_tensor(tensor.second));
     }
 
     return tensors;
+}
+
+py::object TensorMemoryInterfaceProxy::tensors_to_cupy(const TensorMemory::tensor_map_t& tensors)
+{
+    auto cupy_tensors = py::dict();
+    for (const auto& tensor : tensors)
+    {
+        cupy_tensors[py::str(tensor.first)] = std::move(CupyUtil::tensor_to_cupy(tensor.second));
+    }
+
+    return cupy_tensors;
 }
 
 }  // namespace morpheus
