@@ -29,6 +29,7 @@
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/data_table.hpp"
+#include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <mrc/channel/status.hpp>  // for Status
