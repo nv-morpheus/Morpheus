@@ -23,26 +23,42 @@ from morpheus.messages.message_base import MessageBase
 
 
 class MutableTableCtxMgr:
+    """
+    Context manager for editing the DataFrame held by a MessageMeta, ensures an editing lock aqcuired and released.
+    Not intended to be used directly but is instead invoked via MessageMeta's `mutable_dataframe`.
 
-    def __init__(self, df: pd.DataFrame, mutex: threading.RLock) -> None:
-        self.__df = df
-        self.__mutex = mutex
-        self.__acquired = False
+    Examples
+    --------
+    >>> with meta.mutable_dataframe() as df:
+    >>>     df['col'] = 5
+    """
+
+    ussage_error = ("Error attempting to use mutable_dataframe outside of context manager. Intended usage :\n"
+                    "with message_meta.mutable_dataframe() as df:\n"
+                    "    df['col'] = 5")
+
+    def __init__(self, meta) -> None:
+        self.__dict__['__meta'] = meta
 
     def __enter__(self):
-        self.__acquired = self.__mutex.acquire()
-        return self
+        meta = self.__dict__['__meta']
+        meta._mutex.acquire()
+        return meta._df
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.__acquired = False
-        self.__mutex.release()
+        self.__dict__['__meta']._mutex.release()
 
-    @property
-    def df(self) -> pd.DataFrame:
-        if (not self.__acquired):
-            raise RuntimeError("Error accessing released mutable_dataframe outside of context manager")
+    def __getattr__(self, name):
+        raise AttributeError(self.ussage_error)
 
-        return self.__df
+    def __getitem__(self, key):
+        raise AttributeError(self.ussage_error)
+
+    def __setattr__(self, name, value):
+        raise AttributeError(self.ussage_error)
+
+    def __setitem__(self, key, value):
+        raise AttributeError(self.ussage_error)
 
 
 @dataclasses.dataclass(init=False)
@@ -76,7 +92,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         return self._df.copy(deep=True)
 
     def mutable_dataframe(self):
-        return MutableTableCtxMgr(self._df, self._mutex)
+        return MutableTableCtxMgr(self)
 
     @property
     def count(self) -> int:

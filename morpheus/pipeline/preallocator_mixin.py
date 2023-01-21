@@ -72,8 +72,8 @@ class PreallocatorMixin(ABC):
                     df[column_name] = ''
 
     def _preallocate_meta(self, msg: MessageMeta):
-        with msg.mutable_dataframe() as ctx:
-            self._preallocate_df(ctx.df)
+        with msg.mutable_dataframe() as df:
+            self._preallocate_df(df)
 
         return msg
 

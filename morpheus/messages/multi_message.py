@@ -145,13 +145,13 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             `Series` or `Dataframe` is passed, rows will be matched by index.
 
         """
-        with self.meta.mutable_dataframe() as ctx:
+        with self.meta.mutable_dataframe() as df:
             if (columns is None):
                 # Set all columns
-                ctx.df.loc[ctx.df.index[self.mess_offset:self.mess_offset + self.mess_count], :] = value
+                df.loc[df.index[self.mess_offset:self.mess_offset + self.mess_count], :] = value
             else:
                 # If its a single column or list of columns, this is the same
-                ctx.df.loc[ctx.df.index[self.mess_offset:self.mess_offset + self.mess_count], columns] = value
+                df.loc[df.index[self.mess_offset:self.mess_offset + self.mess_count], columns] = value
 
     def get_slice(self, start, stop):
         """
