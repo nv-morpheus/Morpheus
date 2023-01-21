@@ -33,7 +33,7 @@ void MutableTableCtxMgr::throw_usage_error(pybind11::args args, const pybind11::
     err_msg << "Error attempting to use mutable_dataframe outside of context manager. Intended usage :\n";
     err_msg << "with message_meta.mutable_dataframe() as df:\n";
     err_msg << "    df['col'] = 5";
-    throw std::runtime_error(err_msg.str());
+    throw py::attribute_error(err_msg.str());
 }
 
 }  // namespace morpheus
