@@ -27,7 +27,9 @@ NVIDIA Morpheus is an open AI application framework that provides cybersecurity 
 * [Morpheus CLI Overview](./docs/source/basics/overview.rst) - Brief overview of the `morpheus` command line interface
 * [Building a Pipeline](./docs/source/basics/building_a_pipeline.rst) - Introduction to building a pipeline using the command line interface
 * [Morpheus Examples](./examples.md) - Example pipelines using both the Python API and command line interface
+* [Pre-built Models and Datasets](./models) - Pretrained models with corresponding training, validation scripts, and datasets
 * [Developer Guides](./docs/source/developer_guide/guides.md) - Covers extending Morpheus with custom stages
+
 
 ### Modifying Morpheus
 * [Contributing to Morpheus](./CONTRIBUTING.md) - Covers building from source, making changes and contributing to Morpheus
