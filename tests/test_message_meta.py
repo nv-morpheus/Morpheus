@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import operator
 import os
 
 import pytest
@@ -29,16 +30,27 @@ def test_mutable_dataframe(config):
 
     meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
 
-    with meta.mutable_dataframe() as ctx:
-        ctx.df['v2'][3] = 47
+    with meta.mutable_dataframe() as df:
+        df['v2'][3] = 47
 
     assert meta.copy_dataframe()['v2'][3] == 47
 
-    pytest.raises(RuntimeError, getattr, ctx, 'df')
 
-    copied_df = meta.copy_dataframe()
-    with meta.mutable_dataframe() as ctx:
-        pytest.raises(AttributeError, setattr, ctx, 'df', copied_df)
+def test_using_ctx_outside_with_block(config):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+
+    meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
+
+    ctx = meta.mutable_dataframe()
+
+    # ctx.fillna() & ctx.col
+    pytest.raises(AttributeError, getattr, ctx, 'fillna')
+
+    # ctx[col]
+    pytest.raises(AttributeError, operator.getitem, ctx, 'col')
+
+    # ctx[col] = 5
+    pytest.raises(AttributeError, operator.setitem, ctx, 'col', 5)
 
 
 def test_copy_dataframe(config):
