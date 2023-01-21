@@ -39,6 +39,8 @@ namespace morpheus {
  * @file
  */
 
+class MutableTableCtxMgr;
+
 /**
  * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
  * Python and C++ representations of the table
@@ -123,22 +125,6 @@ class SlicedMessageMeta : public MessageMeta
 };
 
 /****** Python Interface **************************/
-class MutableTableCtxMgr : public std::enable_shared_from_this<MutableTableCtxMgr>
-{
-  public:
-    MutableTableCtxMgr(MessageMeta& meta_msg);
-    pybind11::object enter();
-    void exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback);
-
-    // Throws a useful exception when a user attempts to use this object as if it were the dataframe itself
-    void throw_usage_error(pybind11::args args, const pybind11::kwargs& kwargs);
-
-  private:
-    MessageMeta& m_meta_msg;
-    std::unique_ptr<MutableTableInfo> m_table;
-    std::unique_ptr<pybind11::object> m_py_table;
-};
-
 /****** MessageMetaInterfaceProxy**************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
