@@ -61,17 +61,9 @@ class NLPVizFileSource(SingleOutputSource):
     filter_null: bool, default = True
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
-    cudf_kwargs: dict, default=None
-        keyword args passed to underlying cuDF I/O function. Refer to the cuDF documentation for `cudf.read_csv()` and
-        `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
-        and with `file_type` == 'csv', this defaults to ``{}``.
     """
 
-    def __init__(self,
-                 c: Config,
-                 filenames: typing.List[str],
-                 file_type: FileTypes = FileTypes.Auto,
-                 cudf_kwargs: dict = None):
+    def __init__(self, c: Config, filenames: typing.List[str], file_type: FileTypes = FileTypes.Auto):
 
         super().__init__(c)
 
@@ -79,7 +71,6 @@ class NLPVizFileSource(SingleOutputSource):
 
         self._filenames = filenames
         self._file_type = file_type
-        self._cudf_kwargs = {} if cudf_kwargs is None else cudf_kwargs
 
         self._input_count = None
         self._max_concurrent = c.num_threads
