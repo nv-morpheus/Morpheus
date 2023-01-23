@@ -154,7 +154,7 @@ docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 \
     --strict-readiness=false \
     --disable-auto-complete-config \
     --model-control-mode=explicit \
-    --load-model phishing-bert-onnx
+    --load-model=phishing-bert-onnx
 ```
 
 Once we have Triton running, we can verify that it is healthy using [curl](https://curl.se/). The `/v2/health/live` endpoint should return a 200 status code:
@@ -390,7 +390,7 @@ pipeline.add_stage(WriteToFileStage(config, filename=results_file, overwrite=Tru
 
 Note that we didn't specify the output format. In our example, the result file contains the extension `.jsonlines`. Morpheus will infer the output format based on the extension. At time of writing the extensions that Morpheus will infer are: `.csv`, `.json` & `.jsonlines`
 
-To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus._lib.file_types.FileTypes`. Current values defined are:
+To explicitly set the output format we could specify the `file_type` argument to the `WriteToFileStage` which is an enumeration defined in `morpheus._lib.common.FileTypes`. Current values defined are:
 * `FileTypes.Auto`
 * `FileTypes.JSON`
 * `FileTypes.CSV`

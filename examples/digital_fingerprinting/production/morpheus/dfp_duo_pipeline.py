@@ -46,7 +46,8 @@ from dfp.utils.column_info import create_increment_col
 from dfp.utils.file_utils import date_extractor
 from dfp.utils.file_utils import iso_date_regex
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
+from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
 from morpheus.config import Config
@@ -55,6 +56,8 @@ from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import get_log_levels
 from morpheus.utils.logger import parse_log_level
@@ -156,6 +159,7 @@ def run_pipeline(train_users,
 
     # Enable the Morpheus logger
     configure_logging(log_level=log_level)
+    logging.getLogger("mlflow").setLevel(log_level)
 
     if (len(skip_users) > 0 and len(only_users) > 0):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
@@ -300,7 +304,12 @@ def run_pipeline(train_users,
 
         pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
 
-        pipeline.add_stage(DFPPostprocessingStage(config, z_score_threshold=2.0))
+        pipeline.add_stage(
+            FilterDetectionsStage(config, threshold=2.0, filter_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
+        pipeline.add_stage(DFPPostprocessingStage(config))
+
+        # Exclude the columns we don't want in our output
+        pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
 
         pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_duo.csv", overwrite=True))
 

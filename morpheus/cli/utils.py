@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ PluginSpec = typing.Union[None, types.ModuleType, str, typing.Sequence[str]]
 
 def str_to_file_type(file_type_str: str):
     # Delay FileTypes since this will import ._lib
-    from morpheus._lib.file_types import FileTypes
+    from morpheus._lib.common import FileTypes
     file_type_members = {name.lower(): t for (name, t) in FileTypes.__members__.items()}
 
     return file_type_members[file_type_str]

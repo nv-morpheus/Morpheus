@@ -160,7 +160,7 @@ Starting! Time: 1668537665.9479523
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
 ====Pipeline Started====
-Added source: <from-file-0; FileSourceStage(filename=/workspace/models/datasets/validation-data/root-cause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=/workspace/models/datasets/validation-data/root-cause-validation-data-input.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
   └─> morpheus.MessageMeta
 Added stage: <deserialize-1; DeserializeStage()>
   └─ morpheus.MessageMeta -> morpheus.MultiMessage

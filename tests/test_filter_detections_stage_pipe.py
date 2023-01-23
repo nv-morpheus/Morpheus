@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -108,21 +108,12 @@ def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True
 @pytest.mark.parametrize('order', ['F', 'C'])
 @pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
 @pytest.mark.parametrize('repeat', [1, 10, 100])
-def test_filter_detections_stage_pipe_copy(config, tmp_path, order, pipeline_batch_size, repeat):
-    return _test_filter_detections_stage_pipe(config, tmp_path, True, order, pipeline_batch_size, repeat)
+@pytest.mark.parametrize('do_copy', [True, False])
+def test_filter_detections_stage_pipe(config, tmp_path, order, pipeline_batch_size, repeat, do_copy):
+    return _test_filter_detections_stage_pipe(config, tmp_path, do_copy, order, pipeline_batch_size, repeat)
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('order', ['F', 'C'])
-@pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
-@pytest.mark.parametrize('repeat', [1, 10, 100])
-def test_filter_detections_stage_pipe_slice(config, tmp_path, order, pipeline_batch_size, repeat):
-    return _test_filter_detections_stage_pipe(config, tmp_path, False, order, pipeline_batch_size, repeat)
-
-
-def test_filter_detections_stage_multi_segment_pipe_copy(config, tmp_path):
-    return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, True)
-
-
-def test_filter_detections_stage_multi_segment_pipe_slice(config, tmp_path):
-    return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, False)
+@pytest.mark.parametrize('do_copy', [True, False])
+def test_filter_detections_stage_multi_segment_pipe(config, tmp_path, do_copy):
+    return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, do_copy)

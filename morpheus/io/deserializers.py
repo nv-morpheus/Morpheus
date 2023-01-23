@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,8 @@ import pandas as pd
 
 import cudf
 
-from morpheus._lib.file_types import FileTypes
-from morpheus._lib.file_types import determine_file_type
+from morpheus._lib.common import FileTypes
+from morpheus._lib.common import determine_file_type
 from morpheus.io.utils import filter_null_data
 
 
@@ -47,7 +47,7 @@ def read_file_to_df(file_name: str,
     ----------
     file_name : str
         File to read.
-    file_type : `morpheus._lib.file_types.FileTypes`
+    file_type : `morpheus._lib.common.FileTypes`
         Type of file. Leave as Auto to determine from the extension.
     parser_kwargs : dict, optional
         Any argument to pass onto the parse, by default {}.
