@@ -43,7 +43,7 @@ def dfp_training(builder: mrc.Builder):
     config = get_module_config(DFP_TRAINING, builder)
 
     feature_columns = config.get("feature_columns", None)
-    validation_size = config.get("validation_size", None)
+    validation_size = config.get("validation_size", 0.0)
     epochs = config.get("epochs", None)
     model_kwargs = config.get("model_kwargs", None)
 
