@@ -32,3 +32,15 @@ ignore_patterns = [
   "**/*.pyx",
   "**/*.pxd"
 ]
+
+[tool.interrogate]
+verbose = 2
+ignore-private = true
+ignore-property-decorators = true
+ignore-semiprivate = true
+ignore-init-method = true
+ignore-init-module = true
+ignore-magic = true
+ignore-module = true
+ignore-regex = ["supports_cpp_node$"]
+omit-covered-files = true
