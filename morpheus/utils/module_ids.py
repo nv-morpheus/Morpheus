@@ -15,5 +15,5 @@
 MODULE_NAMESPACE = "morpheus_modules"
 
 FILE_BATCHER = "FileBatcher"
-FILE_TO_DATAFRAME = "FileToDataFrame"
+FILE_TO_DF = "FileToDataFrame"
 MLFLOW_MODEL_WRITER = "MLFlowModelWriter"

@@ -23,7 +23,7 @@ import mrc
 import morpheus.modules.file_batcher  # noqa: F401
 import morpheus.modules.file_to_df  # noqa: F401
 from morpheus.utils.module_ids import FILE_BATCHER
-from morpheus.utils.module_ids import FILE_TO_DATAFRAME
+from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_module(DFP_PREPROCESSING, MODULE_NAMESPACE)
-def dfp_pipeline_preprocessing(builder: mrc.Builder):
+def dfp_preprocessing(builder: mrc.Builder):
     """
     This module function allows for the consolidation of multiple dfp pipeline preprocessing modules
     into a single module.
@@ -52,7 +52,7 @@ def dfp_pipeline_preprocessing(builder: mrc.Builder):
     config = get_module_config(DFP_PREPROCESSING, builder)
 
     file_batcher_conf = config.get(FILE_BATCHER, None)
-    file_to_df_conf = config.get(FILE_TO_DATAFRAME, None)
+    file_to_df_conf = config.get(FILE_TO_DF, None)
     dfp_split_users_conf = config.get(DFP_SPLIT_USERS, None)
     dfp_rolling_window_conf = config.get(DFP_ROLLING_WINDOW, None)
     dfp_data_prep_conf = config.get(DFP_DATA_PREP, None)

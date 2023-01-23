@@ -59,7 +59,7 @@ from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import get_log_levels
 from morpheus.utils.logger import parse_log_level
 from morpheus.utils.module_ids import FILE_BATCHER
-from morpheus.utils.module_ids import FILE_TO_DATAFRAME
+from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 
@@ -261,9 +261,9 @@ def run_pipeline(train_users,
             "end_time": end_time,
             "iso_date_regex_pattern": iso_date_regex_pattern
         },
-        FILE_TO_DATAFRAME: {
-            "module_id": FILE_TO_DATAFRAME,
-            "module_name": "file_to_dataframe",
+        FILE_TO_DF: {
+            "module_id": FILE_TO_DF,
+            "module_name": "FILE_TO_DF",
             "namespace": MODULE_NAMESPACE,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,

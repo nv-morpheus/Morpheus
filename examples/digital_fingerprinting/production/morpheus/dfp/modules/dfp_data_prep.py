@@ -31,9 +31,9 @@ logger = logging.getLogger(__name__)
 
 
 @register_module(DFP_DATA_PREP, MODULE_NAMESPACE)
-def dfp_preprocessing(builder: mrc.Builder):
+def dfp_data_prep(builder: mrc.Builder):
     """
-    Preprocessed data are produced by this module function for either inference or model training.
+    This module function prepares data for either inference or model training.
 
     Parameters
     ----------

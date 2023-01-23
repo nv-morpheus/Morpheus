@@ -34,7 +34,7 @@ from morpheus._lib.file_types import FileTypes
 from morpheus.cli.utils import str_to_file_type
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import process_dataframe
-from morpheus.utils.module_ids import FILE_TO_DATAFRAME
+from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -42,8 +42,8 @@ from morpheus.utils.module_utils import register_module
 logger = logging.getLogger(__name__)
 
 
-@register_module(FILE_TO_DATAFRAME, MODULE_NAMESPACE)
-def file_to_dataframe(builder: mrc.Builder):
+@register_module(FILE_TO_DF, MODULE_NAMESPACE)
+def file_to_df(builder: mrc.Builder):
     """
     This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module.
     In addition to loading data from the disk, it has ability to load the file content from S3 buckets.
@@ -54,7 +54,7 @@ def file_to_dataframe(builder: mrc.Builder):
         mrc Builder object.
     """
 
-    config = get_module_config(FILE_TO_DATAFRAME, builder)
+    config = get_module_config(FILE_TO_DF, builder)
 
     schema_config = config.get("schema", None)
     schema_str = schema_config.get("schema_str", None)
@@ -254,7 +254,7 @@ def file_to_dataframe(builder: mrc.Builder):
     if (download_method.startswith("dask")):
         dask_cluster = get_dask_cluster()
 
-    node = builder.make_node_full(FILE_TO_DATAFRAME, node_fn)
+    node = builder.make_node_full(FILE_TO_DF, node_fn)
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

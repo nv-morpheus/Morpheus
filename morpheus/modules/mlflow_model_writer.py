@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_module(MLFLOW_MODEL_WRITER, MODULE_NAMESPACE)
-def module_init(builder: mrc.Builder):
+def mlflow_model_writer(builder: mrc.Builder):
     """
     This module uploads trained models to the mlflow server.
 
