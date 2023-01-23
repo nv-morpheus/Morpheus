@@ -57,6 +57,7 @@ Using Morpheus
  * :doc:`basics/overview` - Brief overview of the command line interface
  * :doc:`basics/building_a_pipeline` - Introduction to building a pipeline using the command line interface
  * :doc:`Morpheus Examples <examples>` - Example pipelines using both the Python API and command line interface
+ * :doc:`Pretrained Models <models_and_datasets>` - Pretrained models with corresponding training, validation scripts, and datasets
  * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
 
 Modifying Morpheus
