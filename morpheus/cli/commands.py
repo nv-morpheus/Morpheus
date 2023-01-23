@@ -63,13 +63,16 @@ logger = logging.getLogger("morpheus.cli")
 # Command to add the command. We cache the response so this only executes once (which can happen with module load).
 # `modes` is a tuple so it can be cached for LRU to work
 @functools.lru_cache(maxsize=None)
-def add_command(name: str, stage_module: str, modes: typing.Tuple[PipelineModes, ...] = None):
+def _add_command(name: str, stage_module: str, modes: typing.Tuple[PipelineModes, ...] = None):
+    """
+    Load stages into the
+    """
 
     GlobalStageRegistry.get().add_stage_info(
         LazyStageInfo(name=name, stage_qualified_name=stage_module, modes=list(modes)))
 
 
-class AliasedGroup(click.Group):
+class _AliasedGroup(click.Group):
 
     def get_command(self, ctx, cmd_name):
         try:
@@ -79,7 +82,7 @@ class AliasedGroup(click.Group):
         return super().get_command(ctx, cmd_name)
 
 
-class PluginGroup(AliasedGroup):
+class _PluginGroup(_AliasedGroup):
 
     def __init__(
         self,
@@ -89,7 +92,7 @@ class PluginGroup(AliasedGroup):
     ):
         self._pipeline_mode = attrs.pop("pipeline_mode", None)
 
-        assert self._pipeline_mode is not None, "Must specify `pipeline_mode` when using `PluginGroup`"
+        assert self._pipeline_mode is not None, "Must specify `pipeline_mode` when using `_PluginGroup`"
 
         super().__init__(name, commands, **attrs)
 
@@ -136,7 +139,7 @@ class PluginGroup(AliasedGroup):
         return super().get_command(ctx, cmd_name)
 
 
-@click.group(name="morpheus", chain=False, invoke_without_command=True, no_args_is_help=True, cls=AliasedGroup)
+@click.group(name="morpheus", chain=False, invoke_without_command=True, no_args_is_help=True, cls=_AliasedGroup)
 @click.option('--debug/--no-debug', default=False)
 @click.option("--log_level",
               default=logging.getLevelName(DEFAULT_CONFIG.log_level),
@@ -162,6 +165,9 @@ def cli(ctx: click.Context,
         log_config_file: str = DEFAULT_CONFIG.log_config_file,
         plugins: typing.List[str] = None,
         **kwargs):
+    """
+    Bootstrap the morpheus command and configure logging
+    """
 
     # ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below
@@ -185,7 +191,9 @@ def cli(ctx: click.Context,
 @cli.group(short_help="Run a utility tool", no_args_is_help=True)
 @prepare_command()
 def tools(ctx: click.Context, **kwargs):
-
+    """
+    tools sub-command
+    """
     pass
 
 
@@ -197,6 +205,9 @@ def tools(ctx: click.Context, **kwargs):
 @click.option('--max_workspace_size', type=int, default=16000)
 @prepare_command()
 def onnx_to_trt(ctx: click.Context, **kwargs):
+    """"
+    Converts an ONNX model to a TRT engine
+    """
 
     logger.info("Generating onnx file")
 
@@ -216,6 +227,9 @@ def onnx_to_trt(ctx: click.Context, **kwargs):
 
 @tools.group(short_help="Utility for installing/updating/removing shell completion for Morpheus", no_args_is_help=True)
 def autocomplete(**kwargs):
+    """
+    Utility for installing/updating/removing shell completion for Morpheus
+    """
     pass
 
 
@@ -254,7 +268,7 @@ def install(**kwargs):
     click.echo('%s completion installed in %s' % (shell, path))
 
 
-@cli.group(short_help="Run one of the available pipelines", no_args_is_help=True, cls=AliasedGroup)
+@cli.group(short_help="Run one of the available pipelines", no_args_is_help=True, cls=_AliasedGroup)
 @click.option('--num_threads',
               default=os.cpu_count(),
               type=click.IntRange(min=1),
@@ -281,6 +295,9 @@ def install(**kwargs):
                     "Only use as a last resort if bugs are encountered"))
 @prepare_command(parse_config=True)
 def run(ctx: click.Context, **kwargs):
+    """
+    Run a morpheus pipeline
+    """
 
     # Since the option isnt the same name as `should_use_cpp` anymore, manually set the value here.
     CppConfig.set_should_use_cpp(kwargs.pop("use_cpp", CppConfig.get_should_use_cpp()))
@@ -291,7 +308,7 @@ def run(ctx: click.Context, **kwargs):
 @click.group(chain=True,
              short_help="Run the inference pipeline with a NLP model",
              no_args_is_help=True,
-             cls=PluginGroup,
+             cls=_PluginGroup,
              pipeline_mode=PipelineModes.NLP)
 @click.option('--model_seq_length',
               default=256,
@@ -354,7 +371,7 @@ def pipeline_nlp(ctx: click.Context, **kwargs):
 @click.group(chain=True,
              short_help="Run the inference pipeline with a FIL model",
              no_args_is_help=True,
-             cls=PluginGroup,
+             cls=_PluginGroup,
              pipeline_mode=PipelineModes.FIL)
 @click.option('--model_fea_length',
               default=29,
@@ -430,7 +447,7 @@ def pipeline_fil(ctx: click.Context, **kwargs):
 @click.group(chain=True,
              short_help="Run the inference pipeline with an AutoEncoder model",
              no_args_is_help=True,
-             cls=PluginGroup,
+             cls=_PluginGroup,
              pipeline_mode=PipelineModes.AE)
 @click.option('--columns_file',
               required=True,
@@ -529,7 +546,7 @@ def pipeline_ae(ctx: click.Context, **kwargs):
 @click.group(chain=True,
              short_help="Run a custom inference pipeline without a specific model type",
              no_args_is_help=True,
-             cls=PluginGroup,
+             cls=_PluginGroup,
              pipeline_mode=PipelineModes.OTHER)
 @click.option('--model_fea_length',
               default=1,
@@ -599,6 +616,9 @@ def pipeline_other(ctx: click.Context, **kwargs):
 @pipeline_other.result_callback()
 @click.pass_context
 def post_pipeline(ctx: click.Context, *args, **kwargs):
+    """
+    Runs immediately after building the pipeline, and prior to starting it
+    """
 
     config = get_config_from_ctx(ctx)
 
@@ -631,36 +651,36 @@ FIL_ONLY = (PipelineModes.FIL, )
 NLP_ONLY = (PipelineModes.NLP, )
 
 # Keep these sorted!!!
-add_command("add-class", "morpheus.stages.postprocess.add_classifications_stage.AddClassificationsStage", modes=ALL)
-add_command("add-scores", "morpheus.stages.postprocess.add_scores_stage.AddScoresStage", modes=ALL)
-add_command("buffer", "morpheus.stages.general.buffer_stage.BufferStage", modes=ALL)
-add_command("delay", "morpheus.stages.general.delay_stage.DelayStage", modes=ALL)
-add_command("deserialize", "morpheus.stages.preprocess.deserialize_stage.DeserializeStage", modes=NOT_AE)
-add_command("dropna", "morpheus.stages.preprocess.drop_null_stage.DropNullStage", modes=NOT_AE)
-add_command("filter", "morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage", modes=ALL)
-add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
-add_command("from-appshield", "morpheus.stages.input.appshield_source_stage.AppShieldSourceStage", modes=FIL_ONLY)
-add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
-add_command("from-cloudtrail", "morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage", modes=AE_ONLY)
-add_command("from-duo", "morpheus.stages.input.duo_source_stage.DuoSourceStage", modes=AE_ONLY)
-add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStage", modes=NOT_AE)
-add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=NOT_AE)
-add_command("gen-viz", "morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage", modes=NLP_ONLY)
-add_command("inf-identity", "morpheus.stages.inference.identity_inference_stage.IdentityInferenceStage", modes=NOT_AE)
-add_command("inf-pytorch",
-            "morpheus.stages.inference.auto_encoder_inference_stage.AutoEncoderInferenceStage",
-            modes=AE_ONLY)
-add_command("inf-pytorch", "morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage", modes=NOT_AE)
-add_command("inf-triton", "morpheus.stages.inference.triton_inference_stage.TritonInferenceStage", modes=ALL)
-add_command("mlflow-drift", "morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage", modes=NOT_AE)
-add_command("monitor", "morpheus.stages.general.monitor_stage.MonitorStage", modes=ALL)
-add_command("preprocess", "morpheus.stages.preprocess.preprocess_ae_stage.PreprocessAEStage", modes=AE_ONLY)
-add_command("preprocess", "morpheus.stages.preprocess.preprocess_fil_stage.PreprocessFILStage", modes=FIL_ONLY)
-add_command("preprocess", "morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage", modes=NLP_ONLY)
-add_command("serialize", "morpheus.stages.postprocess.serialize_stage.SerializeStage", modes=ALL)
-add_command("timeseries", "morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage", modes=AE_ONLY)
-add_command("to-file", "morpheus.stages.output.write_to_file_stage.WriteToFileStage", modes=ALL)
-add_command("to-kafka", "morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage", modes=ALL)
-add_command("train-ae", "morpheus.stages.preprocess.train_ae_stage.TrainAEStage", modes=AE_ONLY)
-add_command("trigger", "morpheus.stages.general.trigger_stage.TriggerStage", modes=ALL)
-add_command("validate", "morpheus.stages.postprocess.validation_stage.ValidationStage", modes=ALL)
+_add_command("add-class", "morpheus.stages.postprocess.add_classifications_stage.AddClassificationsStage", modes=ALL)
+_add_command("add-scores", "morpheus.stages.postprocess.add_scores_stage.AddScoresStage", modes=ALL)
+_add_command("buffer", "morpheus.stages.general.buffer_stage.BufferStage", modes=ALL)
+_add_command("delay", "morpheus.stages.general.delay_stage.DelayStage", modes=ALL)
+_add_command("deserialize", "morpheus.stages.preprocess.deserialize_stage.DeserializeStage", modes=NOT_AE)
+_add_command("dropna", "morpheus.stages.preprocess.drop_null_stage.DropNullStage", modes=NOT_AE)
+_add_command("filter", "morpheus.stages.postprocess.filter_detections_stage.FilterDetectionsStage", modes=ALL)
+_add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
+_add_command("from-appshield", "morpheus.stages.input.appshield_source_stage.AppShieldSourceStage", modes=FIL_ONLY)
+_add_command("from-azure", "morpheus.stages.input.azure_source_stage.AzureSourceStage", modes=AE_ONLY)
+_add_command("from-cloudtrail", "morpheus.stages.input.cloud_trail_source_stage.CloudTrailSourceStage", modes=AE_ONLY)
+_add_command("from-duo", "morpheus.stages.input.duo_source_stage.DuoSourceStage", modes=AE_ONLY)
+_add_command("from-file", "morpheus.stages.input.file_source_stage.FileSourceStage", modes=NOT_AE)
+_add_command("from-kafka", "morpheus.stages.input.kafka_source_stage.KafkaSourceStage", modes=NOT_AE)
+_add_command("gen-viz", "morpheus.stages.postprocess.generate_viz_frames_stage.GenerateVizFramesStage", modes=NLP_ONLY)
+_add_command("inf-identity", "morpheus.stages.inference.identity_inference_stage.IdentityInferenceStage", modes=NOT_AE)
+_add_command("inf-pytorch",
+             "morpheus.stages.inference.auto_encoder_inference_stage.AutoEncoderInferenceStage",
+             modes=AE_ONLY)
+_add_command("inf-pytorch", "morpheus.stages.inference.pytorch_inference_stage.PyTorchInferenceStage", modes=NOT_AE)
+_add_command("inf-triton", "morpheus.stages.inference.triton_inference_stage.TritonInferenceStage", modes=ALL)
+_add_command("mlflow-drift", "morpheus.stages.postprocess.ml_flow_drift_stage.MLFlowDriftStage", modes=NOT_AE)
+_add_command("monitor", "morpheus.stages.general.monitor_stage.MonitorStage", modes=ALL)
+_add_command("preprocess", "morpheus.stages.preprocess.preprocess_ae_stage.PreprocessAEStage", modes=AE_ONLY)
+_add_command("preprocess", "morpheus.stages.preprocess.preprocess_fil_stage.PreprocessFILStage", modes=FIL_ONLY)
+_add_command("preprocess", "morpheus.stages.preprocess.preprocess_nlp_stage.PreprocessNLPStage", modes=NLP_ONLY)
+_add_command("serialize", "morpheus.stages.postprocess.serialize_stage.SerializeStage", modes=ALL)
+_add_command("timeseries", "morpheus.stages.postprocess.timeseries_stage.TimeSeriesStage", modes=AE_ONLY)
+_add_command("to-file", "morpheus.stages.output.write_to_file_stage.WriteToFileStage", modes=ALL)
+_add_command("to-kafka", "morpheus.stages.output.write_to_kafka_stage.WriteToKafkaStage", modes=ALL)
+_add_command("train-ae", "morpheus.stages.preprocess.train_ae_stage.TrainAEStage", modes=AE_ONLY)
+_add_command("trigger", "morpheus.stages.general.trigger_stage.TriggerStage", modes=ALL)
+_add_command("validate", "morpheus.stages.postprocess.validation_stage.ValidationStage", modes=ALL)
