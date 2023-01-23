@@ -344,7 +344,7 @@ def run_pipeline(train_users,
                     "activation": 'relu',  # activation function
                     "swap_p": 0.2,  # noise parameter
                     "lr": 0.001,  # learning rate
-                    "lr_decay": .99,  # learning decay
+                    "lr_decay": 0.99,  # learning decay
                     "batch_size": 512,
                     "verbose": False,
                     "optimizer": 'sgd',  # SGD optimizer is selected(Stochastic gradient descent)
@@ -354,6 +354,8 @@ def run_pipeline(train_users,
                     "device": "cuda"
                 },
                 "feature_columns": config.ae.feature_columns,
+                "epochs": 30,
+                "validation_size": 0.10
             },
             MLFLOW_MODEL_WRITER: {
                 "module_id": MLFLOW_MODEL_WRITER,

@@ -43,7 +43,15 @@ def dfp_training(builder: mrc.Builder):
     config = get_module_config(DFP_TRAINING, builder)
 
     feature_columns = config.get("feature_columns", None)
+    validation_size = config.get("validation_size", None)
+    epochs = config.get("epochs", None)
     model_kwargs = config.get("model_kwargs", None)
+
+    if (validation_size > 0.0 and validation_size < 1.0):
+        validation_size = validation_size
+    else:
+        raise ValueError("validation_size={0} should be a positive float in the "
+                         "(0, 1) range".format(validation_size))
 
     def on_data(message: MultiDFPMessage):
         if (message is None or message.mess_count == 0):
@@ -59,7 +67,7 @@ def dfp_training(builder: mrc.Builder):
         final_df = final_df[final_df.columns.intersection(feature_columns)]
 
         logger.debug("Training AE model for user: '%s'...", user_id)
-        model.fit(final_df, epochs=30)
+        model.fit(final_df, epochs=epochs)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
         output_message = MultiAEMessage(message.meta,

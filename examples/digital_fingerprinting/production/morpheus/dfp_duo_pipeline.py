@@ -36,7 +36,8 @@ from dfp.stages.dfp_training import DFPTraining
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.regex_utils import iso_date_regex
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
+from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
 from morpheus.config import Config
@@ -45,6 +46,8 @@ from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.column_info import BoolColumn
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
@@ -287,7 +290,7 @@ def run_pipeline(train_users,
     if (is_training):
 
         # Finally, perform training which will output a model
-        pipeline.add_stage(DFPTraining(config))
+        pipeline.add_stage(DFPTraining(config, validation_size=0.10))
 
         pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
 
@@ -301,7 +304,12 @@ def run_pipeline(train_users,
 
         pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
 
-        pipeline.add_stage(DFPPostprocessingStage(config, z_score_threshold=2.0))
+        pipeline.add_stage(
+            FilterDetectionsStage(config, threshold=2.0, filter_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
+        pipeline.add_stage(DFPPostprocessingStage(config))
+
+        # Exclude the columns we don't want in our output
+        pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
 
         pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_duo.csv", overwrite=True))
 

@@ -30,7 +30,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.cli.utils import str_to_file_type
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import process_dataframe

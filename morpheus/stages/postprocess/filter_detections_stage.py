@@ -17,12 +17,16 @@ import typing
 
 import cupy as cp
 import mrc
+import numpy as np
+import typing_utils
 from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
+from morpheus._lib.common import FilterSource
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -63,17 +67,30 @@ class FilterDetectionsStage(SinglePortStage):
         Pipeline configuration instance.
     threshold : float
         Threshold to classify, default is 0.5.
-
     copy : bool
         Whether or not to perform a copy.
+    filter_source : `from morpheus._lib.common.FilterSource`, default = 'auto'
+        Indicate if we are operating on is an output tensor or a field in the DataFrame.
+        Choosing `Auto` will default to `TENSOR` when the incoming message contains output tensorts and `DATAFRAME`
+        otherwise.
+    field_name : str
+        Name of the tensor or DataFrame column to use as the filter criteria
     """
 
-    def __init__(self, c: Config, threshold: float = 0.5, copy: bool = True):
+    def __init__(self,
+                 c: Config,
+                 threshold: float = 0.5,
+                 copy: bool = True,
+                 filter_source: FilterSource = FilterSource.Auto,
+                 field_name: str = "probs"):
         super().__init__(c)
 
         # Probability to consider a detection
         self._threshold = threshold
         self._copy = copy
+
+        self._filter_source = filter_source
+        self._field_name = field_name
 
     @property
     def name(self) -> str:
@@ -85,94 +102,118 @@ class FilterDetectionsStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseProbsMessage`, ]
+        typing.Tuple[`morpheus.pipeline.messages.MultiMessage`, ]
             Accepted input types.
 
         """
-        return (MultiResponseProbsMessage, )
+        if self._filter_source == FilterSource.TENSOR:
+            return (MultiResponseMessage, )
+        else:
+            return (MultiMessage, )
 
     def supports_cpp_node(self):
         # Enable support by default
         return True
 
-    def _find_detections(self, x: MultiResponseProbsMessage) -> cp.ndarray:
+    def _find_detections(self, x: MultiMessage) -> typing.Union[cp.ndarray, np.ndarray]:
+        # Determind the filter source
+        if self._filter_source == FilterSource.TENSOR:
+            filter_source = x.get_output(self._field_name)
+        else:
+            filter_source = x.get_meta(self._field_name).values
+
+        if (isinstance(filter_source, np.ndarray)):
+            array_mod = np
+        else:
+            array_mod = cp
+
         # Get per row detections
-        detections = (x.probs > self._threshold).any(axis=1)
+        detections = (filter_source > self._threshold)
+
+        if (len(detections.shape) > 1):
+            detections = detections.any(axis=1)
 
         # Surround in False to ensure we get an even number of pairs
-        detections = cp.concatenate([cp.array([False]), detections, cp.array([False])])
+        detections = array_mod.concatenate([array_mod.array([False]), detections, array_mod.array([False])])
 
-        return cp.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
+        return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(self, x: MultiResponseProbsMessage) -> MultiResponseProbsMessage:
+    def filter_copy(self, x: MultiMessage) -> MultiMessage:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiResponseProbsMessage`
+        x : `morpheus.pipeline.messages.MultiMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
         -------
-        `morpheus.pipeline.messages.MultiResponseProbsMessage`
+        `morpheus.pipeline.messages.MultiMessage`
             A new message containing a copy of the rows above the threshold.
 
         """
+        if x is None:
+            return None
+
         true_pairs = self._find_detections(x)
         return x.copy_ranges(true_pairs)
 
-    def filter_slice(self, x: MultiResponseProbsMessage) -> typing.List[MultiResponseProbsMessage]:
+    def filter_slice(self, x: MultiMessage) -> typing.List[MultiMessage]:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiResponseProbsMessage`
+        x : `morpheus.pipeline.messages.MultiMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
         -------
-        typing.List[`morpheus.pipeline.messages.MultiResponseProbsMessage`]
+        typing.List[`morpheus.pipeline.messages.MultiMessage`]
             List of filtered messages.
 
         """
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
         output_list = []
-
-        true_pairs = self._find_detections(x)
-        for pair in true_pairs:
-            pair = tuple(pair.tolist())
-            mess_offset = x.mess_offset + pair[0]
-            mess_count = pair[1] - pair[0]
-
-            # Filter empty message groups
-            if (mess_count == 0):
-                continue
-
-            output_list.append(
-                MultiResponseProbsMessage(x.meta,
-                                          mess_offset=mess_offset,
-                                          mess_count=mess_count,
-                                          memory=x.memory,
-                                          offset=pair[0],
-                                          count=mess_count))
+        if x is not None:
+            true_pairs = self._find_detections(x)
+            for pair in true_pairs:
+                pair = tuple(pair.tolist())
+                if ((pair[1] - pair[0]) > 0):
+                    output_list.append(x.get_slice(*pair))
 
         return output_list
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+        (parent_node, message_type) = input_stream
+        if self._filter_source == FilterSource.Auto:
+            if (typing_utils.issubtype(message_type, MultiResponseMessage)):
+                self._filter_source = FilterSource.TENSOR
+            else:
+                self._filter_source = FilterSource.DATAFRAME
+
+            logger.debug(
+                f"filter_source was set to Auto, infering a filter source of {self._filter_source} based on an input "
+                "message type of {message_type}")
+
         if self._build_cpp_node():
-            stream = _stages.FilterDetectionsStage(builder, self.unique_name, self._threshold, self._copy)
+            node = _stages.FilterDetectionsStage(builder,
+                                                 self.unique_name,
+                                                 self._threshold,
+                                                 self._copy,
+                                                 self._filter_source,
+                                                 self._field_name)
         else:
             if self._copy:
-                stream = builder.make_node(self.unique_name, self.filter_copy)
+                node = builder.make_node(self.unique_name, self.filter_copy)
             else:
-                # Convert list back to individual MultiResponseProbsMessage
+                # Convert list back to individual messages
                 def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
                     obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
 
-                stream = builder.make_node_full(self.unique_name, flatten_fn)
+                node = builder.make_node_full(self.unique_name, flatten_fn)
 
-        builder.make_edge(input_stream[0], stream)
+        builder.make_edge(parent_node, node)
 
-        return stream, MultiResponseProbsMessage
+        return node, message_type

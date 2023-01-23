@@ -20,7 +20,8 @@ from unittest import mock
 import cupy as cp
 import pytest
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
+from morpheus._lib.common import FilterSource
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
@@ -53,7 +54,7 @@ def test_filter_copy(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
 
-    fds = FilterDetectionsStage(config, threshold=0.5)
+    fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
     mock_message = _make_message(df, probs)
@@ -108,11 +109,36 @@ def test_filter_copy(config):
 
 
 @pytest.mark.use_python
+@pytest.mark.parametrize('do_copy', [True, False])
+@pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
+@pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
+def test_filter_column(config, do_copy, threshold, field_name):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+
+    fds = FilterDetectionsStage(config,
+                                threshold=threshold,
+                                copy=do_copy,
+                                filter_source=FilterSource.DATAFRAME,
+                                field_name=field_name)
+
+    probs = cp.zeros([len(df), 3], 'float')
+    mock_message = _make_message(df, probs)
+
+    # All values are at or below the threshold
+    output_message = fds.filter_copy(mock_message)
+
+    expected_df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='pandas')
+    expected_df = expected_df[expected_df[field_name] > threshold]
+    output_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
+
+
+@pytest.mark.use_python
 def test_filter_slice(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
 
-    fds = FilterDetectionsStage(config, threshold=0.5)
+    fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
 
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
     mock_message = _make_message(df, probs)
@@ -183,10 +209,10 @@ def test_build_single(config):
     mock_stream = mock.MagicMock()
     mock_builder = mock.MagicMock()
     mock_builder.make_node.return_value = mock_stream
-    mock_input = mock.MagicMock()
+    mock_stream_pair = (mock.MagicMock(), mock.MagicMock())
 
     fds = FilterDetectionsStage(config)
-    fds._build_single(mock_builder, mock_input)
+    fds._build_single(mock_builder, mock_stream_pair)
 
     mock_builder.make_node.assert_called_once()
     mock_builder.make_edge.assert_called_once()
