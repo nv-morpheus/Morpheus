@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import typing
 import click
 import mrc
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus._lib.messages import MessageMeta
 from morpheus.config import Config
 from morpheus.config import CppConfig
@@ -53,7 +53,7 @@ class NLPVizFileSource(SingleOutputSource):
     iterative: boolean
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
-    file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
+    file_type : `morpheus._lib.common.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1
@@ -61,17 +61,9 @@ class NLPVizFileSource(SingleOutputSource):
     filter_null: bool, default = True
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
-    cudf_kwargs: dict, default=None
-        keyword args passed to underlying cuDF I/O function. Refer to the cuDF documentation for `cudf.read_csv()` and
-        `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
-        and with `file_type` == 'csv', this defaults to ``{}``.
     """
 
-    def __init__(self,
-                 c: Config,
-                 filenames: typing.List[str],
-                 file_type: FileTypes = FileTypes.Auto,
-                 cudf_kwargs: dict = None):
+    def __init__(self, c: Config, filenames: typing.List[str], file_type: FileTypes = FileTypes.Auto):
 
         super().__init__(c)
 
@@ -79,7 +71,6 @@ class NLPVizFileSource(SingleOutputSource):
 
         self._filenames = filenames
         self._file_type = file_type
-        self._cudf_kwargs = {} if cudf_kwargs is None else cudf_kwargs
 
         self._input_count = None
         self._max_concurrent = c.num_threads

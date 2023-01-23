@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,9 @@
 
 #pragma once
 
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi.hpp"
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/filter_source.hpp"
 
 #include <mrc/channel/status.hpp>          // for Status
 #include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
@@ -68,12 +70,11 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-class FilterDetectionsStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-                                                            std::shared_ptr<MultiResponseProbsMessage>>
+class FilterDetectionsStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -84,13 +85,17 @@ class FilterDetectionsStage : public mrc::pymrc::PythonNode<std::shared_ptr<Mult
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
      */
-    FilterDetectionsStage(float threshold, bool copy = true);
+    FilterDetectionsStage(float threshold, bool copy, FilterSource filter_source, std::string field_name = "probs");
 
   private:
     subscribe_fn_t build_operator();
+    DevMemInfo get_tensor_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
+    DevMemInfo get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
 
     float m_threshold;
     bool m_copy;
+    FilterSource m_filter_source;
+    std::string m_field_name;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
 };
@@ -113,7 +118,9 @@ struct FilterDetectionStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,
                                                                              const std::string& name,
                                                                              float threshold,
-                                                                             bool copy = true);
+                                                                             bool copy,
+                                                                             FilterSource filter_source,
+                                                                             std::string field_name);
 };
 
 #pragma GCC visibility pop

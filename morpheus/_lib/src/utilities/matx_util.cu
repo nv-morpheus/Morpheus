@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +17,13 @@
 
 #include "morpheus/utilities/matx_util.hpp"
 
-#include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/utilities/type_util.hpp"
-#include "morpheus/objects/tensor_object.hpp"
-
-#include <mrc/cuda/sync.hpp>
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
 #include <matx.h>
+#include <mrc/cuda/sync.hpp>
+
+#include <memory>
 
 namespace morpheus {
 
@@ -177,7 +177,7 @@ namespace morpheus {
          */
         template<typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()> * = nullptr>
         void
-        operator()(void *input_data, void *output_data, double threshold, const std::vector<TensorIndex> &stride) {
+        operator()(void *input_data, void *output_data, double threshold, const std::vector<std::size_t>& stride) {
             throw std::invalid_argument("Unsupported conversion");
         }
 
@@ -186,7 +186,7 @@ namespace morpheus {
          */
         template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
         void
-        operator()(void *input_data, void *output_data, double threshold, const std::vector<TensorIndex> &stride) {
+        operator()(void *input_data, void *output_data, double threshold, const std::vector<std::size_t>& stride) {
             if (by_row) {
                 this->threshold_by_row<InputT>(input_data, output_data, threshold, stride);
             } else {
@@ -200,7 +200,7 @@ namespace morpheus {
          */
         template<typename InputT>
         void threshold_by_row(void *input_data, void *output_data, double threshold,
-                              const std::vector<TensorIndex> &stride) {
+                              const std::vector<std::size_t>& stride) {
             matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
 
             // Output is always 1 column
@@ -229,7 +229,7 @@ namespace morpheus {
          */
         template<typename InputT>
         void
-        threshold(void *input_data, void *output_data, double threshold, const std::vector<TensorIndex> &stride) {
+        threshold(void *input_data, void *output_data, double threshold, const std::vector<std::size_t>& stride) {
             matx::tensorShape_t<2> shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
 
             matx::index_t matx_stride[2] = {static_cast<matx::index_t>(stride[0]),
@@ -285,17 +285,14 @@ namespace morpheus {
     // Component public implementations
     // ************ MatxUtil************************* //
     std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo &input, TypeId output_type) {
-        auto input_dtype = DType(input.type_id);
         auto output_dtype = DType(output_type);
 
         // Create the output
-        auto output = std::make_shared<rmm::device_buffer>(
-                output_dtype.item_size() * input.element_count, input.buffer->stream(),
-                input.buffer->memory_resource());
+        auto output = input.make_new_buffer(output_dtype.item_size() * input.count());
 
-        cudf::double_type_dispatcher(cudf::data_type{input_dtype.cudf_type_id()},
+        cudf::double_type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
                                      cudf::data_type{output_dtype.cudf_type_id()},
-                                     MatxUtil__MatxCast{input.element_count, output->stream()},
+                                     MatxUtil__MatxCast{input.count(), output->stream()},
                                      input.data(),
                                      output->data());
 
@@ -321,29 +318,23 @@ namespace morpheus {
     }
 
     std::shared_ptr<rmm::device_buffer> MatxUtil::logits(const DevMemInfo &input) {
-        auto input_dtype = DType(input.type_id);
+        // Create the output
+        auto output = input.make_new_buffer(input.bytes());
 
-        // Now create the output
-        auto output = std::make_shared<rmm::device_buffer>(
-                input_dtype.item_size() * input.element_count, input.buffer->stream(), input.buffer->memory_resource());
-
-        cudf::type_dispatcher(cudf::data_type{input_dtype.cudf_type_id()},
-                              MatxUtil__MatxLogits{input.element_count, output->stream()},
+        cudf::type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
+                              MatxUtil__MatxLogits{input.count(), output->stream()},
                               input.data(),
                               output->data());
 
         return output;
     }
 
-    std::shared_ptr<rmm::device_buffer> MatxUtil::transpose(const DevMemInfo &input, size_t rows, size_t cols) {
-        auto input_dtype = DType(input.type_id);
-
+    std::shared_ptr<rmm::device_buffer> MatxUtil::transpose(const DevMemInfo &input) {
         // Now create the output
-        auto output = std::make_shared<rmm::device_buffer>(
-                input_dtype.item_size() * input.element_count, input.buffer->stream(), input.buffer->memory_resource());
+        auto output = input.make_new_buffer(input.bytes());
 
-        cudf::type_dispatcher(cudf::data_type{input_dtype.cudf_type_id()},
-                              MatxUtil__MatxTranspose{input.element_count, output->stream(), rows, cols},
+        cudf::type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
+                              MatxUtil__MatxTranspose{input.count(), output->stream(), input.shape(0), input.shape(1)},
                               input.data(),
                               output->data());
 
@@ -351,26 +342,24 @@ namespace morpheus {
     }
 
     std::shared_ptr<rmm::device_buffer>
-    MatxUtil::threshold(const DevMemInfo &input, size_t rows, size_t cols,
-                        const std::vector<TensorIndex> &stride,
+    MatxUtil::threshold(const DevMemInfo &input,
                         double thresh_val, bool by_row) {
-        auto input_dtype = DType(input.type_id);
-
+        const auto rows = input.shape(0);
+        const auto cols = input.shape(1);
         std::size_t output_size = sizeof(bool) * rows;
         if (!by_row) {
             output_size *= cols;
         }
 
         // Now create the output array of bools
-        auto output = std::make_shared<rmm::device_buffer>(output_size, input.buffer->stream(),
-                                                           input.buffer->memory_resource());
+        auto output = input.make_new_buffer(output_size);
 
-        cudf::type_dispatcher(cudf::data_type{input_dtype.cudf_type_id()},
+        cudf::type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
                               MatxUtil__MatxThreshold{rows, cols, by_row, output->stream()},
                               input.data(),
                               output->data(),
                               thresh_val,
-                              stride);
+                              input.stride());
 
         mrc::enqueue_stream_sync_event(output->stream()).get();
 
@@ -381,28 +370,29 @@ namespace morpheus {
     MatxUtil::reduce_max(const DevMemInfo &input,
                          const std::vector<int32_t> &seq_ids,
                          size_t seq_id_offset,
-                         const std::vector<int64_t> &input_shape,
-                         const std::vector<int64_t> &input_stride,
                          const std::vector<int64_t> &output_shape)
     {
-        auto dtype = DType(input.type_id);
-        auto elem_size = dtype.item_size();
+        const auto&  dtype = input.dtype();
         auto cudf_type = cudf::data_type{dtype.cudf_type_id()};
-        auto num_input_rows = input_shape[0];
-        auto num_input_cols = input_shape[1];
+        auto num_input_rows = input.shape(0);
+        auto num_input_cols = input.shape(1);
 
-        std::vector<matx::index_t>matx_stride{input_stride[0], input_stride[1]};
+        std::vector<matx::index_t> matx_stride{static_cast<matx::index_t>(input.stride(0)), static_cast<matx::index_t>(input.stride(1))};
         std::size_t output_element_count = output_shape[0] * output_shape[1];
-        std::size_t output_buff_size = elem_size * output_element_count;
+        std::size_t output_buff_size = dtype.item_size() * output_element_count;
 
-        DCHECK(output_element_count <= input.element_count) << "Output buffer size should be less than or equal to the input";
+        DCHECK(output_element_count <= input.count()) << "Output buffer size should be less than or equal to the input";
         DCHECK(num_input_cols == output_shape[1]) << "Number of input and output columns must match";
 
-        auto output = std::make_shared<rmm::device_buffer>(output_buff_size,
-                                                           input.buffer->stream(),
-                                                           input.buffer->memory_resource());
+        auto output = input.make_new_buffer(output_buff_size);
 
-        MatxUtil__MatxReduceMax matx_reduce_max{num_input_rows, num_input_cols, matx_stride, output_shape[0], input.data(), output->data(), output->stream()};
+        MatxUtil__MatxReduceMax matx_reduce_max{static_cast<matx::index_t>(num_input_rows),
+                                                static_cast<matx::index_t>(num_input_cols),
+                                                matx_stride,
+                                                output_shape[0],
+                                                input.data(),
+                                                output->data(),
+                                                output->stream()};
 
         std::size_t start = 0;
         auto output_offset = seq_ids[seq_id_offset];

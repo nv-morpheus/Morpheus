@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ from dfp.utils.column_info import create_increment_col
 from dfp.utils.file_utils import date_extractor
 from dfp.utils.file_utils import iso_date_regex
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
 from morpheus.config import Config

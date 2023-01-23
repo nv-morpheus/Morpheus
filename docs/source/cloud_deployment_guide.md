@@ -26,8 +26,8 @@ limitations under the License.
   - [Install Morpheus AI Engine](#install-morpheus-ai-engine)
   - [Install Morpheus SDK Client](#install-morpheus-sdk-client)
     - [Morpheus SDK Client in Sleep Mode](#morpheus-sdk-client-in-sleep-mode)
-  - [Models for MLflow Plugin Deployment](#models-for-mlflow-plugin-deployment)
-  - [Install Morpheus MLflow Triton Plugin](#install-morpheus-mlflow-triton-plugin)
+  - [Models for MLflow Deployment](#models-for-mlflow-deployment)
+  - [Install Morpheus MLflow](#install-morpheus-mlflow)
   - [Model Deployment](#model-deployment)
   - [Verify Model Deployment](#verify-model-deployment)
   - [Create Kafka Topics](#create-kafka-topics)
@@ -52,31 +52,31 @@ limitations under the License.
 
 ## Introduction
 
-This quick start guide provides the necessary instructions to set up the minimum infrastructure and configuration needed to deploy the Morpheus Developer Kit and includes example workflows leveraging the deployment.
+This cloud deployment guide provides the necessary instructions to set up the minimum infrastructure and configuration needed to deploy the Morpheus Developer Kit and includes example workflows leveraging the deployment.
 
-- This quick start guide consists of the following steps:
+- This cloud deployment guide consists of the following steps:
 - Set up of the NVIDIA Cloud Native Core Stack
 - Set up Morpheus AI Engine
 - Set up Morpheus SDK Client
-- Models for MLflow Triton Plugin Deployments
-- Set up Morpheus MLflow Triton Plugin
+- Models for MLflow Deployment
+- Set up Morpheus MLflow
 - Deploy models to Triton inference server
 - Create Kafka topics
 - Run example workloads
 
-**Note**: This guide requires access to the NGC Public Catalog.
+> **Note**: This guide requires access to the NGC Public Catalog.
 
 ## Setup
 
 ### Prerequisites
-1.  Refer to [Appendix A](#appendix-a) for Cloud (AWS) or On-Prem (Ubuntu)
+1.  Refer to prerequisites for Cloud (AWS) [here](#prerequisites-1) or On-Prem (Ubuntu) [here](#prerequisites-2)
 2.  Registration in the NGC Public Catalog
 
 Continue with the setup steps below once the host system is installed, configured, and satisfies all prerequisites.
 
 ### Set up NGC API Key and Install NGC Registry CLI
 
-First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide].
+First, you will need to set up your NGC API Key to access all the Morpheus components, using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1).
 
 Once you've created your API key, create an environment variable containing your API key for use by the commands used further in this document:
 
@@ -84,7 +84,7 @@ Once you've created your API key, create an environment variable containing your
 export API_KEY="<NGC_API_KEY>"
 ```
 
-Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide].
+Next, install and configure the NGC Registry CLI on your system using the linked instructions from the [NGC Registry CLI User Guide](https://docs.nvidia.com/dgx/ngc-registry-cli-user-guide/index.html#topic_4_1).
 
 ### Create Namespace for Morpheus
 
@@ -97,7 +97,7 @@ kubectl create namespace ${NAMESPACE}
 
 ### Install Morpheus AI Engine
 
-The Morpheus AI Engine consists of the following components:
+The Helm chart (`morpheus-ai-engine`) that offers the auxiliary components required to execute certain Morpheus workflows is referred to as the Morpheus AI Engine. It comprises of the following components
 -   Triton Inference Server [ **ai-engine** ] from NVIDIA for processing inference requests.
 -   Kafka Broker [ **broker** ] to consume and publish messages.
 -   Zookeeper [ **zookeeper** ] to maintain coordination between the Kafka Brokers.
@@ -144,7 +144,7 @@ replicaset.apps/zookeeper-87f9f4dd     1         1         1       54s
 ```
 
 ### Install Morpheus SDK Client
-Run the following command to pull the Morpheus SDK Client chart on to your instance:
+Run the following command to pull the Morpheus SDK Client (referred to as Helm chart `morpheus-sdk-client`) on to your instance:
 
 ```bash
 helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-sdk-client-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
@@ -172,7 +172,7 @@ Output:
 pod/sdk-cli-helper           1/1     Running   0               41s
 ```
 
-### Models for MLflow Plugin Deployment
+### Models for MLflow Deployment
 
 Connect to the **sdk-cli-helper** container and copy the models to `/common`, which is mapped to `/opt/morpheus/common` on the host and where MLflow will have access to model files.
 
@@ -180,9 +180,9 @@ Connect to the **sdk-cli-helper** container and copy the models to `/common`, wh
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -RL /workspace/models /common
 ```
 
-### Install Morpheus MLflow Triton Plugin
+### Install Morpheus MLflow
 
-The Morpheus MLflow Triton Plugin is used to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort 30500. Follow the below steps to install the Morpheus MLflow Triton Plugin:
+The Morpheus MLflow Helm chart offers MLFlow server with Triton plugin to deploy, update, and remove models from the Morpheus AI Engine. The MLflow server UI can be accessed using NodePort `30500`. Follow the below steps to install the Morpheus MLflow:
 
 ```bash
 helm fetch https://helm.ngc.nvidia.com/nvidia/morpheus/charts/morpheus-mlflow-22.09.tgz --username='$oauthtoken' --password=$API_KEY --untar
@@ -194,7 +194,7 @@ helm install --set ngc.apiKey="$API_KEY" \
              morpheus-mlflow
 ```
 
-**Note**: If the default port is already allocated, helm throws below error. Choose an alternative by adjusting the `dashboardPort` value in the `morpheus-mlflow/values.yaml` file, remove the previous release and reinstall it.
+> **Note**: If the default port is already allocated, Helm throws below error. Choose an alternative by adjusting the `dashboardPort` value in the `morpheus-mlflow/values.yaml` file, remove the previous release and reinstall it.
 
 ```console
 Error: Service "mlflow" is invalid: spec.ports[0].nodePort: Invalid value: 30500: provided port is already allocated
@@ -403,9 +403,9 @@ To publish messages to a Kafka topic, we need to copy datasets to locations wher
 kubectl -n $NAMESPACE exec sdk-cli-helper -- cp -R /workspace/examples/data /common
 ```
 
-Refer to the [Using Morpheus to Run Pipelines](#using-morpheus-to-run-pipelines) section of the Appendix for more information regarding the commands.
+Refer to the [Morpheus CLI Overview](https://github.com/nv-morpheus/Morpheus/blob/branch-23.01/docs/source/basics/overview.rst) and [Building a Pipeline](https://github.com/nv-morpheus/Morpheus/blob/branch-23.01/docs/source/basics/building_a_pipeline.rst) documentation for more information regarding the commands.
 
-**Note**: Before running the example pipelines, ensure that the criteria below are met:
+> **Note**: Before running the example pipelines, ensure that the criteria below are met:
 -   Ensure that models specific to the pipeline are deployed.
 -   Input and Output Kafka topics have been created.
 -   Recommended to create an output directory under  `/opt/morpheus/common/data` which is bound to `/common/data` (pod/container) for storing inference or validation results.
@@ -542,7 +542,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: /opt/morpheus/common/data/email.jsonlines>
 ```
 
-**Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
+> **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 ### Run NLP Sensitive Information Detection Pipeline
 The following Sensitive Information Detection pipeline examples use a pre-trained NLP model to ingest and analyze PCAP (packet capture network traffic) input sample data, like the example below, to inspect IP traffic across data center networks.
@@ -617,7 +617,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/examples/data/pcap_dump.jsonlines>
 ```
 
-**Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
+> **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 ### Run FIL Anomalous Behavior Profiling Pipeline
 The following Anomalous Behavior Profiling pipeline examples use a pre-trained FIL model to ingest and analyze NVIDIA System Management Interface (nvidia-smi) logs, like the example below, as input sample data to identify crypto mining activity on GPU devices.
@@ -686,7 +686,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
        <YOUR_INPUT_DATA_FILE_PATH_EXAMPLE: ${HOME}/examples/data/nvsmi.jsonlines>
 ```
 
-**Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
+> **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 ### Verify Running Pipeline
 Once you've deployed the SDK client to run a pipeline, you can check the status of the pod using the following command:
@@ -719,7 +719,7 @@ Inference rate: 7051messages [00:04, 4639.40messages/s]
 2.  AWS EC2 G4 instance with T4 or V100 GPU, at least 64GB RAM, 8 cores CPU, and 100 GB storage.
 
 ### Install Cloud Native Core Stack for AWS
-On your AWS EC2 G4 instance, follow the instructions in the linked document to install [NVIDIA's Cloud Native Core Stack for AWS][NVIDIA's Cloud Native Core Stack].
+On your AWS EC2 G4 instance, follow the instructions in the linked document to install [NVIDIA's Cloud Native Core Stack for AWS](https://github.com/NVIDIA/cloud-native-core).
 
 ## Prerequisites and Installation for Ubuntu
 
@@ -729,7 +729,7 @@ On your AWS EC2 G4 instance, follow the instructions in the linked document to i
 3.  Ubuntu 20.04 LTS or newer
 
 ## Installing Cloud Native Core Stack on NVIDIA Certified Systems
-On your NVIDIA-Certified System, follow the instructions in the linked document to install [NVIDIA's Cloud Native Core Stack].
+On your NVIDIA-Certified System, follow the instructions in the linked document to install [NVIDIA's Cloud Native Core Stack](https://github.com/NVIDIA/cloud-native-core).
 
 ## Kafka Topic Commands
 
@@ -760,7 +760,7 @@ kubectl -n $NAMESPACE exec -it deploy/broker -c broker -- kafka-console-producer
        <YOUR_INPUT_DATA_FILE>
 ```
 
-**Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
+> **Note**: This should be used for development purposes only via this developer kit. Loading from the file into Kafka should not be used in production deployments of Morpheus.
 
 
 Consume messages from Kafka topic:
@@ -781,10 +781,9 @@ kubectl -n $NAMESPACE exec deploy/broker -c broker -- kafka-topics.sh \
 ```
 
 ## Additional Documentation
-For more information on how to use the Morpheus CLI to customize and run your own optimized AI pipelines, Refer to below documentation.
-- [Morpheus Contribution]
-- [Morpheus Developer Guide]
-- [Morpheus Pipeline Examples]
+For more information on how to use the Morpheus Python API to customize and run your own optimized AI pipelines, Refer to below documentation.
+- [Morpheus Developer Guide](https://github.com/nv-morpheus/Morpheus/tree/branch-23.01/docs/source/developer_guide)
+- [Morpheus Pipeline Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-23.01/examples)
 
 
 ## Troubleshooting

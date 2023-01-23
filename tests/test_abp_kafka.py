@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ import numpy as np
 import pandas
 import pytest
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.config import Config
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes

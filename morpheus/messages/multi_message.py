@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@ import dataclasses
 import typing
 
 import cupy as cp
+import numpy as np
 
 import cudf
 
@@ -172,8 +173,13 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         """
         return MultiMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
 
-    def _ranges_to_mask(self, length, ranges):
-        mask = cp.zeros(length, cp.bool_)
+    def _ranges_to_mask(self, df, ranges):
+        if isinstance(df, cudf.DataFrame):
+            zeros_fn = cp.zeros
+        else:
+            zeros_fn = np.zeros
+
+        mask = zeros_fn(len(df), bool)
 
         for range in ranges:
             mask[range[0]:range[1]] = True
@@ -184,7 +190,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         df = self.get_meta()
 
         if mask is None:
-            mask = self._ranges_to_mask(len(df), ranges=ranges)
+            mask = self._ranges_to_mask(df, ranges=ranges)
 
         return df.loc[mask, :]
 

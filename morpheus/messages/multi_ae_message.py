@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ import logging
 
 from dfencoder import AutoEncoder
 
+from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,19 @@ class MultiAEMessage(MultiMessage):
         return MultiAEMessage(meta=self.meta,
                               mess_offset=start,
                               mess_count=stop - start,
+                              model=self.model,
+                              train_scores_mean=self.train_scores_mean,
+                              train_scores_std=self.train_scores_std)
+
+    def copy_ranges(self, ranges, num_selected_rows=None):
+        sliced_rows = self.copy_meta_ranges(ranges)
+
+        if num_selected_rows is None:
+            num_selected_rows = len(sliced_rows)
+
+        return MultiAEMessage(meta=UserMessageMeta(sliced_rows, user_id=self.meta.user_id),
+                              mess_offset=0,
+                              mess_count=num_selected_rows,
                               model=self.model,
                               train_scores_mean=self.train_scores_mean,
                               train_scores_std=self.train_scores_std)

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,9 +37,9 @@ namespace morpheus {
 /****** DType****************************************/
 struct DType : DataType  // NOLINT
 {
-    DType(const DataType &dtype);
+    DType(const DataType& dtype);
 
-    DType(TypeId tid);
+    DType(TypeId tid = TypeId::EMPTY);
 
     // Cudf representation
     cudf::type_id cudf_type_id() const;
@@ -58,7 +58,7 @@ struct DType : DataType  // NOLINT
     static DType from_cudf(cudf::type_id tid);
 
     // From triton
-    static DType from_triton(const std::string &type_str);
+    static DType from_triton(const std::string& type_str);
 };
 
 template <typename T>
