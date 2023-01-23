@@ -19,8 +19,8 @@ import typing
 import numpy as np
 import pandas as pd
 
-from morpheus._lib.file_types import FileTypes
-from morpheus._lib.file_types import determine_file_type
+from morpheus._lib.common import FileTypes
+from morpheus._lib.common import determine_file_type
 from morpheus.cli import register_stage
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
@@ -64,7 +64,7 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
         ----------
         filename : str
             Path to a file to read.
-        file_type : `morpheus._lib.file_types.FileTypes`
+        file_type : `morpheus._lib.common.FileTypes`
             What type of file to read. Leave as Auto to auto detect based on the file extension.
 
         Returns

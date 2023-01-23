@@ -164,14 +164,14 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
     def copy_output_ranges(self, ranges, mask=None):
         if mask is None:
-            mask = self._ranges_to_mask(self.mess_count, ranges=ranges)
+            mask = self._ranges_to_mask(self.get_meta(), ranges=ranges)
 
         # The outputs property method returns a copy with the offsets applied
         outputs = self.outputs
         return {key: output[mask] for (key, output) in outputs.items()}
 
     def copy_ranges(self, ranges):
-        mask = self._ranges_to_mask(self.mess_count, ranges)
+        mask = self._ranges_to_mask(self.get_meta(), ranges)
         sliced_rows = self.copy_meta_ranges(ranges, mask=mask)
         sliced_count = len(sliced_rows)
         sliced_outputs = self.copy_output_ranges(ranges, mask=mask)
@@ -180,6 +180,15 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
         mem.outputs = sliced_outputs
 
         return MultiResponseMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)
+
+    def get_slice(self, start, stop):
+        mess_count = stop - start
+        return MultiResponseMessage(meta=self.meta,
+                                    mess_offset=self.mess_offset + start,
+                                    mess_count=mess_count,
+                                    memory=self.memory,
+                                    offset=self.offset + start,
+                                    count=mess_count)
 
 
 @dataclasses.dataclass
@@ -212,3 +221,23 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
     """
 
     user_id: str = None
+
+    def copy_ranges(self, ranges):
+        m = super().copy_ranges(ranges)
+        return MultiResponseAEMessage(meta=m.meta,
+                                      mess_offset=m.mess_offset,
+                                      mess_count=m.mess_count,
+                                      memory=m.memory,
+                                      offset=m.offset,
+                                      count=m.mess_count,
+                                      user_id=self.user_id)
+
+    def get_slice(self, start, stop):
+        slice = super().get_slice(start, stop)
+        return MultiResponseAEMessage(meta=slice.meta,
+                                      mess_offset=slice.mess_offset,
+                                      mess_count=slice.mess_count,
+                                      memory=slice.memory,
+                                      offset=slice.offset,
+                                      count=slice.mess_count,
+                                      user_id=self.user_id)
