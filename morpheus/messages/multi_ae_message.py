@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class MultiAEMessage(MultiMessage):
+    """
+    Subclass of `MultiMessage` specific to the AutoEncoder pipeline, which contains the model.
+    """
 
     model: AutoEncoder
     # train_loss_scores: cp.ndarray
@@ -57,6 +60,19 @@ class MultiAEMessage(MultiMessage):
                               train_scores_std=self.train_scores_std)
 
     def copy_ranges(self, ranges, num_selected_rows=None):
+        """
+        Perform a copy of the current message class instance for the given `ranges` of rows.
+
+        Parameters
+        ----------
+        ranges : typing.List[typing.Tuple[int, int]]
+            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
+            The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
+
+        num_selected_rows : typing.Union[None, int]
+            Optional specify the number of rows selected by `ranges`, otherwise this is computed by the result.
+        """
+
         sliced_rows = self.copy_meta_ranges(ranges)
 
         if num_selected_rows is None:
