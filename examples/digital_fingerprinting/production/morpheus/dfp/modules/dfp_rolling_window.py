@@ -83,7 +83,6 @@ def dfp_rolling_window(builder: mrc.Builder):
         with get_user_cache(user_id) as user_cache:
 
             incoming_df = message.get_df()
-            # existing_df = user_cache.df
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
                 # Then our incoming dataframe wasnt even covered by the window. Generate warning

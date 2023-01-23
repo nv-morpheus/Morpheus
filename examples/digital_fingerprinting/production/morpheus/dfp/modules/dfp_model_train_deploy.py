@@ -50,7 +50,7 @@ def dfp_model_train_deploy(builder: mrc.Builder):
     dfp_training_module = load_module(dfp_training_conf, builder=builder)
     mlflow_model_writer_module = load_module(mlflow_model_writer_conf, builder=builder)
 
-    # Make edge between the modules.
+    # Make an edge between the modules.
     builder.make_edge(dfp_training_module.output_port("output"), mlflow_model_writer_module.input_port("input"))
 
     # Register input and output port for a module.
