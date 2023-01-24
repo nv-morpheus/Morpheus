@@ -12,19 +12,23 @@
 # the License.
 # =============================================================================
 
-if (NOT EXISTS ${Python3_SITELIB}/skbuild)
-  # In case this is messed up by `/usr/local/python/site-packages` vs `/usr/python/site-packages`, check pip itself.
-  execute_process(
-      COMMAND bash "-c" "pip show scikit-build | sed -n -e 's/Location: //p'"
-      OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+morpheus_utils_add_pybind11_module(
+    file_types
+    MODULE_ROOT
+      "${MORPHEUS_LIB_ROOT}"
+    SOURCE_FILES
+      "${MORPHEUS_LIB_ROOT}/src/python_modules/file_types.cpp"
+    INCLUDE_DIRS
+      "${MORPHEUS_LIB_ROOT}/include"
+    LINK_TARGETS
+      morpheus
+      mrc::pymrc
+    OUTPUT_TARGET
+      file_types_target
+    INSTALL_DEST
+      ${MORPHEUS_LIB_INSTALL_DIR}
+)
 
-  if (NOT EXISTS ${PYTHON_SITE_PACKAGES}/skbuild)
-    message(SEND_ERROR "Scikit-build is not installed. CMake may not be able to find Cython. Install scikit-build with `pip install scikit-build`")
-  else()
-    list(APPEND CMAKE_MODULE_PATH "${PYTHON_SITE_PACKAGES}/skbuild/resources/cmake")
-  endif()
-else ()
-  list(APPEND CMAKE_MODULE_PATH "${Python3_SITELIB}/skbuild/resources/cmake")
+if(MORPHEUS_PYTHON_INPLACE_BUILD)
+  morpheus_utils_inplace_build_copy(${file_types_target} ${MORPHEUS_LIB_ROOT})
 endif()

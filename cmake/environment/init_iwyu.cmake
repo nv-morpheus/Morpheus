@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#!/bin/bash
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +13,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# =============================================================================
 
-max_size = 10G
-# hash_dir = false
-# let ccache preserve C++ comments, because some of them may be meaningful to the compiler
-keep_comments_cpp = true
-cache_dir = @CCACHE_DIR@
-compiler_check = %compiler% --version
-# Uncomment to debug ccache preprocessor errors/cache misses
-log_file = @CCACHE_DIR@/ccache.log
-
-# Force absolute paths in error output for IDEs
-absolute_paths_in_stderr = true
+if(MORPHEUS_USE_IWYU)
+  morpheus_utils_initialize_iwyu(
+      MORPHEUS_USE_IWYU
+      MORPHEUS_IWYU_VERBOSITY
+      MORPHEUS_IWYU_PROGRAM
+      MORPHEUS_IWYU_OPTIONS
+      MORPHEUS_USE_CCACHE
+  )
+endif(MORPHEUS_USE_IWYU)
