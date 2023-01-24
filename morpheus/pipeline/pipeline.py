@@ -96,7 +96,7 @@ class Pipeline():
 
         return x
 
-    def add_node(self, node: StreamWrapper, segment_id: str = "main"):
+    def _add_node(self, node: StreamWrapper, segment_id: str = "main"):
 
         assert node._pipeline is None or node._pipeline is self, "A stage can only be added to one pipeline at a time"
 
@@ -117,10 +117,10 @@ class Pipeline():
 
         segment_graph.add_node(node)
 
-    def add_edge(self,
-                 start: typing.Union[StreamWrapper, Sender],
-                 end: typing.Union[Stage, Receiver],
-                 segment_id: str = "main"):
+    def _add_edge(self,
+                  start: typing.Union[StreamWrapper, Sender],
+                  end: typing.Union[Stage, Receiver],
+                  segment_id: str = "main"):
 
         if (isinstance(start, StreamWrapper)):
             start_port = start.output_ports[0]
@@ -141,7 +141,7 @@ class Pipeline():
                                start_port_idx=start_port.port_number,
                                end_port_idx=end_port.port_number)
 
-    def add_segment_edge(self, egress_stage, egress_segment, ingress_stage, ingress_segment, port_pair):
+    def _add_segment_edge(self, egress_stage, egress_segment, ingress_stage, ingress_segment, port_pair):
         egress_edges = self._segments[egress_segment]["egress_ports"]
         egress_edges.append({
             "port_pair": port_pair,
@@ -176,7 +176,7 @@ class Pipeline():
 
         self._mrc_pipeline = mrc.Pipeline()
 
-        def inner_build(builder: mrc.Builder, segment_id: str):
+        def _inner_build(builder: mrc.Builder, segment_id: str):
             segment_graph = self._segment_graphs[segment_id]
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
@@ -207,7 +207,7 @@ class Pipeline():
             logger.info(f"====Building Segment: {segment_id}====")
             segment_ingress_ports = self._segments[segment_id]["ingress_ports"]
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
-            segment_inner_build = partial(inner_build, segment_id=segment_id)
+            segment_inner_build = partial(_inner_build, segment_id=segment_id)
 
             self._mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
