@@ -164,8 +164,8 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                     "Epochs": model.lr_decay.state_dict().get("last_epoch", "unknown"),
                     "Learning rate": model.lr,
                     "Batch size": model.batch_size,
-                    "Start Epoch": message.get_meta("timestamp").min(),
-                    "End Epoch": message.get_meta("timestamp").max(),
+                    "Start Epoch": message.get_meta(self._config.ae.timestamp_column_name).min(),
+                    "End Epoch": message.get_meta(self._config.ae.timestamp_column_name).max(),
                     "Log Count": message.mess_count,
                 })
 
