@@ -142,12 +142,30 @@ class ResourcePool:
             return self._queue.get()
 
     def borrow(self):
+        """
+        Returns an item from the queue without blocking. If the queue is empty, add an item.
+
+        Returns
+        -------
+        obj : typing.Any
+            Item from the queue.
+        """
+
         obj = self._borrow()
 
         return obj
 
     def return_obj(self, obj):
+        """
+        Add an item to the queue.
+
+        Parameters
+        ----------
+        obj : typing.Any
+            An item to be added to the queue.
+
         self._queue.put(obj)
+        """
 
 
 class InputWrapper:
@@ -646,10 +664,22 @@ class TritonInferenceNLP(_TritonInferenceWorker):
 
     @classmethod
     def needs_logits(cls):
+        """
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
+        """
         return True
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
+        """
+        Returns default dictionary used to map NLP pipeline input/output names to Triton input/output names
+
+        Returns
+        -------
+        default_inout_mapping : typing.Dict[str, str]
+            Dictionary with default input and output names.
+        """
+
         # Some models use different names for the same thing. Set that here but allow user customization
         return {
             "attention_mask": "input_mask",
@@ -718,6 +748,14 @@ class TritonInferenceFIL(_TritonInferenceWorker):
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
+        """
+        Returns default dictionary used to map FIL pipeline input/output names to Triton input/output names
+
+        Returns
+        -------
+        default_inout_mapping : typing.Dict[str, str]
+            Dictionary with default input and output names.
+        """
         # Some models use different names for the same thing. Set that here but allow user customization
         return {
             "output__0": "probs",

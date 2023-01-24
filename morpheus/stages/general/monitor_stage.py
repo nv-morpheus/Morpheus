@@ -34,11 +34,16 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-# Functions exactly the same as TMonitor, except we do not check for `instance.miniters == 1` before updating. This
-# allows the timer to update every 1 second on the screen making the pipeline feel running
 class MorpheusTqdmMonitor(TMonitor):
+    """
+    Monitoring thread for tqdm bars.
+    """
 
     def run(self):
+        """
+        This function does exactly the same as `TMonitor.run`, except we do not check for `instance.miniters == 1`
+        before updating. This allows the timer to update every 1 second on the screen making the pipeline feel running
+        """
         cur_t = self._time()
         while True:
             # After processing and before sleeping, notify that we woke
@@ -112,13 +117,23 @@ class MorpheusTqdm(tqdm):
         return base_val
 
     def update(self, n=1):
+        """
+        This function updates the time and progress bar.
+
+        Parameters
+        ----------
+        n : int
+            Increment to add to the internal counter of iterations.
+        """
 
         self.last_update_t = self._time()
 
         return super().update(n)
 
     def stop(self):
-
+        """
+        Progress bar incrementing is stopped by this function.
+        """
         # Set is running to false to stop elapsed from incrementing
         self.is_running = False
 
@@ -195,7 +210,9 @@ class MonitorStage(SinglePortStage):
         return False
 
     def on_start(self):
-
+        """
+        Starts the pipeline stage's progress bar.
+        """
         # Set the monitor interval to 0 to use prevent using tqdms monitor
         tqdm.monitor_interval = 0
 
@@ -204,6 +221,9 @@ class MonitorStage(SinglePortStage):
             self._ensure_progress_bar()
 
     def stop(self):
+        """
+        Clean up and close the progress bar.
+        """
         if (self._progress is not None):
             self._progress.close()
 
