@@ -49,7 +49,8 @@
 
     "mounts": [
         {"type":"bind", "source": "/var/run/docker.sock", "target": "/var/run/docker.sock"},
-        {"type":"bind", "source": "${localWorkspaceFolder}/.cache/conda", "target": "/home/coder/.conda"}
+        {"type":"bind", "source": "${localWorkspaceFolder}/.cache/conda", "target": "/home/coder/.conda"},
+        {"type":"bind", "source": "${localEnv:HOME}/.config/gh", "target": "/home/coder/.config/gh"}
     ],
 
     "features": {
@@ -58,7 +59,8 @@
             "gid": "1000",
             "username": "coder"
         },
-        "ghcr.io/devcontainers/features/docker-from-docker": {}
+        "ghcr.io/devcontainers/features/docker-from-docker": {},
+        "ghcr.io/devcontainers/features/github-cli": {}
     },
 
     "customizations": {
