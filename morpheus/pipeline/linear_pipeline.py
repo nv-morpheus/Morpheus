@@ -39,11 +39,11 @@ class LinearPipeline(_pipeline.Pipeline):
 
         self._current_segment_id = ""
         self._next_segment_index = 0
-        self.increment_segment_id()
+        self._increment_segment_id()
 
         self._linear_stages: typing.List[_pipeline.StreamWrapper] = []
 
-    def increment_segment_id(self):
+    def _increment_segment_id(self):
         self._linear_stages = []
         self._current_segment_id = f"linear_segment_{self._next_segment_index}"
         self._next_segment_index += 1
@@ -149,7 +149,7 @@ class LinearPipeline(_pipeline.Pipeline):
         self.add_stage(boundary_egress)
         egress_segment_id = self._current_segment_id
 
-        self.increment_segment_id()
+        self._increment_segment_id()
         ingress_segment_id = self._current_segment_id
 
         self._linear_stages.append(boundary_ingress)
