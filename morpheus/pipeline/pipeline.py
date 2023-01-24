@@ -333,7 +333,7 @@ class Pipeline():
         start_def_port = ":e" if is_lr else ":s"
         end_def_port = ":w" if is_lr else ":n"
 
-        def has_ports(n: StreamWrapper, is_input):
+        def _has_ports(n: StreamWrapper, is_input):
             if (is_input):
                 return len(n.input_ports) > 0
             else:
@@ -356,8 +356,8 @@ class Pipeline():
 
                 label = ""
 
-                show_in_ports = has_ports(n, is_input=True)
-                show_out_ports = has_ports(n, is_input=False)
+                show_in_ports = _has_ports(n, is_input=True)
+                show_out_ports = _has_ports(n, is_input=False)
 
                 # Build the ports for the node. Only show ports if there are any
                 # (Would like to have this not show for one port, but the lines get all messed up)
@@ -396,14 +396,14 @@ class Pipeline():
                 start_name = e[0].unique_name
 
                 # Append the port if necessary
-                if (has_ports(e[0], is_input=False)):
+                if (_has_ports(e[0], is_input=False)):
                     start_name += f":d{attrs['start_port_idx']}"
                 else:
                     start_name += start_def_port
 
                 end_name = e[1].unique_name
 
-                if (has_ports(e[1], is_input=True)):
+                if (_has_ports(e[1], is_input=True)):
                     end_name += f":u{attrs['end_port_idx']}"
                 else:
                     end_name += end_def_port
