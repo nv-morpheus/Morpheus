@@ -95,28 +95,7 @@ class Receiver():
                 self._input_type = sender.out_type
                 self._is_linked = True
             else:
-                # We have multiple senders. Create a dummy stream to connect all senders
-                if (self.is_complete):
-                    # Connect all streams now
-                    # self._input_stream = streamz.Stream(upstreams=[x.out_stream for x in self._input_senders],
-                    #                                     asynchronous=True,
-                    #                                     loop=IOLoop.current())
-                    raise NotImplementedError("Still using streamz")
-                    self._is_linked = True
-                else:
-                    # Create a dummy stream that needs to be linked later
-                    # self._input_stream = streamz.Stream(asynchronous=True, loop=IOLoop.current())
-                    raise NotImplementedError("Still using streamz")
-
-                # Now determine the output type from what we have
-                great_ancestor = greatest_ancestor(*[x.out_type for x in self._input_senders if x.is_complete])
-
-                if (great_ancestor is None):
-                    # TODO: Add stage, port, and type info to message
-                    raise RuntimeError(("Cannot determine single type for senders of input port. "
-                                        "Use a merge stage to handle different types of inputs."))
-
-                self._input_type = great_ancestor
+                raise NotImplementedError("Still using streamz")
 
         return (self._input_stream, self._input_type)
 
