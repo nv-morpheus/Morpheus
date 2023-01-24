@@ -26,6 +26,10 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 def create_increment_col(df, column_name: str, groupby_column="username", timestamp_column="timestamp"):
+    """
+    Create a new integer column named `column_name` which will first group by `timestamp_column` per-day and then group
+    by `groupby_column` returning incrementing values starting at `1`.
+    """
     DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 
     # Ensure we are pandas for this
@@ -46,7 +50,10 @@ def create_increment_col(df, column_name: str, groupby_column="username", timest
     return increment_col
 
 
-def column_listjoin(df, col_name):
+def column_listjoin(df, col_name: str) -> pd.Series:
+    """
+    Returns the array series `df[col_name]` as flattened string series.
+    """
     if col_name in df:
         return df[col_name].transform(lambda x: ",".join(x)).astype('string')
     else:
@@ -55,6 +62,7 @@ def column_listjoin(df, col_name):
 
 @dataclasses.dataclass
 class ColumnInfo:
+    """Defines a single column and type-cast."""
     name: str
     dtype: str  # The final type
 
@@ -74,6 +82,7 @@ class ColumnInfo:
 
 @dataclasses.dataclass
 class CustomColumn(ColumnInfo):
+    """Subclass of `ColumnInfo`, defines a column to be computed by a user-defined function `process_column_fn`."""
     process_column_fn: typing.Callable
 
     def process_column(self, df: pd.DataFrame) -> pd.Series:
@@ -82,6 +91,7 @@ class CustomColumn(ColumnInfo):
 
 @dataclasses.dataclass
 class RenameColumn(ColumnInfo):
+    """Subclass of `ColumnInfo`, adds the ability to also perform a rename."""
     input_name: str
 
     def process_column(self, df: pd.DataFrame) -> pd.Series:
@@ -94,6 +104,7 @@ class RenameColumn(ColumnInfo):
 
 @dataclasses.dataclass
 class BoolColumn(RenameColumn):
+    """Subclass of `RenameColumn`, adds the ability to map a set custom values as boolean values."""
     value_map: typing.Dict[str, bool] = dataclasses.field(init=False, default_factory=dict)
 
     true_value: dataclasses.InitVar[str] = None
@@ -125,6 +136,10 @@ class BoolColumn(RenameColumn):
 
 @dataclasses.dataclass
 class DateTimeColumn(RenameColumn):
+    """
+    Subclass of `RenameColumn`, specific to casting UTC localized datetime values. When incoming values contain a
+    time-zone offset string the values are converted to UTC, while values without a time-zone are assumed to be UTC.
+    """
 
     def process_column(self, df: pd.DataFrame) -> pd.Series:
         return pd.to_datetime(super().process_column(df), infer_datetime_format=True, utc=True)
@@ -132,7 +147,7 @@ class DateTimeColumn(RenameColumn):
 
 @dataclasses.dataclass
 class StringJoinColumn(RenameColumn):
-
+    """Subclass of `RenameColumn`, converts incoming `list` values to string by joining by `sep`."""
     sep: str
 
     def process_column(self, df: pd.DataFrame) -> pd.Series:
@@ -142,7 +157,9 @@ class StringJoinColumn(RenameColumn):
 
 @dataclasses.dataclass
 class StringCatColumn(ColumnInfo):
-
+    """
+    Subclass of `ColumnInfo`, concatenates values from multiple columns into a new string column separated by `sep`.
+    """
     input_columns: typing.List[str]
     sep: str
 
@@ -155,6 +172,10 @@ class StringCatColumn(ColumnInfo):
 
 @dataclasses.dataclass
 class IncrementColumn(DateTimeColumn):
+    """
+    Subclass of `DateTimeColumn`, counts the unique occurrences of a value in `groupby_column` over a specific time
+    window `period` based on dates in the `input_name` field.
+    """
     groupby_column: str
     period: str = "D"
 
@@ -167,6 +188,8 @@ class IncrementColumn(DateTimeColumn):
 
 @dataclasses.dataclass
 class DataFrameInputSchema:
+    """Defines the schema specifying the columns to be included in the output `DataFrame`."""
+
     json_columns: typing.List[str] = dataclasses.field(default_factory=list)
     column_info: typing.List[ColumnInfo] = dataclasses.field(default_factory=list)
     preserve_columns: typing.List[str] = dataclasses.field(default_factory=list)
