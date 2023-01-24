@@ -44,11 +44,11 @@ class CachedUserWindow:
     def append_dataframe(self, incoming_df: pd.DataFrame) -> bool:
 
         # Filter the incoming df by epochs later than the current max_epoch
-        filtered_df = incoming_df[incoming_df["timestamp"] > self.max_epoch]
+        filtered_df = incoming_df[incoming_df[self.timestamp_column] > self.max_epoch]
 
         if (len(filtered_df) == 0):
             # We have nothing new to add. Double check that we fit within the window
-            before_history = incoming_df[incoming_df["timestamp"] < self.min_epoch]
+            before_history = incoming_df[incoming_df[self.timestamp_column] < self.min_epoch]
 
             return len(before_history) == 0
 
@@ -59,7 +59,7 @@ class CachedUserWindow:
         # Set the filtered index
         filtered_df.index = range(self.total_count, self.total_count + len(filtered_df))
 
-        # Save the row hash to make it easier to find later. Do this before the batch so it doesnt participate
+        # Save the row hash to make it easier to find later. Do this before the batch so it doesn't participate
         filtered_df["_row_hash"] = pd.util.hash_pandas_object(filtered_df, index=False)
 
         # Use batch id to distinguish groups in the same dataframe

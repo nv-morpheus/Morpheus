@@ -13,11 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(VCPKG_TARGET_ARCHITECTURE x64)
-set(VCPKG_CRT_LINKAGE dynamic)
-set(VCPKG_LIBRARY_LINKAGE dynamic)
+include_guard(GLOBAL)
 
-set(VCPKG_CMAKE_SYSTEM_NAME Linux)
+list(APPEND CMAKE_MESSAGE_CONTEXT "cache")
 
-# Set the RPATH to allow finding other libraries in the same folder
-set(VCPKG_LINKER_FLAGS "-Wl,-rpath,'$ORIGIN':'$ORIGIN/../lib'")
+morpheus_utils_check_cache_path(MORPHEUS_CACHE_DIR)
+
+# Configure CCache if requested
+if(MORPHEUS_USE_CCACHE)
+  morpheus_utils_initialize_ccache(MORPHEUS_CACHE_DIR)
+endif()
+
+list(POP_BACK CMAKE_MESSAGE_CONTEXT)
