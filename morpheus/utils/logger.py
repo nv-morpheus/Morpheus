@@ -26,6 +26,10 @@ from tqdm import tqdm
 
 
 class TqdmLoggingHandler(logging.Handler):
+    """
+    Console log handler used by Morpheus, provides colorized output and sends
+    all logs at level ERROR and above to stderr, others to stdout.
+    """
 
     def __init__(self, level=logging.NOTSET):
         super().__init__(level)
@@ -204,6 +208,9 @@ def set_log_level(log_level: int):
 
 
 def deprecated_stage_warning(logger, cls, name):
+    """
+    Log a warning about a deprecated stage
+    """
     logger.warning(("The '%s' stage ('%s') is no longer required to manage backpressure and has been deprecated. "
                     "It has no effect and acts as a pass through stage."),
                    cls.__name__,
@@ -211,6 +218,13 @@ def deprecated_stage_warning(logger, cls, name):
 
 
 def get_log_levels():
+    """
+    Return a list of the available log levels as strings in order from CRITICAL --> DEBUG
+
+    Returns
+    -------
+    typing.List[str]
+    """
     log_levels = list(logging._nameToLevel.keys())
 
     if ("NOTSET" in log_levels):
@@ -220,6 +234,9 @@ def get_log_levels():
 
 
 def parse_log_level(ctx, param, value):
+    """
+    Given a log-level name return the numeric log level value used by the Python logger.
+    """
     x = logging._nameToLevel.get(value.upper(), None)
     if x is None:
         raise click.BadParameter('Must be one of {}. Passed: {}'.format(", ".join(logging._nameToLevel.keys()), value))
