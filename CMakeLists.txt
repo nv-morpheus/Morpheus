@@ -145,6 +145,9 @@ if(MORPHEUS_PYTHON_PERFORM_INSTALL)
   list(APPEND extra_args "INSTALL_WHEEL")
 endif()
 
+file(GLOB morpheus_data_files "${CMAKE_CURRENT_SOURCE_DIR}/morpheus/data/*")
+morpheus_utils_add_python_sources(${morpheus_data_files})
+
 morpheus_utils_build_python_package(morpheus ${extra_args})
 
 if(MORPHEUS_BUILD_EXAMPLES)
