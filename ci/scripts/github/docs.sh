@@ -24,7 +24,7 @@ aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.t
 
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
-pip install ${MORPHEUS_ROOT}/build/dist
+pip install ${MORPHEUS_ROOT}/build/dist/*.whl
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}
