@@ -27,8 +27,9 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 def create_increment_col(df, column_name: str, groupby_column="username", timestamp_column="timestamp"):
     """
-    Create a new integer column named `column_name` which will first group by `timestamp_column` per-day and then group
-    by `groupby_column` returning incrementing values starting at `1`.
+    Create a new integer column counting unique occurrences of values in `column_name` grouped per-day using the
+    timestamp values in `timestamp_column` and then grouping by `groupby_column` returning incrementing values starting
+    at `1`.
     """
     DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
 
@@ -66,14 +67,27 @@ class ColumnInfo:
     name: str
     dtype: str  # The final type
 
-    def get_pandas_dtype(self):
-
+    def get_pandas_dtype(self) -> str:
+        """Return the pandas type string of column."""
         if (issubclass(self.dtype, datetime)):
             return "datetime64[ns]"
         else:
             return self.dtype
 
-    def process_column(self, df: pd.DataFrame) -> pd.Series:
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
+        """
+        Performs the processing of the ColumnInfo. Most subclasses should override this method.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe to process.
+
+        Returns
+        -------
+        pd.Series
+            New series defined by this class
+        """
         if (self.name not in df.columns):
             return pd.Series(None, index=df.index, dtype=self.get_pandas_dtype())
 
@@ -85,7 +99,7 @@ class CustomColumn(ColumnInfo):
     """Subclass of `ColumnInfo`, defines a column to be computed by a user-defined function `process_column_fn`."""
     process_column_fn: typing.Callable
 
-    def process_column(self, df: pd.DataFrame) -> pd.Series:
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
         return self.process_column_fn(df)
 
 
@@ -94,7 +108,7 @@ class RenameColumn(ColumnInfo):
     """Subclass of `ColumnInfo`, adds the ability to also perform a rename."""
     input_name: str
 
-    def process_column(self, df: pd.DataFrame) -> pd.Series:
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
 
         if (self.input_name not in df.columns):
             return pd.Series(None, index=df.index, dtype=self.get_pandas_dtype())
@@ -130,8 +144,8 @@ class BoolColumn(RenameColumn):
         if (false_values is not None):
             self.value_map.update({v: False for v in false_values})
 
-    def process_column(self, df: pd.DataFrame) -> pd.Series:
-        return super().process_column(df).map(self.value_map).astype(bool)
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
+        return super()._process_column(df).map(self.value_map).astype(bool)
 
 
 @dataclasses.dataclass
@@ -141,8 +155,8 @@ class DateTimeColumn(RenameColumn):
     time-zone offset string the values are converted to UTC, while values without a time-zone are assumed to be UTC.
     """
 
-    def process_column(self, df: pd.DataFrame) -> pd.Series:
-        return pd.to_datetime(super().process_column(df), infer_datetime_format=True, utc=True)
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
+        return pd.to_datetime(super()._process_column(df), infer_datetime_format=True, utc=True)
 
 
 @dataclasses.dataclass
@@ -150,9 +164,8 @@ class StringJoinColumn(RenameColumn):
     """Subclass of `RenameColumn`, converts incoming `list` values to string by joining by `sep`."""
     sep: str
 
-    def process_column(self, df: pd.DataFrame) -> pd.Series:
-
-        return super().process_column(df).str.join(sep=self.sep)
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
+        return super()._process_column(df).str.join(sep=self.sep)
 
 
 @dataclasses.dataclass
@@ -163,8 +176,7 @@ class StringCatColumn(ColumnInfo):
     input_columns: typing.List[str]
     sep: str
 
-    def process_column(self, df: pd.DataFrame) -> pd.Series:
-
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
         first_col = df[self.input_columns[0]]
 
         return first_col.str.cat(others=df[self.input_columns[1:]], sep=self.sep)
@@ -179,8 +191,8 @@ class IncrementColumn(DateTimeColumn):
     groupby_column: str
     period: str = "D"
 
-    def process_column(self, df: pd.DataFrame) -> pd.Series:
-        period = super().process_column(df).dt.to_period(self.period)
+    def _process_column(self, df: pd.DataFrame) -> pd.Series:
+        period = super()._process_column(df).dt.to_period(self.period)
 
         # Create the `groupby_column`, per-period log count
         return df.groupby([self.groupby_column, period]).cumcount()
@@ -220,7 +232,7 @@ def _process_columns(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
     # Iterate over the column info
     for ci in input_schema.column_info:
         try:
-            output_df[ci.name] = ci.process_column(df_in)
+            output_df[ci.name] = ci._process_column(df_in)
         except Exception:
             logger.exception("Failed to process column '%s'. Dataframe: \n%s", ci.name, df_in, exc_info=True)
             raise
@@ -289,8 +301,10 @@ def _filter_rows(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
     return input_schema.row_filter(df_in)
 
 
-def process_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
-
+def process_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema) -> pd.DataFrame:
+    """
+    Applies colmn transformations as defined by `input_schema`
+    """
     # Step 1 is to normalize any columns
     df_processed = _normalize_dataframe(df_in, input_schema)
 
