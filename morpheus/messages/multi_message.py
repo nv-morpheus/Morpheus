@@ -186,7 +186,9 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         return mask
 
-    def copy_meta_ranges(self, ranges: typing.List[typing.Tuple[int, int]], mask=None):
+    def copy_meta_ranges(self,
+                         ranges: typing.List[typing.Tuple[int, int]],
+                         mask: typing.Union[None, cp.ndarray, np.ndarray] = None):
         """
         Perform a copy of the underlying dataframe for the given `ranges` of rows.
 
@@ -200,6 +202,10 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             Optionally specify rows as a cupy array (when using cudf Dataframes) or a numpy array (when using pandas
             Dataframes) of booleans. When not-None `ranges` will be ignored. This is useful as an optimization as this
             avoids needing to generate the mask on it's own.
+
+        Returns
+        -------
+        `Dataframe`
         """
         df = self.get_meta()
 
@@ -208,9 +214,9 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         return df.loc[mask, :]
 
-    def copy_ranges(self, ranges, num_selected_rows=None):
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]], num_selected_rows: int = None):
         """
-        Perform a copy of the current message class instance for the given `ranges` of rows.
+        Perform a copy of the current message instance for the given `ranges` of rows.
 
         Parameters
         ----------
@@ -220,6 +226,10 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         num_selected_rows : typing.Union[None, int]
             Optional specify the number of rows selected by `ranges`, otherwise this is computed by the result.
+
+        Returns
+        -------
+        `MultiMessage`
         """
         sliced_rows = self.copy_meta_ranges(ranges)
 

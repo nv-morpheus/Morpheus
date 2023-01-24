@@ -14,6 +14,7 @@
 
 import dataclasses
 import logging
+import typing
 
 from dfencoder import AutoEncoder
 
@@ -59,9 +60,9 @@ class MultiAEMessage(MultiMessage):
                               train_scores_mean=self.train_scores_mean,
                               train_scores_std=self.train_scores_std)
 
-    def copy_ranges(self, ranges, num_selected_rows=None):
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]], num_selected_rows: int = None):
         """
-        Perform a copy of the current message class instance for the given `ranges` of rows.
+        Perform a copy of the current message instance for the given `ranges` of rows.
 
         Parameters
         ----------
@@ -71,6 +72,10 @@ class MultiAEMessage(MultiMessage):
 
         num_selected_rows : typing.Union[None, int]
             Optional specify the number of rows selected by `ranges`, otherwise this is computed by the result.
+
+        Returns
+        -------
+        `MultiAEMessage`
         """
 
         sliced_rows = self.copy_meta_ranges(ranges)
