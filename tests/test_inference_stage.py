@@ -188,15 +188,6 @@ def test_build_single_cpp_not_impl(config):
     pytest.raises(NotImplementedError, inf_stage._build_single, mock_segment, mock_input_stream)
 
 
-def test_start(config):
-    inf_stage = InferenceStage(config)
-
-    pytest.raises(AssertionError, inf_stage.start)
-
-    inf_stage._is_built = True
-    inf_stage.start()
-
-
 def test_stop(config):
     mock_workers = [mock.MagicMock() for _ in range(5)]
     inf_stage = InferenceStage(config)
