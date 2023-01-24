@@ -42,6 +42,6 @@ ignore-init-method = true
 ignore-init-module = true
 ignore-magic = true
 ignore-module = true
-ignore-regex = ["supports_cpp_node$"]
+ignore-regex = ["supports_cpp_node$", "^unpack_tuple$", "^unpack_union$"]
 exclude = ["morpheus/cli"]
 omit-covered-files = true
