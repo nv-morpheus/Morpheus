@@ -231,10 +231,16 @@ def run_pipeline(train_users,
                         groupby_column=config.ae.userid_column_name),
         CustomColumn(name="locincrement",
                      dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="location")),
+                     process_column_fn=partial(create_increment_col,
+                                               column_name="location",
+                                               groupby_column=config.ae.userid_column_name,
+                                               timestamp_column=config.ae.timestamp_column_name)),
         CustomColumn(name="appincrement",
                      dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="appDisplayName")),
+                     process_column_fn=partial(create_increment_col,
+                                               column_name="appDisplayName",
+                                               groupby_column=config.ae.userid_column_name,
+                                               timestamp_column=config.ae.timestamp_column_name))
     ]
 
     preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
