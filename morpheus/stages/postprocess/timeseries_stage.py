@@ -37,10 +37,28 @@ logger = logging.getLogger(__name__)
 
 
 def round_seconds(obj: pd.Timestamp) -> pd.Timestamp:
+    """
+    Returns the given timestamp with rounded seconds.
+
+    Parameters
+    ----------
+    obj : pd.Timestamp
+        Timestamp obj.
+
+    Returns
+    -------
+    pd.Timestamp
+        Timestamp with rounded seconds.
+
+    """
     return obj.round(freq="S")
 
 
 def calc_bin(obj: pd.Timestamp, t0: pd.Timestamp, resolution_sec: float) -> int:
+    """
+    Calculates the bin value.
+    """
+
     return round((round_seconds(obj) - t0).total_seconds()) // resolution_sec
 
 
@@ -137,6 +155,7 @@ def fftAD(signalvalues: cp.ndarray, p=90, zt=8, lowpass=None):
 
 @dataclasses.dataclass
 class TimeSeriesAction:
+
     perform_calc: bool = False
     window: pd.DataFrame = None
     window_start: dt.datetime = None

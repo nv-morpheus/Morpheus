@@ -165,6 +165,9 @@ class GenerateVizFramesStage(SinglePortStage):
         in_df.to_csv(fn, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
 
     async def start_async(self):
+        """
+        Launch the Websocket server and asynchronously send messages via Websocket.
+        """
 
         loop = asyncio.get_event_loop()
         self._loop = loop
@@ -172,6 +175,9 @@ class GenerateVizFramesStage(SinglePortStage):
         self._buffer_queue = AsyncIOProducerConsumerQueue(maxsize=2, loop=loop)
 
         async def client_connected(websocket: websockets.legacy.server.WebSocketServerProtocol):
+            """
+            Establishes a connection with the WebSocket server.
+            """
 
             logger.info("Got connection from: {}:{}".format(*websocket.remote_address))
 
@@ -187,6 +193,9 @@ class GenerateVizFramesStage(SinglePortStage):
             logger.info("Disconnected from: {}:{}".format(*websocket.remote_address))
 
         async def run_server():
+            """
+            Runs Websocket server.
+            """
 
             try:
 

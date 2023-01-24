@@ -93,6 +93,22 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
 
     @staticmethod
     def cleanup_df(df: pd.DataFrame, feature_columns: typing.List[str]):
+        """
+        This function does clean up certain columns in the dataframe.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for columns cleanup.
+        feature_columns : typing.List[str]
+            Only the columns that are present in the feature columns will be preserved in the dataframe
+            if feature columns are supplied..
+
+        Returns
+        -------
+        df : typing.List[pd.DataFrame]
+            Clean dataframe.
+        """
 
         # Replace all the dots in column names
         df.columns = df.columns.str.replace('.', '', regex=False)
@@ -143,6 +159,28 @@ class CloudTrailSourceStage(AutoencoderSourceStage):
                               feature_columns: typing.List[str],
                               userid_filter: str = None,
                               repeat_count: int = 1) -> typing.Dict[str, pd.DataFrame]:
+        """
+        After loading the input batch of CloudTrail (logs) into a dataframe, this method builds a dataframe
+        for each set of userid rows in accordance with the specified filter condition.
+
+        Parameters
+        ----------
+        x : typing.List[str]
+            List of messages.
+        userid_column_name : str
+            Name of the column used for categorization.
+        feature_columns : typing.List[str]
+            Feature column names.
+        userid_filter : str
+            Only rows with the supplied userid are filtered.
+        repeat_count : str
+            Number of times the given rows should be repeated.
+
+        Returns
+        -------
+        df_per_user  : typing.Dict[str, pd.DataFrame]
+            Dataframe per userid.
+        """
 
         # Using pandas to parse nested JSON until cuDF adds support
         # https://github.com/rapidsai/cudf/issues/8827
