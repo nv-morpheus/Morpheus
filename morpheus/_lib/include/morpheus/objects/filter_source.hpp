@@ -15,30 +15,28 @@
  * limitations under the License.
  */
 
-#include "morpheus/objects/file_types.hpp"
+#pragma once
 
-#include "morpheus/utilities/cudf_util.hpp"
-
-#include <pybind11/pybind11.h>
+#include <cstdint>
+#include <string>
 
 namespace morpheus {
 
-namespace py = pybind11;
+/**
+ * @addtogroup objects
+ * @{
+ * @file
+ */
 
-PYBIND11_MODULE(file_types, m)
+#pragma GCC visibility push(default)
+enum class FilterSource : int32_t
 {
-    // Load the cudf helpers
-    load_cudf_helpers();
+    Auto,
+    TENSOR,
+    DATAFRAME
+};
 
-    py::enum_<FileTypes>(m,
-                         "FileTypes",
-                         "The type of files that the `FileSourceStage` can read and `WriteToFileStage` can write. Use "
-                         "'auto' to determine from the file extension.")
-        .value("Auto", FileTypes::Auto)
-        .value("JSON", FileTypes::JSON)
-        .value("CSV", FileTypes::CSV);
+#pragma GCC visibility pop
 
-    m.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
-
-}  // module
+/** @} */  // end of group
 }  // namespace morpheus

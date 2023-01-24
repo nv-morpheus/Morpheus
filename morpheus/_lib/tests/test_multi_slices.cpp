@@ -22,7 +22,6 @@
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/utilities/matx_util.hpp"  // for MatxUtil::create_seg_ids
 #include "morpheus/utilities/type_util.hpp"  // for TypeId
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyHostToDevice

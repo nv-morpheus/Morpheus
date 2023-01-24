@@ -367,4 +367,5 @@ Note: The available commands for different types of pipelines are not the same. 
 
 ## Next Steps
 * [Morpheus Examples](./examples.md) - Example pipelines using both the Python API and command line interface
+* [Morpheus Pretrained Models](./models_and_datasets.md) - Pretrained models with corresponding training, validation scripts, and datasets
 * [Morpheus Developer Guide](./developer_guide/guides.md) - Documentation on using the Morpheus Python & C++ APIs
