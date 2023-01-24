@@ -188,7 +188,7 @@ The output should display:
 ====Registering Pipeline Complete!====
 ====Starting Pipeline====
 ====Building Pipeline====
-Added source: <from-file-0; FileSourceStage(filename=examples/data/email_with_addresses.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True, cudf_kwargs=None)>
+Added source: <from-file-0; FileSourceStage(filename=examples/data/email_with_addresses.jsonlines, iterative=False, file_type=FileTypes.Auto, repeat=1, filter_null=True)>
   └─> morpheus.MessageMeta
 Added stage: <pass-thru-1; PassThruStage(args=(), kwargs={})>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
