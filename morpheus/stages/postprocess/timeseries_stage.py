@@ -155,7 +155,9 @@ def fftAD(signalvalues: cp.ndarray, p=90, zt=8, lowpass=None):
 
 @dataclasses.dataclass
 class TimeSeriesAction:
-
+    """
+    Dataclass representing actions to be performed. Used internally by `UserTimeSeries`
+    """
     perform_calc: bool = False
     window: pd.DataFrame = None
     window_start: dt.datetime = None
@@ -166,6 +168,9 @@ class TimeSeriesAction:
 
 
 class UserTimeSeries(object):
+    """
+    Used internally by `TimeSeriesStage` to group data on a per-user basis.
+    """
 
     def __init__(self,
                  user_id: str,
