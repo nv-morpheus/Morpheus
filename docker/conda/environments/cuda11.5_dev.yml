@@ -27,7 +27,7 @@ dependencies:
     - boost-cpp=1.74
     - cachetools=5.0.0
     - ccache>=3.7
-    - clangdev=15
+    - clangdev=14
     - click >=8
     - cmake=3.24
     - configargparse=1.5
@@ -54,7 +54,7 @@ dependencies:
     - grpcio
     - gtest=1.10
     - gxx_linux-64=11.2
-    - include-what-you-use=0.19
+    - include-what-you-use=0.18
     - isort
     - libcublas-dev
     - libcufft-dev
