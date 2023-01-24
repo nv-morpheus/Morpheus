@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import logging
 import os
+import pickle
 import typing
 from datetime import datetime
 from datetime import timedelta
@@ -22,21 +22,22 @@ from datetime import timezone
 from functools import partial
 
 import click
+import dfp.modules.dfp_model_train_deploy  # noqa: F401
+import dfp.modules.dfp_preprocessing  # noqa: F401
 import mlflow
 import pandas as pd
-from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
-from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
+from dfp.messages.multi_dfp_message import MultiDFPMessage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
-from dfp.stages.dfp_mlflow_model_writer import DFPMLFlowModelWriterStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
-from dfp.stages.dfp_preprocessing_stage import DFPPreprocessingStage
-from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
-from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
-from dfp.stages.dfp_training import DFPTraining
 from dfp.stages.multi_file_source import MultiFileSource
-from dfp.utils.regex_utils import iso_date_regex
+from dfp.utils.module_ids import DFP_DATA_PREP
+from dfp.utils.module_ids import DFP_MODEL_TRAIN_DEPLOY
+from dfp.utils.module_ids import DFP_PREPROCESSING
+from dfp.utils.module_ids import DFP_ROLLING_WINDOW
+from dfp.utils.module_ids import DFP_SPLIT_USERS
+from dfp.utils.module_ids import DFP_TRAINING
+from dfp.utils.regex_utils import iso_date_regex_pattern
 
-from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
@@ -44,6 +45,7 @@ from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
+from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
@@ -57,10 +59,13 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
-from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import get_log_levels
 from morpheus.utils.logger import parse_log_level
+from morpheus.utils.module_ids import FILE_BATCHER
+from morpheus.utils.module_ids import FILE_TO_DF
+from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
+from morpheus.utils.module_ids import MODULE_NAMESPACE
 
 
 @click.command()
@@ -120,7 +125,7 @@ from morpheus.utils.logger import parse_log_level
     help=("List of files to process. Can specify multiple arguments for multiple files. "
           "Also accepts glob (*) wildcards and schema prefixes such as `s3://`. "
           "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
-          "Refer to fsspec documentation for list of possible options."),
+          "See fsspec documentation for list of possible options."),
 )
 @click.option('--tracking_uri',
               type=str,
@@ -187,10 +192,10 @@ def run_pipeline(train_users,
     config.ae = ConfigAutoEncoder()
 
     config.ae.feature_columns = load_labels_file(get_package_relative_file("data/columns_ae_duo.txt"))
+
     config.ae.userid_column_name = "username"
     config.ae.timestamp_column_name = "timestamp"
 
-    # Specify the column names to ensure all data is uniform
     source_column_info = [
         DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="timestamp"),
         RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="user.name"),
@@ -237,75 +242,161 @@ def run_pipeline(train_users,
 
     preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
 
+    encoding = "latin1"
+
+    # Convert schema as a string
+    source_schema_str = str(pickle.dumps(source_schema), encoding=encoding)
+    preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
+
+    preprocessing_module_config = {
+        "module_id": DFP_PREPROCESSING,
+        "module_name": "dfp_preprocessing",
+        "namespace": MODULE_NAMESPACE,
+        FILE_BATCHER: {
+            "module_id": FILE_BATCHER,
+            "module_name": "file_batcher",
+            "namespace": MODULE_NAMESPACE,
+            "period": "D",
+            "sampling_rate_s": sample_rate_s,
+            "start_time": start_time,
+            "end_time": end_time,
+            "iso_date_regex_pattern": iso_date_regex_pattern
+        },
+        FILE_TO_DF: {
+            "module_id": FILE_TO_DF,
+            "module_name": "FILE_TO_DF",
+            "namespace": MODULE_NAMESPACE,
+            "timestamp_column_name": config.ae.timestamp_column_name,
+            "userid_column_name": config.ae.userid_column_name,
+            "parser_kwargs": {
+                "lines": False, "orient": "records"
+            },
+            "cache_dir": cache_dir,
+            "filter_null": True,
+            "file_type": "JSON",
+            "schema": {
+                "schema_str": source_schema_str, "encoding": encoding
+            }
+        },
+        DFP_SPLIT_USERS: {
+            "module_id": DFP_SPLIT_USERS,
+            "module_name": "dfp_fsplit_users",
+            "namespace": MODULE_NAMESPACE,
+            "include_generic": include_generic,
+            "include_individual": include_individual,
+            "skip_users": skip_users,
+            "only_users": only_users,
+            "timestamp_column_name": config.ae.timestamp_column_name,
+            "userid_column_name": config.ae.userid_column_name,
+            "fallback_username": config.ae.fallback_username
+        },
+        DFP_ROLLING_WINDOW: {
+            "module_id": DFP_ROLLING_WINDOW,
+            "module_name": "dfp_rolling_window",
+            "namespace": MODULE_NAMESPACE,
+            "min_history": 300 if is_training else 1,
+            "min_increment": 300 if is_training else 0,
+            "max_history": "60d" if is_training else "1d",
+            "cache_dir": cache_dir,
+            "timestamp_column_name": config.ae.timestamp_column_name
+        },
+        DFP_DATA_PREP: {
+            "module_id": DFP_DATA_PREP,
+            "module_name": "dfp_data_prep",
+            "namespace": MODULE_NAMESPACE,
+            "timestamp_column_name": config.ae.timestamp_column_name,
+            "userid_column_name": config.ae.userid_column_name,
+            "schema": {
+                "schema_str": preprocess_schema_str, "encoding": encoding
+            }
+        }
+    }
+
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
-    # Batch files into buckets by time. Use the default ISO date extractor from the filename
+    # Here we add a wrapped module that implements the full DFPPreprocessing pipeline.
     pipeline.add_stage(
-        DFPFileBatcherStage(config,
-                            period="D",
-                            sampling_rate_s=sample_rate_s,
-                            date_conversion_func=functools.partial(date_extractor, filename_regex=iso_date_regex),
-                            start_time=start_time,
-                            end_time=end_time))
+        LinearModulesStage(config,
+                           preprocessing_module_config,
+                           input_port_name="input",
+                           output_port_name="output",
+                           output_type=MultiDFPMessage))
 
-    # Output is S3 Buckets. Convert to DataFrames. This caches downloaded S3 data
-    pipeline.add_stage(
-        DFPFileToDataFrameStage(config,
-                                schema=source_schema,
-                                file_type=FileTypes.JSON,
-                                parser_kwargs={
-                                    "lines": False, "orient": "records"
-                                },
-                                cache_dir=cache_dir))
-
-    pipeline.add_stage(MonitorStage(config, description="Input data rate"))
-
-    # This will split users or just use one single user
-    pipeline.add_stage(
-        DFPSplitUsersStage(config,
-                           include_generic=include_generic,
-                           include_individual=include_individual,
-                           skip_users=skip_users,
-                           only_users=only_users))
-
-    # Next, have a stage that will create rolling windows
-    pipeline.add_stage(
-        DFPRollingWindowStage(
-            config,
-            min_history=300 if is_training else 1,
-            min_increment=300 if is_training else 0,
-            # For inference, we only ever want 1 day max
-            max_history="60d" if is_training else "1d",
-            cache_dir=cache_dir))
-
-    # Output is UserMessageMeta -- Cached frame set
-    pipeline.add_stage(DFPPreprocessingStage(config, input_schema=preprocess_schema))
+    pipeline.add_stage(MonitorStage(config, description="Preprocessing Module rate", smoothing=0.001))
 
     model_name_formatter = "DFP-duo-{user_id}"
     experiment_name_formatter = "dfp/duo/training/{reg_model_name}"
 
     if (is_training):
 
-        # Finally, perform training which will output a model
-        pipeline.add_stage(DFPTraining(config, validation_size=0.10))
-
-        pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
-
-        # Write that model to MLFlow
+        # Module configuration
+        training_module_config = {
+            "module_id": DFP_MODEL_TRAIN_DEPLOY,
+            "module_name": "dfp_model_train_deploy",
+            "namespace": MODULE_NAMESPACE,
+            DFP_TRAINING: {
+                "module_id": DFP_TRAINING,
+                "module_name": "dfp_training",
+                "namespace": MODULE_NAMESPACE,
+                "model_kwargs": {
+                    "encoder_layers": [512, 500],  # layers of the encoding part
+                    "decoder_layers": [512],  # layers of the decoding part
+                    "activation": 'relu',  # activation function
+                    "swap_p": 0.2,  # noise parameter
+                    "lr": 0.001,  # learning rate
+                    "lr_decay": 0.99,  # learning decay
+                    "batch_size": 512,
+                    "verbose": False,
+                    "optimizer": 'sgd',  # SGD optimizer is selected(Stochastic gradient descent)
+                    "scaler": 'standard',  # feature scaling method
+                    "min_cats": 1,  # cut off for minority categories
+                    "progress_bar": False,
+                    "device": "cuda"
+                },
+                "feature_columns": config.ae.feature_columns,
+                "epochs": 30,
+                "validation_size": 0.10
+            },
+            MLFLOW_MODEL_WRITER: {
+                "module_id": MLFLOW_MODEL_WRITER,
+                "module_name": "mlflow_model_writer",
+                "namespace": MODULE_NAMESPACE,
+                "model_name_formatter": model_name_formatter,
+                "experiment_name_formatter": experiment_name_formatter,
+                "timestamp_column_name": config.ae.timestamp_column_name,
+                "conda_env": {
+                    'channels': ['defaults', 'conda-forge'],
+                    'dependencies': ['python={}'.format('3.8'), 'pip'],
+                    'pip': ['mlflow', 'dfencoder'],
+                    'name': 'mlflow-env'
+                },
+                "databricks_permissions": None
+            }
+        }
+        # Here we add a wrapped module implementing the DFPTraining pipeline
         pipeline.add_stage(
-            DFPMLFlowModelWriterStage(config,
-                                      model_name_formatter=model_name_formatter,
-                                      experiment_name_formatter=experiment_name_formatter))
+            LinearModulesStage(
+                config,
+                training_module_config,
+                input_port_name="input",
+                output_port_name="output",
+            ))
+
+        pipeline.add_stage(MonitorStage(config, description="Training Module rate", smoothing=0.001))
+
     else:
         pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=model_name_formatter))
 
         pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
 
+        # Filter for only the anomalous logs
         pipeline.add_stage(
             FilterDetectionsStage(config, threshold=2.0, filter_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
+
+        # Filter for only the anomalous logs
         pipeline.add_stage(DFPPostprocessingStage(config))
 
         # Exclude the columns we don't want in our output
