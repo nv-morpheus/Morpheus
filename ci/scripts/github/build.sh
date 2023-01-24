@@ -31,6 +31,7 @@ rapids-logger "Configuring cmake for Morpheus"
 git submodule update --init --recursive
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
     -DCCACHE_PROGRAM_PATH=$(which sccache) \
+    -DMORPHEUS_BUILD_PYTHON_WHEEL=ON \
     -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON .
 
 rapids-logger "Building Morpheus"
@@ -39,11 +40,8 @@ cmake --build build --parallel ${PARALLEL_LEVEL}
 rapids-logger "sccache usage for morpheus build:"
 sccache --show-stats
 
-rapids-logger "Installing Morpheus"
-cmake -DCOMPONENT=Wheel -P ${MORPHEUS_ROOT}/build/cmake_install.cmake
-
 rapids-logger "Archiving results"
-tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/wheel
+tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/dist
 
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/wheel.tar.bz" "${ARTIFACT_URL}/wheel.tar.bz"

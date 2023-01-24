@@ -25,6 +25,7 @@ option(MORPHEUS_BUILD_BENCHMARKS "Whether or not to build benchmarks" OFF)
 option(MORPHEUS_BUILD_EXAMPLES "Whether or not to build examples" OFF)
 option(MORPHEUS_BUILD_TESTS "Whether or not to build tests" OFF)
 option(MORPHEUS_BUILD_PYTHON_STUBS "Whether or not to generated .pyi stub files for C++ Python modules. Disable to avoid requiring loading the NVIDIA GPU Driver during build" ON)
+option(MORPHEUS_BUILD_PYTHON_WHEEL "Whether or not to build the morpheus .whl file" OFF)
 option(MORPHEUS_ENABLE_DEBUG_INFO "Enable printing debug information" OFF)
 option(MORPHEUS_USE_CCACHE "Enable caching compilation results with ccache" OFF)
 option(MORPHEUS_USE_CLANG_TIDY "Enable running clang-tidy as part of the build process" OFF)
@@ -132,10 +133,12 @@ morpheus_utils_create_python_package(morpheus
 add_subdirectory(morpheus)
 
 # Complete the python package
-set(extra_args "")
-
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
   list(APPEND extra_args "IS_INPLACE")
+endif()
+
+if(MORPHEUS_BUILD_PYTHON_WHEEL)
+  list(APPEND extra_args "BUILD_WHEEL")
 endif()
 
 if(MORPHEUS_PYTHON_PERFORM_INSTALL)
@@ -162,7 +165,6 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
         stages
         messages
         common
-        file_types
       WRITE_TO_FILE
   )
 
