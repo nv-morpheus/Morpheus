@@ -176,7 +176,7 @@ class Pipeline():
 
         self._mrc_pipeline = mrc.Pipeline()
 
-        def _inner_build(builder: mrc.Builder, segment_id: str):
+        def inner_build(builder: mrc.Builder, segment_id: str):
             segment_graph = self._segment_graphs[segment_id]
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
@@ -207,7 +207,7 @@ class Pipeline():
             logger.info(f"====Building Segment: {segment_id}====")
             segment_ingress_ports = self._segments[segment_id]["ingress_ports"]
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
-            segment_inner_build = partial(_inner_build, segment_id=segment_id)
+            segment_inner_build = partial(inner_build, segment_id=segment_id)
 
             self._mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
@@ -344,7 +344,7 @@ class Pipeline():
         start_def_port = ":e" if is_lr else ":s"
         end_def_port = ":w" if is_lr else ":n"
 
-        def _has_ports(n: StreamWrapper, is_input):
+        def has_ports(n: StreamWrapper, is_input):
             if (is_input):
                 return len(n.input_ports) > 0
             else:
@@ -367,8 +367,8 @@ class Pipeline():
 
                 label = ""
 
-                show_in_ports = _has_ports(n, is_input=True)
-                show_out_ports = _has_ports(n, is_input=False)
+                show_in_ports = has_ports(n, is_input=True)
+                show_out_ports = has_ports(n, is_input=False)
 
                 # Build the ports for the node. Only show ports if there are any
                 # (Would like to have this not show for one port, but the lines get all messed up)
@@ -407,14 +407,14 @@ class Pipeline():
                 start_name = e[0].unique_name
 
                 # Append the port if necessary
-                if (_has_ports(e[0], is_input=False)):
+                if (has_ports(e[0], is_input=False)):
                     start_name += f":d{attrs['start_port_idx']}"
                 else:
                     start_name += start_def_port
 
                 end_name = e[1].unique_name
 
-                if (_has_ports(e[1], is_input=True)):
+                if (has_ports(e[1], is_input=True)):
                     end_name += f":u{attrs['end_port_idx']}"
                 else:
                     end_name += end_def_port
@@ -472,19 +472,19 @@ class Pipeline():
         """
         loop = asyncio.get_running_loop()
 
-        def _error_handler(_, context: dict):
+        def error_handler(_, context: dict):
 
             msg = "Unhandled exception in async loop! Exception: \n{}".format(context["message"])
             exception = context.get("exception", Exception())
 
             logger.critical(msg, exc_info=exception)
 
-        loop.set_exception_handler(_error_handler)
+        loop.set_exception_handler(error_handler)
 
         exit_count = 0
 
         # Handles Ctrl+C for graceful shutdown
-        def _term_signal():
+        def term_signal():
 
             nonlocal exit_count
             exit_count = exit_count + 1
@@ -497,7 +497,7 @@ class Pipeline():
                 exit(1)
 
         for s in [signal.SIGINT, signal.SIGTERM]:
-            loop.add_signal_handler(s, _term_signal)
+            loop.add_signal_handler(s, term_signal)
 
         try:
             await self._build_and_start()

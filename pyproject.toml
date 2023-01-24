@@ -43,6 +43,14 @@ ignore-init-module = true
 ignore-magic = true
 ignore-module = true
 ignore-nested-functions = true
-ignore-regex = ["supports_cpp_node$", "^unpack_tuple$", "^unpack_union$"]
+ignore-regex = [
+   "supports_cpp_node$",
+   "^unpack_tuple$",
+   "^unpack_union$",
+
+   # work-around for https://github.com/econchick/interrogate/issues/105
+   "^error_handler$",
+   "^term_signal$",
+]
 exclude = ["morpheus/cli"]
 omit-covered-files = true
