@@ -38,6 +38,9 @@ class TqdmLoggingHandler(logging.Handler):
         self._stderr = click.get_text_stream('stderr')
 
     def emit(self, record: logging.LogRecord):
+        """
+        Apply formatting and send output to stderr or stdout
+        """
         try:
             msg = self.format(record)
 
