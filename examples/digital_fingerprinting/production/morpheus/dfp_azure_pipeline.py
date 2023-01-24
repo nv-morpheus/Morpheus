@@ -58,8 +58,8 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
-from morpheus.utils.logger import get_log_levels
-from morpheus.utils.logger import parse_log_level
+from morpheus.cli.utils import get_log_levels
+from morpheus.cli.utils import parse_log_level
 
 
 @click.command()
