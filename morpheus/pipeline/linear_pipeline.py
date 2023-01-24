@@ -51,7 +51,7 @@ class LinearPipeline(_pipeline.Pipeline):
     def set_source(self, source: _pipeline.SourceStage):
         """
         Set a pipeline's source stage to consume messages before it begins executing stages. This must be
-        called once before `build_and_start`.
+        called once before calling `run` or `do_run`.
 
         Parameters
         ----------

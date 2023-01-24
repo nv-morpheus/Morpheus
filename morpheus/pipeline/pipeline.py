@@ -226,7 +226,7 @@ class Pipeline():
 
         logger.info("====Registering Pipeline Complete!====")
 
-    def start(self):
+    def _start(self):
         assert self._is_built, "Pipeline must be built before starting"
 
         logger.info("====Starting Pipeline====")
@@ -236,6 +236,9 @@ class Pipeline():
         logger.info("====Pipeline Started====")
 
     def stop(self):
+        """
+        Stops all running stages and the underlying MRC pipeline.
+        """
 
         logger.info("====Stopping Pipeline====")
         for s in list(self._sources) + list(self._stages):
@@ -246,7 +249,10 @@ class Pipeline():
         logger.info("====Pipeline Stopped====")
 
     async def join(self):
-
+        """
+        Suspend execution all currently running stages and the MRC pipeline.
+        Typically called after `stop`.
+        """
         try:
             await self._mrc_executor.join_async()
         except Exception:
@@ -270,7 +276,7 @@ class Pipeline():
             for s in list(self._stages):
                 await s.join()
 
-    async def build_and_start(self):
+    async def _build_and_start(self):
 
         if (not self.is_built):
             try:
@@ -279,11 +285,11 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
-        await self.async_start()
+        await self._async_start()
 
-        self.start()
+        self._start()
 
-    async def async_start(self):
+    async def _async_start(self):
 
         # Loop over all stages and call on_start if it exists
         for s in self._stages:
@@ -305,6 +311,11 @@ class Pipeline():
             s.on_start()
 
     def visualize(self, filename: str = None, **graph_kwargs):
+        """
+        Output a pipeline diagram to `filename`. The file format of the diagrame is inferred by the extension of
+        `filename`. If the directory path leading to `filename` does not exist it will be created, if `filename` already
+        exists it will be overwritten.  Requires the graphviz library.
+        """
 
         # Mimic the streamz visualization
         # 1. Create graph (already done since we use networkx under the hood)
@@ -455,25 +466,25 @@ class Pipeline():
         with open(filename, "wb") as f:
             f.write(viz_binary)
 
-    async def _do_run(self):
+    async def do_run(self):
         """
         This function sets up the current asyncio loop, builds the pipeline, and awaits on it to complete.
         """
         loop = asyncio.get_running_loop()
 
-        def error_handler(_, context: dict):
+        def _error_handler(_, context: dict):
 
             msg = "Unhandled exception in async loop! Exception: \n{}".format(context["message"])
             exception = context.get("exception", Exception())
 
             logger.critical(msg, exc_info=exception)
 
-        loop.set_exception_handler(error_handler)
+        loop.set_exception_handler(_error_handler)
 
         exit_count = 0
 
         # Handles Ctrl+C for graceful shutdown
-        def term_signal():
+        def _term_signal():
 
             nonlocal exit_count
             exit_count = exit_count + 1
@@ -486,10 +497,10 @@ class Pipeline():
                 exit(1)
 
         for s in [signal.SIGINT, signal.SIGTERM]:
-            loop.add_signal_handler(s, term_signal)
+            loop.add_signal_handler(s, _term_signal)
 
         try:
-            await self.build_and_start()
+            await self._build_and_start()
 
             # Wait for completion
             await self.join()
@@ -514,4 +525,4 @@ class Pipeline():
 
         # Use asyncio.run() to launch the pipeline. This creates and destroys an event loop so re-running a pipeline in
         # the same process wont fail
-        asyncio.run(self._do_run())
+        asyncio.run(self.do_run())
