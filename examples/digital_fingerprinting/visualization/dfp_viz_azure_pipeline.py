@@ -54,8 +54,8 @@ from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.utils.logger import configure_logging
-from morpheus.utils.logger import get_log_levels
-from morpheus.utils.logger import parse_log_level
+from morpheus.cli.utils import get_log_levels
+from morpheus.cli.utils import parse_log_level
 
 
 @click.command()
