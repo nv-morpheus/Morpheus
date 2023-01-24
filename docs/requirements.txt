@@ -15,7 +15,6 @@
 
 breathe==4.34.0
 exhale==0.3.6
-interrogate
 ipython
 myst-parser==0.17.2
 nbsphinx
