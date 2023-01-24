@@ -25,6 +25,7 @@ dependencies:
     - boto3
     - dask
     - dill
+    - distributed
     - kfp
     - librdkafka
     - mlflow>1.29.0,<2
