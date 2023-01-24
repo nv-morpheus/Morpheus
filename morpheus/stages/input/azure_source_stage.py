@@ -92,7 +92,7 @@ class AzureSourceStage(AutoencoderSourceStage):
     @staticmethod
     def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):
         """
-        Derives feature columns from the source columns.
+        Derives feature columns from the AzureAD (logs) source columns.
 
         Parameters
         ----------
@@ -147,7 +147,7 @@ class AzureSourceStage(AutoencoderSourceStage):
                               userid_filter: str = None,
                               repeat_count: int = 1) -> typing.Dict[str, pd.DataFrame]:
         """
-        After loading the input batch of string messages into a dataframe, this method builds a dataframe
+        After loading the input batch of AzureAD logs into a dataframe, this method builds a dataframe
         for each set of userid rows in accordance with the specified filter condition.
 
         Parameters
