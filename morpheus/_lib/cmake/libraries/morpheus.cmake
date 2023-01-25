@@ -33,7 +33,6 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_response_probs.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/fiber_queue.cpp
-    ${MORPHEUS_LIB_ROOT}/src/objects/file_types.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/mutable_table_ctx_mgr.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/wrapped_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/python_data_table.cpp
