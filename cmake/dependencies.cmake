@@ -22,8 +22,16 @@ if (VERBOSE)
 endif()
 
 # Load direct physical package dependencies first, so we fail early.
-find_package(Protobuf REQUIRED)
-find_package(CUDAToolkit REQUIRED) # Required by Morpheus. Fail early if we don't have it.
+rapids_find_package(Protobuf REQUIRED
+  BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
+  INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
+)
+
+# Required by Morpheus. Fail early if we don't have it.
+rapids_find_package(CUDAToolkit REQUIRED
+  BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
+  INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
+)
 
 if(MORPHEUS_BUILD_BENCHMARKS)
   # google benchmark

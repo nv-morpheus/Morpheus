@@ -35,7 +35,7 @@ option(MORPHEUS_USE_IWYU "Enable running include-what-you-use as part of the bui
 option(MORPHEUS_BUILD_DOCS "Enable building of API documentation" OFF)
 set(MORPHEUS_PY_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/wheel" CACHE STRING "Location to install the python directory")
 
-set(MORPHEUS_RAPIDS_CMAKE_VERSION "22.10" CACHE STRING "Sets default versions for RAPIDS CMake.")
+set(MORPHEUS_RAPIDS_VERSION "22.10" CACHE STRING "Sets default versions for RAPIDS libraries.")
 set(MORPHEUS_CACHE_DIR "${CMAKE_SOURCE_DIR}/.cache" CACHE PATH "Directory to contain all CPM and CCache data")
 mark_as_advanced(MORPHEUS_CACHE_DIR)
 
@@ -68,8 +68,10 @@ set(MORPHEUS_CMAKE_PREFIX_PATH_EXTENSIONS
 list(PREPEND CMAKE_MODULE_PATH "${MORPHEUS_CMAKE_MODULE_PATH_EXTENSIONS}")
 list(PREPEND CMAKE_PREFIX_PATH "${MORPHEUS_CMAKE_PREFIX_PATH_EXTENSIONS}")
 
+# Force the MORPHEUS_UTILS_RAPIDS_VERSION to match our value
+set(MORPHEUS_UTILS_RAPIDS_VERSION ${MORPHEUS_RAPIDS_VERSION} CACHE STRING "" FORCE)
+
 # Load morpheus utils and update CMake paths
-set(MORPHEUS_UTILS_RAPIDS_CMAKE_VERSION ${MORPHEUS_RAPIDS_CMAKE_VERSION})
 include(morpheus_utils/load)
 
 # Configure project package manager
