@@ -67,6 +67,7 @@ PYBIND11_MODULE(common, m)
         .value("STRING", TypeId::STRING);
 
     m.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
+
     py::enum_<FileTypes>(m,
                          "FileTypes",
                          "The type of files that the `FileSourceStage` can read and `WriteToFileStage` can write. Use "
