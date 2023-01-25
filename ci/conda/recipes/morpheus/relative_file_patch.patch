@@ -1,0 +1,11 @@
+diff --git a/.gitmodules b/.gitmodules
+index 0403d44b..6c028492 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -4,5 +4,5 @@
+ 	branch = branch-22.11
+ [submodule "morpheus_utils"]
+ 	path = external/utilities
+-	url = ../../nv-morpheus/utilities.git
++	url = https://github.com/nv-morpheus/utilities.git
+ 	branch = branch-23.01 
