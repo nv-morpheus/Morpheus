@@ -131,7 +131,7 @@ class ConfigAutoEncoder(ConfigBase):
 @dataclasses.dataclass
 class ConfigFIL(ConfigBase):
     """
-    Config specific to running with a fil model
+    Config specific to running with a FIL model
     """
     feature_columns: typing.List[str] = None
 
