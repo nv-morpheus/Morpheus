@@ -38,10 +38,10 @@
 
     "containerEnv": {
         "HOST_MORPHEUS_ROOT": "${localWorkspaceFolder}",
-        "MORPHEUS_ROOT": "/workspaces/morpheus"
+        "MORPHEUS_ROOT": "${containerWorkspaceFolder}"
     },
 
-    "postStartCommand": "${MORPHEUS_ROOT}/.devcontainer/bin/setup-morpheus-env",
+    "postStartCommand": "${containerWorkspaceFolder}/.devcontainer/bin/setup-morpheus-env",
 
     "initializeCommand": [ "./.devcontainer/init.sh" ],
 
