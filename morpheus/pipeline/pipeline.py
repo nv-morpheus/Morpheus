@@ -466,7 +466,7 @@ class Pipeline():
         with open(filename, "wb") as f:
             f.write(viz_binary)
 
-    async def do_run(self):
+    async def run_async(self):
         """
         This function sets up the current asyncio loop, builds the pipeline, and awaits on it to complete.
         """
@@ -525,4 +525,4 @@ class Pipeline():
 
         # Use asyncio.run() to launch the pipeline. This creates and destroys an event loop so re-running a pipeline in
         # the same process wont fail
-        asyncio.run(self.do_run())
+        asyncio.run(self.run_async())
