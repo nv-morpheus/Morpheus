@@ -57,9 +57,9 @@
 namespace {
 // Component-private free functions.
 void InferenceClientStage__check_triton_errors(triton::client::Error status,
-                                               const std::string &methodName,
-                                               const std::string &filename,
-                                               const int &lineNumber)
+                                               const std::string& methodName,
+                                               const std::string& filename,
+                                               const int& lineNumber)
 {
     if (!status.IsOk())
     {
@@ -72,7 +72,7 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
 }
 
 template <typename IndexT>
-inline IndexT get_elem_count(const std::vector<IndexT> &shape)
+inline IndexT get_elem_count(const std::vector<IndexT>& shape)
 {
     return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
 }
@@ -115,7 +115,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 std::map<std::string, TensorObject> response_outputs;
 
                 // Create the output memory blocks
-                for (auto &model_output : m_model_outputs)
+                for (auto& model_output : m_model_outputs)
                 {
                     std::vector<TensorIndex> total_shape{model_output.shape.begin(), model_output.shape.end()};
 
@@ -162,7 +162,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                 for (size_t i = 0; i < x->count; i += m_max_batch_size)
                 {
-                    triton::client::InferInput *input1;
+                    triton::client::InferInput* input1;
 
                     size_t start = i;
                     size_t stop  = std::min(i + m_max_batch_size, x->count);
@@ -188,11 +188,11 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                     // Iterate on the model inputs in case the model takes less than what tensors are available
                     std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>>
-                        saved_inputs = foreach_map(m_model_inputs, [this, &mini_batch_input](auto const &model_input) {
+                        saved_inputs = foreach_map(m_model_inputs, [this, &mini_batch_input](auto const& model_input) {
                             DCHECK(mini_batch_input->memory->has_tensor(model_input.mapped_name))
                                 << "Model input '" << model_input.mapped_name << "' not found in InferenceMemory";
 
-                            auto const &inp_tensor = mini_batch_input->get_input(model_input.mapped_name);
+                            auto const& inp_tensor = mini_batch_input->get_input(model_input.mapped_name);
 
                             // Convert to the right type. Make shallow if necessary
                             auto final_tensor = inp_tensor.as_type(model_input.datatype);
@@ -200,7 +200,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                             std::vector<uint8_t> inp_data = final_tensor.get_host_data();
 
                             // Test
-                            triton::client::InferInput *inp_ptr;
+                            triton::client::InferInput* inp_ptr;
 
                             triton::client::InferInput::Create(&inp_ptr,
                                                                model_input.name,
@@ -215,9 +215,9 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         });
 
                     std::vector<std::shared_ptr<const triton::client::InferRequestedOutput>> saved_outputs =
-                        foreach_map(m_model_outputs, [this](auto const &model_output) {
+                        foreach_map(m_model_outputs, [this](auto const& model_output) {
                             // Generate the outputs to be requested.
-                            triton::client::InferRequestedOutput *out_ptr;
+                            triton::client::InferRequestedOutput* out_ptr;
 
                             triton::client::InferRequestedOutput::Create(&out_ptr, model_output.name);
                             std::shared_ptr<const triton::client::InferRequestedOutput> out_shared;
@@ -226,19 +226,19 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                             return out_shared;
                         });
 
-                    std::vector<triton::client::InferInput *> inputs =
+                    std::vector<triton::client::InferInput*> inputs =
                         foreach_map(saved_inputs, [](auto x) { return x.first.get(); });
 
-                    std::vector<const triton::client::InferRequestedOutput *> outputs =
+                    std::vector<const triton::client::InferRequestedOutput*> outputs =
                         foreach_map(saved_outputs, [](auto x) { return x.get(); });
 
                     // this->segment().resources().fiber_pool().enqueue([client, output](){});
 
-                    triton::client::InferResult *results;
+                    triton::client::InferResult* results;
 
                     CHECK_TRITON(client->Infer(&results, m_options, inputs, outputs));
 
-                    for (auto &model_output : m_model_outputs)
+                    for (auto& model_output : m_model_outputs)
                     {
                         std::vector<int64_t> output_shape;
 
@@ -250,7 +250,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                             output_shape.push_back(1);
                         }
 
-                        const uint8_t *output_ptr = nullptr;
+                        const uint8_t* output_ptr = nullptr;
                         size_t output_ptr_size    = 0;
                         CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
 
@@ -268,17 +268,17 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                             std::vector<int64_t> mapped_output_shape{output_shape};
                             mapped_output_shape[0] = mini_batch_output->count;
 
-                            size_t element_count = get_elem_count(output_shape);
+                            // The shape of the triton output is the input to the reduce_max method
+                            std::vector<std::size_t> input_shape(output_shape.size());
+                            std::copy(output_shape.cbegin(), output_shape.cend(), input_shape.begin());
 
                             // Triton results are always in row-major as required by the KServe protocol
                             // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
-                            std::vector<int64_t> stride{output_shape[1], 1};
+                            std::vector<std::size_t> stride{static_cast<std::size_t>(output_shape[1]), 1};
                             output_buffer = MatxUtil::reduce_max(
-                                DevMemInfo{element_count, model_output.datatype.type_id(), output_buffer, 0},
+                                DevMemInfo{output_buffer, model_output.datatype, input_shape, stride},
                                 *host_seq_ids,
                                 mini_batch_input->offset,
-                                output_shape,
-                                stride,
                                 mapped_output_shape);
                             output_shape = std::move(mapped_output_shape);
                         }
@@ -286,9 +286,14 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         // If we need to do logits, do that here
                         if (m_needs_logits)
                         {
-                            size_t element_count = get_elem_count(output_shape);
-                            output_buffer        = MatxUtil::logits(
-                                DevMemInfo{element_count, model_output.datatype.type_id(), output_buffer, 0});
+                            std::vector<std::size_t> input_shape(output_shape.size());
+                            std::copy(output_shape.cbegin(), output_shape.cend(), input_shape.begin());
+
+                            output_buffer =
+                                MatxUtil::logits(DevMemInfo{output_buffer,
+                                                            model_output.datatype,
+                                                            input_shape,
+                                                            {static_cast<std::size_t>(output_shape[1]), 1}});
                         }
 
                         mini_batch_output->set_output(
@@ -387,7 +392,7 @@ void InferenceClientStage::connect_with_server()
         m_max_batch_size = model_config.at("max_batch_size").get<int>();
     }
 
-    for (auto const &input : model_metadata.at("inputs"))
+    for (auto const& input : model_metadata.at("inputs"))
     {
         auto shape = input.at("shape").get<std::vector<int>>();
 
@@ -395,7 +400,7 @@ void InferenceClientStage::connect_with_server()
 
         size_t bytes = dtype.item_size();
 
-        for (auto &y : shape)
+        for (auto& y : shape)
         {
             if (y == -1)
             {
@@ -420,7 +425,7 @@ void InferenceClientStage::connect_with_server()
                                              0});
     }
 
-    for (auto const &output : model_metadata.at("outputs"))
+    for (auto const& output : model_metadata.at("outputs"))
     {
         auto shape = output.at("shape").get<std::vector<int>>();
 
@@ -428,7 +433,7 @@ void InferenceClientStage::connect_with_server()
 
         size_t bytes = dtype.item_size();
 
-        for (auto &y : shape)
+        for (auto& y : shape)
         {
             if (y == -1)
             {
@@ -450,7 +455,7 @@ void InferenceClientStage::connect_with_server()
     }
 }
 
-bool InferenceClientStage::is_default_grpc_port(std::string &server_url)
+bool InferenceClientStage::is_default_grpc_port(std::string& server_url)
 {
     // Check if we are the default gRPC port of 8001 and try 8000 for http client instead
     size_t colon_loc = server_url.find_last_of(':');

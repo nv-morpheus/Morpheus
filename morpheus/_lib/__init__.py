@@ -12,6 +12,5 @@
 # limitations under the License.
 
 from . import common
-from . import file_types
 from . import messages
 from . import stages

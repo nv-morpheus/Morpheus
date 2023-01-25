@@ -22,8 +22,8 @@ import pandas as pd
 import cudf
 
 import morpheus._lib.stages as _stages
-from morpheus._lib.file_types import FileTypes
-from morpheus._lib.file_types import determine_file_type
+from morpheus._lib.common import FileTypes
+from morpheus._lib.common import determine_file_type
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io import serializers
@@ -48,7 +48,7 @@ class WriteToFileStage(SinglePortStage):
         Name of the file to which the messages will be written.
     overwrite : boolean, default = False, is_flag = True
         Overwrite file if exists. Will generate an error otherwise.
-    file_type : `morpheus._lib.file_types.FileTypes`, optional
+    file_type : `morpheus._lib.common.FileTypes`, optional
         File type of output (FileTypes.JSON, FileTypes.CSV, FileTypes.Auto), by default FileTypes.Auto.
     include_index_col : bool, default = True
         Write out the index as a column, by default True.

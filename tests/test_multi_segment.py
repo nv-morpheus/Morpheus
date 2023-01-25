@@ -18,7 +18,7 @@ import os
 
 import numpy as np
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline

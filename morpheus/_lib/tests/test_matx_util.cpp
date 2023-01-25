@@ -56,10 +56,9 @@ TEST_F(TestMatxUtil, ReduceMax1d)
 
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
-    DevMemInfo dm{input.size(), dtype.type_id(), input_buffer, 0};
-    std::vector<int64_t> input_shape{static_cast<int64_t>(input.size()), 1};
+    DevMemInfo dm{input_buffer, dtype, {input.size(), 1}, {1, 0}};
     std::vector<int64_t> output_shape{static_cast<int64_t>(expected_output.size()), 1};
-    auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, {1, 0}, output_shape);
+    auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     std::vector<float> output(expected_output.size());
     MRC_CHECK_CUDA(cudaMemcpy(output.data(), output_buffer->data(), output_buffer->size(), cudaMemcpyDeviceToHost));
@@ -111,11 +110,9 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
 
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
-    DevMemInfo dm{input.size(), dtype.type_id(), input_buffer, 0};
-    std::vector<int64_t> input_shape{static_cast<int64_t>(num_rows), static_cast<int64_t>(num_cols)};
+    DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {num_cols, 1}};
     std::vector<int64_t> output_shape{static_cast<int64_t>(expected_rows), static_cast<int64_t>(num_cols)};
-    auto output_buffer =
-        MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, {static_cast<int64_t>(num_cols), 1}, output_shape);
+    auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
 
@@ -132,11 +129,11 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
 TEST_F(TestMatxUtil, ReduceMax2dColMajor)
 {
     auto morpheus_root = test::get_morpheus_root();
-    auto input_file = morpheus_root / "tests/tests_data/filter_probs.csv";
+    auto input_file    = morpheus_root / "tests/tests_data/filter_probs.csv";
 
     auto table_m  = morpheus::load_table_from_file(input_file);
-    auto num_rows = table_m.tbl->num_rows();
-    auto num_cols = table_m.tbl->num_columns();
+    auto num_rows = static_cast<std::size_t>(table_m.tbl->num_rows());
+    auto num_cols = static_cast<std::size_t>(table_m.tbl->num_columns());
 
     EXPECT_EQ(num_rows, 20);
     EXPECT_EQ(num_cols, 4);
@@ -174,11 +171,9 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     const std::size_t expected_rows = 12;
     EXPECT_EQ(expected_rows * num_cols, expected_output.size());
 
-    DevMemInfo dm{static_cast<std::size_t>(num_rows * num_cols), dtype.type_id(), input_buffer, 0};
-    std::vector<int64_t> input_shape{static_cast<int64_t>(num_rows), static_cast<int64_t>(num_cols)};
+    DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {1, num_rows}};
     std::vector<int64_t> output_shape{static_cast<int64_t>(expected_rows), static_cast<int64_t>(num_cols)};
-    auto output_buffer =
-        MatxUtil::reduce_max(dm, seq_ids, 0, input_shape, {1, static_cast<int64_t>(num_rows)}, output_shape);
+    auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
 

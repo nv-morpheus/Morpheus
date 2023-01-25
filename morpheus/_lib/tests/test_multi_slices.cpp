@@ -23,7 +23,6 @@
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/utilities/matx_util.hpp"  // for MatxUtil::create_seg_ids
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyHostToDevice
 #include <cudf/concatenate.hpp>

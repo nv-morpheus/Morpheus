@@ -15,9 +15,15 @@
 # re-run 'versioneer.py setup' after changing this section, and commit the
 # resulting files.
 
-import versioneer
-from setuptools import find_packages
-from setuptools import setup
+import os
+
+# Required to install torch via setup.py
+# Note: this is order dependent
+os.environ["PIP_FIND_LINKS"] = "https://download.pytorch.org/whl/cu113/torch_stable.html"
+
+import versioneer  # noqa: E402
+from setuptools import find_packages  # noqa: E402
+from setuptools import setup  # noqa: E402
 
 setup(
     name="morpheus",

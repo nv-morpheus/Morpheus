@@ -20,26 +20,12 @@ option(MORPHEUS_PYTHON_INPLACE_BUILD
 option(MORPHEUS_BUILD_PYTHON_STUBS
         "Whether or not to generate stubs for python files." ON)
 
-set(Python3_FIND_VIRTUALENV "FIRST")
-set(Python3_FIND_STRATEGY "LOCATION")
-find_package(Python3 REQUIRED COMPONENTS Development Interpreter NumPy)
-
-# Check if SKlearn is installed
-include(cmake/utils/sklearn_check.cmake)
-include(cmake/utils/python_module_tools.cmake)
+morpheus_utils_python_modules_ensure_loaded()
 
 # Save the root of the python for relative paths
 set(MORPHEUS_PY_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # Determine the install directory for built modules
-file(RELATIVE_PATH python_relative_install ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} ${Python3_SITELIB})
-
-# Find dependencies
-find_package(CUDAToolkit REQUIRED)
-find_package(Cython REQUIRED)
-find_package(pybind11 REQUIRED)
-
-set(CYTHON_FLAGS "--directive binding=True,boundscheck=False,wraparound=False,embedsignature=True,always_allow_keywords=True" CACHE STRING "The directives for Cython compilation.")
 
 add_subdirectory(_lib)
 

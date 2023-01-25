@@ -32,15 +32,14 @@ from dask.distributed import LocalCluster
 
 import cudf
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-
-from ..utils.column_info import DataFrameInputSchema
-from ..utils.column_info import process_dataframe
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import process_dataframe
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -206,7 +205,7 @@ class DFPFileToDataFrameStage(PreallocatorMixin, SinglePortStage):
         output_df: pd.DataFrame = pd.concat(dfs)
 
         # Finally sort by timestamp and then reset the index
-        output_df.sort_values(by=["timestamp"], inplace=True)
+        output_df.sort_values(by=[self._config.ae.timestamp_column_name], inplace=True)
 
         output_df.reset_index(drop=True, inplace=True)
 

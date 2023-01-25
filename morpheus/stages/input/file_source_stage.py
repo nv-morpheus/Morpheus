@@ -20,7 +20,7 @@ import mrc
 import typing_utils
 from mrc.core import operators as ops
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.cli import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -33,9 +33,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger(__name__)
 
 
-@register_stage("from-file",
-                modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER],
-                ignore_args=["cudf_kwargs"])
+@register_stage("from-file", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Load messages from a file.
@@ -52,7 +50,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     iterative : boolean, default = False, is_flag = True
         Iterative mode will emit dataframes one at a time. Otherwise a list of dataframes is emitted. Iterative mode is
         good for interleaving source stages.
-    file_type : `morpheus._lib.file_types.FileTypes`, default = 'auto'
+    file_type : `morpheus._lib.common.FileTypes`, default = 'auto'
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat : int, default = 1, min = 1
@@ -60,10 +58,6 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
     filter_null : bool, default = True
         Whether or not to filter rows with null 'data' column. Null values in the 'data' column can cause issues down
         the line with processing. Setting this to True is recommended.
-    cudf_kwargs : dict, default = None
-        keyword args passed to underlying cuDF I/O function. See the cuDF documentation for `cudf.read_csv()` and
-        `cudf.read_json()` for the available options. With `file_type` == 'json', this defaults to ``{ "lines": True }``
-        and with `file_type` == 'csv', this defaults to ``{}``.
     """
 
     def __init__(self,
@@ -72,8 +66,7 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
                  iterative: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
                  repeat: int = 1,
-                 filter_null: bool = True,
-                 cudf_kwargs: dict = None):
+                 filter_null: bool = True):
 
         super().__init__(c)
 
@@ -82,7 +75,6 @@ class FileSourceStage(PreallocatorMixin, SingleOutputSource):
         self._filename = filename
         self._file_type = file_type
         self._filter_null = filter_null
-        self._cudf_kwargs = {} if cudf_kwargs is None else cudf_kwargs
 
         self._input_count = None
         self._max_concurrent = c.num_threads

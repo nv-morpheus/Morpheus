@@ -66,9 +66,9 @@ std::shared_ptr<MemoryDescriptor> RMMTensor::get_memory() const
     return nullptr;
 }
 
-void *RMMTensor::data() const
+void* RMMTensor::data() const
 {
-    return static_cast<uint8_t *>(m_md->data()) + this->offset_bytes();
+    return static_cast<uint8_t*>(m_md->data()) + this->offset_bytes();
 }
 
 RankType RMMTensor::rank() const
@@ -103,13 +103,13 @@ std::size_t RMMTensor::stride(std::size_t idx) const
     return m_stride.at(idx);
 }
 
-void RMMTensor::get_shape(std::vector<TensorIndex> &s) const
+void RMMTensor::get_shape(std::vector<TensorIndex>& s) const
 {
     s.resize(rank());
     std::copy(m_shape.begin(), m_shape.end(), s.begin());
 }
 
-void RMMTensor::get_stride(std::vector<TensorIndex> &s) const
+void RMMTensor::get_stride(std::vector<TensorIndex>& s) const
 {
     s.resize(rank());
     std::copy(m_stride.begin(), m_stride.end(), s.begin());
@@ -130,8 +130,8 @@ bool RMMTensor::is_compact() const
     return true;
 }
 
-std::shared_ptr<ITensor> RMMTensor::slice(const std::vector<TensorIndex> &min_dims,
-                                          const std::vector<TensorIndex> &max_dims) const
+std::shared_ptr<ITensor> RMMTensor::slice(const std::vector<TensorIndex>& min_dims,
+                                          const std::vector<TensorIndex>& max_dims) const
 {
     // Calc new offset
     size_t offset = std::transform_reduce(
@@ -146,7 +146,7 @@ std::shared_ptr<ITensor> RMMTensor::slice(const std::vector<TensorIndex> &min_di
     return std::make_shared<RMMTensor>(m_md, offset, m_dtype, shape, m_stride);
 }
 
-std::shared_ptr<ITensor> RMMTensor::reshape(const std::vector<TensorIndex> &dims) const
+std::shared_ptr<ITensor> RMMTensor::reshape(const std::vector<TensorIndex>& dims) const
 {
     return std::make_shared<RMMTensor>(m_md, 0, m_dtype, dims, m_stride);
 }
@@ -164,12 +164,18 @@ std::shared_ptr<ITensor> RMMTensor::as_type(DType dtype) const
 {
     DType new_dtype(dtype.type_id());
 
-    auto input_type  = m_dtype.type_id();
+    auto input_type = m_dtype.type_id();
+    std::vector<std::size_t> input_shape(rank());
+    std::copy(m_shape.cbegin(), m_shape.cend(), input_shape.begin());
+
+    std::vector<std::size_t> input_stride(rank());
+    std::copy(m_stride.cbegin(), m_stride.cend(), input_stride.begin());
+
     auto output_type = new_dtype.type_id();
 
     // Now do the conversion
-    auto new_data_buffer =
-        MatxUtil::cast(DevMemInfo{this->count(), input_type, m_md, this->offset_bytes()}, output_type);
+    auto new_data_buffer = MatxUtil::cast(
+        DevMemInfo{m_md, m_dtype, std::move(input_shape), std::move(input_stride), this->offset_bytes()}, output_type);
 
     // Return the new type
     return std::make_shared<RMMTensor>(new_data_buffer, 0, new_dtype, m_shape, m_stride);
@@ -180,7 +186,7 @@ size_t RMMTensor::offset_bytes() const
     return m_offset * m_dtype.item_size();
 }
 
-std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>> &selected_rows,
+std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
                                               TensorIndex num_rows) const
 {
     const auto tensor_type = dtype();
@@ -192,11 +198,11 @@ std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<Tensor
     auto output_buffer =
         std::make_shared<rmm::device_buffer>(num_rows * num_columns * item_size, rmm::cuda_stream_per_thread);
 
-    auto output_offset = static_cast<uint8_t *>(output_buffer->data());
+    auto output_offset = static_cast<uint8_t*>(output_buffer->data());
 
-    for (const auto &rows : selected_rows)
+    for (const auto& rows : selected_rows)
     {
-        const auto &sliced_input_tensor  = slice({rows.first, 0}, {rows.second, num_columns});
+        const auto& sliced_input_tensor  = slice({rows.first, 0}, {rows.second, num_columns});
         const std::size_t num_input_rows = rows.second - rows.first;
         DCHECK_EQ(num_input_rows, sliced_input_tensor->shape(0));
 
