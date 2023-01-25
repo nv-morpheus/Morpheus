@@ -78,6 +78,7 @@ Skip ahead to the [Launching Triton Server](#launching-triton-server) section.
 ```bash
 MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
+git submodule update --init --recursive &&\
 cd $MORPHEUS_ROOT
 ```
 
