@@ -115,10 +115,20 @@ void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_head
                                .false_value("False"s);
 
     cudf::io::table_metadata metadata{};
+
     if (include_header)
     {
         metadata.column_names = column_names;
-        options_builder       = options_builder.metadata(&metadata);
+
+        // After cuDF PR #11364, use schema_info instead of column_names (actually just set both)
+        metadata.schema_info = std::vector<cudf::io::column_name_info>();
+
+        for (auto& name : column_names)
+        {
+            metadata.schema_info.emplace_back(cudf::io::column_name_info{name});
+        }
+
+        options_builder = options_builder.metadata(&metadata);
     }
 
     cudf::io::write_csv(options_builder.build(), rmm::mr::get_current_device_resource());
