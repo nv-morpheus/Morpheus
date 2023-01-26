@@ -68,7 +68,7 @@ class MultiAEMessage(MultiMessage):
         ----------
         ranges : typing.List[typing.Tuple[int, int]]
             Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
-            The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
+            The final output is exclusive of the `stop_row`, i.e. `[start_row, stop_row)`. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
 
         num_selected_rows : typing.Union[None, int]
             Optional specify the number of rows selected by `ranges`, otherwise this is computed by the result.
