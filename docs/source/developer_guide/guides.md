@@ -24,3 +24,4 @@ Morpheus includes several stages to choose from when building a custom pipeline,
 * [Simple C++ Stage](./guides/3_simple_cpp_stage.md).
 * [Creating a C++ Source Stage](./guides/4_source_cpp_stage.md).
 * [Digital Fingerprinting (DFP)](./guides/5_digital_fingerprinting.md).
+* [Digital Fingerprinting (DFP) Reference](./guides/5_digital_fingerprinting_reference.md)
