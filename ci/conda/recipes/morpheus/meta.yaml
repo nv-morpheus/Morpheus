@@ -19,7 +19,7 @@
 {% set cuda_version='.'.join(environ.get('CUDA', '11.5').split('.')[:2]) %}
 {% set cuda_major=cuda_version.split('.')[0] %}
 {% set rapids_version = "22.08" %}
-{% set conda_build_git_path=environ['MORPHEUS_CONDA_BUILD_GIT_PATH'] %}
+{% set conda_build_git_path=environ['MORPHEUS_GIT_PATH'] %}
 
 package:
   name: morpheus-split

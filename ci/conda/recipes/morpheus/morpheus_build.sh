@@ -77,6 +77,5 @@ cmake -B ${BUILD_DIR} \
 # Build the components
 cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)}
 
-
 # Install just the python wheel components
 ${PYTHON} -m pip install -vv --no-deps ${BUILD_DIR}/dist/*.whl

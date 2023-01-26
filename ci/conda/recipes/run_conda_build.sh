@@ -125,8 +125,8 @@ if hasArg morpheus; then
 
    echo "Running conda-build for morpheus..."
    set -x
-   create_ephemeral_clone_and_patch TEMP_DIR MORPHEUS_CONDA_BUILD_GIT_PATH
-   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
+   create_ephemeral_clone_and_patch TEMP_DIR REPO_PATH
+   MORPHEUS_GIT_PATH=${REPO_PATH} conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
    rm -rf ${TEMP_DIR}
    set +x
 fi
@@ -136,8 +136,8 @@ if hasArg pydebug; then
 
   echo "Running conda-build for python-dbg..."
   set -x
-  create_ephemeral_clone_and_patch TEMP_DIR MORPHEUS_CONDA_BUILD_GIT_PATH
-  conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
+  create_ephemeral_clone_and_patch TEMP_DIR REPO_PATH
+  MORPHEUS_GIT_PATH=${REPO_PATH} conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
   rm -rf ${TEMP_DIR}
   set +x
 fi
