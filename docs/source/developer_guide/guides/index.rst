@@ -27,3 +27,4 @@ Developer Guides
    ./3_simple_cpp_stage.md
    ./4_source_cpp_stage.md
    ./5_digital_fingerprinting.md
+   ./6_digital_fingerprinting_reference.md
