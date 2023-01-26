@@ -104,7 +104,7 @@ jobs:
   test:
     name: Test
     needs: [build]
-    runs-on: [self-hosted, linux, amd64, gpu-v100-495-1]
+    runs-on: [self-hosted, linux, amd64, gpu-v100-520-1]
     timeout-minutes: 60
     container:
       credentials:
