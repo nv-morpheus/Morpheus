@@ -56,7 +56,7 @@ def round_seconds(obj: pd.Timestamp) -> pd.Timestamp:
 
 def calc_bin(obj: pd.Timestamp, t0: pd.Timestamp, resolution_sec: float) -> int:
     """
-    Calculates the bin value.
+    Calculates the bin spacing between the start and stop timestamp at a specified resolution.
     """
 
     return round((round_seconds(obj) - t0).total_seconds()) // resolution_sec

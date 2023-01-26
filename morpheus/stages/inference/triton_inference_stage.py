@@ -143,7 +143,7 @@ class ResourcePool:
 
     def borrow(self):
         """
-        Returns an item from the queue without blocking. If the queue is empty, add an item.
+        Returns an item from the pool. If the pool is empty, a new item will be created and returned.
 
         Returns
         -------
@@ -157,7 +157,7 @@ class ResourcePool:
 
     def return_obj(self, obj):
         """
-        Add an item to the queue.
+        Returns a borrowed item back to the pool to be used by new calls to `borrow()`.
 
         Parameters
         ----------
