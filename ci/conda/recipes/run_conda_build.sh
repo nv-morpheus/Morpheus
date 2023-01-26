@@ -107,6 +107,7 @@ function create_ephemeral_clone_and_patch() {
    local -n temp_dir=$1
    local -n conda_build_git_path=$2
 
+   initial_dir=$(pwd)
    temp_dir=`mktemp -d -p ${PWD}`
    conda_build_git_path=${temp_dir}/morpheus
    git clone ${MORPHEUS_ROOT} ${conda_build_git_path}
@@ -117,6 +118,7 @@ function create_ephemeral_clone_and_patch() {
    git config user.name "conda-build"
    git commit -m "Swap submodule relative path to absolute path as workaround to conda-build bug. \
       See conda_build:source.py:327"
+   cd ${initial_dir}
 }
 
 if hasArg morpheus; then
