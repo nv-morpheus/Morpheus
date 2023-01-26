@@ -21,7 +21,7 @@ Morpheus includes several stages to choose from when building a custom pipeline,
 
 * [Simple Python Stage](./guides/1_simple_python_stage.md)
 * [Real-World Application: Phishing Detection](./guides/2_real_world_phishing.md)
-* [Simple C++ Stage](./guides/3_simple_cpp_stage.md).
-* [Creating a C++ Source Stage](./guides/4_source_cpp_stage.md).
-* [Digital Fingerprinting (DFP)](./guides/5_digital_fingerprinting.md).
+* [Simple C++ Stage](./guides/3_simple_cpp_stage.md)
+* [Creating a C++ Source Stage](./guides/4_source_cpp_stage.md)
+* [Digital Fingerprinting (DFP)](./guides/5_digital_fingerprinting.md)
 * [Digital Fingerprinting (DFP) Reference](./guides/5_digital_fingerprinting_reference.md)
