@@ -188,7 +188,7 @@ def test_string_cat_column():
         "country",
     ], sep=", ")
 
-    actual = string_cat_col.process_column(df)
+    actual = string_cat_col._process_column(df)
 
     expected = pd.Series(["New York, USA", "Dallas, USA", "Austin, USA"])
 
@@ -200,7 +200,7 @@ def test_string_cat_column():
     ], sep=", ")
 
     with pytest.raises(Exception):
-        string_cat_col_with_int.process_column(df)
+        string_cat_col_with_int._process_column(df)
 
 
 @pytest.mark.use_python
@@ -216,7 +216,7 @@ def test_string_join_column():
 
     string_join_col = StringJoinColumn(name="city_new", dtype=str, input_name="city", sep="-")
 
-    actual = string_join_col.process_column(df)
+    actual = string_join_col._process_column(df)
 
     expected = pd.Series(["B-o-s-t-o-n", "D-a-l-l-a-s", "A-u-s-t-i-n"])
 
@@ -236,7 +236,7 @@ def test_column_info():
 
     string_join_col = ColumnInfo(name="city", dtype=str)
 
-    actual = string_join_col.process_column(df)
+    actual = string_join_col._process_column(df)
 
     assert actual.equals(cities)
     assert string_join_col.name == "city"
@@ -257,7 +257,7 @@ def test_date_column():
 
     datetime_col = DateTimeColumn(name="timestamp", dtype=datetime, input_name="time")
 
-    datetime_series = datetime_col.process_column(df)
+    datetime_series = datetime_col._process_column(df)
 
     assert datetime_series.dtype == 'datetime64[ns, UTC]'
 
@@ -277,7 +277,7 @@ def test_rename_column():
 
     rename_col = RenameColumn(name="timestamp", dtype=str, input_name="time")
 
-    actutal = rename_col.process_column(df)
+    actutal = rename_col._process_column(df)
 
     assert actutal.equals(time_series)
 
@@ -301,7 +301,7 @@ def test_custom_column():
                               dtype=str,
                               process_column_fn=partial(convert_to_upper, column_name="city"))
 
-    actutal = custom_col.process_column(df)
+    actutal = custom_col._process_column(df)
 
     expected = pd.Series(["NEW YORK", "DALLAS", "AUSTIN"])
 

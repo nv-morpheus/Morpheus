@@ -226,9 +226,7 @@ def autocomplete(**kwargs):
               help="The shell to install completion to. Leave as the default to auto-detect")
 def show(shell):
     """Show the click-completion-command completion code"""
-
-    from morpheus.utils import click_completion_tools
-
+    from morpheus.cli import click_completion_tools
     shell, path, code = click_completion_tools.get_code(shell=shell)
 
     click.secho("To add %s completion, write the following code to '%s':\n" % (shell, path), fg="blue")
@@ -246,9 +244,7 @@ def show(shell):
               help="Location to install complete to. Leave empty to choose the default for the specified shell")
 def install(**kwargs):
     """Install the click-completion-command completion"""
-
-    from morpheus.utils import click_completion_tools
-
+    from morpheus.cli import click_completion_tools
     shell, path = click_completion_tools.install_code(**kwargs)
 
     click.echo('%s completion installed in %s' % (shell, path))

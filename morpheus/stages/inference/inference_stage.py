@@ -48,10 +48,19 @@ class InferenceWorker:
         self._inf_queue = inf_queue
 
     def init(self):
+        """
+        By overriding this function, the resources necessary for the inference can be initiated.
+        Each inference worker calls this function once.
+        """
+
         # Nothing required in base
         pass
 
     def stop(self):
+        """
+        Override this function to stop the inference workers or carry out any additional cleanups.
+        """
+
         pass
 
     def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseProbsMessage:
@@ -168,7 +177,8 @@ class InferenceStage(MultiMessageStage):
         return "inference"
 
     def accepted_types(self) -> typing.Tuple:
-        """Accepted input types to this stage.
+        """
+        Accepted input types to this stage.
 
         Returns
         -------
@@ -272,6 +282,10 @@ class InferenceStage(MultiMessageStage):
         return super()._start()
 
     def stop(self):
+        """
+        Stops the inference workers and closes the inference queue.
+        """
+
         for w in self._workers:
             w.stop()
 
@@ -279,6 +293,9 @@ class InferenceStage(MultiMessageStage):
         self._inf_queue.close()
 
     async def join(self):
+        """
+        On all inference worker threads, this function applies join.
+        """
 
         # Wait for queue to be finished. This does block but it should be fine for now
         self._inf_queue.join()
