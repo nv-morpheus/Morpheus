@@ -157,7 +157,7 @@ class ResourcePool:
 
     def return_obj(self, obj):
         """
-        Add an item to the queue.
+        Returns a borrowed item back to the pool to be used by new calls to `borrow()`.
 
         Parameters
         ----------
