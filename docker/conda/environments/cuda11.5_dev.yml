@@ -32,7 +32,6 @@ dependencies:
     - cmake=3.24
     - configargparse=1.5
     - cuda-nvml-dev=11.5
-    - cuda-python>=11.6 # Remove when Issue #251 is closed
     - cudatoolkit=11.5
     - cudf 22.10
     - cupy=9.5.0

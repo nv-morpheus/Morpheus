@@ -212,8 +212,6 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
     Returns none but will throw an assertion error on failure.
     """
 
-    import os
-
     # Quick exit if the file exists
     if (os.path.exists(filename)):
         return
