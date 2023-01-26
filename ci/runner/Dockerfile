@@ -62,7 +62,7 @@ RUN apt update && \
     libcufft-dev-${CUDA_PKG_VER} \
     libcurand-dev-${CUDA_PKG_VER} \
     libcusolver-dev-${CUDA_PKG_VER} \
-    libnvidia-compute-495 && \
+    libnvidia-compute-520 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
