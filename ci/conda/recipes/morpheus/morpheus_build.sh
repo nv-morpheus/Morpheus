@@ -61,10 +61,7 @@ echo "========End Env========"
 
 # clone morpheus -- this is a workaround for conda-build not supporting git submodules properly
 #  and lets us avoid having to tar up the entire build directory
-echo "=====> WHERE AM I: ${PWD}"
 bash clone_morpheus.sh
-git checkout HEAD
-git apply static_path.patch
 
 BUILD_DIR="build-conda"
 
