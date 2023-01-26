@@ -32,9 +32,9 @@ Additional data sources and remote stores can easily be added using the Morpheus
 
 Adding a new source for the DFP pipeline requires defining five critical pieces:
 1. The user_id column in the Morpheus config attribute `ae.userid_column_name`. This can be any column which uniquely identifies the user, account or service being fingerprinted. Examples of possible user_ids could be:
-   * A username or fullname  (for example, "johndoe", or "Jane Doe")
+   * A username or fullname  (for example, "johndoe" or "Jane Doe")
    * User's LDAP ID number
-   * A user group (for example, "sales", or "engineering")
+   * A user group (for example, "sales" or "engineering")
    * Hostname of a machine on the network
    * IP address of a client
    * Name of a service (for example, "DNS", "Customer DB", or "SMTP")
@@ -298,3 +298,6 @@ docker-compose up mlflow
 * [NVIDIA GPU Operator](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/gpu-operator) installed in the cluster
 
 > **Note:**  For GPU Requirements refer to [README.md](/README.md#requirements)
+
+## Customizing DFP
+For details on customizing the DFP pipeline refer to [Digital Fingerprinting (DFP) Reference](./5_digital_fingerprinting_reference.md).
