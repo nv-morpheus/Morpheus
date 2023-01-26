@@ -67,7 +67,7 @@ Note about some of the flags above:
 
 Once launched, users wishing to launch Triton using the included Morpheus models will need to install the Docker tools in the Morpheus container by running:
 ```bash
-./docker/install_docker.sh
+./external/utilities/docker/install_docker.sh
 ```
 
 Skip ahead to the [Launching Triton Server](#launching-triton-server) section.

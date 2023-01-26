@@ -34,16 +34,7 @@ from dfp.stages.dfp_rolling_window_stage import DFPRollingWindowStage
 from dfp.stages.dfp_split_users_stage import DFPSplitUsersStage
 from dfp.stages.dfp_training import DFPTraining
 from dfp.stages.multi_file_source import MultiFileSource
-from dfp.utils.column_info import ColumnInfo
-from dfp.utils.column_info import CustomColumn
-from dfp.utils.column_info import DataFrameInputSchema
-from dfp.utils.column_info import DateTimeColumn
-from dfp.utils.column_info import IncrementColumn
-from dfp.utils.column_info import RenameColumn
-from dfp.utils.column_info import StringCatColumn
-from dfp.utils.column_info import create_increment_col
-from dfp.utils.file_utils import date_extractor
-from dfp.utils.file_utils import iso_date_regex
+from dfp.utils.regex_utils import iso_date_regex
 
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
@@ -57,6 +48,15 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.utils.column_info import ColumnInfo
+from morpheus.utils.column_info import CustomColumn
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import DateTimeColumn
+from morpheus.utils.column_info import IncrementColumn
+from morpheus.utils.column_info import RenameColumn
+from morpheus.utils.column_info import StringCatColumn
+from morpheus.utils.column_info import create_increment_col
+from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 from morpheus.utils.logger import get_log_levels
 from morpheus.utils.logger import parse_log_level
@@ -231,10 +231,16 @@ def run_pipeline(train_users,
                         groupby_column=config.ae.userid_column_name),
         CustomColumn(name="locincrement",
                      dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="location")),
+                     process_column_fn=partial(create_increment_col,
+                                               column_name="location",
+                                               groupby_column=config.ae.userid_column_name,
+                                               timestamp_column=config.ae.timestamp_column_name)),
         CustomColumn(name="appincrement",
                      dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="appDisplayName")),
+                     process_column_fn=partial(create_increment_col,
+                                               column_name="appDisplayName",
+                                               groupby_column=config.ae.userid_column_name,
+                                               timestamp_column=config.ae.timestamp_column_name))
     ]
 
     preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
@@ -292,7 +298,7 @@ def run_pipeline(train_users,
     if (is_training):
 
         # Finally, perform training which will output a model
-        pipeline.add_stage(DFPTraining(config))
+        pipeline.add_stage(DFPTraining(config, validation_size=0.10))
 
         pipeline.add_stage(MonitorStage(config, description="Training rate", smoothing=0.001))
 
