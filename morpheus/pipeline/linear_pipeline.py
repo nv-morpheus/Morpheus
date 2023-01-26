@@ -73,14 +73,14 @@ class LinearPipeline(_pipeline.Pipeline):
             self._linear_stages.clear()
 
         # Need to store the source in the pipeline
-        super()._add_node(source, self._current_segment_id)
+        super().add_stage(source, self._current_segment_id)
 
         # Store this as the first one in the linear stages. Must be index 0
         self._linear_stages.append(source)
 
     def add_stage(self, stage: _pipeline.SinglePortStage):
         """
-        Add stages to the pipeline. All `Stage` classes added with this method will be executed sequentially
+        Add a stage to the pipeline. All `Stage` classes added with this method will be executed sequentially
         inthe order they were added.
 
         Parameters
@@ -95,10 +95,10 @@ class LinearPipeline(_pipeline.Pipeline):
                                                               "`add_stage()`")
 
         # Add this stage to the segment graph
-        super()._add_node(stage, self._current_segment_id)
+        super().add_stage(stage, self._current_segment_id)
 
         # Make an edge between the last node and this one
-        super()._add_edge(self._linear_stages[-1], stage, self._current_segment_id)
+        super().add_edge(self._linear_stages[-1], stage, self._current_segment_id)
 
         self._linear_stages.append(stage)
 
@@ -154,9 +154,9 @@ class LinearPipeline(_pipeline.Pipeline):
 
         self._linear_stages.append(boundary_ingress)
 
-        super()._add_node(boundary_ingress, self._current_segment_id)
-        super()._add_segment_edge(boundary_egress,
-                                  egress_segment_id,
-                                  boundary_ingress,
-                                  ingress_segment_id,
-                                  port_id_tuple)
+        super().add_stage(boundary_ingress, self._current_segment_id)
+        super().add_segment_edge(boundary_egress,
+                                 egress_segment_id,
+                                 boundary_ingress,
+                                 ingress_segment_id,
+                                 port_id_tuple)

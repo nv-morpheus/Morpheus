@@ -96,31 +96,56 @@ class Pipeline():
 
         return x
 
-    def _add_node(self, node: StreamWrapper, segment_id: str = "main"):
+    def add_stage(self, stage: StreamWrapper, segment_id: str = "main"):
+        """
+        Add a stage to a segment in the pipeline.
 
-        assert node._pipeline is None or node._pipeline is self, "A stage can only be added to one pipeline at a time"
+        Parameters
+        ----------
+        stage : Stage
+            The stage object to add. It cannot be already added to another `Pipeline` object.
+
+        segment_id : str
+            ID indicating what segment the stage should be added to.
+        """
+
+        assert stage._pipeline is None or stage._pipeline is self, "A stage can only be added to one pipeline at a time"
 
         segment_nodes = self._segments[segment_id]["nodes"]
         segment_graph = self._segment_graphs[segment_id]
 
         # Add to list of stages if it's a stage, not a source
-        if (isinstance(node, Stage)):
-            segment_nodes.add(node)
-            self._stages.add(node)
-        elif (isinstance(node, SourceStage)):
-            segment_nodes.add(node)
-            self._sources.add(node)
+        if (isinstance(stage, Stage)):
+            segment_nodes.add(stage)
+            self._stages.add(stage)
+        elif (isinstance(stage, SourceStage)):
+            segment_nodes.add(stage)
+            self._sources.add(stage)
         else:
-            raise NotImplementedError("add_node() failed. Unknown node type: {}".format(type(node)))
+            raise NotImplementedError("add_stage() failed. Unknown node type: {}".format(type(stage)))
 
-        node._pipeline = self
+        stage._pipeline = self
 
-        segment_graph.add_node(node)
+        segment_graph.add_node(stage)
 
-    def _add_edge(self,
-                  start: typing.Union[StreamWrapper, Sender],
-                  end: typing.Union[Stage, Receiver],
-                  segment_id: str = "main"):
+    def add_edge(self,
+                 start: typing.Union[StreamWrapper, Sender],
+                 end: typing.Union[Stage, Receiver],
+                 segment_id: str = "main"):
+        """
+        Create an edge between two stages and add it to a segment in the pipeline.
+
+        Parameters
+        ----------
+        start : typing.Union[StreamWrapper, Sender]
+            The start of the edge or parent stage.
+
+        end : typing.Union[Stage, Receiver]
+            The end of the edge or child stage.
+
+        segment_id : str
+            ID indicating what segment the edge should be added to.
+        """
 
         if (isinstance(start, StreamWrapper)):
             start_port = start.output_ports[0]
@@ -141,7 +166,36 @@ class Pipeline():
                                start_port_idx=start_port.port_number,
                                end_port_idx=end_port.port_number)
 
-    def _add_segment_edge(self, egress_stage, egress_segment, ingress_stage, ingress_segment, port_pair):
+    def add_segment_edge(self,
+                         egress_stage: Stage,
+                         egress_segment: str,
+                         ingress_stage: Stage,
+                         ingress_segment: str,
+                         port_pair: typing.Union[str, typing.Tuple[str, typing.Type, bool]]):
+        """
+        Create an edge between two segments in the pipeline.
+
+        Parameters
+        ----------
+
+        egress_stage : Stage
+            The egress stage of the parent segment
+
+        egress_segment : str
+            Segment ID of the parent segment
+
+        ingress_stage : Stage
+            The ingress stage of the child segment
+
+        ingress_segment : str
+            Segment ID of the child segment
+
+        port_pair : typing.Union[str, typing.Tuple]
+            Either the ID of the egress segment, or a tuple with the following three elements:
+                * str: ID of the egress segment
+                * class: type being sent (typically `object`)
+                * bool: If the type is a shared pointer (typically should be `False`)
+        """
         egress_edges = self._segments[egress_segment]["egress_ports"]
         egress_edges.append({
             "port_pair": port_pair,
