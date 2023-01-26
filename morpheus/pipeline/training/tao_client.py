@@ -13,9 +13,12 @@
 # limitations under the License.
 
 import functools
+import io
 import json
 import logging
 import os
+import tarfile
+import time
 import typing
 
 import requests
@@ -181,10 +184,10 @@ class TaoApiClient():
 
         Parameters
         ----------
-        data : typing.Dict
-            Initial metadata for new resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
+        data : typing.Dict
+            Initial metadata for new resource.
         **kwargs :
             Additional arguments.
         Returns
@@ -217,12 +220,12 @@ class TaoApiClient():
 
         Parameters
         ----------
+        kind : _KIND
+            Endpoint type that is specific to a model or a dataset.
         data : typing.Dict
             Metadata that needs to be updated.
         resource_id: str
             Unique identifier for the resource.
-        kind : _KIND
-            Endpoint type that is specific to a model or a dataset.
         **kwargs :
             Additional arguments.
         Returns
@@ -252,12 +255,12 @@ class TaoApiClient():
 
         Parameters
         ----------
+        kind : _KIND
+            Endpoint type that is specific to a model or a dataset.
         data : typing.Dict
             Metadata that needs to be updated.
         resource_id: str
             Unique identifier for the resource.
-        kind : _KIND
-            Endpoint type that is specific to a model or a dataset.
         **kwargs :
             Additional arguments.
         Returns
@@ -287,12 +290,12 @@ class TaoApiClient():
 
         Parameters
         ----------
+        kind : _KIND
+            Endpoint type that is specific to a model or a dataset.
         resource_path : str
             The location of the resource to be uploaded.
         resource_id: str
             Unique identifier for the resource.
-        kind : _KIND
-            Endpoint type that is specific to a model or a dataset.
         **kwargs :
             Additional arguments.
         Returns
@@ -313,6 +316,69 @@ class TaoApiClient():
         logger.debug("Constructed endpoint with provided input: {}".format(endpoint))
 
         resp = self.session.post(endpoint, files=files, **kwargs)
+        if not resp.status_code == 201:
+            raise Exception("Unable to upload resource: {}".format(resp.content))
+
+        json_resp = resp.json()
+        logger.debug("Response: {}".format(json_resp))
+
+        return json_resp
+
+    def upload_in_memory_data(self,
+                              files_content: typing.Dict[str, bytearray],
+                              dirs_to_create,
+                              resource_id: str,
+                              **kwargs) -> typing.Dict:
+        """
+        Upload in memory data.
+
+        Parameters
+        ----------
+        files_content : typing.Dict[str, bytearray]
+            Keys in dictionary are stored as obsolete filepaths and values as bytearray data.
+        dirs_to_create: typing.Dict[str]
+            To meet the requirements of the TAO data format, a list of directories must be created.
+        resource_id: str
+            Unique identifier for the resource.
+        **kwargs :
+            Additional arguments.
+        Returns
+        -------
+        json_resp : typing.Dict
+            JSON response.
+        """
+        # Create an in-memory binary stream
+        tar_bytes = io.BytesIO()
+
+        # Open tarfile
+        tar = tarfile.open(fileobj=tar_bytes, mode='w')
+
+        # Create required directories.
+        for dir in dirs_to_create:
+            dir_info = tarfile.TarInfo(name=dir)
+            dir_info.type = tarfile.DIRTYPE
+            dir_info.mode = 0o755
+            dir_info.mtime = time.time()
+            tar.addfile(tarinfo=dir_info)
+
+        # Create file within the directories.
+        for key in files_content.keys():
+            # Here key is a absolute filepath.
+            file_content = files_content[key]
+            file_content = io.BytesIO(file_content)
+            file_info = tarfile.TarInfo(name=key)
+            file_info.size = len(file_content.getvalue())
+            file_info.mtime = time.time()
+            tar.addfile(file_info, file_content)
+
+        # Seek to the beginning of the stream
+        tar_bytes.seek(0)
+
+        endpoint = f"{self.user_uri}/dataset/{resource_id}/upload"
+        logger.debug("Constructed endpoint with provided input: {}".format(endpoint))
+
+        resp = self.session.post(endpoint, files={'file': tar_bytes}, **kwargs)
+
         if not resp.status_code == 201:
             raise Exception("Unable to upload resource: {}".format(resp.content))
 
@@ -358,12 +424,12 @@ class TaoApiClient():
 
         Parameters
         ----------
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
         action: str
             TAO actions.
+        resource_id: str
+            Unique identifier for the resource.
         **kwargs :
             Additional arguments.
         Returns
@@ -392,12 +458,12 @@ class TaoApiClient():
 
         Parameters
         ----------
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
         action: str
             TAO actions.
+        resource_id: str
+            Unique identifier for the resource.
         **kwargs :
             Additional arguments.
         Returns
@@ -426,14 +492,14 @@ class TaoApiClient():
 
         Parameters
         ----------
-        specs: typing.Dict
-            Updated specs.
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
         action: str
             TAO actions.
+        specs: typing.Dict
+            Updated specs.
+        resource_id: str
+            Unique identifier for the resource.
         **kwargs :
             Additional arguments.
         Returns
@@ -464,12 +530,12 @@ class TaoApiClient():
 
         Parameters
         ----------
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
         action: str
             TAO actions.
+        resource_id: str
+            Unique identifier for the resource.
         **kwargs :
             Additional arguments.
         Returns
@@ -503,12 +569,12 @@ class TaoApiClient():
 
         Parameters
         ----------
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
         action: str
             TAO actions.
+        resource_id: str
+            Unique identifier for the resource.
         parent_job_id: str
             Parent job id.
         **kwargs :
@@ -540,12 +606,12 @@ class TaoApiClient():
 
         Parameters
         ----------
-        job_id: str
-            Unique identifier for the job.
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
+        resource_id: str
+            Unique identifier for the resource.
+        job_id: str
+            Unique identifier for the job.
         **kwargs :
             Additional arguments.
         Returns
@@ -573,10 +639,10 @@ class TaoApiClient():
 
         Parameters
         ----------
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
+        resource_id: str
+            Unique identifier for the resource.
         **kwargs :
             Additional arguments.
         Returns
@@ -605,12 +671,12 @@ class TaoApiClient():
 
         Parameters
         ----------
+        kind : _KIND
+            Endpoint type that is specific to a model or a dataset.
         resource_id: str
             Unique identifier for the resource.
         job_id: str
             Unique identifier for the job.
-        kind : _KIND
-            Endpoint type that is specific to a model or a dataset.
         **kwargs :
             Additional arguments.
         Returns
@@ -638,12 +704,12 @@ class TaoApiClient():
 
         Parameters
         ----------
+        kind : _KIND
+            Endpoint type that is specific to a model or a dataset.
         resource_id: str
             Unique identifier for the resource.
         job_id: str
             Unique identifier for the job.
-        kind : _KIND
-            Endpoint type that is specific to a model or a dataset.
         **kwargs :
             Additional arguments.
         Returns
@@ -703,12 +769,12 @@ class TaoApiClient():
 
         Parameters
         ----------
+        kind : _KIND
+            Endpoint type that is specific to a model or a dataset.
         resource_id: str
             Unique identifier for the resource.
         job_id: str
             Unique identifier for the job.
-        kind : _KIND
-            Endpoint type that is specific to a model or a dataset.
         output_dir : str
             Output directory to save the downloaded content.
         **kwargs :
@@ -756,10 +822,10 @@ class TaoApiClient():
 
         Parameters
         ----------
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
+        resource_id: str
+            Unique identifier for the resource.
         **kwargs :
             Additional arguments.
         Returns
@@ -787,10 +853,10 @@ class TaoApiClient():
 
         Parameters
         ----------
-        resource_id: str
-            Unique identifier for the resource.
         kind : _KIND
             Endpoint type that is specific to a model or a dataset.
+        resource_id: str
+            Unique identifier for the resource.
         **kwargs :
             Additional arguments.
         Returns
