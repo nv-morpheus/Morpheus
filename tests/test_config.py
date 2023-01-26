@@ -20,7 +20,7 @@ from unittest import mock
 
 import morpheus
 import morpheus.config
-from tests.utils import assert_path_exists
+from utils import assert_path_exists
 
 # Using morpheus.config to distinguish between the config package and the pytest fixture of the same name
 
