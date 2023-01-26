@@ -41,7 +41,7 @@ from github_link import make_linkcode_resolve  # noqa
 # -- Project information -----------------------------------------------------
 
 project = 'morpheus'
-copyright = '2022, NVIDIA'
+copyright = '2023, NVIDIA'
 author = 'NVIDIA'
 
 # The version info for the project you're documenting, acts as replacement for
