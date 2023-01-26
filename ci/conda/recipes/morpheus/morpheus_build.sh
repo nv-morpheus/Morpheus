@@ -59,6 +59,13 @@ echo "========Begin Env========"
 env
 echo "========End Env========"
 
+# clone morpheus -- this is a workaround for conda-build not supporting git submodules properly
+#  and lets us avoid having to tar up the entire build directory
+echo "=====> WHERE AM I: ${PWD}"
+bash clone_morpheus.sh
+git checkout HEAD
+git apply static_path.patch
+
 BUILD_DIR="build-conda"
 
 # Check if the build directory already exists. And if so, delete the
@@ -70,6 +77,7 @@ if [[ -d "./${BUILD_DIR}" ]]; then
 fi
 
 # Run configure
+git submodule update --init --recursive
 cmake -B ${BUILD_DIR} \
    ${CMAKE_ARGS} \
    --log-level=verbose \

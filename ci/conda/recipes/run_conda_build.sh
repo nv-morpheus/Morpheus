@@ -22,10 +22,6 @@ function hasArg {
     (( ${NUMARGS} != 0 )) && (echo " ${ARGS} " | grep -q " $1 ")
 }
 
-function get_version() {
-   echo "$(git describe --tags | grep -o -E '^([^-]*?)')"
-}
-
 # Color variables
 export b="\033[0;36m"
 export g="\033[0;32m"
@@ -102,44 +98,23 @@ CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvid
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
 CONDA_ARGS_ARRAY+=("-c" "conda-forge")
 
-function create_ephemeral_clone_and_patch() {
-   # Create a temporary directory to clone the repo into
-   local -n temp_dir=$1
-   local -n conda_build_git_path=$2
-
-   initial_dir=$(pwd)
-   temp_dir=`mktemp -d -p ${PWD}`
-   conda_build_git_path=${temp_dir}/morpheus
-   git clone ${MORPHEUS_ROOT} ${conda_build_git_path}
-   cd ${conda_build_git_path}
-   git apply ${MORPHEUS_ROOT}/ci/conda/recipes/morpheus/relative_file_patch.patch
-   git add ./.gitmodules
-   git config user.email "conda-build"
-   git config user.name "conda-build"
-   git commit -m "Swap submodule relative path to absolute path as workaround to conda-build bug. \
-      See conda_build:source.py:327"
-   cd ${initial_dir}
-}
-
+export GIT_DESCRIBE="$(git describe --tags)"
 if hasArg morpheus; then
-   # Set GIT_VERSION to set the project version inside of meta.yaml
-   export GIT_VERSION="$(get_version)"
-
    echo "Running conda-build for morpheus..."
    set -x
-   create_ephemeral_clone_and_patch TEMP_DIR REPO_PATH
-   MORPHEUS_GIT_PATH=${REPO_PATH} conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
-   rm -rf ${TEMP_DIR}
+   # Do something sneaky to trick conda-build into giving us more control
+   echo "git clone ${MORPHEUS_ROOT} morpheus_temp;shopt -s dotglob;mv morpheus_temp/* .;rmdir morpheus_temp" \
+      > clone_morpheus.sh
+   tar -cvf morpheus_extractor.tar.xz clone_morpheus.sh ci/conda/recipes/morpheus/static_path.patch
+   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
    set +x
 fi
 
 if hasArg pydebug; then
   export MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2)
-
   echo "Running conda-build for python-dbg..."
   set -x
-  create_ephemeral_clone_and_patch TEMP_DIR REPO_PATH
-  MORPHEUS_GIT_PATH=${REPO_PATH} conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
-  rm -rf ${TEMP_DIR}
+   # Do something sneaky to trick conda-build into giving us more control
+  conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
   set +x
 fi

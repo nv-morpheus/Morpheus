@@ -13,14 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{% set version = environ.get('MORPHEUS_PYTHON_VER') %}
+{% set git_describe = environ('GIT_DESCRIBE', 'v0.0.0.dev-0-unknown') %}
+{% set git_version = git_describe.split('-')[0].lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
+{% set git_number = git_describe.split('-'][1] %}
+{% set git_hash = git_describe.split('-')[2] %}
+{% set py_version = environ.get('MORPHEUS_PYTHON_VER') %}
 
 package:
   name: python
   version: {{ version }}
 
 source:
-  fn: Python-{{ version }}.tar.xz
+  fn: Python-{{ py_version }}.tar.xz
   url: https://www.python.org/ftp/python/{{ version }}/Python-{{ version }}.tar.xz
   # md5: c4b7100dcaace9d33ab1fda9a3a038d6
   # If you want to build from the github source. This is quite a bit slower than pulling the tarball.
@@ -31,7 +35,7 @@ build:
   include_recipe: False
   no_link: bin/python
   number: 0
-  string: py{{ version }}_dbg_morpheus
+  string: py{{ py_version }}_dbg_morpheus
 
 requirements:
   build:
