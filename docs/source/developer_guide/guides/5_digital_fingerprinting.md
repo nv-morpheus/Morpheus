@@ -300,4 +300,4 @@ docker-compose up mlflow
 > **Note:**  For GPU Requirements refer to [README.md](/README.md#requirements)
 
 ## Customizing DFP
-For details on customizing the DFP pipeline refer to [Digital Fingerprinting (DFP) Reference](./5_digital_fingerprinting_reference.md).
+For details on customizing the DFP pipeline refer to [Digital Fingerprinting (DFP) Reference](./6_digital_fingerprinting_reference.md).
