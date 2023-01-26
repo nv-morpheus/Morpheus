@@ -92,7 +92,7 @@ class DirectoryWatcher():
 
     def build_node(self, name: str, builder: mrc.Builder):
         """
-        Build & return the MRC source node
+        Build and return the MRC source node
         """
 
         # The first source just produces filenames
