@@ -103,6 +103,6 @@ class SourceStage(_pipeline.StreamWrapper):
         """
         Awaitable method that stages can implement this to perform cleanup steps when pipeline is stopped.
         Typically this is called after `stop` during a graceful shutdown, but may not be called if the pipeline is
-        terminated.
+        terminated on its own.
         """
         pass
