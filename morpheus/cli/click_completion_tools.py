@@ -18,8 +18,11 @@ import subprocess
 import click
 
 
-def get_code(shell=None, path=None):
-
+def get_code(shell=None, path=None) -> str:
+    """
+    Return shell code to add morpheus auto completion. Return code is intended to be copy/pasted into shell startup
+    scripts. Currently only bash is supported.
+    """
     if (shell is None):
         shell = "bash"
 
@@ -44,6 +47,10 @@ def get_code(shell=None, path=None):
 
 
 def install_code(append=False, shell=None, path=None):
+    """
+    Write shell auto completion code to the shell startup script `path`. If `append` is `True` the code will be appended
+    to the file, when `False` the file will be overwritten. Currently only bash is supported.
+    """
 
     shell, path, code = get_code(shell, path)
 
