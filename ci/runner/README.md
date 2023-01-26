@@ -1,5 +1,5 @@
 <!--
- SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  SPDX-License-Identifier: Apache-2.0
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,10 @@
  limitations under the License.
 -->
 
-# Building Documentation
+The CI Runner documentation is located in the external Utilities repo. Ensure all submodules are up to date:
 
-Additional packages required for building the documentation are defined in `./conda_docs.yml`.
-
-## Get additional dependency
-From the root of the morpheus repo:
-```bash
-mamba env update -f docs/conda_docs.yml
+```
+git submodule update --init --recursive
 ```
 
-## Build Morpheus and Documentation
-```
-CMAKE_CONFIGURE_EXTRA_ARGS="-DMORPHEUS_BUILD_DOCS=ON" ./scripts/compile.sh
-```
-Outputs to `build/docs/html`
+The documentation is then located [here](../../external/utilities/ci/runner/README.md).

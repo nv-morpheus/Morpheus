@@ -19,3 +19,6 @@ docker network inspect morpheus >/dev/null 2>&1 || docker network create morpheu
 
 # create the parent conda folder so it's found when mounting
 mkdir -p ./.cache/conda
+
+# create a github cli config directory if it does not exist so it's found when mounting
+mkdir -p ~/.config/gh
