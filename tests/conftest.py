@@ -349,6 +349,8 @@ def _camouflage_is_running():
 
     from utils import TEST_DIRS
 
+    logger = logging.getLogger(f"morpheus.{__name__}")
+
     root_dir = TEST_DIRS.mock_triton_servers_dir
     startup_timeout = 5
     shutdown_timeout = 5
@@ -361,44 +363,51 @@ def _camouflage_is_running():
         is_running = wait_for_camouflage(timeout=0.0)
 
         if (is_running):
-            logging.warning("Camoflage already running. Skipping startup")
+            logger.warning("Camoflage already running. Skipping startup")
             launch_camouflage = False
             is_running = True
 
     # Actually launch camoflague
     if launch_camouflage:
-        popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
-                                 cwd=root_dir,
-                                 stderr=subprocess.DEVNULL,
-                                 stdout=subprocess.DEVNULL,
-                                 preexec_fn=_set_pdeathsig(signal.SIGTERM))
+        try:
+            popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
+                                     cwd=root_dir,
+                                     stderr=subprocess.DEVNULL,
+                                     stdout=subprocess.DEVNULL,
+                                     preexec_fn=_set_pdeathsig(signal.SIGTERM))
 
-        logging.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
+            logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
-        if not wait_for_camouflage(timeout=startup_timeout):
+            if not wait_for_camouflage(timeout=startup_timeout):
 
-            if popen.poll() is not None:
-                raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
-                    popen.poll(), os.path.join(root_dir, 'camouflage.log')))
+                if popen.poll() is not None:
+                    raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
+                        popen.poll(), os.path.join(root_dir, 'camouflage.log')))
 
-            raise RuntimeError("Failed to launch camouflage server")
+                raise RuntimeError("Failed to launch camouflage server")
 
-        # Must have been started by this point
-        yield True
+            # Must have been started by this point
+            yield True
 
-        logging.info("Killing pid {}".format(popen.pid))
+        except Exception:
+            # Log the error and rethrow
+            logger.exception("Error launching camouflage")
+            raise
+        finally:
 
-        elapsed_time = 0.0
-        sleep_time = 0.1
-        stopped = False
+            logger.info("Killing camouflage with pid {}".format(popen.pid))
 
-        # It takes a little while to shutdown
-        while not stopped and elapsed_time < shutdown_timeout:
-            popen.kill()
-            stopped = (popen.poll() is not None)
-            if not stopped:
-                time.sleep(sleep_time)
-                elapsed_time += sleep_time
+            elapsed_time = 0.0
+            sleep_time = 0.1
+            stopped = False
+
+            # It takes a little while to shutdown
+            while not stopped and elapsed_time < shutdown_timeout:
+                popen.kill()
+                stopped = (popen.poll() is not None)
+                if not stopped:
+                    time.sleep(sleep_time)
+                    elapsed_time += sleep_time
 
     else:
 
