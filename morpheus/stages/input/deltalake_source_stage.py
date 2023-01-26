@@ -16,15 +16,15 @@ import logging
 import os
 
 import mrc
+from pyspark.sql import SparkSession
+
 import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.messages import MessageMeta
-
-from pyspark.sql import SparkSession
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,11 @@ class DeltaLakeSourceStage(SingleOutputSource):
 
         super().__init__(config)
         self.spark_query = spark_query
-        self._configure_databricks_connect(databricks_host, databricks_token, databricks_cluster_id, databricks_port,databricks_org_id)
+        self._configure_databricks_connect(databricks_host,
+                                           databricks_token,
+                                           databricks_cluster_id,
+                                           databricks_port,
+                                           databricks_org_id)
         self.spark = SparkSession.builder.getOrCreate()
 
     @property
@@ -84,12 +88,17 @@ class DeltaLakeSourceStage(SingleOutputSource):
             logger.exception("Error occurred reading data from feature store and converting to Dataframe: {}".format(e))
             raise Exception(e)
 
-    def _configure_databricks_connect(self,databricks_host, databricks_token, databricks_cluster_id, databricks_port, databricks_org_id):
-        if(os.environ.get('DATABRICKS_HOST',None)==None and databricks_host==None):
+    def _configure_databricks_connect(self,
+                                      databricks_host,
+                                      databricks_token,
+                                      databricks_cluster_id,
+                                      databricks_port,
+                                      databricks_org_id):
+        if (os.environ.get('DATABRICKS_HOST', None) is None and databricks_host is None):
             raise Exception("Parameter for databricks host not provided")
-        if(os.environ.get('DATABRICKS_TOKEN',None)==None and databricks_token==None):
+        if (os.environ.get('DATABRICKS_TOKEN', None) is None and databricks_token is None):
             raise Exception("Parameter for databricks token not provided")
-        if(os.environ.get('DATABRICKS_CLUSTER_ID',None)==None and databricks_cluster_id==None):
+        if (os.environ.get('DATABRICKS_CLUSTER_ID', None) is None and databricks_cluster_id is None):
             raise Exception("Parameter for databricks cluster not provided")
         host = None
         cluster = None
@@ -103,20 +112,21 @@ class DeltaLakeSourceStage(SingleOutputSource):
                       "org_id": "@org_id",
                       "port": "@port"
                 }"""
-        if(os.environ.get('DATABRICKS_HOST',None)!=None):
+        if (os.environ.get('DATABRICKS_HOST', None) is not None):
             host = os.environ.get('DATABRICKS_HOST')
         else:
             host = databricks_host
-        if(os.environ.get('DATABRICKS_TOKEN',None)!=None):
+        if (os.environ.get('DATABRICKS_TOKEN', None) is not None):
             token = os.environ.get('DATABRICKS_TOKEN')
         else:
             token = databricks_token
-        if(os.environ.get('DATABRICKS_CLUSTER_ID',None)!=None):
+        if (os.environ.get('DATABRICKS_CLUSTER_ID', None) is not None):
             cluster = os.environ.get('DATABRICKS_CLUSTER_ID')
         else:
             cluster = databricks_cluster_id
 
-        config = config.replace("@host",host).replace("@token",token).replace("@cluster_id",cluster).replace("@org_id",databricks_org_id).replace("@port",databricks_port)
+        config = config.replace("@host", host).replace("@token", token).replace("@cluster_id", cluster).replace(
+            "@org_id", databricks_org_id).replace("@port", databricks_port)
 
         # check if the config file for databricks connect already exists
         config_exist = os.path.exists(config_file)
@@ -131,6 +141,6 @@ class DeltaLakeSourceStage(SingleOutputSource):
         else:
             should_add = True
         if should_add:
-            with open(config_file,"w+") as f:
+            with open(config_file, "w+") as f:
                 f.write(config)
             logger.info("Databricks-connect successfully configured!")
