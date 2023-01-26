@@ -30,6 +30,19 @@ class AtomicInteger():
         self._lock = threading.Lock()
 
     def inc(self, d=1):
+        """
+        Increments and returns new value.
+
+        Parameters
+        ----------
+        d : int, optional
+            Value to increment by, default 1.
+
+        Returns
+        -------
+        int
+            Incremented value.
+        """
         with self._lock:
             self._value += int(d)
             return self._value
@@ -41,7 +54,7 @@ class AtomicInteger():
         Parameters
         ----------
         d : int, optional
-            Decrements the value, by default 1.
+            Value to decrement by, default 1.
 
         Returns
         -------

@@ -120,6 +120,22 @@ class AutoencoderSourceStage(SingleOutputSource):
 
     @staticmethod
     def repeat_df(df: pd.DataFrame, repeat_count: int) -> typing.List[pd.DataFrame]:
+        """
+        This function iterates over the same dataframe to extending small datasets in debugging with incremental
+        updates to the `event_dt` and `eventTime` columns.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            To be repeated dataframe.
+        repeat_count : int
+            Number of times the given dataframe should be repeated.
+
+        Returns
+        -------
+        df_array : typing.List[pd.DataFrame]
+            List of repeated dataframes.
+        """
 
         df_array = []
 
@@ -144,6 +160,25 @@ class AutoencoderSourceStage(SingleOutputSource):
                          userid_column_name: str,
                          userid_filter: str,
                          datetime_column_name="event_dt"):
+        """
+        Creates a dataframe for each userid.
+
+        Parameters
+        ----------
+        x : typing.List[pd.DataFrame]
+            List of dataframes.
+        userid_column_name : str
+            Name of a dataframe column used for categorization.
+        userid_filter : str
+            Only rows with the supplied userid are filtered.
+        datetime_column_name : str
+            Name of the dataframe column used to sort the rows.
+
+        Returns
+        -------
+        user_dfs : typing.Dict[str, pd.DataFrame]
+            Dataframes, each of which is associated with a single userid.
+        """
 
         combined_df = pd.concat(x)
 
@@ -193,11 +228,48 @@ class AutoencoderSourceStage(SingleOutputSource):
                               feature_columns: typing.List[str],
                               userid_filter: str = None,
                               repeat_count: int = 1) -> typing.Dict[str, pd.DataFrame]:
+        """
+        Stages that extend `AutoencoderSourceStage` must implement this abstract function
+        in order to convert messages in the files to dataframes per userid.
+
+        Parameters
+        ----------
+        x : typing.List[str]
+            List of messages.
+        userid_column_name : str
+            Name of the column used for categorization.
+        feature_columns : typing.List[str]
+            Feature column names.
+        userid_filter : str
+            Only rows with the supplied userid are filtered.
+        repeat_count : str
+            Number of times the given rows should be repeated.
+
+        Returns
+        -------
+            : typing.Dict[str, pd.DataFrame]
+            Dataframe per userid.
+        """
 
         pass
 
     @staticmethod
     def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):
+        """
+        If any features are available to be derived, can be implemented by overriding this function.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            A dataframe.
+        feature_columns : typing.List[str]
+            Names of columns that are need to be derived.
+
+        Returns
+        -------
+        df : typing.List[pd.DataFrame]
+            Dataframe with actual and derived columns.
+        """
         return df
 
     def _add_derived_features(self, x: typing.Dict[str, pd.DataFrame]):

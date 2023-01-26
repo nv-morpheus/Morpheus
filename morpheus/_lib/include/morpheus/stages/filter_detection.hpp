@@ -47,9 +47,9 @@ namespace morpheus {
 
 #pragma GCC visibility push(default)
 /**
- * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
- * criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
- * equal to `threshold`.
+ * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor or dataframe column
+ * using a specified criteria. Rows in the `meta` dataframe are excluded if their associated value in the datasource
+ * indicated by `field_name` is less than or equal to `threshold`.
  *
  * This stage can operate in two different modes set by the `copy` argument.
  * When the `copy` argument is `true` (default), rows that meet the filter criteria are copied into a new dataframe.
@@ -84,6 +84,9 @@ class FilterDetectionsStage
      *
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
+     * @param filter_source : Indicate if the values used for filtering exist in either an output tensor
+     * (`FilterSource::TENSOR`) or a column in a Dataframe (`FilterSource::DATAFRAME`).
+     * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
      */
     FilterDetectionsStage(float threshold, bool copy, FilterSource filter_source, std::string field_name = "probs");
 
@@ -113,6 +116,9 @@ struct FilterDetectionStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
+     * @param filter_source : Indicate if the values used for filtering exist in either an output tensor
+     * (`FilterSource::TENSOR`) or a column in a Dataframe (`FilterSource::DATAFRAME`).
+     * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
      * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>
      */
     static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,

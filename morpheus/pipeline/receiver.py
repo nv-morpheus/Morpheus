@@ -81,6 +81,9 @@ class Receiver():
         return self._input_type
 
     def get_input_pair(self) -> StreamPair:
+        """
+        Returns the input `StreamPair` which is a tuple consisting of the parent node and the parent node's output type.
+        """
 
         assert self.is_partial, "Must be partially complete to get the input pair!"
 

@@ -71,12 +71,41 @@ class DuoSourceStage(AutoencoderSourceStage):
 
     @staticmethod
     def change_columns(df):
+        """
+        Removes characters (_,.,{,},:) from the names of the dataframe columns.
+
+        Parameters
+        ----------
+        df : `pd.DataFrame`
+            Dataframe that requires column renaming.
+
+        Returns
+        -------
+        df : `pd.DataFrame`
+            Dataframe with renamed columns.
+        """
+
         df.columns = df.columns.str.replace('[_,.,{,},:]', '')
         df.columns = df.columns.str.strip()
         return df
 
     @staticmethod
     def derive_features(df: pd.DataFrame, feature_columns: typing.List[str]):
+        """
+        Derives feature columns from the DUO (logs) source columns.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe for deriving columns.
+        feature_columns : typing.List[str]
+            Names of columns that are need to be derived.
+
+        Returns
+        -------
+        df : typing.List[pd.DataFrame]
+            Dataframe with actual and derived columns.
+        """
 
         _DEFAULT_DATE = '1970-01-01T00:00:00.000000+00:00'
         timestamp_column = "isotimestamp"
@@ -110,6 +139,28 @@ class DuoSourceStage(AutoencoderSourceStage):
                               feature_columns: typing.List[str],
                               userid_filter: str = None,
                               repeat_count: int = 1) -> typing.Dict[str, pd.DataFrame]:
+        """
+        After loading the input batch of DUO logs into a dataframe, this method builds a dataframe
+        for each set of userid rows in accordance with the specified filter condition.
+
+        Parameters
+        ----------
+        x : typing.List[str]
+            List of messages.
+        userid_column_name : str
+            Name of the column used for categorization.
+        feature_columns : typing.List[str]
+            Feature column names.
+        userid_filter : str
+            Only rows with the supplied userid are filtered.
+        repeat_count : str
+            Number of times the given rows should be repeated.
+
+        Returns
+        -------
+        df_per_user  : typing.Dict[str, pd.DataFrame]
+            Dataframe per userid.
+        """
 
         dfs = []
         for file in x:
