@@ -18,8 +18,8 @@
 #include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
 #include "morpheus/messages/multi_tensor.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"          // for DataType
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"         // for DataType
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
