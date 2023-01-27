@@ -129,6 +129,9 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
         return True
 
     def stop(self):
+        """
+        Performs cleanup steps when pipeline is stopped.
+        """
 
         # Indicate we need to stop
         self._stop_requested = True
