@@ -324,10 +324,7 @@ class TaoApiClient():
 
         return json_resp
 
-    def upload_in_memory_data(self,
-                              files_content: typing.Dict[str, bytearray],
-                              dirs_to_create,
-                              resource_id: str,
+    def upload_in_memory_data(self, files_content: typing.Dict[str, bytearray], resource_id: str,
                               **kwargs) -> typing.Dict:
         """
         Upload in memory data.
@@ -335,9 +332,7 @@ class TaoApiClient():
         Parameters
         ----------
         files_content : typing.Dict[str, bytearray]
-            Keys in dictionary are stored as obsolete filepaths and values as bytearray data.
-        dirs_to_create: typing.Dict[str]
-            To meet the requirements of the TAO data format, a list of directories must be created.
+            Keys in the dictionary are file path and values are file content as bytearray.
         resource_id: str
             Unique identifier for the resource.
         **kwargs :
@@ -353,17 +348,9 @@ class TaoApiClient():
         # Open tarfile
         tar = tarfile.open(fileobj=tar_bytes, mode='w')
 
-        # Create required directories.
-        for dir in dirs_to_create:
-            dir_info = tarfile.TarInfo(name=dir)
-            dir_info.type = tarfile.DIRTYPE
-            dir_info.mode = 0o755
-            dir_info.mtime = time.time()
-            tar.addfile(tarinfo=dir_info)
-
         # Create file within the directories.
         for key in files_content.keys():
-            # Here key is a absolute filepath.
+            # Here key is a filepath.
             file_content = files_content[key]
             file_content = io.BytesIO(file_content)
             file_info = tarfile.TarInfo(name=key)
@@ -378,6 +365,9 @@ class TaoApiClient():
         logger.debug("Constructed endpoint with provided input: {}".format(endpoint))
 
         resp = self.session.post(endpoint, files={'file': tar_bytes}, **kwargs)
+
+        # Close tar file.
+        tar.close()
 
         if not resp.status_code == 201:
             raise Exception("Unable to upload resource: {}".format(resp.content))
