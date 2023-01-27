@@ -1,6 +1,6 @@
 # Note, to include this when using setup.py or pip, set the variable:
-# PIP_FIND_LINKS=https://download.pytorch.org/whl/torch/
---find-links https://download.pytorch.org/whl/torch/
+# PIP_FIND_LINKS=https://download.pytorch.org/whl/cu116/torch_stable.html
+--find-links https://download.pytorch.org/whl/cu116/torch_stable.html
 
 ####### Pip-only runtime dependencies (keep sorted!) #######
 # Packages listed here should also be listed in setup.py
