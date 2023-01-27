@@ -82,8 +82,7 @@ struct ResponseMemoryInterfaceProxy
      * @param cupy_tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<ResponseMemory>
      */
-    static std::shared_ptr<ResponseMemory> init(std::size_t count,
-                                                std::map<std::string, pybind11::object> cupy_tensors);
+    static std::shared_ptr<ResponseMemory> init(std::size_t count, TensorMemoryInterfaceProxy::py_tensor_map_t tensors);
 
     /**
      * @brief Get the output object
@@ -102,6 +101,9 @@ struct ResponseMemoryInterfaceProxy
      * @return TensorObject
      */
     static TensorObject get_output_tensor(ResponseMemory& self, const std::string& name);
+
+    static TensorMemoryInterfaceProxy::py_tensor_map_t get_tensors(TensorMemory& self);
+    static void set_tensors(TensorMemory& self, TensorMemoryInterfaceProxy::py_tensor_map_t tensors);
 };
 #pragma GCC visibility pop
 

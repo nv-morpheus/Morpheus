@@ -148,7 +148,9 @@ PYBIND11_MODULE(messages, m)
         .def(py::init<>(&InferenceMemoryInterfaceProxy::init),
              py::arg("count"),
              py::arg("tensors") = TensorMemoryInterfaceProxy::py_tensor_map_t())
-        .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count);
+        .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count)
+        .def_property(
+            "tensors", &InferenceMemoryInterfaceProxy::get_tensors, &InferenceMemoryInterfaceProxy::set_tensors);
 
     py::class_<InferenceMemoryNLP, InferenceMemory, std::shared_ptr<InferenceMemoryNLP>>(m, "InferenceMemoryNLP")
         .def(py::init<>(&InferenceMemoryNLPInterfaceProxy::init),
@@ -222,6 +224,13 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("offset", &MultiInferenceFILMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
 
+    // The tensors property has a limitation in that it always returns a copy so code like:
+    // >>> m.tensors['c'] = cp.zeros(count)
+    // won't have the intended outcome. However this will:
+    // >>> tensors = m.tensors
+    // >>> tensors['c'] = cp.zeros(count)
+    // >>> m.tensors = tensors
+    // https://pybind11.readthedocs.io/en/stable/advanced/cast/stl.html?highlight=opaque#making-opaque-types
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
         .def(py::init<>(&TensorMemoryInterfaceProxy::init),
              py::arg("count"),
@@ -234,6 +243,7 @@ PYBIND11_MODULE(messages, m)
              py::arg("count"),
              py::arg("tensors") = TensorMemoryInterfaceProxy::py_tensor_map_t())
         .def_readonly("count", &ResponseMemory::count)
+        .def_property("tensors", &ResponseMemoryInterfaceProxy::get_tensors, &ResponseMemoryInterfaceProxy::set_tensors)
         .def("get_output", &ResponseMemoryInterfaceProxy::get_output, py::return_value_policy::reference_internal)
         .def("get_output_tensor",
              &ResponseMemoryInterfaceProxy::get_output_tensor,

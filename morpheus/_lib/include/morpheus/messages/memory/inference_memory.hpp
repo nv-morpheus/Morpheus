@@ -79,7 +79,7 @@ struct InferenceMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<InferenceMemory>
      */
-    static std::shared_ptr<InferenceMemory> init(std::size_t count, std::map<std::string, pybind11::object> tensors);
+    static std::shared_ptr<InferenceMemory> init(std::size_t count, TensorMemoryInterfaceProxy::py_tensor_map_t tensors);
 
     /**
      * @brief Get the count object
@@ -88,6 +88,9 @@ struct InferenceMemoryInterfaceProxy
      * @return std::size_t
      */
     static std::size_t get_count(InferenceMemory& self);
+
+    static TensorMemoryInterfaceProxy::py_tensor_map_t get_tensors(TensorMemory& self);
+    static void set_tensors(TensorMemory& self, TensorMemoryInterfaceProxy::py_tensor_map_t tensors);
 };
 #pragma GCC visibility pop
 

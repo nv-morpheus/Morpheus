@@ -42,4 +42,15 @@ std::size_t InferenceMemoryInterfaceProxy::get_count(InferenceMemory& self)
 {
     return self.count;
 }
+
+TensorMemoryInterfaceProxy::py_tensor_map_t InferenceMemoryInterfaceProxy::get_tensors(TensorMemory& self)
+{
+    return TensorMemoryInterfaceProxy::tensors_to_cupy(self.tensors);
+}
+
+void InferenceMemoryInterfaceProxy::set_tensors(TensorMemory& self, TensorMemoryInterfaceProxy::py_tensor_map_t tensors)
+{
+    self.tensors = std::move(TensorMemoryInterfaceProxy::cupy_to_tensors(tensors));
+}
+
 }  // namespace morpheus
