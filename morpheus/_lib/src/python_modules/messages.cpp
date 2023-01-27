@@ -147,7 +147,7 @@ PYBIND11_MODULE(messages, m)
     py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
         .def(py::init<>(&InferenceMemoryInterfaceProxy::init),
              py::arg("count"),
-             py::arg("tensors") = std::map<std::string, py::object>())
+             py::arg("tensors") = TensorMemoryInterfaceProxy::py_tensor_map_t())
         .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count);
 
     py::class_<InferenceMemoryNLP, InferenceMemory, std::shared_ptr<InferenceMemoryNLP>>(m, "InferenceMemoryNLP")
@@ -225,14 +225,14 @@ PYBIND11_MODULE(messages, m)
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
         .def(py::init<>(&TensorMemoryInterfaceProxy::init),
              py::arg("count"),
-             py::arg("tensors") = std::map<std::string, py::object>())
+             py::arg("tensors") = TensorMemoryInterfaceProxy::py_tensor_map_t())
         .def_readonly("count", &TensorMemory::count)
         .def_property("tensors", &TensorMemoryInterfaceProxy::get_tensors, &TensorMemoryInterfaceProxy::set_tensors);
 
     py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def(py::init<>(&ResponseMemoryInterfaceProxy::init),
              py::arg("count"),
-             py::arg("tensors") = std::map<std::string, py::object>())
+             py::arg("tensors") = TensorMemoryInterfaceProxy::py_tensor_map_t())
         .def_readonly("count", &ResponseMemory::count)
         .def("get_output", &ResponseMemoryInterfaceProxy::get_output, py::return_value_policy::reference_internal)
         .def("get_output_tensor",

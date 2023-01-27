@@ -93,6 +93,8 @@ class TensorMemory
  */
 struct TensorMemoryInterfaceProxy
 {
+    using py_tensor_map_t = std::map<std::string, pybind11::object>;
+
     /**
      * @brief Create and initialize a TensorMemory object, and return a shared pointer to the result. Each array in
      * `tensors` should be of length `count`.
@@ -101,7 +103,7 @@ struct TensorMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<TensorMemory>
      */
-    static std::shared_ptr<TensorMemory> init(std::size_t count, std::map<std::string, pybind11::object> tensors);
+    static std::shared_ptr<TensorMemory> init(std::size_t count, py_tensor_map_t tensors);
 
     /**
      * @brief Get the count object
@@ -111,8 +113,8 @@ struct TensorMemoryInterfaceProxy
      */
     static std::size_t get_count(TensorMemory& self);
 
-    static pybind11::object get_tensors(TensorMemory& self);
-    static void set_tensors(TensorMemory& self, std::map<std::string, pybind11::object> tensors);
+    static py_tensor_map_t get_tensors(TensorMemory& self);
+    static void set_tensors(TensorMemory& self, py_tensor_map_t tensors);
 
     /**
      * @brief
@@ -120,9 +122,9 @@ struct TensorMemoryInterfaceProxy
      * @param cupy_tensors
      * @return TensorMemory::tensor_map_t
      */
-    static TensorMemory::tensor_map_t cupy_to_tensors(const std::map<std::string, pybind11::object>& cupy_tensors);
+    static TensorMemory::tensor_map_t cupy_to_tensors(const py_tensor_map_t& cupy_tensors);
 
-    static pybind11::object tensors_to_cupy(const TensorMemory::tensor_map_t& tensors);
+    static py_tensor_map_t tensors_to_cupy(const TensorMemory::tensor_map_t& tensors);
 };
 
 #pragma GCC visibility pop

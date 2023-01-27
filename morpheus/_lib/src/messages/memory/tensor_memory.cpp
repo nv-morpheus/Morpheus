@@ -47,8 +47,7 @@ TensorMemory::tensor_map_t TensorMemory::copy_tensor_ranges(
 
 /****** TensorMemoryInterfaceProxy *************************/
 namespace py = pybind11;
-std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count,
-                                                               std::map<std::string, py::object> tensors)
+std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count, py_tensor_map_t tensors)
 {
     return std::make_shared<TensorMemory>(count, std::move(cupy_to_tensors(tensors)));
 }
@@ -58,18 +57,17 @@ std::size_t TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
     return self.count;
 }
 
-py::object TensorMemoryInterfaceProxy::get_tensors(TensorMemory& self)
+TensorMemoryInterfaceProxy::py_tensor_map_t TensorMemoryInterfaceProxy::get_tensors(TensorMemory& self)
 {
     return tensors_to_cupy(self.tensors);
 }
 
-void TensorMemoryInterfaceProxy::set_tensors(TensorMemory& self, std::map<std::string, py::object> tensors)
+void TensorMemoryInterfaceProxy::set_tensors(TensorMemory& self, py_tensor_map_t tensors)
 {
     self.tensors = std::move(cupy_to_tensors(tensors));
 }
 
-TensorMemory::tensor_map_t TensorMemoryInterfaceProxy::cupy_to_tensors(
-    const std::map<std::string, py::object>& cupy_tensors)
+TensorMemory::tensor_map_t TensorMemoryInterfaceProxy::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
 {
     TensorMemory::tensor_map_t tensors;
     for (const auto& tensor : cupy_tensors)
@@ -80,12 +78,13 @@ TensorMemory::tensor_map_t TensorMemoryInterfaceProxy::cupy_to_tensors(
     return tensors;
 }
 
-py::object TensorMemoryInterfaceProxy::tensors_to_cupy(const TensorMemory::tensor_map_t& tensors)
+TensorMemoryInterfaceProxy::py_tensor_map_t TensorMemoryInterfaceProxy::tensors_to_cupy(
+    const TensorMemory::tensor_map_t& tensors)
 {
-    auto cupy_tensors = py::dict();
+    py_tensor_map_t cupy_tensors;
     for (const auto& tensor : tensors)
     {
-        cupy_tensors[py::str(tensor.first)] = std::move(CupyUtil::tensor_to_cupy(tensor.second));
+        cupy_tensors[tensor.first] = std::move(CupyUtil::tensor_to_cupy(tensor.second));
     }
 
     return cupy_tensors;
