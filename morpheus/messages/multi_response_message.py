@@ -95,7 +95,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
         return self.tensors[name]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProbs):
     """
     Subclass of `ResponseMemory` containng an output tensor named 'probs'.
@@ -107,11 +107,11 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
     """
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_output, set_output)
 
-    def __post_init__(self, probs):
-        self.probs = probs
+    def __init__(self, probs):
+        super().__init__(count=len(probs), tensors={'probs': probs})
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class ResponseMemoryAE(ResponseMemory, cpp_class=None):
     """
     Subclass of `ResponseMemory` specific to the AutoEncoder pipeline.
@@ -132,8 +132,8 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
     user_id = ""
     explain_df = None
 
-    def __post_init__(self, probs):
-        self.probs = probs
+    def __init__(self, probs):
+        super().__init__(count=len(probs), tensors={'probs': probs})
 
 
 @dataclasses.dataclass

@@ -78,7 +78,7 @@ def set_input(instance, name: str, value):
     instance.tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP):
     """
     This is a container class for data that needs to be submitted to the inference server for NLP category
@@ -99,13 +99,14 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP
     input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
 
-    def __post_init__(self, input_ids, input_mask, seq_ids):
-        self.input_ids = input_ids
-        self.input_mask = input_mask
-        self.seq_ids = seq_ids
+    def __init__(self, input_ids, input_mask, seq_ids):
+        super().__init__(count=len(input_ids),
+                         tensors={
+                             'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids
+                         })
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL):
     """
     This is a container class for data that needs to be submitted to the inference server for FIL category
@@ -123,12 +124,11 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
     input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
 
-    def __post_init__(self, input__0, seq_ids):
-        self.input__0 = input__0
-        self.seq_ids = seq_ids
+    def __init__(self, input__0, seq_ids):
+        super().__init__(count=len(input__0), tensors={'input__0': input__0, 'seq_ids': seq_ids})
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class InferenceMemoryAE(InferenceMemory, cpp_class=None):
     """
     This is a container class for data that needs to be submitted to the inference server for FIL category
@@ -146,9 +146,8 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
     input: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
 
-    def __post_init__(self, input, seq_ids):
-        self.input = input
-        self.seq_ids = seq_ids
+    def __init__(self, input__0, seq_ids):
+        super().__init__(count=len(input__0), tensors={'input__0': input__0, 'seq_ids': seq_ids})
 
 
 @dataclasses.dataclass

@@ -38,4 +38,4 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
     """
     count: int
 
-    tensors: typing.Dict[str, cp.ndarray] = dataclasses.field(default_factory=dict, init=False)
+    tensors: typing.Dict[str, cp.ndarray] = dataclasses.field(default_factory=dict)
