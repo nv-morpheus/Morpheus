@@ -35,6 +35,7 @@
 #include <cstdint>  // for uintptr_t
 #include <memory>   // for make_shared
 #include <string>   // for string
+#include <utility>  // for move
 #include <vector>   // for vector
 
 namespace morpheus {
@@ -128,5 +129,27 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
                        0);
 
     return tensor;
+}
+
+std::map<std::string, TensorObject> CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
+{
+    std::map<std::string, TensorObject> tensors;
+    for (const auto& tensor : cupy_tensors)
+    {
+        tensors[tensor.first] = std::move(cupy_to_tensor(tensor.second));
+    }
+
+    return tensors;
+}
+
+CupyUtil::py_tensor_map_t CupyUtil::tensors_to_cupy(const std::map<std::string, TensorObject>& tensors)
+{
+    py_tensor_map_t cupy_tensors;
+    for (const auto& tensor : tensors)
+    {
+        cupy_tensors[tensor.first] = std::move(tensor_to_cupy(tensor.second));
+    }
+
+    return cupy_tensors;
 }
 }  // namespace morpheus

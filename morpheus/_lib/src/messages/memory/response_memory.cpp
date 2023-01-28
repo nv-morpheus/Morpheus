@@ -39,7 +39,7 @@ bool ResponseMemory::has_output(const std::string& name) const
 std::shared_ptr<ResponseMemory> ResponseMemoryInterfaceProxy::init(std::size_t count,
                                                                    std::map<std::string, pybind11::object> tensors)
 {
-    return std::make_shared<ResponseMemory>(count, std::move(TensorMemoryInterfaceProxy::cupy_to_tensors(tensors)));
+    return std::make_shared<ResponseMemory>(count, std::move(CupyUtil::cupy_to_tensors(tensors)));
 }
 
 pybind11::object ResponseMemoryInterfaceProxy::get_output(ResponseMemory& self, const std::string& name)
@@ -58,15 +58,14 @@ TensorObject ResponseMemoryInterfaceProxy::get_output_tensor(ResponseMemory& sel
     return self.tensors[name];
 }
 
-TensorMemoryInterfaceProxy::py_tensor_map_t ResponseMemoryInterfaceProxy::get_tensors(ResponseMemory& self)
+CupyUtil::py_tensor_map_t ResponseMemoryInterfaceProxy::get_tensors(ResponseMemory& self)
 {
-    return TensorMemoryInterfaceProxy::tensors_to_cupy(self.tensors);
+    return CupyUtil::tensors_to_cupy(self.tensors);
 }
 
-void ResponseMemoryInterfaceProxy::set_tensors(ResponseMemory& self,
-                                               TensorMemoryInterfaceProxy::py_tensor_map_t tensors)
+void ResponseMemoryInterfaceProxy::set_tensors(ResponseMemory& self, CupyUtil::py_tensor_map_t tensors)
 {
-    self.tensors = std::move(TensorMemoryInterfaceProxy::cupy_to_tensors(tensors));
+    self.tensors = std::move(CupyUtil::cupy_to_tensors(tensors));
 }
 
 }  // namespace morpheus

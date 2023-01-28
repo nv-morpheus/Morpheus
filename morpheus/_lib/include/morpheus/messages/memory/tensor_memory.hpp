@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil
 
 #include <pybind11/pytypes.h>  // for object
 
@@ -93,8 +94,6 @@ class TensorMemory
  */
 struct TensorMemoryInterfaceProxy
 {
-    using py_tensor_map_t = std::map<std::string, pybind11::object>;
-
     /**
      * @brief Create and initialize a TensorMemory object, and return a shared pointer to the result. Each array in
      * `tensors` should be of length `count`.
@@ -103,7 +102,7 @@ struct TensorMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<TensorMemory>
      */
-    static std::shared_ptr<TensorMemory> init(std::size_t count, py_tensor_map_t tensors);
+    static std::shared_ptr<TensorMemory> init(std::size_t count, CupyUtil::py_tensor_map_t tensors);
 
     /**
      * @brief Get the count object
@@ -113,18 +112,15 @@ struct TensorMemoryInterfaceProxy
      */
     static std::size_t get_count(TensorMemory& self);
 
-    static py_tensor_map_t get_tensors(TensorMemory& self);
-    static void set_tensors(TensorMemory& self, py_tensor_map_t tensors);
-
     /**
-     * @brief
+     * @brief Get the tensors converted to CuPy arrays. Pybind11 will convert the std::map to a Python dict.
      *
-     * @param cupy_tensors
-     * @return TensorMemory::tensor_map_t
+     * @param self
+     * @return py_tensor_map_t
      */
-    static TensorMemory::tensor_map_t cupy_to_tensors(const py_tensor_map_t& cupy_tensors);
+    static CupyUtil::py_tensor_map_t get_tensors(TensorMemory& self);
 
-    static py_tensor_map_t tensors_to_cupy(const TensorMemory::tensor_map_t& tensors);
+    static void set_tensors(TensorMemory& self, CupyUtil::py_tensor_map_t tensors);
 };
 
 #pragma GCC visibility pop

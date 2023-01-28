@@ -30,6 +30,7 @@
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
 #include <mrc/channel/status.hpp>  // for Status
 #include <mrc/node/edge_connector.hpp>
@@ -158,7 +159,7 @@ PYBIND11_MODULE(messages, m)
     py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
         .def(py::init<>(&InferenceMemoryInterfaceProxy::init),
              py::arg("count"),
-             py::arg("tensors") = TensorMemoryInterfaceProxy::py_tensor_map_t())
+             py::arg("tensors") = CupyUtil::py_tensor_map_t())
         .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count)
         .def_property("tensors",
                       &InferenceMemoryInterfaceProxy::get_tensors,
@@ -240,7 +241,7 @@ PYBIND11_MODULE(messages, m)
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
         .def(py::init<>(&TensorMemoryInterfaceProxy::init),
              py::arg("count"),
-             py::arg("tensors") = TensorMemoryInterfaceProxy::py_tensor_map_t())
+             py::arg("tensors") = CupyUtil::py_tensor_map_t())
         .def_readonly("count", &TensorMemory::count)
         .def_property("tensors",
                       &TensorMemoryInterfaceProxy::get_tensors,
@@ -250,7 +251,7 @@ PYBIND11_MODULE(messages, m)
     py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def(py::init<>(&ResponseMemoryInterfaceProxy::init),
              py::arg("count"),
-             py::arg("tensors") = TensorMemoryInterfaceProxy::py_tensor_map_t())
+             py::arg("tensors") = CupyUtil::py_tensor_map_t())
         .def_readonly("count", &ResponseMemory::count)
         .def_property("tensors",
                       &ResponseMemoryInterfaceProxy::get_tensors,
