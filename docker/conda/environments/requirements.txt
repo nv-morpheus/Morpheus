@@ -9,7 +9,6 @@ ipywidgets
 jupyter-core>=4.11.2,<5.0
 jupyterlab
 nvidia-pyindex
-protobuf==3.20.2
 pytest-benchmark>=4.0
 torch==1.12.0+cu113
 tritonclient[all]==2.17.*
