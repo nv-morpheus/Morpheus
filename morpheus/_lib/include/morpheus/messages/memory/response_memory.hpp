@@ -102,8 +102,8 @@ struct ResponseMemoryInterfaceProxy
      */
     static TensorObject get_output_tensor(ResponseMemory& self, const std::string& name);
 
-    static TensorMemoryInterfaceProxy::py_tensor_map_t get_tensors(TensorMemory& self);
-    static void set_tensors(TensorMemory& self, TensorMemoryInterfaceProxy::py_tensor_map_t tensors);
+    static TensorMemoryInterfaceProxy::py_tensor_map_t get_tensors(ResponseMemory& self);
+    static void set_tensors(ResponseMemory& self, TensorMemoryInterfaceProxy::py_tensor_map_t tensors);
 };
 #pragma GCC visibility pop
 

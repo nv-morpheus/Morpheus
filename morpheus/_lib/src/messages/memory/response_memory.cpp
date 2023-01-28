@@ -58,12 +58,13 @@ TensorObject ResponseMemoryInterfaceProxy::get_output_tensor(ResponseMemory& sel
     return self.tensors[name];
 }
 
-TensorMemoryInterfaceProxy::py_tensor_map_t ResponseMemoryInterfaceProxy::get_tensors(TensorMemory& self)
+TensorMemoryInterfaceProxy::py_tensor_map_t ResponseMemoryInterfaceProxy::get_tensors(ResponseMemory& self)
 {
     return TensorMemoryInterfaceProxy::tensors_to_cupy(self.tensors);
 }
 
-void ResponseMemoryInterfaceProxy::set_tensors(TensorMemory& self, TensorMemoryInterfaceProxy::py_tensor_map_t tensors)
+void ResponseMemoryInterfaceProxy::set_tensors(ResponseMemory& self,
+                                               TensorMemoryInterfaceProxy::py_tensor_map_t tensors)
 {
     self.tensors = std::move(TensorMemoryInterfaceProxy::cupy_to_tensors(tensors));
 }
