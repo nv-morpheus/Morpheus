@@ -103,6 +103,14 @@ def pytest_addoption(parser: pytest.Parser):
         help="Run benchmark tests that would otherwise be skipped",
     )
 
+    parser.addoption(
+        "--log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "FATAL"],
+        dest="log_level",
+        help="A specific log level to use during testing. Defaults to WARNING if not set.",
+    )
+
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):
     """
@@ -437,7 +445,7 @@ def launch_mock_triton(_camouflage_is_running):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def configure_tests_logging():
+def configure_tests_logging(pytestconfig: pytest.Config):
     """
     Sets the base logging settings for the entire test suite to ensure logs are generated. Automatically detects if a
     debugger is attached and lowers the logging level to DEBUG.
@@ -446,7 +454,7 @@ def configure_tests_logging():
 
     from morpheus.utils.logger import configure_logging
 
-    log_level = logging.WARN
+    log_level = logging.WARNING
 
     # Check if a debugger is attached. If so, choose DEBUG for the logging level. Otherwise, only WARN
     trace_func = sys.gettrace()
@@ -456,6 +464,12 @@ def configure_tests_logging():
 
         if (trace_module is not None and trace_module.find("pydevd") != -1):
             log_level = logging.DEBUG
+
+    config_log_level = pytestconfig.getoption("log_level")
+
+    # Overwrite the logging level if specified
+    if (config_log_level is not None):
+        log_level = logging.getLevelName(config_log_level)
 
     configure_logging(log_level=log_level)
 
