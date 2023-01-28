@@ -27,6 +27,7 @@ from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from utils import TEST_DIRS
 from utils import ConvMsg
 from utils import assert_path_exists
@@ -53,7 +54,7 @@ def _test_filter_detections_stage_pipe(config, tmp_path, copy=True, order='K', p
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, order=order, columns=input_cols))
-    # pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
+    pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
@@ -83,8 +84,8 @@ def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
     pipe.add_stage(ConvMsg(config))
-    # pipe.add_segment_boundary(MultiResponseProbsMessage)
-    # pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
+    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
     pipe.add_segment_boundary(MultiResponseProbsMessage)
     pipe.add_stage(SerializeStage(config))
     pipe.add_segment_boundary(MessageMeta)
