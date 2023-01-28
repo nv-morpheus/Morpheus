@@ -25,7 +25,6 @@ from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
@@ -69,7 +68,7 @@ def _test_filter_detections_stage_pipe(config, tmp_path, copy=True, order='K', p
     output_data = np.around(output_data[:, 1:], 2)
 
     expected = input_data[np.any(input_data >= threshold, axis=1), :]
-    # assert output_data.tolist() == expected.tolist()
+    assert output_data.tolist() == expected.tolist()
 
 
 def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True):
