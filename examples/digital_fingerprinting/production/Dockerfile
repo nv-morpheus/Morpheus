@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG MORPHEUS_CONTAINER=nvcr.io/nvidia/morpheus/morpheus
-ARG MORPHEUS_CONTAINER_VERSION=v22.11.00-runtime
+ARG MORPHEUS_CONTAINER_VERSION=v23.01.00-runtime
 
 FROM ${MORPHEUS_CONTAINER}:${MORPHEUS_CONTAINER_VERSION} as base
 
