@@ -107,8 +107,8 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
     """
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_output, set_output)
 
-    def __init__(self, probs):
-        super().__init__(count=len(probs), tensors={'probs': probs})
+    def __init__(self, count, probs):
+        super().__init__(count, tensors={'probs': probs})
 
 
 @dataclasses.dataclass(init=False)
@@ -132,8 +132,8 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
     user_id = ""
     explain_df = None
 
-    def __init__(self, probs):
-        super().__init__(count=len(probs), tensors={'probs': probs})
+    def __init__(self, count, probs):
+        super().__init__(count, tensors={'probs': probs})
 
 
 @dataclasses.dataclass

@@ -99,11 +99,8 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP
     input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
 
-    def __init__(self, input_ids, input_mask, seq_ids):
-        super().__init__(count=len(input_ids),
-                         tensors={
-                             'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids
-                         })
+    def __init__(self, count, input_ids, input_mask, seq_ids):
+        super().__init__(count, tensors={'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
 
 
 @dataclasses.dataclass(init=False)
@@ -124,8 +121,8 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
     input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
 
-    def __init__(self, input__0, seq_ids):
-        super().__init__(count=len(input__0), tensors={'input__0': input__0, 'seq_ids': seq_ids})
+    def __init__(self, count, input__0, seq_ids):
+        super().__init__(count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
 
 
 @dataclasses.dataclass(init=False)
@@ -146,8 +143,8 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
     input: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
 
-    def __init__(self, input__0, seq_ids):
-        super().__init__(count=len(input__0), tensors={'input__0': input__0, 'seq_ids': seq_ids})
+    def __init__(self, count, input__0, seq_ids):
+        super().__init__(count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
 
 
 @dataclasses.dataclass
