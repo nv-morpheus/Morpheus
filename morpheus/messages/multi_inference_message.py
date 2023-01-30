@@ -128,12 +128,12 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
 @dataclasses.dataclass(init=False)
 class InferenceMemoryAE(InferenceMemory, cpp_class=None):
     """
-    This is a container class for data that needs to be submitted to the inference server for FIL category
+    This is a container class for data that needs to be submitted to the inference server for auto encoder
     usecases.
 
     Parameters
     ----------
-    input__0 : cupy.ndarray
+    input : cupy.ndarray
         Inference input.
     seq_ids : cupy.ndarray
         Ids used to index from an inference input to a message. Necessary since there can be more inference
