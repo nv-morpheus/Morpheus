@@ -129,6 +129,7 @@ endif()
 
 set_target_properties(morpheus PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set_target_properties(morpheus PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(morpheus PROPERTIES CUDA_STANDARD 17)
 
 message(STATUS " Install dest: (morpheus) ${MORPHEUS_LIB_INSTALL_DIR}")
 install(
@@ -142,5 +143,5 @@ install(
 )
 
 if (MORPHEUS_PYTHON_INPLACE_BUILD)
-  inplace_build_copy(morpheus ${CMAKE_CURRENT_SOURCE_DIR})
+  morpheus_utils_inplace_build_copy(morpheus ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

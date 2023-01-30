@@ -18,13 +18,14 @@ import os
 
 import numpy as np
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from utils import TEST_DIRS
+from utils import assert_path_exists
 
 
 # Adapted from fil_in_out_stage -- used for testing multi-segment error conditions
@@ -38,7 +39,7 @@ def test_linear_boundary_stages(tmp_path, config, output_type='json'):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
 

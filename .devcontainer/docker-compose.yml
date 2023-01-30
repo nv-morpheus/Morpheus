@@ -20,7 +20,7 @@ services:
   triton:
     container_name: morpheus-triton
     runtime: nvidia
-    image: nvcr.io/nvidia/tritonserver:22.08-py3
+    image: nvcr.io/nvidia/tritonserver:22.10-py3
     command: tritonserver --model-repository=/models --exit-on-error=false ${TRITON_MODEL_ARGS}
     ports:
       - 8000:8000

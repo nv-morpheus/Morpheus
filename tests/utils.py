@@ -24,7 +24,7 @@ import mrc
 import pandas as pd
 
 import morpheus
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
@@ -63,13 +63,20 @@ class ConvMsg(SinglePortStage):
     Setting `expected_data_file` to `None` causes the probs array to be a copy of the incoming dataframe.
     Setting `columns` restricts the columns copied into probs to just the ones specified.
     Setting `order` specifies probs to be in either column or row major
+    Setting `empty_probs` will create an empty probs array with 3 columns, and the same number of rows as the dataframe
     """
 
-    def __init__(self, c: Config, expected_data_file: str = None, columns: typing.List[str] = None, order: str = 'K'):
+    def __init__(self,
+                 c: Config,
+                 expected_data_file: str = None,
+                 columns: typing.List[str] = None,
+                 order: str = 'K',
+                 empty_probs: bool = False):
         super().__init__(c)
         self._expected_data_file = expected_data_file
         self._columns = columns
         self._order = order
+        self._empty_probs = empty_probs
 
     @property
     def name(self):
@@ -90,7 +97,11 @@ class ConvMsg(SinglePortStage):
             else:
                 df = m.get_meta()
 
-        probs = cp.array(df.values, copy=True, order=self._order)
+        if self._empty_probs:
+            probs = cp.zeros([len(df), 3], 'float')
+        else:
+            probs = cp.array(df.values, copy=True, order=self._order)
+
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
         return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
 
@@ -179,3 +190,42 @@ def extend_data(input_file, output_file, repeat_count):
         if (len(output_strs[-1].strip()) == 0):
             output_strs = output_strs[:-1]
         fh.writelines(output_strs)
+
+
+def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500):
+    """
+    This should be used in place of `assert os.path.exists(filename)` inside of tests. This will automatically retry
+    with a delay if the file is not immediately found. This removes the need for adding any `time.sleep()` inside of
+    tests
+
+    Parameters
+    ----------
+    filename : str
+        The path to assert exists
+    retry_count : int, optional
+        Number of times to check for the file before failing, by default 5
+    delay_ms : int, optional
+        Milliseconds between trys, by default 500
+
+    Returns
+    -------
+    Returns none but will throw an assertion error on failure.
+    """
+
+    # Quick exit if the file exists
+    if (os.path.exists(filename)):
+        return
+
+    attempts = 1
+
+    # Otherwise, delay and retry
+    while (attempts <= retry_count):
+        time.sleep(delay_ms / 1000.0)
+
+        if (os.path.exists(filename)):
+            return
+
+        attempts += 1
+
+    # Finally, actually assert on the final try
+    assert os.path.exists(filename)

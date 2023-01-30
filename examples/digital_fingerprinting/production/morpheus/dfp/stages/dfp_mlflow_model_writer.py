@@ -164,8 +164,8 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                     "Epochs": model.lr_decay.state_dict().get("last_epoch", "unknown"),
                     "Learning rate": model.lr,
                     "Batch size": model.batch_size,
-                    "Start Epoch": message.get_meta("timestamp").min(),
-                    "End Epoch": message.get_meta("timestamp").max(),
+                    "Start Epoch": message.get_meta(self._config.ae.timestamp_column_name).min(),
+                    "End Epoch": message.get_meta(self._config.ae.timestamp_column_name).max(),
                     "Log Count": message.mess_count,
                 })
 
@@ -180,12 +180,6 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
                     metrics_dict[f"embedding-{k}-num_embeddings"] = embedding.num_embeddings
                     metrics_dict[f"embedding-{k}-embedding_dim"] = embedding.embedding_dim
-
-                # Add metrics for all of the loss stats
-                if (hasattr(model, "feature_loss_stats")):
-                    for k, v in model.feature_loss_stats.items():
-                        metrics_dict[f"loss-{k}-mean"] = v.get("mean", "unknown")
-                        metrics_dict[f"loss-{k}-std"] = v.get("std", "unknown")
 
                 mlflow.log_metrics(metrics_dict)
 

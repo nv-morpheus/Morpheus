@@ -1,5 +1,5 @@
 <!--
- SPDX-FileCopyrightText: Copyright (c) 2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  SPDX-License-Identifier: Apache-2.0
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@
 
 Additional packages required for building the documentation are defined in `./conda_docs.yml`.
 
-## Get additional dependency
+## Install Additional Dependencies
 From the root of the morpheus repo:
 ```bash
 mamba env update -f docs/conda_docs.yml

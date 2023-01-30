@@ -22,7 +22,7 @@ import mrc
 import numpy as np
 import pytest
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.linear_pipeline import LinearPipeline
@@ -33,6 +33,7 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
+from utils import assert_path_exists
 from utils import write_file_to_kafka
 
 
@@ -59,7 +60,7 @@ def test_kafka_source_stage_pipe(tmp_path, config, kafka_bootstrap_servers: str,
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
     output_data = read_file_to_df(out_file, file_type=FileTypes.Auto).values
@@ -176,7 +177,7 @@ def test_kafka_source_commit(num_records,
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
     output_data = read_file_to_df(out_file, file_type=FileTypes.Auto).values

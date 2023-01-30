@@ -183,6 +183,7 @@ tags
 # End of https://www.gitignore.io/api/vim,c++,cmake,python,synology
 .tmp
 examples/data/dfp
+examples/digital_fingerprinting/**/dfp_detections_*.csv
 viz_frames*
 notebooks/output
 dask-worker-space

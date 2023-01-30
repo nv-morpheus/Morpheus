@@ -52,7 +52,9 @@ ARG CONDA_CHANNEL=rapidsai
 ARG IMAGE_TYPE=base
 ARG PYTHON_VER=3.8
 ARG RAPIDS_CHANNEL=rapidsai-nightly
-ARG RAPIDS_VER=22.08
+ARG RAPIDS_VER=22.10
+ARG PYTHON_VER=3.8
+ARG CONDA_CHANNEL=rapidsai
 
 # Temp option to set conda channel_alias property during build
 ARG CONDA_CHANNEL_ALIAS
