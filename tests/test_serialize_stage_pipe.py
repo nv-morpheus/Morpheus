@@ -29,6 +29,7 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
+from utils import assert_path_exists
 
 
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
@@ -43,7 +44,7 @@ def test_serialize_pipe(tmp_path, config, output_type):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
 
@@ -75,7 +76,7 @@ def test_serialize_multi_segment_pipe(tmp_path, config, output_type):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
 

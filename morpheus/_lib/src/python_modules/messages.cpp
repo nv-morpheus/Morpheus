@@ -32,7 +32,7 @@
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <mrc/channel/status.hpp>  // for Status
-#include <mrc/node/edge_connector.hpp>
+#include <mrc/edge/edge_connector.hpp>
 #include <mrc/node/port_registry.hpp>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
@@ -86,28 +86,28 @@ PYBIND11_MODULE(messages, m)
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
@@ -125,13 +125,13 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
         .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &)>(&MultiMessageInterfaceProxy::get_meta),
+             static_cast<pybind11::object (*)(MultiMessage&)>(&MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &, std::string)>(&MultiMessageInterfaceProxy::get_meta),
+             static_cast<pybind11::object (*)(MultiMessage&, std::string)>(&MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &, std::vector<std::string>)>(
+             static_cast<pybind11::object (*)(MultiMessage&, std::vector<std::string>)>(
                  &MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("set_meta", &MultiMessageInterfaceProxy::set_meta, py::return_value_policy::move)

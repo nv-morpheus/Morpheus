@@ -28,6 +28,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
+from utils import assert_path_exists
 
 
 @pytest.fixture(scope="function")
@@ -74,5 +75,5 @@ def test_png(viz_pipeline: Pipeline, tmp_path):
     viz_pipeline.visualize(viz_file, rankdir="LR")
 
     # Verify that the output file exists and is a valid png file
-    assert os.path.exists(viz_file)
+    assert_path_exists(viz_file)
     assert imghdr.what(viz_file) == 'png'
