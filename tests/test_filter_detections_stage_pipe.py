@@ -25,9 +25,9 @@ from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from utils import TEST_DIRS
 from utils import ConvMsg
 from utils import assert_path_exists
