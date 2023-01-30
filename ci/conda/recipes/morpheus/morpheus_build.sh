@@ -80,7 +80,7 @@ cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)}
 cmake -DCOMPONENT=Wheel -P ${BUILD_DIR}/cmake_install.cmake
 
 # Change to the wheel install dir
-cd ${BUILD_DIR}/wheel
+cd ${BUILD_DIR}
 
 # Install the python library
 ${PYTHON} -m pip install -vv --no-deps .

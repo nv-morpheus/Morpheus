@@ -55,6 +55,7 @@ outputs:
         - ccache
         - ninja
       host:
+        - cuda-python <=11.7.0
         - cudatoolkit {{ cuda_version }}.*
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
