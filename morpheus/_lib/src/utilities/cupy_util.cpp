@@ -100,7 +100,6 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
 
     pybind11::tuple shape_tup = arr_interface["shape"];
 
-    // pybind11::print(shape_tup);
     auto shape = shape_tup.cast<std::vector<TensorIndex>>();
 
     auto typestr = arr_interface["typestr"].cast<std::string>();
