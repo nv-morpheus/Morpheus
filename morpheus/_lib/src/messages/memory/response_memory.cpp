@@ -37,8 +37,7 @@ bool ResponseMemory::has_output(const std::string& name) const
 }
 
 /****** ResponseMemoryInterfaceProxy *************************/
-std::shared_ptr<ResponseMemory> ResponseMemoryInterfaceProxy::init(std::size_t count,
-                                                                   std::map<std::string, pybind11::object> tensors)
+std::shared_ptr<ResponseMemory> ResponseMemoryInterfaceProxy::init(std::size_t count, CupyUtil::py_tensor_map_t tensors)
 {
     return std::make_shared<ResponseMemory>(count, std::move(CupyUtil::cupy_to_tensors(tensors)));
 }
