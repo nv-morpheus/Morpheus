@@ -71,23 +71,24 @@ outputs:
       run:
         # Runtime only requirements. This + setup.y is the definitive runtime requirement list
         - click >=8
-        - configargparse 1.5
-        - cudf {{ rapids_version }}
+        - configargparse 1.5.*
+        - cudf
         - cudf_kafka {{ rapids_version }}
         - cupy # Version determined from cudf
-        - datacompy 0.8
+        - datacompy 0.8.*
         - distributed
-        - docker-py 5.0
+        - docker-py 5.0.*
         - grpcio # Version determined from cudf
         - mlflow >1.29,<2
+        - mrc
         - networkx 2.8
-        - numpydoc 1.4
-        - pandas 1.3
-        - pluggy 1.0
+        - numpydoc 1.4.*
+        - pandas 1.3.*
+        - pluggy 1.0.*
         - python
-        - tqdm 4
-        - typing_utils 0.1
-        - watchdog 2.1
+        - tqdm 4.*
+        - typing_utils 0.1.*
+        - watchdog 2.1.*
 
     test:
       requires:
