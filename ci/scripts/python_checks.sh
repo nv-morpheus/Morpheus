@@ -54,7 +54,7 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
 
    if [[ "${SKIP_YAPF}" == "" ]]; then
       # Run yapf. Will return 1 if there are any diffs
-      YAPF_OUTPUT=`python3 -m yapf --style ${PY_CFG} --diff ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
+      YAPF_OUTPUT=`python3 -m yapf --style ${PY_CFG} ${YAPF_EXCLUDE_FLAGS} --diff ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       YAPF_RETVAL=$?
    fi
 
