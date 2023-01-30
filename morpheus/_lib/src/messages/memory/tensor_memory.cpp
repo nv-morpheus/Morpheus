@@ -45,7 +45,6 @@ CupyUtil::tensor_map_t TensorMemory::copy_tensor_ranges(const std::vector<std::p
 }
 
 /****** TensorMemoryInterfaceProxy *************************/
-namespace py = pybind11;
 std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count, CupyUtil::py_tensor_map_t tensors)
 {
     return std::make_shared<TensorMemory>(count, std::move(CupyUtil::cupy_to_tensors(tensors)));
