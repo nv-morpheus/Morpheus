@@ -54,7 +54,7 @@ class ResponseMemory : public TensorMemory
      * @param count
      * @param tensors
      */
-    ResponseMemory(size_t count, tensor_map_t&& tensors);
+    ResponseMemory(size_t count, CupyUtil::tensor_map_t&& tensors);
 
     /**
      * @brief Checks if a tensor named `name` exists in `tensors`

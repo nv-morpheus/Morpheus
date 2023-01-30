@@ -47,8 +47,6 @@ namespace morpheus {
 class TensorMemory
 {
   public:
-    using tensor_map_t = std::map<std::string, TensorObject>;
-
     /**
      * @brief Construct a new Tensor Memory object
      *
@@ -62,11 +60,11 @@ class TensorMemory
      * @param count
      * @param tensors
      */
-    TensorMemory(size_t count, tensor_map_t&& tensors);
+    TensorMemory(size_t count, CupyUtil::tensor_map_t&& tensors);
     virtual ~TensorMemory() = default;
 
     size_t count{0};
-    tensor_map_t tensors;
+    CupyUtil::tensor_map_t tensors;
 
     /**
      * @brief Verify whether the specified tensor name is present in the tensor memory
@@ -82,10 +80,10 @@ class TensorMemory
      *
      * @param ranges
      * @param num_selected_rows
-     * @return tensor_map_t
+     * @return CupyUtil::tensor_map_t
      */
-    tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
-                                    size_t num_selected_rows) const;
+    CupyUtil::tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
+                                              size_t num_selected_rows) const;
 };
 
 /****** TensorMemoryInterfaceProxy *************************/
