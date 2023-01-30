@@ -97,7 +97,7 @@ outputs:
         - pytest-cov
         - pytest-benchmark
       source_files:
-        - .git/*
+        # - .git/*
         - docker/conda/environments/*
         - pyproject.toml
         - scripts/fetch_data.py

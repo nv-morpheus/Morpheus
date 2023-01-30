@@ -34,6 +34,9 @@ export e="\033[0;90m"
 export y="\033[0;33m"
 export x="\033[0m"
 
+# Ensure yes is always selected otherwise it can stop halfway through on a prelink message
+export CONDA_ALWAYS_YES=true
+
 # Change this to switch between build/mambabuild/debug
 export CONDA_COMMAND=${CONDA_COMMAND:-"mambabuild"}
 
