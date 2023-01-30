@@ -22,11 +22,13 @@ import numpy as np
 import pytest
 
 from morpheus._lib.common import FileTypes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.multi_inference_message import InferenceMemory
 from morpheus.messages.multi_inference_message import InferenceMemoryAE
 from morpheus.messages.multi_inference_message import InferenceMemoryFIL
 from morpheus.messages.multi_inference_message import InferenceMemoryNLP
 from morpheus.messages.multi_response_message import ResponseMemory
+from morpheus.messages.multi_response_message import ResponseMemoryAE
 from morpheus.messages.multi_response_message import ResponseMemoryProbs
 from morpheus.messages.tensor_memory import TensorMemory
 from utils import TEST_DIRS
@@ -75,6 +77,21 @@ def test_tensor_memory(config):
         check_tensor_memory(cls, count, tensors)
 
 
+@pytest.mark.use_python
+def test_inference_memory_ae(config):
+    test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
+    count = test_data.shape[0]
+
+    input = cp.array(test_data[:, 0])
+    seq_ids = cp.array(test_data[:, 1])
+    m = InferenceMemoryAE(count, input=input, seq_ids=seq_ids)
+
+    assert m.count == count
+    compare_tensors(m.tensors, {'input': input, 'seq_ids': seq_ids})
+    assert (m.input == input).all()
+    assert (m.seq_ids == seq_ids).all()
+
+
 def test_inference_memory_fil(config):
     test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
     count = test_data.shape[0]
@@ -101,15 +118,35 @@ def test_inference_memory_nlp(config):
     assert m.count == count
     compare_tensors(m.tensors, {'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
     assert (m.input_ids == input_ids).all()
-    assert (m.inpinput_maskut_ids == input_mask).all()
+    assert (m.input_mask == input_mask).all()
     assert (m.seq_ids == seq_ids).all()
 
 
-def test_response_memory_probs(config):
+def check_response_memory_probs_and_ae(cls):
     test_data = cp.array(np.loadtxt(INPUT_FILE, delimiter=",", skiprows=1))
     count = test_data.shape[0]
 
-    m = ResponseMemoryProbs(count=count, probs=test_data)
+    m = cls(count=count, probs=test_data)
     assert m.count == count
     compare_tensors(m.tensors, {'probs': test_data})
     assert (m.probs == test_data).all()
+    return m
+
+
+@pytest.mark.use_python
+def test_response_memory_ae(config):
+    m = check_response_memory_probs_and_ae(ResponseMemoryAE)
+
+    assert m.user_id == ""
+    assert m.explain_df is None
+
+    df = read_file_to_df(INPUT_FILE, file_type=FileTypes.Auto, df_type='pandas')
+    m.user_id = "testy"
+    m.explain_df = df
+
+    assert m.user_id == "testy"
+    assert (m.explain_df.values == df.values).all()
+
+
+def test_response_memory_probs(config):
+    check_response_memory_probs_and_ae(ResponseMemoryProbs)
