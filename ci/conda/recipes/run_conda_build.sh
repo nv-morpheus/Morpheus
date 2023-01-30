@@ -102,19 +102,6 @@ export GIT_DESCRIBE="$(git describe --tags)"
 if hasArg morpheus; then
    echo "Running conda-build for morpheus..."
    set -x
-   # Do something sneaky to trick conda-build into giving us more control
-   echo "git clone ${MORPHEUS_ROOT} morpheus_temp \
-         && ls -a . \
-         && cd morpheus_temp \
-         && git clone ${MORPHEUS_ROOT}/external/utilities ./external/utilities \
-         && git submodule update --init --recursive \
-         && cd .. \
-         && shopt -s dotglob \
-         && mv morpheus_temp/* . \
-         && rm -rf morpheus_temp
-         " > clone_morpheus.sh
-   tar -cvf morpheus_extractor.tar.xz clone_morpheus.sh
-   git submodule update --init --recursive
    conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ci/conda/recipes/morpheus
    set +x
 fi
@@ -123,7 +110,6 @@ if hasArg pydebug; then
   export MORPHEUS_PYTHON_VER=$(python --version | cut -d ' ' -f 2)
   echo "Running conda-build for python-dbg..."
   set -x
-   # Do something sneaky to trick conda-build into giving us more control
   conda ${CONDA_COMMAND} "${CONDA_ARGS_ARRAY[@]}" ${CONDA_ARGS} ./ci/conda/recipes/python-dbg
   set +x
 fi

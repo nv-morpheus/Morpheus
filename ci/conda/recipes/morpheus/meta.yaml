@@ -28,7 +28,7 @@ package:
   version: {{ git_version }}
 
 source:
-  url: ../../../../morpheus_extractor.tar.xz
+  url: ../../../..
 
 outputs:
 

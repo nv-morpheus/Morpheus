@@ -59,10 +59,6 @@ echo "========Begin Env========"
 env
 echo "========End Env========"
 
-# clone morpheus -- this is a workaround for conda-build not supporting git submodules properly
-#  and lets us avoid having to tar up the entire build directory
-bash clone_morpheus.sh
-
 BUILD_DIR="build-conda"
 
 # Check if the build directory already exists. And if so, delete the
