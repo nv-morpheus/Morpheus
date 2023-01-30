@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -124,23 +124,23 @@ python $DFP_HOME/fetch_example_data.py all
 
 Run Duo Training Pipeline:
 ```bash
-python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="./examples/data/dfp/duo-training-data/*.json"
+python dfp_duo_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/duo-training-data/*.json"
 ```
 
 Run Duo Inference Pipeline:
 ```bash
-python dfp_duo_pipeline.py --train_users none --start_time "2022-08-30" --input_file="./examples/data/dfp/duo-inference-data/*.json"
+python dfp_duo_pipeline.py --train_users none --start_time "2022-08-30" --input_file="../../../data/dfp/duo-inference-data/*.json"
 ```
 
 Run Azure Training Pipeline:
 
 ```bash
-python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="./examples/data/dfp/azure-training-data/AZUREAD_2022*.json"
+python dfp_azure_pipeline.py --train_users generic --start_time "2022-08-01" --input_file="../../../data/dfp/azure-training-data/AZUREAD_2022*.json"
 ```
 
 Run Azure Inference Pipeline:
 ```bash
-python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="./examples/data/dfp/azure-inference-data/*.json"
+python dfp_azure_pipeline.py --train_users none  --start_time "2022-08-30" --input_file="../../../data/dfp/azure-inference-data/*.json"
 ```
 
 #### Optional MLflow Service

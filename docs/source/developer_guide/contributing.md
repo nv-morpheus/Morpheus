@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,7 +36,7 @@ Contributions to Morpheus fall into the following three categories.
 
 As contributors and maintainers to this project,
 you are expected to abide by Morpheus' code of conduct.
-More information can be found at: [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
+More information can be found at: [Contributor Code of Conduct](https://github.com/nv-morpheus/.github/blob/main/CODE_OF_CONDUCT.md).
 
 ## Code contributions
 
@@ -134,7 +134,7 @@ This workflow utilizes a Docker container to set up most dependencies ensuring a
       ```
       Then once the container is started you will need to install some extra packages to enable launching Docker containers:
       ```bash
-      ./docker/install_docker.sh
+      ./external/utilities/docker/install_docker.sh
 
       # Install utils for checking output
       apt install -y jq bc
@@ -389,7 +389,7 @@ Third-party code included in the source tree (that is not pulled in as an extern
 Ex:
 ```
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2018-2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2018-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

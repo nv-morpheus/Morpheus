@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,7 +67,7 @@ Note about some of the flags above:
 
 Once launched, users wishing to launch Triton using the included Morpheus models will need to install the Docker tools in the Morpheus container by running:
 ```bash
-./docker/install_docker.sh
+./external/utilities/docker/install_docker.sh
 ```
 
 Skip ahead to the [Launching Triton Server](#launching-triton-server) section.
@@ -367,4 +367,5 @@ Note: The available commands for different types of pipelines are not the same. 
 
 ## Next Steps
 * [Morpheus Examples](./examples.md) - Example pipelines using both the Python API and command line interface
+* [Morpheus Pretrained Models](./models_and_datasets.md) - Pretrained models with corresponding training, validation scripts, and datasets
 * [Morpheus Developer Guide](./developer_guide/guides.md) - Documentation on using the Morpheus Python & C++ APIs

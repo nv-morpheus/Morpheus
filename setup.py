@@ -15,9 +15,15 @@
 # re-run 'versioneer.py setup' after changing this section, and commit the
 # resulting files.
 
-import versioneer
-from setuptools import find_packages
-from setuptools import setup
+import os
+
+# Required to install torch via setup.py
+# Note: this is order dependent
+os.environ["PIP_FIND_LINKS"] = "https://download.pytorch.org/whl/cu116/torch_stable.html"
+
+import versioneer  # noqa: E402
+from setuptools import find_packages  # noqa: E402
+from setuptools import setup  # noqa: E402
 
 setup(
     name="morpheus",
@@ -43,7 +49,7 @@ setup(
         # Only list the packages which cannot be installed via conda here. Should mach the requirements in
         # docker/conda/environments/requirements.txt
         "dfencoder @ git+https://github.com/nv-morpheus/dfencoder.git@branch-23.01#egg=dfencoder",
-        "torch==1.12.0+cu113",
+        "torch==1.13.1+cu116",
         "tritonclient[all]==2.17.*",  # Force to 2.17 since they require grpcio==1.41 for newer versions
     ],
     license="Apache",

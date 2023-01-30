@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ We show here how to set up and run the DFP pipeline for three log types: CloudTr
 
 ## Environment Setup
 
-Follow the instructions [here](https://github.com/nv-morpheus/Morpheus/blob/branch-22.09/CONTRIBUTING.md) to set up your development environment in either a Docker container or conda environment.
+Follow the instructions [here](https://github.com/nv-morpheus/Morpheus/blob/branch-23.01/docs/source/developer_guide/contributing.md) to set up your development environment in either a Docker container or conda environment.
 
 ## Morpheus CLI
 

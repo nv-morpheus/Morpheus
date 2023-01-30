@@ -1,5 +1,5 @@
 ..
-   SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
    SPDX-License-Identifier: Apache-2.0
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,6 +57,7 @@ Using Morpheus
  * :doc:`basics/overview` - Brief overview of the command line interface
  * :doc:`basics/building_a_pipeline` - Introduction to building a pipeline using the command line interface
  * :doc:`Morpheus Examples <examples>` - Example pipelines using both the Python API and command line interface
+ * :doc:`Pretrained Models <models_and_datasets>` - Pretrained models with corresponding training, validation scripts, and datasets
  * :doc:`Developer Guides <developer_guide/guides>` - Covers extending Morpheus with custom stages
 
 Modifying Morpheus

@@ -12,7 +12,7 @@
 # the License.
 # =============================================================================
 
-morpheus_add_cython_libraries(
+morpheus_utils_add_cython_library(
     cudf_helpers
     MODULE_ROOT
       "${MORPHEUS_LIB_ROOT}"
@@ -33,7 +33,6 @@ morpheus_add_cython_libraries(
 # The `morpheus_style_checks` target allows these to be generated without a full build of Morpheus.
 add_dependencies(${PROJECT_NAME}_style_checks ${cudf_helpers_target})
 
-
 # Disable clang-tidy and IWYU for cython generated code
 set_target_properties(
   ${cudf_helpers_target}
@@ -45,5 +44,5 @@ set_target_properties(
 )
 
 if (MORPHEUS_PYTHON_INPLACE_BUILD)
-  inplace_build_copy(${cudf_helpers_target} ${MORPHEUS_LIB_ROOT})
+  morpheus_utils_inplace_build_copy(${cudf_helpers_target} ${MORPHEUS_LIB_ROOT})
 endif()

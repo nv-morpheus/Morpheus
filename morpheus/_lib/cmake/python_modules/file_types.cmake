@@ -12,7 +12,7 @@
 # the License.
 # =============================================================================
 
-morpheus_add_pybind11_module(
+morpheus_utils_add_pybind11_module(
     file_types
     MODULE_ROOT
       "${MORPHEUS_LIB_ROOT}"
@@ -30,5 +30,5 @@ morpheus_add_pybind11_module(
 )
 
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
-  inplace_build_copy(${file_types_target} ${MORPHEUS_LIB_ROOT})
+  morpheus_utils_inplace_build_copy(${file_types_target} ${MORPHEUS_LIB_ROOT})
 endif()
