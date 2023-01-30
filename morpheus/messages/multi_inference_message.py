@@ -143,8 +143,8 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
     input: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
 
-    def __init__(self, count, input__0, seq_ids):
-        super().__init__(count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
+    def __init__(self, count, input, seq_ids):
+        super().__init__(count, tensors={'input': input, 'seq_ids': seq_ids})
 
 
 @dataclasses.dataclass
