@@ -130,9 +130,9 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
     return tensor;
 }
 
-std::map<std::string, TensorObject> CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
+CupyUtil::tensor_map_t CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
 {
-    std::map<std::string, TensorObject> tensors;
+    tensor_map_t tensors;
     for (const auto& tensor : cupy_tensors)
     {
         tensors[tensor.first] = std::move(cupy_to_tensor(tensor.second));
@@ -141,7 +141,7 @@ std::map<std::string, TensorObject> CupyUtil::cupy_to_tensors(const py_tensor_ma
     return tensors;
 }
 
-CupyUtil::py_tensor_map_t CupyUtil::tensors_to_cupy(const std::map<std::string, TensorObject>& tensors)
+CupyUtil::py_tensor_map_t CupyUtil::tensors_to_cupy(const tensor_map_t& tensors)
 {
     py_tensor_map_t cupy_tensors;
     for (const auto& tensor : tensors)

@@ -73,7 +73,7 @@ struct CupyUtil
      * @param cupy_tensors
      * @return tensor_map_t
      */
-    static std::map<std::string, TensorObject> cupy_to_tensors(const py_tensor_map_t& cupy_tensors);
+    static tensor_map_t cupy_to_tensors(const py_tensor_map_t& cupy_tensors);
 
     /**
      * @brief Convert a map of TensorObjects into a map of CuPy arrays. Requires GIL to have already been aqcuired.
@@ -81,7 +81,7 @@ struct CupyUtil
      * @param tensors
      * @return py_tensor_map_t
      */
-    static py_tensor_map_t tensors_to_cupy(const std::map<std::string, TensorObject>& tensors);
+    static py_tensor_map_t tensors_to_cupy(const tensor_map_t& tensors);
 };
 /** @} */  // end of group
 }  // namespace morpheus
