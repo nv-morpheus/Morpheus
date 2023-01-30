@@ -18,7 +18,7 @@
 {% set py_version=environ.get('CONDA_PY', '3.8') %}
 {% set cuda_version='.'.join(environ.get('CUDA', '11.5').split('.')[:2]) %}
 {% set cuda_major=cuda_version.split('.')[0] %}
-{% set rapids_version = "22.08" %}
+{% set rapids_version = "22.10" %}
 
 package:
   name: morpheus-split
@@ -55,7 +55,6 @@ outputs:
         - ccache
         - ninja
       host:
-        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
@@ -71,7 +70,6 @@ outputs:
         # Runtime only requirements. This + setup.y is the definitive runtime requirement list
         - click >=8
         - configargparse 1.5
-        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
         - cudf {{ rapids_version }}
         - cudf_kafka {{ rapids_version }}
         - cupy # Version determined from cudf

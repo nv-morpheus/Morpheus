@@ -1,6 +1,6 @@
 # Note, to include this when using setup.py or pip, set the variable:
-# PIP_FIND_LINKS=https://download.pytorch.org/whl/cu113/torch_stable.html
---find-links https://download.pytorch.org/whl/cu113/torch_stable.html
+# PIP_FIND_LINKS=https://download.pytorch.org/whl/cu116/torch_stable.html
+--find-links https://download.pytorch.org/whl/cu116/torch_stable.html
 
 ####### Pip-only runtime dependencies (keep sorted!) #######
 # Packages listed here should also be listed in setup.py
@@ -12,6 +12,6 @@ nvidia-pyindex
 # Duplicated in conda dev to ensure parity with libprotobuf
 protobuf==3.20.2
 pytest-benchmark>=4.0
-torch==1.12.0+cu113
+torch==1.13.1+cu116
 tritonclient[all]==2.17.*
 websockets

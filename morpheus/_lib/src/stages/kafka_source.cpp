@@ -83,17 +83,17 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb  // NOLINT
     KafkaSourceStage__Rebalancer(std::function<int32_t()> batch_timeout_fn,
                                  std::function<std::size_t()> max_batch_size_fn,
                                  std::function<std::string(std::string)> display_str_fn,
-                                 std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> process_fn);
+                                 std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>>&)> process_fn);
 
-    void rebalance_cb(RdKafka::KafkaConsumer *consumer,
+    void rebalance_cb(RdKafka::KafkaConsumer* consumer,
                       RdKafka::ErrorCode err,
-                      std::vector<RdKafka::TopicPartition *> &partitions) override;
+                      std::vector<RdKafka::TopicPartition*>& partitions) override;
 
-    void rebalance_loop(RdKafka::KafkaConsumer *consumer);
+    void rebalance_loop(RdKafka::KafkaConsumer* consumer);
 
     bool is_rebalanced();
 
-    std::vector<std::unique_ptr<RdKafka::Message>> partition_progress_step(RdKafka::KafkaConsumer *consumer)
+    std::vector<std::unique_ptr<RdKafka::Message>> partition_progress_step(RdKafka::KafkaConsumer* consumer)
     {
         // auto batch_timeout = std::chrono::milliseconds(m_parent.batch_timeout_ms());
         auto batch_timeout = std::chrono::milliseconds(m_batch_timeout_fn());
@@ -138,7 +138,7 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb  // NOLINT
         return std::move(messages);
     }
 
-    bool process_messages(std::vector<std::unique_ptr<RdKafka::Message>> &messages)
+    bool process_messages(std::vector<std::unique_ptr<RdKafka::Message>>& messages)
     {
         return m_process_fn(messages);
     }
@@ -149,7 +149,7 @@ class KafkaSourceStage__Rebalancer : public RdKafka::RebalanceCb  // NOLINT
     std::function<int32_t()> m_batch_timeout_fn;
     std::function<std::size_t()> m_max_batch_size_fn;
     std::function<std::string(std::string)> m_display_str_fn;
-    std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> m_process_fn;
+    std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>>&)> m_process_fn;
 
     boost::fibers::recursive_mutex m_mutex;
     mrc::SharedFuture<bool> m_partition_future;
@@ -159,24 +159,24 @@ KafkaSourceStage__Rebalancer::KafkaSourceStage__Rebalancer(
     std::function<int32_t()> batch_timeout_fn,
     std::function<std::size_t()> max_batch_size_fn,
     std::function<std::string(std::string)> display_str_fn,
-    std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>> &)> process_fn) :
+    std::function<bool(std::vector<std::unique_ptr<RdKafka::Message>>&)> process_fn) :
   m_batch_timeout_fn(std::move(batch_timeout_fn)),
   m_max_batch_size_fn(std::move(max_batch_size_fn)),
   m_display_str_fn(std::move(display_str_fn)),
   m_process_fn(std::move(process_fn))
 {}
 
-void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer *consumer,
+void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer* consumer,
                                                 RdKafka::ErrorCode err,
-                                                std::vector<RdKafka::TopicPartition *> &partitions)
+                                                std::vector<RdKafka::TopicPartition*>& partitions)
 {
     std::unique_lock<boost::fibers::recursive_mutex> lock(m_mutex);
 
-    std::vector<RdKafka::TopicPartition *> current_assignment;
+    std::vector<RdKafka::TopicPartition*> current_assignment;
     CHECK_KAFKA(consumer->assignment(current_assignment), RdKafka::ERR_NO_ERROR, "Error retrieving current assignment");
 
-    auto old_partition_ids = foreach_map(current_assignment, [](const auto &x) { return x->partition(); });
-    auto new_partition_ids = foreach_map(partitions, [](const auto &x) { return x->partition(); });
+    auto old_partition_ids = foreach_map(current_assignment, [](const auto& x) { return x->partition(); });
+    auto new_partition_ids = foreach_map(partitions, [](const auto& x) { return x->partition(); });
 
     if (err == RdKafka::ERR__ASSIGN_PARTITIONS)
     {
@@ -223,7 +223,7 @@ void KafkaSourceStage__Rebalancer::rebalance_cb(RdKafka::KafkaConsumer *consumer
     }
 }
 
-void KafkaSourceStage__Rebalancer::rebalance_loop(RdKafka::KafkaConsumer *consumer)
+void KafkaSourceStage__Rebalancer::rebalance_loop(RdKafka::KafkaConsumer* consumer)
 {
     do
     {
@@ -303,7 +303,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 try
                 {
                     batch = std::move(this->process_batch(std::move(message_batch)));
-                } catch (std::exception &ex)
+                } catch (std::exception& ex)
                 {
                     LOG(ERROR) << "Exception in process_batch. Msg: " << ex.what();
 
@@ -350,7 +350,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
         } catch (KafkaSourceStageStopAfter)
         {
             DLOG(INFO) << "Completed after emitting " << records_emitted << " records";
-        } catch (std::exception &ex)
+        } catch (std::exception& ex)
         {
             LOG(ERROR) << "Exception in rebalance_loop. Msg: " << ex.what();
         }
@@ -375,7 +375,7 @@ int32_t KafkaSourceStage::batch_timeout_ms()
     return m_batch_timeout_ms;
 }
 
-std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map<std::string, std::string> &config_in)
+std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map<std::string, std::string>& config_in)
 {
     // Copy the config
     std::map<std::string, std::string> config_out(config_in);
@@ -406,7 +406,7 @@ std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map
     // Make the kafka_conf and set all properties
     auto kafka_conf = std::unique_ptr<RdKafka::Conf>(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
 
-    for (auto const &key_value : config_out)
+    for (auto const& key_value : config_out)
     {
         std::string error_string;
         if (RdKafka::Conf::ConfResult::CONF_OK != kafka_conf->set(key_value.first, key_value.second, error_string))
@@ -418,7 +418,7 @@ std::unique_ptr<RdKafka::Conf> KafkaSourceStage::build_kafka_conf(const std::map
     return std::move(kafka_conf);
 }
 
-std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafka::RebalanceCb &rebalancer)
+std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafka::RebalanceCb& rebalancer)
 {
     auto kafka_conf = this->build_kafka_conf(m_config);
     std::string errstr;
@@ -441,7 +441,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
 
     auto spec_topic = std::unique_ptr<RdKafka::Topic>(RdKafka::Topic::create(consumer.get(), m_topic, nullptr, errstr));
 
-    RdKafka::Metadata *md;
+    RdKafka::Metadata* md;
 
     for (size_t i = 0; i < 5; ++i)
     {
@@ -466,37 +466,37 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
     auto& ctx = mrc::runnable::Context::get_runtime_context();
     VLOG(10) << ctx.info() << MORPHEUS_CONCAT_STR(" Subscribed to " << md->topics()->size() << " topics:");
 
-    for (auto const &topic : *(md->topics()))
+    for (auto const& topic : *(md->topics()))
     {
-        auto &part_ids = topic_parts[topic->topic()];
+        auto& part_ids = topic_parts[topic->topic()];
 
-        auto const &parts = *(topic->partitions());
+        auto const& parts = *(topic->partitions());
 
         std::transform(
-            parts.cbegin(), parts.cend(), std::back_inserter(part_ids), [](auto const &part) { return part->id(); });
+            parts.cbegin(), parts.cend(), std::back_inserter(part_ids), [](auto const& part) { return part->id(); });
 
-        auto toppar_list = foreach_map(parts, [&topic](const auto &part) {
+        auto toppar_list = foreach_map(parts, [&topic](const auto& part) {
             return std::unique_ptr<RdKafka::TopicPartition>{
                 RdKafka::TopicPartition::create(topic->topic(), part->id())};
         });
 
-        std::vector<RdKafka::TopicPartition *> toppar_ptrs =
-            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition> &x) { return x.get(); });
+        std::vector<RdKafka::TopicPartition*> toppar_ptrs =
+            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x.get(); });
 
         // Query Kafka to populate the TopicPartitions with the desired offsets
         CHECK_KAFKA(
-            consumer->committed(toppar_ptrs, 1000), RdKafka::ERR_NO_ERROR, "Failed retrieve Kafka committed offsets");
+            consumer->committed(toppar_ptrs, 2000), RdKafka::ERR_NO_ERROR, "Failed retrieve Kafka committed offsets");
 
         auto committed =
-            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition> &x) { return x->offset(); });
+            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x->offset(); });
 
         // Query Kafka to populate the TopicPartitions with the desired offsets
         CHECK_KAFKA(consumer->position(toppar_ptrs), RdKafka::ERR_NO_ERROR, "Failed retrieve Kafka positions");
 
         auto positions =
-            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition> &x) { return x->offset(); });
+            foreach_map(toppar_list, [](const std::unique_ptr<RdKafka::TopicPartition>& x) { return x->offset(); });
 
-        auto watermarks = foreach_map(toppar_list, [&consumer](const std::unique_ptr<RdKafka::TopicPartition> &x) {
+        auto watermarks = foreach_map(toppar_list, [&consumer](const std::unique_ptr<RdKafka::TopicPartition>& x) {
             int64_t low;
             int64_t high;
             CHECK_KAFKA(consumer->query_watermark_offsets(x->topic(), x->partition(), &low, &high, 1000),
@@ -506,7 +506,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
             return std::make_tuple(low, high);
         });
 
-        auto watermark_strs = foreach_map(watermarks, [](const auto &x) {
+        auto watermark_strs = foreach_map(watermarks, [](const auto& x) {
             return MORPHEUS_CONCAT_STR("(" << std::get<0>(x) << ", " << std::get<1>(x) << ")");
         });
 
@@ -524,7 +524,7 @@ std::unique_ptr<RdKafka::KafkaConsumer> KafkaSourceStage::create_consumer(RdKafk
     return std::move(consumer);
 }
 
-cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string &buffer)
+cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string& buffer)
 {
     auto options =
         cudf::io::json_reader_options::builder(cudf::io::source_info(buffer.c_str(), buffer.size())).lines(true);
@@ -533,13 +533,13 @@ cudf::io::table_with_metadata KafkaSourceStage::load_table(const std::string &bu
 }
 
 template <bool EnableFilter>
-std::string concat_message_batch(std::vector<std::unique_ptr<RdKafka::Message>> const &message_batch)
+std::string concat_message_batch(std::vector<std::unique_ptr<RdKafka::Message>> const& message_batch)
 {
     std::ostringstream buffer;
 
-    for (auto &msg : message_batch)
+    for (auto& msg : message_batch)
     {
-        auto s = static_cast<char *>(msg->payload());
+        auto s = static_cast<char*>(msg->payload());
 
         if constexpr (EnableFilter)
         {
@@ -557,7 +557,7 @@ std::string concat_message_batch(std::vector<std::unique_ptr<RdKafka::Message>> 
 }
 
 std::shared_ptr<morpheus::MessageMeta> KafkaSourceStage::process_batch(
-    std::vector<std::unique_ptr<RdKafka::Message>> &&message_batch)
+    std::vector<std::unique_ptr<RdKafka::Message>>&& message_batch)
 {
     // concat the kafka json messages
     auto json_lines = !this->m_disable_pre_filtering ? concat_message_batch<true>(message_batch)
