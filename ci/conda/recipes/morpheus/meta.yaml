@@ -28,7 +28,7 @@ package:
   version: {{ git_version }}
 
 source:
-  url: ../../../..
+  git_url: ../../../..
 
 outputs:
 
