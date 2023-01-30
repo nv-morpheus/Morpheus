@@ -4,5 +4,5 @@
 	branch = branch-23.01
 [submodule "morpheus_utils"]
 	path = external/utilities
-	url = ../../nv-morpheus/utilities.git
-	branch = branch-23.01 
+	url = https://github.com/nv-morpheus/utilities.git
+	branch = branch-23.01
