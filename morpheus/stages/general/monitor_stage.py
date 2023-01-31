@@ -25,6 +25,7 @@ from tqdm import tqdm
 import cudf
 
 from morpheus.cli.register_stage import register_stage
+from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -165,7 +166,8 @@ class MonitorStage(SinglePortStage):
     determine_count_fn : typing.Callable[[typing.Any], int]
         Custom function for determining the count in a message. Gets called for each message. Allows for
         correct counting of batched and sliced messages.
-
+    log_level : str, default = "INFO"
+        Enable this stage when the configured log level is at `log_level` or lower.
     """
     stage_count: int = 0
 
@@ -175,7 +177,8 @@ class MonitorStage(SinglePortStage):
                  smoothing: float = 0.05,
                  unit: str = "messages",
                  delayed_start: bool = False,
-                 determine_count_fn: typing.Callable[[typing.Any], int] = None):
+                 determine_count_fn: typing.Callable[[typing.Any], int] = None,
+                 log_level: str = "INFO"):
         super().__init__(c)
 
         self._progress: MorpheusTqdm = None
@@ -189,6 +192,11 @@ class MonitorStage(SinglePortStage):
         self._delayed_start = delayed_start
 
         self._determine_count_fn = determine_count_fn
+
+        if isinstance(log_level, str):
+            log_level = parse_log_level(None, None, log_level)
+
+        self._log_level = log_level
 
     @property
     def name(self) -> str:
@@ -213,12 +221,13 @@ class MonitorStage(SinglePortStage):
         """
         Starts the pipeline stage's progress bar.
         """
-        # Set the monitor interval to 0 to use prevent using tqdms monitor
-        tqdm.monitor_interval = 0
+        if logger.isEnabledFor(self._log_level):
+            # Set the monitor interval to 0 to use prevent using tqdms monitor
+            tqdm.monitor_interval = 0
 
-        # Start the progress bar if we dont have a delayed start
-        if (not self._delayed_start):
-            self._ensure_progress_bar()
+            # Start the progress bar if we dont have a delayed start
+            if (not self._delayed_start):
+                self._ensure_progress_bar()
 
     def stop(self):
         """
@@ -241,6 +250,8 @@ class MonitorStage(SinglePortStage):
             self._progress.reset()
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+        if not logger.isEnabledFor(self._log_level):
+            return input_stream
 
         def sink_on_completed():
             # Set the name to complete. This refreshes the display
