@@ -19,10 +19,10 @@ function(find_and_configure_rabbitmq version)
 
   list(APPEND CMAKE_MESSAGE_CONTEXT "rabbitmq")
 
-  # Supress warnings coming from rabbitmq's cmake project.
-  set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
+  # Commit 7fa7b0b contains unreleased cmake fixes which currently only exist in the master branch of the repo.
+  # https://github.com/alanxz/rabbitmq-c/issues/740
 
-  rapids_cpm_find(rabbitmq 633d5fd10a2782968783c0bb58b3e88b8978c567
+  rapids_cpm_find(rabbitmq ${version}
     GLOBAL_TARGETS
       rabbitmq rabbitmq::rabbitmq
     BUILD_EXPORT_SET
@@ -31,8 +31,7 @@ function(find_and_configure_rabbitmq version)
       ${PROJECT_NAME}-exports
     CPM_ARGS
       GIT_REPOSITORY  https://github.com/alanxz/rabbitmq-c
-      GIT_TAG 633d5fd10a2782968783c0bb58b3e88b8978c567
-      GIT_SHALLOW     TRUE
+      GIT_TAG         7fa7b0b
       OPTIONS         "BUILD_EXAMPLES OFF"
                       "BUILD_TESTING OFF"
                       "BUILD_TOOLS OFF"
