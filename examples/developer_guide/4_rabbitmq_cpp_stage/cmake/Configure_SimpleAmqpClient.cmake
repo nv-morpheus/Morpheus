@@ -41,6 +41,9 @@ function(find_and_configure_SimpleAmqpClient version)
   # Needed to pick up the generated export.h
   target_include_directories(SimpleAmqpClient PUBLIC "${rabbitmq_BINARY_DIR}/include")
 
+  # Suppress #warning deprecation messages from rabbitmq
+  target_compile_options(SimpleAmqpClient PRIVATE -Wno-cpp)
+
 endfunction()
 
 find_and_configure_SimpleAmqpClient(${SIMPLE_AMQP_CLIENT_VERSION})
