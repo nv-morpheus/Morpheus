@@ -29,8 +29,9 @@
 namespace morpheus::test {
 
 /**
-* @brief Gets the `MORPHEUS_ROOT` env variable or throws a runtime_error.
-* @return std::filesystem::path
-*/
+ * @brief Gets the `MORPHEUS_ROOT` env variable or throws a runtime_error.
+ * @return std::filesystem::path
+ */
 std::filesystem::path get_morpheus_root();
-}
+
+}  // namespace morpheus::test

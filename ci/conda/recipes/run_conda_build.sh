@@ -34,6 +34,9 @@ export e="\033[0;90m"
 export y="\033[0;33m"
 export x="\033[0m"
 
+# Ensure yes is always selected otherwise it can stop halfway through on a prelink message
+export CONDA_ALWAYS_YES=true
+
 # Change this to switch between build/mambabuild/debug
 export CONDA_COMMAND=${CONDA_COMMAND:-"mambabuild"}
 
@@ -97,8 +100,8 @@ CONDA_ARGS_ARRAY+=("--variants" "{python: 3.8}")
 
 # And default channels (with optional channel alias)
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapidsai")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.5.2") # Prefer labeled versions over the latest
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia")
-CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.5.2")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
 CONDA_ARGS_ARRAY+=("-c" "conda-forge")
 

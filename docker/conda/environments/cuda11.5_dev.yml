@@ -16,9 +16,9 @@
 name: morpheus
 channels:
     - rapidsai
+    - nvidia/label/cuda-11.5.2 # Prefer packages with a specific cuda label over ones without
     - nvidia
     - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
-    - nvidia/label/cuda-11.5.2 # For cuda-nvml-dev=11.5, which is not published under nvidia channel yet.
     - conda-forge
 dependencies:
     ####### Morpheus Dependencies (keep sorted!) #######
@@ -32,6 +32,7 @@ dependencies:
     - cmake=3.24
     - configargparse=1.5
     - cuda-nvml-dev=11.5
+    - cuda-python<=11.7.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.5
     - cudf 22.10
     - cupy=9.5.0

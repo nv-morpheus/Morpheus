@@ -16,6 +16,7 @@
 
 
 class Dataset(object):
+
     def __init__(self, df):
         self._df = df.reset_index(drop=True)
         self._dataset_len = self._df.shape[0]
