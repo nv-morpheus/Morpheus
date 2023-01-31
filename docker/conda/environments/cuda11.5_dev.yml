@@ -69,7 +69,7 @@ dependencies:
     - pip
     - pkg-config # for mrc cmake
     - pluggy=1.0
-    - protobuf=3.20
+    - protobuf=3.20.2
     - pybind11-stubgen=0.10.5
     - pydot
     - pytest
