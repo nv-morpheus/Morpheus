@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,6 @@ import typing
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
-import pytest
 from mrc.core.node import Broadcast
 
 import cudf
@@ -144,7 +143,6 @@ class CompareDataframeStage(SinglePortStage):
         return node, input_stream[1]
 
 
-@pytest.mark.use_python
 def test_forking_pipeline(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
