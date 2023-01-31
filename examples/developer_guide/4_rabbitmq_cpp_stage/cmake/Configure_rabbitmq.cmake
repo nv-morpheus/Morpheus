@@ -19,7 +19,10 @@ function(find_and_configure_rabbitmq version)
 
   list(APPEND CMAKE_MESSAGE_CONTEXT "rabbitmq")
 
-  rapids_cpm_find(rabbitmq ${version}
+  # Supress warnings coming from rabbitmq's cmake project.
+  set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
+
+  rapids_cpm_find(rabbitmq 633d5fd10a2782968783c0bb58b3e88b8978c567
     GLOBAL_TARGETS
       rabbitmq rabbitmq::rabbitmq
     BUILD_EXPORT_SET
@@ -28,7 +31,7 @@ function(find_and_configure_rabbitmq version)
       ${PROJECT_NAME}-exports
     CPM_ARGS
       GIT_REPOSITORY  https://github.com/alanxz/rabbitmq-c
-      GIT_TAG         "v${version}"
+      GIT_TAG 633d5fd10a2782968783c0bb58b3e88b8978c567
       GIT_SHALLOW     TRUE
       OPTIONS         "BUILD_EXAMPLES OFF"
                       "BUILD_TESTING OFF"
