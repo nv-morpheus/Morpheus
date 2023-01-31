@@ -31,7 +31,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
-from utils import assert_file_exists_with_timeout
+from utils import assert_path_exists
 from utils import extend_data
 from utils import get_column_names_from_file
 
@@ -64,7 +64,7 @@ def test_add_scores_stage_pipe(config, tmp_path, order, pipeline_batch_size, rep
     pipe.run()
 
     # There seems to be some sort of race between the sync to the output file when cpp=True and repeat=100
-    assert_file_exists_with_timeout(out_file, 1.0)
+    assert_path_exists(out_file)
 
     expected = np.loadtxt(input_file, delimiter=",", skiprows=1)
 
@@ -102,7 +102,7 @@ def test_add_scores_stage_multi_segment_pipe(config, tmp_path, repeat):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert_file_exists_with_timeout(out_file, 1.0)
+    assert_path_exists(out_file)
 
     expected_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
     expected = np.concatenate([expected_data for _ in range(repeat)])

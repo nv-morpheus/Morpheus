@@ -35,10 +35,6 @@ git submodule update --init --recursive
 Before launching the demo, we need the dev container for Morpheus to be created:
 ```bash
 export DOCKER_IMAGE_TAG="sid-viz"
-```
-
-# Build the dev container
-```bash
 ./docker/build_container_dev.sh
 ```
 

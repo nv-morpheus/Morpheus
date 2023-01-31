@@ -33,7 +33,7 @@
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <mrc/channel/status.hpp>  // for Status
-#include <mrc/node/edge_connector.hpp>
+#include <mrc/edge/edge_connector.hpp>
 #include <mrc/node/port_registry.hpp>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
@@ -87,28 +87,28 @@ PYBIND11_MODULE(messages, m)
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception

@@ -17,6 +17,8 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus")
 
 option(MORPHEUS_PYTHON_INPLACE_BUILD
         "Whether or not to copy built python modules back to the source tree for debug purposes." OFF)
+option(MORPHEUS_PYTHON_PERFORM_INSTALL
+        "Whether or not to automatically `pip install` any built python library. WARNING: This may overwrite any existing installation of the same name." OFF)
 option(MORPHEUS_BUILD_PYTHON_STUBS
         "Whether or not to generate stubs for python files." ON)
 

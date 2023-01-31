@@ -33,7 +33,7 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
-from utils import assert_file_exists_with_timeout
+from utils import assert_path_exists
 from utils import write_file_to_kafka
 
 
@@ -60,7 +60,7 @@ def test_kafka_source_stage_pipe(tmp_path, config, kafka_bootstrap_servers: str,
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert_file_exists_with_timeout(out_file)
+    assert_path_exists(out_file)
 
     input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
     output_data = read_file_to_df(out_file, file_type=FileTypes.Auto).values
@@ -177,7 +177,7 @@ def test_kafka_source_commit(num_records,
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
     output_data = read_file_to_df(out_file, file_type=FileTypes.Auto).values

@@ -23,6 +23,7 @@
 
 #include <mrc/cuda/sync.hpp>
 
+#include <cudf/utilities/type_dispatcher.hpp>
 #include <matx.h>
 #include <mrc/cuda/sync.hpp>
 

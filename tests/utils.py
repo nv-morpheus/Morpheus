@@ -194,25 +194,40 @@ def extend_data(input_file, output_file, repeat_count):
         fh.writelines(output_strs)
 
 
-def assert_file_exists_with_timeout(filename: str, timeout_sec: float = 1.0):
+def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500):
     """
-    Asserts a file exists, but will wait up to `timeout_sec` before attempting the assert. Useful for files that may not
-    be created early. Better than adding `time.sleep()`
+    This should be used in place of `assert os.path.exists(filename)` inside of tests. This will automatically retry
+    with a delay if the file is not immediately found. This removes the need for adding any `time.sleep()` inside of
+    tests
 
     Parameters
     ----------
     filename : str
-        File to assert that it exists
-    timeout_sec : float, default = 1.0
-        Maximum time to wait, in seconds
+        The path to assert exists
+    retry_count : int, optional
+        Number of times to check for the file before failing, by default 5
+    delay_ms : int, optional
+        Milliseconds between trys, by default 500
+
+    Returns
+    -------
+    Returns none but will throw an assertion error on failure.
     """
 
-    start_epoch = time.time()
+    # Quick exit if the file exists
+    if (os.path.exists(filename)):
+        return
 
-    # Continually check until the timeout. Exit early if possible
-    while ((time.time() - start_epoch) < timeout_sec):
+    attempts = 1
+
+    # Otherwise, delay and retry
+    while (attempts <= retry_count):
+        time.sleep(delay_ms / 1000.0)
+
         if (os.path.exists(filename)):
-            break
+            return
 
-    # Finally assert
+        attempts += 1
+
+    # Finally, actually assert on the final try
     assert os.path.exists(filename)

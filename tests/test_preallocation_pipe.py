@@ -35,7 +35,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
-from utils import assert_file_exists_with_timeout
+from utils import assert_path_exists
 from utils import get_column_names_from_file
 
 
@@ -103,7 +103,7 @@ def test_preallocation(config, tmp_path, probs_type):
     }
 
     # There seems to be some sort of race between the sync to the output file when cpp=True and repeat=100
-    assert_file_exists_with_timeout(out_file, 1.0)
+    assert_path_exists(out_file, 1.0)
 
 
 @pytest.mark.slow
@@ -142,7 +142,7 @@ def test_preallocation_multi_segment_pipe(config, tmp_path, probs_type):
         'frogs': probs_type, 'lizards': probs_type, 'toads': probs_type, 'turtles': probs_type
     }
 
-    assert_file_exists_with_timeout(out_file, 1.0)
+    assert_path_exists(out_file, 1.0)
 
 
 @pytest.mark.slow
