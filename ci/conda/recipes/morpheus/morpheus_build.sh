@@ -40,6 +40,8 @@ CMAKE_ARGS="-DMORPHEUS_USE_CONDA=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DMORPHEUS_USE_CCACHE=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DMORPHEUS_BUILD_PYTHON_STUBS=${MORPHEUS_BUILD_PYTHON_STUBS=-"ON"} ${CMAKE_ARGS}"
 CMAKE_ARGS="-DMORPHEUS_PYTHON_INPLACE_BUILD=ON ${CMAKE_ARGS}"
+CMAKE_ARGS="-DMORPHEUS_BUILD_PYTHON_WHEEL=ON ${CMAKE_ARGS}"
+CMAKE_ARGS="-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES=-"all"} ${CMAKE_ARGS}"
 CMAKE_ARGS="-DPython_EXECUTABLE=${PYTHON} ${CMAKE_ARGS}"
 
@@ -77,10 +79,4 @@ cmake -B ${BUILD_DIR} \
 cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)}
 
 # Install just the python wheel components
-cmake -DCOMPONENT=Wheel -P ${BUILD_DIR}/cmake_install.cmake
-
-# Change to the wheel install dir
-cd ${BUILD_DIR}/wheel
-
-# Install the python library
-${PYTHON} -m pip install -vv --no-deps .
+${PYTHON} -m pip install -vv --no-deps ${BUILD_DIR}/dist/*.whl

@@ -18,6 +18,7 @@
 import argparse
 import datetime
 import io
+import logging
 import os
 import re
 import sys
@@ -230,6 +231,8 @@ def checkCopyright_main():
     """
     retVal = 0
     global ExemptFiles
+
+    logging.basicConfig(level=logging.DEBUG)
 
     argparser = argparse.ArgumentParser("Checks for a consistent copyright header in git's modified files")
     argparser.add_argument("--update-start-year",
