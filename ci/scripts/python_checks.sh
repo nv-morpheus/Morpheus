@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,20 +41,20 @@ if [[ -n "${MORPHEUS_MODIFIED_FILES}" ]]; then
    done
 
    if [[ "${SKIP_ISORT}" == "" ]]; then
-      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesnt return the correct error codes)
+      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesn't return the correct error codes)
       ISORT_OUTPUT=`python3 -m isort --settings-file ${PY_CFG} --filter-files --check-only  ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       ISORT_RETVAL=$?
    fi
 
    if [[ "${SKIP_FLAKE}" == "" ]]; then
-      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesnt return the correct error codes)
+      # Run using a clang-tidy wrapper to allow warnings-as-errors and to eliminate any output except errors (since clang-tidy-diff.py doesn't return the correct error codes)
       FLAKE_OUTPUT=`python3 -m flake8 --config ${PY_CFG} ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       FLAKE_RETVAL=$?
    fi
 
    if [[ "${SKIP_YAPF}" == "" ]]; then
       # Run yapf. Will return 1 if there are any diffs
-      YAPF_OUTPUT=`python3 -m yapf --style ${PY_CFG} --diff ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
+      YAPF_OUTPUT=`python3 -m yapf --style ${PY_CFG} ${YAPF_EXCLUDE_FLAGS} --diff ${MORPHEUS_MODIFIED_FILES[@]} 2>&1`
       YAPF_RETVAL=$?
    fi
 

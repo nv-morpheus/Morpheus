@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
 
 import typing
 
-import srf
+import mrc
 from common.data_models import FeatureConfig
 from common.feature_extractor import FeatureExtractor
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from dask.distributed import Client
 
@@ -83,11 +83,11 @@ class CreateFeaturesRWStage(MultiMessageStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 
-        def node_fn(input: srf.Observable, output: srf.Subscriber):
+        def node_fn(input: mrc.Observable, output: mrc.Subscriber):
 
             def on_next(x: AppShieldMessageMeta):
 

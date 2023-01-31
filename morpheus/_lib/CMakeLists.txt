@@ -1,5 +1,5 @@
 # =============================================================================
-# Copyright (c) 2020-2022, NVIDIA CORPORATION.
+# Copyright (c) 2020-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -23,15 +23,6 @@ endif()
 ########### morpheus ###########
 set(MORPHEUS_LIB_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
-file(RELATIVE_PATH install_relative ${MORPHEUS_PY_ROOT} ${CMAKE_CURRENT_SOURCE_DIR})
-set(MORPHEUS_LIB_INSTALL_DIR "${MORPHEUS_PY_INSTALL_DIR}/${install_relative}")
-unset(install_relative)
-
-# Must create a custom target to hold all python dependencies before first module call
-add_custom_target(all_python_targets ALL
-  DEPENDS copy_python_source # depend on copying the source so the full python package is built with this target
-)
-
 #----------cuda_utils---------
 include(cmake/libraries/cuda_utils.cmake)
 
@@ -51,28 +42,8 @@ include(cmake/python_modules/messages.cmake)
 #----------morpheus._lib.common---------
 include(cmake/python_modules/common.cmake)
 
-#----------morpheus._lib.file_types---------
-include(cmake/python_modules/file_types.cmake)
-
 if (MORPHEUS_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
-
-#----------make documentation---------
-
-# doc targets for libmorpheus
-add_custom_command(
-  OUTPUT MORPHEUS_DOXYGEN
-  WORKING_DIRECTORY ${MORPHEUS_LIB_ROOT}/doxygen
-  COMMAND doxygen Doxyfile
-  VERBATIM
-  COMMENT "Custom command for building morpheus doxygen docs."
-)
-
-add_custom_target(
-  docs_morpheus
-  DEPENDS MORPHEUS_DOXYGEN
-  COMMENT "Custom command for building morpheus doxygen docs."
-)
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

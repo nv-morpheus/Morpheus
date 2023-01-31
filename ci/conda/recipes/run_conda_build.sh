@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,17 @@ function hasArg {
 function get_version() {
    echo "$(git describe --tags | grep -o -E '^([^-]*?)')"
 }
+
+# Color variables
+export b="\033[0;36m"
+export g="\033[0;32m"
+export r="\033[0;31m"
+export e="\033[0;90m"
+export y="\033[0;33m"
+export x="\033[0m"
+
+# Ensure yes is always selected otherwise it can stop halfway through on a prelink message
+export CONDA_ALWAYS_YES=true
 
 # Change this to switch between build/mambabuild/debug
 export CONDA_COMMAND=${CONDA_COMMAND:-"mambabuild"}
@@ -89,8 +100,8 @@ CONDA_ARGS_ARRAY+=("--variants" "{python: 3.8}")
 
 # And default channels (with optional channel alias)
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapidsai")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.5.2") # Prefer labeled versions over the latest
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia")
-CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.5.2")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
 CONDA_ARGS_ARRAY+=("-c" "conda-forge")
 

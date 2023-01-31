@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ from unittest import mock
 
 import morpheus
 import morpheus.config
+from utils import assert_path_exists
 
 # Using morpheus.config to distinguish between the config package and the pytest fixture of the same name
 
@@ -94,7 +95,7 @@ def test_config_save(tmp_path):
     c = morpheus.config.Config()
     c.save(filename)
 
-    assert os.path.exists(filename)
+    assert_path_exists(filename)
     with open(filename) as fh:
         assert isinstance(json.load(fh), dict)
 

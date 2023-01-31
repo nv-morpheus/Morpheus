@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,12 +30,12 @@ docker pull nvcr.io/nvidia/tritonserver:22.08-py3
 
 Bind the provided `abp-pcap-xgb` directory to the docker container model repo at `/models`.
 
+From the root of the Morpheus repo, navigate to the anomalous behavior profiling example directory:
 ```bash
-# Change directory to the anomalous behavior profiling example folder
-cd <MORPHEUS_ROOT>/examples/abp_pcap_detection
+cd examples/abp_pcap_detection
 
 # Launch the container
-docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/abp-pcap-xgb:/models/abp-pcap-xgb --name tritonserver nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models --exit-on-error=false --model-control-mode=poll --repository-poll-secs=30
+docker run --rm --gpus=all -p 8000:8000 -p 8001:8001 -p 8002:8002 -v $PWD/abp-pcap-xgb:/models/abp-pcap-xgb --name tritonserver nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models --exit-on-error=false
 ```
 
 ##### Verify Model Deployment
@@ -52,8 +52,14 @@ Once Triton server finishes starting up, it will display the status of all loade
 ## ABP Detection Pipeline
 Use Morpheus to run the Anomalous Behavior Profiling Detection Pipeline with the pcap data. A pipeline has been configured in `run.py` with several command line options:
 
+From the root of the Morpheus repo run:
 ```bash
-$ python run.py --help
+cd examples/abp_pcap_detection
+python run.py --help
+```
+
+Output:
+```
 Usage: run.py [OPTIONS]
 
 Options:
@@ -83,7 +89,7 @@ Options:
   --help                          Show this message and exit.
 ```
 
-To launch the configured Morpheus pipeline with the sample data that is provided at `<MORPHEUS_ROOT>/examples/data`, from the `examples/abp_pcap_detection` directory run the following:
+To launch the configured Morpheus pipeline with the sample data that is provided in `examples/data`, from the `examples/abp_pcap_detection` directory run the following:
 
 ```bash
 python run.py \
@@ -98,7 +104,7 @@ The pipeline will process the input `pcap_dump.jsonlines` sample data and write 
 
 ### CLI Example
 The above example is illustrative of using the Python API to build a custom Morpheus Pipeline.
-Alternately the Morpheus command line could have been used to accomplush the same goal by registering the `abp_pcap_preprocessing.py` module as a plugin.
+Alternately the Morpheus command line could have been used to accomplish the same goal by registering the `abp_pcap_preprocessing.py` module as a plugin.
 
 From the root of the Morpheus repo run:
 ```bash

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,6 +81,9 @@ class Receiver():
         return self._input_type
 
     def get_input_pair(self) -> StreamPair:
+        """
+        Returns the input `StreamPair` which is a tuple consisting of the parent node and the parent node's output type.
+        """
 
         assert self.is_partial, "Must be partially complete to get the input pair!"
 

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,7 @@ target_link_libraries(morpheus_rabbit
       morpheus
       rabbitmq
       SimpleAmqpClient
-      srf::pysrf
+      mrc::pymrc
 )
 
 target_include_directories(morpheus_rabbit
@@ -58,8 +58,7 @@ else()
   )
 endif()
 
-
-inplace_build_copy(morpheus_rabbit "${CMAKE_CURRENT_SOURCE_DIR}/_lib")
+morpheus_utils_inplace_build_copy(morpheus_rabbit "${CMAKE_CURRENT_SOURCE_DIR}/_lib")
 
 message(STATUS " Install dest: (morpheus_rabbit) ${CMAKE_CURRENT_BINARY_DIR}/_lib")
 install(

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -126,7 +126,7 @@ struct InferenceMemoryFILInterfaceProxy
     static TensorObject get_tensor(InferenceMemoryFIL& self, const std::string& name);
 
     /**
-     * @brief Returns the 'input_ids' as cupy array
+     * @brief Returns the 'input__0' as cupy array
      *
      * @param self
      * @return pybind11::object
@@ -137,7 +137,7 @@ struct InferenceMemoryFILInterfaceProxy
      * @brief Sets a tensor named 'input__0'
      *
      * @param self
-     * @param input_ids
+     * @param cupy_values
      */
     static void set_input__0(InferenceMemoryFIL& self, pybind11::object cupy_values);
 

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,15 @@ namespace morpheus {
  * @{
  * @file
  */
+
+/**
+ * @brief Get the column names from table object. Looks at both column_names as well as schema_info and returns the
+ * correct one.
+ *
+ * @param table The table to pull the columns from
+ * @return std::vector<std::string>
+ */
+std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_metadata& table);
 
 /**
  * @brief Loads a cudf table from either CSV or JSON file

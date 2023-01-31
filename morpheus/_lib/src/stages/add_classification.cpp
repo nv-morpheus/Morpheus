@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,9 +27,9 @@
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
-#include <srf/cuda/common.hpp>       // for SRF_CHECK_CUDA
 
 #include <algorithm>  // for min_element, transform
 #include <cstddef>
@@ -61,9 +61,11 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
-                const auto& probs  = x->get_probs();
-                const auto& shape  = probs.get_shape();
-                const auto& stride = probs.get_stride();
+                const auto& probs = x->get_probs();
+                const auto& shape = probs.get_shape();
+
+                // Depending on the input the stride is given in bytes or elements, convert to elements
+                auto stride = TensorUtils::get_element_stride<std::size_t>(probs.get_stride());
 
                 CHECK(shape.size() == 2 && shape[1] == m_num_class_labels)
                     << "Label count does not match output of model. Label count: " << m_num_class_labels
@@ -75,26 +77,21 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
                 auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
 
-                SRF_CHECK_CUDA(
+                MRC_CHECK_CUDA(
                     cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
-
-                // Depending on the input the stride is given in bytes or elements, convert to elements
-                auto tensor_stride = TensorUtils::get_element_stride<TensorIndex, std::size_t>(stride);
 
                 // Now call the threshold function
                 auto thresh_bool_buffer =
-                    MatxUtil::threshold(DevMemInfo{probs.count(), probs.dtype().type_id(), tmp_buffer, 0},
-                                        num_rows,
-                                        num_columns,
-                                        tensor_stride,
-                                        m_threshold,
-                                        false);
+                    MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride}, m_threshold, false);
 
-                auto tensor_obj = Tensor::create(
-                    thresh_bool_buffer,
-                    DType::create<bool>(),
-                    std::vector<TensorIndex>{static_cast<long long>(shape[0]), static_cast<long long>(shape[1])},
-                    tensor_stride);
+                std::vector<TensorIndex> tensor_shape(shape.size());
+                std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());
+
+                std::vector<TensorIndex> tensor_stride(stride.size());
+                std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
+
+                auto tensor_obj =
+                    Tensor::create(thresh_bool_buffer, DType::create<bool>(), tensor_shape, tensor_stride);
 
                 std::vector<std::string> columns(m_idx2label.size());
                 std::vector<TensorObject> tensors(m_idx2label.size());
@@ -120,8 +117,8 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
 }
 
 // ************ AddClassificationStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
-    srf::segment::Builder& builder,
+std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
     const std::string& name,
     float threshold,
     std::size_t num_class_labels,

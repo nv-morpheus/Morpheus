@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,11 +21,15 @@ import os
 
 import appdirs
 import click
-import srf
+import mrc
 from tqdm import tqdm
 
 
 class TqdmLoggingHandler(logging.Handler):
+    """
+    Console log handler used by Morpheus, provides colorized output and sends
+    all logs at level ERROR and above to stderr, others to stdout.
+    """
 
     def __init__(self, level=logging.NOTSET):
         super().__init__(level)
@@ -34,6 +38,9 @@ class TqdmLoggingHandler(logging.Handler):
         self._stderr = click.get_text_stream('stderr')
 
     def emit(self, record: logging.LogRecord):
+        """
+        Apply formatting and send output to stderr or stdout
+        """
         try:
             msg = self.format(record)
 
@@ -164,8 +171,8 @@ def configure_logging(log_level: int, log_config_file: str = None):
         <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`__). Defaults to None.
     """
 
-    # Start by initializing SRF logging
-    srf.logging.init_logging("morpheus")
+    # Start by initializing MRC logging
+    mrc.logging.init_logging("morpheus")
 
     if (log_config_file is not None):
         # Configure using log file
@@ -176,7 +183,7 @@ def configure_logging(log_level: int, log_config_file: str = None):
 
 def set_log_level(log_level: int):
     """
-    Set the Morpheus logging level. Also propagates the value to SRF's logging system to keep the logging levels in sync
+    Set the Morpheus logging level. Also propagates the value to MRC's logging system to keep the logging levels in sync
 
     Parameters
     ----------
@@ -191,10 +198,10 @@ def set_log_level(log_level: int):
     """
 
     # Get the old level and return it in case the user wants that
-    old_level = srf.logging.get_level()
+    old_level = mrc.logging.get_level()
 
-    # Set the SRF logging level to match
-    srf.logging.set_level(log_level)
+    # Set the MRC logging level to match
+    mrc.logging.set_level(log_level)
 
     # Get the root Morpheus logger
     morpheus_logger = logging.getLogger("morpheus")
@@ -204,23 +211,10 @@ def set_log_level(log_level: int):
 
 
 def deprecated_stage_warning(logger, cls, name):
+    """
+    Log a warning about a deprecated stage
+    """
     logger.warning(("The '%s' stage ('%s') is no longer required to manage backpressure and has been deprecated. "
                     "It has no effect and acts as a pass through stage."),
                    cls.__name__,
                    name)
-
-
-def get_log_levels():
-    log_levels = list(logging._nameToLevel.keys())
-
-    if ("NOTSET" in log_levels):
-        log_levels.remove("NOTSET")
-
-    return log_levels
-
-
-def parse_log_level(ctx, param, value):
-    x = logging._nameToLevel.get(value.upper(), None)
-    if x is None:
-        raise click.BadParameter('Must be one of {}. Passed: {}'.format(", ".join(logging._nameToLevel.keys()), value))
-    return x

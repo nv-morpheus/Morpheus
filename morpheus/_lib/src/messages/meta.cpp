@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -106,14 +106,14 @@ TableInfo MessageMeta::get_info() const
     return this->m_data->get_info();
 }
 
-std::shared_ptr<MessageMeta> MessageMeta::create_from_python(pybind11::object &&data_table)
+std::shared_ptr<MessageMeta> MessageMeta::create_from_python(pybind11::object&& data_table)
 {
     auto data = std::make_unique<PyDataTable>(std::move(data_table));
 
     return std::shared_ptr<MessageMeta>(new MessageMeta(std::move(data)));
 }
 
-std::shared_ptr<MessageMeta> MessageMeta::create_from_cpp(cudf::io::table_with_metadata &&data_table,
+std::shared_ptr<MessageMeta> MessageMeta::create_from_cpp(cudf::io::table_with_metadata&& data_table,
                                                           int index_col_count)
 {
     // Convert to py first
@@ -126,7 +126,7 @@ std::shared_ptr<MessageMeta> MessageMeta::create_from_cpp(cudf::io::table_with_m
 
 MessageMeta::MessageMeta(std::shared_ptr<IDataTable> data) : m_data(std::move(data)) {}
 
-pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata &&table, int index_col_count)
+pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int index_col_count)
 {
     pybind11::gil_scoped_acquire gil;
 
@@ -145,17 +145,17 @@ pybind11::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata &&table, i
 }
 
 /********** MessageMetaInterfaceProxy **********/
-std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(pybind11::object &&data_frame)
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(pybind11::object&& data_frame)
 {
     return MessageMeta::create_from_python(std::move(data_frame));
 }
 
-cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta &self)
+cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta& self)
 {
     return self.count();
 }
 
-pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta &self)
+pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 {
     // // Get the column and convert to cudf
     // auto py_table_struct = make_table_from_view_and_meta(self.m_pydf;.tbl->view(),
@@ -168,7 +168,7 @@ pybind11::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta &self)
     return self.get_py_table();
 }
 
-std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::string &filename)
+std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::string& filename)
 {
     // Load the file
     auto df_with_meta = CuDFTableUtil::load_table(filename);

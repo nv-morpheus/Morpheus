@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import typing
 from functools import partial
 
 import fsspec
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 import dask
 from dask.distributed import Client
@@ -32,14 +32,13 @@ from dask.distributed import LocalCluster
 
 import cudf
 
-from morpheus._lib.file_types import FileTypes
+from morpheus._lib.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-
-from ..utils.column_info import DataFrameInputSchema
-from ..utils.column_info import process_dataframe
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import process_dataframe
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -205,7 +204,7 @@ class DFPFileToDataFrameStage(SinglePortStage):
         output_df: pd.DataFrame = pd.concat(dfs)
 
         # Finally sort by timestamp and then reset the index
-        output_df.sort_values(by=["timestamp"], inplace=True)
+        output_df.sort_values(by=[self._config.ae.timestamp_column_name], inplace=True)
 
         output_df.reset_index(drop=True, inplace=True)
 
@@ -244,9 +243,9 @@ class DFPFileToDataFrameStage(SinglePortStage):
             logger.exception("Error while converting S3 buckets to DF.")
             raise
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.convert_to_dataframe), ops.on_completed(self._close_dask_cluster)).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)

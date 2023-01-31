@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -121,11 +121,11 @@ SerializeStage::subscribe_fn_t SerializeStage::build_operator()
 }
 
 // ************ WriteToFileStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<SerializeStage>> SerializeStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
-    const std::vector<std::string> &include,
-    const std::vector<std::string> &exclude,
+std::shared_ptr<mrc::segment::Object<SerializeStage>> SerializeStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    const std::vector<std::string>& include,
+    const std::vector<std::string>& exclude,
     bool fixed_columns)
 {
     auto stage = builder.construct_object<SerializeStage>(name, include, exclude, fixed_columns);

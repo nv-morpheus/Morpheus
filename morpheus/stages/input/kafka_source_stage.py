@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ from enum import Enum
 from io import StringIO
 
 import confluent_kafka as ck
+import mrc
 import pandas as pd
-import srf
 
 import cudf
 
@@ -128,6 +128,9 @@ class KafkaSourceStage(SingleOutputSource):
         return True
 
     def stop(self):
+        """
+        Performs cleanup steps when pipeline is stopped.
+        """
 
         # Indicate we need to stop
         self._stop_requested = True
@@ -216,7 +219,7 @@ class KafkaSourceStage(SingleOutputSource):
             if (consumer):
                 consumer.close()
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
 
         if (self._build_cpp_node()):
             source = _stages.KafkaSourceStage(builder,

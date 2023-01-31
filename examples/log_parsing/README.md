@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 # Example cyBERT Morpheus Pipeline for Apache Log Parsing
 
-Example Morpheus pipeline using Docker containers for Triton Inference server and Morpheus SDK/Client.
+Example Morpheus pipeline using Triton Inference server and Morpheus.
 
 ### Set up Triton Inference Server
 
@@ -25,15 +25,20 @@ Pull Docker image from NGC (https://ngc.nvidia.com/catalog/containers/nvidia:tri
 
 Example:
 
-```
+```bash
 docker pull nvcr.io/nvidia/tritonserver:22.08-py3
 ```
 
-##### Start Triton Inference Server container
+##### Setup Env Variable
+```bash
+export MORPHEUS_ROOT=$(pwd)
 ```
-cd ${MORPHEUS_ROOT}/models
 
-docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --model-control-mode=explicit --load-model log-parsing-onnx
+##### Start Triton Inference Server Container
+From the Morpheus repo root directory, run the following to launch Triton and load the `log-parsing-onnx` model:
+
+```bash
+docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/models:/models nvcr.io/nvidia/tritonserver:22.08-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model log-parsing-onnx
 ```
 
 ##### Verify Model Deployment
@@ -46,6 +51,8 @@ Once Triton server finishes starting up, it will display the status of all loade
 | log-parsing-onnx | 1       | READY  |
 +------------------+---------+--------+
 ```
+
+> **Note**: If this is not present in the output, check the Triton log for any error messages related to loading the model.
 
 ### Run Log Parsing Pipeline
 
@@ -67,7 +74,7 @@ python run.py \
 Use `--help` to display information about the command line options:
 
 ```bash
-python ./examples/log_parsing/run.py --help
+python run.py --help
 
 Options:
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
@@ -95,7 +102,7 @@ Options:
 ```
 
 ### CLI Example
-The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplush the same goal. To do this we must ensure that the `examples`/log_parsing directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
+The above example is illustrative of using the Python API to build a custom Morpheus Pipeline. Alternately the Morpheus command line could have been used to accomplish the same goal. To do this we must ensure that the `examples/log_parsing` directory is available in the `PYTHONPATH` and each of the custom stages are registered as plugins.
 
 From the root of the Morpheus repo run:
 ```bash

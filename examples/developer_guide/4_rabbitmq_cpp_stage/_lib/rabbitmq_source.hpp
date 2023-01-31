@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,9 +20,9 @@
 #include <SimpleAmqpClient/SimpleAmqpClient.h>  // for AmqpClient::Channel::ptr_t
 #include <cudf/io/types.hpp>                    // for cudf::io::table_with_metadata
 #include <morpheus/messages/meta.hpp>           // for MessageMeta
-#include <pysrf/node.hpp>                       // for srf::pysrf::PythonSource
-#include <srf/segment/builder.hpp>              // for Segment Builder
-#include <srf/segment/object.hpp>               // for Segment Object
+#include <mrc/segment/builder.hpp>              // for Segment Builder
+#include <mrc/segment/object.hpp>               // for Segment Object
+#include <pymrc/node.hpp>                       // for mrc::pymrc::PythonSource
 
 #include <chrono>  // for chrono::milliseconds
 #include <memory>  // for shared_ptr
@@ -36,17 +36,17 @@ namespace morpheus_rabbit {
 using namespace std::literals;
 using namespace morpheus;
 
-class RabbitMQSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>
+class RabbitMQSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>
 {
   public:
-    using base_t = srf::pysrf::PythonSource<std::shared_ptr<MessageMeta>>;
+    using base_t = mrc::pymrc::PythonSource<std::shared_ptr<MessageMeta>>;
     using typename base_t::source_type_t;
     using typename base_t::subscriber_fn_t;
 
-    RabbitMQSourceStage(const std::string &host,
-                        const std::string &exchange,
-                        const std::string &exchange_type        = "fanout"s,
-                        const std::string &queue_name           = ""s,
+    RabbitMQSourceStage(const std::string& host,
+                        const std::string& exchange,
+                        const std::string& exchange_type        = "fanout"s,
+                        const std::string& queue_name           = ""s,
                         std::chrono::milliseconds poll_interval = 100ms);
 
     ~RabbitMQSourceStage() override = default;
@@ -54,7 +54,7 @@ class RabbitMQSourceStage : public srf::pysrf::PythonSource<std::shared_ptr<Mess
   private:
     subscriber_fn_t build();
     void source_generator(rxcpp::subscriber<source_type_t> subscriber);
-    cudf::io::table_with_metadata from_json(const std::string &body) const;
+    cudf::io::table_with_metadata from_json(const std::string& body) const;
     void close();
 
     std::chrono::milliseconds m_poll_interval;
@@ -71,12 +71,12 @@ struct RabbitMQSourceStageInterfaceProxy
     /**
      * @brief Create and initialize a RabbitMQSourceStage, and return the result.
      */
-    static std::shared_ptr<srf::segment::Object<RabbitMQSourceStage>> init(srf::segment::Builder &builder,
-                                                                           const std::string &name,
-                                                                           const std::string &host,
-                                                                           const std::string &exchange,
-                                                                           const std::string &exchange_type,
-                                                                           const std::string &queue_name,
+    static std::shared_ptr<mrc::segment::Object<RabbitMQSourceStage>> init(mrc::segment::Builder& builder,
+                                                                           const std::string& name,
+                                                                           const std::string& host,
+                                                                           const std::string& exchange,
+                                                                           const std::string& exchange_type,
+                                                                           const std::string& queue_name,
                                                                            std::chrono::milliseconds poll_interval);
 };
 #pragma GCC visibility pop

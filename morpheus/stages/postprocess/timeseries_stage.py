@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,9 +21,9 @@ from collections import deque
 from math import ceil
 
 import cupy as cp
+import mrc
 import pandas as pd
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -37,10 +37,28 @@ logger = logging.getLogger(__name__)
 
 
 def round_seconds(obj: pd.Timestamp) -> pd.Timestamp:
+    """
+    Returns the given timestamp with rounded seconds.
+
+    Parameters
+    ----------
+    obj : pd.Timestamp
+        Timestamp obj.
+
+    Returns
+    -------
+    pd.Timestamp
+        Timestamp with rounded seconds.
+
+    """
     return obj.round(freq="S")
 
 
 def calc_bin(obj: pd.Timestamp, t0: pd.Timestamp, resolution_sec: float) -> int:
+    """
+    Calculates the bin spacing between the start and stop timestamp at a specified resolution.
+    """
+
     return round((round_seconds(obj) - t0).total_seconds()) // resolution_sec
 
 
@@ -136,7 +154,10 @@ def fftAD(signalvalues: cp.ndarray, p=90, zt=8, lowpass=None):
 
 
 @dataclasses.dataclass
-class TimeSeriesAction:
+class _TimeSeriesAction:
+    """
+    Dataclass representing actions to be performed. Used internally by `UserTimeSeries`
+    """
     perform_calc: bool = False
     window: pd.DataFrame = None
     window_start: dt.datetime = None
@@ -146,7 +167,10 @@ class TimeSeriesAction:
     message: MultiResponseMessage = None
 
 
-class UserTimeSeries(object):
+class _UserTimeSeries(object):
+    """
+    Used internally by `TimeSeriesStage` to group data on a per-user basis.
+    """
 
     def __init__(self,
                  user_id: str,
@@ -190,7 +214,7 @@ class UserTimeSeries(object):
 
         return round((t.dt.round(freq="S") - self._t0_epoch).dt.total_seconds()).astype(int) // self._resolution_sec
 
-    def _calc_outliers(self, action: TimeSeriesAction):
+    def _calc_outliers(self, action: _TimeSeriesAction):
 
         # Subtract one bin to add buffers on either side. This makes the calculation of the bins easier
         window_start = action.window_start - 1
@@ -226,7 +250,7 @@ class UserTimeSeries(object):
 
         return None
 
-    def _determine_action(self, is_complete: bool) -> typing.Optional[TimeSeriesAction]:
+    def _determine_action(self, is_complete: bool) -> typing.Optional[_TimeSeriesAction]:
 
         # Stop processing on empty queue
         if (len(self._pending_messages) == 0):
@@ -259,7 +283,7 @@ class UserTimeSeries(object):
 
             # Not shutting down and we arent warm, send through
             if (not self._is_warm and not is_complete):
-                return TimeSeriesAction(send_message=True, message=self._pending_messages.popleft())
+                return _TimeSeriesAction(send_message=True, message=self._pending_messages.popleft())
 
         self._is_warm = True
 
@@ -279,7 +303,7 @@ class UserTimeSeries(object):
                 return None
             elif (is_complete and self._cold_end):
                 # Shutting down and we have a cold ending, just empty the message
-                return TimeSeriesAction(send_message=True, message=self._pending_messages.popleft())
+                return _TimeSeriesAction(send_message=True, message=self._pending_messages.popleft())
             else:
                 # Shutting down and hot end
                 # logger.debug("Hot End. Processing. TS: %s", timeseries_start._repr_base)
@@ -302,12 +326,12 @@ class UserTimeSeries(object):
         window_timestamps_df = self._timeseries_data[self._timeseries_data["event_bin"] <= window_end]
 
         # Return info to perform calc
-        return TimeSeriesAction(perform_calc=True,
-                                window=window_timestamps_df,
-                                window_start=window_start,
-                                window_end=window_end,
-                                send_message=True,
-                                message=self._pending_messages.popleft())
+        return _TimeSeriesAction(perform_calc=True,
+                                 window=window_timestamps_df,
+                                 window_start=window_start,
+                                 window_end=window_end,
+                                 send_message=True,
+                                 message=self._pending_messages.popleft())
 
     def _calc_timeseries(self, x: MultiResponseMessage, is_complete: bool):
 
@@ -426,7 +450,7 @@ class TimeSeriesStage(SinglePortStage):
         assert zscore_threshold >= 0.0
         self._zscore_threshold = zscore_threshold
 
-        self._timeseries_per_user: typing.Dict[str, UserTimeSeries] = {}
+        self._timeseries_per_user: typing.Dict[str, _UserTimeSeries] = {}
 
     @property
     def name(self) -> str:
@@ -450,22 +474,22 @@ class TimeSeriesStage(SinglePortStage):
     def _call_timeseries_user(self, x: MultiResponseAEMessage):
 
         if (x.user_id not in self._timeseries_per_user):
-            self._timeseries_per_user[x.user_id] = UserTimeSeries(user_id=x.user_id,
-                                                                  resolution=self._resolution,
-                                                                  min_window=self._min_window,
-                                                                  hot_start=self._hot_start,
-                                                                  cold_end=self._cold_end,
-                                                                  filter_percent=self._filter_percent,
-                                                                  zscore_threshold=self._zscore_threshold)
+            self._timeseries_per_user[x.user_id] = _UserTimeSeries(user_id=x.user_id,
+                                                                   resolution=self._resolution,
+                                                                   min_window=self._min_window,
+                                                                   hot_start=self._hot_start,
+                                                                   cold_end=self._cold_end,
+                                                                   filter_percent=self._filter_percent,
+                                                                   zscore_threshold=self._zscore_threshold)
 
         return self._timeseries_per_user[x.user_id]._calc_timeseries(x, False)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = input_stream[1]
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             def on_next(x: MultiResponseAEMessage):
 

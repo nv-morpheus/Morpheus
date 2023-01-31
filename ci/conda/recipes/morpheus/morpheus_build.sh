@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ CMAKE_ARGS=${CMAKE_ARGS:-""}
 export CCACHE_BASEDIR=$(realpath ${SRC_DIR}/..)
 export USE_SCCACHE=${USE_SCCACHE:-""}
 
-# Check for some srf environment variables. Append to front of args to allow users to overwrite them
+# Check for some mrc environment variables. Append to front of args to allow users to overwrite them
 if [[ -n "${MORPHEUS_CACHE_DIR}" ]]; then
    # Set the cache variable, then set the Staging prefix to allow for host searching
    CMAKE_ARGS="-DMORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR} ${CMAKE_ARGS}"
@@ -40,7 +40,9 @@ CMAKE_ARGS="-DMORPHEUS_USE_CONDA=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DMORPHEUS_USE_CCACHE=ON ${CMAKE_ARGS}"
 CMAKE_ARGS="-DMORPHEUS_BUILD_PYTHON_STUBS=${MORPHEUS_BUILD_PYTHON_STUBS=-"ON"} ${CMAKE_ARGS}"
 CMAKE_ARGS="-DMORPHEUS_PYTHON_INPLACE_BUILD=ON ${CMAKE_ARGS}"
-CMAKE_ARGS="-DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES=-"ALL"} ${CMAKE_ARGS}"
+CMAKE_ARGS="-DMORPHEUS_BUILD_PYTHON_WHEEL=ON ${CMAKE_ARGS}"
+CMAKE_ARGS="-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON ${CMAKE_ARGS}"
+CMAKE_ARGS="-DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES=-"all"} ${CMAKE_ARGS}"
 CMAKE_ARGS="-DPython_EXECUTABLE=${PYTHON} ${CMAKE_ARGS}"
 
 if [[ "${USE_SCCACHE}" == "1" ]]; then
@@ -77,10 +79,4 @@ cmake -B ${BUILD_DIR} \
 cmake --build ${BUILD_DIR} -j${PARALLEL_LEVEL:-$(nproc)}
 
 # Install just the python wheel components
-cmake -DCOMPONENT=Wheel -P ${BUILD_DIR}/cmake_install.cmake
-
-# Change to the wheel install dir
-cd ${BUILD_DIR}/wheel
-
-# Install the python library
-${PYTHON} -m pip install -vv --no-deps .
+${PYTHON} -m pip install -vv --no-deps ${BUILD_DIR}/dist/*.whl

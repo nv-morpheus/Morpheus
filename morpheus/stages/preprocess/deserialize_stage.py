@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +17,8 @@ import logging
 import typing
 from functools import partial
 
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @register_stage("deserialize", modes=[PipelineModes.FIL, PipelineModes.NLP, PipelineModes.OTHER])
 class DeserializeStage(MultiMessageStage):
     """
-    Deserialize source data into Dataframes.
+    Messages are logically partitioned based on the specified `c.pipeline_batch_size`.
 
     This stage deserialize the output of `FileSourceStage`/`KafkaSourceStage` into a `MultiMessage`. This
     should be one of the first stages after the `Source` object.
@@ -96,12 +96,12 @@ class DeserializeStage(MultiMessageStage):
 
         return output
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiMessage
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             obs.pipe(ops.map(partial(DeserializeStage.process_dataframe, batch_size=self._batch_size)),
                      ops.flatten()).subscribe(sub)

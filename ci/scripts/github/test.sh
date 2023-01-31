@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,9 +26,9 @@ aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.t
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
 
 # Install the built Morpheus python package
-pip install ${MORPHEUS_ROOT}/build/wheel
+pip install ${MORPHEUS_ROOT}/build/dist/*.whl
 
-CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/wheel -name "*.x"))
+CPP_TESTS=($(find ${MORPHEUS_ROOT}/build -name "*.x"))
 
 rapids-logger "Pulling LFS assets"
 cd ${MORPHEUS_ROOT}

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@ add_library(${PROJECT_NAME}::morpheus_example ALIAS morpheus_example)
 target_link_libraries(morpheus_example
     PUBLIC
       morpheus
-      srf::pysrf
+      mrc::pymrc
 )
 
 target_include_directories(morpheus_example
@@ -50,7 +50,7 @@ else()
   )
 endif()
 
-inplace_build_copy(morpheus_example "${CMAKE_CURRENT_SOURCE_DIR}/_lib")
+morpheus_utils_inplace_build_copy(morpheus_example "${CMAKE_CURRENT_SOURCE_DIR}/_lib")
 
 message(STATUS " Install dest: (morpheus_example) ${CMAKE_CURRENT_BINARY_DIR}/_lib")
 install(

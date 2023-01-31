@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,6 +30,19 @@ class AtomicInteger():
         self._lock = threading.Lock()
 
     def inc(self, d=1):
+        """
+        Increments and returns new value.
+
+        Parameters
+        ----------
+        d : int, optional
+            Value to increment by, default 1.
+
+        Returns
+        -------
+        int
+            Incremented value.
+        """
         with self._lock:
             self._value += int(d)
             return self._value
@@ -41,7 +54,7 @@ class AtomicInteger():
         Parameters
         ----------
         d : int, optional
-            Decrements the value, by default 1.
+            Value to decrement by, default 1.
 
         Returns
         -------

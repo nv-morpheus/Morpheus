@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ from morpheus.utils.logger import configure_logging
 
 DEFAULT_CONFIG = Config()
 
-# List all of the options in from morpheus._lib.file_types.FileTypes without importing the object. This slows down
+# List all of the options in from morpheus._lib.common.FileTypes without importing the object. This slows down
 # autocomplete too much.
 FILE_TYPE_NAMES = ["auto", "csv", "json"]
 
@@ -226,9 +226,7 @@ def autocomplete(**kwargs):
               help="The shell to install completion to. Leave as the default to auto-detect")
 def show(shell):
     """Show the click-completion-command completion code"""
-
-    from morpheus.utils import click_completion_tools
-
+    from morpheus.cli import click_completion_tools
     shell, path, code = click_completion_tools.get_code(shell=shell)
 
     click.secho("To add %s completion, write the following code to '%s':\n" % (shell, path), fg="blue")
@@ -246,9 +244,7 @@ def show(shell):
               help="Location to install complete to. Leave empty to choose the default for the specified shell")
 def install(**kwargs):
     """Install the click-completion-command completion"""
-
-    from morpheus.utils import click_completion_tools
-
+    from morpheus.cli import click_completion_tools
     shell, path = click_completion_tools.install_code(**kwargs)
 
     click.echo('%s completion installed in %s' % (shell, path))

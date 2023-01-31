@@ -1,5 +1,5 @@
 <!--
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ python dfp_viz_azure_pipeline.py \
     --output_dir=./azure-dfp-output
 ```
 
-When pipeline run completes, you should now see `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` in the `azure-dfp-output` directory. These files can be used as input to the DFP Viz UI.
+When the pipeline run completes, the `dfp-viz-azure-2022-08-30.csv` and `dfp-viz-azure-2022-08-31.csv` output files will be present in the `azure-dfp-output` directory. These files can be used as input to the DFP Viz UI.
 
 ### Duo
 

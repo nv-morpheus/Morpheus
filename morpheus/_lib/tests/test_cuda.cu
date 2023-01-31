@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,16 +19,16 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <srf/cuda/common.hpp> // for SRF_CHECK_CUDA
-#include <srf/cuda/sync.hpp> // for enqueue_stream_sync_event
-#include <srf/memory/adaptors.hpp>
-#include <srf/memory/buffer.hpp>
-#include <srf/memory/literals.hpp>
-#include <srf/memory/old_interface/memory.hpp>
-#include <srf/memory/resources/device/cuda_malloc_resource.hpp>
-#include <srf/memory/resources/host/pinned_memory_resource.hpp>
-#include <srf/memory/resources/logging_resource.hpp>
-#include <srf/ucx/context.hpp>
+#include <mrc/cuda/common.hpp> // for MRC_CHECK_CUDA
+#include <mrc/cuda/sync.hpp> // for enqueue_stream_sync_event
+#include <mrc/memory/adaptors.hpp>
+#include <mrc/memory/buffer.hpp>
+#include <mrc/memory/literals.hpp>
+#include <mrc/memory/old_interface/memory.hpp>
+#include <mrc/memory/resources/device/cuda_malloc_resource.hpp>
+#include <mrc/memory/resources/host/pinned_memory_resource.hpp>
+#include <mrc/memory/resources/logging_resource.hpp>
+#include <mrc/ucx/context.hpp>
 
 #include <cuda/memory_resource>
 #include <cuda_runtime.h>
@@ -43,7 +43,7 @@
 #include <chrono>
 #include <ratio>
 
-using namespace srf::memory::literals;
+using namespace mrc::memory::literals;
 using namespace morpheus;
 
 using RankType = int;
@@ -54,19 +54,19 @@ class TestCuda : public ::testing::Test
   protected:
     void SetUp() override
     {
-        SRF_CHECK_CUDA(cudaStreamCreate(&stream));
+        MRC_CHECK_CUDA(cudaStreamCreate(&stream));
 
-        auto pinned = std::make_shared<srf::memory::pinned_memory_resource>();
-        auto device = std::make_shared<srf::memory::cuda_malloc_resource>(0);
+        auto pinned = std::make_shared<mrc::memory::pinned_memory_resource>();
+        auto device = std::make_shared<mrc::memory::cuda_malloc_resource>(0);
 
-        m_host_allocator   = srf::memory::OldHostAllocator(pinned, nullptr).shared();
-        m_device_allocator = srf::memory::OldDeviceAllocator(device, nullptr).shared();
+        m_host_allocator   = mrc::memory::OldHostAllocator(pinned, nullptr).shared();
+        m_device_allocator = mrc::memory::OldDeviceAllocator(device, nullptr).shared();
     }
 
     void TearDown() override
     {
-        SRF_CHECK_CUDA(cudaStreamSynchronize(stream));
-        SRF_CHECK_CUDA(cudaStreamDestroy(stream));
+        MRC_CHECK_CUDA(cudaStreamSynchronize(stream));
+        MRC_CHECK_CUDA(cudaStreamDestroy(stream));
     }
 
     template <typename T, RankType R>
@@ -96,15 +96,15 @@ class TestCuda : public ::testing::Test
 
     cudaStream_t stream;  // NOLINT
 
-    std::shared_ptr<srf::memory::IAllocator> m_host_allocator;
-    std::shared_ptr<srf::memory::IAllocator> m_device_allocator;
+    std::shared_ptr<mrc::memory::IAllocator> m_host_allocator;
+    std::shared_ptr<mrc::memory::IAllocator> m_device_allocator;
 };
 
 template <typename T>
 auto await_matx(matx::BaseOp<T>& op, cudaStream_t stream)
 {
     op.run(stream);
-    return srf::enqueue_stream_sync_event(stream);
+    return mrc::enqueue_stream_sync_event(stream);
 }
 
 void test_1d(const TensorObject& one_d)

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import inspect
 import typing
 from collections import defaultdict
@@ -30,6 +29,9 @@ _DecoratorType = typing.TypeVar("_DecoratorType", bound=typing.Callable[..., typ
 
 
 def greatest_ancestor(*cls_list):
+    """
+    Returns the greatest common ancestor of the classes in the class list
+    """
     mros = [list(inspect.getmro(cls)) for cls in cls_list]
     track = defaultdict(int)
     while mros:
@@ -122,13 +124,10 @@ def pretty_print_type_name(t: typing.Type) -> str:
     return t.__module__.split(".")[0] + "." + t.__name__
 
 
-def mirror_args(wrapped: _DecoratorType,
-                assigned=('__doc__', '__annotations__'),
-                updated=functools.WRAPPER_UPDATES) -> typing.Callable[[_DecoratorType], _DecoratorType]:
-    return functools.wraps(wrapped=wrapped, assigned=assigned, updated=updated)
-
-
 def get_full_qualname(klass: typing.Type) -> str:
+    """
+    Returns the fully qualified name of a class.
+    """
     module = klass.__module__
     if module == '__builtin__':
         return klass.__qualname__

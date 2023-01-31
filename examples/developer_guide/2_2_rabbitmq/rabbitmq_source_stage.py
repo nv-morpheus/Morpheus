@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,9 @@ import logging
 import time
 from io import StringIO
 
+import mrc
 import pandas as pd
 import pika
-import srf
 
 import cudf
 
@@ -91,7 +91,7 @@ class RabbitMQSourceStage(SingleOutputSource):
 
         return super().stop()
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
         node = builder.make_source(self.unique_name, self.source_generator)
         return node, MessageMeta
 

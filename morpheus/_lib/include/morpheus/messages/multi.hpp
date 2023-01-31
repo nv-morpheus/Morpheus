@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -321,6 +321,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     /**
      * @brief Applies the message offset to the elements in `ranges` casting the results to `TensorIndex`
      *
+     * @param offset
      * @param ranges
      * @return std::vector<std::pair<TensorIndex, TensorIndex>>
      */

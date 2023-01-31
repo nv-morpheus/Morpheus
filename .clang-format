@@ -1,6 +1,6 @@
 ---
 # Refer to the following link for the explanation of each params:
-#   http://releases.llvm.org/8.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+#   https://releases.llvm.org/14.0.0/tools/clang/docs/ClangFormatStyleOptions.html
 Language: Cpp
 # BasedOnStyle: Google
 AccessModifierOffset: -2
@@ -58,7 +58,6 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
-DerivePointerAlignment: true
 DisableFormat: false
 ExperimentalAutoDetectBinPacking: false
 FixNamespaceComments: true
@@ -158,7 +157,7 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: c++17
+Standard: c++20
 StatementMacros:
   - Q_UNUSED
   - QT_REQUIRE_VERSION

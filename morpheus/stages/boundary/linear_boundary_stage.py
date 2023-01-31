@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 import logging
 import typing
 
-import srf
+import mrc
 
 from morpheus.config import Config
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class LinearBoundaryEgressStage(SinglePortStage):
     """
-    TheLinearBoundaryEgressStage acts as an egress point from one linear segment to another. Given an existing linear
+    The LinearBoundaryEgressStage acts as an egress point from one linear segment to another. Given an existing linear
     pipeline that we want to connect to another segment, a linear boundary egress stage would be added, in conjunction
     with a matching LinearBoundaryIngressStage on the target linear segment.
 
@@ -41,9 +41,9 @@ class LinearBoundaryEgressStage(SinglePortStage):
     data_type : `typing.Type`
         Data type that this Stage will accept and then output to its egress port.
 
-    Example
-    -------
-        boundary_egress = LinearBoundaryEgressStage(config, "my_boundary_port", int)
+    Examples
+    --------
+    >>> boundary_egress = LinearBoundaryEgressStage(config, "my_boundary_port", int)
     """
 
     def __init__(self, c: Config, boundary_port_id: str, data_type):
@@ -71,7 +71,7 @@ class LinearBoundaryEgressStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         boundary_egress = builder.get_egress(self._port_id)
         builder.make_edge(input_stream[0], boundary_egress)
 
@@ -80,9 +80,9 @@ class LinearBoundaryEgressStage(SinglePortStage):
 
 class LinearBoundaryIngressStage(SingleOutputSource):
     """
-    TheLinearBoundaryIngressStage acts as source ingress point from a corresponding egress in another linear segment.
+    The LinearBoundaryIngressStage acts as source ingress point from a corresponding egress in another linear segment.
     Given an existing linear pipeline that we want to connect to another segment, a linear boundary egress stage would
-    be added to it and a matching LinearBoundaryIngressStage would be created to receive the e.
+    be added to it and a matching LinearBoundaryIngressStage would be created to receive the egress point.
 
     Parameters
     ----------
@@ -94,9 +94,9 @@ class LinearBoundaryIngressStage(SingleOutputSource):
     data_type : `object`
         Data type that this Stage will accept, which will correspond to some existing egress output.
 
-    Example
-    -------
-        boundary_ingress = LinearBoundaryIngressStage(config, "my_boundary_port", int)
+    Examples
+    --------
+    >>> boundary_ingress = LinearBoundaryIngressStage(config, "my_boundary_port", int)
     """
 
     def __init__(self, c: Config, boundary_port_id: str, data_type=None):
@@ -124,7 +124,7 @@ class LinearBoundaryIngressStage(SingleOutputSource):
     def supports_cpp_node(self):
         return False
 
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
         boundary_ingress = builder.get_ingress(self._port_id)
         source = builder.make_node(self.unique_name, lambda data: data)
         builder.make_edge(boundary_ingress, source)

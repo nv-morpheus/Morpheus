@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,11 +39,11 @@ class LinearPipeline(_pipeline.Pipeline):
 
         self._current_segment_id = ""
         self._next_segment_index = 0
-        self.increment_segment_id()
+        self._increment_segment_id()
 
         self._linear_stages: typing.List[_pipeline.StreamWrapper] = []
 
-    def increment_segment_id(self):
+    def _increment_segment_id(self):
         self._linear_stages = []
         self._current_segment_id = f"linear_segment_{self._next_segment_index}"
         self._next_segment_index += 1
@@ -51,7 +51,7 @@ class LinearPipeline(_pipeline.Pipeline):
     def set_source(self, source: _pipeline.SourceStage):
         """
         Set a pipeline's source stage to consume messages before it begins executing stages. This must be
-        called once before `build_and_start`.
+        called once before calling `run` or `run_async`.
 
         Parameters
         ----------
@@ -73,14 +73,14 @@ class LinearPipeline(_pipeline.Pipeline):
             self._linear_stages.clear()
 
         # Need to store the source in the pipeline
-        super().add_node(source, self._current_segment_id)
+        super().add_stage(source, self._current_segment_id)
 
         # Store this as the first one in the linear stages. Must be index 0
         self._linear_stages.append(source)
 
     def add_stage(self, stage: _pipeline.SinglePortStage):
         """
-        Add stages to the pipeline. All `Stage` classes added with this method will be executed sequentially
+        Add a stage to the pipeline. All `Stage` classes added with this method will be executed sequentially
         inthe order they were added.
 
         Parameters
@@ -95,7 +95,7 @@ class LinearPipeline(_pipeline.Pipeline):
                                                               "`add_stage()`")
 
         # Add this stage to the segment graph
-        super().add_node(stage, self._current_segment_id)
+        super().add_stage(stage, self._current_segment_id)
 
         # Make an edge between the last node and this one
         super().add_edge(self._linear_stages[-1], stage, self._current_segment_id)
@@ -113,23 +113,23 @@ class LinearPipeline(_pipeline.Pipeline):
         as_shared_pointer : `boolean`
             Whether the data type will be wrapped in a shared pointer.
 
-        Example
-        -------
-            # Create a config and pipeline
-            config = Config()
-            pipe = LinearPipeline(config)
-
-            # Add a source in Segment #1
-            pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
-
-            # Add a segment boundary
-            # [Current Segment] - [Egress Boundary] ---- [Ingress Boundary] - [Next Segment]
-            pipe.add_segment_boundary(MessageMeta)
-
-            # Add a sink in Segment #2
-            pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
-
-            pipe.run()
+        Examples
+        --------
+        >>> # Create a config and pipeline
+        >>> config = Config()
+        >>> pipe = LinearPipeline(config)
+        >>>
+        >>> # Add a source in Segment #1
+        >>> pipe.set_source(FileSourceStage(config, filename=val_file_name, iterative=False))
+        >>>
+        >>> # Add a segment boundary
+        >>> # [Current Segment] - [Egress Boundary] ---- [Ingress Boundary] - [Next Segment]
+        >>> pipe.add_segment_boundary(MessageMeta)
+        >>>
+        >>> # Add a sink in Segment #2
+        >>> pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+        >>>
+        >>> pipe.run()
         """
         if (len(self._linear_stages) == 0):
             raise RuntimeError("Cannot create a segment boundary, current segment is empty.")
@@ -143,18 +143,18 @@ class LinearPipeline(_pipeline.Pipeline):
                                                       data_type=data_type)
 
         # TODO: update to use data_type once typeid is attached to registered objects out of band:
-        #  https://github.com/nv-morpheus/SRF/issues/176
+        #  https://github.com/nv-morpheus/MRC/issues/176
         port_id_tuple = (self._current_segment_id, object, False) if data_type else self._current_segment_id
 
         self.add_stage(boundary_egress)
         egress_segment_id = self._current_segment_id
 
-        self.increment_segment_id()
+        self._increment_segment_id()
         ingress_segment_id = self._current_segment_id
 
         self._linear_stages.append(boundary_ingress)
 
-        super().add_node(boundary_ingress, self._current_segment_id)
+        super().add_stage(boundary_ingress, self._current_segment_id)
         super().add_segment_edge(boundary_egress,
                                  egress_segment_id,
                                  boundary_ingress,

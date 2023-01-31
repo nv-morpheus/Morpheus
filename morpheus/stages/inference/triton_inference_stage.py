@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ from functools import lru_cache
 from functools import partial
 
 import cupy as cp
+import mrc
 import numpy as np
-import srf
 import tritonclient.grpc as tritonclient
 from tritonclient.utils import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
@@ -142,12 +142,30 @@ class ResourcePool:
             return self._queue.get()
 
     def borrow(self):
+        """
+        Returns an item from the pool. If the pool is empty, a new item will be created and returned.
+
+        Returns
+        -------
+        obj : typing.Any
+            Item from the queue.
+        """
+
         obj = self._borrow()
 
         return obj
 
     def return_obj(self, obj):
+        """
+        Returns a borrowed item back to the pool to be used by new calls to `borrow()`.
+
+        Parameters
+        ----------
+        obj : typing.Any
+            An item to be added to the queue.
+
         self._queue.put(obj)
+        """
 
 
 class InputWrapper:
@@ -646,10 +664,22 @@ class TritonInferenceNLP(_TritonInferenceWorker):
 
     @classmethod
     def needs_logits(cls):
+        """
+        Determines whether a logits calculation is needed for the value returned by the Triton inference response.
+        """
         return True
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
+        """
+        Returns default dictionary used to map NLP pipeline input/output names to Triton input/output names
+
+        Returns
+        -------
+        default_inout_mapping : typing.Dict[str, str]
+            Dictionary with default input and output names.
+        """
+
         # Some models use different names for the same thing. Set that here but allow user customization
         return {
             "attention_mask": "input_mask",
@@ -718,6 +748,14 @@ class TritonInferenceFIL(_TritonInferenceWorker):
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
+        """
+        Returns default dictionary used to map FIL pipeline input/output names to Triton input/output names
+
+        Returns
+        -------
+        default_inout_mapping : typing.Dict[str, str]
+            Dictionary with default input and output names.
+        """
         # Some models use different names for the same thing. Set that here but allow user customization
         return {
             "output__0": "probs",
@@ -893,7 +931,7 @@ class TritonInferenceStage(InferenceStage):
 
         return worker_cls(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
-    def _get_cpp_inference_node(self, builder: srf.Builder):
+    def _get_cpp_inference_node(self, builder: mrc.Builder):
 
         return _stages.InferenceClientStage(builder,
                                             name=self.unique_name,

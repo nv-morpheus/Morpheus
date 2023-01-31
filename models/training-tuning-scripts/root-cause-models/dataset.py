@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES.
 # All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -16,6 +16,7 @@
 
 
 class Dataset(object):
+
     def __init__(self, df):
         self._df = df.reset_index(drop=True)
         self._dataset_len = self._df.shape[0]

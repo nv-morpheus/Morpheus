@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import typing
 from collections import defaultdict
 from functools import partial
 
+import mrc
 import networkx
-import srf
 from tqdm import tqdm
 
 import cudf
@@ -36,6 +36,8 @@ from morpheus.pipeline.stream_wrapper import StreamWrapper
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
+
+StageT = typing.TypeVar("StageT", bound=StreamWrapper)
 
 
 class Pipeline():
@@ -66,12 +68,12 @@ class Pipeline():
         # Dictionary containing segment information for this pipeline
         self._segments: typing.Dict = defaultdict(lambda: {"nodes": set(), "ingress_ports": [], "egress_ports": []})
 
-        self._exec_options = srf.Options()
+        self._exec_options = mrc.Options()
         self._exec_options.topology.user_cpuset = "0-{}".format(c.num_threads - 1)
-        self._exec_options.engine_factories.default_engine_type = srf.core.options.EngineType.Thread
+        self._exec_options.engine_factories.default_engine_type = mrc.core.options.EngineType.Thread
 
         # Set the default channel size
-        srf.Config.default_channel_size = c.edge_buffer_size
+        mrc.Config.default_channel_size = c.edge_buffer_size
 
         self.batch_size = c.pipeline_batch_size
 
@@ -81,8 +83,8 @@ class Pipeline():
         self._is_build_complete = False
         self._is_started = False
 
-        self._srf_executor: srf.Executor = None
-        self._srf_pipeline: srf.Pipeline = None
+        self._mrc_executor: mrc.Executor = None
+        self._mrc_pipeline: mrc.Pipeline = None
 
     @property
     def is_built(self) -> bool:
@@ -96,31 +98,58 @@ class Pipeline():
 
         return x
 
-    def add_node(self, node: StreamWrapper, segment_id: str = "main"):
+    def add_stage(self, stage: StageT, segment_id: str = "main") -> StageT:
+        """
+        Add a stage to a segment in the pipeline.
 
-        assert node._pipeline is None or node._pipeline is self, "A stage can only be added to one pipeline at a time"
+        Parameters
+        ----------
+        stage : Stage
+            The stage object to add. It cannot be already added to another `Pipeline` object.
+
+        segment_id : str
+            ID indicating what segment the stage should be added to.
+        """
+
+        assert stage._pipeline is None or stage._pipeline is self, "A stage can only be added to one pipeline at a time"
 
         segment_nodes = self._segments[segment_id]["nodes"]
         segment_graph = self._segment_graphs[segment_id]
 
         # Add to list of stages if it's a stage, not a source
-        if (isinstance(node, Stage)):
-            segment_nodes.add(node)
-            self._stages.add(node)
-        elif (isinstance(node, SourceStage)):
-            segment_nodes.add(node)
-            self._sources.add(node)
+        if (isinstance(stage, Stage)):
+            segment_nodes.add(stage)
+            self._stages.add(stage)
+        elif (isinstance(stage, SourceStage)):
+            segment_nodes.add(stage)
+            self._sources.add(stage)
         else:
-            raise NotImplementedError("add_node() failed. Unknown node type: {}".format(type(node)))
+            raise NotImplementedError("add_stage() failed. Unknown node type: {}".format(type(stage)))
 
-        node._pipeline = self
+        stage._pipeline = self
 
-        segment_graph.add_node(node)
+        segment_graph.add_node(stage)
+
+        return stage
 
     def add_edge(self,
                  start: typing.Union[StreamWrapper, Sender],
                  end: typing.Union[Stage, Receiver],
                  segment_id: str = "main"):
+        """
+        Create an edge between two stages and add it to a segment in the pipeline.
+
+        Parameters
+        ----------
+        start : typing.Union[StreamWrapper, Sender]
+            The start of the edge or parent stage.
+
+        end : typing.Union[Stage, Receiver]
+            The end of the edge or child stage.
+
+        segment_id : str
+            ID indicating what segment the edge should be added to.
+        """
 
         if (isinstance(start, StreamWrapper)):
             start_port = start.output_ports[0]
@@ -141,7 +170,36 @@ class Pipeline():
                                start_port_idx=start_port.port_number,
                                end_port_idx=end_port.port_number)
 
-    def add_segment_edge(self, egress_stage, egress_segment, ingress_stage, ingress_segment, port_pair):
+    def add_segment_edge(self,
+                         egress_stage: Stage,
+                         egress_segment: str,
+                         ingress_stage: Stage,
+                         ingress_segment: str,
+                         port_pair: typing.Union[str, typing.Tuple[str, typing.Type, bool]]):
+        """
+        Create an edge between two segments in the pipeline.
+
+        Parameters
+        ----------
+
+        egress_stage : Stage
+            The egress stage of the parent segment
+
+        egress_segment : str
+            Segment ID of the parent segment
+
+        ingress_stage : Stage
+            The ingress stage of the child segment
+
+        ingress_segment : str
+            Segment ID of the child segment
+
+        port_pair : typing.Union[str, typing.Tuple]
+            Either the ID of the egress segment, or a tuple with the following three elements:
+                * str: ID of the egress segment
+                * class: type being sent (typically `object`)
+                * bool: If the type is a shared pointer (typically should be `False`)
+        """
         egress_edges = self._segments[egress_segment]["egress_ports"]
         egress_edges.append({
             "port_pair": port_pair,
@@ -172,11 +230,11 @@ class Pipeline():
 
         logger.info("====Registering Pipeline====")
 
-        self._srf_executor = srf.Executor(self._exec_options)
+        self._mrc_executor = mrc.Executor(self._exec_options)
 
-        self._srf_pipeline = srf.Pipeline()
+        self._mrc_pipeline = mrc.Pipeline()
 
-        def inner_build(builder: srf.Builder, segment_id: str):
+        def inner_build(builder: mrc.Builder, segment_id: str):
             segment_graph = self._segment_graphs[segment_id]
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
@@ -209,7 +267,7 @@ class Pipeline():
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
 
-            self._srf_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
+            self._mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
                                             segment_inner_build)
             logger.info("====Building Segment Complete!====")
@@ -220,35 +278,41 @@ class Pipeline():
         # Finally call _on_start
         self._on_start()
 
-        self._srf_executor.register_pipeline(self._srf_pipeline)
+        self._mrc_executor.register_pipeline(self._mrc_pipeline)
 
         self._is_built = True
 
         logger.info("====Registering Pipeline Complete!====")
 
-    def start(self):
+    def _start(self):
         assert self._is_built, "Pipeline must be built before starting"
 
         logger.info("====Starting Pipeline====")
 
-        self._srf_executor.start()
+        self._mrc_executor.start()
 
         logger.info("====Pipeline Started====")
 
     def stop(self):
+        """
+        Stops all running stages and the underlying MRC pipeline.
+        """
 
         logger.info("====Stopping Pipeline====")
         for s in list(self._sources) + list(self._stages):
             s.stop()
 
-        self._srf_executor.stop()
+        self._mrc_executor.stop()
 
         logger.info("====Pipeline Stopped====")
 
     async def join(self):
-
+        """
+        Suspend execution all currently running stages and the MRC pipeline.
+        Typically called after `stop`.
+        """
         try:
-            await self._srf_executor.join_async()
+            await self._mrc_executor.join_async()
         except Exception:
             logger.exception("Exception occurred in pipeline. Rethrowing")
             raise
@@ -270,7 +334,7 @@ class Pipeline():
             for s in list(self._stages):
                 await s.join()
 
-    async def build_and_start(self):
+    async def _build_and_start(self):
 
         if (not self.is_built):
             try:
@@ -279,11 +343,11 @@ class Pipeline():
                 logger.exception("Error occurred during Pipeline.build(). Exiting.", exc_info=True)
                 return
 
-        await self.async_start()
+        await self._async_start()
 
-        self.start()
+        self._start()
 
-    async def async_start(self):
+    async def _async_start(self):
 
         # Loop over all stages and call on_start if it exists
         for s in self._stages:
@@ -305,6 +369,11 @@ class Pipeline():
             s.on_start()
 
     def visualize(self, filename: str = None, **graph_kwargs):
+        """
+        Output a pipeline diagram to `filename`. The file format of the diagrame is inferred by the extension of
+        `filename`. If the directory path leading to `filename` does not exist it will be created, if `filename` already
+        exists it will be overwritten.  Requires the graphviz library.
+        """
 
         # Mimic the streamz visualization
         # 1. Create graph (already done since we use networkx under the hood)
@@ -455,7 +524,7 @@ class Pipeline():
         with open(filename, "wb") as f:
             f.write(viz_binary)
 
-    async def _do_run(self):
+    async def run_async(self):
         """
         This function sets up the current asyncio loop, builds the pipeline, and awaits on it to complete.
         """
@@ -489,7 +558,7 @@ class Pipeline():
             loop.add_signal_handler(s, term_signal)
 
         try:
-            await self.build_and_start()
+            await self._build_and_start()
 
             # Wait for completion
             await self.join()
@@ -514,4 +583,4 @@ class Pipeline():
 
         # Use asyncio.run() to launch the pipeline. This creates and destroys an event loop so re-running a pipeline in
         # the same process wont fail
-        asyncio.run(self._do_run())
+        asyncio.run(self.run_async())

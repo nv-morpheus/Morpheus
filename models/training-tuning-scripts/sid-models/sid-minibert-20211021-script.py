@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Example Usage:
 python sid-minibert-20210614-script.py \
@@ -28,8 +27,7 @@ from transformers import AutoModelForSequenceClassification, AdamW
 from torch.utils.data import TensorDataset, DataLoader
 from torch.utils.data.dataset import random_split
 from torch.utils.dlpack import from_dlpack
-from sklearn.metrics import (f1_score, accuracy_score,
-                             multilabel_confusion_matrix)
+from sklearn.metrics import (f1_score, accuracy_score, multilabel_confusion_matrix)
 from tqdm import trange
 import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
@@ -56,8 +54,7 @@ def data_preprocessing(training_data):
     # convert labels to pytorch tensor
     labels = from_dlpack(df[label_names].to_dlpack()).type(torch.long)
 
-    cased_tokenizer = SubwordTokenizer("resources/bert-base-uncased-hash.txt",
-                                       do_lower_case=True)
+    cased_tokenizer = SubwordTokenizer("resources/bert-base-uncased-hash.txt", do_lower_case=True)
 
     tokenizer_output = cased_tokenizer(df.text,
                                        max_length=256,
@@ -68,31 +65,23 @@ def data_preprocessing(training_data):
                                        add_special_tokens=True)
 
     # create dataset
-    dataset = TensorDataset(tokenizer_output["input_ids"],
-                            tokenizer_output["attention_mask"],
-                            labels)
+    dataset = TensorDataset(tokenizer_output["input_ids"], tokenizer_output["attention_mask"], labels)
 
     # use pytorch random_split to create training and validation data subsets
     dataset_size = len(tokenizer_output["input_ids"])
-    train_size = int(dataset_size * .8)   # 80/20 split
-    training_dataset, validation_dataset = random_split(
-        dataset, (train_size, (dataset_size-train_size)))
+    train_size = int(dataset_size * .8)  # 80/20 split
+    training_dataset, validation_dataset = random_split(dataset, (train_size, (dataset_size - train_size)))
 
     # create dataloaders
-    train_dataloader = DataLoader(dataset=training_dataset,
-                                  shuffle=True,
-                                  batch_size=32)
-    val_dataloader = DataLoader(dataset=validation_dataset,
-                                shuffle=False,
-                                batch_size=64)
+    train_dataloader = DataLoader(dataset=training_dataset, shuffle=True, batch_size=32)
+    val_dataloader = DataLoader(dataset=validation_dataset, shuffle=False, batch_size=64)
     return train_dataloader, val_dataloader, idx2label
 
 
 def train_model(model_dir, train_dataloader, idx2label):
 
     num_labels = len(idx2label)
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_dir, num_labels=num_labels)
+    model = AutoModelForSequenceClassification.from_pretrained(model_dir, num_labels=num_labels)
     model.train()
     model.cuda()
 
@@ -106,14 +95,13 @@ def train_model(model_dir, train_dataloader, idx2label):
     # apply weight decay to all parameters other than bias, gamma, and beta
     param_optimizer = list(model.named_parameters())
     no_decay = ['bias', 'gamma', 'beta']
-    optimizer_grouped_parameters = [
-        {'params': [p for n, p in param_optimizer if not any(
-            nd in n for nd in no_decay)],
-         'weight_decay_rate': 0.01},
-        {'params': [p for n, p in param_optimizer if any(
-            nd in n for nd in no_decay)],
-         'weight_decay_rate': 0.0}
-    ]
+    optimizer_grouped_parameters = [{
+        'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay_rate': 0.01
+    },
+                                    {
+                                        'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+                                        'weight_decay_rate': 0.0
+                                    }]
 
     optimizer = AdamW(optimizer_grouped_parameters, lr=2e-5)
 
@@ -142,8 +130,7 @@ def train_model(model_dir, train_dataloader, idx2label):
             # assigns independent probabilities to each label
             loss_func = BCEWithLogitsLoss()
             # convert labels to float for calculation
-            loss = loss_func(logits.view(-1, num_labels),
-                             b_labels.type_as(logits).view(-1, num_labels))
+            loss = loss_func(logits.view(-1, num_labels), b_labels.type_as(logits).view(-1, num_labels))
 
             if torch.cuda.device_count() > 1:
                 # mean() to average on multi-gpu parallel training
@@ -159,7 +146,7 @@ def train_model(model_dir, train_dataloader, idx2label):
             nb_tr_examples += b_input_ids.size(0)
             nb_tr_steps += 1
 
-        print("Train loss: {}".format(tr_loss/nb_tr_steps))
+        print("Train loss: {}".format(tr_loss / nb_tr_steps))
     return model
 
 
@@ -199,23 +186,20 @@ def model_eval(model, val_dataloader, idx2label):
     threshold = 0.50
     pred_bools = [pl > threshold for pl in pred_labels]
     true_bools = [tl == 1 for tl in true_labels]
-    val_f1_accuracy = f1_score(true_bools,
-                               pred_bools, average='macro')*100
-    val_flat_accuracy = accuracy_score(true_bools, pred_bools)*100
+    val_f1_accuracy = f1_score(true_bools, pred_bools, average='macro') * 100
+    val_flat_accuracy = accuracy_score(true_bools, pred_bools) * 100
 
     print('F1 Macro Validation Accuracy: ', val_f1_accuracy)
     print('Flat Validation Accuracy: ', val_flat_accuracy)
 
-    for label, cf in zip(list(idx2label.values()),
-                         multilabel_confusion_matrix(true_bools, pred_bools)):
+    for label, cf in zip(list(idx2label.values()), multilabel_confusion_matrix(true_bools, pred_bools)):
         print(label)
         print(cf)
 
 
 def main():
     print("Data Preprocessing...")
-    train_dataloader, val_dataloader, idx2label = data_preprocessing(
-        args.training_data)
+    train_dataloader, val_dataloader, idx2label = data_preprocessing(args.training_data)
     print("Model Training...")
     model = train_model(args.model_dir, train_dataloader, idx2label)
     save_model(model, args.output_file)
@@ -225,16 +209,16 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--training-data", required=True,
+    parser.add_argument("--training-data",
+                        required=True,
                         help="CSV with 'text' and single T/F \
                         field for each label")
-    parser.add_argument("--model-dir", required=True,
+    parser.add_argument("--model-dir",
+                        required=True,
                         help="Local directory or HuggingFace directory \
                         with model file")
-    parser.add_argument("--tokenizer-hash-filepath", required=True,
-                        help="hash file for tokenizer vocab")
-    parser.add_argument("--output-file", required=True,
-                        help="output file to save new model")
+    parser.add_argument("--tokenizer-hash-filepath", required=True, help="hash file for tokenizer vocab")
+    parser.add_argument("--output-file", required=True, help="output file to save new model")
     args = parser.parse_args()
 
 main()

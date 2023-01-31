@@ -1,5 +1,5 @@
 # =============================================================================
-# Copyright (c) 2020-2022, NVIDIA CORPORATION.
+# Copyright (c) 2020-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -12,7 +12,7 @@
 # the License.
 # =============================================================================
 
-morpheus_add_pybind11_module(
+morpheus_utils_add_pybind11_module(
     common
     MODULE_ROOT
       "${MORPHEUS_LIB_ROOT}"
@@ -22,7 +22,7 @@ morpheus_add_pybind11_module(
       "${MORPHEUS_LIB_ROOT}/include"
     LINK_TARGETS
       morpheus
-      srf::pysrf
+      mrc::pymrc
     OUTPUT_TARGET
       common_target
     INSTALL_DEST
@@ -30,5 +30,5 @@ morpheus_add_pybind11_module(
 )
 
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
-  inplace_build_copy(${common_target} ${MORPHEUS_LIB_ROOT})
+  morpheus_utils_inplace_build_copy(${common_target} ${MORPHEUS_LIB_ROOT})
 endif()

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 import logging
 import typing
 
-import srf
+import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
@@ -38,7 +38,7 @@ class Stage(_pipeline.StreamWrapper):
     def __init__(self, c: Config):
         super().__init__(c)
 
-    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         return out_ports_pair
 

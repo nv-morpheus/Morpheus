@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 import dataclasses
 import typing
 
-import srf
+import mrc
 
 import cudf
 
@@ -106,7 +106,7 @@ class GraphSAGEStage(SinglePortStage):
                                      mess_offset=message.mess_offset,
                                      mess_count=message.mess_count)
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self._process_message)
         builder.make_edge(input_stream[0], node)
         return node, GraphSAGEMultiMessage

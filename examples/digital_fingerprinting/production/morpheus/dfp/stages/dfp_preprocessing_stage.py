@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@ import logging
 import time
 import typing
 
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.column_info import DataFrameInputSchema
+from morpheus.utils.column_info import process_dataframe
 
 from ..messages.multi_dfp_message import MultiDFPMessage
-from ..utils.column_info import DataFrameInputSchema
-from ..utils.column_info import process_dataframe
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -70,9 +70,9 @@ class DFPPreprocessingStage(SinglePortStage):
 
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.process_features)).subscribe(sub)
 
         node = builder.make_node_full(self.unique_name, node_fn)

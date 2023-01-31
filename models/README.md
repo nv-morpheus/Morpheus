@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Morpheus Models
 
 Pretrained models for Morpheus with corresponding training, validation scripts, and datasets.
@@ -135,7 +152,7 @@ parsed apache web log as jsonlines
 ### Model Overview
 This model shows an application of a graph neural network for fraud detection in a credit card transaction graph. A transaction dataset that includes three types of nodes, transaction, client, and merchant nodes is used for modeling. A combination of `GraphSAGE` along `XGBoost` is used to identify frauds in the transaction networks.
 ### Model Architecture
-It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogenous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.
+It uses a bipartite heterogeneous graph representation as input for `GraphSAGE` for feature learning and `XGBoost` as a classifier. Since the input graph is heterogeneous, a heterogeneous implementation of `GraphSAGE` (HinSAGE) is used for feature embedding.
 ### Training
 A training data consists of raw 753 labeled credit card transaction data with data augmentation in a total of 12053 labeled transaction data. The `GraphSAGE` is trained to output embedded representation of transactions out of the graph. The `XGBoost` is trained using the embedded features as a binary classifier to classify fraud and genuine transactions.
 ### How To Use This Model
@@ -161,7 +178,7 @@ Combined with host data from DOCA AppShield, this model can be used to detect ra
 #### Input
 Snapshots collected from DOCA AppShield
 #### Output
-For each process_id and snapshot there is a probablity score between 1 and 0, where 1 is ransomware and 0 is benign.
+For each process_id and snapshot there is a probability score between 1 and 0, where 1 is ransomware and 0 is benign.
 ### References
 - Cohen, A,. & Nissim, N. (2018). Trusted detection of ransomware in a private cloud using machine learning methods leveraging meta-features from volatile memory. In Expert Systems With Applications. (https://www.sciencedirect.com/science/article/abs/pii/S0957417418301283)
 - https://developer.nvidia.com/networking/doca

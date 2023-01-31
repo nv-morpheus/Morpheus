@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import typing
 import urllib.parse
 
 import mlflow
+import mrc
 import requests
-import srf
 from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
@@ -32,7 +32,7 @@ from mlflow.types import ColSpec
 from mlflow.types import Schema
 from mlflow.types.utils import _infer_pandas_column
 from mlflow.types.utils import _infer_schema
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
@@ -150,7 +150,7 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
             experiment_name = self.user_id_to_experiment(user_id=user)
 
-            # Creates a new experiment if it doesnt exist
+            # Creates a new experiment if it doesn't exist
             experiment = mlflow.set_experiment(experiment_name)
 
             with mlflow.start_run(run_name="Duo autoencoder model training run",
@@ -164,8 +164,8 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
                     "Epochs": model.lr_decay.state_dict().get("last_epoch", "unknown"),
                     "Learning rate": model.lr,
                     "Batch size": model.batch_size,
-                    "Start Epoch": message.get_meta("timestamp").min(),
-                    "End Epoch": message.get_meta("timestamp").max(),
+                    "Start Epoch": message.get_meta(self._config.ae.timestamp_column_name).min(),
+                    "End Epoch": message.get_meta(self._config.ae.timestamp_column_name).max(),
                     "Log Count": message.mess_count,
                 })
 
@@ -180,12 +180,6 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
                     metrics_dict[f"embedding-{k}-num_embeddings"] = embedding.num_embeddings
                     metrics_dict[f"embedding-{k}-embedding_dim"] = embedding.embedding_dim
-
-                # Add metrics for all of the loss stats
-                if (hasattr(model, "feature_loss_stats")):
-                    for k, v in model.feature_loss_stats.items():
-                        metrics_dict[f"loss-{k}-mean"] = v.get("mean", "unknown")
-                        metrics_dict[f"loss-{k}-std"] = v.get("std", "unknown")
 
                 mlflow.log_metrics(metrics_dict)
 
@@ -248,9 +242,9 @@ class DFPMLFlowModelWriterStage(SinglePortStage):
 
         return message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.on_data)).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)

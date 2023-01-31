@@ -1,3 +1,104 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+# Morpheus 23.01.00 (30 Jan 2023)
+
+## 🚨 Breaking Changes
+
+- Add missing docstrings ([#628](https://github.com/nv-morpheus/Morpheus/pull/628)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove unused `cudf_kwargs` constructor argument from FileSourceStage &amp; NLPVizFileSource ([#602](https://github.com/nv-morpheus/Morpheus/pull/602)) [@dagardner-nv](https://github.com/dagardner-nv)
+- DFP: Exclude unwanted columns ([#583](https://github.com/nv-morpheus/Morpheus/pull/583)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Morpheus refactor to MRC ([#530](https://github.com/nv-morpheus/Morpheus/pull/530)) [@drobison00](https://github.com/drobison00)
+- Add C++ API docs to documentation builds ([#414](https://github.com/nv-morpheus/Morpheus/pull/414)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🐛 Bug Fixes
+
+- Updated gitignore ([#633](https://github.com/nv-morpheus/Morpheus/pull/633)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Update meta.yaml ([#621](https://github.com/nv-morpheus/Morpheus/pull/621)) [@pdmack](https://github.com/pdmack)
+- Remove hard-coded keys from production DFP ([#607](https://github.com/nv-morpheus/Morpheus/pull/607)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Remove unused `cudf_kwargs` constructor argument from FileSourceStage &amp; NLPVizFileSource ([#602](https://github.com/nv-morpheus/Morpheus/pull/602)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update container version to 23.01 in DFP docker-compose ([#578](https://github.com/nv-morpheus/Morpheus/pull/578)) [@dagardner-nv](https://github.com/dagardner-nv)
+- rm inadvertent kafka-docker add ([#518](https://github.com/nv-morpheus/Morpheus/pull/518)) [@pdmack](https://github.com/pdmack)
+- Fix ambiguous segfault for test requiring MORPHEUS_ROOT ([#514](https://github.com/nv-morpheus/Morpheus/pull/514)) [@cwharris](https://github.com/cwharris)
+- Fix offset attr in inference messages ([#513](https://github.com/nv-morpheus/Morpheus/pull/513)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 📖 Documentation
+
+- Fix docstring for InferenceMemoryAE ([#653](https://github.com/nv-morpheus/Morpheus/pull/653)) [@dagardner-nv](https://github.com/dagardner-nv)
+- 23.01 doc fixes ([#652](https://github.com/nv-morpheus/Morpheus/pull/652)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update NGC version references ([#642](https://github.com/nv-morpheus/Morpheus/pull/642)) [@pdmack](https://github.com/pdmack)
+- Updating Code of Conduct ([#640](https://github.com/nv-morpheus/Morpheus/pull/640)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Split up the DFP guide ([#637](https://github.com/nv-morpheus/Morpheus/pull/637)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add md &amp; rst files to copyright.py checks and Fix copyright year in Sphinx footer ([#635](https://github.com/nv-morpheus/Morpheus/pull/635)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add missing docstrings ([#628](https://github.com/nv-morpheus/Morpheus/pull/628)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Model and dataset documentation update ([#612](https://github.com/nv-morpheus/Morpheus/pull/612)) [@shawn-davis](https://github.com/shawn-davis)
+- Fix production DFP pipeline run commands ([#608](https://github.com/nv-morpheus/Morpheus/pull/608)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update copyright headers for 2023 ([#599](https://github.com/nv-morpheus/Morpheus/pull/599)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Ensure Kafka &amp; Triton deps are documented when used ([#598](https://github.com/nv-morpheus/Morpheus/pull/598)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Typo(fix): missing equal operator in `--load_model` ([#596](https://github.com/nv-morpheus/Morpheus/pull/596)) [@tanmoyio](https://github.com/tanmoyio)
+- Stated explicitly regarding helm chart names ([#592](https://github.com/nv-morpheus/Morpheus/pull/592)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Fix spelling mistakes &amp; bad copy/paste ([#590](https://github.com/nv-morpheus/Morpheus/pull/590)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Removed outdated comments ([#585](https://github.com/nv-morpheus/Morpheus/pull/585)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Document DFP output fields ([#581](https://github.com/nv-morpheus/Morpheus/pull/581)) [@dagardner-nv](https://github.com/dagardner-nv)
+- 566 doc source basics overviewrst ([#580](https://github.com/nv-morpheus/Morpheus/pull/580)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Small updates to examples/basic_usage/README.md ([#575](https://github.com/nv-morpheus/Morpheus/pull/575)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Misc updates for README.md ([#574](https://github.com/nv-morpheus/Morpheus/pull/574)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Add a glossary to docs ([#573](https://github.com/nv-morpheus/Morpheus/pull/573)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove search link from index.rst ([#572](https://github.com/nv-morpheus/Morpheus/pull/572)) [@efajardo-nv](https://github.com/efajardo-nv)
+- getting_started.md: Goto is two words. ([#571](https://github.com/nv-morpheus/Morpheus/pull/571)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Minor fixes/updates to abp_pcap_detection example ([#570](https://github.com/nv-morpheus/Morpheus/pull/570)) [@dagardner-nv](https://github.com/dagardner-nv)
+- More documentation fixes ([#560](https://github.com/nv-morpheus/Morpheus/pull/560)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Misc documentation fixes ([#547](https://github.com/nv-morpheus/Morpheus/pull/547)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Update cloud deployment guide and fix doc build instructions. ([#546](https://github.com/nv-morpheus/Morpheus/pull/546)) [@cwharris](https://github.com/cwharris)
+- Move DFP Viz screenshot to LFS ([#537](https://github.com/nv-morpheus/Morpheus/pull/537)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Restructure the getting started guide ([#536](https://github.com/nv-morpheus/Morpheus/pull/536)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Morpheus not &quot;Morpheus SDK&quot; ([#534](https://github.com/nv-morpheus/Morpheus/pull/534)) [@dagardner-nv](https://github.com/dagardner-nv)
+- 525 doc images in docs/source/basics/img should be moved to LFS ([#532](https://github.com/nv-morpheus/Morpheus/pull/532)) [@bsuryadevara](https://github.com/bsuryadevara)
+- 524 doc remove usage of buffer stage from examples.rst ([#528](https://github.com/nv-morpheus/Morpheus/pull/528)) [@bsuryadevara](https://github.com/bsuryadevara)
+- Rename morpheus_quickstart_guide to cloud_deployment_guide ([#526](https://github.com/nv-morpheus/Morpheus/pull/526)) [@cwharris](https://github.com/cwharris)
+- Reorg docs ([#522](https://github.com/nv-morpheus/Morpheus/pull/522)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Documentation updates ([#519](https://github.com/nv-morpheus/Morpheus/pull/519)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Remove fork references ([#511](https://github.com/nv-morpheus/Morpheus/pull/511)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Typo fixes ([#502](https://github.com/nv-morpheus/Morpheus/pull/502)) [@pdmack](https://github.com/pdmack)
+- Add C++ API docs to documentation builds ([#414](https://github.com/nv-morpheus/Morpheus/pull/414)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🚀 New Features
+
+- Add GitHub CLI support to devcontainer ([#629](https://github.com/nv-morpheus/Morpheus/pull/629)) [@cwharris](https://github.com/cwharris)
+- DFP pipeline module ([#510](https://github.com/nv-morpheus/Morpheus/pull/510)) [@bsuryadevara](https://github.com/bsuryadevara)
+
+## 🛠️ Improvements
+
+- Update protobuf to 3.20.2 ([#648](https://github.com/nv-morpheus/Morpheus/pull/648)) [@pdmack](https://github.com/pdmack)
+- Update torch to 1.13.1+cu116 ([#645](https://github.com/nv-morpheus/Morpheus/pull/645)) [@pdmack](https://github.com/pdmack)
+- Update morpheus-visualizations submodule ([#639](https://github.com/nv-morpheus/Morpheus/pull/639)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Updating the CI image to use Driver 520 ([#634](https://github.com/nv-morpheus/Morpheus/pull/634)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Update Rapids version to 22.10 ([#617](https://github.com/nv-morpheus/Morpheus/pull/617)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Update DFPMLFlowModelWriterStage to no longer save mean and std metrics ([#605](https://github.com/nv-morpheus/Morpheus/pull/605)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Log parsing model training for split logs and smaller models ([#597](https://github.com/nv-morpheus/Morpheus/pull/597)) [@raykallen](https://github.com/raykallen)
+- Ensure that the mlflow logger is uses at the same level as the morpheus logger ([#594](https://github.com/nv-morpheus/Morpheus/pull/594)) [@dagardner-nv](https://github.com/dagardner-nv)
+- DFP: Exclude unwanted columns ([#583](https://github.com/nv-morpheus/Morpheus/pull/583)) [@dagardner-nv](https://github.com/dagardner-nv)
+- Add validation set option to DFP training ([#579](https://github.com/nv-morpheus/Morpheus/pull/579)) [@efajardo-nv](https://github.com/efajardo-nv)
+- Updating CI runner image for MRC and C++20 ([#556](https://github.com/nv-morpheus/Morpheus/pull/556)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+- Add Morpheus devcontainer ([#535](https://github.com/nv-morpheus/Morpheus/pull/535)) [@cwharris](https://github.com/cwharris)
+- Morpheus changes related to utility consolidation ([#531](https://github.com/nv-morpheus/Morpheus/pull/531)) [@drobison00](https://github.com/drobison00)
+- Morpheus refactor to MRC ([#530](https://github.com/nv-morpheus/Morpheus/pull/530)) [@drobison00](https://github.com/drobison00)
+- Update to PyTorch 1.12 ([#523](https://github.com/nv-morpheus/Morpheus/pull/523)) [@efajardo-nv](https://github.com/efajardo-nv)
+
 # Morpheus 22.11.00 (18 Nov 2022)
 
 ## 🐛 Bug Fixes

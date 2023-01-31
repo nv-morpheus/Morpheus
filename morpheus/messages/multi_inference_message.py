@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -131,18 +131,17 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
 @dataclasses.dataclass
 class InferenceMemoryAE(InferenceMemory, cpp_class=None):
     """
-    This is a container class for data that needs to be submitted to the inference server for FIL category
-    usecases.
+    This is a container class for data that needs to be submitted to the inference server for auto encoder usecases.
 
     Parameters
     ----------
-    input__0 : cupy.ndarray
+    input : cupy.ndarray
         Inference input.
     seq_ids : cupy.ndarray
         Ids used to index from an inference input to a message. Necessary since there can be more inference
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
-
     """
+
     input: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
 

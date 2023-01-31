@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,7 +107,7 @@ def test_py_inf_fn(config):
 
 
 @pytest.mark.use_python
-@mock.patch('srf.Future')
+@mock.patch('mrc.Future')
 @mock.patch('morpheus.stages.inference.inference_stage.ops')
 def test_py_inf_fn_on_next(mock_ops, mock_future, config):
     mock_future.return_value = mock_future
@@ -186,15 +186,6 @@ def test_build_single_cpp_not_impl(config):
     inf_stage = InferenceStage(config)
     inf_stage.supports_cpp_node = lambda: True
     pytest.raises(NotImplementedError, inf_stage._build_single, mock_segment, mock_input_stream)
-
-
-def test_start(config):
-    inf_stage = InferenceStage(config)
-
-    pytest.raises(AssertionError, inf_stage.start)
-
-    inf_stage._is_built = True
-    inf_stage.start()
 
 
 def test_stop(config):

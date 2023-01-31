@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -187,6 +187,6 @@ TableInfo TableInfo::get_slice(cudf::size_type start, cudf::size_type stop, std:
 
     auto slice_cols = slice_rows.select(col_indices);
 
-    return TableInfo(m_parent, slice_cols, m_index_names, new_column_names);
+    return {m_parent, slice_cols, m_index_names, new_column_names};
 }
 }  // namespace morpheus

@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # SID Visualization Example
 
 ## Prerequisites
@@ -18,10 +35,6 @@ git submodule update --init --recursive
 Before launching the demo, we need the dev container for Morpheus to be created:
 ```bash
 export DOCKER_IMAGE_TAG="sid-viz"
-```
-
-# Build the dev container
-```bash
 ./docker/build_container_dev.sh
 ```
 
@@ -31,7 +44,7 @@ We will use docker-compose to build and run the entire demo. To launch everythin
 
 Save the Morpheus repo directory:
 ```bash
-export MORPHEUS_HOME=$(git rev-parse --show-toplevel)
+export MORPHEUS_ROOT=$(git rev-parse --show-toplevel)
 ```
 
 Ensure SID model is downloaded for deployment to Triton:
@@ -41,7 +54,7 @@ Ensure SID model is downloaded for deployment to Triton:
 
 Change to the example directory:
 ```bash
-cd ${MORPHEUS_HOME}/examples/sid_visualization
+cd ${MORPHEUS_ROOT}/examples/sid_visualization
 ```
 
 Launch the containers:
@@ -51,7 +64,7 @@ DOCKER_BUILDKIT=1 docker-compose up --build -d
 
 The following GUI should be displayed when all containers have completed launching:
 
-<img src="./img/initial_win.png" width=75% height=75%>
+![Initial Window](./img/initial_win.png)
 
 ### Build Morpheus
 
@@ -114,19 +127,19 @@ This launch will use all of the available datasets. Each dataset will show up as
 
 The following is a screenshot after all four batches have been processed:
 
-<img src="./img/full_win.png" width=75% height=75%>
+![Full Window](./img/full_win.png)
 
 Use the slider or the following buttons to step through the inferences batches in the visualization:
 |                              |                                                   |
 | ---------------------------- | ------------------------------------------------- |
-| <img src="./img/left.png">   | Step to previous inference batch                  |
-| <img src="./img/right.png">  | Step to next inference batch                      |
-| <img src="./img/replay.png"> | Step through all inference batches from beginning |
-| <img src="./img/pause.png">  | Pause animation                                   |
+| ![left](./img/left.png)      | Step to previous inference batch                  |
+| ![right](./img/right.png)    | Step to next inference batch                      |
+| ![replay](./img/replay.png)  | Step through all inference batches from beginning |
+| ![pause](./img/pause.png)    | Pause animation                                   |
 
 The visualization on the right shows nodes in the current inference batch represented as
 green spheres. White (benign) and red (SI) packets are shown flowing between the node connections.
-While the animation is running, you can click the pause button or toggle off `Simulating`. Once paused, 
+While the animation is running, you can click the pause button or toggle off `Simulating`. Once paused,
 you will be able to hover over an individual packet to view its contents.
 
 Changing the dataset does not require relaunching the GUI. Simply re-run Morpheus with the new dataset and the GUI will be updated.

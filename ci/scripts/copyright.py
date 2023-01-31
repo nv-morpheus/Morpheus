@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: Copyright (c) 2019-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: Copyright (c) 2019-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +18,7 @@
 import argparse
 import datetime
 import io
+import logging
 import os
 import re
 import sys
@@ -27,7 +29,7 @@ import gitutils  # noqa: E402
 
 FilesToCheck = [
     # Get all of these extensions and templates (*.in)
-    re.compile(r"[.](cmake|cpp|cc|cu|cuh|h|hpp|sh|pxd|py|pyx|yml|yaml)(\.in)?$"),
+    re.compile(r"[.](cmake|cpp|cc|cu|cuh|h|hpp|md|rst|sh|pxd|py|pyx|yml|yaml)(\.in)?$"),
     # And files with a particular file/extension combo
     re.compile(r"CMakeLists[.]txt$"),
     re.compile(r"setup[.]cfg$"),
@@ -37,7 +39,12 @@ FilesToCheck = [
 ]
 
 # Nothing in a build folder or .cache
-ExemptFiles = [re.compile(r"_version\.py"), r"^[^ \/\n]*\.cache[^ \/\n]*\/.*$", r"^[^ \/\n]*build[^ \/\n]*\/.*$"]
+ExemptFiles = [
+    r"_version\.py",
+    r"^[^ \/\n]*\.cache[^ \/\n]*\/.*$",
+    r"^[^ \/\n]*build[^ \/\n]*\/.*$",
+    r"[^ \/\n]*docs/source/(_lib|_modules|_templates)/.*$"
+]
 
 # this will break starting at year 10000, which is probably OK :)
 CheckSimple = re.compile(r"Copyright *(?:\(c\))? *(\d{4}),? *NVIDIA C(?:ORPORATION|orporation)")
@@ -225,6 +232,8 @@ def checkCopyright_main():
     retVal = 0
     global ExemptFiles
 
+    logging.basicConfig(level=logging.DEBUG)
+
     argparser = argparse.ArgumentParser("Checks for a consistent copyright header in git's modified files")
     argparser.add_argument("--update-start-year",
                            dest='update_start_year',
@@ -361,7 +370,7 @@ def checkCopyright_main():
     return retVal
 
 
-A2_LIC_HASH = """# SPDX-FileCopyrightText: Copyright (c) {YEAR} NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+A2_LIC_HASH = """# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -378,7 +387,7 @@ A2_LIC_HASH = """# SPDX-FileCopyrightText: Copyright (c) {YEAR} NVIDIA CORPORATI
 """
 
 A2_LIC_C = """/*
- * SPDX-FileCopyrightText: Copyright (c) {YEAR} NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -395,6 +404,42 @@ A2_LIC_C = """/*
  */
 """
 
+A2_LIC_MD = """<!--
+SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+"""
+
+A2_LIC_RST = """..
+   SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: Apache-2.0
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+"""
+
 # FilesToCheck list will allow us to assume Cmake for the txt extension
 EXT_LIC_MAPPING = {
     'c': A2_LIC_C,
@@ -405,9 +450,11 @@ EXT_LIC_MAPPING = {
     'cuh': A2_LIC_C,
     'h': A2_LIC_C,
     'hpp': A2_LIC_C,
+    'md': A2_LIC_MD,
     'pxd': A2_LIC_HASH,
     'py': A2_LIC_HASH,
     'pyx': A2_LIC_HASH,
+    'rst': A2_LIC_RST,
     'sh': A2_LIC_HASH,
     'txt': A2_LIC_HASH,
     'yaml': A2_LIC_HASH,

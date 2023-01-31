@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ import os
 import sys
 import typing
 
+import mrc
+import mrc.core.operators as ops
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import srf
-import srf.core.operators as ops
 import websockets.legacy.server
 from websockets.server import serve
 
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 @register_stage("gen-viz", modes=[PipelineModes.NLP], command_args={"deprecated": True})
 class GenerateVizFramesStage(SinglePortStage):
     """
-    Write out vizualization DataFrames.
+    Write out visualization DataFrames.
 
     Parameters
     ----------
@@ -165,6 +165,9 @@ class GenerateVizFramesStage(SinglePortStage):
         in_df.to_csv(fn, columns=["timestamp", "src_ip", "dest_ip", "src_port", "dest_port", "si", "data"])
 
     async def start_async(self):
+        """
+        Launch the Websocket server and asynchronously send messages via Websocket.
+        """
 
         loop = asyncio.get_event_loop()
         self._loop = loop
@@ -172,6 +175,9 @@ class GenerateVizFramesStage(SinglePortStage):
         self._buffer_queue = AsyncIOProducerConsumerQueue(maxsize=2, loop=loop)
 
         async def client_connected(websocket: websockets.legacy.server.WebSocketServerProtocol):
+            """
+            Establishes a connection with the WebSocket server.
+            """
 
             logger.info("Got connection from: {}:{}".format(*websocket.remote_address))
 
@@ -187,6 +193,9 @@ class GenerateVizFramesStage(SinglePortStage):
             logger.info("Disconnected from: {}:{}".format(*websocket.remote_address))
 
         async def run_server():
+            """
+            Runs Websocket server.
+            """
 
             try:
 
@@ -225,7 +234,7 @@ class GenerateVizFramesStage(SinglePortStage):
         # Wait for it to
         await self._server_task
 
-    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
 

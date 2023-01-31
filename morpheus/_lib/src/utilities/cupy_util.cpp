@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,12 +49,12 @@ pybind11::module_ CupyUtil::get_cp()
         cp_module = pybind11::module_::import("cupy");
     }
 
-    pybind11::module_ m = pybind11::cast<pybind11::module_>(cp_module);
+    auto m = pybind11::cast<pybind11::module_>(cp_module);
 
     return m;
 }
 
-pybind11::object CupyUtil::tensor_to_cupy(const TensorObject &tensor)
+pybind11::object CupyUtil::tensor_to_cupy(const TensorObject& tensor)
 {
     // These steps follow the cupy._convert_object_with_cuda_array_interface function shown here:
     // https://github.com/cupy/cupy/blob/a5b24f91d4d77fa03e6a4dd2ac954ff9a04e21f4/cupy/core/core.pyx#L2478-L2514
@@ -72,12 +72,12 @@ pybind11::object CupyUtil::tensor_to_cupy(const TensorObject &tensor)
     pybind11::list shape_list;
     pybind11::list stride_list;
 
-    for (auto &idx : tensor.get_shape())
+    for (auto& idx : tensor.get_shape())
     {
         shape_list.append(idx);
     }
 
-    for (auto &idx : tensor.get_stride())
+    for (auto& idx : tensor.get_stride())
     {
         stride_list.append(idx * tensor.dtype_size());
     }
@@ -99,14 +99,13 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
 
     pybind11::tuple shape_tup = arr_interface["shape"];
 
-    pybind11::print(shape_tup);
     auto shape = shape_tup.cast<std::vector<TensorIndex>>();
 
-    std::string typestr = arr_interface["typestr"].cast<std::string>();
+    auto typestr = arr_interface["typestr"].cast<std::string>();
 
     pybind11::tuple data_tup = arr_interface["data"];
 
-    uintptr_t data_ptr = data_tup[0].cast<uintptr_t>();
+    auto data_ptr = data_tup[0].cast<uintptr_t>();
 
     std::vector<TensorIndex> strides{};
 
@@ -121,7 +120,7 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
     auto size = cupy_array.attr("data").attr("mem").attr("size").cast<size_t>();
 
     auto tensor =
-        Tensor::create(std::make_shared<rmm::device_buffer>((void const *)data_ptr, size, rmm::cuda_stream_per_thread),
+        Tensor::create(std::make_shared<rmm::device_buffer>((void const*)data_ptr, size, rmm::cuda_stream_per_thread),
                        DType::from_numpy(typestr),
                        shape,
                        strides,

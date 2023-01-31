@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ from functools import partial
 from functools import reduce
 
 import cupy as cp
-import srf
-from srf.core import operators as ops
+import mrc
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
@@ -48,10 +48,19 @@ class InferenceWorker:
         self._inf_queue = inf_queue
 
     def init(self):
+        """
+        By overriding this function, the resources necessary for the inference can be initiated.
+        Each inference worker calls this function once.
+        """
+
         # Nothing required in base
         pass
 
     def stop(self):
+        """
+        Override this function to stop the inference workers or carry out any additional cleanups.
+        """
+
         pass
 
     def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseProbsMessage:
@@ -168,7 +177,8 @@ class InferenceStage(MultiMessageStage):
         return "inference"
 
     def accepted_types(self) -> typing.Tuple:
-        """Accepted input types to this stage.
+        """
+        Accepted input types to this stage.
 
         Returns
         -------
@@ -201,15 +211,15 @@ class InferenceStage(MultiMessageStage):
         """
         pass
 
-    def _get_cpp_inference_node(self, builder: srf.Builder) -> srf.SegmentObject:
+    def _get_cpp_inference_node(self, builder: mrc.Builder) -> mrc.SegmentObject:
         raise NotImplementedError("No C++ node is available for this inference type")
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
         out_type = MultiResponseProbsMessage
 
-        def py_inference_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
             worker = self._get_inference_worker(self._inf_queue)
 
@@ -231,9 +241,9 @@ class InferenceStage(MultiMessageStage):
                 for batch in batches:
                     outstanding_requests += 1
 
-                    completion_future = srf.Future()
+                    completion_future = mrc.Future()
 
-                    def set_output_fut(resp: ResponseMemoryProbs, b, batch_future: srf.Future):
+                    def set_output_fut(resp: ResponseMemoryProbs, b, batch_future: mrc.Future):
                         nonlocal outstanding_requests
                         m = self._convert_one_response(memory, b, resp)
 
@@ -272,6 +282,10 @@ class InferenceStage(MultiMessageStage):
         return super()._start()
 
     def stop(self):
+        """
+        Stops the inference workers and closes the inference queue.
+        """
+
         for w in self._workers:
             w.stop()
 
@@ -279,6 +293,9 @@ class InferenceStage(MultiMessageStage):
         self._inf_queue.close()
 
     async def join(self):
+        """
+        On all inference worker threads, this function applies join.
+        """
 
         # Wait for queue to be finished. This does block but it should be fine for now
         self._inf_queue.join()
@@ -348,7 +365,7 @@ class InferenceStage(MultiMessageStage):
 
         for inf, res in zip(in_message, out_message):
 
-            # Ensure they all share the same meta object. Otherwise this doesnt work
+            # Ensure they all share the same meta object. Otherwise this doesn't work
             # assert inf.meta is saved_meta
 
             # Make sure we have a continuous list

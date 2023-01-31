@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,7 @@ class TableInfo;
 
 /**
  * @brief Owning object which owns a unique_ptr<cudf::table>, table_metadata, and index information
- * Why this doesnt exist in cudf is beyond me
+ * Why this doesn't exist in cudf is beyond me
  */
 struct IDataTable : public std::enable_shared_from_this<IDataTable>
 {

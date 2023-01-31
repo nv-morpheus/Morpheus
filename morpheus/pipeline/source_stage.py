@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ import logging
 import typing
 from abc import abstractmethod
 
-import srf
+import mrc
 
 import morpheus.pipeline as _pipeline
 from morpheus.config import Config
@@ -43,7 +43,7 @@ class SourceStage(_pipeline.StreamWrapper):
         self._start_callbacks: typing.List[typing.Callable] = []
         self._stop_callbacks: typing.List[typing.Callable] = []
 
-        self._source_stream: srf.SegmentObject = None
+        self._source_stream: mrc.SegmentObject = None
 
     @property
     def input_count(self) -> int:
@@ -59,7 +59,7 @@ class SourceStage(_pipeline.StreamWrapper):
         return None
 
     @abstractmethod
-    def _build_source(self, builder: srf.Builder) -> StreamPair:
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
         """
         Abstract method all derived Source classes should implement. Returns the same value as `build`.
 
@@ -69,13 +69,13 @@ class SourceStage(_pipeline.StreamWrapper):
         -------
 
         `morpheus.pipeline.pipeline.StreamPair`:
-            A tuple containing the output `srf.SegmentObject` object from this stage and the message data type.
+            A tuple containing the output `mrc.SegmentObject` object from this stage and the message data type.
         """
 
         pass
 
     @typing.final
-    def _build(self, builder: srf.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _build(self, builder: mrc.Builder, in_ports_streams: typing.List[StreamPair]) -> typing.List[StreamPair]:
         # Derived source stages should override `_build_source` instead of this method. This allows for tracking the
         # True source object separate from the output stream. If any other operators need to be added after the source,
         # use `_post_build`
@@ -92,7 +92,7 @@ class SourceStage(_pipeline.StreamWrapper):
 
         return [source_pair]
 
-    def _post_build(self, builder: srf.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
+    def _post_build(self, builder: mrc.Builder, out_ports_pair: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         return out_ports_pair
 
@@ -100,4 +100,9 @@ class SourceStage(_pipeline.StreamWrapper):
         self._source_stream.start()
 
     async def join(self):
+        """
+        Awaitable method that stages can implement this to perform cleanup steps when pipeline is stopped.
+        Typically this is called after `stop` during a graceful shutdown, but may not be called if the pipeline is
+        terminated on its own.
+        """
         pass

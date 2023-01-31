@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,11 @@
 
 import dataclasses
 import logging
+import typing
 
 from dfencoder import AutoEncoder
 
+from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class MultiAEMessage(MultiMessage):
+    """
+    Subclass of `MultiMessage` specific to the AutoEncoder pipeline, which contains the model.
+    """
 
     model: AutoEncoder
     # train_loss_scores: cp.ndarray
@@ -51,6 +56,37 @@ class MultiAEMessage(MultiMessage):
         return MultiAEMessage(meta=self.meta,
                               mess_offset=start,
                               mess_count=stop - start,
+                              model=self.model,
+                              train_scores_mean=self.train_scores_mean,
+                              train_scores_std=self.train_scores_std)
+
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]], num_selected_rows: int = None):
+        """
+        Perform a copy of the current message instance for the given `ranges` of rows.
+
+        Parameters
+        ----------
+        ranges : typing.List[typing.Tuple[int, int]]
+            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
+            The final output is exclusive of the `stop_row`, i.e. `[start_row, stop_row)`. For example to copy rows
+            1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
+
+        num_selected_rows : typing.Union[None, int]
+            Optional specify the number of rows selected by `ranges`, otherwise this is computed by the result.
+
+        Returns
+        -------
+        `MultiAEMessage`
+        """
+
+        sliced_rows = self.copy_meta_ranges(ranges)
+
+        if num_selected_rows is None:
+            num_selected_rows = len(sliced_rows)
+
+        return MultiAEMessage(meta=UserMessageMeta(sliced_rows, user_id=self.meta.user_id),
+                              mess_offset=0,
+                              mess_count=num_selected_rows,
                               model=self.model,
                               train_scores_mean=self.train_scores_mean,
                               train_scores_std=self.train_scores_std)

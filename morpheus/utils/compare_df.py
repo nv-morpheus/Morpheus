@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,29 @@ def filter_df(df: pd.DataFrame,
               include_columns: typing.List[str],
               exclude_columns: typing.List[str],
               replace_idx: str = None):
+    """
+    Filters the dataframe `df` including and excluding the columns specified by `include_columns` and `exclude_columns`
+    respectively. If a column is matched by both `include_columns` and `exclude_columns`, it will be excluded.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe to filter.
+
+    include_columns : typing.List[str]
+        List of regular expression strings of columns to be included.
+
+    exclude_columns : typing.List[str]
+        List of regular expression strings of columns to be excluded.
+
+    replace_idx: str, optional
+        When `replace_idx` is not None and existsa in the dataframe it will be set as the index.
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered slice of `df`.
+    """
 
     if (include_columns is not None and len(include_columns) > 0):
         include_columns = re.compile("({})".format("|".join(include_columns)))

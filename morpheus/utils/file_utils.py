@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,12 @@
 # limitations under the License.
 
 import os
+import re
 import typing
+from datetime import datetime
+from datetime import timezone
+
+import fsspec
 
 import morpheus
 
@@ -72,3 +77,46 @@ def load_labels_file(labels_filename: str) -> typing.List[str]:
 
     with open(labels_filename, "r") as lf:
         return [x.strip() for x in lf.readlines()]
+
+
+def date_extractor(file_object: fsspec.core.OpenFile, filename_regex: re.Pattern):
+    """
+    Date is extracted from a file name using a specified regex pattern by this function.
+    If there is no match with the pattern, extracts the modified or creation timestamp from the file.
+
+    Parameters
+    ----------
+    file_object : fsspec.core.OpenFile
+        File object
+    filename_regex : re.Pattern
+        Filename regex.
+
+    Returns
+    -------
+    int
+        Timestamp
+    """
+    assert isinstance(file_object, fsspec.core.OpenFile)
+
+    file_path = file_object.path
+
+    # Match regex with the pathname since that can be more accurate
+    match = filename_regex.search(file_path)
+
+    if (match):
+        # Convert the regex match
+        groups = match.groupdict()
+
+        if ("microsecond" in groups):
+            groups["microsecond"] = int(float(groups["microsecond"]) * 1000000)
+
+        groups = {key: int(value) for key, value in groups.items()}
+
+        groups["tzinfo"] = timezone.utc
+
+        ts_object = datetime(**groups)
+    else:
+        # Otherwise, fallback to the file modified (created?) time
+        ts_object = file_object.fs.modified(file_object.path)
+
+    return ts_object

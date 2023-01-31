@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@
 #include "morpheus/utilities/tensor_util.hpp"
 
 #include <glog/logging.h>              // for DCHECK_EQ
-#include <srf/utils/sort_indexes.hpp>  // for sort_indexes
+#include <mrc/utils/sort_indexes.hpp>  // for sort_indexes
 
 // clang-format off
 // prevent from moving this into the third-party section
@@ -33,14 +33,14 @@
 #include <vector>       // for vector
 
 namespace morpheus {
-void TensorUtils::write_shape_to_stream(const shape_type& shape, std::ostream& os)
+void TensorUtils::write_shape_to_stream(const shape_type_t& shape, std::ostream& os)
 {
     os << "(";
     std::copy(shape.begin(), shape.end(), std::experimental::make_ostream_joiner(os, ", "));
     os << ")";
 }
 
-std::string TensorUtils::shape_to_string(const shape_type& shape)
+std::string TensorUtils::shape_to_string(const shape_type_t& shape)
 {
     std::stringstream ss;
     write_shape_to_stream(shape, ss);
@@ -59,7 +59,7 @@ void TensorUtils::set_contiguous_stride(const std::vector<TensorIndex>& shape, s
     }
 }
 
-bool TensorUtils::has_contiguous_stride(const std::vector<TensorIndex>& shape, const shape_type& stride)
+bool TensorUtils::has_contiguous_stride(const std::vector<TensorIndex>& shape, const shape_type_t& stride)
 {
     DCHECK_EQ(shape.size(), stride.size());
     auto count = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
@@ -74,7 +74,7 @@ bool TensorUtils::validate_shape_and_stride(const std::vector<TensorIndex>& shap
         return false;
     }
 
-    auto stride_sorted_idx = srf::sort_indexes(stride);
+    auto stride_sorted_idx = mrc::sort_indexes(stride);
 
     for (int i = 0; i < stride_sorted_idx.size() - 1; ++i)
     {

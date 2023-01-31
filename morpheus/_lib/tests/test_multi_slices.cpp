@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,6 @@
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/utilities/matx_util.hpp"  // for MatxUtil::create_seg_ids
 #include "morpheus/utilities/type_util.hpp"  // for TypeId
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyHostToDevice
@@ -33,10 +32,10 @@
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <gtest/gtest.h>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <pybind11/embed.h>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
-#include <srf/cuda/common.hpp>  // for SRF_CHECK_CUDA
 
 #include <algorithm>
 #include <cstdlib>

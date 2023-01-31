@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,11 +107,11 @@ WriteToFileStage::subscribe_fn_t WriteToFileStage::build_operator()
 }
 
 // ************ WriteToFileStageInterfaceProxy ************* //
-std::shared_ptr<srf::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
-    const std::string &filename,
-    const std::string &mode,
+std::shared_ptr<mrc::segment::Object<WriteToFileStage>> WriteToFileStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
+    const std::string& filename,
+    const std::string& mode,
     FileTypes file_type,
     bool include_index_col)
 {

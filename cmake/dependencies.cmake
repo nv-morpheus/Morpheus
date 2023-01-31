@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,41 +15,11 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "dep")
 
-# Needed force rapids cpm to use our source directory.
-set(CPM_SOURCE_CACHE "${CMAKE_SOURCE_DIR}/.cache/cpm")
-# Prevent cpm_init from trying to tell us where to put cpm.cmake
-include(get_cpm)
+morpheus_utils_initialize_cpm(MORPHEUS_CACHE_DIR)
 
-# Cant use rapids_cpm_init() for now since the `rapids_cpm_download()` creates a
-# new scope when importing CPM. Manually do the other commands and import CPM on
-# our own with get_cpm
-#include("${rapids-cmake-dir}/cpm/detail/load_preset_versions.cmake")
-#rapids_cpm_load_preset_versions()
-
-# Print CMake settings when verbose output is enabled
-message(VERBOSE "PROJECT_NAME: " ${PROJECT_NAME})
-message(VERBOSE "CMAKE_HOST_SYSTEM: ${CMAKE_HOST_SYSTEM}")
-message(VERBOSE "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
-message(VERBOSE "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER})
-message(VERBOSE "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID})
-message(VERBOSE "CMAKE_CXX_COMPILER_VERSION: " ${CMAKE_CXX_COMPILER_VERSION})
-message(VERBOSE "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS})
-message(VERBOSE "CMAKE_CUDA_COMPILER: " ${CMAKE_CUDA_COMPILER})
-message(VERBOSE "CMAKE_CUDA_COMPILER_ID: " ${CMAKE_CUDA_COMPILER_ID})
-message(VERBOSE "CMAKE_CUDA_COMPILER_VERSION: " ${CMAKE_CUDA_COMPILER_VERSION})
-message(VERBOSE "CMAKE_CUDA_FLAGS: " ${CMAKE_CUDA_FLAGS})
-message(VERBOSE "CMAKE_CURRENT_SOURCE_DIR: " ${CMAKE_CURRENT_SOURCE_DIR})
-message(VERBOSE "CMAKE_CURRENT_BINARY_DIR: " ${CMAKE_CURRENT_BINARY_DIR})
-message(VERBOSE "CMAKE_CURRENT_LIST_DIR: " ${CMAKE_CURRENT_LIST_DIR})
-message(VERBOSE "CMAKE_EXE_LINKER_FLAGS: " ${CMAKE_EXE_LINKER_FLAGS})
-message(VERBOSE "CMAKE_INSTALL_PREFIX: " ${CMAKE_INSTALL_PREFIX})
-message(VERBOSE "CMAKE_INSTALL_FULL_INCLUDEDIR: " ${CMAKE_INSTALL_FULL_INCLUDEDIR})
-message(VERBOSE "CMAKE_INSTALL_FULL_LIBDIR: " ${CMAKE_INSTALL_FULL_LIBDIR})
-message(VERBOSE "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
-message(VERBOSE "CMAKE_PREFIX_PATH: " ${CMAKE_PREFIX_PATH})
-message(VERBOSE "CMAKE_FIND_ROOT_PATH: " ${CMAKE_FIND_ROOT_PATH})
-message(VERBOSE "CMAKE_LIBRARY_ARCHITECTURE: " ${CMAKE_LIBRARY_ARCHITECTURE})
-message(VERBOSE "FIND_LIBRARY_USE_LIB64_PATHS: " ${FIND_LIBRARY_USE_LIB64_PATHS})
+if (VERBOSE)
+  morpheus_utils_print_config()
+endif()
 
 # Load direct physical package dependencies first, so we fail early.
 find_package(Protobuf REQUIRED)
@@ -83,37 +53,30 @@ endif()
 
 # libcudacxx -- get an explicit lubcudacxx build, matx tries to pull a tag that doesn't exist.
 # =========
-set(LIBCUDACXX_VERSION "1.8.0" CACHE STRING "Version of libcudacxx to use")
-include(deps/Configure_libcudacxx)
+morpheus_utils_configure_libcudacxx()
 
 # matx
 # ====
-set(MATX_VERSION "0.1.0" CACHE STRING "Version of MatX to use")
-include(deps/Configure_matx)
+morpheus_utils_configure_matx()
 
 # pybind11
 # =========
-set(PYBIND11_VERSION "2.8.1" CACHE STRING "Version of Pybind11 to use")
-include(deps/Configure_pybind11)
+morpheus_utils_configure_pybind11()
 
 # RD-Kafka
 # =====
-set(RDKAFKA_VERSION 1.6.2)
-include(deps/Configure_rdkafka)
+morpheus_utils_configure_rdkafka()
 
-# SRF (Should come after all third party but before NVIDIA repos)
+# MRC (Should come after all third party but before NVIDIA repos)
 # =====
-set(SRF_VERSION 22.11 CACHE STRING "Which version of SRF to use")
-include(deps/Configure_srf)
+morpheus_utils_configure_mrc()
 
 # CuDF
 # =====
-set(CUDF_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of cuDF to use")
-include(deps/Configure_cudf)
+morpheus_utils_configure_cudf()
 
 # Triton-client
 # =====
-set(TRITONCLIENT_VERSION "${MORPHEUS_RAPIDS_VERSION}" CACHE STRING "Which version of TritonClient to use")
-include(deps/Configure_TritonClient)
+morpheus_utils_configure_tritonclient()
 
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)

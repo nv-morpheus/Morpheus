@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,10 +29,10 @@
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
+#include <mrc/segment/builder.hpp>
 #include <nvtext/subword_tokenize.hpp>
-#include <pysrf/node.hpp>
+#include <pymrc/node.hpp>
 #include <rmm/device_buffer.hpp>  // for device_buffer
-#include <srf/segment/builder.hpp>
 
 #include <cstdint>
 #include <exception>
@@ -138,9 +138,9 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
 }
 
 // ************ PreprocessNLPStageInterfaceProxy *********** //
-std::shared_ptr<srf::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
-    srf::segment::Builder &builder,
-    const std::string &name,
+std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>> PreprocessNLPStageInterfaceProxy::init(
+    mrc::segment::Builder& builder,
+    const std::string& name,
     std::string vocab_hash_file,
     uint32_t sequence_length,
     bool truncation,

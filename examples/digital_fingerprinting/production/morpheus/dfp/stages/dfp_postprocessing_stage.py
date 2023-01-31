@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,26 +17,22 @@ import time
 import typing
 from datetime import datetime
 
+import mrc
 import numpy as np
-import srf
-from srf.core import operators as ops
+from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
-from ..messages.multi_dfp_message import DFPMessageMeta
-
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 class DFPPostprocessingStage(SinglePortStage):
 
-    def __init__(self, c: Config, z_score_threshold=2.0):
+    def __init__(self, c: Config):
         super().__init__(c)
-
-        self._z_score_threshold = z_score_threshold
 
     @property
     def name(self) -> str:
@@ -48,27 +44,20 @@ class DFPPostprocessingStage(SinglePortStage):
     def accepted_types(self) -> typing.Tuple:
         return (MultiAEMessage, )
 
-    def _extract_events(self, message: MultiAEMessage):
-
-        z_scores = message.get_meta("mean_abs_z")
-
-        above_threshold_df = message.get_meta()[z_scores > self._z_score_threshold]
-
-        if (not above_threshold_df.empty):
-            above_threshold_df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-            above_threshold_df = above_threshold_df.replace(np.nan, 'NaN', regex=True)
-
-            return above_threshold_df
-
-        return None
+    def _process_events(self, message: MultiAEMessage):
+        # Assume that a filter stage preceedes this stage
+        df = message.get_meta()
+        df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        df.replace(np.nan, 'NaN', regex=True, inplace=True)
+        message.set_meta(None, df)
 
     def on_data(self, message: MultiAEMessage):
-        if (not message):
+        if (not message or message.mess_count == 0):
             return None
 
         start_time = time.time()
 
-        extracted_events = self._extract_events(message)
+        self._process_events(message)
 
         duration = (time.time() - start_time) * 1000.0
 
@@ -76,21 +65,18 @@ class DFPPostprocessingStage(SinglePortStage):
             logger.debug("Completed postprocessing for user %s in %s ms. Event count: %s. Start: %s, End: %s",
                          message.meta.user_id,
                          duration,
-                         0 if extracted_events is None else len(extracted_events),
+                         message.mess_count,
                          message.get_meta(self._config.ae.timestamp_column_name).min(),
                          message.get_meta(self._config.ae.timestamp_column_name).max())
 
-        if (extracted_events is None):
-            return None
+        return message
 
-        return DFPMessageMeta(extracted_events, user_id=message.meta.user_id)
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)
         builder.make_edge(input_stream[0], stream)
 
-        return stream, DFPMessageMeta
+        return stream, input_stream[1]

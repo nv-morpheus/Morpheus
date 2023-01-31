@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ from morpheus.config import CppConfig
 
 
 class MessageImpl(abc.ABCMeta):
-
-    _cpp_class: typing.Union[type, typing.Callable] = None
     """
     Metaclass to switch between Python & C++ message implementations at construction time.
     Note: some classes don't have a C++ implementation, but do inherit from a class that
     does (ex UserMessageMeta & InferenceMemoryAE) these classes also need this metaclass
     to prevent creating instances of their parent's C++ impl.
     """
+
+    _cpp_class: typing.Union[type, typing.Callable] = None
 
     def __new__(cls, classname, bases, classdict, cpp_class=None):
         result = super().__new__(cls, classname, bases, classdict)
@@ -43,6 +43,10 @@ class MessageImpl(abc.ABCMeta):
 
 
 class MessageBase(metaclass=MessageImpl):
+    """
+    Base class for all messages. Returns a C++ implementation if `CppConfig.get_should_use_cpp()` is `True` and the
+    class has an associated C++ implementation (`cpp_class`), returns the Python implementation for all others.
+    """
 
     def __new__(cls, *args, **kwargs):
 
@@ -56,6 +60,9 @@ class MessageBase(metaclass=MessageImpl):
 
 @dataclasses.dataclass
 class MessageData(MessageBase):
+    """
+    Base class for MultiMessage, defining serialization methods
+    """
 
     def __getstate__(self):
         return self.__dict__

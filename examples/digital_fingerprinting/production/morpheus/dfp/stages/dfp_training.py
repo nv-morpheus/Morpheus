@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
 import logging
 import typing
 
-import srf
+import mrc
 from dfencoder import AutoEncoder
-from srf.core import operators as ops
+from mrc.core import operators as ops
+from sklearn.model_selection import train_test_split
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
@@ -31,7 +32,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 class DFPTraining(SinglePortStage):
 
-    def __init__(self, c: Config, model_kwargs: dict = None):
+    def __init__(self, c: Config, model_kwargs: dict = None, epochs=30, validation_size=0.0):
         super().__init__(c)
 
         self._model_kwargs = {
@@ -53,6 +54,14 @@ class DFPTraining(SinglePortStage):
         # Update the defaults
         self._model_kwargs.update(model_kwargs if model_kwargs is not None else {})
 
+        self._epochs = epochs
+
+        if (validation_size > 0.0 and validation_size < 1.0):
+            self._validation_size = validation_size
+        else:
+            raise ValueError("validation_size={0} should be a positive float in the "
+                             "(0, 1) range".format(validation_size))
+
     @property
     def name(self) -> str:
         return "dfp-training"
@@ -71,13 +80,18 @@ class DFPTraining(SinglePortStage):
 
         model = AutoEncoder(**self._model_kwargs)
 
-        final_df = message.get_meta_dataframe()
+        train_df = message.get_meta_dataframe()
 
         # Only train on the feature columns
-        final_df = final_df[final_df.columns.intersection(self._config.ae.feature_columns)]
+        train_df = train_df[train_df.columns.intersection(self._config.ae.feature_columns)]
+        validation_df = None
+
+        # Split into training and validation sets
+        if self._validation_size > 0.0:
+            train_df, validation_df = train_test_split(train_df, test_size=self._validation_size, shuffle=False)
 
         logger.debug("Training AE model for user: '%s'...", user_id)
-        model.fit(final_df, epochs=30)
+        model.fit(train_df, epochs=self._epochs, val=validation_df)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
         output_message = MultiAEMessage(message.meta,
@@ -87,9 +101,9 @@ class DFPTraining(SinglePortStage):
 
         return output_message
 
-    def _build_single(self, builder: srf.Builder, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
-        def node_fn(obs: srf.Observable, sub: srf.Subscriber):
+        def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
             obs.pipe(ops.map(self.on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
         stream = builder.make_node_full(self.unique_name, node_fn)

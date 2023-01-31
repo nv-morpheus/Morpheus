@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@ export PY_CFG="${PY_ROOT}/setup.cfg"
 export PY_DIRS="${PY_ROOT} ci/scripts"
 
 # work-around for known yapf issue https://github.com/google/yapf/issues/984
-export YAPF_EXCLUDE_FLAGS="-e ${PY_ROOT}/versioneer.py -e ${PY_ROOT}/morpheus/_version.py"
+export YAPF_EXCLUDE_FLAGS="-e versioneer.py -e morpheus/_version.py"
 
 # Determine the commits to compare against. If running in CI, these will be set. Otherwise, diff with main
 export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-$(${SCRIPT_DIR}/gitutils.py get_merge_target)}}
@@ -45,11 +45,18 @@ export BUILD_DIR=${BUILD_DIR:-"${REPO_DIR}/build"}
 # Speficy the clang-tools version to use. Default 14
 export CLANG_TOOLS_VERSION=${CLANG_TOOLS_VERSION:-14}
 
+# Returns the `branch-YY.MM` that is used as the base for merging
+function get_base_branch() {
+   local major_minor_version=$(git describe --tags | grep -o -E '[0-9][0-9]\.[0-9][0-9]')
+
+   echo "branch-${major_minor_version}"
+}
+
 # Determine the merge base as the root to compare against. Optionally pass in a
 # result variable otherwise the output is printed to stdout
 function get_merge_base() {
    local __resultvar=$1
-   local result=$(git merge-base ${BASE_SHA:-main} ${COMMIT_SHA:-HEAD})
+   local result=$(git merge-base ${BASE_SHA:-$(get_merge_base)} ${COMMIT_SHA:-HEAD})
 
    if [[ "$__resultvar" ]]; then
       eval $__resultvar="'${result}'"

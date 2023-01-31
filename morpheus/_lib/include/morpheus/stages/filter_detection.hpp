@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,15 +17,17 @@
 
 #pragma once
 
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi.hpp"
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/filter_source.hpp"
 
-#include <pysrf/node.hpp>
+#include <mrc/channel/status.hpp>          // for Status
+#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
+#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>  // for Object
+#include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
-#include <srf/channel/status.hpp>          // for Status
-#include <srf/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <srf/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <srf/segment/builder.hpp>
-#include <srf/segment/object.hpp>  // for Object
 
 #include <cstddef>  // for size_t
 #include <map>
@@ -45,9 +47,9 @@ namespace morpheus {
 
 #pragma GCC visibility push(default)
 /**
- * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
- * criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
- * equal to `threshold`.
+ * @brief FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor or dataframe column
+ * using a specified criteria. Rows in the `meta` dataframe are excluded if their associated value in the datasource
+ * indicated by `field_name` is less than or equal to `threshold`.
  *
  * This stage can operate in two different modes set by the `copy` argument.
  * When the `copy` argument is `true` (default), rows that meet the filter criteria are copied into a new dataframe.
@@ -68,12 +70,11 @@ namespace morpheus {
  * Depending on the downstream stages, this can cause performance issues, especially if those stages need to acquire
  * the Python GIL.
  */
-class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-                                                            std::shared_ptr<MultiResponseProbsMessage>>
+class FilterDetectionsStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>
 {
   public:
-    using base_t =
-        srf::pysrf::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage>, std::shared_ptr<MultiMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -83,14 +84,21 @@ class FilterDetectionsStage : public srf::pysrf::PythonNode<std::shared_ptr<Mult
      *
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
+     * @param filter_source : Indicate if the values used for filtering exist in either an output tensor
+     * (`FilterSource::TENSOR`) or a column in a Dataframe (`FilterSource::DATAFRAME`).
+     * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
      */
-    FilterDetectionsStage(float threshold, bool copy = true);
+    FilterDetectionsStage(float threshold, bool copy, FilterSource filter_source, std::string field_name = "probs");
 
   private:
     subscribe_fn_t build_operator();
+    DevMemInfo get_tensor_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
+    DevMemInfo get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
 
     float m_threshold;
     bool m_copy;
+    FilterSource m_filter_source;
+    std::string m_field_name;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
 };
@@ -108,12 +116,17 @@ struct FilterDetectionStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param threshold : Threshold to classify
      * @param copy : Whether or not to perform a copy default=true
-     * @return std::shared_ptr<srf::segment::Object<FilterDetectionsStage>>
+     * @param filter_source : Indicate if the values used for filtering exist in either an output tensor
+     * (`FilterSource::TENSOR`) or a column in a Dataframe (`FilterSource::DATAFRAME`).
+     * @param field_name : Name of the tensor or Dataframe column to filter on default="probs"
+     * @return std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>
      */
-    static std::shared_ptr<srf::segment::Object<FilterDetectionsStage>> init(srf::segment::Builder &builder,
-                                                                             const std::string &name,
+    static std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>> init(mrc::segment::Builder& builder,
+                                                                             const std::string& name,
                                                                              float threshold,
-                                                                             bool copy = true);
+                                                                             bool copy,
+                                                                             FilterSource filter_source,
+                                                                             std::string field_name);
 };
 
 #pragma GCC visibility pop

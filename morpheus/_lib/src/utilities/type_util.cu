@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2021-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,7 +62,7 @@ cudf::type_id DType::cudf_type_id() const
 // Returns the triton string representation
 std::string DType::triton_str() const
 {
-    // Triton doesnt have any definitions or enums. Wow
+    // Triton doesn't have any definitions or enums. Wow
     switch (m_type_id)
     {
     case TypeId::INT8:
