@@ -32,11 +32,14 @@ function(find_and_configure_SimpleAmqpClient version)
       GIT_REPOSITORY  https://github.com/alanxz/SimpleAmqpClient
       GIT_TAG         "v${version}"
       GIT_SHALLOW     TRUE
-      OPTIONS         "Rabbitmqc_INCLUDE_DIR ${rabbitmq_SOURCE_DIR}/librabbitmq"
+      OPTIONS         "Rabbitmqc_INCLUDE_DIR ${rabbitmq_SOURCE_DIR}/include"
                       "Rabbitmqc_LIBRARY ${rabbitmq_BINARY_DIR}/librabbitmq/librabbitmq.so"
                       "BUILD_API_DOCS OFF"
                       "BUILD_SHARED_LIBS OFF"
   )
+
+  # Needed to pick up the generated export.h
+  target_include_directories(SimpleAmqpClient PUBLIC "${rabbitmq_BINARY_DIR}/include")
 
 endfunction()
 
