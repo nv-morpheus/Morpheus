@@ -37,6 +37,8 @@ from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
 
+StageT = typing.TypeVar("StageT", bound=StreamWrapper)
+
 
 class Pipeline():
     """
@@ -96,7 +98,7 @@ class Pipeline():
 
         return x
 
-    def add_stage(self, stage: StreamWrapper, segment_id: str = "main"):
+    def add_stage(self, stage: StageT, segment_id: str = "main") -> StageT:
         """
         Add a stage to a segment in the pipeline.
 
@@ -127,6 +129,8 @@ class Pipeline():
         stage._pipeline = self
 
         segment_graph.add_node(stage)
+
+        return stage
 
     def add_edge(self,
                  start: typing.Union[StreamWrapper, Sender],
