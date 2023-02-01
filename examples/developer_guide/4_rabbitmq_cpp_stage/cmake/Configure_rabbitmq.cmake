@@ -32,7 +32,6 @@ function(find_and_configure_rabbitmq version)
     CPM_ARGS
       GIT_REPOSITORY  https://github.com/alanxz/rabbitmq-c
       GIT_TAG         7fa7b0b
-      GIT_SHALLOW     TRUE
       OPTIONS         "BUILD_EXAMPLES OFF"
                       "BUILD_TESTING OFF"
                       "BUILD_TOOLS OFF"
