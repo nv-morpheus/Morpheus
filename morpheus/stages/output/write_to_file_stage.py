@@ -51,7 +51,7 @@ class WriteToFileStage(SinglePortStage):
         File type of output (FileTypes.JSON, FileTypes.CSV, FileTypes.Auto), by default FileTypes.Auto.
     include_index_col : bool, default = True
         Write out the index as a column, by default True.
-    flush : bool, default = False
+    flush : bool, default = False, is_flag = True
         When `True` flush the output buffer to disk on each message.
     """
 
