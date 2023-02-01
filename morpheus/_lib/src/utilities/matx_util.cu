@@ -208,11 +208,10 @@ namespace morpheus {
             // Output is always 1 column
             tensorShape_1d output_shape({static_cast<matx::index_t>(rows)});
 
-            // Specify the stride here since the data comes in column major order.
-            auto input_tensor = matx::make_tensor<InputT, 2>(static_cast<InputT *>(input_data),
-                                                   {static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
-                                                   {static_cast<matx::index_t>(stride[0]),
-                                                    static_cast<matx::index_t>(stride[1])});
+            matx::DefaultDescriptor<2>  desc{{static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
+                                             {static_cast<matx::index_t>(stride[0]), static_cast<matx::index_t>(stride[1])}};
+
+            auto input_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(static_cast<InputT *>(input_data), std::move(desc));
 
             // Tmp array to hold max value
             auto max_tensor = matx::make_tensor<InputT>(output_shape);
@@ -274,8 +273,11 @@ namespace morpheus {
             auto input_ptr = static_cast<InputT *>(input_data) + (start * input_stride[0]);
             auto output_ptr = static_cast<InputT *>(output_data) + (output_idx *  output_stride[0]);
 
-            auto input_tensor = matx::make_tensor<InputT>(input_ptr, input_shape, {input_stride[0], input_stride[1]});
-            auto output_tensor = matx::make_tensor<InputT>(output_ptr, output_shape, {output_stride[1]});
+            matx::DefaultDescriptor<2> input_desc{input_shape, {input_stride[0], input_stride[1]}};
+            matx::DefaultDescriptor<1> output_desc{output_shape, {output_stride[1]}};
+
+            auto input_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(input_ptr, std::move(input_desc));
+            auto output_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<1>>(output_ptr, std::move(output_desc));
 
             // We need to transpose the input such that rmax will reduce the rows
             // Matx performs reductions over the innermost dimensions.
