@@ -23,7 +23,6 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from utils import TEST_DIRS
-from utils import assert_path_exists
 
 
 @pytest.mark.use_python
