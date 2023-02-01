@@ -24,9 +24,13 @@
 #include <matx.h>
 #include <mrc/cuda/sync.hpp>
 
+#include <array>
 #include <memory>
 
 namespace morpheus {
+
+    using tensorShape_1d = std::array<matx::index_t, 1>;
+    using tensorShape_2d = std::array<matx::index_t, 2>;
 
     // Component-private classes.
     // ************ MatxUtil__MatxCast**************//
@@ -54,10 +58,10 @@ namespace morpheus {
                 typename OutputT,
                 std::enable_if_t<cudf::is_numeric<InputT>() && cudf::is_numeric<OutputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
-            matx::tensorShape_t<1> shape({static_cast<matx::index_t>(element_count)});
+            tensorShape_1d shape({static_cast<matx::index_t>(element_count)});
 
-            matx::tensor_t<InputT, 1> input_tensor(static_cast<InputT *>(input_data), shape);
-            matx::tensor_t<OutputT, 1> output_tensor(static_cast<OutputT *>(output_data), shape);
+            auto input_tensor = matx::make_tensor<InputT>(static_cast<InputT *>(input_data), shape);
+            auto output_tensor = matx::make_tensor<OutputT>(static_cast<OutputT *>(output_data), shape);
 
             (output_tensor = input_tensor).run(stream.value());
         }
@@ -85,14 +89,13 @@ namespace morpheus {
          */
         template<typename OutputT, std::enable_if_t<std::is_integral_v<OutputT>> * = nullptr>
         void operator()(void *output_data) {
-            matx::tensorShape_t<2> shape({static_cast<matx::index_t>(element_count), 3});
+            tensorShape_2d shape({static_cast<matx::index_t>(element_count), 3});
 
-            matx::tensor_t<OutputT, 2> output_tensor(static_cast<OutputT *>(output_data), shape);
+            auto output_tensor = matx::make_tensor<OutputT>(static_cast<OutputT *>(output_data), shape);
 
             auto col0 = output_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
             auto col2 = output_tensor.template Slice<1>({0, 2}, {matx::matxEnd, matx::matxDropDim});
-            auto range_col =
-                    matx::range_x<OutputT>(matx::tensorShape_t<1>({static_cast<matx::index_t>(element_count)}), 0, 1);
+            auto range_col = matx::range<0, tensorShape_1d, OutputT>(std::move(tensorShape_1d({static_cast<matx::index_t>(element_count)})), 0, 1);
 
             (col0 = range_col).run(stream.value());
             (col2 = fea_len - 1).run(stream.value());
@@ -120,11 +123,11 @@ namespace morpheus {
          */
         template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
-            matx::tensorShape_t<1> shape({static_cast<matx::index_t>(element_count)});
+            tensorShape_1d shape({static_cast<matx::index_t>(element_count)});
 
-            matx::tensor_t<InputT, 1> input_tensor(static_cast<InputT *>(input_data), shape);
+            auto input_tensor = matx::make_tensor<InputT>(static_cast<InputT *>(input_data), shape);
 
-            matx::tensor_t<InputT, 1> output_tensor(static_cast<InputT *>(output_data), shape);
+            auto output_tensor = matx::make_tensor<InputT>(static_cast<InputT *>(output_data), shape);
 
             (output_tensor = (InputT) 1 / ((InputT) 1 + matx::exp((InputT) -1 * input_tensor))).run(stream.value());
         }
@@ -153,11 +156,11 @@ namespace morpheus {
          */
         template<typename InputT, std::enable_if_t<cudf::is_numeric<InputT>()> * = nullptr>
         void operator()(void *input_data, void *output_data) {
-            matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
-            matx::tensorShape_t<2> output_shape({static_cast<matx::index_t>(cols), static_cast<matx::index_t>(rows)});
+            tensorShape_2d input_shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
+            tensorShape_2d output_shape({static_cast<matx::index_t>(cols), static_cast<matx::index_t>(rows)});
 
-            matx::tensor_t<InputT, 2> input_tensor(static_cast<InputT *>(input_data), input_shape);
-            matx::tensor_t<InputT, 2> output_tensor(static_cast<InputT *>(output_data), output_shape);
+            auto input_tensor = matx::make_tensor<InputT>(static_cast<InputT *>(input_data), input_shape);
+            auto output_tensor = matx::make_tensor<InputT>(static_cast<InputT *>(output_data), output_shape);
 
             (output_tensor = input_tensor.Permute({1, 0})).run(stream.value());
         }
@@ -202,24 +205,22 @@ namespace morpheus {
         template<typename InputT>
         void threshold_by_row(void *input_data, void *output_data, double threshold,
                               const std::vector<std::size_t>& stride) {
-            matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
-
             // Output is always 1 column
-            matx::tensorShape_t<1> output_shape({static_cast<matx::index_t>(rows)});
+            tensorShape_1d output_shape({static_cast<matx::index_t>(rows)});
 
             // Specify the stride here since the data comes in column major order.
-            matx::tensor_t<InputT, 2> input_tensor(static_cast<InputT *>(input_data),
-                                                   input_shape,
+            auto input_tensor = matx::make_tensor<InputT, 2>(static_cast<InputT *>(input_data),
+                                                   {static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
                                                    {static_cast<matx::index_t>(stride[0]),
                                                     static_cast<matx::index_t>(stride[1])});
 
             // Tmp array to hold max value
-            matx::tensor_t<InputT, 1> max_tensor(output_shape);
+            auto max_tensor = matx::make_tensor<InputT>(output_shape);
 
             // row-wise reduction
             matx::rmax(max_tensor, input_tensor, stream.value());
 
-            matx::tensor_t<bool, 1> output_tensor(static_cast<bool *>(output_data), output_shape);
+            auto output_tensor = matx::make_tensor<bool>(static_cast<bool *>(output_data), output_shape);
 
             // Convert max value to bool
             (output_tensor = max_tensor > (InputT) threshold).run(stream.value());
@@ -231,13 +232,13 @@ namespace morpheus {
         template<typename InputT>
         void
         threshold(void *input_data, void *output_data, double threshold, const std::vector<std::size_t>& stride) {
-            matx::tensorShape_t<2> shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
+            tensorShape_2d shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
 
             matx::index_t matx_stride[2] = {static_cast<matx::index_t>(stride[0]),
                                             static_cast<matx::index_t>(stride[1])};
 
-            matx::tensor_t<InputT, 2> input_tensor(static_cast<InputT *>(input_data), shape, matx_stride);
-            matx::tensor_t<bool, 2> output_tensor(static_cast<bool *>(output_data), shape, matx_stride);
+            auto input_tensor = matx::make_tensor<InputT>(static_cast<InputT *>(input_data), shape, matx_stride);
+            auto output_tensor = matx::make_tensor<bool>(static_cast<bool *>(output_data), shape, matx_stride);
 
             // Convert max value to bool
             (output_tensor = input_tensor > (InputT) threshold).run(stream.value());
@@ -261,8 +262,8 @@ namespace morpheus {
         template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
         void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
             auto input_count = stop - start;
-            matx::tensorShape_t<2> input_shape({static_cast<matx::index_t>(input_count), num_cols});
-            matx::tensorShape_t<1> output_shape({num_cols});
+            tensorShape_2d input_shape({static_cast<matx::index_t>(input_count), num_cols});
+            tensorShape_1d output_shape({num_cols});
 
             matx::index_t output_stride[2] = {input_stride[0], input_stride[1]};
             if (output_stride[0] == 1)
@@ -273,8 +274,8 @@ namespace morpheus {
             auto input_ptr = static_cast<InputT *>(input_data) + (start * input_stride[0]);
             auto output_ptr = static_cast<InputT *>(output_data) + (output_idx *  output_stride[0]);
 
-            matx::tensor_t<InputT, 2> input_tensor(input_ptr, input_shape, {input_stride[0], input_stride[1]});
-            matx::tensor_t<InputT, 1> output_tensor(output_ptr, output_shape, {output_stride[1]});
+            auto input_tensor = matx::make_tensor<InputT>(input_ptr, input_shape, {input_stride[0], input_stride[1]});
+            auto output_tensor = matx::make_tensor<InputT>(output_ptr, output_shape, {output_stride[1]});
 
             // We need to transpose the input such that rmax will reduce the rows
             // Matx performs reductions over the innermost dimensions.
