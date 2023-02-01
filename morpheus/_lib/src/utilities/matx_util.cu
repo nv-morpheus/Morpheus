@@ -261,8 +261,6 @@ namespace morpheus {
         template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
         void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
             auto input_count = stop - start;
-            tensorShape_2d input_shape({static_cast<matx::index_t>(input_count), num_cols});
-            tensorShape_1d output_shape({num_cols});
 
             matx::index_t output_stride[2] = {input_stride[0], input_stride[1]};
             if (output_stride[0] == 1)
@@ -273,8 +271,9 @@ namespace morpheus {
             auto input_ptr = static_cast<InputT *>(input_data) + (start * input_stride[0]);
             auto output_ptr = static_cast<InputT *>(output_data) + (output_idx *  output_stride[0]);
 
-            matx::DefaultDescriptor<2> input_desc{input_shape, {input_stride[0], input_stride[1]}};
-            matx::DefaultDescriptor<1> output_desc{output_shape, {output_stride[1]}};
+            matx::DefaultDescriptor<2> input_desc{{static_cast<matx::index_t>(input_count), num_cols},
+                                                  {input_stride[0], input_stride[1]}};
+            matx::DefaultDescriptor<1> output_desc{{num_cols}, {output_stride[1]}};
 
             auto input_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(input_ptr, std::move(input_desc));
             auto output_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<1>>(output_ptr, std::move(output_desc));
