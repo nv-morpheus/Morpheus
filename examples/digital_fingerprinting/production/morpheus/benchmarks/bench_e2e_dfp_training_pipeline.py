@@ -17,6 +17,7 @@ import functools
 import logging
 import typing
 
+# flake8 warnings are silenced by the addition of noqa.
 import dfp.modules.dfp_model_train_deploy  # noqa: F401
 import dfp.modules.dfp_preprocessing  # noqa: F401
 import pytest
