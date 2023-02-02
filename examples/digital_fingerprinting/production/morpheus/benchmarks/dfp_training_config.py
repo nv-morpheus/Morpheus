@@ -38,22 +38,6 @@ from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
 
 
-def get_updated_pipeline_config(pipeline_conf: typing.Dict[str, any], feature_columns: typing.List[str]) -> Config:
-
-    config = Config()
-    CppConfig.set_should_use_cpp(False)
-    config.ae = ConfigAutoEncoder()
-
-    config.num_threads = pipeline_conf["num_threads"]
-    config.pipeline_batch_size = pipeline_conf["pipeline_batch_size"]
-    config.edge_buffer_size = pipeline_conf["edge_buffer_size"]
-    config.ae.userid_column_name = "username"
-    config.ae.timestamp_column_name = "timestamp"
-    config.ae.feature_columns = feature_columns
-
-    return config
-
-
 def get_duo_source_schema(config: Config) -> DataFrameInputSchema:
 
     # Source schema
@@ -168,84 +152,116 @@ def get_azure_preprocess_schema(config: Config) -> DataFrameInputSchema:
     return preprocess_schema
 
 
-def get_start_stop_time(pipeline_conf: typing.Dict[str, any]) -> typing.Tuple[datetime, datetime]:
-    start_time = pipeline_conf["start_time"]
-    start_time = datetime.strptime(start_time, "%Y-%m-%d")
-
-    duration = pipeline_conf["duration"]
-
-    duration = timedelta(seconds=pd.Timedelta(duration).total_seconds())
-
-    if start_time is None:
-        end_time = datetime.now(tz=timezone.utc)
-        start_time = end_time - duration
-    else:
-        if start_time.tzinfo is None:
-            start_time = start_time.replace(tzinfo=timezone.utc)
-
-        end_time = start_time + duration
-    return tuple((start_time, end_time))
-
-
 def set_mlflow_tracking_uri(tracking_uri: str):
     mlflow.set_tracking_uri(tracking_uri)
     logging.getLogger("mlflow").setLevel(logging.WARN)
 
 
-def get_model_name_formatter(source: str) -> str:
-    model_name_formatter = "DFP-{}-".format(source) + "{user_id}"
-    return model_name_formatter
+class DFPTrainingConfig():
 
+    def __init__(self,
+                 pipeline_conf: typing.Dict[str, any],
+                 feature_columns: typing.List[str],
+                 source: str,
+                 modules_conf: typing.Dict[str, any] = None):
+        self._pipeline_conf = pipeline_conf
+        self._modules_conf = modules_conf
+        self._feature_columns = feature_columns
+        self._source = source
 
-def get_experiment_name_formatter(source) -> str:
-    experiment_name_formatter = "dfp/{}/training/".format(source) + "{reg_model_name}"
-    return experiment_name_formatter
+    @property
+    def pipeline_conf(self):
+        return self._pipeline_conf
 
+    @property
+    def modules_conf(self):
+        return self._modules_conf
 
-def get_updated_modules_conf(pipeline_conf: typing.Dict[str, any],
-                             modules_conf: typing.Dict[str, any],
-                             source_schema: DataFrameInputSchema,
-                             preprocess_schema: DataFrameInputSchema,
-                             feature_columns: typing.List[str],
-                             source: str) -> typing.Dict[str, any]:
+    @property
+    def feature_columns(self):
+        return self._feature_columns
 
-    start_stop_time = get_start_stop_time(pipeline_conf=pipeline_conf)
-    modules_conf["preprocessing"]["FileBatcher"]["start_time"] = start_stop_time[0]
-    modules_conf["preprocessing"]["FileBatcher"]["end_time"] = start_stop_time[0]
-    modules_conf["preprocessing"]["DFPRollingWindow"]["max_history"] = pipeline_conf["duration"]
+    @property
+    def source(self):
+        return self._source
 
-    encoding = "latin1"
+    def get_config(self) -> Config:
 
-    # Convert schema as a string
-    source_schema_str = str(pickle.dumps(source_schema), encoding=encoding)
-    preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
+        config = Config()
+        CppConfig.set_should_use_cpp(False)
+        config.ae = ConfigAutoEncoder()
 
-    modules_conf["preprocessing"]["FileToDF"]["schema"]["schema_str"] = source_schema_str
-    modules_conf["preprocessing"]["FileToDF"]["schema"]["encoding"] = encoding
-    modules_conf["preprocessing"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
-    modules_conf["preprocessing"]["DFPDataPrep"]["schema"]["encoding"] = encoding
-    modules_conf["train_deploy"]["DFPTraining"]["feature_columns"] = feature_columns
+        config.num_threads = self.pipeline_conf["num_threads"]
+        config.pipeline_batch_size = self.pipeline_conf["pipeline_batch_size"]
+        config.edge_buffer_size = self.pipeline_conf["edge_buffer_size"]
+        config.ae.userid_column_name = "username"
+        config.ae.timestamp_column_name = "timestamp"
+        config.ae.feature_columns = self.feature_columns
 
-    modules_conf["train_deploy"]["MLFlowModelWriter"]["model_name_formatter"] = get_model_name_formatter(source)
-    modules_conf["train_deploy"]["MLFlowModelWriter"]["experiment_name_formatter"] = get_experiment_name_formatter(
-        source)
+        return config
 
-    return modules_conf
+    def _get_model_name_formatter(self) -> str:
+        model_name_formatter = "DFP-{}-".format(self.source) + "{user_id}"
+        return model_name_formatter
 
+    def _get_experiment_name_formatter(self) -> str:
+        experiment_name_formatter = "dfp/{}/training/".format(self.source) + "{reg_model_name}"
+        return experiment_name_formatter
 
-def get_stages_conf(pipeline_conf: typing.Dict[str, any], source: str) -> typing.Dict[str, any]:
-    stages_conf = {}
-    start_stop_time = get_start_stop_time(pipeline_conf=pipeline_conf)
-    stages_conf["start_time"] = start_stop_time[0]
-    stages_conf["end_time"] = start_stop_time[1]
-    stages_conf["duration"] = pipeline_conf["duration"]
-    stages_conf["sampling_rate_s"] = 0
-    stages_conf["cache_dir"] = "./.cache/dfp"
-    stages_conf["include_generic"] = True
-    stages_conf["include_individual"] = []
-    stages_conf["skip_users"] = []
-    stages_conf["only_users"] = []
-    stages_conf["model_name_formatter"] = get_model_name_formatter(source)
-    stages_conf["experiment_name_formatter"] = get_experiment_name_formatter(source)
+    def _get_start_stop_time(self) -> typing.Tuple[datetime, datetime]:
+        start_time = self.pipeline_conf["start_time"]
+        start_time = datetime.strptime(start_time, "%Y-%m-%d")
 
-    return stages_conf
+        duration = self.pipeline_conf["duration"]
+        duration = timedelta(seconds=pd.Timedelta(duration).total_seconds())
+
+        if start_time is None:
+            end_time = datetime.now(tz=timezone.utc)
+            start_time = end_time - duration
+        else:
+            if start_time.tzinfo is None:
+                start_time = start_time.replace(tzinfo=timezone.utc)
+
+            end_time = start_time + duration
+        return tuple((start_time, end_time))
+
+    def update_modules_conf(self, source_schema: DataFrameInputSchema, preprocess_schema: DataFrameInputSchema):
+
+        start_stop_time = self._get_start_stop_time()
+        self.modules_conf["preprocessing"]["FileBatcher"]["start_time"] = start_stop_time[0]
+        self.modules_conf["preprocessing"]["FileBatcher"]["end_time"] = start_stop_time[0]
+        self.modules_conf["preprocessing"]["DFPRollingWindow"]["max_history"] = self.pipeline_conf["duration"]
+
+        encoding = "latin1"
+
+        # Convert schema as a string
+        source_schema_str = str(pickle.dumps(source_schema), encoding=encoding)
+        preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
+
+        self.modules_conf["preprocessing"]["FileToDF"]["schema"]["schema_str"] = source_schema_str
+        self.modules_conf["preprocessing"]["FileToDF"]["schema"]["encoding"] = encoding
+        self.modules_conf["preprocessing"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
+        self.modules_conf["preprocessing"]["DFPDataPrep"]["schema"]["encoding"] = encoding
+        self.modules_conf["train_deploy"]["DFPTraining"]["feature_columns"] = self.feature_columns
+
+        self.modules_conf["train_deploy"]["MLFlowModelWriter"]["model_name_formatter"] = self._get_model_name_formatter(
+        )
+        self.modules_conf["train_deploy"]["MLFlowModelWriter"][
+            "experiment_name_formatter"] = self._get_experiment_name_formatter()
+
+    def get_stages_conf(self) -> typing.Dict[str, any]:
+        stages_conf = {}
+        start_stop_time = self._get_start_stop_time()
+        stages_conf["start_time"] = start_stop_time[0]
+        stages_conf["end_time"] = start_stop_time[1]
+        stages_conf["duration"] = self.pipeline_conf["duration"]
+        stages_conf["sampling_rate_s"] = 0
+        stages_conf["cache_dir"] = "./.cache/dfp"
+        stages_conf["include_generic"] = True
+        stages_conf["include_individual"] = []
+        stages_conf["skip_users"] = []
+        stages_conf["only_users"] = []
+        stages_conf["model_name_formatter"] = self._get_model_name_formatter()
+        stages_conf["experiment_name_formatter"] = self._get_experiment_name_formatter()
+
+        return stages_conf
