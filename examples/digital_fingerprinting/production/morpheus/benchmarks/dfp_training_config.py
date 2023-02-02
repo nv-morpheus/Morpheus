@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import glob
+import json
 import logging
 import pickle
 import typing
@@ -20,6 +22,7 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from functools import partial
+from os import path
 
 import mlflow
 import pandas as pd
@@ -36,6 +39,20 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
+
+THIS_DIR = path.dirname(path.abspath(__file__))
+
+
+def set_mlflow_tracking_uri(tracking_uri):
+    mlflow.set_tracking_uri(tracking_uri)
+    logging.getLogger("mlflow").setLevel(logging.WARN)
+
+
+def load_json(filepath: str):
+    full_filepath = path.join(THIS_DIR, filepath)
+    with open(full_filepath, 'r') as f:
+        json_dict = json.load(f)
+    return json_dict
 
 
 def get_duo_source_schema(config: Config) -> DataFrameInputSchema:
@@ -63,10 +80,10 @@ def get_duo_source_schema(config: Config) -> DataFrameInputSchema:
         ColumnInfo(name="reason", dtype=str),
     ]
 
-    source_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
-                                         column_info=source_column_info)
+    schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
+                                  column_info=source_column_info)
 
-    return source_schema
+    return schema
 
 
 def get_duo_preprocess_schema(config: Config) -> DataFrameInputSchema:
@@ -89,9 +106,9 @@ def get_duo_preprocess_schema(config: Config) -> DataFrameInputSchema:
                      process_column_fn=partial(create_increment_col, column_name="location")),
     ]
 
-    preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+    schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
 
-    return preprocess_schema
+    return schema
 
 
 def get_azure_source_schema(config: Config) -> DataFrameInputSchema:
@@ -118,9 +135,9 @@ def get_azure_source_schema(config: Config) -> DataFrameInputSchema:
         RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
     ]
 
-    source_schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
+    schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
 
-    return source_schema
+    return schema
 
 
 def get_azure_preprocess_schema(config: Config) -> DataFrameInputSchema:
@@ -147,14 +164,9 @@ def get_azure_preprocess_schema(config: Config) -> DataFrameInputSchema:
                      process_column_fn=partial(create_increment_col, column_name="appDisplayName")),
     ]
 
-    preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+    schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
 
-    return preprocess_schema
-
-
-def set_mlflow_tracking_uri(tracking_uri: str):
-    mlflow.set_tracking_uri(tracking_uri)
-    logging.getLogger("mlflow").setLevel(logging.WARN)
+    return schema
 
 
 class DFPTrainingConfig():
@@ -250,6 +262,7 @@ class DFPTrainingConfig():
             "experiment_name_formatter"] = self._get_experiment_name_formatter()
 
     def get_stages_conf(self) -> typing.Dict[str, any]:
+
         stages_conf = {}
         start_stop_time = self._get_start_stop_time()
         stages_conf["start_time"] = start_stop_time[0]
@@ -265,3 +278,13 @@ class DFPTrainingConfig():
         stages_conf["experiment_name_formatter"] = self._get_experiment_name_formatter()
 
         return stages_conf
+
+    def get_filenames(self) -> typing.List[str]:
+
+        input_glob = self.pipeline_conf.get("file_path")
+        input_glob = path.join(THIS_DIR, input_glob)
+        filenames = glob.glob(input_glob)
+
+        assert len(filenames) > 0  # List empty throw error
+
+        return filenames

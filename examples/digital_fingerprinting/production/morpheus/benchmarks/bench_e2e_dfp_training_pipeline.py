@@ -14,10 +14,7 @@
 # limitations under the License.
 
 import functools
-import glob
-import json
 import logging
-import os
 import typing
 
 import dfp.modules.dfp_model_train_deploy  # noqa: F401
@@ -39,6 +36,7 @@ from benchmarks.dfp_training_config import get_azure_preprocess_schema
 from benchmarks.dfp_training_config import get_azure_source_schema
 from benchmarks.dfp_training_config import get_duo_preprocess_schema
 from benchmarks.dfp_training_config import get_duo_source_schema
+from benchmarks.dfp_training_config import load_json
 from benchmarks.dfp_training_config import set_mlflow_tracking_uri
 from morpheus._lib.common import FileTypes
 from morpheus.config import Config
@@ -48,16 +46,8 @@ from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 
-curr_file_dir = os.path.dirname(os.path.abspath(__file__))
-
-modules_conf_file = os.path.join(curr_file_dir, "modules_conf.json")
-pipelines_conf_file = os.path.join(curr_file_dir, "pipelines_conf.json")
-
-with open(modules_conf_file, 'r') as f:
-    MODULES_CONF = json.load(f)
-
-with open(pipelines_conf_file, 'r') as f:
-    PIPELINES_CONF = json.load(f)
+MODULES_CONF = load_json("resource/modules_conf.json")
+PIPELINES_CONF = load_json("resource/pipelines_conf.json")
 
 set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
 
@@ -145,18 +135,17 @@ def test_dfp_training_duo_modules_e2e(benchmark: typing.Any, pipeline_name: str)
         "logcount",
     ]
 
-    modules_conf = MODULES_CONF.copy()
     pipeline_conf = PIPELINES_CONF.get(pipeline_name)
 
-    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="duo", modules_conf=modules_conf)
-    config: Config = dfp_tc.get_config()
+    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="duo", modules_conf=MODULES_CONF)
+
+    config = dfp_tc.get_config()
+    filenames = dfp_tc.get_filenames()
 
     source_schema = get_duo_source_schema(config)
     preprocess_schema = get_duo_preprocess_schema(config)
 
     dfp_tc.update_modules_conf(source_schema, preprocess_schema)
-
-    filenames = glob.glob(pipeline_conf.get("file_path"))
 
     benchmark(dfp_training_pipeline_modules, config, dfp_tc.modules_conf, filenames)
 
@@ -178,13 +167,13 @@ def test_dfp_training_duo_stages_e2e(benchmark: typing.Any, pipeline_name: str):
     pipeline_conf = PIPELINES_CONF.get(pipeline_name)
 
     dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="duo")
-    config: Config = dfp_tc.get_config()
+
+    config = dfp_tc.get_config()
     stages_conf = dfp_tc.get_stages_conf()
+    filenames = dfp_tc.get_filenames()
 
     source_schema = get_duo_source_schema(config)
     preprocess_schema = get_duo_preprocess_schema(config)
-
-    filenames = glob.glob(pipeline_conf.get("file_path"))
 
     benchmark(dfp_training_pipeline_stages, config, stages_conf, source_schema, preprocess_schema, filenames)
 
@@ -205,18 +194,17 @@ def test_dfp_training_azure_modules_e2e(benchmark: typing.Any, pipeline_name: st
         "logcount"
     ]
 
-    modules_conf = MODULES_CONF.copy()
     pipeline_conf = PIPELINES_CONF.get(pipeline_name)
 
-    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="azure", modules_conf=modules_conf)
-    config: Config = dfp_tc.get_config()
+    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="azure", modules_conf=MODULES_CONF)
+
+    config = dfp_tc.get_config()
+    filenames = dfp_tc.get_filenames()
 
     source_schema = get_azure_source_schema(config)
     preprocess_schema = get_azure_preprocess_schema(config)
 
     dfp_tc.update_modules_conf(source_schema, preprocess_schema)
-
-    filenames = glob.glob(pipeline_conf.get("file_path"))
 
     benchmark(dfp_training_pipeline_modules, config, dfp_tc.modules_conf, filenames)
 
@@ -240,12 +228,12 @@ def test_dfp_training_azure_stages_e2e(benchmark: typing.Any, pipeline_name: str
     pipeline_conf = PIPELINES_CONF.get(pipeline_name)
 
     dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="azure")
-    config: Config = dfp_tc.get_config()
+
+    config = dfp_tc.get_config()
     stages_conf = dfp_tc.get_stages_conf()
+    filenames = dfp_tc.get_filenames()
 
     source_schema = get_azure_source_schema(config)
     preprocess_schema = get_azure_preprocess_schema(config)
-
-    filenames = glob.glob(pipeline_conf.get("file_path"))
 
     benchmark(dfp_training_pipeline_stages, config, stages_conf, source_schema, preprocess_schema, filenames)

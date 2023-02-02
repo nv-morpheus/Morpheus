@@ -1,8 +1,9 @@
-{"preprocessing":{
-    "module_id": "DFPPreprocessing",
-    "module_name": "dfp_preprocessing",
-    "namespace": "morpheus_modules",
-    "FileBatcher": {
+{
+    "preprocessing": {
+      "module_id": "DFPPreprocessing",
+      "module_name": "dfp_preprocessing",
+      "namespace": "morpheus_modules",
+      "FileBatcher": {
         "module_id": "FileBatcher",
         "module_name": "file_batcher",
         "namespace": "morpheus_modules",
@@ -11,24 +12,26 @@
         "start_time": null,
         "end_time": null,
         "iso_date_regex_pattern": "(?P<year>\\d{4})-(?P<month>\\d{1,2})-(?P<day>\\d{1,2})T(?P<hour>\\d{1,2})(:|_)(?P<minute>\\d{1,2})(:|_)(?P<second>\\d{1,2})(?P<microsecond>\\.\\d{1,6})?Z"
-    },
-    "FileToDF": {
+      },
+      "FileToDF": {
         "module_id": "FileToDF",
         "module_name": "FILE_TO_DF",
         "namespace": "morpheus_modules",
         "timestamp_column_name": "timestamp",
         "userid_column_name": "username",
         "parser_kwargs": {
-            "lines": false, "orient": "records"
+          "lines": false,
+          "orient": "records"
         },
         "cache_dir": "./.cache/dfp",
         "filter_null": true,
         "file_type": "JSON",
         "schema": {
-            "schema_str": null, "encoding": null
+          "schema_str": null,
+          "encoding": null
         }
-    },
-    "DFPSplitUsers": {
+      },
+      "DFPSplitUsers": {
         "module_id": "DFPSplitUsers",
         "module_name": "dfp_split_users",
         "namespace": "morpheus_modules",
@@ -39,8 +42,8 @@
         "timestamp_column_name": "timestamp",
         "userid_column_name": "username",
         "fallback_username": "generic_user"
-    },
-    "DFPRollingWindow": {
+      },
+      "DFPRollingWindow": {
         "module_id": "DFPRollingWindow",
         "module_name": "dfp_rolling_window",
         "namespace": "morpheus_modules",
@@ -49,46 +52,52 @@
         "max_history": null,
         "cache_dir": "./.cache/dfp",
         "timestamp_column_name": "timestamp"
-    },
-    "DFPDataPrep": {
+      },
+      "DFPDataPrep": {
         "module_id": "DFPDataPrep",
         "module_name": "dfp_data_prep",
         "namespace": "morpheus_modules",
         "timestamp_column_name": "timestamp",
         "userid_column_name": "username",
         "schema": {
-            "schema_str": null, "encoding": null
+          "schema_str": null,
+          "encoding": null
         }
-    }
-},
-"train_deploy" : {
-    "module_id": "DFPModelTrainDeploy",
-    "module_name": "dfp_model_train_deploy",
-    "namespace": "morpheus_modules",
-    "DFPTraining": {
+      }
+    },
+    "train_deploy": {
+      "module_id": "DFPModelTrainDeploy",
+      "module_name": "dfp_model_train_deploy",
+      "namespace": "morpheus_modules",
+      "DFPTraining": {
         "module_id": "DFPTraining",
         "module_name": "dfp_training",
         "namespace": "morpheus_modules",
         "model_kwargs": {
-            "encoder_layers": [512, 500],
-            "decoder_layers": [512],
-            "activation": "relu",
-            "swap_p": 0.2,
-            "lr": 0.001,
-            "lr_decay": 0.99,
-            "batch_size": 512,
-            "verbose": false,
-            "optimizer": "sgd",
-            "scaler": "standard",
-            "min_cats": 1,
-            "progress_bar": false,
-            "device": "cuda"
+          "encoder_layers": [
+            512,
+            500
+          ],
+          "decoder_layers": [
+            512
+          ],
+          "activation": "relu",
+          "swap_p": 0.2,
+          "lr": 0.001,
+          "lr_decay": 0.99,
+          "batch_size": 512,
+          "verbose": false,
+          "optimizer": "sgd",
+          "scaler": "standard",
+          "min_cats": 1,
+          "progress_bar": false,
+          "device": "cuda"
         },
         "feature_columns": null,
         "epochs": 30,
-        "validation_size": 0.10
-    },
-    "MLFlowModelWriter": {
+        "validation_size": 0.1
+      },
+      "MLFlowModelWriter": {
         "module_id": "MLFlowModelWriter",
         "module_name": "mlflow_model_writer",
         "namespace": "morpheus_modules",
@@ -96,11 +105,21 @@
         "experiment_name_formatter": null,
         "timestamp_column_name": "timestamp",
         "conda_env": {
-            "channels": ["defaults", "conda-forge"],
-            "dependencies": ["python=3.8", "pip"],
-            "pip": ["mlflow", "dfencoder"],
-            "name": "mlflow-env"
+          "channels": [
+            "defaults",
+            "conda-forge"
+          ],
+          "dependencies": [
+            "python=3.8",
+            "pip"
+          ],
+          "pip": [
+            "mlflow",
+            "dfencoder"
+          ],
+          "name": "mlflow-env"
         },
         "databricks_permissions": null
+      }
     }
-}}
+  }

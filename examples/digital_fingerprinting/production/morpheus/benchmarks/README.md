@@ -27,7 +27,7 @@ Benchmarks are run using `pytest-benchmark`. By default, there are five rounds o
 
 To provide your own calibration or use other `pytest-benchmark` features with these workflows, please refer to their [documentation](https://pytest-benchmark.readthedocs.io/en/latest/).
 
-Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./pipelines_conf.json). For example, this is the Morpheus configuration for  `duo_training_modules`:
+Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./resource/pipelines_conf.json). For example, this is the Morpheus configuration for  `duo_training_modules`:
 ```
 "dfp_training_duo_modules_e2e": {
     "file_path": "../../../../data/dfp/duo-training-data/*.json",
@@ -40,7 +40,7 @@ Morpheus pipeline configurations for each workflow are managed using [pipelines_
 ...
 ```
 
-In addition to the Morpheus pipeline settings, we also have a configuration file called [modules_conf.json](./modules_conf.json) that is specific to modules. When using MRC SegmentModule, pipelines need this configuration file. Additional information is included in the [Morpheus Pipeline with Modules](../../../../../docs/source/developer_guide/guides/6_digital_fingerprinting_reference.md#morpheus-pipeline-with-modules)
+In addition to the Morpheus pipeline settings, we also have a configuration file called [modules_conf.json](./resource/modules_conf.json) that is specific to modules. When using MRC SegmentModule, pipelines need this configuration file. Additional information is included in the [Morpheus Pipeline with Modules](../../../../../docs/source/developer_guide/guides/6_digital_fingerprinting_reference.md#morpheus-pipeline-with-modules)
 
 Benchmarks for an individual workflow can be run using the following:
 
@@ -50,7 +50,7 @@ pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations
 ```
 The `-s` option allows outputs of pipeline execution to be displayed so you can ensure there are no errors while running your benchmarks.
 
-The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because the models deployed to Triton are configured to convert from ONNX to TensorRT on first use. Since the conversion can take a considerable amount of time, we don't want to include it in the measurements.
+The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because, if it does not already exist, the preprocessed data is cached during the initial run.
 
 `<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
 - `test_dfp_training_duo_modules_e2e`
@@ -73,12 +73,11 @@ The console output should look like this:
 --------------------------------------------------------------------------------------------------------- benchmark: 4 tests ---------------------------------------------------------------------------------------------------------
 Name (time in s)                                                            Min                Max               Mean            StdDev             Median               IQR            Outliers     OPS            Rounds  Iterations
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-test_dfp_training_duo_modules_e2e[dfp_training_duo_modules_e2e]         14.0830 (1.0)      14.9877 (1.0)      14.6516 (1.0)      0.3793 (1.89)     14.8319 (1.00)     0.5705 (1.78)          1;0  0.0683 (1.0)           5           1
-test_dfp_training_duo_stages_e2e[dfp_training_duo_stages_e2e]           14.5587 (1.03)     15.1005 (1.01)     14.7982 (1.01)     0.2127 (1.06)     14.7599 (1.0)      0.3206 (1.0)           2;0  0.0676 (0.99)          5           1
-test_dfp_training_azure_modules_e2e[dfp_training_azure_modules_e2e]     26.3609 (1.87)     30.0867 (2.01)     27.7483 (1.89)     1.5031 (7.47)     27.8537 (1.89)     2.0313 (6.34)          1;0  0.0360 (0.53)          5           1
-test_dfp_training_azure_stages_e2e[dfp_training_azure_stages_e2e]       26.9595 (1.91)     27.4533 (1.83)     27.2270 (1.86)     0.2012 (1.0)      27.2217 (1.84)     0.3303 (1.03)          2;0  0.0367 (0.54)          5           1
+test_dfp_training_duo_modules_e2e[dfp_training_duo_modules_e2e]         14.6904 (1.0)      15.4328 (1.0)      15.0454 (1.0)      0.3456 (1.29)     14.9375 (1.0)      0.6445 (1.33)          2;0  0.0665 (1.0)           5           1
+test_dfp_training_duo_stages_e2e[dfp_training_duo_stages_e2e]           16.1813 (1.10)     16.7849 (1.09)     16.4841 (1.10)     0.2677 (1.0)      16.5409 (1.11)     0.4859 (1.0)           2;0  0.0607 (0.91)          5           1
+test_dfp_training_azure_stages_e2e[dfp_training_azure_stages_e2e]       27.9413 (1.90)     30.3021 (1.96)     29.3920 (1.95)     0.8975 (3.35)     29.5483 (1.98)     1.0533 (2.17)          2;0  0.0340 (0.51)          5           1
+test_dfp_training_azure_modules_e2e[dfp_training_azure_modules_e2e]     29.2428 (1.99)     30.8350 (2.00)     30.1221 (2.00)     0.6535 (2.44)     30.0971 (2.01)     1.0755 (2.21)          2;0  0.0332 (0.50)          5           1
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 ```
 
 ### Benchmarks Report
