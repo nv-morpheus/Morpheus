@@ -89,13 +89,14 @@ namespace morpheus {
          */
         template<typename OutputT, std::enable_if_t<std::is_integral_v<OutputT>> * = nullptr>
         void operator()(void *output_data) {
-            tensorShape_2d shape({static_cast<matx::index_t>(element_count), 3});
+            auto matx_count = static_cast<matx::index_t>(element_count);
+            tensorShape_2d shape({matx_count, 3});
 
             auto output_tensor = matx::make_tensor<OutputT>(static_cast<OutputT *>(output_data), shape);
 
             auto col0 = output_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
             auto col2 = output_tensor.template Slice<1>({0, 2}, {matx::matxEnd, matx::matxDropDim});
-            auto range_col = matx::range<0, tensorShape_1d, OutputT>(std::move(tensorShape_1d({static_cast<matx::index_t>(element_count)})), 0, 1);
+            auto range_col = matx::range<0, tensorShape_1d, OutputT>({matx_count}, 0, 1);
 
             (col0 = range_col).run(stream.value());
             (col2 = fea_len - 1).run(stream.value());
@@ -211,7 +212,8 @@ namespace morpheus {
             matx::DefaultDescriptor<2>  desc{{static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
                                              {static_cast<matx::index_t>(stride[0]), static_cast<matx::index_t>(stride[1])}};
 
-            auto input_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(static_cast<InputT *>(input_data), std::move(desc));
+            auto input_tensor =
+                matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(static_cast<InputT*>(input_data), std::move(desc));
 
             // Tmp array to hold max value
             auto max_tensor = matx::make_tensor<InputT>(output_shape);
@@ -234,6 +236,8 @@ namespace morpheus {
             matx::DefaultDescriptor<2>  input_desc{{static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
                                                    {static_cast<matx::index_t>(stride[0]), static_cast<matx::index_t>(stride[1])}};
 
+            // Input & Output have the same shape & stride. The make_tensor API requires a move for the descriptor
+            // so we need to take a copy of it here.
             matx::DefaultDescriptor<2>  output_desc = input_desc;
 
 
@@ -375,7 +379,9 @@ namespace morpheus {
         auto num_input_rows = input.shape(0);
         auto num_input_cols = input.shape(1);
 
-        std::vector<matx::index_t> matx_stride{static_cast<matx::index_t>(input.stride(0)), static_cast<matx::index_t>(input.stride(1))};
+        std::vector<matx::index_t> matx_stride{static_cast<matx::index_t>(input.stride(0)),
+                                               static_cast<matx::index_t>(input.stride(1))};
+
         std::size_t output_element_count = output_shape[0] * output_shape[1];
         std::size_t output_buff_size = dtype.item_size() * output_element_count;
 
