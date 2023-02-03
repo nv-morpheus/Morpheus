@@ -29,7 +29,7 @@ To provide your own calibration or use other `pytest-benchmark` features with th
 
 Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./resource/pipelines_conf.json). For example, this is the Morpheus configuration for  `duo_training_modules`:
 ```
-"dfp_training_duo_modules_e2e": {
+"test_dfp_training_duo_modules_e2e": {
     "file_path": "../../../../data/dfp/duo-training-data/*.json",
     "num_threads": 8,
     "pipeline_batch_size": 1024,
@@ -46,38 +46,42 @@ Benchmarks for an individual workflow can be run using the following:
 
 ```
 
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave bench_e2e_dfp_training_pipeline.py::<test-workflow>
+pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::<test-workflow>
 ```
 The `-s` option allows outputs of pipeline execution to be displayed so you can ensure there are no errors while running your benchmarks.
 
 The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because, if it does not already exist, the preprocessed data is cached during the initial run.
 
 `<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
-- `test_dfp_training_duo_modules_e2e`
-- `test_dfp_training_duo_stages_e2e`
+- `test_dfp_inference_azure_stages_e2e`
+- `test_dfp_inference_duo_stages_e2e`
 - `test_dfp_training_azure_modules_e2e`
 - `test_dfp_training_azure_stages_e2e`
+- `test_dfp_training_duo_modules_e2e`
+- `test_dfp_training_duo_stages_e2e`
 
 For example, to run E2E benchmarks on the DFP training (modules) workflow on the duo logs:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave bench_e2e_dfp_training_pipeline.py::test_dfp_training_duo_modules_e2e
+pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_training_duo_modules_e2e
 ```
 
 To run E2E benchmarks on all workflows:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave bench_e2e_dfp_training_pipeline.py
+pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py
 ```
 
 The console output should look like this:
 ```
---------------------------------------------------------------------------------------------------------- benchmark: 4 tests ---------------------------------------------------------------------------------------------------------
-Name (time in s)                                                            Min                Max               Mean            StdDev             Median               IQR            Outliers     OPS            Rounds  Iterations
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-test_dfp_training_duo_modules_e2e[dfp_training_duo_modules_e2e]         14.6904 (1.0)      15.4328 (1.0)      15.0454 (1.0)      0.3456 (1.29)     14.9375 (1.0)      0.6445 (1.33)          2;0  0.0665 (1.0)           5           1
-test_dfp_training_duo_stages_e2e[dfp_training_duo_stages_e2e]           16.1813 (1.10)     16.7849 (1.09)     16.4841 (1.10)     0.2677 (1.0)      16.5409 (1.11)     0.4859 (1.0)           2;0  0.0607 (0.91)          5           1
-test_dfp_training_azure_stages_e2e[dfp_training_azure_stages_e2e]       27.9413 (1.90)     30.3021 (1.96)     29.3920 (1.95)     0.8975 (3.35)     29.5483 (1.98)     1.0533 (2.17)          2;0  0.0340 (0.51)          5           1
-test_dfp_training_azure_modules_e2e[dfp_training_azure_modules_e2e]     29.2428 (1.99)     30.8350 (2.00)     30.1221 (2.00)     0.6535 (2.44)     30.0971 (2.01)     1.0755 (2.21)          2;0  0.0332 (0.50)          5           1
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------- benchmark: 6 tests -----------------------------------------------------------------------------------------------------
+Name (time in ms)                               Min                    Max                   Mean                StdDev                 Median                   IQR            Outliers     OPS            Rounds  Iterations
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_dfp_inference_duo_stages_e2e          308.4402 (1.0)         441.9953 (1.0)         385.4835 (1.0)         52.7466 (1.0)         374.8979 (1.0)         73.1232 (1.0)           2;0  2.5941 (1.0)           5           1
+test_dfp_inference_azure_stages_e2e        454.2198 (1.47)        625.3723 (1.41)        539.4551 (1.40)        77.5497 (1.47)        556.1858 (1.48)       143.2852 (1.96)          2;0  1.8537 (0.71)          5           1
+test_dfp_training_duo_modules_e2e       13,701.4709 (44.42)    15,542.6684 (35.16)    14,604.7726 (37.89)      806.8470 (15.30)    14,486.1345 (38.64)    1,461.3735 (19.99)         2;0  0.0685 (0.03)          5           1
+test_dfp_training_duo_stages_e2e        14,617.3350 (47.39)    15,589.4445 (35.27)    14,941.8147 (38.76)      403.5400 (7.65)     14,717.5218 (39.26)      526.5890 (7.20)          1;0  0.0669 (0.03)          5           1
+test_dfp_training_azure_stages_e2e      26,091.4968 (84.59)    27,554.4906 (62.34)    27,014.1010 (70.08)      558.1178 (10.58)    27,148.0393 (72.41)      612.2293 (8.37)          1;0  0.0370 (0.01)          5           1
+test_dfp_training_azure_modules_e2e     26,228.4464 (85.04)    29,457.1970 (66.65)    28,156.9607 (73.04)    1,252.0302 (23.74)    28,241.6172 (75.33)    1,698.1469 (23.22)         2;0  0.0355 (0.01)          5           1
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 ### Benchmarks Report
@@ -90,24 +94,16 @@ with `000N` where N is incremented for every run. For example, the report file n
 
 A hook to `pytest-benchmark` was developed to add the following information to the JSON report:
 
-CPU(s) used by Morpheus. For example:
+GPU(s) used by Morpheus. For example:
 ```
-"cpu": {
-    "python_version": "3.8.15.final.0 (64 bit)",
-    "cpuinfo_version": [
-        9,
-        0,
-        0
-    ],
-    "cpuinfo_version_string": "9.0.0",
-    "arch": "X86_64",
-    "bits": 64,
-    "count": 12,
-    "arch_string_raw": "x86_64",
-    "vendor_id_raw": "GenuineIntel",
-    "brand_raw": "Intel(R) Xeon(R) Gold 6128 CPU @ 3.40GHz",
-    "hz_advertised_friendly": "3.4000 GHz",
-    "hz_actual_friendly": "3.4000 GHz",
+"gpu_0": {
+    "id": 0,
+    "name": "Quadro RTX 8000",
+    "load": "0.0%",
+    "free_memory": "47627.0MB",
+    "used_memory": "965.0MB",
+    "temperature": "55.0 C",
+    "uuid": "GPU-6fa37f47-763b-fc49-1b15-75b0d36525bf"
 }
 ```
 
@@ -117,3 +113,15 @@ Morpheus config for each workflow:
 - edge_buffer_size
 - start_time
 - duration
+
+Additional benchmark stats for each workflow:
+- input_lines
+- min_throughput_lines
+- max_throughput_lines
+- mean_throughput_lines
+- median_throughput_lines
+- input_bytes
+- min_throughput_bytes
+- max_throughput_bytes
+- mean_throughput_bytes
+- median_throughput_bytes

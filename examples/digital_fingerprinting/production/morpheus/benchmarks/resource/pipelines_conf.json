@@ -1,35 +1,51 @@
 {
     "tracking_uri": "http://mlflow:5000",
-    "dfp_training_azure_modules_e2e": {
-      "file_path": "../../../../data/dfp/azure-training-data/*.json",
+    "test_dfp_training_azure_modules_e2e": {
+      "glob_path": "../../../../data/dfp/azure-training-data/*.json",
       "num_threads": 12,
       "pipeline_batch_size": 256,
       "edge_buffer_size": 128,
       "start_time": "2022-08-01",
       "duration": "60d"
     },
-    "dfp_training_duo_modules_e2e": {
-      "file_path": "../../../../data/dfp/duo-training-data/*.json",
+    "test_dfp_training_duo_modules_e2e": {
+      "glob_path": "../../../../data/dfp/duo-training-data/*.json",
       "num_threads": 12,
       "pipeline_batch_size": 256,
       "edge_buffer_size": 128,
       "start_time": "2022-08-01",
       "duration": "60d"
     },
-    "dfp_training_azure_stages_e2e": {
-      "file_path": "../../../../data/dfp/azure-training-data/*.json",
+    "test_dfp_training_azure_stages_e2e": {
+      "glob_path": "../../../../data/dfp/azure-training-data/*.json",
       "num_threads": 12,
       "pipeline_batch_size": 256,
       "edge_buffer_size": 128,
       "start_time": "2022-08-01",
       "duration": "60d"
     },
-    "dfp_training_duo_stages_e2e": {
-      "file_path": "../../../../data/dfp/duo-training-data/*.json",
+    "test_dfp_training_duo_stages_e2e": {
+      "glob_path": "../../../../data/dfp/duo-training-data/*.json",
       "num_threads": 12,
       "pipeline_batch_size": 256,
       "edge_buffer_size": 128,
       "start_time": "2022-08-01",
       "duration": "60d"
+    },
+    "test_dfp_inference_azure_stages_e2e": {
+      "glob_path": "../../../../data/dfp/azure-inference-data/*.json",
+      "num_threads": 12,
+      "pipeline_batch_size": 256,
+      "edge_buffer_size": 128,
+      "start_time": "2022-08-01",
+      "duration": "1d"
+    },
+    "test_dfp_inference_duo_stages_e2e": {
+      "glob_path": "../../../../data/dfp/duo-inference-data/*.json",
+      "num_threads": 12,
+      "pipeline_batch_size": 256,
+      "edge_buffer_size": 128,
+      "start_time": "2022-08-01",
+      "duration": "1d"
     }
 }

@@ -281,9 +281,16 @@ class DFPTrainingConfig():
 
     def get_filenames(self) -> typing.List[str]:
 
-        input_glob = self.pipeline_conf.get("file_path")
-        input_glob = path.join(THIS_DIR, input_glob)
-        filenames = glob.glob(input_glob)
+        if "glob_path" in self.pipeline_conf:
+            input_glob = self.pipeline_conf.get("glob_path")
+            input_glob = path.join(THIS_DIR, input_glob)
+            filenames = glob.glob(input_glob)
+        elif "file_path" in self.pipeline_conf:
+            file_path = self.pipeline_conf.get("file_path")
+            full_file_path = path.join(THIS_DIR, file_path)
+            filenames = [full_file_path]
+        else:
+            raise KeyError("Configuration needs the glob path or file path attribute.")
 
         assert len(filenames) > 0  # List empty throw error
 
