@@ -214,3 +214,69 @@ TEST_F(TestMatxUtil, Cast)
         EXPECT_DOUBLE_EQ(double_vec[i], float_vec[i]);
     }
 }
+
+TEST_F(TestMatxUtil, Thrshold)
+{
+    // clang-format off
+    // disabling clang-format to illustrate row-major layout
+
+    std::vector<float> input
+    {
+        1.0, 0.2, 0.7, 0.9,
+        1.0, 0.6, 0.1, 0.9,
+        0.2, 0.8, 1.0, 0.9,
+        0.1, 0.4, 0.1, 0.3,
+        0.8, 1.0, 1.0, 0.8
+    };
+
+    std::vector<bool> expected_output
+    {
+        true,  false, true,  true,
+        true,  true,  false, true,
+        false, true,  true,  true,
+        false, false, false, false,
+        true,  true,  true,  true,
+    };
+
+    std::vector<bool> expected_by_row_output{true, true, true, false, true};
+    // clang-format on
+
+    std::size_t num_cols = 4;
+    std::size_t num_rows = 5;
+    EXPECT_EQ(num_cols * num_rows, input.size());
+
+    DataType dtype(TypeId::FLOAT32);
+
+    std::size_t buff_size = input.size() * dtype.item_size();
+    auto input_buffer     = std::make_shared<rmm::device_buffer>(buff_size, rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
+
+    DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {num_cols, 1}};
+
+    auto output        = MatxUtil::threshold(dm, 0.5, false);
+    auto output_by_row = MatxUtil::threshold(dm, 0.5, true);
+
+    // output and output_by_row are holding 1-byte bool values, so the byte size and element size should be the same
+    EXPECT_EQ(output->size(), expected_output.size());
+    EXPECT_EQ(output_by_row->size(), expected_by_row_output.size());
+
+    std::vector<uint8_t> host_byte_outut(expected_output.size());
+    std::vector<uint8_t> host_byte_output_by_row(expected_by_row_output.size());
+
+    MRC_CHECK_CUDA(cudaMemcpy(host_byte_outut.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(
+        host_byte_output_by_row.data(), output_by_row->data(), output_by_row->size(), cudaMemcpyDeviceToHost));
+
+    for (std::size_t i = 0; i < host_byte_outut.size(); ++i)
+    {
+        bool output_val = host_byte_outut[i];
+        EXPECT_EQ(output_val, expected_output[i]);
+    }
+
+    for (std::size_t i = 0; i < host_byte_output_by_row.size(); ++i)
+    {
+        bool output_val = host_byte_output_by_row[i];
+        EXPECT_EQ(output_val, expected_by_row_output[i]);
+    }
+}
