@@ -231,13 +231,14 @@ namespace morpheus {
         template<typename InputT>
         void
         threshold(void *input_data, void *output_data, double threshold, const std::vector<std::size_t>& stride) {
-            tensorShape_2d shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
+            matx::DefaultDescriptor<2>  input_desc{{static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
+                                                   {static_cast<matx::index_t>(stride[0]), static_cast<matx::index_t>(stride[1])}};
 
-            matx::index_t matx_stride[2] = {static_cast<matx::index_t>(stride[0]),
-                                            static_cast<matx::index_t>(stride[1])};
+            matx::DefaultDescriptor<2>  output_desc = input_desc;
 
-            auto input_tensor = matx::make_tensor<InputT>(static_cast<InputT *>(input_data), shape, matx_stride);
-            auto output_tensor = matx::make_tensor<bool>(static_cast<bool *>(output_data), shape, matx_stride);
+
+            auto input_tensor = matx::make_tensor<InputT>(static_cast<InputT *>(input_data), std::move(input_desc));
+            auto output_tensor = matx::make_tensor<bool>(static_cast<bool *>(output_data), std::move(output_desc));
 
             // Convert max value to bool
             (output_tensor = input_tensor > (InputT) threshold).run(stream.value());
