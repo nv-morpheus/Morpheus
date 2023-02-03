@@ -262,18 +262,12 @@ namespace morpheus {
         void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
             auto input_count = stop - start;
 
-            matx::index_t output_stride[2] = {input_stride[0], input_stride[1]};
-            if (output_stride[0] == 1)
-            {
-                output_stride[1] = num_output_rows;
-            }
-
             auto input_ptr = static_cast<InputT *>(input_data) + (start * input_stride[0]);
-            auto output_ptr = static_cast<InputT *>(output_data) + (output_idx *  output_stride[0]);
+            auto output_ptr = static_cast<InputT *>(output_data) + (output_idx * num_cols);
 
             matx::DefaultDescriptor<2> input_desc{{static_cast<matx::index_t>(input_count), num_cols},
                                                   {input_stride[0], input_stride[1]}};
-            matx::DefaultDescriptor<1> output_desc{{num_cols}, {output_stride[1]}};
+            matx::DefaultDescriptor<1> output_desc{{num_cols}, {1}};
 
             auto input_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(input_ptr, std::move(input_desc));
             auto output_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<1>>(output_ptr, std::move(output_desc));
@@ -418,6 +412,20 @@ namespace morpheus {
                               start,
                               num_input_rows,
                               seq_ids[start+seq_id_offset]-output_offset);
+
+        // output is in row major, if our input was in column major we need to convert to column major
+        if (matx_stride[0] == 1)
+        {
+            auto tmp_buffer = input.make_new_buffer(output_buff_size);
+            cudf::type_dispatcher(cudf_type,
+                                  MatxUtil__MatxTranspose{output_element_count, output->stream(), static_cast<size_t>(output_shape[0]), static_cast<size_t>(output_shape[1])},
+                                  output->data(),
+                                  tmp_buffer->data());
+
+            mrc::enqueue_stream_sync_event(tmp_buffer->stream()).get();
+            return tmp_buffer;
+        }
+
 
         mrc::enqueue_stream_sync_event(output->stream()).get();
         return output;
