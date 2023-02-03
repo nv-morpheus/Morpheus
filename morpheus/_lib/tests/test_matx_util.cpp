@@ -187,3 +187,30 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
         EXPECT_DOUBLE_EQ(output[i], expected_output[i]);
     }
 }
+
+TEST_F(TestMatxUtil, Cast)
+{
+    std::vector<float> float_vec{5.1, 2.2, 8.3, 9.4, 8.5, 2.6, 1.7, 8.1};
+
+    DataType float_type(TypeId::FLOAT32);
+
+    auto float_buffer =
+        std::make_shared<rmm::device_buffer>(float_vec.size() * float_type.item_size(), rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(float_buffer->data(), float_vec.data(), float_buffer->size(), cudaMemcpyHostToDevice));
+
+    DevMemInfo dm{float_buffer, float_type, {4, 2}, {1, 4}};
+
+    DataType double_type(TypeId::FLOAT64);
+    auto double_buffer = MatxUtil::cast(dm, double_type.type_id());
+    EXPECT_EQ(float_vec.size() * double_type.item_size(), double_buffer->size());
+
+    std::vector<double> double_vec(float_vec.size());
+    MRC_CHECK_CUDA(cudaMemcpy(double_vec.data(), double_buffer->data(), double_buffer->size(), cudaMemcpyDeviceToHost));
+
+    EXPECT_EQ(double_vec.size(), float_vec.size());
+    for (std::size_t i = 0; i < double_vec.size(); ++i)
+    {
+        EXPECT_DOUBLE_EQ(double_vec[i], float_vec[i]);
+    }
+}
