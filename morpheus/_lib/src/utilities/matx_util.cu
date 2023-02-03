@@ -422,8 +422,7 @@ namespace morpheus {
                                   output->data(),
                                   tmp_buffer->data());
 
-            mrc::enqueue_stream_sync_event(tmp_buffer->stream()).get();
-            return tmp_buffer;
+            output.swap(tmp_buffer);
         }
 
 
