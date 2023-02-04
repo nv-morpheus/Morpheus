@@ -251,36 +251,65 @@ namespace morpheus {
 
     struct MatxUtil__MatxReduceMax {
         matx::index_t num_input_rows;
+        matx::index_t num_output_rows;
         matx::index_t num_cols;
         std::vector<matx::index_t> input_stride;
-        matx::index_t num_output_rows;
-        void *input_data;
-        void *output_data;
+        const std::vector<int32_t> &seq_ids;
+        size_t seq_id_offset;
         rmm::cuda_stream_view stream;
 
         template<typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()> * = nullptr>
-        void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
+        void operator()(void *input_data, void *output_data) {
             throw std::invalid_argument("Unsupported conversion");
         }
 
         template<typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()> * = nullptr>
-        void operator()(std::size_t start, std::size_t stop, int32_t output_idx) {
-            auto input_count = stop - start;
-
-            auto input_ptr = static_cast<InputT *>(input_data) + (start * input_stride[0]);
-            auto output_ptr = static_cast<InputT *>(output_data) + (output_idx * num_cols);
-
-            matx::DefaultDescriptor<2> input_desc{{static_cast<matx::index_t>(input_count), num_cols},
-                                                  {input_stride[0], input_stride[1]}};
-            matx::DefaultDescriptor<1> output_desc{{num_cols}, {1}};
-
+        void operator()(void *input_data, void *output_data)
+        {
+            auto input_ptr = static_cast<InputT *>(input_data);
+            matx::DefaultDescriptor<2> input_desc{{num_input_rows, num_cols}, {input_stride[0], input_stride[1]}};
             auto input_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(input_ptr, std::move(input_desc));
-            auto output_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<1>>(output_ptr, std::move(output_desc));
 
-            // We need to transpose the input such that rmax will reduce the rows
-            // Matx performs reductions over the innermost dimensions.
-            // see https://nvidia.github.io/MatX/api/reduce.html
-            matx::rmax(output_tensor, input_tensor.Permute({1, 0}), stream.value());
+            auto output_ptr = static_cast<InputT *>(output_data);
+
+            matx::index_t output_stride[2] = {input_stride[0], input_stride[1]};
+            if (output_stride[0] == 1)
+            {
+                output_stride[1] = num_output_rows;
+            }
+
+            matx::DefaultDescriptor<2> output_desc{{num_output_rows, num_cols}, output_stride};
+            auto output_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(output_ptr, std::move(output_desc));
+
+            matx::index_t start = 0;
+            auto output_offset = static_cast<matx::index_t>(seq_ids[seq_id_offset]);
+            for (matx::index_t i=0; i < num_input_rows; ++i)
+            {
+                auto idx = seq_ids[i+seq_id_offset];
+                if (idx != seq_ids[start+seq_id_offset])
+                {
+                    reduce_rows(input_tensor, output_tensor, start, i, static_cast<matx::index_t>(seq_ids[start+seq_id_offset])-output_offset);
+                    start = i;
+                }
+            }
+
+            reduce_rows(input_tensor, output_tensor, start, num_input_rows, static_cast<matx::index_t>(seq_ids[start+seq_id_offset])-output_offset);
+        }
+
+        template<typename InputT>
+        void reduce_rows(matx::tensor_t<InputT, 2>& input_tensor,
+                         matx::tensor_t<InputT, 2>& output_tensor,
+                         matx::index_t start,
+                         matx::index_t stop,
+                         matx::index_t output_idx)
+        {
+            auto input_slice = input_tensor.Slice({start, 0}, {stop, matx::matxEnd});
+            auto tmp_tensor = matx::make_tensor<InputT>({num_cols});
+
+            matx::rmax(tmp_tensor, input_slice.Permute({1, 0}), stream.value());
+
+            //auto output_slice = output_tensor.Slice<1>({output_idx, 0}, {matx::matxDropDim, matx::matxEnd});
+            //(output_slice = tmp_tensor).run(stream.value());
         }
     };
 
@@ -391,47 +420,14 @@ namespace morpheus {
         auto output = input.make_new_buffer(output_buff_size);
 
         MatxUtil__MatxReduceMax matx_reduce_max{static_cast<matx::index_t>(num_input_rows),
+                                                static_cast<matx::index_t>(output_shape[0]),
                                                 static_cast<matx::index_t>(num_input_cols),
                                                 matx_stride,
-                                                output_shape[0],
-                                                input.data(),
-                                                output->data(),
+                                                seq_ids,
+                                                seq_id_offset,
                                                 output->stream()};
 
-        std::size_t start = 0;
-        auto output_offset = seq_ids[seq_id_offset];
-        for (std::size_t i=0; i < num_input_rows; ++i)
-        {
-            auto idx = seq_ids[i+seq_id_offset];
-            if (idx != seq_ids[start+seq_id_offset])
-            {
-                cudf::type_dispatcher(cudf_type,
-                                      matx_reduce_max,
-                                      start,
-                                      i,
-                                      seq_ids[start+seq_id_offset]-output_offset);
-                start = i;
-            }
-        }
-
-        cudf::type_dispatcher(cudf_type,
-                              matx_reduce_max,
-                              start,
-                              num_input_rows,
-                              seq_ids[start+seq_id_offset]-output_offset);
-
-        // output is in row major, if our input was in column major we need to convert to column major
-        if (matx_stride[0] == 1)
-        {
-            auto tmp_buffer = input.make_new_buffer(output_buff_size);
-            cudf::type_dispatcher(cudf_type,
-                                  MatxUtil__MatxTranspose{output_element_count, output->stream(), static_cast<size_t>(output_shape[0]), static_cast<size_t>(output_shape[1])},
-                                  output->data(),
-                                  tmp_buffer->data());
-
-            output.swap(tmp_buffer);
-        }
-
+        cudf::type_dispatcher(cudf_type, matx_reduce_max, input.data(), output->data());
 
         mrc::enqueue_stream_sync_event(output->stream()).get();
         return output;
