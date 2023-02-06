@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include "morpheus/utilities/type_util.hpp"  // for DType
-#include "morpheus/utilities/type_util_detail.hpp"
+#include "morpheus/objects/dtype.hpp"
 
 #include <rmm/device_buffer.hpp>
 

@@ -139,7 +139,7 @@ void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_head
     }
 }
 
-std::string df_to_json(const TableInfo& tbl, bool include_index_col)
+std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
 {
     std::string results;
     // no cpp impl for to_json, instead python module converts to pandas and calls to_json
@@ -147,11 +147,14 @@ std::string df_to_json(const TableInfo& tbl, bool include_index_col)
         py::gil_scoped_acquire gil;
         py::object StringIO = py::module_::import("io").attr("StringIO");
 
-        auto df         = tbl.as_py_object();
+        auto df = tbl.checkout_obj();
+
         auto buffer     = StringIO();
         py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true, "index"_a = include_index_col);
         df.attr("to_json")(buffer, **kwargs);
         buffer.attr("seek")(0);
+
+        tbl.return_obj(std::move(df));
 
         py::object pyresults = buffer.attr("getvalue")();
         results              = pyresults.cast<std::string>();
@@ -160,7 +163,7 @@ std::string df_to_json(const TableInfo& tbl, bool include_index_col)
     return results;
 }
 
-void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
+void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
 {
     // Unlike df_to_csv, we use the ostream overload to call the string overload because there is no C++
     // implementation of to_json

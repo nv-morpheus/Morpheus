@@ -1,4 +1,4 @@
-/*
+/**
  * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,33 +17,37 @@
 
 #pragma once
 
-#include "morpheus/objects/dtype.hpp"
+#include "morpheus/messages/meta.hpp"
 
-#include <string>
-#include <vector>
+#include <pybind11/pytypes.h>  // for object
+
+#include <memory>   // for unique_ptr
+#include <utility>  // for move
 
 namespace morpheus {
-/****** Component public implementations *******************/
-/****** TritonInOut****************************************/
-
 /**
  * @addtogroup objects
  * @{
  * @file
  */
 
-/**
- * @brief Container for model input and output configuration
- *
- */
-struct TritonInOut
+#pragma GCC visibility push(default)
+class MutableTableCtxMgr
 {
-    std::string name;
-    size_t bytes;
-    DType datatype;
-    std::vector<int> shape;
-    std::string mapped_name;
-    size_t offset;
+  public:
+    MutableTableCtxMgr(MessageMeta& meta_msg);
+    pybind11::object enter();
+    void exit(const pybind11::object& type, const pybind11::object& value, const pybind11::object& traceback);
+
+    // Throws a useful exception when a user attempts to use this object as if it were the dataframe itself
+    void throw_usage_error(pybind11::args args, const pybind11::kwargs& kwargs);
+
+  private:
+    MessageMeta& m_meta_msg;
+    std::unique_ptr<MutableTableInfo> m_table;
+    std::unique_ptr<pybind11::object> m_py_table;
 };
+
+#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

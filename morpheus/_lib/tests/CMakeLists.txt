@@ -23,7 +23,7 @@ add_executable(test_libmorpheus
   test_morpheus.cpp
   test_multi_slices.cpp
   test_tensor.cpp
-  test_type_util_detail.cpp
+  test_type_util.cpp
 )
 
 target_link_libraries(test_libmorpheus
