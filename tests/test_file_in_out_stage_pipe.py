@@ -29,14 +29,15 @@ from utils import TEST_DIRS
 from utils import assert_path_exists
 
 
+@pytest.mark.parametrize("flush", [False, True])
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_file_rw_pipe(tmp_path, config, output_type):
+def test_file_rw_pipe(tmp_path, config, output_type, flush):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, flush=flush))
     pipe.run()
 
     assert_path_exists(out_file)
