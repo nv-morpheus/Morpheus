@@ -94,7 +94,6 @@ Deploying Morpheus
    :maxdepth: 20
    :hidden:
 
-   getting_started
    cloud_deployment_guide
 
 .. toctree::
