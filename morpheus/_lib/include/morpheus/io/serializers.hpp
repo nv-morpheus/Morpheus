@@ -47,8 +47,13 @@ std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_in
  * @param out_stream : Output stream to write the results to a destination
  * @param include_header : Determines whether or not to include the header
  * @param include_index_col : Determines whether or not to include the dataframe index
+ * @param flush : When `true` flush `out_stream`.
  */
-void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col = true);
+void df_to_csv(const TableInfo& tbl,
+               std::ostream& out_stream,
+               bool include_header,
+               bool include_index_col = true,
+               bool flush             = false);
 
 /**
  * @brief Serialize a dataframe into a JSON formatted string
@@ -67,10 +72,11 @@ std::string df_to_json(MutableTableInfo& tbl, bool include_index_col = true);
  * @param tbl : A wrapper around data in the dataframe
  * @param out_stream : Output stream to write the results to a destination
  * @param include_index_col : Determines whether or not to include the dataframe index
+ * @param flush : When `true` flush `out_stream`.
  *
  * Requires MutableTableInfo since there is no C++ implementation of the JSON writer
  */
-void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col = true);
+void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col = true, bool flush = false);
 
 /** @} */  // end of group
 }  // namespace morpheus

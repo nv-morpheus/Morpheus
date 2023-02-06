@@ -19,6 +19,9 @@ function(find_and_configure_rabbitmq version)
 
   list(APPEND CMAKE_MESSAGE_CONTEXT "rabbitmq")
 
+  # Commit 7fa7b0b contains unreleased cmake fixes which currently only exist in the master branch of the repo.
+  # https://github.com/alanxz/rabbitmq-c/issues/740
+
   rapids_cpm_find(rabbitmq ${version}
     GLOBAL_TARGETS
       rabbitmq rabbitmq::rabbitmq
@@ -28,8 +31,7 @@ function(find_and_configure_rabbitmq version)
       ${PROJECT_NAME}-exports
     CPM_ARGS
       GIT_REPOSITORY  https://github.com/alanxz/rabbitmq-c
-      GIT_TAG         "v${version}"
-      GIT_SHALLOW     TRUE
+      GIT_TAG         7fa7b0b
       OPTIONS         "BUILD_EXAMPLES OFF"
                       "BUILD_TESTING OFF"
                       "BUILD_TOOLS OFF"

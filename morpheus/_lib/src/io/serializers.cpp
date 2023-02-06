@@ -93,7 +93,7 @@ std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_in
     return out_stream.str();
 }
 
-void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col)
+void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col, bool flush)
 {
     auto column_names         = tbl.get_column_names();
     cudf::size_type start_col = 1;
@@ -132,6 +132,11 @@ void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_head
     }
 
     cudf::io::write_csv(options_builder.build(), rmm::mr::get_current_device_resource());
+
+    if (flush)
+    {
+        sink.flush();
+    }
 }
 
 std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
@@ -158,7 +163,7 @@ std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
     return results;
 }
 
-void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col)
+void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
 {
     // Unlike df_to_csv, we use the ostream overload to call the string overload because there is no C++
     // implementation of to_json
@@ -166,7 +171,11 @@ void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_in
 
     // Now write the contents to the stream
     out_stream.write(output.data(), output.size());
-    out_stream.flush();
+
+    if (flush)
+    {
+        out_stream.flush();
+    }
 }
 
 }  // namespace morpheus

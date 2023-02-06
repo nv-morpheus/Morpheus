@@ -39,15 +39,11 @@ def train(trainingdata, unseenerrors):
 
     random_seed = 42
 
-    dflogs = pd.read_csv(trainingdata, header=None, names=['label',
-                         'log'])
+    dflogs = pd.read_csv(trainingdata, header=None, names=['label', 'log'])
 
-    dfnewerror = pd.read_csv(unseenerrors, header=None, names=['label',
-                             'log'])
+    dfnewerror = pd.read_csv(unseenerrors, header=None, names=['label', 'log'])
 
-    (X_train, X_test, y_train, y_test) = train_test_split(
-        dflogs, dflogs.label, random_state=random_seed
-    )
+    (X_train, X_test, y_train, y_test) = train_test_split(dflogs, dflogs.label, random_state=random_seed)
 
     X_train.reset_index(drop=True, inplace=True)
 
@@ -73,8 +69,7 @@ def train(trainingdata, unseenerrors):
     torch.cuda.manual_seed(random_seed)
     np.random.seed(random_seed)
     torch.backends.cudnn.deterministic = True
-    seq_classifier.train_model(X_train['log'], y_train, batch_size=128,
-                               epochs=1, learning_rate=3.6e-04)
+    seq_classifier.train_model(X_train['log'], y_train, batch_size=128, epochs=1, learning_rate=3.6e-04)
 
     timestr = time.strftime('%Y%m%d-%H%M%S')
 
@@ -82,8 +77,7 @@ def train(trainingdata, unseenerrors):
 
     print(seq_classifier.evaluate_model(X_test['log'], y_test))
 
-    test_preds = seq_classifier.predict(X_test['log'], batch_size=128,
-                                        threshold=0.5)
+    test_preds = seq_classifier.predict(X_test['log'], batch_size=128, threshold=0.5)
 
     tests = test_preds[0].to_numpy()
 
@@ -99,12 +93,11 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--trainingdata', required=True,
-                        help='Labelled data in CSV format')
-    parser.add_argument('--unseenerrors', required=True,
+    parser.add_argument('--trainingdata', required=True, help='Labelled data in CSV format')
+    parser.add_argument('--unseenerrors',
+                        required=True,
                         help="""Labelled data to be added to test set for
-                        evaluation after training"""
-                        )
+                        evaluation after training""")
     args = parser.parse_args()
 
 main()

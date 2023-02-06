@@ -47,8 +47,7 @@ inspect.isfunction = isfunction
 
 REVISION_CMD = 'git rev-parse --short HEAD'
 
-source_regex = re.compile(r"^File: (.*?) \(starting at line ([0-9]*?)\)$",
-                          re.MULTILINE)
+source_regex = re.compile(r"^File: (.*?) \(starting at line ([0-9]*?)\)$", re.MULTILINE)
 
 
 def _get_git_revision():
@@ -118,9 +117,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
 
             # fn is expected to be the absolute path.
             fn = os.path.relpath(source_file, start=package)
-            print("{}:{}".format(
-                os.path.abspath(os.path.join("..", "python", "cuml", fn)),
-                lineno))
+            print("{}:{}".format(os.path.abspath(os.path.join("..", "python", "cuml", fn)), lineno))
         else:
             return
     else:
@@ -130,9 +127,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
             fn = os.path.abspath(os.path.join("..", "python", fn))
 
         # Convert to relative from module root
-        fn = os.path.relpath(fn,
-                             start=os.path.dirname(
-                                 __import__(package).__file__))
+        fn = os.path.relpath(fn, start=os.path.dirname(__import__(package).__file__))
 
     # Get the line number if we need it. (Can work without it)
     if (lineno is None):
@@ -145,10 +140,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
                 lineno = obj.__code__.co_firstlineno
             else:
                 lineno = ''
-    return url_fmt.format(revision=revision,
-                          package=package,
-                          path=fn,
-                          lineno=lineno)
+    return url_fmt.format(revision=revision, package=package, path=fn, lineno=lineno)
 
 
 def make_linkcode_resolve(package, url_fmt):
@@ -163,7 +155,4 @@ def make_linkcode_resolve(package, url_fmt):
                                    '{path}#L{lineno}')
     """
     revision = _get_git_revision()
-    return partial(_linkcode_resolve,
-                   revision=revision,
-                   package=package,
-                   url_fmt=url_fmt)
+    return partial(_linkcode_resolve, revision=revision, package=package, url_fmt=url_fmt)
