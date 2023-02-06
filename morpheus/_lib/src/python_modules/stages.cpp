@@ -179,7 +179,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("filename"),
              py::arg("mode")              = "w",
              py::arg("file_type")         = 0,  // Setting this to FileTypes::AUTO throws a conversion error at runtime
-             py::arg("include_index_col") = true);
+             py::arg("include_index_col") = true,
+             py::arg("flush")             = false);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
