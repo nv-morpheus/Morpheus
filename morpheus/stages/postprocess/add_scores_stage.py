@@ -18,6 +18,7 @@ import typing
 import mrc
 
 import morpheus._lib.stages as _stages
+from morpheus._lib.common import TypeId
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
@@ -45,10 +46,15 @@ class AddScoresStage(SinglePortStage):
         the Config.class_labels property.
     prefix : str, default = ""
         Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
-
+    probs_type : `morpheus._lib.common.TypeId`, default = "float32"
+        Datatype of the scores columns.
     """
 
-    def __init__(self, c: Config, labels: typing.List[str] = None, prefix: str = ""):
+    def __init__(self,
+                 c: Config,
+                 labels: typing.List[str] = None,
+                 prefix: str = "",
+                 probs_type: TypeId = TypeId.FLOAT32):
         super().__init__(c)
 
         self._feature_length = c.feature_length
@@ -65,7 +71,9 @@ class AddScoresStage(SinglePortStage):
                 logger.warning("The label '%s' is not in Config.class_labels and will be ignored", label)
                 continue
 
-            self._idx2label[self._class_labels.index(label)] = self._prefix + label
+            prefixed_label = self._prefix + label
+            self._idx2label[self._class_labels.index(label)] = prefixed_label
+            self._needed_columns[prefixed_label] = probs_type
 
         assert len(self._idx2label) > 0, "No labels were added to the stage"
 
