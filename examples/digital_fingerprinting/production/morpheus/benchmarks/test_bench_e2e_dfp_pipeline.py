@@ -35,13 +35,13 @@ from dfp.stages.dfp_training import DFPTraining
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.regex_utils import iso_date_regex
 
-from benchmarks.dfp_training_config import DFPTrainingConfig
-from benchmarks.dfp_training_config import get_azure_preprocess_schema
-from benchmarks.dfp_training_config import get_azure_source_schema
-from benchmarks.dfp_training_config import get_duo_preprocess_schema
-from benchmarks.dfp_training_config import get_duo_source_schema
-from benchmarks.dfp_training_config import load_json
-from benchmarks.dfp_training_config import set_mlflow_tracking_uri
+from benchmarks.dfp_config import DFPConfig
+from benchmarks.dfp_config import get_azure_preprocess_schema
+from benchmarks.dfp_config import get_azure_source_schema
+from benchmarks.dfp_config import get_duo_preprocess_schema
+from benchmarks.dfp_config import get_duo_source_schema
+from benchmarks.dfp_config import load_json
+from benchmarks.dfp_config import set_mlflow_tracking_uri
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
 from morpheus.config import Config
@@ -194,17 +194,17 @@ def test_dfp_training_duo_modules_e2e(benchmark: typing.Any):
 
     pipeline_conf = PIPELINES_CONF.get("test_dfp_training_duo_modules_e2e")
 
-    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="duo", modules_conf=MODULES_CONF)
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="duo", modules_conf=MODULES_CONF)
 
-    config = dfp_tc.get_config()
-    filenames = dfp_tc.get_filenames()
+    config = dfp_config.get_config()
+    filenames = dfp_config.get_filenames()
 
     source_schema = get_duo_source_schema(config)
     preprocess_schema = get_duo_preprocess_schema(config)
 
-    dfp_tc.update_modules_conf(source_schema, preprocess_schema)
+    dfp_config.update_modules_conf(source_schema, preprocess_schema)
 
-    benchmark(dfp_training_pipeline_modules, config, dfp_tc.modules_conf, filenames)
+    benchmark(dfp_training_pipeline_modules, config, dfp_config.modules_conf, filenames)
 
 
 @pytest.mark.benchmark
@@ -222,11 +222,11 @@ def test_dfp_training_duo_stages_e2e(benchmark: typing.Any):
 
     pipeline_conf = PIPELINES_CONF.get("test_dfp_training_duo_stages_e2e")
 
-    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="duo")
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="duo")
 
-    config = dfp_tc.get_config()
-    stages_conf = dfp_tc.get_stages_conf()
-    filenames = dfp_tc.get_filenames()
+    config = dfp_config.get_config()
+    stages_conf = dfp_config.get_stages_conf()
+    filenames = dfp_config.get_filenames()
 
     source_schema = get_duo_source_schema(config)
     preprocess_schema = get_duo_preprocess_schema(config)
@@ -251,17 +251,17 @@ def test_dfp_training_azure_modules_e2e(benchmark: typing.Any):
 
     pipeline_conf = PIPELINES_CONF.get("test_dfp_training_azure_modules_e2e")
 
-    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="azure", modules_conf=MODULES_CONF)
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="azure", modules_conf=MODULES_CONF)
 
-    config = dfp_tc.get_config()
-    filenames = dfp_tc.get_filenames()
+    config = dfp_config.get_config()
+    filenames = dfp_config.get_filenames()
 
     source_schema = get_azure_source_schema(config)
     preprocess_schema = get_azure_preprocess_schema(config)
 
-    dfp_tc.update_modules_conf(source_schema, preprocess_schema)
+    dfp_config.update_modules_conf(source_schema, preprocess_schema)
 
-    benchmark(dfp_training_pipeline_modules, config, dfp_tc.modules_conf, filenames)
+    benchmark(dfp_training_pipeline_modules, config, dfp_config.modules_conf, filenames)
 
 
 @pytest.mark.benchmark
@@ -281,11 +281,11 @@ def test_dfp_training_azure_stages_e2e(benchmark: typing.Any):
 
     pipeline_conf = PIPELINES_CONF.get("test_dfp_training_azure_stages_e2e")
 
-    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="azure")
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="azure")
 
-    config = dfp_tc.get_config()
-    stages_conf = dfp_tc.get_stages_conf()
-    filenames = dfp_tc.get_filenames()
+    config = dfp_config.get_config()
+    stages_conf = dfp_config.get_stages_conf()
+    filenames = dfp_config.get_filenames()
 
     source_schema = get_azure_source_schema(config)
     preprocess_schema = get_azure_preprocess_schema(config)
@@ -310,11 +310,11 @@ def test_dfp_inference_azure_stages_e2e(benchmark: typing.Any, tmp_path):
 
     pipeline_conf = PIPELINES_CONF.get("test_dfp_inference_azure_stages_e2e")
 
-    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="azure")
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="azure")
 
-    config = dfp_tc.get_config()
-    stages_conf = dfp_tc.get_stages_conf()
-    filenames = dfp_tc.get_filenames()
+    config = dfp_config.get_config()
+    stages_conf = dfp_config.get_stages_conf()
+    filenames = dfp_config.get_filenames()
 
     source_schema = get_azure_source_schema(config)
     preprocess_schema = get_azure_preprocess_schema(config)
@@ -347,11 +347,11 @@ def test_dfp_inference_duo_stages_e2e(benchmark: typing.Any, tmp_path):
 
     pipeline_conf = PIPELINES_CONF.get("test_dfp_inference_duo_stages_e2e")
 
-    dfp_tc = DFPTrainingConfig(pipeline_conf, feature_columns, source="duo")
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="duo")
 
-    config = dfp_tc.get_config()
-    stages_conf = dfp_tc.get_stages_conf()
-    filenames = dfp_tc.get_filenames()
+    config = dfp_config.get_config()
+    stages_conf = dfp_config.get_stages_conf()
+    filenames = dfp_config.get_filenames()
 
     source_schema = get_azure_source_schema(config)
     preprocess_schema = get_azure_preprocess_schema(config)

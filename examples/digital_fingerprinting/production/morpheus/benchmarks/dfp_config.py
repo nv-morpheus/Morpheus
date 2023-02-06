@@ -169,7 +169,7 @@ def get_azure_preprocess_schema(config: Config) -> DataFrameInputSchema:
     return schema
 
 
-class DFPTrainingConfig():
+class DFPConfig():
 
     def __init__(self,
                  pipeline_conf: typing.Dict[str, any],
