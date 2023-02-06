@@ -161,30 +161,44 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                                                 cudaMemcpyDeviceToHost));
                 }
 
-                for (size_t i = 0; i < x->count; i += m_max_batch_size)
+                for (size_t i = 0; i < x->count;)
                 {
                     triton::client::InferInput* input1;
 
                     size_t start = i;
                     size_t stop  = std::min(i + m_max_batch_size, x->count);
 
-                    sink_type_t mini_batch_input = x->get_slice(start, stop);
-
-                    size_t out_start = start;
-                    size_t out_stop  = stop;
+                    size_t out_start;
+                    size_t out_stop;
                     if (needs_seq_ids)
                     {
-                        out_start = (*host_seq_ids)[out_start];
-                        if (out_stop < host_seq_ids->size())
+                        out_start = (*host_seq_ids)[start];
+                        if (stop < host_seq_ids->size())
                         {
-                            out_stop = (*host_seq_ids)[out_stop];
+                            // make sure we aren't performing a batch split between rows for the same input
+                            // this assumes that we don't have input that couldn't fit in a single mini-batch
+                            while (stop > start && (*host_seq_ids)[stop - 1] == (*host_seq_ids)[stop])
+                            {
+                                --stop;
+                            }
+
+                            out_stop = (*host_seq_ids)[stop];
+                            i += (stop - start);
                         }
                         else
                         {
                             out_stop = x->mess_count;
+                            i += m_max_batch_size;
                         }
                     }
+                    else
+                    {
+                        out_start = start;
+                        out_stop  = stop;
+                        i += m_max_batch_size;
+                    }
 
+                    sink_type_t mini_batch_input    = x->get_slice(start, stop);
                     source_type_t mini_batch_output = response->get_slice(out_start, out_stop);
 
                     // Iterate on the model inputs in case the model takes less than what tensors are available
@@ -265,7 +279,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         {
                             // Since we are working with slices of both the input and the output, the seq_ids have
                             // already been applied to the output's start & stop, so we only need to reduce the
-                            // response tensort when the size doesn't match our output
+                            // response tensor when the size doesn't match our output
                             std::vector<int64_t> mapped_output_shape{output_shape};
                             mapped_output_shape[0] = mini_batch_output->count;
 

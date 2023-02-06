@@ -397,11 +397,12 @@ namespace morpheus {
 
         std::size_t start = 0;
         auto output_offset = seq_ids[seq_id_offset];
-        for (std::size_t i=0; i < num_input_rows; ++i)
+        for (std::size_t i=1; i < num_input_rows; ++i)
         {
             auto idx = seq_ids[i+seq_id_offset];
             if (idx != seq_ids[start+seq_id_offset])
             {
+                DCHECK(seq_ids[start+seq_id_offset]-output_offset < output_shape[0]);
                 cudf::type_dispatcher(cudf_type,
                                       matx_reduce_max,
                                       start,
@@ -411,6 +412,7 @@ namespace morpheus {
             }
         }
 
+        DCHECK(seq_ids[start+seq_id_offset]-output_offset < output_shape[0]);
         cudf::type_dispatcher(cudf_type,
                               matx_reduce_max,
                               start,
