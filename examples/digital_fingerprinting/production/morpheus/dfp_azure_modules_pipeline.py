@@ -39,8 +39,10 @@ from dfp.utils.module_ids import DFP_TRAINING
 from dfp.utils.regex_utils import iso_date_regex_pattern
 
 from morpheus._lib.common import FilterSource
+from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
+from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
@@ -59,8 +61,6 @@ from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.logger import configure_logging
-from morpheus.utils.logger import get_log_levels
-from morpheus.utils.logger import parse_log_level
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
@@ -269,7 +269,6 @@ def run_pipeline(train_users,
             "module_name": "FILE_TO_DF",
             "namespace": MODULE_NAMESPACE,
             "timestamp_column_name": config.ae.timestamp_column_name,
-            "userid_column_name": config.ae.userid_column_name,
             "parser_kwargs": {
                 "lines": False, "orient": "records"
             },
@@ -307,7 +306,6 @@ def run_pipeline(train_users,
             "module_name": "dfp_data_prep",
             "namespace": MODULE_NAMESPACE,
             "timestamp_column_name": config.ae.timestamp_column_name,
-            "userid_column_name": config.ae.userid_column_name,
             "schema": {
                 "schema_str": preprocess_schema_str, "encoding": encoding
             }
