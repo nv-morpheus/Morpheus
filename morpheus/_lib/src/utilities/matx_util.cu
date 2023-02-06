@@ -308,8 +308,8 @@ namespace morpheus {
 
             matx::rmax(tmp_tensor, input_slice.Permute({1, 0}), stream.value());
 
-            //auto output_slice = output_tensor.Slice<1>({output_idx, 0}, {matx::matxDropDim, matx::matxEnd});
-            //(output_slice = tmp_tensor).run(stream.value());
+            auto output_slice = output_tensor.template Slice<1>({output_idx, 0}, {matx::matxDropDim, matx::matxEnd});
+            (output_slice = tmp_tensor).run(stream.value());
         }
     };
 
