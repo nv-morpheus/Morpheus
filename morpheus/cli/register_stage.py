@@ -164,6 +164,18 @@ def has_matching_kwargs(function, input_dict: dict) -> bool:
     return len([True for input_name in list(input_dict.keys()) if input_name in fn_sig.parameters]) > 0
 
 
+def _convert_enum_default(options_kwargs: dict, annotation, use_value: bool = False):
+    """
+    Display the default value of an enum argument as a string not an enum instance
+    """
+    default_val = options_kwargs.get('default')
+    if (isinstance(default_val, annotation)):
+        if use_value:
+            options_kwargs['default'] = default_val.value
+        else:
+            options_kwargs['default'] = default_val.name
+
+
 def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
 
     doc_type_kwargs = get_doc_kwargs(doc_type)
@@ -184,6 +196,7 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         case_sensitive = doc_type_kwargs.get('case_sensitive', True)
         options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(get_enum_values(annotation))
 
+        _convert_enum_default(options_kwargs, annotation, use_value=True)
         options_kwargs["callback"] = functools.partial(parse_enum, enum_class=annotation, case_sensitive=case_sensitive)
 
     elif (is_pybind_enum(annotation)):
@@ -191,11 +204,7 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         choices = list(get_enum_map(annotation).keys())
         options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(choices)
 
-        # Display the default value as a string not an enum instance
-        default_val = options_kwargs.get('default')
-        if (isinstance(default_val, annotation)):
-            options_kwargs['default'] = default_val.name
-
+        _convert_enum_default(options_kwargs, annotation)
         options_kwargs["callback"] = functools.partial(parse_pybind_enum,
                                                        enum_class=annotation,
                                                        case_sensitive=case_sensitive)

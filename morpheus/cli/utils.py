@@ -168,7 +168,7 @@ def get_enum_map(enum_class: typing.Type):
     assert (issubclass(enum_class, Enum) or is_pybind_enum(enum_class)), \
             "Must pass a class that derives from Enum or a C++ enum exposed to Python"
 
-    return dict(enum_class.__members__)
+    return {x.name: x.value for x in enum_class.__members__.values()}
 
 
 def get_enum_inv_map(enum_class: typing.Type):
