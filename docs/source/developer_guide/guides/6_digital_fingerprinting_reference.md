@@ -524,3 +524,7 @@ To run the DFP pipelines using modules with the example datasets, within the con
    ```bash
    python dfp_azure_modules_pipeline.py --train_users=all --start_time="2022-08-01" --input_file="/workspace/examples/data/dfp/azure-training-data/*.json"
    ```
+
+### Benchmarks
+
+DFP pipeline benchmarks setup and execution instructions are provided [here](/examples/digital_fingerprinting/production/morpheus/benchmarks/README.md)

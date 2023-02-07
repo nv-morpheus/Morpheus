@@ -18,10 +18,10 @@
 #include "morpheus/objects/rmm_tensor.hpp"
 
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for get_element_stride
-#include "morpheus/utilities/type_util.hpp"
 
 #include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>            // for DCHECK_LT, COMPACT_GOOGLE_LOG_FATAL, DCHECK, DCHECK_EQ, LogMessageFatal
@@ -76,7 +76,7 @@ RankType RMMTensor::rank() const
     return m_shape.size();
 }
 
-DataType RMMTensor::dtype() const
+DType RMMTensor::dtype() const
 {
     return m_dtype;
 }
@@ -160,7 +160,7 @@ std::shared_ptr<ITensor> RMMTensor::deep_copy() const
     return std::make_shared<RMMTensor>(copied_buffer, m_offset, m_dtype, m_shape, m_stride);
 }
 
-std::shared_ptr<ITensor> RMMTensor::as_type(DataType dtype) const
+std::shared_ptr<ITensor> RMMTensor::as_type(DType dtype) const
 {
     DType new_dtype(dtype.type_id());
 

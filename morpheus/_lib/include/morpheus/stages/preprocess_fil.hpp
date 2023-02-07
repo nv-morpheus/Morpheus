@@ -33,6 +33,8 @@
 #include <vector>
 
 namespace morpheus {
+struct TableInfo;
+
 /****** Component public implementations *******************/
 /****** PreprocessFILStage**********************************/
 
@@ -67,6 +69,8 @@ class PreprocessFILStage
      * TODO(Documentation)
      */
     subscribe_fn_t build_operator();
+
+    TableInfo fix_bad_columns(sink_type_t x);
 
     std::vector<std::string> m_fea_cols;
     std::string m_vocab_file;

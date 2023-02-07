@@ -29,6 +29,7 @@
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/data_table.hpp"
+#include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
@@ -123,10 +124,21 @@ PYBIND11_MODULE(messages, m)
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
+    // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
+    py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")
+        .def("__enter__", &MutableTableCtxMgr::enter, py::return_value_policy::reference)
+        .def("__exit__", &MutableTableCtxMgr::exit)
+        .def("__getattr__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__getitem__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__setattr__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__setitem__", &MutableTableCtxMgr::throw_usage_error);
+
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
-        .def_property_readonly("df", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
+        .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
+        .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
+        .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(m, "MultiMessage")

@@ -71,11 +71,13 @@ class ConvMsg(SinglePortStage):
                  expected_data_file: str = None,
                  columns: typing.List[str] = None,
                  order: str = 'K',
+                 probs_type: str = 'f4',
                  empty_probs: bool = False):
         super().__init__(c)
         self._expected_data_file = expected_data_file
         self._columns = columns
         self._order = order
+        self._probs_type = probs_type
         self._empty_probs = empty_probs
 
     @property
@@ -100,7 +102,7 @@ class ConvMsg(SinglePortStage):
         if self._empty_probs:
             probs = cp.zeros([len(df), 3], 'float')
         else:
-            probs = cp.array(df.values, copy=True, order=self._order)
+            probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
         return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
