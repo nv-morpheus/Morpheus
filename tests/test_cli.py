@@ -25,6 +25,7 @@ from mlflow.tracking import fluent
 
 import morpheus
 from morpheus._lib.common import FileTypes
+from morpheus._lib.common import FilterSource
 from morpheus.cli import commands
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -633,6 +634,7 @@ class TestCLI:
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
+        assert filter_stage._filter_source == FilterSource.TENSOR.value
 
         assert isinstance(dropna, DropNullStage)
         assert dropna._column == 'xyz'
