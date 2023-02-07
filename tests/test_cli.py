@@ -543,7 +543,7 @@ class TestCLI:
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
         assert to_kafka._output_topic == 'test_topic'
 
-    @pytest.mark.replace_callback('pipeline_fil')
+    @pytest.mark.replace_callback('pipeline_other')
     def test_enum_parsing(self, config, callback_values, tmp_path, mlflow_uri):
         """
         Test parsing of CLI flags for C++ enum values issue #675
@@ -551,6 +551,10 @@ class TestCLI:
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
         with open(tmp_model, 'w'):
             pass
+
+        labels_file = os.path.join(tmp_path, 'labels.txt')
+        with open(labels_file, 'w') as fh:
+            fh.writelines(['frogs\n', 'lizards\n', 'toads'])
 
         file_src_args = FILE_SRC_ARGS[:]
         file_src_args.append('--file_type=json')
@@ -561,14 +565,13 @@ class TestCLI:
         to_file_args = TO_FILE_ARGS[:]
         to_file_args.append('--file_type=csv')
 
-        args = (GENERAL_ARGS + ['pipeline-other'] + file_src_args + from_kafka_args + [
+        args = (GENERAL_ARGS + ['pipeline-other', '--labels_file', labels_file] + file_src_args + from_kafka_args + [
             'deserialize',
             'filter',
             '--filter_source=tensor',
             'dropna',
             '--column',
             'xyz',
-            'preprocess',
             'add-scores',
             'unittest-conv-msg',
             'inf-identity',
@@ -589,8 +592,7 @@ class TestCLI:
         # Ensure our config is populated correctly
 
         config = obj["config"]
-        assert config.mode == PipelineModes.FIL
-        assert config.class_labels == ['frogs', 'lizards', 'toads']
+        assert config.mode == PipelineModes.OTHER
 
         assert config.ae is None
 
@@ -605,7 +607,6 @@ class TestCLI:
             deserialize,
             filter_stage,
             dropna,
-            process_fil,
             add_scores,
             conv_msg,
             inf_ident,
@@ -623,7 +624,7 @@ class TestCLI:
         assert isinstance(file_source, FileSourceStage)
         assert file_source._filename == os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
         assert not file_source._iterative
-        assert file_source._file_type == FileTypes.JSON
+        assert file_source._file_type == FileTypes.JSON.value
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -635,8 +636,6 @@ class TestCLI:
 
         assert isinstance(dropna, DropNullStage)
         assert dropna._column == 'xyz'
-
-        assert isinstance(process_fil, PreprocessFILStage)
 
         assert isinstance(add_scores, AddScoresStage)
         assert isinstance(conv_msg, ConvMsg)
@@ -674,7 +673,7 @@ class TestCLI:
 
         assert isinstance(to_file, WriteToFileStage)
         assert to_file._output_file == 'out.csv'
-        assert file_source._file_type == FileTypes.CSV
+        assert to_file._file_type == FileTypes.CSV.value
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
