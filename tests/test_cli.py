@@ -24,6 +24,7 @@ from click.testing import CliRunner
 from mlflow.tracking import fluent
 
 import morpheus
+from morpheus._lib.common import FileTypes
 from morpheus.cli import commands
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
@@ -537,6 +538,143 @@ class TestCLI:
 
         assert isinstance(to_file, WriteToFileStage)
         assert to_file._output_file == 'out.csv'
+
+        assert isinstance(to_kafka, WriteToKafkaStage)
+        assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
+        assert to_kafka._output_topic == 'test_topic'
+
+    @pytest.mark.replace_callback('pipeline_fil')
+    def test_issue_675(self, config, callback_values, tmp_path, mlflow_uri):
+        """
+        Test parsing of CLI flags for C++ enum values
+        """
+        tmp_model = os.path.join(tmp_path, 'fake-model.file')
+        with open(tmp_model, 'w'):
+            pass
+
+        file_src_args = FILE_SRC_ARGS[:]
+        file_src_args.append('--file_type=json')
+
+        from_kafka_args = FROM_KAFKA_ARGS[:]
+        from_kafka_args.append('--auto_offset_reset=earliest')
+
+        to_file_args = TO_FILE_ARGS[:]
+        to_file_args.append('--file_type=csv')
+
+        args = (GENERAL_ARGS + ['pipeline-other'] + file_src_args + from_kafka_args + [
+            'deserialize',
+            'filter',
+            '--filter_source=tensor',
+            'dropna',
+            '--column',
+            'xyz',
+            'preprocess',
+            'add-scores',
+            'unittest-conv-msg',
+            'inf-identity',
+            'inf-pytorch',
+            '--model_filename',
+            tmp_model,
+            'mlflow-drift',
+            '--tracking_uri',
+            mlflow_uri
+        ] + INF_TRITON_ARGS + MONITOR_ARGS + ['add-class'] + VALIDATE_ARGS + ['serialize'] + to_file_args +
+                TO_KAFKA_ARGS)
+
+        obj = {}
+        runner = CliRunner()
+        result = runner.invoke(commands.cli, args, obj=obj)
+        assert result.exit_code == 47, result.output
+
+        # Ensure our config is populated correctly
+
+        config = obj["config"]
+        assert config.mode == PipelineModes.FIL
+        assert config.class_labels == ['frogs', 'lizards', 'toads']
+
+        assert config.ae is None
+
+        pipe = callback_values['pipe']
+        assert pipe is not None
+
+        stages = callback_values['stages']
+        # Verify the stages are as we expect them, if there is a size-mismatch python will raise a Value error
+        [
+            file_source,
+            from_kafka,
+            deserialize,
+            filter_stage,
+            dropna,
+            process_fil,
+            add_scores,
+            conv_msg,
+            inf_ident,
+            inf_pytorch,
+            mlflow_drift,
+            triton_inf,
+            monitor,
+            add_class,
+            validation,
+            serialize,
+            to_file,
+            to_kafka
+        ] = stages
+
+        assert isinstance(file_source, FileSourceStage)
+        assert file_source._filename == os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
+        assert not file_source._iterative
+        assert file_source._file_type == FileTypes.JSON
+
+        assert isinstance(from_kafka, KafkaSourceStage)
+        assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
+        assert from_kafka._topic == 'test_topic'
+        assert from_kafka._consumer_params['auto.offset.reset'] == 'earliest'
+
+        assert isinstance(deserialize, DeserializeStage)
+        assert isinstance(filter_stage, FilterDetectionsStage)
+
+        assert isinstance(dropna, DropNullStage)
+        assert dropna._column == 'xyz'
+
+        assert isinstance(process_fil, PreprocessFILStage)
+
+        assert isinstance(add_scores, AddScoresStage)
+        assert isinstance(conv_msg, ConvMsg)
+        assert isinstance(inf_ident, IdentityInferenceStage)
+
+        assert isinstance(inf_pytorch, PyTorchInferenceStage)
+        assert inf_pytorch._model_filename == tmp_model
+
+        assert isinstance(mlflow_drift, MLFlowDriftStage)
+        assert mlflow_drift._tracking_uri == mlflow_uri
+
+        assert isinstance(triton_inf, TritonInferenceStage)
+        assert triton_inf._kwargs['model_name'] == 'test-model'
+        assert triton_inf._kwargs['server_url'] == 'test:123'
+        assert triton_inf._kwargs['force_convert_inputs']
+
+        assert isinstance(monitor, MonitorStage)
+        assert monitor._description == 'Unittest'
+        assert monitor._smoothing == 0.001
+        assert monitor._unit == 'inf'
+
+        assert isinstance(add_class, AddClassificationsStage)
+
+        assert isinstance(validation, ValidationStage)
+        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
+                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
+        assert validation._results_file_name == 'results.json'
+        assert validation._index_col == '_index_'
+
+        # Click appears to be converting this into a tuple
+        assert list(validation._exclude_columns) == ['event_dt']
+        assert validation._rel_tol == 0.1
+
+        assert isinstance(serialize, SerializeStage)
+
+        assert isinstance(to_file, WriteToFileStage)
+        assert to_file._output_file == 'out.csv'
+        assert file_source._file_type == FileTypes.CSV
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
