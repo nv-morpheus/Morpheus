@@ -23,9 +23,12 @@ markers = [
 filterwarnings = [
    # Warning coming from mlflow's usage of numpy
    'ignore:`np.object` is a deprecated alias for the builtin `object`. To silence this warning, use `object` by itself. Doing this will not modify any behavior and is safe',
+   'ignore:Warning the df property returns a copy, please use the copy_dataframe method or the mutable_dataframe context manager to modify the DataFrame in-place instead.',
 ]
 
 addopts = "--benchmark-disable"
+
+norecursedirs = "examples/digital_fingerprinting/production"
 
 [tool.yapfignore]
 ignore_patterns = [

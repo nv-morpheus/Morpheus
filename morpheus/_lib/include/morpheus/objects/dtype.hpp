@@ -17,19 +17,20 @@
 
 #pragma once
 
+#include <cudf/types.hpp>
+#include <cudf/utilities/traits.hpp>
+
 #include <climits>  // for CHAR_BIT
 #include <cstddef>  // for size_t
 #include <cstdint>  // for int32_t
-#include <string>   // for string
-
-#ifndef NDEBUG
-    #include <cxxabi.h>
-#endif
+#include <memory>
+#include <stdexcept>
+#include <string>  // for string
 
 namespace morpheus {
 
 /**
- * @addtogroup utilities
+ * @addtogroup objects
  * @{
  * @file
  */
@@ -43,6 +44,7 @@ constexpr std::size_t size_in_bits()
 }
 
 // Pulled from cudf
+#pragma GCC visibility push(default)
 enum class TypeId : int32_t
 {
     EMPTY,    ///< Always null with no underlying data
@@ -57,6 +59,7 @@ enum class TypeId : int32_t
     FLOAT32,  ///< 4 byte floating point
     FLOAT64,  ///< 8 byte floating point
     BOOL8,    ///< Boolean using one byte per value, 0 == false, else true
+    STRING,   ///< String elements, not supported by cupy
 
     //   TIMESTAMP_DAYS,          ///< point in time in days since Unix Epoch in int32
     //   TIMESTAMP_SECONDS,       ///< point in time in seconds since Unix Epoch in int64
@@ -69,7 +72,6 @@ enum class TypeId : int32_t
     //   DURATION_MICROSECONDS,   ///< time interval of microseconds in int64
     //   DURATION_NANOSECONDS,    ///< time interval of nanoseconds in int64
     //   DICTIONARY32,            ///< Dictionary type using int32 indices
-    //   STRING,                  ///< String elements
     //   LIST,                    ///< List elements
     //   DECIMAL32,               ///< Fixed-point type with int32_t
     //   DECIMAL64,               ///< Fixed-point type with int64_t
@@ -79,9 +81,12 @@ enum class TypeId : int32_t
     NUM_TYPE_IDS  ///< Total number of type ids
 };
 
-struct DataType
+/****** DType****************************************/
+struct DType  // TODO(dagardner): move to dtype.hpp
 {
-    DataType(TypeId tid);
+    DType(TypeId tid);
+    DType(const DType& dtype) = default;
+    bool operator==(const DType& other) const;
 
     TypeId type_id() const;
 
@@ -94,14 +99,24 @@ struct DataType
     // Returns the numpy string representation
     std::string type_str() const;
 
-    // // Returns the triton string representation
-    // std::string triton_str() const;
+    // Cudf representation
+    cudf::type_id cudf_type_id() const;
 
-    bool operator==(const DataType& other) const;
+    // Returns the triton string representation
+    std::string triton_str() const;
+
+    // From cudf
+    static DType from_cudf(cudf::type_id tid);
+
+    // From numpy
+    static DType from_numpy(const std::string& numpy_str);
+
+    // From triton
+    static DType from_triton(const std::string& type_str);
 
     // from template
     template <typename T>
-    static DataType create()
+    static DType create()
     {
         if constexpr (std::is_integral_v<T> && std::is_signed_v<T> && size_in_bits<T>() == 8)
         {
@@ -147,6 +162,10 @@ struct DataType
         {
             return {TypeId::BOOL8};
         }
+        else if constexpr (std::is_same_v<T, std::string>)
+        {
+            return {TypeId::STRING};
+        }
         else
         {
             static_assert(!sizeof(T), "Type not implemented");
@@ -156,14 +175,12 @@ struct DataType
         return {TypeId::EMPTY};
     }
 
-    // From numpy
-    static DataType from_numpy(const std::string& numpy_str);
-
-  protected:
+  private:
     char type_char() const;
 
     TypeId m_type_id;
 };
 
 /** @} */  // end of group
+#pragma GCC visibility pop
 }  // namespace morpheus
