@@ -544,9 +544,9 @@ class TestCLI:
         assert to_kafka._output_topic == 'test_topic'
 
     @pytest.mark.replace_callback('pipeline_fil')
-    def test_issue_675(self, config, callback_values, tmp_path, mlflow_uri):
+    def test_enum_parsing(self, config, callback_values, tmp_path, mlflow_uri):
         """
-        Test parsing of CLI flags for C++ enum values
+        Test parsing of CLI flags for C++ enum values issue #675
         """
         tmp_model = os.path.join(tmp_path, 'fake-model.file')
         with open(tmp_model, 'w'):
