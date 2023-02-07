@@ -47,38 +47,39 @@ void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
 
 namespace morpheus {
 
-template <typename MessageT>
-PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, TypeId>>& needed_columns) :
-  base_t(base_t::op_factory_from_sub_fn(build_operator()))
-{
-    for (const auto& col : needed_columns)
-    {
-        m_needed_columns.emplace_back(std::make_tuple<>(std::get<0>(col), DType(std::get<1>(col))));
-    }
-}
-
-template <typename MessageT>
-typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::build_operator()
-{
-    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output](sink_type_t x) {
-                // Since the msg was just emitted from the source we shouldn't have any trouble acquiring the mutex.
-                preallocate(x, m_needed_columns);
-                output.on_next(std::move(x));
-            },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
-    };
-}
-
-template <typename MessageT>
-std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateStageInterfaceProxy<MessageT>::init(
-    mrc::segment::Builder& builder,
-    const std::string& name,
-    std::vector<std::tuple<std::string, TypeId>> needed_columns)
-{
-    return builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
-}
-
+//TODO(devin) temporary fix for missing symbols issue
+//template <typename MessageT>
+//PreallocateStage<MessageT>::PreallocateStage(const std::vector<std::tuple<std::string, TypeId>>& needed_columns) :
+//  base_t(base_t::op_factory_from_sub_fn(build_operator()))
+//{
+//    for (const auto& col : needed_columns)
+//    {
+//        m_needed_columns.emplace_back(std::make_tuple<>(std::get<0>(col), DType(std::get<1>(col))));
+//    }
+//}
+//
+//template <typename MessageT>
+//typename PreallocateStage<MessageT>::subscribe_fn_t PreallocateStage<MessageT>::build_operator()
+//{
+//    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
+//        return input.subscribe(rxcpp::make_observer<sink_type_t>(
+//            [this, &output](sink_type_t x) {
+//                // Since the msg was just emitted from the source we shouldn't have any trouble acquiring the mutex.
+//                preallocate(x, m_needed_columns);
+//                output.on_next(std::move(x));
+//            },
+//            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
+//            [&]() { output.on_completed(); }));
+//    };
+//}
+//
+//template <typename MessageT>
+//std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateStageInterfaceProxy<MessageT>::init(
+//    mrc::segment::Builder& builder,
+//    const std::string& name,
+//    std::vector<std::tuple<std::string, TypeId>> needed_columns)
+//{
+//    return builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
+//}
+//
 }  // namespace morpheus

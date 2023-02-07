@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 #include "morpheus/messages/memory/inference_memory_nlp.hpp"
@@ -110,6 +111,12 @@ PYBIND11_MODULE(messages, m)
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(m, "ControlMessage")
+        .def(py::init<>())
+        .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)), py::return_value_policy::move)
+        .def("message", &ControlMessage::message)
+        .def("type", &ControlMessage::type);
 
     // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
     py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")
