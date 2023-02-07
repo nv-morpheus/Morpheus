@@ -83,11 +83,11 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
             // Clone the meta object before pushing while we still have access to it
             if (repeat_idx + 1 < m_repeat)
             {
+                // Use the copy function, copy_to_py_object will acquire it's own gil
+                auto df = meta->get_info().copy_to_py_object();
+
                 // GIL must come after get_info
                 pybind11::gil_scoped_acquire gil;
-
-                // Use the copy function
-                auto df = meta->get_py_table().attr("copy")();
 
                 pybind11::int_ df_len = pybind11::len(df);
 

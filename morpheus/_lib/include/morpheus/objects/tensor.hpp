@@ -17,8 +17,8 @@
 
 #pragma once
 
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/utilities/type_util.hpp"
 
 #include <rmm/device_buffer.hpp>
 

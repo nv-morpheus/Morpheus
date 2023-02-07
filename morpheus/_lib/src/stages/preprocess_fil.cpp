@@ -18,14 +18,14 @@
 #include "morpheus/stages/preprocess_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
-#include "morpheus/messages/meta.hpp"         // for MessageMeta
+#include "morpheus/messages/meta.hpp"  // for MessageMeta
+#include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/table_info.hpp"    // for TableInfo
+#include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/type_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <cudf/column/column.hpp>       // for column, column::contents
@@ -40,6 +40,7 @@
 #include <pybind11/pybind11.h>  // for str_attr_accessor, arg
 #include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
+#include <pymrc/types.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
@@ -64,56 +65,17 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [&output, this](sink_type_t x) {
-                // TODO(MDD): Add some sort of lock here to prevent fixing columns after they have been accessed
-                auto df_meta           = x->get_meta(m_fea_cols);
-                auto df_meta_col_names = df_meta.get_column_names();
+                // Make sure to
+                auto df_meta = this->fix_bad_columns(x);
 
                 auto packed_data = std::make_shared<rmm::device_buffer>(
                     m_fea_cols.size() * x->mess_count * sizeof(float), rmm::cuda_stream_per_thread);
 
-                std::vector<std::string> bad_cols;
-
-                auto df_just_features = df_meta.get_view();
-
                 for (size_t i = 0; i < df_meta.num_columns(); ++i)
                 {
-                    if (df_just_features.column(df_meta.num_indices() + i).type().id() == cudf::type_id::STRING)
-                    {
-                        bad_cols.push_back(df_meta_col_names[i]);
-                    }
-                }
+                    auto curr_col = df_meta.get_column(i);
 
-                // Need to ensure all string columns have been converted to numbers. This requires running a
-                // regex which is too difficult to do from C++ at this time. So grab the GIL, make the
-                // conversions, and release. This is horribly inefficient, but so is the JSON lines format for
-                // this workflow
-                if (!bad_cols.empty())
-                {
-                    using namespace pybind11::literals;
-                    pybind11::gil_scoped_acquire gil;
-
-                    pybind11::object df = x->meta->get_py_table();
-
-                    std::string regex = R"((\d+))";
-
-                    for (auto c : bad_cols)
-                    {
-                        df[pybind11::str(c)] = df[pybind11::str(c)]
-                                                   .attr("str")
-                                                   .attr("extract")(pybind11::str(regex), "expand"_a = true)
-                                                   .attr("astype")(pybind11::str("float32"));
-                    }
-
-                    // Now re-get the meta
-                    df_meta          = x->get_meta(m_fea_cols);
-                    df_just_features = df_meta.get_view();
-                }
-
-                for (size_t i = 0; i < df_meta.num_columns(); ++i)
-                {
-                    auto curr_col = df_just_features.column(df_meta.num_indices() + i);
-
-                    auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_just_features.num_rows();
+                    auto curr_ptr = static_cast<float*>(packed_data->data()) + i * df_meta.num_rows();
 
                     // Check if we are something other than float
                     if (curr_col.type().id() != cudf::type_id::FLOAT32)
@@ -123,14 +85,14 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                         // Do the copy here before it goes out of scope
                         MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
                                                   float_data.data->data(),
-                                                  df_just_features.num_rows() * sizeof(float),
+                                                  df_meta.num_rows() * sizeof(float),
                                                   cudaMemcpyDeviceToDevice));
                     }
                     else
                     {
                         MRC_CHECK_CUDA(cudaMemcpy(curr_ptr,
                                                   curr_col.data<float>(),
-                                                  df_just_features.num_rows() * sizeof(float),
+                                                  df_meta.num_rows() * sizeof(float),
                                                   cudaMemcpyDeviceToDevice));
                     }
                 }
@@ -164,6 +126,61 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
             [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
             [&]() { output.on_completed(); }));
     };
+}
+
+TableInfo PreprocessFILStage::fix_bad_columns(sink_type_t x)
+{
+    std::vector<std::string> bad_cols;
+
+    {
+        // TODO(MDD): Add some sort of lock here to prevent fixing columns after they have been accessed
+        auto df_meta           = x->get_meta(m_fea_cols);
+        auto df_meta_col_names = df_meta.get_column_names();
+
+        for (size_t i = 0; i < df_meta.num_columns(); ++i)
+        {
+            if (df_meta.get_column(i).type().id() == cudf::type_id::STRING)
+            {
+                bad_cols.push_back(df_meta_col_names[i]);
+            }
+        }
+
+        // Exit early if there is nothing to do
+        if (bad_cols.empty())
+        {
+            return df_meta;
+        }
+    }
+
+    // Need to ensure all string columns have been converted to numbers. This requires running a
+    // regex which is too difficult to do from C++ at this time. So grab the GIL, make the
+    // conversions, and release. This is horribly inefficient, but so is the JSON lines format for
+    // this workflow
+    {
+        // Get the mutable info for the entire meta object so we only do this once per dataframe
+        auto mutable_info = x->meta->get_mutable_info();
+
+        using namespace pybind11::literals;
+        pybind11::gil_scoped_acquire gil;
+
+        // pybind11::object df = x->meta->get_py_table();
+        auto df = mutable_info.checkout_obj();
+
+        std::string regex = R"((\d+))";
+
+        for (auto c : bad_cols)
+        {
+            df[pybind11::str(c)] = df[pybind11::str(c)]
+                                       .attr("str")
+                                       .attr("extract")(pybind11::str(regex), "expand"_a = true)
+                                       .attr("astype")(pybind11::str("float32"));
+        }
+
+        mutable_info.return_obj(std::move(df));
+    }
+
+    // Now re-get the meta
+    return x->get_meta(m_fea_cols);
 }
 
 // ************ PreprocessFILStageInterfaceProxy *********** //
