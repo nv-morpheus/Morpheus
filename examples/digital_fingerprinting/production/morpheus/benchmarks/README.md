@@ -21,10 +21,10 @@
 To set up and run the benchmarks on production DFP pipeline, follow the instructions provided [here](../../README.md). Once the Morpheus container and the MLFlow server have been set up and running with `docker-compose`. Attach to the Morpheus pipeline container and download the sample data from S3 per the document's instructions.
 
 ## Requirements
-> **Note**: Make sure `dask` and `distributed` are installed in your Conda environment before running the benchmarks. Run the installation command specified below if not.
+> **Note**: Make sure `gputil`, `dask` and `distributed` are installed in your Conda environment before running the benchmarks. Run the installation command specified below if not.
 
 ```bash
-conda install dask==2022.7.0 distributed==2022.7.0
+conda install gputil dask==2022.7.0 distributed==2022.7.0
 ```
 
 ### Run E2E Benchmarks
