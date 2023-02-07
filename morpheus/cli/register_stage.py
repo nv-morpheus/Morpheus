@@ -29,9 +29,12 @@ from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.stage_registry import StageInfo
 from morpheus.cli.utils import get_config_from_ctx
+from morpheus.cli.utils import get_enum_map
 from morpheus.cli.utils import get_enum_values
 from morpheus.cli.utils import get_pipeline_from_ctx
+from morpheus.cli.utils import is_pybind_enum
 from morpheus.cli.utils import parse_enum
+from morpheus.cli.utils import parse_pybind_enum
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -182,6 +185,20 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(get_enum_values(annotation))
 
         options_kwargs["callback"] = functools.partial(parse_enum, enum_class=annotation, case_sensitive=case_sensitive)
+
+    elif (is_pybind_enum(annotation)):
+        case_sensitive = doc_type_kwargs.get('case_sensitive', True)
+        choices = list(get_enum_map(annotation).keys())
+        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(choices)
+
+        # Display the default value as a string not an enum instance
+        default_val = options_kwargs.get('default')
+        if (isinstance(default_val, annotation)):
+            options_kwargs['default'] = default_val.name
+
+        options_kwargs["callback"] = functools.partial(parse_pybind_enum,
+                                                       enum_class=annotation,
+                                                       case_sensitive=case_sensitive)
 
     elif (issubtype(annotation, int) and not issubtype(annotation, bool)):
         # Check if there are any range arguments. Otherwise use a normal int

@@ -22,6 +22,7 @@ from functools import update_wrapper
 
 import click
 import click.globals
+from typing_utils import issubtype
 
 import morpheus
 from morpheus.config import Config
@@ -46,6 +47,15 @@ def str_to_file_type(file_type_str: str):
 
 def _without_empty_args(passed_args):
     return {k: v for k, v in passed_args.items() if v is not None}
+
+
+def is_pybind_enum(cls):
+    """
+    Determines if the given `cls` is an enum.
+    C++ enums exposed via pybind11 do not inherit from Enum, but do expose the `__members__` convention.
+    https://docs.python.org/3.8/library/enum.html?highlight=__members__#iteration
+    """
+    return 'pybind11' in type(cls).__name__ and hasattr(cls, '__members__')
 
 
 def without_empty_args(f):
@@ -155,18 +165,18 @@ def parse_log_level(ctx, param, value):
 
 def get_enum_map(enum_class: typing.Type):
 
-    assert issubclass(enum_class, Enum), "Must pass a class that derives from Enum"
+    assert (issubclass(enum_class, Enum) or is_pybind_enum(enum_class)), \
+            "Must pass a class that derives from Enum or a C++ enum exposed to Python"
 
-    enum_map = {x.name: x.value for x in enum_class}
-
-    return enum_map
+    return dict(enum_class.__members__)
 
 
 def get_enum_inv_map(enum_class: typing.Type):
 
-    assert issubclass(enum_class, Enum), "Must pass a class that derives from Enum"
+    assert (issubclass(enum_class, Enum) or is_pybind_enum(enum_class)), \
+        "Must pass a class that derives from Enum or a C++ enum exposed to Python"
 
-    enum_map = {x.value: x.name for x in enum_class}
+    enum_map = {x.value: x.name for x in enum_class.__members__.values()}
 
     return enum_map
 
@@ -190,6 +200,18 @@ def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: ty
         enum_key = enum_map[value.lower()]
 
     result = enum_class[enum_key]
+    return result
+
+
+def parse_pybind_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: typing.Type, case_sensitive=True):
+    enum_map = get_enum_map(enum_class)
+
+    if not case_sensitive:
+        # Make the keys lowercase
+        enum_map = {key.lower(): value for key, value in enum_map.items()}
+        value = value.lower()
+
+    result = enum_map[value]
     return result
 
 
