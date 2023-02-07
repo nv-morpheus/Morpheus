@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import logging
-import os
-import pickle
 import typing
 from datetime import datetime
 from functools import partial
@@ -22,14 +20,14 @@ from functools import partial
 import click
 import dfp.modules.dfp_training_pipeline  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
+from dfp.utils.derive_args import DeriveArgs
+from dfp.utils.derive_args import get_ae_config
+from dfp.utils.derive_args import pyobj2str
 from dfp.utils.module_ids import DFP_DATA_PREP
 from dfp.utils.module_ids import DFP_ROLLING_WINDOW
 from dfp.utils.module_ids import DFP_SPLIT_USERS
 from dfp.utils.module_ids import DFP_TRAINING
 from dfp.utils.module_ids import DFP_TRAINING_PIPELINE
-from dfp.utils.pipeline_args_initializer import PipelineArgsInitializer
-from dfp.utils.pipeline_args_initializer import get_ae_config
-from dfp.utils.pipeline_args_initializer import pyobj2str
 from dfp.utils.regex_utils import iso_date_regex_pattern
 
 from morpheus.cli.utils import get_log_levels
@@ -128,15 +126,15 @@ def run_pipeline(train_users,
                  sample_rate_s,
                  **kwargs):
 
-    args_initializer = PipelineArgsInitializer(skip_user,
-                                               only_user,
-                                               start_time,
-                                               duration,
-                                               log_level,
-                                               cache_dir,
-                                               tracking_uri=kwargs["tracking_uri"],
-                                               source="duo",
-                                               train_users=train_users)
+    args_initializer = DeriveArgs(skip_user,
+                                  only_user,
+                                  start_time,
+                                  duration,
+                                  log_level,
+                                  cache_dir,
+                                  tracking_uri=kwargs["tracking_uri"],
+                                  source="duo",
+                                  train_users=train_users)
 
     args_initializer.init()
 

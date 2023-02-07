@@ -18,24 +18,31 @@ from datetime import datetime
 from functools import partial
 
 import click
-import dfp.modules.dfp_training_pipeline  # noqa: F401
+import dfp.modules.dfp_inference_pipeline  # noqa: F401
+import dfp.modules.dfp_postprocessing  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.derive_args import DeriveArgs
 from dfp.utils.derive_args import get_ae_config
 from dfp.utils.derive_args import pyobj2str
 from dfp.utils.module_ids import DFP_DATA_PREP
+from dfp.utils.module_ids import DFP_INFERENCE
+from dfp.utils.module_ids import DFP_INFERENCE_PIPELINE
+from dfp.utils.module_ids import DFP_POST_PROCESSING
 from dfp.utils.module_ids import DFP_ROLLING_WINDOW
 from dfp.utils.module_ids import DFP_SPLIT_USERS
-from dfp.utils.module_ids import DFP_TRAINING
-from dfp.utils.module_ids import DFP_TRAINING_PIPELINE
 from dfp.utils.regex_utils import iso_date_regex_pattern
 
+from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
+from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
 from morpheus.utils.column_info import DataFrameInputSchema
@@ -46,19 +53,10 @@ from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
-from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 
 
 @click.command()
-@click.option(
-    "--train_users",
-    type=click.Choice(["all", "generic", "individual"], case_sensitive=False),
-    default="generic",
-    show_default=True,
-    help=("Indicates whether or not to train per user or a generic model for all users. "
-          "Selecting none runs the inference pipeline."),
-)
 @click.option(
     "--skip_user",
     multiple=True,
@@ -81,7 +79,7 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
 @click.option(
     "--duration",
     type=str,
-    default="60d",
+    default="1d",
     help="The duration to run starting from start_time",
 )
 @click.option(
@@ -115,8 +113,7 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
               type=str,
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
-def run_pipeline(train_users,
-                 skip_user: typing.Tuple[str],
+def run_pipeline(skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
                  start_time: datetime,
                  duration,
@@ -132,8 +129,7 @@ def run_pipeline(train_users,
                     log_level,
                     cache_dir,
                     tracking_uri=kwargs["tracking_uri"],
-                    source="azure",
-                    train_users=train_users)
+                    source="azure")
 
     da.init()
 
@@ -198,8 +194,8 @@ def run_pipeline(train_users,
     preprocess_schema_str = pyobj2str(preprocess_schema, encoding=encoding)
 
     module_config = {
-        "module_id": DFP_TRAINING_PIPELINE,
-        "module_name": "dfp_training_pipeline",
+        "module_id": DFP_INFERENCE_PIPELINE,
+        "module_name": "dfp_inference_pipeline",
         "namespace": MODULE_NAMESPACE,
         FILE_BATCHER: {
             "module_id": FILE_BATCHER,
@@ -242,9 +238,9 @@ def run_pipeline(train_users,
             "module_id": DFP_ROLLING_WINDOW,
             "module_name": "dfp_rolling_window",
             "namespace": MODULE_NAMESPACE,
-            "min_history": 300,
-            "min_increment": 300,
-            "max_history": "60d",
+            "min_history": 1,
+            "min_increment": 0,
+            "max_history": duration,
             "cache_dir": cache_dir,
             "timestamp_column_name": config.ae.timestamp_column_name
         },
@@ -257,44 +253,21 @@ def run_pipeline(train_users,
                 "schema_str": preprocess_schema_str, "encoding": encoding
             }
         },
-        DFP_TRAINING: {
-            "module_id": DFP_TRAINING,
-            "module_name": "dfp_training",
-            "namespace": MODULE_NAMESPACE,
-            "model_kwargs": {
-                "encoder_layers": [512, 500],  # layers of the encoding part
-                "decoder_layers": [512],  # layers of the decoding part
-                "activation": 'relu',  # activation function
-                "swap_p": 0.2,  # noise parameter
-                "lr": 0.001,  # learning rate
-                "lr_decay": 0.99,  # learning decay
-                "batch_size": 512,
-                "verbose": False,
-                "optimizer": 'sgd',  # SGD optimizer is selected(Stochastic gradient descent)
-                "scaler": 'standard',  # feature scaling method
-                "min_cats": 1,  # cut off for minority categories
-                "progress_bar": False,
-                "device": "cuda"
-            },
-            "feature_columns": config.ae.feature_columns,
-            "epochs": 30,
-            "validation_size": 0.10
-        },
-        MLFLOW_MODEL_WRITER: {
-            "module_id": MLFLOW_MODEL_WRITER,
-            "module_name": "mlflow_model_writer",
+        DFP_INFERENCE: {
+            "module_id": DFP_INFERENCE,
+            "module_name": "dfp_inference",
             "namespace": MODULE_NAMESPACE,
             "model_name_formatter": da.model_name_formatter,
-            "experiment_name_formatter": da.experiment_name_formatter,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "conda_env": {
-                'channels': ['defaults', 'conda-forge'],
-                'dependencies': ['python={}'.format('3.8'), 'pip'],
-                'pip': ['mlflow', 'dfencoder'],
-                'name': 'mlflow-env'
-            },
-            "databricks_permissions": None
+            "fallback_username": config.ae.fallback_username,
+            "timestamp_column_name": config.ae.timestamp_column_name
         }
+    }
+
+    post_proc_config = {
+        "module_id": DFP_POST_PROCESSING,
+        "module_name": "dfp_post_processing",
+        "namespace": MODULE_NAMESPACE,
+        "timestamp_column_name": config.ae.timestamp_column_name
     }
 
     # Create a linear pipeline object
@@ -302,10 +275,32 @@ def run_pipeline(train_users,
 
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
-    # Here we add a wrapped module that implements the full DFP Training pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
+    # Here we add a wrapped module that implements the DFP Inference pipeline
+    pipeline.add_stage(
+        LinearModulesStage(config,
+                           module_config,
+                           input_port_name="input",
+                           output_port_name="output",
+                           output_type=MultiMessage))
 
-    pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
+    pipeline.add_stage(MonitorStage(config, description="Preprocessing & Inference rate", smoothing=0.001))
+
+    pipeline.add_stage(
+        FilterDetectionsStage(config, threshold=2.0, filter_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
+
+    pipeline.add_stage(
+        LinearModulesStage(config,
+                           post_proc_config,
+                           input_port_name="input",
+                           output_port_name="output",
+                           input_type=MultiMessage,
+                           output_type=MultiMessage))
+
+    # Exclude the columns we don't want in our output
+    pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
+
+    # Write all anomalies to a CSV file
+    pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_azure.csv", overwrite=True))
 
     # Run the pipeline
     pipeline.run()

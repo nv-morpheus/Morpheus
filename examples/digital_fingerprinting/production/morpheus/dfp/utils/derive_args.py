@@ -32,7 +32,7 @@ from morpheus.utils.logger import configure_logging
 logger = logging.getLogger(__name__)
 
 
-class PipelineArgsInitializer:
+class DeriveArgs:
 
     def __init__(self,
                  skip_user: str,
@@ -58,6 +58,7 @@ class PipelineArgsInitializer:
         self._tracking_uri = tracking_uri
         self._model_name_formatter = "DFP-%s-{user_id}" % (source)
         self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (source)
+        self._is_training = (train_users is not None and train_users != "none")
 
     def verify_init(func):
 
@@ -69,6 +70,7 @@ class PipelineArgsInitializer:
         return wrapper
 
     def _configure_logging(self):
+
         configure_logging(log_level=self._log_level)
         logging.getLogger("mlflow").setLevel(self._log_level)
 
@@ -124,6 +126,10 @@ class PipelineArgsInitializer:
         return self._model_name_formatter
 
     @property
+    def is_training(self):
+        return self._is_training
+
+    @property
     def experiment_name_formatter(self):
         return self._experiment_name_formatter
 
@@ -155,6 +161,7 @@ class PipelineArgsInitializer:
         self._update_start_stop_time()
         self._set_include_generic()
         self._set_include_individual()
+        self._configure_logging()
         self._set_mlflow_tracking_uri()
         self._initialized = True
 
