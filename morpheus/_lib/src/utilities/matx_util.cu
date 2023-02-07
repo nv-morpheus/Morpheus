@@ -288,11 +288,13 @@ namespace morpheus {
                 auto idx = seq_ids[i+seq_id_offset];
                 if (idx != seq_ids[start+seq_id_offset])
                 {
+                    DCHECK(seq_ids[start+seq_id_offset]-output_offset < num_output_rows);
                     reduce_rows(input_tensor, output_tensor, start, i, static_cast<matx::index_t>(seq_ids[start+seq_id_offset])-output_offset);
                     start = i;
                 }
             }
 
+            DCHECK(seq_ids[start+seq_id_offset]-output_offset < num_output_rows);
             reduce_rows(input_tensor, output_tensor, start, num_input_rows, static_cast<matx::index_t>(seq_ids[start+seq_id_offset])-output_offset);
         }
 
