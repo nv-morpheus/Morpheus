@@ -13,33 +13,27 @@
 # limitations under the License.
 
 import logging
-import os
 import pickle
 import typing
 from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
 from functools import partial
 
 import click
 import dfp.modules.dfp_training_pipeline  # noqa: F401
-import mlflow
-import pandas as pd
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.module_ids import DFP_DATA_PREP
 from dfp.utils.module_ids import DFP_ROLLING_WINDOW
 from dfp.utils.module_ids import DFP_SPLIT_USERS
 from dfp.utils.module_ids import DFP_TRAINING
 from dfp.utils.module_ids import DFP_TRAINING_PIPELINE
+from dfp.utils.pipeline_args_initializer import PipelineArgsInitializer
+from dfp.utils.pipeline_args_initializer import get_ae_config
+from dfp.utils.pipeline_args_initializer import pyobj2str
 from dfp.utils.regex_utils import iso_date_regex_pattern
 
 from morpheus.cli.utils import get_log_levels
-from morpheus.cli.utils import get_package_relative_file
-from morpheus.cli.utils import load_labels_file
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
-from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -51,7 +45,6 @@ from morpheus.utils.column_info import IncrementColumn
 from morpheus.utils.column_info import RenameColumn
 from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
-from morpheus.utils.logger import configure_logging
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
@@ -132,57 +125,22 @@ def run_pipeline(train_users,
                  log_level,
                  sample_rate_s,
                  **kwargs):
-    # To include the generic, we must be training all or generic
-    include_generic = train_users == "all" or train_users == "generic"
 
-    # To include individual, we must be training
-    include_individual = not include_generic
+    args_initializer = PipelineArgsInitializer(skip_user,
+                                               only_user,
+                                               start_time,
+                                               duration,
+                                               log_level,
+                                               cache_dir,
+                                               tracking_uri=kwargs["tracking_uri"],
+                                               source="azure",
+                                               train_users=train_users)
 
-    skip_users = list(skip_user)
-    only_users = list(only_user)
+    args_initializer.init()
 
-    duration = timedelta(seconds=pd.Timedelta(duration).total_seconds())
-    if start_time is None:
-        end_time = datetime.now(tz=timezone.utc)
-        start_time = end_time - duration
-    else:
-        if start_time.tzinfo is None:
-            start_time = start_time.replace(tzinfo=timezone.utc)
-
-        end_time = start_time + duration
-
-    # Enable the Morpheus logger
-    configure_logging(log_level=log_level)
-    logging.getLogger("mlflow").setLevel(log_level)
-
-    if (len(skip_users) > 0 and len(only_users) > 0):
-        logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
-
-    logger = logging.getLogger("morpheus.{}".format(__name__))
-
-    logger.info("Running training pipeline with the following options: ")
-    logger.info("Train generic_user: %s", include_generic)
-    logger.info("Skipping users: %s", skip_users)
-    logger.info("Start Time: %s", start_time)
-    logger.info("Duration: %s", duration)
-    logger.info("Cache Dir: %s", cache_dir)
-
-    if ("tracking_uri" in kwargs):
-        # Initialize ML Flow
-        mlflow.set_tracking_uri(kwargs["tracking_uri"])
-        logger.info("Tracking URI: %s", mlflow.get_tracking_uri())
-
-    config = Config()
-
-    CppConfig.set_should_use_cpp(False)
-
-    config.num_threads = os.cpu_count()
-
-    config.ae = ConfigAutoEncoder()
-
-    config.ae.feature_columns = load_labels_file(get_package_relative_file("data/columns_ae_azure.txt"))
-    config.ae.userid_column_name = "username"
-    config.ae.timestamp_column_name = "timestamp"
+    config: Config = get_ae_config(labels_file="data/columns_ae_azure.txt",
+                                   userid_column_name="username",
+                                   timestamp_column_name="timestamp")
 
     # Specify the column names to ensure all data is uniform
     source_column_info = [
@@ -237,11 +195,8 @@ def run_pipeline(train_users,
     encoding = "latin1"
 
     # Convert schema as a string
-    source_schema_str = str(pickle.dumps(source_schema), encoding=encoding)
-    preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
-
-    model_name_formatter = "DFP-azure-{user_id}"
-    experiment_name_formatter = "dfp/azure/training/{reg_model_name}"
+    source_schema_str = pyobj2str(source_schema, encoding=encoding)
+    preprocess_schema_str = pyobj2str(preprocess_schema, encoding=encoding)
 
     module_config = {
         "module_id": DFP_TRAINING_PIPELINE,
@@ -253,8 +208,8 @@ def run_pipeline(train_users,
             "namespace": MODULE_NAMESPACE,
             "period": "D",
             "sampling_rate_s": sample_rate_s,
-            "start_time": start_time,
-            "end_time": end_time,
+            "start_time": args_initializer.start_time,
+            "end_time": args_initializer.end_time,
             "iso_date_regex_pattern": iso_date_regex_pattern
         },
         FILE_TO_DF: {
@@ -276,10 +231,10 @@ def run_pipeline(train_users,
             "module_id": DFP_SPLIT_USERS,
             "module_name": "dfp_split_users",
             "namespace": MODULE_NAMESPACE,
-            "include_generic": include_generic,
-            "include_individual": include_individual,
-            "skip_users": skip_users,
-            "only_users": only_users,
+            "include_generic": args_initializer.include_generic,
+            "include_individual": args_initializer.include_individual,
+            "skip_users": args_initializer.skip_users,
+            "only_users": args_initializer.only_users,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
             "fallback_username": config.ae.fallback_username
@@ -330,8 +285,8 @@ def run_pipeline(train_users,
             "module_id": MLFLOW_MODEL_WRITER,
             "module_name": "mlflow_model_writer",
             "namespace": MODULE_NAMESPACE,
-            "model_name_formatter": model_name_formatter,
-            "experiment_name_formatter": experiment_name_formatter,
+            "model_name_formatter": args_initializer.model_name_formatter,
+            "experiment_name_formatter": args_initializer.experiment_name_formatter,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "conda_env": {
                 'channels': ['defaults', 'conda-forge'],
