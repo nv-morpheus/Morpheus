@@ -22,7 +22,6 @@ from functools import update_wrapper
 
 import click
 import click.globals
-from typing_utils import issubtype
 
 import morpheus
 from morpheus.config import Config
