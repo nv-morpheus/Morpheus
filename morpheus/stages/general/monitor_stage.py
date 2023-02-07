@@ -25,12 +25,12 @@ from tqdm import tqdm
 import cudf
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.logger import LogLevels
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +166,7 @@ class MonitorStage(SinglePortStage):
     determine_count_fn : typing.Callable[[typing.Any], int]
         Custom function for determining the count in a message. Gets called for each message. Allows for
         correct counting of batched and sliced messages.
-    log_level : str, default = "INFO"
+    log_level : `morpheus.utils.logger.LogLevels`, default = 'INFO'
         Enable this stage when the configured log level is at `log_level` or lower.
     """
     stage_count: int = 0
@@ -178,7 +178,7 @@ class MonitorStage(SinglePortStage):
                  unit: str = "messages",
                  delayed_start: bool = False,
                  determine_count_fn: typing.Callable[[typing.Any], int] = None,
-                 log_level: str = "INFO"):
+                 log_level: LogLevels = LogLevels.INFO):
         super().__init__(c)
 
         self._progress: MorpheusTqdm = None
@@ -193,10 +193,8 @@ class MonitorStage(SinglePortStage):
 
         self._determine_count_fn = determine_count_fn
 
-        if isinstance(log_level, str):
-            log_level = parse_log_level(None, None, log_level)
-
         self._log_level = log_level
+        self._enabled = None  # defined on first call to _is_enabled
 
     @property
     def name(self) -> str:
@@ -217,11 +215,17 @@ class MonitorStage(SinglePortStage):
     def supports_cpp_node(self):
         return False
 
+    def _is_enabled(self) -> bool:
+        if self._enabled is None:
+            self._enabled = logger.isEnabledFor(self._log_level)
+
+        return self._enabled
+
     def on_start(self):
         """
         Starts the pipeline stage's progress bar.
         """
-        if logger.isEnabledFor(self._log_level):
+        if self._is_enabled():
             # Set the monitor interval to 0 to use prevent using tqdms monitor
             tqdm.monitor_interval = 0
 
@@ -250,7 +254,7 @@ class MonitorStage(SinglePortStage):
             self._progress.reset()
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        if not logger.isEnabledFor(self._log_level):
+        if not self._is_enabled():
             return input_stream
 
         def sink_on_completed():
