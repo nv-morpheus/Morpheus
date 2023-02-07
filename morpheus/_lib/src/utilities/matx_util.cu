@@ -283,7 +283,7 @@ namespace morpheus {
 
             matx::index_t start = 0;
             auto output_offset = static_cast<matx::index_t>(seq_ids[seq_id_offset]);
-            for (matx::index_t i=0; i < num_input_rows; ++i)
+            for (matx::index_t i=1; i < num_input_rows; ++i)
             {
                 auto idx = seq_ids[i+seq_id_offset];
                 if (idx != seq_ids[start+seq_id_offset])
@@ -294,7 +294,8 @@ namespace morpheus {
                 }
             }
 
-            DCHECK(seq_ids[start+seq_id_offset]-output_offset < num_output_rows);
+
+            DCHECK(seq_ids[start+seq_id_offset]-output_offset < num_output_rows) << "\nstart=" << start << " seq_ids[start+seq_id_offset]-output_offset=" << seq_ids[start+seq_id_offset]-output_offset << " num_output_rows="  << num_output_rows;
             reduce_rows(input_tensor, output_tensor, start, num_input_rows, static_cast<matx::index_t>(seq_ids[start+seq_id_offset])-output_offset);
         }
 
