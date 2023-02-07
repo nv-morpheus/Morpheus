@@ -28,6 +28,8 @@ filterwarnings = [
 
 addopts = "--benchmark-disable"
 
+norecursedirs = "examples/digital_fingerprinting/production"
+
 [tool.yapfignore]
 ignore_patterns = [
   "**/*.pyx",
