@@ -15,7 +15,6 @@
 import logging
 import typing
 from datetime import datetime
-from functools import partial
 
 import click
 import dfp.modules.dfp_training_pipeline  # noqa: F401
@@ -29,6 +28,8 @@ from dfp.utils.module_ids import DFP_SPLIT_USERS
 from dfp.utils.module_ids import DFP_TRAINING
 from dfp.utils.module_ids import DFP_TRAINING_PIPELINE
 from dfp.utils.regex_utils import iso_date_regex_pattern
+from dfp.utils.schema_util import Schema
+from dfp.utils.schema_util import SchemaBuilder
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
@@ -36,15 +37,6 @@ from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.utils.column_info import BoolColumn
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.column_info import DateTimeColumn
-from morpheus.utils.column_info import IncrementColumn
-from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.column_info import StringCatColumn
-from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
@@ -126,73 +118,30 @@ def run_pipeline(train_users,
                  sample_rate_s,
                  **kwargs):
 
-    args_initializer = DeriveArgs(skip_user,
-                                  only_user,
-                                  start_time,
-                                  duration,
-                                  log_level,
-                                  cache_dir,
-                                  tracking_uri=kwargs["tracking_uri"],
-                                  source="duo",
-                                  train_users=train_users)
+    derive_args = DeriveArgs(skip_user,
+                             only_user,
+                             start_time,
+                             duration,
+                             log_level,
+                             cache_dir,
+                             tracking_uri=kwargs["tracking_uri"],
+                             source="duo",
+                             train_users=train_users)
 
-    args_initializer.init()
+    derive_args.init()
 
     config: Config = get_ae_config(labels_file="data/columns_ae_duo.txt",
                                    userid_column_name="username",
                                    timestamp_column_name="timestamp")
 
-    source_column_info = [
-        DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="timestamp"),
-        RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="user.name"),
-        RenameColumn(name="accessdevicebrowser", dtype=str, input_name="access_device.browser"),
-        RenameColumn(name="accessdeviceos", dtype=str, input_name="access_device.os"),
-        StringCatColumn(name="location",
-                        dtype=str,
-                        input_columns=[
-                            "access_device.location.city",
-                            "access_device.location.state",
-                            "access_device.location.country"
-                        ],
-                        sep=", "),
-        RenameColumn(name="authdevicename", dtype=str, input_name="auth_device.name"),
-        BoolColumn(name="result",
-                   dtype=bool,
-                   input_name="result",
-                   true_values=["success", "SUCCESS"],
-                   false_values=["denied", "DENIED", "FRAUD"]),
-        ColumnInfo(name="reason", dtype=str),
-    ]
-
-    source_schema = DataFrameInputSchema(json_columns=["access_device", "application", "auth_device", "user"],
-                                         column_info=source_column_info)
-
-    # Preprocessing schema
-    preprocess_column_info = [
-        ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
-        ColumnInfo(name=config.ae.userid_column_name, dtype=str),
-        ColumnInfo(name="accessdevicebrowser", dtype=str),
-        ColumnInfo(name="accessdeviceos", dtype=str),
-        ColumnInfo(name="authdevicename", dtype=str),
-        ColumnInfo(name="result", dtype=bool),
-        ColumnInfo(name="reason", dtype=str),
-        # Derived columns
-        IncrementColumn(name="logcount",
-                        dtype=int,
-                        input_name=config.ae.timestamp_column_name,
-                        groupby_column=config.ae.userid_column_name),
-        CustomColumn(name="locincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="location")),
-    ]
-
-    preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+    schema_builder = SchemaBuilder(config)
+    schema: Schema = schema_builder.build_duo_schema()
 
     encoding = "latin1"
 
     # Convert schema as a string
-    source_schema_str = pyobj2str(source_schema, encoding=encoding)
-    preprocess_schema_str = pyobj2str(preprocess_schema, encoding=encoding)
+    source_schema_str = pyobj2str(schema.source, encoding=encoding)
+    preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
 
     module_config = {
         "module_id": DFP_TRAINING_PIPELINE,
@@ -204,8 +153,8 @@ def run_pipeline(train_users,
             "namespace": MODULE_NAMESPACE,
             "period": "D",
             "sampling_rate_s": sample_rate_s,
-            "start_time": args_initializer.start_time,
-            "end_time": args_initializer.end_time,
+            "start_time": derive_args.start_time,
+            "end_time": derive_args.end_time,
             "iso_date_regex_pattern": iso_date_regex_pattern
         },
         FILE_TO_DF: {
@@ -227,10 +176,10 @@ def run_pipeline(train_users,
             "module_id": DFP_SPLIT_USERS,
             "module_name": "dfp_fsplit_users",
             "namespace": MODULE_NAMESPACE,
-            "include_generic": args_initializer.include_generic,
-            "include_individual": args_initializer.include_individual,
-            "skip_users": args_initializer.skip_users,
-            "only_users": args_initializer.only_users,
+            "include_generic": derive_args.include_generic,
+            "include_individual": derive_args.include_individual,
+            "skip_users": derive_args.skip_users,
+            "only_users": derive_args.only_users,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
             "fallback_username": config.ae.fallback_username
@@ -242,7 +191,7 @@ def run_pipeline(train_users,
             "min_history": 300,
             "min_increment": 300,
             "max_history": "60d",
-            "cache_dir": args_initializer.cache_dir,
+            "cache_dir": derive_args.cache_dir,
             "timestamp_column_name": config.ae.timestamp_column_name
         },
         DFP_DATA_PREP: {
@@ -281,8 +230,8 @@ def run_pipeline(train_users,
             "module_id": MLFLOW_MODEL_WRITER,
             "module_name": "mlflow_model_writer",
             "namespace": MODULE_NAMESPACE,
-            "model_name_formatter": args_initializer.model_name_formatter,
-            "experiment_name_formatter": args_initializer.experiment_name_formatter,
+            "model_name_formatter": derive_args.model_name_formatter,
+            "experiment_name_formatter": derive_args.experiment_name_formatter,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "conda_env": {
                 'channels': ['defaults', 'conda-forge'],

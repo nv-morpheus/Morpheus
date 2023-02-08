@@ -15,7 +15,6 @@
 import logging
 import typing
 from datetime import datetime
-from functools import partial
 
 import click
 import dfp.modules.dfp_model_train_deploy  # noqa: F401
@@ -34,6 +33,8 @@ from dfp.utils.module_ids import DFP_ROLLING_WINDOW
 from dfp.utils.module_ids import DFP_SPLIT_USERS
 from dfp.utils.module_ids import DFP_TRAINING
 from dfp.utils.regex_utils import iso_date_regex_pattern
+from dfp.utils.schema_util import Schema
+from dfp.utils.schema_util import SchemaBuilder
 
 from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_log_levels
@@ -45,14 +46,6 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.column_info import DateTimeColumn
-from morpheus.utils.column_info import IncrementColumn
-from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.column_info import StringCatColumn
-from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
@@ -132,77 +125,30 @@ def run_pipeline(train_users,
                  sample_rate_s,
                  **kwargs):
 
-    da = DeriveArgs(skip_user,
-                    only_user,
-                    start_time,
-                    duration,
-                    log_level,
-                    cache_dir,
-                    source="azure",
-                    tracking_uri=kwargs["tracking_uri"],
-                    train_users=train_users)
+    derive_args = DeriveArgs(skip_user,
+                             only_user,
+                             start_time,
+                             duration,
+                             log_level,
+                             cache_dir,
+                             tracking_uri=kwargs["tracking_uri"],
+                             source="azure",
+                             train_users=train_users)
 
-    da.init()
+    derive_args.init()
 
     config: Config = get_ae_config(labels_file="data/columns_ae_azure.txt",
                                    userid_column_name="username",
                                    timestamp_column_name="timestamp")
 
-    # Specify the column names to ensure all data is uniform
-    source_column_info = [
-        DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="time"),
-        RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
-                     input_name="properties.deviceDetail.operatingSystem"),
-        StringCatColumn(name="location",
-                        dtype=str,
-                        input_columns=[
-                            "properties.location.city",
-                            "properties.location.countryOrRegion",
-                        ],
-                        sep=", "),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
-    ]
-
-    source_schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
-
-    # Preprocessing schema
-    preprocess_column_info = [
-        ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
-        ColumnInfo(name=config.ae.userid_column_name, dtype=str),
-        ColumnInfo(name="appDisplayName", dtype=str),
-        ColumnInfo(name="clientAppUsed", dtype=str),
-        ColumnInfo(name="deviceDetailbrowser", dtype=str),
-        ColumnInfo(name="deviceDetaildisplayName", dtype=str),
-        ColumnInfo(name="deviceDetailoperatingSystem", dtype=str),
-        ColumnInfo(name="statusfailureReason", dtype=str),
-
-        # Derived columns
-        IncrementColumn(name="logcount",
-                        dtype=int,
-                        input_name=config.ae.timestamp_column_name,
-                        groupby_column=config.ae.userid_column_name),
-        CustomColumn(name="locincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="location")),
-        CustomColumn(name="appincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="appDisplayName")),
-    ]
-
-    preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+    schema_builder = SchemaBuilder(config)
+    schema: Schema = schema_builder.build_azure_schema()
 
     encoding = "latin1"
 
     # Convert schema as a string
-    source_schema_str = pyobj2str(source_schema, encoding=encoding)
-    preprocess_schema_str = pyobj2str(preprocess_schema, encoding=encoding)
+    source_schema_str = pyobj2str(schema.source, encoding=encoding)
+    preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
 
     preprocessing_module_config = {
         "module_id": DFP_PREPROCESSING,
@@ -214,8 +160,8 @@ def run_pipeline(train_users,
             "namespace": MODULE_NAMESPACE,
             "period": "D",
             "sampling_rate_s": sample_rate_s,
-            "start_time": da.start_time,
-            "end_time": da.end_time,
+            "start_time": derive_args.start_time,
+            "end_time": derive_args.end_time,
             "iso_date_regex_pattern": iso_date_regex_pattern
         },
         FILE_TO_DF: {
@@ -237,10 +183,10 @@ def run_pipeline(train_users,
             "module_id": DFP_SPLIT_USERS,
             "module_name": "dfp_split_users",
             "namespace": MODULE_NAMESPACE,
-            "include_generic": da.include_generic,
-            "include_individual": da.include_individual,
-            "skip_users": da.skip_users,
-            "only_users": da.only_users,
+            "include_generic": derive_args.include_generic,
+            "include_individual": derive_args.include_individual,
+            "skip_users": derive_args.skip_users,
+            "only_users": derive_args.only_users,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
             "fallback_username": config.ae.fallback_username
@@ -249,9 +195,9 @@ def run_pipeline(train_users,
             "module_id": DFP_ROLLING_WINDOW,
             "module_name": "dfp_rolling_window",
             "namespace": MODULE_NAMESPACE,
-            "min_history": 300 if da.is_training else 1,
-            "min_increment": 300 if da.is_training else 0,
-            "max_history": "60d" if da.is_training else "1d",
+            "min_history": 300 if derive_args.is_training else 1,
+            "min_increment": 300 if derive_args.is_training else 0,
+            "max_history": "60d" if derive_args.is_training else "1d",
             "cache_dir": cache_dir,
             "timestamp_column_name": config.ae.timestamp_column_name
         },
@@ -281,7 +227,7 @@ def run_pipeline(train_users,
 
     pipeline.add_stage(MonitorStage(config, description="Preprocessing Module rate", smoothing=0.001))
 
-    if (da.is_training):
+    if (derive_args.is_training):
 
         # Module configuration
         training_module_config = {
@@ -315,8 +261,8 @@ def run_pipeline(train_users,
                 "module_id": MLFLOW_MODEL_WRITER,
                 "module_name": "mlflow_model_writer",
                 "namespace": MODULE_NAMESPACE,
-                "model_name_formatter": da.model_name_formatter,
-                "experiment_name_formatter": da.experiment_name_formatter,
+                "model_name_formatter": derive_args.model_name_formatter,
+                "experiment_name_formatter": derive_args.experiment_name_formatter,
                 "timestamp_column_name": config.ae.timestamp_column_name,
                 "conda_env": {
                     'channels': ['defaults', 'conda-forge'],
@@ -340,7 +286,7 @@ def run_pipeline(train_users,
 
     else:
         # Perform inference on the preprocessed data
-        pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=da.model_name_formatter))
+        pipeline.add_stage(DFPInferenceStage(config, model_name_formatter=derive_args.model_name_formatter))
 
         pipeline.add_stage(MonitorStage(config, description="Inference rate", smoothing=0.001))
 

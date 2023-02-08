@@ -15,11 +15,9 @@
 import logging
 import typing
 from datetime import datetime
-from functools import partial
 
 import click
 import dfp.modules.dfp_inference_pipeline  # noqa: F401
-import dfp.modules.dfp_postprocessing  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.derive_args import DeriveArgs
 from dfp.utils.derive_args import get_ae_config
@@ -31,8 +29,9 @@ from dfp.utils.module_ids import DFP_POST_PROCESSING
 from dfp.utils.module_ids import DFP_ROLLING_WINDOW
 from dfp.utils.module_ids import DFP_SPLIT_USERS
 from dfp.utils.regex_utils import iso_date_regex_pattern
+from dfp.utils.schema_util import Schema
+from dfp.utils.schema_util import SchemaBuilder
 
-from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
@@ -40,20 +39,12 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.utils.column_info import ColumnInfo
-from morpheus.utils.column_info import CustomColumn
-from morpheus.utils.column_info import DataFrameInputSchema
-from morpheus.utils.column_info import DateTimeColumn
-from morpheus.utils.column_info import IncrementColumn
-from morpheus.utils.column_info import RenameColumn
-from morpheus.utils.column_info import StringCatColumn
-from morpheus.utils.column_info import create_increment_col
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
+from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import SERIALIZE
+from morpheus.utils.module_ids import WRITE_TO_FILE
 
 
 @click.command()
@@ -122,76 +113,30 @@ def run_pipeline(skip_user: typing.Tuple[str],
                  sample_rate_s,
                  **kwargs):
 
-    da = DeriveArgs(skip_user,
-                    only_user,
-                    start_time,
-                    duration,
-                    log_level,
-                    cache_dir,
-                    tracking_uri=kwargs["tracking_uri"],
-                    source="azure")
+    derive_args = DeriveArgs(skip_user,
+                             only_user,
+                             start_time,
+                             duration,
+                             log_level,
+                             cache_dir,
+                             tracking_uri=kwargs["tracking_uri"],
+                             source="azure")
 
-    da.init()
+    derive_args.init()
 
     config: Config = get_ae_config(labels_file="data/columns_ae_azure.txt",
                                    userid_column_name="username",
                                    timestamp_column_name="timestamp")
 
-    # Specify the column names to ensure all data is uniform
-    source_column_info = [
-        DateTimeColumn(name=config.ae.timestamp_column_name, dtype=datetime, input_name="time"),
-        RenameColumn(name=config.ae.userid_column_name, dtype=str, input_name="properties.userPrincipalName"),
-        RenameColumn(name="appDisplayName", dtype=str, input_name="properties.appDisplayName"),
-        ColumnInfo(name="category", dtype=str),
-        RenameColumn(name="clientAppUsed", dtype=str, input_name="properties.clientAppUsed"),
-        RenameColumn(name="deviceDetailbrowser", dtype=str, input_name="properties.deviceDetail.browser"),
-        RenameColumn(name="deviceDetaildisplayName", dtype=str, input_name="properties.deviceDetail.displayName"),
-        RenameColumn(name="deviceDetailoperatingSystem",
-                     dtype=str,
-                     input_name="properties.deviceDetail.operatingSystem"),
-        StringCatColumn(name="location",
-                        dtype=str,
-                        input_columns=[
-                            "properties.location.city",
-                            "properties.location.countryOrRegion",
-                        ],
-                        sep=", "),
-        RenameColumn(name="statusfailureReason", dtype=str, input_name="properties.status.failureReason"),
-    ]
-
-    source_schema = DataFrameInputSchema(json_columns=["properties"], column_info=source_column_info)
-
-    # Preprocessing schema
-    preprocess_column_info = [
-        ColumnInfo(name=config.ae.timestamp_column_name, dtype=datetime),
-        ColumnInfo(name=config.ae.userid_column_name, dtype=str),
-        ColumnInfo(name="appDisplayName", dtype=str),
-        ColumnInfo(name="clientAppUsed", dtype=str),
-        ColumnInfo(name="deviceDetailbrowser", dtype=str),
-        ColumnInfo(name="deviceDetaildisplayName", dtype=str),
-        ColumnInfo(name="deviceDetailoperatingSystem", dtype=str),
-        ColumnInfo(name="statusfailureReason", dtype=str),
-
-        # Derived columns
-        IncrementColumn(name="logcount",
-                        dtype=int,
-                        input_name=config.ae.timestamp_column_name,
-                        groupby_column=config.ae.userid_column_name),
-        CustomColumn(name="locincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="location")),
-        CustomColumn(name="appincrement",
-                     dtype=int,
-                     process_column_fn=partial(create_increment_col, column_name="appDisplayName")),
-    ]
-
-    preprocess_schema = DataFrameInputSchema(column_info=preprocess_column_info, preserve_columns=["_batch_id"])
+    schema_builder = SchemaBuilder(config)
+    schema: Schema = schema_builder.build_azure_schema()
 
     encoding = "latin1"
 
     # Convert schema as a string
-    source_schema_str = pyobj2str(source_schema, encoding=encoding)
-    preprocess_schema_str = pyobj2str(preprocess_schema, encoding=encoding)
+    source_schema_str = pyobj2str(schema.source, encoding=encoding)
+    preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
+    multi_message_str = pyobj2str(MultiMessage, encoding)
 
     module_config = {
         "module_id": DFP_INFERENCE_PIPELINE,
@@ -203,8 +148,8 @@ def run_pipeline(skip_user: typing.Tuple[str],
             "namespace": MODULE_NAMESPACE,
             "period": "D",
             "sampling_rate_s": sample_rate_s,
-            "start_time": da.start_time,
-            "end_time": da.end_time,
+            "start_time": derive_args.start_time,
+            "end_time": derive_args.end_time,
             "iso_date_regex_pattern": iso_date_regex_pattern
         },
         FILE_TO_DF: {
@@ -226,10 +171,10 @@ def run_pipeline(skip_user: typing.Tuple[str],
             "module_id": DFP_SPLIT_USERS,
             "module_name": "dfp_split_users",
             "namespace": MODULE_NAMESPACE,
-            "include_generic": da.include_generic,
-            "include_individual": da.include_individual,
-            "skip_users": da.skip_users,
-            "only_users": da.only_users,
+            "include_generic": derive_args.include_generic,
+            "include_individual": derive_args.include_individual,
+            "skip_users": derive_args.skip_users,
+            "only_users": derive_args.only_users,
             "timestamp_column_name": config.ae.timestamp_column_name,
             "userid_column_name": config.ae.userid_column_name,
             "fallback_username": config.ae.fallback_username
@@ -257,17 +202,40 @@ def run_pipeline(skip_user: typing.Tuple[str],
             "module_id": DFP_INFERENCE,
             "module_name": "dfp_inference",
             "namespace": MODULE_NAMESPACE,
-            "model_name_formatter": da.model_name_formatter,
+            "model_name_formatter": derive_args.model_name_formatter,
             "fallback_username": config.ae.fallback_username,
             "timestamp_column_name": config.ae.timestamp_column_name
+        },
+        FILTER_DETECTIONS: {
+            "module_id": FILTER_DETECTIONS,
+            "module_name": "filter_detections",
+            "namespace": MODULE_NAMESPACE,
+            "field_name": "mean_abs_z",
+            "threshold": 2.0,
+            "filter_source": "DATAFRAME",
+            "schema": {
+                "input_message_type": multi_message_str, "encoding": encoding
+            }
+        },
+        DFP_POST_PROCESSING: {
+            "module_id": DFP_POST_PROCESSING,
+            "module_name": "dfp_post_processing",
+            "namespace": MODULE_NAMESPACE,
+            "timestamp_column_name": config.ae.timestamp_column_name
+        },
+        SERIALIZE: {
+            "module_id": SERIALIZE,
+            "module_name": "serialize",
+            "namespace": MODULE_NAMESPACE,
+            "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id']
+        },
+        WRITE_TO_FILE: {
+            "module_id": WRITE_TO_FILE,
+            "module_name": "write_to_file",
+            "namespace": MODULE_NAMESPACE,
+            "filename": "dfp_detections_azure.csv",
+            "overwrite": True
         }
-    }
-
-    post_proc_config = {
-        "module_id": DFP_POST_PROCESSING,
-        "module_name": "dfp_post_processing",
-        "namespace": MODULE_NAMESPACE,
-        "timestamp_column_name": config.ae.timestamp_column_name
     }
 
     # Create a linear pipeline object
@@ -276,31 +244,9 @@ def run_pipeline(skip_user: typing.Tuple[str],
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the DFP Inference pipeline
-    pipeline.add_stage(
-        LinearModulesStage(config,
-                           module_config,
-                           input_port_name="input",
-                           output_port_name="output",
-                           output_type=MultiMessage))
+    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
 
-    pipeline.add_stage(MonitorStage(config, description="Preprocessing & Inference rate", smoothing=0.001))
-
-    pipeline.add_stage(
-        FilterDetectionsStage(config, threshold=2.0, filter_source=FilterSource.DATAFRAME, field_name='mean_abs_z'))
-
-    pipeline.add_stage(
-        LinearModulesStage(config,
-                           post_proc_config,
-                           input_port_name="input",
-                           output_port_name="output",
-                           input_type=MultiMessage,
-                           output_type=MultiMessage))
-
-    # Exclude the columns we don't want in our output
-    pipeline.add_stage(SerializeStage(config, exclude=['batch_count', 'origin_hash', '_row_hash', '_batch_id']))
-
-    # Write all anomalies to a CSV file
-    pipeline.add_stage(WriteToFileStage(config, filename="dfp_detections_azure.csv", overwrite=True))
+    pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate", smoothing=0.001))
 
     # Run the pipeline
     pipeline.run()
