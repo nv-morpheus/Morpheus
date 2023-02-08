@@ -17,9 +17,8 @@
 
 #pragma once
 
+#include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/utilities/type_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
 
 #include <rmm/device_buffer.hpp>
 
@@ -60,7 +59,7 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    DataType dtype() const override;
+    DType dtype() const override;
 
     /**
      * TODO(Documentation)
@@ -143,7 +142,7 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<ITensor> as_type(DataType dtype) const override;
+    std::shared_ptr<ITensor> as_type(DType dtype) const override;
 
   protected:
   private:

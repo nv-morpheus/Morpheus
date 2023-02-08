@@ -15,12 +15,15 @@
  * limitations under the License.
  */
 
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
 #include "morpheus/stages/file_source.hpp"
 #include "morpheus/stages/filter_detection.hpp"
 #include "morpheus/stages/kafka_source.hpp"
+#include "morpheus/stages/preallocate.hpp"
 #include "morpheus/stages/preprocess_fil.hpp"
 #include "morpheus/stages/preprocess_nlp.hpp"
 #include "morpheus/stages/serialize.hpp"
@@ -32,6 +35,7 @@
 #include <pybind11/attr.h>      // for multiple_inheritance
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>   // for dict, sequence
+#include <pybind11/stl.h>       // for dict->map conversions
 #include <pymrc/utils.hpp>      // for pymrc::import
 
 #include <memory>
@@ -134,6 +138,24 @@ PYBIND11_MODULE(stages, m)
              py::arg("disable_pre_filtering") = false,
              py::arg("stop_after")            = 0,
              py::arg("async_commits")         = true);
+
+    py::class_<mrc::segment::Object<PreallocateStage<MessageMeta>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageMeta>>>>(
+        m, "PreallocateMessageMetaStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy<MessageMeta>::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("needed_columns"));
+
+    py::class_<mrc::segment::Object<PreallocateStage<MultiMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreallocateStage<MultiMessage>>>>(
+        m, "PreallocateMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy<MultiMessage>::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("needed_columns"));
 
     py::class_<mrc::segment::Object<PreprocessFILStage>,
                mrc::segment::ObjectProperties,

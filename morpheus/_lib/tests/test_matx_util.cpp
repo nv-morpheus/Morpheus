@@ -19,9 +19,8 @@
 
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/type_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <cudf/column/column.hpp>       // for column
@@ -50,7 +49,7 @@ TEST_F(TestMatxUtil, ReduceMax1d)
     std::vector<int32_t> seq_ids{0, 0, 0, 1, 2, 3, 3};
     std::vector<float> expected_output{8, 9, 8, 2};
 
-    DataType dtype(TypeId::FLOAT32);
+    DType dtype(TypeId::FLOAT32);
 
     auto input_buffer =
         std::make_shared<rmm::device_buffer>(input.size() * dtype.item_size(), rmm::cuda_stream_per_thread);
@@ -103,7 +102,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
 
     EXPECT_EQ(num_cols * num_rows, input.size());
     EXPECT_EQ(expected_rows, 5);
-    DataType dtype(TypeId::FLOAT64);
+    DType dtype(TypeId::FLOAT64);
     EXPECT_EQ(dtype.item_size(), sizeof(double));
 
     std::size_t buff_size = input.size() * dtype.item_size();

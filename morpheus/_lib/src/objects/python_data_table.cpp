@@ -49,18 +49,17 @@ cudf::size_type PyDataTable::count() const
     return m_py_table.attr("_num_rows").cast<cudf::size_type>();
 }
 
-TableInfo PyDataTable::get_info() const
+const pybind11::object& PyDataTable::get_py_object() const
+{
+    return m_py_table;
+}
+
+TableInfoData PyDataTable::get_table_data() const
 {
     pybind11::gil_scoped_acquire gil;
 
-    // auto info = proxy_table_info_from_table((PyTable *) m_py_table.ptr(), this->shared_from_this());
-    auto info = proxy_table_info_from_table(m_py_table, this->shared_from_this());
+    auto info = proxy_table_info_data_from_table(m_py_table);
 
     return info;
-}
-
-const pybind11::object &PyDataTable::get_py_object() const
-{
-    return m_py_table;
 }
 }  // namespace morpheus
