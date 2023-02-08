@@ -180,7 +180,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
     def __getattr__(self, name: str) -> typing.Any:
         try:
-            self.get_output(name)
+            return self.get_output(name)
         except KeyError:
             raise AttributeError
 

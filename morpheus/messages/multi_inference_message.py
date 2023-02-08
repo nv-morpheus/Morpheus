@@ -197,7 +197,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
     def __getattr__(self, name: str) -> typing.Any:
         try:
-            self.get_input(name)
+            return self.get_input(name)
         except KeyError:
             raise AttributeError
 
