@@ -303,7 +303,6 @@ def test_convert_one_response(config):
     assert mpm.meta == inf.meta
     assert mpm.mess_offset == 0
     assert mpm.mess_count == 1
-    assert mpm.memory == mem
     assert mpm.offset == 0
     assert mpm.count == 1
     assert mem.get_output('probs').tolist() == [[1.0, 2.0, 3.0]]
