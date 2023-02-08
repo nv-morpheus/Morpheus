@@ -20,36 +20,18 @@ import click
 import dfp.modules.dfp_inference_pipeline  # noqa: F401
 import dfp.modules.dfp_postprocessing  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
+from dfp.utils.config_generator import ConfigGenerator
+from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.derive_args import DeriveArgs
-from dfp.utils.derive_args import get_ae_config
-from dfp.utils.derive_args import pyobj2str
-from dfp.utils.module_ids import DFP_DATA_PREP
-from dfp.utils.module_ids import DFP_INFERENCE
-from dfp.utils.module_ids import DFP_INFERENCE_PIPELINE
-from dfp.utils.module_ids import DFP_POST_PROCESSING
-from dfp.utils.module_ids import DFP_ROLLING_WINDOW
-from dfp.utils.module_ids import DFP_SPLIT_USERS
-from dfp.utils.regex_utils import iso_date_regex_pattern
-from dfp.utils.schema_util import Schema
-from dfp.utils.schema_util import SchemaBuilder
+from dfp.utils.schema_utils import Schema
+from dfp.utils.schema_utils import SchemaBuilder
 
-from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
-from morpheus.messages.multi_message import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
-from morpheus.stages.postprocess.serialize_stage import SerializeStage
-from morpheus.utils.module_ids import FILE_BATCHER
-from morpheus.utils.module_ids import FILE_TO_DF
-from morpheus.utils.module_ids import FILTER_DETECTIONS
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_ids import SERIALIZE
-from morpheus.utils.module_ids import WRITE_TO_FILE
 
 
 @click.command()
@@ -124,124 +106,22 @@ def run_pipeline(skip_user: typing.Tuple[str],
                              duration,
                              log_level,
                              cache_dir,
+                             sample_rate_s,
                              tracking_uri=kwargs["tracking_uri"],
                              source="duo")
 
     derive_args.init()
 
-    config: Config = get_ae_config(labels_file="data/columns_ae_duo.txt",
-                                   userid_column_name="username",
-                                   timestamp_column_name="timestamp")
+    config: Config = generate_ae_config(labels_file="data/columns_ae_duo.txt",
+                                        userid_column_name="username",
+                                        timestamp_column_name="timestamp")
 
     schema_builder = SchemaBuilder(config)
     schema: Schema = schema_builder.build_duo_schema()
 
-    encoding = "latin1"
+    config_generator = ConfigGenerator(config, derive_args, schema)
 
-    # Convert schema as a string
-    source_schema_str = pyobj2str(schema.source, encoding=encoding)
-    preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
-    multi_message_str = pyobj2str(MultiMessage, encoding)
-
-    module_config = {
-        "module_id": DFP_INFERENCE_PIPELINE,
-        "module_name": "dfp_inference_pipeline",
-        "namespace": MODULE_NAMESPACE,
-        FILE_BATCHER: {
-            "module_id": FILE_BATCHER,
-            "module_name": "file_batcher",
-            "namespace": MODULE_NAMESPACE,
-            "period": "D",
-            "sampling_rate_s": sample_rate_s,
-            "start_time": derive_args.start_time,
-            "end_time": derive_args.end_time,
-            "iso_date_regex_pattern": iso_date_regex_pattern
-        },
-        FILE_TO_DF: {
-            "module_id": FILE_TO_DF,
-            "module_name": "FILE_TO_DF",
-            "namespace": MODULE_NAMESPACE,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "parser_kwargs": {
-                "lines": False, "orient": "records"
-            },
-            "cache_dir": cache_dir,
-            "filter_null": True,
-            "file_type": "JSON",
-            "schema": {
-                "schema_str": source_schema_str, "encoding": encoding
-            }
-        },
-        DFP_SPLIT_USERS: {
-            "module_id": DFP_SPLIT_USERS,
-            "module_name": "dfp_fsplit_users",
-            "namespace": MODULE_NAMESPACE,
-            "include_generic": derive_args.include_generic,
-            "include_individual": derive_args.include_individual,
-            "skip_users": derive_args.skip_users,
-            "only_users": derive_args.only_users,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "userid_column_name": config.ae.userid_column_name,
-            "fallback_username": config.ae.fallback_username
-        },
-        DFP_ROLLING_WINDOW: {
-            "module_id": DFP_ROLLING_WINDOW,
-            "module_name": "dfp_rolling_window",
-            "namespace": MODULE_NAMESPACE,
-            "min_history": 1,
-            "min_increment": 0,
-            "max_history": duration,
-            "cache_dir": cache_dir,
-            "timestamp_column_name": config.ae.timestamp_column_name
-        },
-        DFP_DATA_PREP: {
-            "module_id": DFP_DATA_PREP,
-            "module_name": "dfp_data_prep",
-            "namespace": MODULE_NAMESPACE,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "schema": {
-                "schema_str": preprocess_schema_str, "encoding": encoding
-            }
-        },
-        DFP_INFERENCE: {
-            "module_id": DFP_INFERENCE,
-            "module_name": "dfp_inference",
-            "namespace": MODULE_NAMESPACE,
-            "model_name_formatter": derive_args.model_name_formatter,
-            "fallback_username": config.ae.fallback_username,
-            "timestamp_column_name": config.ae.timestamp_column_name
-        },
-        FILTER_DETECTIONS: {
-            "module_id": FILTER_DETECTIONS,
-            "module_name": "filter_detections",
-            "namespace": MODULE_NAMESPACE,
-            "field_name": "mean_abs_z",
-            "threshold": 2.0,
-            "filter_source": "DATAFRAME",
-            "schema": {
-                "input_message_type": multi_message_str, "encoding": encoding
-            }
-        },
-        DFP_POST_PROCESSING: {
-            "module_id": DFP_POST_PROCESSING,
-            "module_name": "dfp_post_processing",
-            "namespace": MODULE_NAMESPACE,
-            "timestamp_column_name": config.ae.timestamp_column_name
-        },
-        SERIALIZE: {
-            "module_id": SERIALIZE,
-            "module_name": "serialize",
-            "namespace": MODULE_NAMESPACE,
-            "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id']
-        },
-        WRITE_TO_FILE: {
-            "module_id": WRITE_TO_FILE,
-            "module_name": "write_to_file",
-            "namespace": MODULE_NAMESPACE,
-            "filename": "dfp_detections_duo.csv",
-            "overwrite": True
-        }
-    }
+    module_conf = config_generator.inf_pipe_module_conf()
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -249,7 +129,7 @@ def run_pipeline(skip_user: typing.Tuple[str],
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the DFP Inference pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
+    pipeline.add_stage(LinearModulesStage(config, module_conf, input_port_name="input", output_port_name="output"))
 
     pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate", smoothing=0.001))
 

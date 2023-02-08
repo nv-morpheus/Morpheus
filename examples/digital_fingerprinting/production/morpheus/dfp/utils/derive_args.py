@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import os
 import pickle
 from datetime import datetime
 from datetime import timedelta
@@ -22,11 +21,6 @@ from datetime import timezone
 import mlflow
 import pandas as pd
 
-from morpheus.cli.utils import get_package_relative_file
-from morpheus.cli.utils import load_labels_file
-from morpheus.config import Config
-from morpheus.config import ConfigAutoEncoder
-from morpheus.config import CppConfig
 from morpheus.utils.logger import configure_logging
 
 logger = logging.getLogger(__name__)
@@ -41,6 +35,7 @@ class DeriveArgs:
                  duration: str,
                  log_level: str,
                  cache_dir: str,
+                 sample_rate_s: str,
                  source: str,
                  tracking_uri: str,
                  train_users: str = None):
@@ -56,6 +51,8 @@ class DeriveArgs:
         self._include_individual = None
         self._initialized = False
         self._tracking_uri = tracking_uri
+        self._sample_rate_s = sample_rate_s
+        self._source = source
         self._model_name_formatter = "DFP-%s-{user_id}" % (source)
         self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (source)
         self._is_training = (train_users is not None and train_users != "none")
@@ -105,9 +102,12 @@ class DeriveArgs:
         return self._include_individual
 
     @property
-    @verify_init
     def duration(self):
         return self._duration
+
+    @property
+    def sample_rate_s(self):
+        return self._sample_rate_s
 
     @property
     def skip_users(self):
@@ -120,6 +120,10 @@ class DeriveArgs:
     @property
     def cache_dir(self):
         return self._cache_dir
+
+    @property
+    def source(self):
+        return self._source
 
     @property
     def model_name_formatter(self):
@@ -140,15 +144,15 @@ class DeriveArgs:
         self._include_individual = self._train_users != "generic"
 
     def _update_start_stop_time(self):
-        self._duration = timedelta(seconds=pd.Timedelta(self._duration).total_seconds())
+        duration = timedelta(seconds=pd.Timedelta(self._duration).total_seconds())
         if self._start_time is None:
             self._end_time = datetime.now(tz=timezone.utc)
-            self._start_time = self._end_time - self._duration
+            self._start_time = self._end_time - duration
         else:
             if self._start_time.tzinfo is None:
                 self._start_time = self._start_time.replace(tzinfo=timezone.utc)
 
-            self._end_time = self._start_time + self._duration
+            self._end_time = self._start_time + duration
 
     def _set_mlflow_tracking_uri(self):
         if self._tracking_uri is None:
@@ -164,27 +168,6 @@ class DeriveArgs:
         self._configure_logging()
         self._set_mlflow_tracking_uri()
         self._initialized = True
-
-
-def get_ae_config(labels_file: str,
-                  userid_column_name: str,
-                  timestamp_column_name: str,
-                  use_cpp: bool = False,
-                  num_threads: int = os.cpu_count()):
-
-    config = Config()
-
-    CppConfig.set_should_use_cpp(use_cpp)
-
-    config.num_threads = num_threads
-
-    config.ae = ConfigAutoEncoder()
-
-    config.ae.feature_columns = load_labels_file(get_package_relative_file(labels_file))
-    config.ae.userid_column_name = userid_column_name
-    config.ae.timestamp_column_name = timestamp_column_name
-
-    return config
 
 
 def pyobj2str(pyobj, encoding):

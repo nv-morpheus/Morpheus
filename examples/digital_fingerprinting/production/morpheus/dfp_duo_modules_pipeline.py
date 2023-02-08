@@ -23,8 +23,8 @@ from dfp.messages.multi_dfp_message import MultiDFPMessage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
 from dfp.stages.dfp_postprocessing_stage import DFPPostprocessingStage
 from dfp.stages.multi_file_source import MultiFileSource
+from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.derive_args import DeriveArgs
-from dfp.utils.derive_args import get_ae_config
 from dfp.utils.derive_args import pyobj2str
 from dfp.utils.module_ids import DFP_DATA_PREP
 from dfp.utils.module_ids import DFP_MODEL_TRAIN_DEPLOY
@@ -33,8 +33,8 @@ from dfp.utils.module_ids import DFP_ROLLING_WINDOW
 from dfp.utils.module_ids import DFP_SPLIT_USERS
 from dfp.utils.module_ids import DFP_TRAINING
 from dfp.utils.regex_utils import iso_date_regex_pattern
-from dfp.utils.schema_util import Schema
-from dfp.utils.schema_util import SchemaBuilder
+from dfp.utils.schema_utils import Schema
+from dfp.utils.schema_utils import SchemaBuilder
 
 from morpheus._lib.common import FilterSource
 from morpheus.cli.utils import get_log_levels
@@ -131,15 +131,16 @@ def run_pipeline(train_users,
                              duration,
                              log_level,
                              cache_dir,
+                             sample_rate_s,
                              tracking_uri=kwargs["tracking_uri"],
                              source="duo",
                              train_users=train_users)
 
     derive_args.init()
 
-    config: Config = get_ae_config(labels_file="data/columns_ae_duo.txt",
-                                   userid_column_name="username",
-                                   timestamp_column_name="timestamp")
+    config: Config = generate_ae_config(labels_file="data/columns_ae_duo.txt",
+                                        userid_column_name="username",
+                                        timestamp_column_name="timestamp")
 
     schema_builder = SchemaBuilder(config)
     schema: Schema = schema_builder.build_duo_schema()

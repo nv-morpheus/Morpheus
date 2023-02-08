@@ -19,17 +19,11 @@ from datetime import datetime
 import click
 import dfp.modules.dfp_training_pipeline  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
+from dfp.utils.config_generator import ConfigGenerator
+from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.derive_args import DeriveArgs
-from dfp.utils.derive_args import get_ae_config
-from dfp.utils.derive_args import pyobj2str
-from dfp.utils.module_ids import DFP_DATA_PREP
-from dfp.utils.module_ids import DFP_ROLLING_WINDOW
-from dfp.utils.module_ids import DFP_SPLIT_USERS
-from dfp.utils.module_ids import DFP_TRAINING
-from dfp.utils.module_ids import DFP_TRAINING_PIPELINE
-from dfp.utils.regex_utils import iso_date_regex_pattern
-from dfp.utils.schema_util import Schema
-from dfp.utils.schema_util import SchemaBuilder
+from dfp.utils.schema_utils import Schema
+from dfp.utils.schema_utils import SchemaBuilder
 
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
@@ -37,10 +31,6 @@ from morpheus.config import Config
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.utils.module_ids import FILE_BATCHER
-from morpheus.utils.module_ids import FILE_TO_DF
-from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
-from morpheus.utils.module_ids import MODULE_NAMESPACE
 
 
 @click.command()
@@ -124,124 +114,23 @@ def run_pipeline(train_users,
                              duration,
                              log_level,
                              cache_dir,
+                             sample_rate_s,
                              tracking_uri=kwargs["tracking_uri"],
                              source="azure",
                              train_users=train_users)
 
     derive_args.init()
 
-    config: Config = get_ae_config(labels_file="data/columns_ae_azure.txt",
-                                   userid_column_name="username",
-                                   timestamp_column_name="timestamp")
+    config: Config = generate_ae_config(labels_file="data/columns_ae_azure.txt",
+                                        userid_column_name="username",
+                                        timestamp_column_name="timestamp")
 
     schema_builder = SchemaBuilder(config)
     schema: Schema = schema_builder.build_azure_schema()
 
-    encoding = "latin1"
+    config_generator = ConfigGenerator(config, derive_args, schema)
 
-    # Convert schema as a string
-    source_schema_str = pyobj2str(schema.source, encoding=encoding)
-    preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
-
-    module_config = {
-        "module_id": DFP_TRAINING_PIPELINE,
-        "module_name": "dfp_training_pipeline",
-        "namespace": MODULE_NAMESPACE,
-        FILE_BATCHER: {
-            "module_id": FILE_BATCHER,
-            "module_name": "file_batcher",
-            "namespace": MODULE_NAMESPACE,
-            "period": "D",
-            "sampling_rate_s": sample_rate_s,
-            "start_time": derive_args.start_time,
-            "end_time": derive_args.end_time,
-            "iso_date_regex_pattern": iso_date_regex_pattern
-        },
-        FILE_TO_DF: {
-            "module_id": FILE_TO_DF,
-            "module_name": "FILE_TO_DF",
-            "namespace": MODULE_NAMESPACE,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "parser_kwargs": {
-                "lines": False, "orient": "records"
-            },
-            "cache_dir": cache_dir,
-            "filter_null": True,
-            "file_type": "JSON",
-            "schema": {
-                "schema_str": source_schema_str, "encoding": encoding
-            }
-        },
-        DFP_SPLIT_USERS: {
-            "module_id": DFP_SPLIT_USERS,
-            "module_name": "dfp_split_users",
-            "namespace": MODULE_NAMESPACE,
-            "include_generic": derive_args.include_generic,
-            "include_individual": derive_args.include_individual,
-            "skip_users": derive_args.skip_users,
-            "only_users": derive_args.only_users,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "userid_column_name": config.ae.userid_column_name,
-            "fallback_username": config.ae.fallback_username
-        },
-        DFP_ROLLING_WINDOW: {
-            "module_id": DFP_ROLLING_WINDOW,
-            "module_name": "dfp_rolling_window",
-            "namespace": MODULE_NAMESPACE,
-            "min_history": 300,
-            "min_increment": 300,
-            "max_history": "60d",
-            "cache_dir": cache_dir,
-            "timestamp_column_name": config.ae.timestamp_column_name
-        },
-        DFP_DATA_PREP: {
-            "module_id": DFP_DATA_PREP,
-            "module_name": "dfp_data_prep",
-            "namespace": MODULE_NAMESPACE,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "schema": {
-                "schema_str": preprocess_schema_str, "encoding": encoding
-            }
-        },
-        DFP_TRAINING: {
-            "module_id": DFP_TRAINING,
-            "module_name": "dfp_training",
-            "namespace": MODULE_NAMESPACE,
-            "model_kwargs": {
-                "encoder_layers": [512, 500],  # layers of the encoding part
-                "decoder_layers": [512],  # layers of the decoding part
-                "activation": 'relu',  # activation function
-                "swap_p": 0.2,  # noise parameter
-                "lr": 0.001,  # learning rate
-                "lr_decay": 0.99,  # learning decay
-                "batch_size": 512,
-                "verbose": False,
-                "optimizer": 'sgd',  # SGD optimizer is selected(Stochastic gradient descent)
-                "scaler": 'standard',  # feature scaling method
-                "min_cats": 1,  # cut off for minority categories
-                "progress_bar": False,
-                "device": "cuda"
-            },
-            "feature_columns": config.ae.feature_columns,
-            "epochs": 30,
-            "validation_size": 0.10
-        },
-        MLFLOW_MODEL_WRITER: {
-            "module_id": MLFLOW_MODEL_WRITER,
-            "module_name": "mlflow_model_writer",
-            "namespace": MODULE_NAMESPACE,
-            "model_name_formatter": derive_args.model_name_formatter,
-            "experiment_name_formatter": derive_args.experiment_name_formatter,
-            "timestamp_column_name": config.ae.timestamp_column_name,
-            "conda_env": {
-                'channels': ['defaults', 'conda-forge'],
-                'dependencies': ['python={}'.format('3.8'), 'pip'],
-                'pip': ['mlflow', 'dfencoder'],
-                'name': 'mlflow-env'
-            },
-            "databricks_permissions": None
-        }
-    }
+    module_conf = config_generator.tra_pipe_module_conf()
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -249,7 +138,7 @@ def run_pipeline(train_users,
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the full DFP Training pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
+    pipeline.add_stage(LinearModulesStage(config, module_conf, input_port_name="input", output_port_name="output"))
 
     pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
 
