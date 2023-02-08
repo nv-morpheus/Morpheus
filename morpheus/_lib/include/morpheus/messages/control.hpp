@@ -25,7 +25,7 @@
 namespace morpheus {
 #pragma GCC visibility push(default)
 
-class ControlMessage
+class MessageControl
 {
   public:
     enum class ControlMessageType
@@ -36,8 +36,8 @@ class ControlMessage
         load
     };
 
-    ControlMessage() = default;
-    ControlMessage(const nlohmann::json& message);
+    MessageControl() = default;
+    MessageControl(const nlohmann::json& message);
 
     /**
      * @brief Get the message type
@@ -45,7 +45,7 @@ class ControlMessage
      */
     ControlMessageType message_type() const;
 
-    // TODO(Devin)
+    // TODO(Devin) : May or may not use enums for message types
     //void message_type(ControlMessageType type);
 
     /**
@@ -67,10 +67,10 @@ class ControlMessage
 
 struct ControlMessageProxy
 {
-    static std::shared_ptr<ControlMessage> create(pybind11::dict& message);
+    static std::shared_ptr<MessageControl> create(pybind11::dict& message);
 
-    static pybind11::dict message(ControlMessage& self);
-    static void message(ControlMessage& self, pybind11::dict& message);
+    static pybind11::dict message(MessageControl& self);
+    static void message(MessageControl& self, pybind11::dict& message);
 };
 
 #pragma GCC visibility pop

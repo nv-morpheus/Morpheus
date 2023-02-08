@@ -20,8 +20,39 @@ import morpheus._lib.messages as _messages
 
 
 def test_control_message_init():
-    raw_control_message_one = _messages.ControlMessage()
-    raw_control_message_two = _messages.ControlMessage({"test": "test"})
+    raw_control_message_one = _messages.MessageControl()
+    raw_control_message_two = _messages.MessageControl({"test": "test"})
 
     control_message_one = messages.MessageControl()
     control_message_two = messages.MessageControl({"test": "test"})
+
+
+def test_control_message_get():
+    raw_control_message = _messages.MessageControl({"test": "test_rcm"})
+    control_message = messages.MessageControl({"test": "test_cm"})
+
+    assert "test" in raw_control_message.message()
+    assert raw_control_message.message()["test"] == "test_rcm"
+
+    assert "test" in control_message.message()
+    assert control_message.message()["test"] == "test_cm"
+
+
+def test_control_message_set():
+    raw_control_message = _messages.MessageControl()
+    control_message = messages.MessageControl()
+
+    raw_control_message.message({"test": "test_rcm"})
+    control_message.message({"test": "test_cm"})
+
+    assert "test" in raw_control_message.message()
+    assert raw_control_message.message()["test"] == "test_rcm"
+
+    assert "test" in control_message.message()
+    assert control_message.message()["test"] == "test_cm"
+
+
+if (__name__ == "__main__"):
+    test_control_message_init()
+    test_control_message_get()
+    test_control_message_set()

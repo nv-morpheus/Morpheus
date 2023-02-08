@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import threading
-import warnings
-
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
 
 
-class MessageControl(MessageBase, cpp_class=_messages.ControlMessage):
+class MessageControl(MessageBase, cpp_class=_messages.MessageControl):
     def __init__(self):
         super().__init__()

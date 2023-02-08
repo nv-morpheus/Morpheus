@@ -25,23 +25,23 @@ using namespace morpheus::test;
 
 TEST_F(TestControlMessage, InitializationTest)
 {
-    auto msg_one = ControlMessage();
+    auto msg_one = MessageControl();
 
-    ASSERT_EQ(msg_one.message_type(), ControlMessage::ControlMessageType::noop);
+    ASSERT_EQ(msg_one.message_type(), MessageControl::ControlMessageType::noop);
 
     auto config          = nlohmann::json();
     config["some_value"] = "42";
 
-    auto msg_two = ControlMessage(config);
+    auto msg_two = MessageControl(config);
 
-    ASSERT_EQ(msg_two.message_type(), ControlMessage::ControlMessageType::noop);
+    ASSERT_EQ(msg_two.message_type(), MessageControl::ControlMessageType::noop);
     ASSERT_EQ(msg_two.message().contains("some_value"), true);
     ASSERT_EQ(msg_two.message()["some_value"], "42");
 }
 
 TEST_F(TestControlMessage, SetMessageTest)
 {
-    auto msg = ControlMessage();
+    auto msg = MessageControl();
 
     ASSERT_EQ(msg.message().contains("some_value"), false);
 

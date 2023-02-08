@@ -79,7 +79,7 @@ PYBIND11_MODULE(messages, m)
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
 
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<ControlMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageControl>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
@@ -113,17 +113,17 @@ PYBIND11_MODULE(messages, m)
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(m, "ControlMessage")
+    py::class_<MessageControl, std::shared_ptr<MessageControl>>(m, "MessageControl")
         .def(py::init<>())
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)), py::return_value_policy::move)
         .def("message",
-             pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::message),
+             pybind11::overload_cast<MessageControl&>(&ControlMessageProxy::message),
              py::return_value_policy::reference_internal)
         .def("message",
-             pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::message),
+             pybind11::overload_cast<MessageControl&, py::dict&>(&ControlMessageProxy::message),
              py::arg("message"),
              py::return_value_policy::reference_internal)
-        .def("type", &ControlMessage::message_type);
+        .def("type", &MessageControl::message_type);
 
     // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
     py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")
