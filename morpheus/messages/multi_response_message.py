@@ -48,11 +48,10 @@ def get_output(instance: "ResponseMemory", name: str):
         If output name does not exist in message container.
 
     """
-
-    if (name not in instance.tensors):
+    try:
+        return instance.get_tensors()[name]
+    except KeyError:
         raise AttributeError
-
-    return instance.tensors[name]
 
 
 def set_output(instance: "ResponseMemory", name: str, value):
@@ -71,10 +70,12 @@ def set_output(instance: "ResponseMemory", name: str, value):
     """
 
     # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-    instance.tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+    tensors = instance.get_tensors()
+    tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+    instance.set_tensors(tensors)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
     """Output memory block holding the results of inference."""
 
@@ -91,8 +92,16 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
         -------
         cupy.ndarray
             Tensor corresponding to name.
+
+        Raises
+        ------
+        AttributeError
+            If input name does not exist in message container.
         """
-        return self.tensors[name]
+        try:
+            return self.get_tensors()[name]
+        except KeyError:
+            raise AttributeError
 
 
 @dataclasses.dataclass(init=False)
@@ -166,17 +175,14 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
             Inference outputs.
 
         """
-
-        return {key: self.get_output(key) for key in self.memory.tensors.keys()}
+        tensors = self.memory.get_tensors()
+        return {key: self.get_output(key) for key in tensors.keys()}
 
     def __getattr__(self, name: str) -> typing.Any:
-
-        output_val = self.memory.tensors.get(name, None)
-
-        if (output_val is not None):
-            return output_val[self.offset:self.offset + self.count, :]
-
-        raise AttributeError
+        try:
+            self.get_output(name)
+        except KeyError:
+            raise AttributeError
 
     def get_output(self, name: str):
         """
@@ -193,8 +199,8 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
             Inference output.
 
         """
-
-        return self.memory.tensors[name][self.offset:self.offset + self.count, :]
+        tensors = self.memory.get_tensors()
+        return tensors[name][self.offset:self.offset + self.count, :]
 
     def copy_output_ranges(self, ranges, mask=None):
         """

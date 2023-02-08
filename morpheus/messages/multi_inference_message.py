@@ -24,7 +24,7 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.tensor_memory import TensorMemory
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
@@ -54,10 +54,10 @@ def get_input(instance, name: str):
     AttributeError
         If input name does not exist in message container.
     """
-    if (name not in instance.tensors):
+    try:
+        return instance.get_tensors()[name]
+    except KeyError:
         raise AttributeError
-
-    return instance.tensors[name]
 
 
 def set_input(instance, name: str, value):
@@ -75,7 +75,9 @@ def set_input(instance, name: str, value):
         Value to set for input.
     """
     # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-    instance.tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+    tensors = instance.get_tensors()
+    tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+    instance.set_tensors(tensors)
 
 
 @dataclasses.dataclass(init=False)
@@ -184,8 +186,8 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
             Inference inputs.
 
         """
-
-        return {key: self.get_input(key) for key in self.memory.tensors.keys()}
+        tensors = self.memory.get_tensors()
+        return {key: self.get_input(key) for key in tensors.keys()}
 
     def __getstate__(self):
         return self.__dict__
@@ -194,13 +196,10 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
         self.__dict__ = d
 
     def __getattr__(self, name: str) -> typing.Any:
-
-        input_val = self.memory.tensors.get(name, None)
-
-        if (input_val is not None):
-            return input_val[self.offset:self.offset + self.count, :]
-
-        raise AttributeError
+        try:
+            self.get_input(name)
+        except KeyError:
+            raise AttributeError
 
     def get_input(self, name: str):
         """
@@ -216,9 +215,13 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
         cupy.ndarray
             Inference input.
 
+        Raises
+        ------
+        KeyError
+            When no matching input tensor exists.
         """
-
-        return self.memory.tensors[name][self.offset:self.offset + self.count, :]
+        tensors = self.memory.get_tensors()
+        return tensors[name][self.offset:self.offset + self.count, :]
 
     def get_slice(self, start, stop):
         """

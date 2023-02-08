@@ -47,20 +47,20 @@ def check_tensor_memory(cls, count, tensors):
 
     m = cls(count)
     assert m.count == count
-    assert m.tensors == {}
+    assert m.get_tensors() == {}
 
-    m.tensors = tensors
-    compare_tensors(m.tensors, tensors)
+    m.set_tensors(tensors)
+    compare_tensors(m.get_tensors(), tensors)
 
-    m.tensors = other_tensors
-    compare_tensors(m.tensors, other_tensors)
+    m.set_tensors(other_tensors)
+    compare_tensors(m.get_tensors(), other_tensors)
 
     m = cls(count, tensors)
     assert m.count == count
-    compare_tensors(m.tensors, tensors)
+    compare_tensors(m.get_tensors(), tensors)
 
-    m.tensors = other_tensors
-    compare_tensors(m.tensors, other_tensors)
+    m.set_tensors(other_tensors)
+    compare_tensors(m.get_tensors(), other_tensors)
 
 
 def test_tensor_memory(config):
@@ -87,7 +87,7 @@ def test_inference_memory_ae(config):
     m = InferenceMemoryAE(count, input=input, seq_ids=seq_ids)
 
     assert m.count == count
-    compare_tensors(m.tensors, {'input': input, 'seq_ids': seq_ids})
+    compare_tensors(m.get_tensors(), {'input': input, 'seq_ids': seq_ids})
     assert (m.input == input).all()
     assert (m.seq_ids == seq_ids).all()
 
@@ -101,7 +101,7 @@ def test_inference_memory_fil(config):
     m = InferenceMemoryFIL(count, input__0=input_0, seq_ids=seq_ids)
 
     assert m.count == count
-    compare_tensors(m.tensors, {'input__0': input_0, 'seq_ids': seq_ids})
+    compare_tensors(m.get_tensors(), {'input__0': input_0, 'seq_ids': seq_ids})
     assert (m.input__0 == input_0).all()
     assert (m.seq_ids == seq_ids).all()
 
@@ -116,7 +116,7 @@ def test_inference_memory_nlp(config):
     m = InferenceMemoryNLP(count, input_ids=input_ids, input_mask=input_mask, seq_ids=seq_ids)
 
     assert m.count == count
-    compare_tensors(m.tensors, {'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
+    compare_tensors(m.get_tensors(), {'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
     assert (m.input_ids == input_ids).all()
     assert (m.input_mask == input_mask).all()
     assert (m.seq_ids == seq_ids).all()
@@ -128,7 +128,7 @@ def check_response_memory_probs_and_ae(cls):
 
     m = cls(count=count, probs=test_data)
     assert m.count == count
-    compare_tensors(m.tensors, {'probs': test_data})
+    compare_tensors(m.get_tensors(), {'probs': test_data})
     assert (m.probs == test_data).all()
     return m
 

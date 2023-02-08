@@ -57,17 +57,6 @@ namespace morpheus {
 namespace fs = std::filesystem;
 namespace py = pybind11;
 
-// https://pybind11.readthedocs.io/en/stable/advanced/cast/stl.html?highlight=opaque#making-opaque-types
-const char* TensorPropDocstring{R"pbdoc(
-    The tensors property has a limitation in that it always returns a copy. Resulting in code like:
-    >>> m.tensors['c'] = cp.zeros(count)
-
-    Not having the intended outcome. Instead the following work-around can be performed:
-    >>> tensors = m.tensors
-    >>> tensors['c'] = cp.zeros(count)
-    >>> m.tensors = tensors
-)pbdoc"};
-
 // Define the pybind11 module m, as 'pipeline'.
 PYBIND11_MODULE(messages, m)
 {
@@ -173,10 +162,8 @@ PYBIND11_MODULE(messages, m)
              py::arg("count"),
              py::arg("tensors") = CupyUtil::py_tensor_map_t())
         .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count)
-        .def_property("tensors",
-                      &InferenceMemoryInterfaceProxy::get_tensors,
-                      &InferenceMemoryInterfaceProxy::set_tensors,
-                      TensorPropDocstring);
+        .def("get_tensors", &InferenceMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
+        .def("set_tensors", &InferenceMemoryInterfaceProxy::set_tensors);
 
     py::class_<InferenceMemoryNLP, InferenceMemory, std::shared_ptr<InferenceMemoryNLP>>(m, "InferenceMemoryNLP")
         .def(py::init<>(&InferenceMemoryNLPInterfaceProxy::init),
@@ -255,20 +242,16 @@ PYBIND11_MODULE(messages, m)
              py::arg("count"),
              py::arg("tensors") = CupyUtil::py_tensor_map_t())
         .def_readonly("count", &TensorMemory::count)
-        .def_property("tensors",
-                      &TensorMemoryInterfaceProxy::get_tensors,
-                      &TensorMemoryInterfaceProxy::set_tensors,
-                      TensorPropDocstring);
+        .def("get_tensors", &TensorMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
+        .def("set_tensors", &TensorMemoryInterfaceProxy::set_tensors);
 
     py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def(py::init<>(&ResponseMemoryInterfaceProxy::init),
              py::arg("count"),
              py::arg("tensors") = CupyUtil::py_tensor_map_t())
         .def_readonly("count", &ResponseMemory::count)
-        .def_property("tensors",
-                      &ResponseMemoryInterfaceProxy::get_tensors,
-                      &ResponseMemoryInterfaceProxy::set_tensors,
-                      TensorPropDocstring)
+        .def("get_tensors", &ResponseMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
+        .def("set_tensors", &ResponseMemoryInterfaceProxy::set_tensors)
         .def("get_output", &ResponseMemoryInterfaceProxy::get_output, py::return_value_policy::reference_internal)
         .def("get_output_tensor",
              &ResponseMemoryInterfaceProxy::get_output_tensor,

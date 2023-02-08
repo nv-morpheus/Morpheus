@@ -22,7 +22,7 @@ import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(init=False)
 class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
     """
     This is a base container class for data that will be used for inference stages. This class is designed to
@@ -31,11 +31,39 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
     Parameters
     ----------
     count : int
-        Number of inference inputs.
-    inputs : typing.Dict[str, cupy.ndarray]
-        Inference inputs to model.
+        Length of each tensor contained in `tensors`.
+    tensors : typing.Dict[str, cupy.ndarray]
+        Collection of tensors uniquely identified by a name.
 
     """
     count: int
 
     tensors: typing.Dict[str, cp.ndarray] = dataclasses.field(default_factory=dict)
+
+    def __init__(self, count: int, tensors: typing.Dict[str, cp.ndarray] = {}):
+        self.count = count
+        self._tensors = tensors
+
+    def get_tensors(self):
+        """
+        Get the tensors contained by this instance. It is important to note that when C++ execution is enabled the
+        returned tensors will be a Python copy of the tensors stored in the C++ object. As such any changes made to the
+        tensors will need to be updated with a call to `set_tensors`.
+
+        Returns
+        -------
+        typing.Dict[str, cp.ndarray]
+        """
+        return self._tensors
+
+    def set_tensors(self, tensors):
+        """
+        Overwrite the tensors stored by this instance. If the length of the tensors has changed, then the `count`
+        properte should also be updated.
+
+        Parameters
+        ----------
+        tensors : typing.Dict[str, cupy.ndarray]
+            Collection of tensors uniquely identified by a name.
+        """
+        self._tensors = tensors
