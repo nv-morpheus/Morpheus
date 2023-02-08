@@ -170,7 +170,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
                 if (needs_seq_ids)
                 {
-                    host_seq_ids.reset(std::move(get_seq_ids(x)));
+                    host_seq_ids = make_unique<std::vector<int32_t>>(get_seq_ids(x));
                 }
 
                 for (size_t i = 0; i < x->count; i += m_max_batch_size)
