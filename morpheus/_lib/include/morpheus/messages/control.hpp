@@ -39,8 +39,25 @@ class ControlMessage
     ControlMessage() = default;
     ControlMessage(const nlohmann::json& message);
 
-    ControlMessageType type() const;
+    /**
+     * @brief Get the message type
+     * @return
+     */
+    ControlMessageType message_type() const;
 
+    // TODO(Devin)
+    //void message_type(ControlMessageType type);
+
+    /**
+     * @brief Set the message object
+     * @param message
+     */
+    void message(const nlohmann::json& message);
+
+    /**
+     *
+     * @return
+     */
     const nlohmann::json& message() const;
 
   private:
@@ -51,6 +68,9 @@ class ControlMessage
 struct ControlMessageProxy
 {
     static std::shared_ptr<ControlMessage> create(pybind11::dict& message);
+
+    static pybind11::dict message(ControlMessage& self);
+    static void message(ControlMessage& self, pybind11::dict& message);
 };
 
 #pragma GCC visibility pop

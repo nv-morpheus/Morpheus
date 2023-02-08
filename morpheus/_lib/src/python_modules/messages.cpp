@@ -79,6 +79,7 @@ PYBIND11_MODULE(messages, m)
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
 
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<ControlMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
@@ -115,8 +116,14 @@ PYBIND11_MODULE(messages, m)
     py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(m, "ControlMessage")
         .def(py::init<>())
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)), py::return_value_policy::move)
-        .def("message", &ControlMessage::message)
-        .def("type", &ControlMessage::type);
+        .def("message",
+             pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::message),
+             py::return_value_policy::reference_internal)
+        .def("message",
+             pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::message),
+             py::arg("message"),
+             py::return_value_policy::reference_internal)
+        .def("type", &ControlMessage::message_type);
 
     // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
     py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")

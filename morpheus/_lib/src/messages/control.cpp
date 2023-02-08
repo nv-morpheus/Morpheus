@@ -26,7 +26,7 @@ namespace morpheus {
 
 ControlMessage::ControlMessage(const nlohmann::json& message) : m_message(message) {}
 
-ControlMessage::ControlMessageType ControlMessage::type() const
+ControlMessage::ControlMessageType ControlMessage::message_type() const
 {
     return m_type;
 }
@@ -36,9 +36,28 @@ const nlohmann::json& ControlMessage::message() const
     return m_message;
 }
 
+void ControlMessage::message(const nlohmann::json& message)
+{
+    m_message = message;
+}
+
+/*** Proxy Implementations ***/
+
 std::shared_ptr<ControlMessage> ControlMessageProxy::create(py::dict& message)
 {
     return std::make_shared<ControlMessage>(mrc::pymrc::cast_from_pyobject(message));
+}
+
+py::dict ControlMessageProxy::message(ControlMessage& self)
+{
+    auto dict = mrc::pymrc::cast_from_json(self.message());
+
+    return dict;
+}
+
+void ControlMessageProxy::message(ControlMessage& self, py::dict& message)
+{
+    self.message(mrc::pymrc::cast_from_pyobject(message));
 }
 
 }  // namespace morpheus

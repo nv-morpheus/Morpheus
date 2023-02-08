@@ -18,6 +18,7 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "tests")
 # Keep all source files sorted
 add_executable(test_libmorpheus
   # test_cuda.cu
+  messages/test_control_message.cpp
   test_main.cpp
   test_matx_util.cpp
   test_morpheus.cpp

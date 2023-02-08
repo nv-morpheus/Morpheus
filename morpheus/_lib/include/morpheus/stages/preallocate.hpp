@@ -57,8 +57,8 @@ void preallocate(std::shared_ptr<morpheus::MultiMessage> msg,
 {
     preallocate(msg->meta, columns);
 }
-//@}
 }  // namespace
+
 /****** Component public implementations *******************/
 /****** PreallocateStage ********************************/
 /* Preallocates new columns into the underlying dataframe. This stage supports both MessageMeta & subclasses of
@@ -131,12 +131,5 @@ std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageT>>> PreallocateSta
 {
     return builder.construct_object<PreallocateStage<MessageT>>(name, needed_columns);
 }
-// Explicit instantiations
-// template class __attribute__((visibility("default"))) PreallocateStage<MessageMeta>;
-// template class __attribute__((visibility("default"))) PreallocateStage<MultiMessage>;
-//
-// template struct __attribute__((visibility("default"))) PreallocateStageInterfaceProxy<MessageMeta>;
-// template struct __attribute__((visibility("default"))) PreallocateStageInterfaceProxy<MultiMessage>;
-
 #pragma GCC visibility pop
 }  // namespace morpheus
