@@ -54,6 +54,9 @@
 #define CHECK_TRITON(method) ::InferenceClientStage__check_triton_errors(method, #method, __FILE__, __LINE__);
 
 namespace {
+
+using namespace morpheus;
+
 // Component-private free functions.
 void InferenceClientStage__check_triton_errors(triton::client::Error status,
                                                const std::string& methodName,
@@ -68,6 +71,51 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
         LOG(ERROR) << err_msg;
         throw std::runtime_error(err_msg);
     }
+}
+
+std::map<std::string, TensorObject> build_response_outputs(std::size_t mess_count,
+                                                           const std::vector<TritonInOut>& model_outputs)
+{
+    std::map<std::string, TensorObject> response_outputs;
+
+    // Create the output memory blocks
+    for (auto& model_output : model_outputs)
+    {
+        std::vector<TensorIndex> total_shape{model_output.shape.begin(), model_output.shape.end()};
+
+        // First dimension will always end up being the number of rows in the dataframe
+        total_shape[0]  = static_cast<TensorIndex>(mess_count);
+        auto elem_count = TensorUtils::get_elem_count(total_shape);
+
+        // Create the output memory
+        auto output_buffer = std::make_shared<rmm::device_buffer>(elem_count * model_output.datatype.item_size(),
+                                                                  rmm::cuda_stream_per_thread);
+
+        response_outputs[model_output.mapped_name] =
+            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, std::vector<TensorIndex>{}, 0);
+    }
+
+    return response_outputs;
+}
+
+std::vector<int32_t> get_seq_ids(InferenceClientStage::sink_type_t message)
+{
+    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
+    // The output tensors we store in `reponse_memory` will all be of the same length as the the
+    // dataframe. seq_ids has three columns, but we are only interested in the first column.
+    auto seq_ids         = message->get_input("seq_ids");
+    const auto item_size = seq_ids.dtype().item_size();
+
+    std::vector<int32_t> host_seq_ids(message->count);
+    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids.data(),
+                                item_size,
+                                seq_ids.data(),
+                                seq_ids.stride(0) * item_size,
+                                item_size,
+                                host_seq_ids.size(),
+                                cudaMemcpyDeviceToHost));
+
+    return host_seq_ids;
 }
 
 }  // namespace
@@ -106,24 +154,8 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 // When our tensor lengths are longer than our dataframe we will need to use the seq_ids
                 // array to lookup how the values should map back into the dataframe
                 const bool needs_seq_ids = x->mess_count != x->count;
-                std::map<std::string, TensorObject> response_outputs;
-
-                // Create the output memory blocks
-                for (auto& model_output : m_model_outputs)
-                {
-                    std::vector<TensorIndex> total_shape{model_output.shape.begin(), model_output.shape.end()};
-
-                    // First dimension will always end up being the number of rows in the dataframe
-                    total_shape[0]  = static_cast<TensorIndex>(x->mess_count);
-                    auto elem_count = TensorUtils::get_elem_count(total_shape);
-
-                    // Create the output memory
-                    auto output_buffer = std::make_shared<rmm::device_buffer>(
-                        elem_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
-
-                    response_outputs[model_output.mapped_name] = Tensor::create(
-                        std::move(output_buffer), model_output.datatype, total_shape, std::vector<TensorIndex>{}, 0);
-                }
+                std::map<std::string, TensorObject> response_outputs =
+                    build_response_outputs(x->mess_count, m_model_outputs);
 
                 // This will be the final output of all mini-batches
                 auto response_mem_probs =
@@ -138,20 +170,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
                 if (needs_seq_ids)
                 {
-                    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
-                    // The output tensors we store in `reponse_memory` will all be of the same length as the the
-                    // dataframe. seq_ids has three columns, but we are only interested in the first column.
-                    auto seq_ids         = x->get_input("seq_ids");
-                    const auto item_size = seq_ids.dtype().item_size();
-
-                    host_seq_ids = std::make_unique<std::vector<int32_t>>(x->count);
-                    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids->data(),
-                                                item_size,
-                                                seq_ids.data(),
-                                                seq_ids.stride(0) * item_size,
-                                                item_size,
-                                                host_seq_ids->size(),
-                                                cudaMemcpyDeviceToHost));
+                    host_seq_ids.reset(std::move(get_seq_ids(x)));
                 }
 
                 for (size_t i = 0; i < x->count; i += m_max_batch_size)
