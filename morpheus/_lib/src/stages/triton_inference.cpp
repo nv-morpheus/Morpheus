@@ -328,7 +328,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         size_t output_ptr_size    = 0;
                         CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
 
-                        auto output_tensor = response_outputs[model_output.name].slice(
+                        auto output_tensor = response_outputs[model_output.mapped_name].slice(
                             {static_cast<cudf::size_type>(start), 0}, {static_cast<cudf::size_type>(stop), -1});
 
                         DCHECK_EQ(stop - start, output_shape[0]);
