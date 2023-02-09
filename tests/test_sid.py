@@ -152,7 +152,6 @@ def _run_minibert(config, tmp_path, model_name, truncated, data_col_name: str = 
         return _run_minibert_pipeline(config, tmp_path, model_name, truncated, data_col_name)
 
 
-@pytest.mark.skip(reason="Failing due to issue #680")
 @pytest.mark.slow
 @pytest.mark.use_cpp
 @pytest.mark.usefixtures("launch_mock_triton")
