@@ -17,43 +17,27 @@
 
 #pragma once
 
-#include <nlohmann/json.hpp>
-#include <pybind11/pybind11.h>
+#include "morpheus/io/data_loader.hpp"
 
-#include <memory>
+#include <mrc/modules/properties/persistent.hpp>
+#include <mrc/modules/segment_modules.hpp>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
-
-class MessageControl
+class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
 {
+    using type_t = DataLoaderModule;
+
   public:
-    MessageControl() = default;
-    MessageControl(const nlohmann::json& message);
+    DataLoaderModule(std::string module_name);
+    DataLoaderModule(std::string module_name, nlohmann::json config);
 
-    /**
-     * @brief Set the message object
-     * @param message
-     */
-    void message(const nlohmann::json& message);
+    bool m_was_configured{false};
 
-    /**
-     *
-     * @return
-     */
-    const nlohmann::json& message() const;
+  protected:
+    void initialize(mrc::segment::Builder& builder) override;
+    std::string module_type_name() const override;
 
   private:
-    nlohmann::json m_message;
+    DataLoader m_data_loader;
 };
-
-struct ControlMessageProxy
-{
-    static std::shared_ptr<MessageControl> create(pybind11::dict& message);
-
-    static pybind11::dict message(MessageControl& self);
-    static void message(MessageControl& self, pybind11::dict& message);
-};
-
-#pragma GCC visibility pop
 }  // namespace morpheus

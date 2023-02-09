@@ -122,8 +122,7 @@ PYBIND11_MODULE(messages, m)
         .def("message",
              pybind11::overload_cast<MessageControl&, py::dict&>(&ControlMessageProxy::message),
              py::arg("message"),
-             py::return_value_policy::reference_internal)
-        .def("type", &MessageControl::message_type);
+             py::return_value_policy::reference_internal);
 
     // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
     py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")
