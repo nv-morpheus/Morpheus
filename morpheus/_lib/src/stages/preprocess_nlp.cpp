@@ -20,10 +20,10 @@
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/memory/tensor_memory.hpp"     // for TensorMemory::tensor_map_t
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
-#include "morpheus/utilities/type_util.hpp"
 
 #include <cudf/column/column.hpp>                // for column, column::contents
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view

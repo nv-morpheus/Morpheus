@@ -51,8 +51,7 @@ pybind11::object morpheus::proxy_table_from_table_with_metadata(cudf::io::table_
         (PyObject *)make_table_from_table_with_metadata(std::move(table), index_col_count));
 }
 
-morpheus::TableInfo morpheus::proxy_table_info_from_table(pybind11::object table,
-                                                          std::shared_ptr<const morpheus::IDataTable> idata_table)
+morpheus::TableInfoData morpheus::proxy_table_info_data_from_table(pybind11::object table)
 {
-    return make_table_info_from_table(table.ptr(), idata_table);
+    return make_table_info_data_from_table(table.ptr());
 }

@@ -462,4 +462,5 @@ EXT_LIC_MAPPING = {
 }
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     sys.exit(checkCopyright_main())
