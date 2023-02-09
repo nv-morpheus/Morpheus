@@ -231,4 +231,10 @@ std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<Tensor
     std::vector<TensorIndex> output_shape{num_rows, num_columns};
     return std::make_shared<RMMTensor>(output_buffer, 0, tensor_type, output_shape);
 }
+
+std::shared_ptr<rmm::device_buffer> RMMTensor::get_buffer()
+{
+    return m_md;
+}
+
 }  // namespace morpheus

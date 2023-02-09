@@ -374,7 +374,7 @@ namespace morpheus {
     MatxUtil::reduce_max(const DevMemInfo &input,
                          const std::vector<int32_t> &seq_ids,
                          size_t seq_id_offset,
-                         const std::vector<int64_t> &output_shape)
+                         const std::vector<std::size_t> &output_shape)
     {
         const auto&  dtype = input.dtype();
         auto cudf_type = cudf::data_type{dtype.cudf_type_id()};

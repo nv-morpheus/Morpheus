@@ -23,6 +23,7 @@
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"         // for DType
+#include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/objects/triton_in_out.hpp"
@@ -92,8 +93,11 @@ std::map<std::string, TensorObject> build_response_outputs(std::size_t count,
         auto output_buffer = std::make_shared<rmm::device_buffer>(elem_count * model_output.datatype.item_size(),
                                                                   rmm::cuda_stream_per_thread);
 
+        // Triton results are always in row-major as required by the KServe protocol
+        // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
+        std::vector<TensorIndex> stride{total_shape[1], 1};
         response_outputs[model_output.mapped_name] =
-            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, std::vector<TensorIndex>{}, 0);
+            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0);
     }
 
     return response_outputs;
@@ -157,6 +161,86 @@ std::shared_ptr<const triton::client::InferRequestedOutput> build_output(const T
     return out_shared;
 }
 
+void reduce_outputs(const InferenceClientStage::sink_type_t& x, std::map<std::string, TensorObject>& response_outputs)
+{
+    // When our tensor lengths are longer than our dataframe we will need to use the seq_ids array to
+    // lookup how the values should map back into the dataframe.
+    auto host_seq_ids = get_seq_ids(x);
+
+    std::map<std::string, TensorObject> reduced_outputs;
+
+    for (const auto& output : response_outputs)
+    {
+        DCHECK(std::dynamic_pointer_cast<RMMTensor>(output.second.get_tensor()) != nullptr);
+        auto tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
+
+        const auto rank = tensor->rank();
+        std::vector<TensorIndex> shape(rank);
+        tensor->get_shape(shape);
+
+        std::vector<TensorIndex> stride(rank);
+        tensor->get_stride(stride);
+
+        // DevMemInfo wants the shape & stride in size_t
+        std::vector<std::size_t> tensor_shape(shape.size());
+        std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());
+
+        std::vector<std::size_t> tensor_stride(stride.size());
+        std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
+
+        std::vector<std::size_t> reduced_shape{tensor_shape};
+        reduced_shape[0] = x->mess_count;
+
+        auto reduced_buffer =
+            MatxUtil::reduce_max(DevMemInfo{tensor->get_buffer(), tensor->dtype(), tensor_shape, tensor_stride},
+                                 host_seq_ids,
+                                 0,
+                                 reduced_shape);
+
+        reduced_outputs[output.first] =
+            Tensor::create(std::move(reduced_buffer),
+                           tensor->dtype(),
+                           {static_cast<TensorIndex>(reduced_shape[0]), static_cast<TensorIndex>(reduced_shape[1])},
+                           stride,
+                           0);
+    }
+
+    response_outputs = std::move(reduced_outputs);
+}
+
+void apply_logits(std::map<std::string, TensorObject>& response_outputs)
+{
+    std::map<std::string, TensorObject> logit_outputs;
+
+    for (const auto& output : response_outputs)
+    {
+        DCHECK(std::dynamic_pointer_cast<RMMTensor>(output.second.get_tensor()) != nullptr);
+        auto input_tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
+
+        const auto rank = input_tensor->rank();
+        std::vector<TensorIndex> shape(rank);
+        input_tensor->get_shape(shape);
+
+        std::vector<TensorIndex> stride(rank);
+        input_tensor->get_stride(stride);
+
+        // DevMemInfo wants the shape & stride in size_t
+        std::vector<std::size_t> input_shape(shape.size());
+        std::copy(shape.cbegin(), shape.cend(), input_shape.begin());
+
+        std::vector<std::size_t> input_stride(stride.size());
+        std::copy(stride.cbegin(), stride.cend(), input_stride.begin());
+
+        auto output_buffer =
+            MatxUtil::logits(DevMemInfo{input_tensor->get_buffer(), input_tensor->dtype(), input_shape, input_stride});
+
+        // For logits the input and output shapes will be the same
+        logit_outputs[output.first] = Tensor::create(std::move(output_buffer), input_tensor->dtype(), shape, stride, 0);
+    }
+
+    response_outputs = std::move(logit_outputs);
+}
+
 }  // namespace
 
 namespace morpheus {
@@ -190,17 +274,13 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, &client](sink_type_t x) {
-                // When our tensor lengths are longer than our dataframe we will need to use the seq_ids
-                // array to lookup how the values should map back into the dataframe
-                const bool needs_seq_ids = x->mess_count != x->count;
+                // Using the `count` which is the number of rows in the inference tensors. We will check later if this
+                // doesn't match the number of rows in the dataframe (`mess_count`). This happens when the size of the
+                // input is too large and needs to be broken up in chunks in the pre-process stage. When this is the
+                // case we will reduce the rows in the response outputs such that we have a single response for each
+                // row int he dataframe.
                 std::map<std::string, TensorObject> response_outputs =
                     build_response_outputs(x->count, m_model_outputs);
-
-                std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
-                if (needs_seq_ids)
-                {
-                    host_seq_ids = make_unique<std::vector<int32_t>>(get_seq_ids(x));
-                }
 
                 for (size_t start = 0; start < x->count; start += m_max_batch_size)
                 {
@@ -259,43 +339,15 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     }
                 }
 
-                if (needs_seq_ids)
+                if (x->mess_count != x->count)
                 {
-                    // Since we are working with slices of both the input and the output, the seq_ids have
-                    // already been applied to the output's start & stop, so we only need to reduce the
-                    // response tensor when the size doesn't match our output
-                    /*
-                    std::vector<int64_t> mapped_output_shape{output_shape};
-                    mapped_output_shape[0] = mini_batch_output->count;
-
-                    // The shape of the triton output is the input to the reduce_max method
-                    std::vector<std::size_t> input_shape(output_shape.size());
-                    std::copy(output_shape.cbegin(), output_shape.cend(), input_shape.begin());
-
-                    // Triton results are always in row-major as required by the KServe protocol
-                    // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
-                    std::vector<std::size_t> stride{static_cast<std::size_t>(output_shape[1]), 1};
-                    output_buffer =
-                        MatxUtil::reduce_max(DevMemInfo{output_buffer, model_output.datatype, input_shape, stride},
-                                             *host_seq_ids,
-                                             mini_batch_input->offset,
-                                             mapped_output_shape);
-                    output_shape = std::move(mapped_output_shape);
-                    */
+                    reduce_outputs(x, response_outputs);
                 }
 
                 // If we need to do logits, do that here
                 if (m_needs_logits)
                 {
-                    /*
-                    std::vector<std::size_t> input_shape(output_shape.size());
-                    std::copy(output_shape.cbegin(), output_shape.cend(), input_shape.begin());
-
-                    output_buffer = MatxUtil::logits(DevMemInfo{output_buffer,
-                                                                model_output.datatype,
-                                                                input_shape,
-                                                                {static_cast<std::size_t>(output_shape[1]), 1}});
-                    */
+                    apply_logits(response_outputs);
                 }
 
                 // Final output of all mini-batches
