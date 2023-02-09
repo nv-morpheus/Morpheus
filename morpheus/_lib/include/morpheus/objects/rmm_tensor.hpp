@@ -145,6 +145,13 @@ class RMMTensor : public ITensor
      */
     std::shared_ptr<ITensor> as_type(DType dtype) const override;
 
+    /**
+     * @brief Get the underlying rmm buffer as-id and does not apply the offset.
+     *
+     * @return std::shared_ptr<rmm::device_buffer>
+     */
+    std::shared_ptr<rmm::device_buffer> get_buffer();
+
   protected:
   private:
     /**
