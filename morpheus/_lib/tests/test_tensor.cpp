@@ -17,10 +17,10 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
+#include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/rmm_tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"       // for TensorIndex
-#include "morpheus/utilities/tensor_util.hpp"       // for TensorUtils, TensorUtils::shape_type_t
-#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
+#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils, TensorUtils::shape_type_t
 
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
 
@@ -85,7 +85,7 @@ TEST_F(TestTensor, AsType)
 {
     std::vector<float> float_vec{5.1, 2.2, 8.3, 9.4, 8.5, 2.6, 1.7, 8.1};
 
-    DataType float_type(TypeId::FLOAT32);
+    DType float_type(TypeId::FLOAT32);
 
     auto float_buffer =
         std::make_shared<rmm::device_buffer>(float_vec.size() * float_type.item_size(), rmm::cuda_stream_per_thread);
@@ -96,7 +96,7 @@ TEST_F(TestTensor, AsType)
     std::vector<TensorIndex> stride{1, 4};
     auto float_tensor = std::make_shared<RMMTensor>(float_buffer, 0, float_type, shape, stride);
 
-    DataType double_type(TypeId::FLOAT64);
+    DType double_type(TypeId::FLOAT64);
     auto double_tensor = float_tensor->as_type(double_type);
 
     EXPECT_EQ(float_vec.size(), double_tensor->count());

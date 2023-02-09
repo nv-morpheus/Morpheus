@@ -191,7 +191,7 @@ TEST_F(TestMatxUtil, Cast)
 {
     std::vector<float> float_vec{5.1, 2.2, 8.3, 9.4, 8.5, 2.6, 1.7, 8.1};
 
-    DataType float_type(TypeId::FLOAT32);
+    DType float_type(TypeId::FLOAT32);
 
     auto float_buffer =
         std::make_shared<rmm::device_buffer>(float_vec.size() * float_type.item_size(), rmm::cuda_stream_per_thread);
@@ -200,7 +200,7 @@ TEST_F(TestMatxUtil, Cast)
 
     DevMemInfo dm{float_buffer, float_type, {4, 2}, {1, 4}};
 
-    DataType double_type(TypeId::FLOAT64);
+    DType double_type(TypeId::FLOAT64);
     auto double_buffer = MatxUtil::cast(dm, double_type.type_id());
     EXPECT_EQ(float_vec.size() * double_type.item_size(), double_buffer->size());
 
@@ -242,7 +242,7 @@ TEST_F(TestMatxUtil, Threshold)
     std::size_t num_rows = 5;
     EXPECT_EQ(num_cols * num_rows, input.size());
 
-    DataType dtype(TypeId::FLOAT32);
+    DType dtype(TypeId::FLOAT32);
 
     std::size_t buff_size = input.size() * dtype.item_size();
     auto input_buffer     = std::make_shared<rmm::device_buffer>(buff_size, rmm::cuda_stream_per_thread);
@@ -288,7 +288,7 @@ TEST_F(TestMatxUtil, ThresholdByRow)
     std::size_t num_rows = 5;
     EXPECT_EQ(num_cols * num_rows, input.size());
 
-    DataType dtype(TypeId::FLOAT32);
+    DType dtype(TypeId::FLOAT32);
 
     std::size_t buff_size = input.size() * dtype.item_size();
     auto input_buffer     = std::make_shared<rmm::device_buffer>(buff_size, rmm::cuda_stream_per_thread);
