@@ -69,6 +69,7 @@ RabbitMQSourceStage(const std::string& host,
                     const std::string& exchange_type        = "fanout"s,
                     const std::string& queue_name           = ""s,
                     std::chrono::milliseconds poll_interval = 100ms);
+
 ~RabbitMQSourceStage() override = default;
 ```
 
