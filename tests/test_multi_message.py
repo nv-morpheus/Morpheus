@@ -21,6 +21,7 @@ import pytest
 from morpheus._lib.common import FileTypes
 from morpheus.config import CppConfig
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.io.serializers import df_to_csv
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 from utils import TEST_DIRS
@@ -75,3 +76,34 @@ def test_set_meta(config):
     assert mm2.get_meta_list('v2') == values
 
     assert mm2.get_meta_list(None) == mm2.get_meta().to_arrow().to_pylist()
+
+
+def test_duplicate_ids(config, tmp_path):
+    """
+    Test for dataframe with duplicate IDs issue #686
+    """
+    src_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+    df = read_file_to_df(src_file, file_type=FileTypes.Auto)
+
+    data = df_to_csv(df, include_header=True, include_index_col=True, strip_newline=True)
+
+    # Duplicate id=7
+    data[9] = data[9].replace('8', '7', 1)
+
+    dup_file = os.path.join(tmp_path, 'dup_id.csv')
+    with open(dup_file, 'w') as fh:
+        fh.writelines("\n".join(data))
+
+    dup_df = read_file_to_df(dup_file, file_type=FileTypes.Auto, df_type='cudf')
+
+    meta = MessageMeta(dup_df)
+    mm = MultiMessage(meta, 0, len(dup_df))
+
+    # Fails mm.get_meta_list(None) returns 22 rows
+    assert mm.get_meta_list(None) == dup_df.to_arrow().to_pylist()
+
+    meta = MessageMeta(dup_df)
+    mm = MultiMessage(meta, 0, len(meta.df))
+
+    # Fails on an assert because len(meta.df) returned 22
+    assert mm.get_meta_list(None) == dup_df.to_arrow().to_pylist()
