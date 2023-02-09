@@ -18,7 +18,6 @@ import inspect
 import pathlib
 import re
 import typing
-from enum import Enum
 
 import click
 import numpydoc.docscrape
@@ -29,12 +28,10 @@ from morpheus.cli.stage_registry import GlobalStageRegistry
 from morpheus.cli.stage_registry import LazyStageInfo
 from morpheus.cli.stage_registry import StageInfo
 from morpheus.cli.utils import get_config_from_ctx
-from morpheus.cli.utils import get_enum_map
-from morpheus.cli.utils import get_enum_values
+from morpheus.cli.utils import get_enum_keys
 from morpheus.cli.utils import get_pipeline_from_ctx
-from morpheus.cli.utils import is_pybind_enum
+from morpheus.cli.utils import is_enum
 from morpheus.cli.utils import parse_enum
-from morpheus.cli.utils import parse_pybind_enum
 from morpheus.cli.utils import prepare_command
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -170,10 +167,7 @@ def _convert_enum_default(options_kwargs: dict, annotation, use_value: bool = Fa
     """
     default_val = options_kwargs.get('default')
     if (isinstance(default_val, annotation)):
-        if use_value:
-            options_kwargs['default'] = default_val.value
-        else:
-            options_kwargs['default'] = default_val.name
+        options_kwargs['default'] = default_val.name
 
 
 def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
@@ -192,22 +186,12 @@ def set_options_param_type(options_kwargs: dict, annotation, doc_type: str):
         # For paths, use the Path option and apply any kwargs
         options_kwargs["type"] = partial_pop_kwargs(click.Path, doc_type_kwargs)()
 
-    elif (issubtype(annotation, Enum)):
+    elif (is_enum(annotation)):
         case_sensitive = doc_type_kwargs.get('case_sensitive', True)
-        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(get_enum_values(annotation))
+        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(get_enum_keys(annotation))
 
         _convert_enum_default(options_kwargs, annotation, use_value=True)
         options_kwargs["callback"] = functools.partial(parse_enum, enum_class=annotation, case_sensitive=case_sensitive)
-
-    elif (is_pybind_enum(annotation)):
-        case_sensitive = doc_type_kwargs.get('case_sensitive', True)
-        choices = list(get_enum_map(annotation).keys())
-        options_kwargs["type"] = partial_pop_kwargs(click.Choice, doc_type_kwargs)(choices)
-
-        _convert_enum_default(options_kwargs, annotation)
-        options_kwargs["callback"] = functools.partial(parse_pybind_enum,
-                                                       enum_class=annotation,
-                                                       case_sensitive=case_sensitive)
 
     elif (issubtype(annotation, int) and not issubtype(annotation, bool)):
         # Check if there are any range arguments. Otherwise use a normal int

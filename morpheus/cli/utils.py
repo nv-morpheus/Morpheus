@@ -48,7 +48,7 @@ def _without_empty_args(passed_args):
     return {k: v for k, v in passed_args.items() if v is not None}
 
 
-def is_pybind_enum(cls):
+def is_pybind_enum(cls: typing.Any):
     """
     Determines if the given `cls` is an enum.
     C++ enums exposed via pybind11 do not inherit from Enum, but do expose the `__members__` convention.
@@ -162,48 +162,28 @@ def parse_log_level(ctx, param, value):
     return x
 
 
-def get_enum_map(enum_class: typing.Type):
+def is_enum(enum_class: typing.Type):
+    return issubclass(enum_class, Enum) or is_pybind_enum(enum_class)
 
-    assert (issubclass(enum_class, Enum) or is_pybind_enum(enum_class)), \
+
+def get_enum_members(enum_class: typing.Type):
+
+    assert is_enum(enum_class), \
             "Must pass a class that derives from Enum or a C++ enum exposed to Python"
 
-    return {x.name: x.value for x in enum_class.__members__.values()}
+    return dict(enum_class.__members__)
 
 
-def get_enum_inv_map(enum_class: typing.Type):
+def get_enum_keys(enum_class: typing.Type):
 
-    assert (issubclass(enum_class, Enum) or is_pybind_enum(enum_class)), \
-        "Must pass a class that derives from Enum or a C++ enum exposed to Python"
+    enum_map = get_enum_members(enum_class)
 
-    enum_map = {x.value: x.name for x in enum_class.__members__.values()}
-
-    return enum_map
-
-
-def get_enum_values(enum_class: typing.Type):
-
-    enum_map = get_enum_map(enum_class)
-
-    return list(enum_map.values())
+    return list(enum_map.keys())
 
 
 def parse_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: typing.Type, case_sensitive=True):
 
-    enum_map = get_enum_inv_map(enum_class)
-
-    if case_sensitive:
-        enum_key = enum_map[value]
-    else:
-        # Make the keys lowercase
-        enum_map = {key.lower(): value for key, value in enum_map.items()}
-        enum_key = enum_map[value.lower()]
-
-    result = enum_class[enum_key]
-    return result
-
-
-def parse_pybind_enum(_: click.Context, _2: click.Parameter, value: str, enum_class: typing.Type, case_sensitive=True):
-    enum_map = get_enum_map(enum_class)
+    enum_map = get_enum_members(enum_class)
 
     if not case_sensitive:
         # Make the keys lowercase
@@ -211,6 +191,7 @@ def parse_pybind_enum(_: click.Context, _2: click.Parameter, value: str, enum_cl
         value = value.lower()
 
     result = enum_map[value]
+
     return result
 
 

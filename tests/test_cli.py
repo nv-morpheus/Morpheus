@@ -625,7 +625,7 @@ class TestCLI:
         assert isinstance(file_source, FileSourceStage)
         assert file_source._filename == os.path.join(TEST_DIRS.validation_data_dir, 'abp-validation-data.jsonlines')
         assert not file_source._iterative
-        assert file_source._file_type == FileTypes.JSON.value
+        assert file_source._file_type == FileTypes.JSON
 
         assert isinstance(from_kafka, KafkaSourceStage)
         assert from_kafka._consumer_params['bootstrap.servers'] == 'kserv1:123,kserv2:321'
@@ -634,7 +634,7 @@ class TestCLI:
 
         assert isinstance(deserialize, DeserializeStage)
         assert isinstance(filter_stage, FilterDetectionsStage)
-        assert filter_stage._filter_source == FilterSource.TENSOR.value
+        assert filter_stage._filter_source == FilterSource.TENSOR
 
         assert isinstance(dropna, DropNullStage)
         assert dropna._column == 'xyz'
@@ -675,7 +675,7 @@ class TestCLI:
 
         assert isinstance(to_file, WriteToFileStage)
         assert to_file._output_file == 'out.csv'
-        assert to_file._file_type == FileTypes.CSV.value
+        assert to_file._file_type == FileTypes.CSV
 
         assert isinstance(to_kafka, WriteToKafkaStage)
         assert to_kafka._kafka_conf['bootstrap.servers'] == 'kserv1:123,kserv2:321'
