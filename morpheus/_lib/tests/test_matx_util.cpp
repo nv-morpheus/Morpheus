@@ -57,7 +57,7 @@ TEST_F(TestMatxUtil, ReduceMax1d)
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
     DevMemInfo dm{input_buffer, dtype, {input.size(), 1}, {1, 0}};
-    std::vector<int64_t> output_shape{static_cast<int64_t>(expected_output.size()), 1};
+    std::vector<std::size_t> output_shape{expected_output.size(), 1};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     std::vector<float> output(expected_output.size());
@@ -111,7 +111,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
     DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {num_cols, 1}};
-    std::vector<int64_t> output_shape{static_cast<int64_t>(expected_rows), static_cast<int64_t>(num_cols)};
+    std::vector<std::size_t> output_shape{expected_rows, num_cols};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
@@ -172,7 +172,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     EXPECT_EQ(expected_rows * num_cols, expected_output.size());
 
     DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {1, num_rows}};
-    std::vector<int64_t> output_shape{static_cast<int64_t>(expected_rows), static_cast<int64_t>(num_cols)};
+    std::vector<std::size_t> output_shape{expected_rows, num_cols};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());

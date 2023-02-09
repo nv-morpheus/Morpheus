@@ -393,7 +393,7 @@ namespace morpheus {
         MatxUtil__MatxReduceMax matx_reduce_max{static_cast<matx::index_t>(num_input_rows),
                                                 static_cast<matx::index_t>(num_input_cols),
                                                 matx_stride,
-                                                output_shape[0],
+                                                static_cast<matx::index_t>(output_shape[0]),
                                                 input.data(),
                                                 output->data(),
                                                 output->stream()};
