@@ -17,36 +17,21 @@
 
 #pragma once
 
-#include "morpheus/messages/control.hpp"
-#include "morpheus/messages/meta.hpp"
-
-#include <map>
-#include <memory>
+#include "morpheus/io/data_loader.hpp"
 
 namespace morpheus {
-
-class Loader
+/**
+ * @brief Very simple raw data loader that takes payload data on the control message and returns it
+ *
+ */
+class PayloadDataLoader : public Loader
 {
   public:
-    virtual ~Loader() = default;
+    PayloadDataLoader()  = default;
+    ~PayloadDataLoader() = default;
 
-    virtual std::shared_ptr<MessageMeta> load(MessageControl& message) = 0;
-};
-
-class DataLoader
-{
-  public:
-    DataLoader();
-    ~DataLoader() = default;
-
-    // Probably a MessageMeta?
-    std::shared_ptr<MessageMeta> load(MessageControl& control_message);
-
-    void register_loader(const std::string& loader_id, std::shared_ptr<Loader> loader);
-
-    void remove_loader(const std::string& loader_id);
-
-  private:
-    std::map<std::string, std::shared_ptr<Loader>> m_loaders{};
+    std::shared_ptr<MessageMeta> load(MessageControl& message) override{
+        return std::move(message.payload());
+    };
 };
 }  // namespace morpheus

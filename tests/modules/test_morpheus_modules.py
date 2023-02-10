@@ -56,8 +56,9 @@ def test_get_module():
 def test_init_module():
     def init_wrapper(builder: mrc.Builder):
         def gen_data():
+            config = {"loader_id": "payload"}
             for i in range(10):
-                yield messages.MessageControl()
+                yield messages.MessageControl(config)
 
         def on_next(data):
             pass

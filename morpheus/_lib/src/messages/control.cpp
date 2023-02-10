@@ -36,6 +36,21 @@ void MessageControl::message(const nlohmann::json& message)
     m_message = message;
 }
 
+std::shared_ptr<MessageMeta> MessageControl::payload()
+{
+    // TODO(Devin): do something else
+    auto temp = std::move(m_data);
+    m_data    = nullptr;
+
+    return temp;
+}
+
+void MessageControl::payload(const std::shared_ptr<MessageMeta>& payload)
+{
+    // TODO(Devin): can we just overwrite?
+    m_data = payload;
+}
+
 /*** Proxy Implementations ***/
 
 std::shared_ptr<MessageControl> ControlMessageProxy::create(py::dict& message)

@@ -23,6 +23,7 @@
 #include <memory>
 
 namespace morpheus {
+class MessageMeta;
 #pragma GCC visibility push(default)
 
 class MessageControl
@@ -43,8 +44,13 @@ class MessageControl
      */
     const nlohmann::json& message() const;
 
+    void payload(const std::shared_ptr<MessageMeta>& payload);
+
+    std::shared_ptr<MessageMeta> payload();
+
   private:
-    nlohmann::json m_message;
+    std::shared_ptr<MessageMeta> m_data{};
+    nlohmann::json m_message{};
 };
 
 struct ControlMessageProxy

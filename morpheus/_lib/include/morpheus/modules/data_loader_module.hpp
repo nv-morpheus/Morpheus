@@ -30,7 +30,6 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
     using type_t = DataLoaderModule;
 
   public:
-    virtual ~DataLoaderModule() = default;
     DataLoaderModule(std::string module_name);
     DataLoaderModule(std::string module_name, nlohmann::json config);
 
@@ -39,7 +38,7 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
     std::string module_type_name() const override;
 
   private:
-    DataLoader m_data_loader;
+    DataLoader m_data_loader{};
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
