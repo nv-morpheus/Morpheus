@@ -23,6 +23,23 @@ from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
 from utils import TEST_DIRS
+from utils import create_df_with_dup_ids
+
+
+def test_has_unique_index(config, tmp_path):
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
+    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+    assert df.index.is_unique
+    meta = MessageMeta(df)
+    assert meta.has_unique_index()
+
+    dup_file = create_df_with_dup_ids(tmp_path)
+
+    dup_df = read_file_to_df(dup_file, file_type=FileTypes.Auto, df_type='cudf')
+    assert not dup_df.index.is_unique
+
+    meta = MessageMeta(dup_df)
+    assert not meta.has_unique_index()
 
 
 def test_mutable_dataframe(config):
