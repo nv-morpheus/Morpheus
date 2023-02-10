@@ -46,7 +46,7 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(SerializeStage(config, include=[r'v\d+']))
+    pipe.add_stage(SerializeStage(config, include=['^v\d+$'], exclude=[r'^ID$', r'^_ts_', r'^Unnamed: 0$']))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
@@ -83,7 +83,7 @@ def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_inde
     pipe.set_source(FileSourceStage(config, filename=input_file))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(SerializeStage(config, include=[r'v\d+']))
+    pipe.add_stage(SerializeStage(config, exclude=[r'^_index_$', r'^ID$', r'^_ts_']))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
