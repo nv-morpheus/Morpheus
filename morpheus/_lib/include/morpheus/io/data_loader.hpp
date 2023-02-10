@@ -17,20 +17,20 @@
 
 #pragma once
 
+#include "morpheus/messages/control.hpp"
+#include "morpheus/messages/meta.hpp"
+
 #include <map>
 #include <memory>
 
 namespace morpheus {
-
-class MessageControl;
-class MessageMeta;
 
 class Loader
 {
   public:
     virtual ~Loader() = default;
 
-    virtual std::shared_ptr<MessageMeta> load_data(const MessageControl& message) = 0;
+    virtual std::shared_ptr<MessageMeta> load(const MessageControl& message) = 0;
 };
 
 class DataLoader

@@ -24,10 +24,13 @@
 #include <mrc/utils/type_utils.hpp>
 #include <nlohmann/json.hpp>
 
+#include <pybind11/pybind11.h>
+
 #include <string>
 
-namespace morpheus {
 using namespace mrc::modules;
+
+namespace morpheus {
 
 DataLoaderModule::DataLoaderModule(std::string module_name) : SegmentModule(module_name) {}
 
@@ -42,9 +45,10 @@ void DataLoaderModule::initialize(mrc::segment::Builder& builder)
         // TODO
     }
 
-    auto loader_node = builder.make_node<MessageControl, MessageMeta>(
-        "input",
-        rxcpp::operators::map([this](MessageControl& control_message) { return m_data_loader.load(control_message); }));
+    auto loader_node = builder.make_node<std::shared_ptr<MessageControl>, std::shared_ptr<MessageMeta>>(
+        "input", rxcpp::operators::map([this](std::shared_ptr<MessageControl> control_message) {
+            return m_data_loader.load(*control_message);
+        }));
 
     register_input_port("input", loader_node);
     register_output_port("output", loader_node);

@@ -21,17 +21,18 @@
 
 #include <mrc/modules/properties/persistent.hpp>
 #include <mrc/modules/segment_modules.hpp>
+#include <nlohmann/json.hpp>
 
 namespace morpheus {
+#pragma GCC visibility push(default)
 class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules::PersistentModule
 {
     using type_t = DataLoaderModule;
 
   public:
+    virtual ~DataLoaderModule() = default;
     DataLoaderModule(std::string module_name);
     DataLoaderModule(std::string module_name, nlohmann::json config);
-
-    bool m_was_configured{false};
 
   protected:
     void initialize(mrc::segment::Builder& builder) override;
@@ -40,4 +41,5 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
   private:
     DataLoader m_data_loader;
 };
+#pragma GCC visibility pop
 }  // namespace morpheus

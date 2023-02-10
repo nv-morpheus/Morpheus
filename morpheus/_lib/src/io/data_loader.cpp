@@ -31,9 +31,12 @@ std::shared_ptr<MessageMeta> DataLoader::load(const MessageControl& control_mess
         auto loader    = m_loaders.find(loader_id);
         if (loader != m_loaders.end())
         {
-            return loader->second->load_data(control_message);
+            return loader->second->load(control_message);
         }
     }
+
+    // TODO(Devin): Testing. Remove this.
+    return std::shared_ptr<MessageMeta>(nullptr);
 
     throw std::runtime_error("No loader registered for message: " + control_message.message().dump());
 }

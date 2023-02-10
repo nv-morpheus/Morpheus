@@ -15,8 +15,10 @@
  * limitations under the License.
  */
 
+#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/modules/data_loader_module.hpp"
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
@@ -31,7 +33,9 @@
 #include "morpheus/stages/write_to_file.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <mrc/modules/module_registry_util.hpp>
 #include <mrc/segment/object.hpp>
+#include <mrc/version.hpp>
 #include <pybind11/attr.h>      // for multiple_inheritance
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>   // for dict, sequence
@@ -58,6 +62,12 @@ PYBIND11_MODULE(stages, m)
     load_cudf_helpers();
 
     mrc::pymrc::from_import(m, "morpheus._lib.common", "FilterSource");
+
+    // TODO(Devin): Move to its own 'modules' module, shouldn't be with stages
+    const std::vector<unsigned int> MRCModuleVersion{mrc_VERSION_MAJOR, mrc_VERSION_MINOR, mrc_VERSION_PATCH};
+    using namespace mrc::modules;
+    mrc::modules::ModelRegistryUtil::create_registered_module<DataLoaderModule>(
+        "DataLoader", "morpheus", MRCModuleVersion);
 
     py::class_<mrc::segment::Object<AddClassificationsStage>,
                mrc::segment::ObjectProperties,

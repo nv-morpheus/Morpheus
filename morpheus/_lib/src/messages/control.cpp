@@ -26,11 +26,6 @@ namespace morpheus {
 
 MessageControl::MessageControl(const nlohmann::json& message) : m_message(message) {}
 
-MessageControl::ControlMessageType MessageControl::message_type() const
-{
-    return m_type;
-}
-
 const nlohmann::json& MessageControl::message() const
 {
     return m_message;
