@@ -86,7 +86,7 @@ class DeserializeStage(MultiMessageStage):
 
         """
         if (not x.has_unique_index()):
-            logger.warn("Non unique index found in dataframe, generating new index.")
+            logger.warning("Non unique index found in dataframe, generating new index.")
             # Reset the index preserving the original index in a new column
             with x.mutable_dataframe() as df:
                 df.index.name = "_index_" + (df.index.name or "")
