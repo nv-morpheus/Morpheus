@@ -100,6 +100,11 @@ def test_duplicate_ids(config, tmp_path):
 
     assert meta.count == len(dup_df)
 
+    with meta.mutable_dataframe() as mut_df:
+        assert len(mut_df) == len(dup_df)
+
+    assert len(meta.copy_dataframe()) == len(dup_df)
+
     mm = MultiMessage(meta, 0, meta.count)
 
     # Fails mm.get_meta_list(None) returns 22 rows
