@@ -26,6 +26,7 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <pybind11/stl.h>
 #include <rmm/mr/device/per_device_resource.hpp>
 
 #include <array>    // for array
@@ -147,11 +148,12 @@ std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
         py::gil_scoped_acquire gil;
         py::object StringIO = py::module_::import("io").attr("StringIO");
 
-        auto df = tbl.checkout_obj();
+        auto df             = tbl.checkout_obj();
+        auto sliced_columns = df.attr("loc")[pybind11::make_tuple(df.attr("index"), tbl.get_column_names())];
 
         auto buffer     = StringIO();
         py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true, "index"_a = include_index_col);
-        df.attr("to_json")(buffer, **kwargs);
+        sliced_columns.attr("to_json")(buffer, **kwargs);
         buffer.attr("seek")(0);
 
         tbl.return_obj(std::move(df));

@@ -65,10 +65,6 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
         output_data = output_data[:, 1:]
     else:  # assume json
         df = read_file_to_df(out_file, file_type=FileTypes.Auto)
-
-        if '_index_' in df:
-            df = df.drop('_index_', axis=1)  # work-around appears that to_json is ignoring columns
-
         output_data = df.values
 
     # Somehow 0.7 ends up being 0.7000000000000001
@@ -110,10 +106,6 @@ def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_inde
         output_data = output_data[:, 1:]
     else:  # assume json
         df = read_file_to_df(out_file, file_type=FileTypes.Auto)
-
-        if '_index_' in df:
-            df = df.drop('_index_', axis=1)  # work-around appears that to_json is ignoring columns
-
         output_data = df.values
 
     # Somehow 0.7 ends up being 0.7000000000000001
