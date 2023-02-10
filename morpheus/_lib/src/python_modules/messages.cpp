@@ -32,10 +32,12 @@
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/version.hpp"
 
 #include <mrc/channel/status.hpp>  // for Status
 #include <mrc/edge/edge_connector.hpp>
 #include <mrc/node/port_registry.hpp>
+#include <mrc/utils/string_utils.hpp>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -56,10 +58,9 @@ namespace morpheus {
 namespace fs = std::filesystem;
 namespace py = pybind11;
 
-// Define the pybind11 module m, as 'pipeline'.
-PYBIND11_MODULE(messages, m)
+PYBIND11_MODULE(messages, _module)
 {
-    m.doc() = R"pbdoc(
+    _module.doc() = R"pbdoc(
         -----------------------
         .. currentmodule:: morpheus.messages
         .. autosummary::
@@ -70,14 +71,14 @@ PYBIND11_MODULE(messages, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    mrc::pymrc::import(m, "cupy");
-    mrc::pymrc::import(m, "morpheus._lib.common");
+    mrc::pymrc::import(_module, "cupy");
+    mrc::pymrc::import(_module, "morpheus._lib.common");
 
     // Required for SegmentObject
-    mrc::pymrc::import(m, "mrc.core.node");
+    mrc::pymrc::import(_module, "mrc.core.node");
 
     // Allows python objects to keep DataTable objects alive
-    py::class_<IDataTable, std::shared_ptr<IDataTable>>(m, "DataTable");
+    py::class_<IDataTable, std::shared_ptr<IDataTable>>(_module, "DataTable");
 
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageControl>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
@@ -88,6 +89,7 @@ PYBIND11_MODULE(messages, m)
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
+    // EdgeConnectors for converting between PyObjectHolders and various Message types
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MessageControl>,
                              mrc::pymrc::PyObjectHolder>::register_converter();
     mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder,
@@ -121,7 +123,7 @@ PYBIND11_MODULE(messages, m)
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    py::class_<MessageControl, std::shared_ptr<MessageControl>>(m, "MessageControl")
+    py::class_<MessageControl, std::shared_ptr<MessageControl>>(_module, "MessageControl")
         .def(py::init<>())
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)), py::return_value_policy::move)
         .def("message",
@@ -133,7 +135,7 @@ PYBIND11_MODULE(messages, m)
              py::return_value_policy::reference_internal);
 
     // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
-    py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")
+    py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(_module, "MutableTableCtxMgr")
         .def("__enter__", &MutableTableCtxMgr::enter, py::return_value_policy::reference)
         .def("__exit__", &MutableTableCtxMgr::exit)
         .def("__getattr__", &MutableTableCtxMgr::throw_usage_error)
@@ -141,7 +143,7 @@ PYBIND11_MODULE(messages, m)
         .def("__setattr__", &MutableTableCtxMgr::throw_usage_error)
         .def("__setitem__", &MutableTableCtxMgr::throw_usage_error);
 
-    py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
+    py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(_module, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
         .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
@@ -149,7 +151,7 @@ PYBIND11_MODULE(messages, m)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
 
-    py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(m, "MultiMessage")
+    py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(_module, "MultiMessage")
         .def(py::init<>(&MultiMessageInterfaceProxy::init),
              py::arg("meta"),
              py::arg("mess_offset"),
@@ -176,10 +178,10 @@ PYBIND11_MODULE(messages, m)
              py::return_value_policy::move)
         .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
-    py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
+    py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(_module, "InferenceMemory")
         .def_property_readonly("count", &InferenceMemoryInterfaceProxy::get_count);
 
-    py::class_<InferenceMemoryNLP, InferenceMemory, std::shared_ptr<InferenceMemoryNLP>>(m, "InferenceMemoryNLP")
+    py::class_<InferenceMemoryNLP, InferenceMemory, std::shared_ptr<InferenceMemoryNLP>>(_module, "InferenceMemoryNLP")
         .def(py::init<>(&InferenceMemoryNLPInterfaceProxy::init),
              py::arg("count"),
              py::arg("input_ids"),
@@ -195,7 +197,7 @@ PYBIND11_MODULE(messages, m)
         .def_property(
             "seq_ids", &InferenceMemoryNLPInterfaceProxy::get_seq_ids, &InferenceMemoryNLPInterfaceProxy::set_seq_ids);
 
-    py::class_<InferenceMemoryFIL, InferenceMemory, std::shared_ptr<InferenceMemoryFIL>>(m, "InferenceMemoryFIL")
+    py::class_<InferenceMemoryFIL, InferenceMemory, std::shared_ptr<InferenceMemoryFIL>>(_module, "InferenceMemoryFIL")
         .def(py::init<>(&InferenceMemoryFILInterfaceProxy::init),
              py::arg("count"),
              py::arg("input__0"),
@@ -208,7 +210,8 @@ PYBIND11_MODULE(messages, m)
         .def_property(
             "seq_ids", &InferenceMemoryFILInterfaceProxy::get_seq_ids, &InferenceMemoryFILInterfaceProxy::set_seq_ids);
 
-    py::class_<MultiInferenceMessage, MultiMessage, std::shared_ptr<MultiInferenceMessage>>(m, "MultiInferenceMessage")
+    py::class_<MultiInferenceMessage, MultiMessage, std::shared_ptr<MultiInferenceMessage>>(_module,
+                                                                                            "MultiInferenceMessage")
         .def(py::init<>(&MultiInferenceMessageInterfaceProxy::init),
              py::arg("meta"),
              py::arg("mess_offset"),
@@ -223,7 +226,7 @@ PYBIND11_MODULE(messages, m)
         .def("get_slice", &MultiInferenceMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal);
 
     py::class_<MultiInferenceNLPMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceNLPMessage>>(
-        m, "MultiInferenceNLPMessage")
+        _module, "MultiInferenceNLPMessage")
         .def(py::init<>(&MultiInferenceNLPMessageInterfaceProxy::init),
              py::arg("meta"),
              py::arg("mess_offset"),
@@ -239,7 +242,7 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("seq_ids", &MultiInferenceNLPMessageInterfaceProxy::seq_ids);
 
     py::class_<MultiInferenceFILMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceFILMessage>>(
-        m, "MultiInferenceFILMessage")
+        _module, "MultiInferenceFILMessage")
         .def(py::init<>(&MultiInferenceFILMessageInterfaceProxy::init),
              py::arg("meta"),
              py::arg("mess_offset"),
@@ -251,23 +254,25 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("offset", &MultiInferenceFILMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
 
-    py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
+    py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(_module, "TensorMemory")
         .def_readonly("count", &TensorMemory::count);
 
-    py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
+    py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(_module, "ResponseMemory")
         .def_readonly("count", &ResponseMemory::count)
         .def("get_output", &ResponseMemoryInterfaceProxy::get_output, py::return_value_policy::reference_internal)
         .def("get_output_tensor",
              &ResponseMemoryInterfaceProxy::get_output_tensor,
              py::return_value_policy::reference_internal);
 
-    py::class_<ResponseMemoryProbs, ResponseMemory, std::shared_ptr<ResponseMemoryProbs>>(m, "ResponseMemoryProbs")
+    py::class_<ResponseMemoryProbs, ResponseMemory, std::shared_ptr<ResponseMemoryProbs>>(_module,
+                                                                                          "ResponseMemoryProbs")
         .def(py::init<>(&ResponseMemoryProbsInterfaceProxy::init), py::arg("count"), py::arg("probs"))
         .def_property_readonly("count", &ResponseMemoryProbsInterfaceProxy::count)
         .def_property(
             "probs", &ResponseMemoryProbsInterfaceProxy::get_probs, &ResponseMemoryProbsInterfaceProxy::set_probs);
 
-    py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(m, "MultiResponseMessage")
+    py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(_module,
+                                                                                          "MultiResponseMessage")
         .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),
              py::arg("meta"),
              py::arg("mess_offset"),
@@ -281,7 +286,7 @@ PYBIND11_MODULE(messages, m)
         .def("get_output", &MultiResponseMessageInterfaceProxy::get_output);
 
     py::class_<MultiResponseProbsMessage, MultiResponseMessage, std::shared_ptr<MultiResponseProbsMessage>>(
-        m, "MultiResponseProbsMessage")
+        _module, "MultiResponseProbsMessage")
         .def(py::init<>(&MultiResponseProbsMessageInterfaceProxy::init),
              py::arg("meta"),
              py::arg("mess_offset"),
@@ -294,10 +299,7 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("count", &MultiResponseProbsMessageInterfaceProxy::count)
         .def_property_readonly("probs", &MultiResponseProbsMessageInterfaceProxy::probs);
 
-#ifdef VERSION_INFO
-    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
-#else
-    m.attr("__version__") = "dev";
-#endif
+    _module.attr("__version__") =
+        MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
 }
 }  // namespace morpheus

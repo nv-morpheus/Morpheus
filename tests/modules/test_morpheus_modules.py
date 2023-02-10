@@ -17,8 +17,9 @@
 import time
 
 import mrc
-import morpheus._lib.stages  # TODO: for DataLoader
+
 import morpheus._lib.messages as _messages
+import morpheus.modules  # Used to load and register morpheus modules
 import morpheus.messages as messages
 
 

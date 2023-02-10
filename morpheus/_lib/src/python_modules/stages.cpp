@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 
-#include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/modules/data_loader_module.hpp"
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
@@ -32,7 +30,9 @@
 #include "morpheus/stages/triton_inference.hpp"
 #include "morpheus/stages/write_to_file.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/version.hpp"
 
+#include <mrc/utils/string_utils.hpp>
 #include <mrc/modules/module_registry_util.hpp>
 #include <mrc/segment/object.hpp>
 #include <mrc/version.hpp>
@@ -47,10 +47,9 @@
 namespace morpheus {
 namespace py = pybind11;
 
-// Define the pybind11 module m, as 'pipeline'.
-PYBIND11_MODULE(stages, m)
+PYBIND11_MODULE(stages, _module)
 {
-    m.doc() = R"pbdoc(
+    _module.doc() = R"pbdoc(
         -----------------------
         .. currentmodule:: morpheus.stages
         .. autosummary::
@@ -61,18 +60,12 @@ PYBIND11_MODULE(stages, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    mrc::pymrc::from_import(m, "morpheus._lib.common", "FilterSource");
-
-    // TODO(Devin): Move to its own 'modules' module, shouldn't be with stages
-    const std::vector<unsigned int> MRCModuleVersion{mrc_VERSION_MAJOR, mrc_VERSION_MINOR, mrc_VERSION_PATCH};
-    using namespace mrc::modules;
-    mrc::modules::ModelRegistryUtil::create_registered_module<DataLoaderModule>(
-        "DataLoader", "morpheus", MRCModuleVersion);
+    mrc::pymrc::from_import(_module, "morpheus._lib.common", "FilterSource");
 
     py::class_<mrc::segment::Object<AddClassificationsStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<AddClassificationsStage>>>(
-        m, "AddClassificationsStage", py::multiple_inheritance())
+        _module, "AddClassificationsStage", py::multiple_inheritance())
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -82,7 +75,7 @@ PYBIND11_MODULE(stages, m)
 
     py::class_<mrc::segment::Object<AddScoresStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<AddScoresStage>>>(m, "AddScoresStage", py::multiple_inheritance())
+               std::shared_ptr<mrc::segment::Object<AddScoresStage>>>(_module, "AddScoresStage", py::multiple_inheritance())
         .def(py::init<>(&AddScoresStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -92,7 +85,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<DeserializeStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<DeserializeStage>>>(
-        m, "DeserializeStage", py::multiple_inheritance())
+        _module, "DeserializeStage", py::multiple_inheritance())
         .def(py::init<>(&DeserializeStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -100,7 +93,7 @@ PYBIND11_MODULE(stages, m)
 
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(m, "FileSourceStage", py::multiple_inheritance())
+               std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(_module, "FileSourceStage", py::multiple_inheritance())
         .def(py::init<>(&FileSourceStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -110,7 +103,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<FilterDetectionsStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<FilterDetectionsStage>>>(
-        m, "FilterDetectionsStage", py::multiple_inheritance())
+        _module, "FilterDetectionsStage", py::multiple_inheritance())
         .def(py::init<>(&FilterDetectionStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -122,7 +115,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<InferenceClientStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<InferenceClientStage>>>(
-        m, "InferenceClientStage", py::multiple_inheritance())
+        _module, "InferenceClientStage", py::multiple_inheritance())
         .def(py::init<>(&InferenceClientStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -136,7 +129,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<KafkaSourceStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<KafkaSourceStage>>>(
-        m, "KafkaSourceStage", py::multiple_inheritance())
+        _module, "KafkaSourceStage", py::multiple_inheritance())
         .def(py::init<>(&KafkaSourceStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -152,7 +145,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<PreallocateStage<MessageMeta>>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageMeta>>>>(
-        m, "PreallocateMessageMetaStage", py::multiple_inheritance())
+        _module, "PreallocateMessageMetaStage", py::multiple_inheritance())
         .def(py::init<>(&PreallocateStageInterfaceProxy<MessageMeta>::init),
              py::arg("builder"),
              py::arg("name"),
@@ -161,7 +154,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<PreallocateStage<MultiMessage>>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PreallocateStage<MultiMessage>>>>(
-        m, "PreallocateMultiMessageStage", py::multiple_inheritance())
+        _module, "PreallocateMultiMessageStage", py::multiple_inheritance())
         .def(py::init<>(&PreallocateStageInterfaceProxy<MultiMessage>::init),
              py::arg("builder"),
              py::arg("name"),
@@ -170,7 +163,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<PreprocessFILStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PreprocessFILStage>>>(
-        m, "PreprocessFILStage", py::multiple_inheritance())
+        _module, "PreprocessFILStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessFILStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -179,7 +172,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<PreprocessNLPStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PreprocessNLPStage>>>(
-        m, "PreprocessNLPStage", py::multiple_inheritance())
+        _module, "PreprocessNLPStage", py::multiple_inheritance())
         .def(py::init<>(&PreprocessNLPStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -193,7 +186,7 @@ PYBIND11_MODULE(stages, m)
 
     py::class_<mrc::segment::Object<SerializeStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<SerializeStage>>>(m, "SerializeStage", py::multiple_inheritance())
+               std::shared_ptr<mrc::segment::Object<SerializeStage>>>(_module, "SerializeStage", py::multiple_inheritance())
         .def(py::init<>(&SerializeStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -204,7 +197,7 @@ PYBIND11_MODULE(stages, m)
     py::class_<mrc::segment::Object<WriteToFileStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<WriteToFileStage>>>(
-        m, "WriteToFileStage", py::multiple_inheritance())
+        _module, "WriteToFileStage", py::multiple_inheritance())
         .def(py::init<>(&WriteToFileStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -214,10 +207,7 @@ PYBIND11_MODULE(stages, m)
              py::arg("include_index_col") = true,
              py::arg("flush")             = false);
 
-#ifdef VERSION_INFO
-    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
-#else
-    m.attr("__version__") = "dev";
-#endif
+    _module.attr("__version__") = MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "."
+                                                                  << morpheus_VERSION_PATCH);
 }
 }  // namespace morpheus

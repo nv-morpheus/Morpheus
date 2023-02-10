@@ -22,7 +22,9 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/version.hpp"
 
+#include <mrc/utils/string_utils.hpp>
 #include <pybind11/pybind11.h>
 
 #include <memory>
@@ -30,9 +32,9 @@
 namespace morpheus {
 namespace py = pybind11;
 
-PYBIND11_MODULE(common, m)
+PYBIND11_MODULE(common, _module)
 {
-    m.doc() = R"pbdoc(
+    _module.doc() = R"pbdoc(
         -----------------------
         .. currentmodule:: morpheus.common
         .. autosummary::
@@ -42,16 +44,16 @@ PYBIND11_MODULE(common, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    py::class_<TensorObject>(m, "Tensor")
+    py::class_<TensorObject>(_module, "Tensor")
         .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
 
-    py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
+    py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(_module, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("close", &FiberQueueInterfaceProxy::close);
 
-    py::enum_<TypeId>(m, "TypeId", "Supported Morpheus types")
+    py::enum_<TypeId>(_module, "TypeId", "Supported Morpheus types")
         .value("EMPTY", TypeId::EMPTY)
         .value("INT8", TypeId::INT8)
         .value("INT16", TypeId::INT16)
@@ -66,9 +68,9 @@ PYBIND11_MODULE(common, m)
         .value("BOOL8", TypeId::BOOL8)
         .value("STRING", TypeId::STRING);
 
-    m.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
+    _module.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
 
-    py::enum_<FileTypes>(m,
+    py::enum_<FileTypes>(_module,
                          "FileTypes",
                          "The type of files that the `FileSourceStage` can read and `WriteToFileStage` can write. Use "
                          "'auto' to determine from the file extension.")
@@ -76,18 +78,15 @@ PYBIND11_MODULE(common, m)
         .value("JSON", FileTypes::JSON)
         .value("CSV", FileTypes::CSV);
 
-    m.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
+    _module.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
 
     py::enum_<FilterSource>(
-        m, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
+        _module, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
         .value("Auto", FilterSource::Auto)
         .value("TENSOR", FilterSource::TENSOR)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
-#ifdef VERSION_INFO
-    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
-#else
-    m.attr("__version__") = "dev";
-#endif
+    _module.attr("__version__") =
+        MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
 }
 }  // namespace morpheus
