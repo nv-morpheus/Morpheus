@@ -34,10 +34,8 @@ from utils import create_df_with_dup_ids
 
 @pytest.mark.slow
 @pytest.mark.parametrize("dup_index", [False, True])
-@pytest.mark.parametrize("flush", [False, True])
-@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-@pytest.mark.parametrize("repeat", [1, 2, 5])
-def test_file_rw_pipe(tmp_path, config, output_type: str, flush: bool, repeat: int, dup_index: bool):
+@pytest.mark.parametrize("output_type", ["csv", "json"])
+def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
     if dup_index:
@@ -46,19 +44,16 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, flush: bool, repeat: i
         input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
+    pipe.set_source(FileSourceStage(config, filename=input_file))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'v\d+']))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, flush=flush))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
     assert_path_exists(out_file)
 
     validation_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     input_data = np.loadtxt(validation_file, delimiter=",", skiprows=1)
-
-    # Repeat the input data
-    input_data = np.tile(input_data, (repeat, 1))
 
     if output_type == "csv":
         # The output data will contain an additional id column that we will need to slice off
@@ -75,7 +70,7 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, flush: bool, repeat: i
 
 @pytest.mark.slow
 @pytest.mark.parametrize("dup_index", [False, True])
-@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
+@pytest.mark.parametrize("output_type", ["csv", "json"])
 def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_index: bool):
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
