@@ -25,7 +25,7 @@ namespace morpheus {
 
 DataLoader::DataLoader() : m_loaders{}
 {
-    register_loader("payload", std::move(std::make_shared<PayloadDataLoader>()));
+    register_loader("payload", std::make_shared<PayloadDataLoader>());
 }
 
 std::shared_ptr<MessageMeta> DataLoader::load(MessageControl& control_message)
@@ -35,13 +35,10 @@ std::shared_ptr<MessageMeta> DataLoader::load(MessageControl& control_message)
     if (payload.contains("loader_id"))
     {
         // TODO
-        std::cerr << "Looking for loader: " << payload["loader_id"] << std::endl << std::flush;
         std::string loader_id = payload["loader_id"];
         auto loader           = m_loaders.find(loader_id);
-        std::cerr << "Found a loader: " << payload["loader_id"] << std::endl << std::flush;
         if (loader != m_loaders.end())
         {
-            std::cerr << "Found loader: " << loader_id << std::endl << std::flush;
             return loader->second->load(control_message);
         }
     }
