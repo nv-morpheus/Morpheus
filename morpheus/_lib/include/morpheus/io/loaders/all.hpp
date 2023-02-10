@@ -17,21 +17,7 @@
 
 #pragma once
 
-#include "morpheus/io/data_loader.hpp"
-
-#include <memory>
-
-namespace morpheus {
-/**
- * @brief Very simple raw data loader that takes payload data on the control message and returns it
- *
- */
-class PayloadDataLoader : public Loader
-{
-  public:
-    PayloadDataLoader()  = default;
-    ~PayloadDataLoader() = default;
-
-    std::shared_ptr<MessageMeta> load(MessageControl& control_message) override;
-};
-}  // namespace morpheus
+#include "file.hpp"
+#include "grpc.hpp"
+#include "payload.hpp"
+#include "rest.hpp"

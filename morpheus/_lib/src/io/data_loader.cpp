@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-#include "morpheus/io/loaders/payload.hpp"
+#include "morpheus/io/data_loader.hpp"
+
 #include "morpheus/messages/control.hpp"
 
 #include <ios>
@@ -23,10 +24,7 @@
 
 namespace morpheus {
 
-DataLoader::DataLoader() : m_loaders{}
-{
-    register_loader("payload", std::make_shared<PayloadDataLoader>());
-}
+DataLoader::DataLoader() : m_loaders{} {}
 
 std::shared_ptr<MessageMeta> DataLoader::load(MessageControl& control_message)
 {

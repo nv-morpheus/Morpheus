@@ -19,19 +19,17 @@
 
 #include "morpheus/io/data_loader.hpp"
 
-#include <memory>
-
 namespace morpheus {
 /**
  * @brief Very simple raw data loader that takes payload data on the control message and returns it
  *
  */
-class PayloadDataLoader : public Loader
+class FileDataLoader : public Loader
 {
   public:
-    PayloadDataLoader()  = default;
-    ~PayloadDataLoader() = default;
+    FileDataLoader()  = default;
+    ~FileDataLoader() = default;
 
-    std::shared_ptr<MessageMeta> load(MessageControl& control_message) override;
+    std::shared_ptr<MessageMeta> load(MessageControl& message) override;
 };
 }  // namespace morpheus

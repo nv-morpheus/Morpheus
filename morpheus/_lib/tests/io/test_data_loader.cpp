@@ -15,23 +15,28 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "test_io.hpp"
 
-#include "morpheus/io/data_loader.hpp"
+#include "morpheus/messages/control.hpp"
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/modules/data_loader_module.hpp"
 
-#include <memory>
+#include <mrc/core/executor.hpp>
+#include <mrc/engine/pipeline/ipipeline.hpp>
+#include <mrc/modules/sample_modules.hpp>
+#include <mrc/modules/segment_modules.hpp>
+#include <mrc/node/rx_sink.hpp>
+#include <mrc/node/rx_source.hpp>
+#include <mrc/options/options.hpp>
+#include <mrc/options/topology.hpp>
+#include <mrc/pipeline/pipeline.hpp>
+#include <mrc/segment/builder.hpp>
+#include <nlohmann/json.hpp>
 
-namespace morpheus {
-/**
- * @brief Very simple raw data loader that takes payload data on the control message and returns it
- *
- */
-class PayloadDataLoader : public Loader
-{
-  public:
-    PayloadDataLoader()  = default;
-    ~PayloadDataLoader() = default;
+using namespace morpheus;
+using namespace morpheus::test;
 
-    std::shared_ptr<MessageMeta> load(MessageControl& control_message) override;
-};
-}  // namespace morpheus
+
+TEST_F(TestDataLoader, DataLoaderModuleInitializationTest) {
+
+}

@@ -17,7 +17,7 @@
 
 #include "morpheus/modules/data_loader_module.hpp"
 
-#include "morpheus/io/loaders/payload.hpp"
+#include "morpheus/io/loaders/all.hpp"
 #include "morpheus/messages/meta.hpp"
 
 #include <mrc/modules/segment_modules.hpp>
@@ -35,8 +35,8 @@ namespace morpheus {
 
 DataLoaderModule::DataLoaderModule(std::string module_name) : SegmentModule(module_name) {}
 
-DataLoaderModule::DataLoaderModule(std::string module_name, nlohmann::json config) :
-  SegmentModule(std::move(module_name), std::move(config))
+DataLoaderModule::DataLoaderModule(std::string module_name, nlohmann::json _config) :
+  SegmentModule(std::move(module_name), std::move(_config))
 {}
 
 void DataLoaderModule::initialize(mrc::segment::Builder& builder)
@@ -47,9 +47,21 @@ void DataLoaderModule::initialize(mrc::segment::Builder& builder)
         auto loader_list = config()["loaders"];
         for (json::iterator it = loader_list.begin(); it != loader_list.end(); ++it)
         {
-            if (*it == "payload")
+            if (*it == "file")
+            {
+                m_data_loader.register_loader("file", std::make_unique<FileDataLoader>());
+            }
+            else if (*it == "grpc")
+            {
+                m_data_loader.register_loader("grpc", std::make_unique<GRPCDataLoader>());
+            }
+            else if (*it == "payload")
             {
                 m_data_loader.register_loader("payload", std::make_unique<PayloadDataLoader>());
+            }
+            else if (*it == "rest")
+            {
+                m_data_loader.register_loader("rest", std::make_unique<RESTDataLoader>());
             }
         }
     }

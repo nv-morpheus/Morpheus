@@ -17,21 +17,16 @@
 
 #pragma once
 
-#include "morpheus/io/data_loader.hpp"
+#include "../test_morpheus.hpp"  // IWYU pragma: associated
 
-#include <memory>
-
-namespace morpheus {
-/**
- * @brief Very simple raw data loader that takes payload data on the control message and returns it
- *
- */
-class PayloadDataLoader : public Loader
+namespace morpheus::test {
+class TestModules : public ::testing::Test
 {
-  public:
-    PayloadDataLoader()  = default;
-    ~PayloadDataLoader() = default;
+  protected:
+    void SetUp() override {}
 
-    std::shared_ptr<MessageMeta> load(MessageControl& control_message) override;
+    void TearDown() override {}
 };
-}  // namespace morpheus
+
+using TestDataLoaderModule = TestModules;
+}  // namespace morpheus::test

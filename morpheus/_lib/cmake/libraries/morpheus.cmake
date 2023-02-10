@@ -18,6 +18,10 @@ add_library(morpheus
     # Keep these sorted!
     ${MORPHEUS_LIB_ROOT}/src/io/data_loader.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/deserializers.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/file.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/grpc.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/payload.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/rest.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/serializers.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/control.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory.cpp

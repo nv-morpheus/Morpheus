@@ -15,23 +15,16 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include "morpheus/io/data_loader.hpp"
+#include "morpheus/io/loaders/rest.hpp"
 
 #include <memory>
 
 namespace morpheus {
-/**
- * @brief Very simple raw data loader that takes payload data on the control message and returns it
- *
- */
-class PayloadDataLoader : public Loader
+std::shared_ptr<MessageMeta> RESTDataLoader::load(MessageControl& message)
 {
-  public:
-    PayloadDataLoader()  = default;
-    ~PayloadDataLoader() = default;
+    VLOG(30) << "Called RESTDataLoader::load()";
 
-    std::shared_ptr<MessageMeta> load(MessageControl& control_message) override;
-};
+    // TODO(Devin): Implement this
+    return std::move(message.payload());
+}
 }  // namespace morpheus
