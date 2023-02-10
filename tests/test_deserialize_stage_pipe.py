@@ -43,10 +43,14 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
     else:
         input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
+    # We want to force the Python impl of the file source
+    py_file_source = FileSourceStage(config, filename=input_file)
+    py_file_source._build_cpp_node = lambda *a, **k: False
+
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file))
+    pipe.set_source(py_file_source)
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(SerializeStage(config, include=['^v\d+$'], exclude=[r'^ID$', r'^_ts_', r'^Unnamed: 0$']))
+    pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
@@ -61,6 +65,10 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
         output_data = output_data[:, 1:]
     else:  # assume json
         df = read_file_to_df(out_file, file_type=FileTypes.Auto)
+
+        if '_index_' in df:
+            df = df.drop('_index_', axis=1)  # work-around appears that to_json is ignoring columns
+
         output_data = df.values
 
     # Somehow 0.7 ends up being 0.7000000000000001

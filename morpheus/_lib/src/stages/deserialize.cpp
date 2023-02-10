@@ -30,40 +30,6 @@
 #include <type_traits>  // for declval
 #include <utility>
 
-namespace {
-namespace py = pybind11;
-using namespace py::literals;
-using namespace morpheus;
-
-void reset_index(DeserializeStage::sink_type_t& msg)
-{
-    // since we are both modifying the index, and preserving the existing one as a new column, both things tracked by
-    // table info we will instead copy the python object and teturn a new meta. Since this is a work-around for an issue
-    // we are warning the user about correctness and safety is more important than performance.
-    auto py_df = msg->get_info().copy_to_py_object();
-
-    {
-        py::gil_scoped_acquire gil;
-        auto df_index   = py_df.attr("index");
-        auto index_name = df_index.attr("name");
-
-        py::str old_index_col_name{"_index_"};
-        if (!index_name.is_none())
-        {
-            old_index_col_name += index_name;
-        }
-
-        df_index.attr("name") = old_index_col_name;
-
-        py_df.attr("reset_index")("inplace"_a = true);
-    }
-
-    auto new_meta = MessageMeta::create_from_python(std::move(py_df));
-    msg.swap(new_meta);
-}
-
-}  // namespace
-
 namespace morpheus {
 // Component public implementations
 // ************ DeserializationStage **************************** //
@@ -80,7 +46,8 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                 if (!x->has_unique_index())
                 {
                     LOG(WARNING) << "Non unique index found in dataframe, generating new index.";
-                    reset_index(x);
+                    auto table = x->get_mutable_info();
+                    table.reset_index();
                 }
 
                 // Make one large MultiMessage

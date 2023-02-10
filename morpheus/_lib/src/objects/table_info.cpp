@@ -297,4 +297,34 @@ void MutableTableInfo::return_obj(pybind11::object&& obj)
     m_checked_out_ref_count = -1;
 }
 
+void MutableTableInfo::reset_index()
+{
+    namespace py = pybind11;
+    using namespace py::literals;
+
+    std::string old_index_col_name{"_index_"};
+    auto py_df = checkout_obj();
+    {
+        py::gil_scoped_acquire gil;
+        auto df_index   = py_df.attr("index");
+        auto index_name = df_index.attr("name");
+
+        if (!index_name.is_none())
+        {
+            old_index_col_name += index_name.cast<std::string>();
+        }
+
+        df_index.attr("name") = py::cast(old_index_col_name);
+
+        py_df.attr("reset_index")("inplace"_a = true);
+    }
+
+    return_obj(std::move(py_df));
+
+    auto& tbl_data = this->get_data();
+    tbl_data.column_names.insert(tbl_data.column_names.begin(), std::move(old_index_col_name));
+    tbl_data.index_names.clear();
+    tbl_data.index_names.emplace_back("");
+}
+
 }  // namespace morpheus
