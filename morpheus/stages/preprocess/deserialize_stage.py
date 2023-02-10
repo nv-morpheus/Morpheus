@@ -85,6 +85,11 @@ class DeserializeStage(MultiMessageStage):
             Batch size.
 
         """
+        if (not x.has_unique_index()):
+            # Reset the index preserving the original index in a new column
+            with x.mutable_dataframe() as df:
+                df.index.name = "_index_" + (df.index.name or "")
+                df.reset_index(inplace=True)
 
         full_message = MultiMessage(meta=x, mess_offset=0, mess_count=x.count)
 
