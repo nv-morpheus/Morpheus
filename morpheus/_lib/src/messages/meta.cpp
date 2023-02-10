@@ -93,6 +93,12 @@ py::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int ind
     return converted_table;
 }
 
+bool MessageMeta::has_unique_index() const
+{
+    const auto table = get_info();
+    return table.has_unique_index();
+}
+
 /********** MessageMetaInterfaceProxy **********/
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&& data_frame)
 {
@@ -139,6 +145,13 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::stri
     return MessageMeta::create_from_cpp(std::move(df_with_meta));
 }
 
+bool MessageMetaInterfaceProxy::has_unique_index(MessageMeta& self)
+{
+    // Release any GIL
+    py::gil_scoped_release no_gil;
+    return self.has_unique_index();
+}
+
 SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
                                      cudf::size_type start,
                                      cudf::size_type stop,
@@ -157,6 +170,11 @@ TableInfo SlicedMessageMeta::get_info() const
 MutableTableInfo SlicedMessageMeta::get_mutable_info() const
 {
     return this->m_data->get_mutable_info(m_start, m_stop, m_column_names);
+}
+
+bool SlicedMessageMeta::has_unique_index() const
+{
+    throw std::runtime_error{"Unable to determine index uniqueness from a slice."};
 }
 
 }  // namespace morpheus

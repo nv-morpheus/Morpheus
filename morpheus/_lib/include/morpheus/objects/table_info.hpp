@@ -119,6 +119,13 @@ struct __attribute__((visibility("default"))) TableInfoBase
      */
     const cudf::column_view& get_column(cudf::size_type idx) const;
 
+    /**
+     * @brief Returns true if the underlying dataframe as a unique index.
+     *
+     * @return bool
+     */
+    bool has_unique_index() const;
+
   protected:
     TableInfoBase() = default;
 

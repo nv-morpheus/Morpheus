@@ -69,6 +69,13 @@ class MessageMeta
     virtual MutableTableInfo get_mutable_info() const;
 
     /**
+     * @brief Returns true if the underlying dataframe as a unique index.
+     *
+     * @return bool
+     */
+    virtual bool has_unique_index() const;
+
+    /**
      * @brief Create MessageMeta cpp object from a python object
      *
      * @param data_table
@@ -118,6 +125,8 @@ class SlicedMessageMeta : public MessageMeta
 
     MutableTableInfo get_mutable_info() const override;
 
+    bool has_unique_index() const override;
+
   private:
     cudf::size_type m_start{0};
     cudf::size_type m_stop{-1};
@@ -165,6 +174,8 @@ struct MessageMetaInterfaceProxy
     static pybind11::object df_property(MessageMeta& self);
 
     static MutableTableCtxMgr mutable_dataframe(MessageMeta& self);
+
+    static bool has_unique_index(MessageMeta& self);
 };
 
 #pragma GCC visibility pop

@@ -202,6 +202,15 @@ const TableInfoData& TableInfoBase::get_data() const
     return m_data;
 }
 
+bool TableInfoBase::has_unique_index() const
+{
+    namespace py = pybind11;
+    pybind11::gil_scoped_acquire gil;
+    auto df        = m_parent->get_py_object();
+    auto is_unique = df.attr("index").attr("is_unique");
+    return is_unique.cast<bool>();
+}
+
 TableInfo::TableInfo(std::shared_ptr<const IDataTable> parent,
                      std::shared_lock<std::shared_mutex> lock,
                      TableInfoData data) :
