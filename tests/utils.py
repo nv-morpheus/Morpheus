@@ -231,3 +231,22 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
 
     # Finally, actually assert on the final try
     assert os.path.exists(filename)
+
+
+def create_df_with_dup_ids(tmp_path: str) -> str:
+    """
+    Helper method to test issue #686, takes the filter_probs.csv and duplicates id=7
+    """
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), file_type=FileTypes.Auto)
+    assert df.index.is_unique
+
+    data = df_to_csv(df, include_header=True, include_index_col=True, strip_newline=True)
+
+    # Duplicate id=7
+    data[9] = data[9].replace('8', '7', 1)
+
+    dup_file = os.path.join(tmp_path, 'dup_id.csv')
+    with open(dup_file, 'w') as fh:
+        fh.writelines("\n".join(data))
+
+    return dup_file

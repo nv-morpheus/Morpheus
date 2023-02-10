@@ -25,6 +25,7 @@ from morpheus.io.serializers import df_to_csv
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 from utils import TEST_DIRS
+from utils import create_df_with_dup_ids
 
 
 @pytest.mark.parametrize('df_type', ['cudf', 'pandas'])
@@ -36,6 +37,7 @@ def test_copy_ranges(config, df_type):
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type=df_type)
 
     meta = MessageMeta(df)
+    assert meta.has_unique_index()
     assert meta.count == len(df)
 
     mm = MultiMessage(meta, 0, len(df))
@@ -65,6 +67,7 @@ def test_set_meta(config):
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
 
     meta = MessageMeta(df)
+    assert meta.has_unique_index()
     mm = MultiMessage(meta, 0, len(df))
 
     mm2 = mm.copy_ranges([(2, 6), (12, 15)])
@@ -82,21 +85,13 @@ def test_duplicate_ids(config, tmp_path):
     """
     Test for dataframe with duplicate IDs issue #686
     """
-    src_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
-    df = read_file_to_df(src_file, file_type=FileTypes.Auto)
-
-    data = df_to_csv(df, include_header=True, include_index_col=True, strip_newline=True)
-
-    # Duplicate id=7
-    data[9] = data[9].replace('8', '7', 1)
-
-    dup_file = os.path.join(tmp_path, 'dup_id.csv')
-    with open(dup_file, 'w') as fh:
-        fh.writelines("\n".join(data))
+    dup_file = create_df_with_dup_ids(tmp_path)
 
     dup_df = read_file_to_df(dup_file, file_type=FileTypes.Auto, df_type='cudf')
+    assert not dup_df.index.is_unique
 
     meta = MessageMeta(dup_df)
+    assert not meta.has_unique_index()
 
     assert meta.count == len(dup_df)
 

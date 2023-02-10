@@ -108,6 +108,9 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
 
         return len(self._df)
 
+    def has_unique_index(self) -> bool:
+        return self._df.index.is_unique
+
 
 @dataclasses.dataclass(init=False)
 class UserMessageMeta(MessageMeta, cpp_class=None):
