@@ -97,7 +97,10 @@ def test_duplicate_ids(config, tmp_path):
     dup_df = read_file_to_df(dup_file, file_type=FileTypes.Auto, df_type='cudf')
 
     meta = MessageMeta(dup_df)
-    mm = MultiMessage(meta, 0, len(dup_df))
+
+    assert meta.count == len(dup_df)
+
+    mm = MultiMessage(meta, 0, meta.count)
 
     # Fails mm.get_meta_list(None) returns 22 rows
     assert mm.get_meta_list(None) == dup_df.to_arrow().to_pylist()
