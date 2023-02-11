@@ -51,7 +51,7 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
     pipe.set_source(py_file_source)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, include_index_col=False))
     pipe.run()
 
     assert_path_exists(out_file)
@@ -62,7 +62,6 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
     if output_type == "csv":
         # The output data will contain an additional id column that we will need to slice off
         output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-        output_data = output_data[:, 1:]
     else:  # assume json
         df = read_file_to_df(out_file, file_type=FileTypes.Auto)
         output_data = df.values
@@ -92,7 +91,7 @@ def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_inde
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, include_index_col=False))
     pipe.run()
 
     assert_path_exists(out_file)
@@ -103,7 +102,6 @@ def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_inde
     if output_type == "csv":
         # The output data will contain an additional id column that we will need to slice off
         output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-        output_data = output_data[:, 1:]
     else:  # assume json
         df = read_file_to_df(out_file, file_type=FileTypes.Auto)
         output_data = df.values
