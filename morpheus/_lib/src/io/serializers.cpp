@@ -142,20 +142,32 @@ void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_head
 
 std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
 {
+    if (!include_index_col)
+    {
+        LOG(WARNING) << "Ignoring include_index_col=false as this isn't supported by CuDF";
+    }
+
     std::string results;
     // no cpp impl for to_json, instead python module converts to pandas and calls to_json
     {
         py::gil_scoped_acquire gil;
         py::object StringIO = py::module_::import("io").attr("StringIO");
+        auto buffer         = StringIO();
 
-        auto df             = tbl.checkout_obj();
-        auto sliced_columns = df.attr("loc")[pybind11::make_tuple(df.attr("index"), tbl.get_column_names())];
+        auto df = tbl.checkout_obj();
+        try
+        {
+            auto sliced_columns = df.attr("loc")[pybind11::make_tuple(df.attr("index"), tbl.get_column_names())];
 
-        auto buffer     = StringIO();
-        py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true, "index"_a = include_index_col);
-        sliced_columns.attr("to_json")(buffer, **kwargs);
-        buffer.attr("seek")(0);
-
+            py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true);
+            sliced_columns.attr("to_json")(buffer, **kwargs);
+            buffer.attr("seek")(0);
+        } catch (std::exception& ex)
+        {
+            LOG(ERROR) << ex.what();
+            tbl.return_obj(std::move(df));
+            throw ex;
+        }
         tbl.return_obj(std::move(df));
 
         py::object pyresults = buffer.attr("getvalue")();
