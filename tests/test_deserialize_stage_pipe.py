@@ -43,7 +43,7 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
     else:
         input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    # We want to force the Python impl of the file source
+    # We want to force the Python impl of the file source (work-around for issue #690)
     py_file_source = FileSourceStage(config, filename=input_file)
     py_file_source._build_cpp_node = lambda *a, **k: False
 
@@ -82,7 +82,7 @@ def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_inde
     else:
         input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    # We want to force the Python impl of the file source
+    # We want to force the Python impl of the file source (work-around for issue #690)
     py_file_source = FileSourceStage(config, filename=input_file)
     py_file_source._build_cpp_node = lambda *a, **k: False
 
