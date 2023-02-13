@@ -237,7 +237,7 @@ MutableTableInfo::~MutableTableInfo()
 {
     if (m_checked_out_ref_count >= 0)
     {
-        LOG(FATAL) << "Checked out python object was not returned before MutableTableInfo went out of scope";
+        LOG(ERROR) << "Checked out python object was not returned before MutableTableInfo went out of scope";
     }
 }
 
