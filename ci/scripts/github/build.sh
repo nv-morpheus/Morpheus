@@ -26,6 +26,7 @@ gcc --version
 g++ --version
 cmake --version
 ninja --version
+sccache --version
 
 rapids-logger "Configuring cmake for Morpheus"
 git submodule update --init --recursive
