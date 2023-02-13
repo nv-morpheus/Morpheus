@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, NVIDIA CORPORATION.
+# Copyright (c) 2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import pickle
 import typing
 
 import cupy as cp
@@ -21,28 +22,27 @@ import numpy as np
 import typing_utils
 from mrc.core import operators as ops
 
-import morpheus._lib.stages as _stages
 from morpheus._lib.common import FilterSource
-from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.messages.multi_response_message import MultiResponseMessage
+from morpheus.utils.module_ids import FILTER_DETECTIONS
+from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_stage("filter")
-class FilterDetectionsStage(SinglePortStage):
+@register_module(FILTER_DETECTIONS, MODULE_NAMESPACE)
+def filter_detections(builder: mrc.Builder):
     """
     Filter message by a classification threshold.
 
-    The FilterDetectionsStage is used to filter rows from a dataframe based on values in a tensor using a specified
+    The FilterDetections is used to filter rows from a dataframe based on values in a tensor using a specified
     criteria. Rows in the `meta` dataframe are excluded if their associated value in the `probs` array is less than or
     equal to `threshold`.
 
-    This stage can operate in two different modes set by the `copy` argument.
+    This module can operate in two different modes set by the `copy` argument.
     When the `copy` argument is `True` (default), rows that meet the filter criteria are copied into a new dataframe.
     When `False` sliced views are used instead.
 
@@ -63,64 +63,30 @@ class FilterDetectionsStage(SinglePortStage):
 
     Parameters
     ----------
-    c : `morpheus.config.Config`
-        Pipeline configuration instance.
-    threshold : float
-        Threshold to classify, default is 0.5.
-    copy : bool
-        Whether or not to perform a copy.
-    filter_source : `from morpheus._lib.common.FilterSource`, case_sensitive = False
-        Indicate if we are operating on is an output tensor or a field in the DataFrame.
-        Choosing `Auto` will default to `TENSOR` when the incoming message contains output tensorts and `DATAFRAME`
-        otherwise.
-    field_name : str
-        Name of the tensor or DataFrame column to use as the filter criteria
+    builder : mrc.Builder
+        mrc Builder object.
     """
 
-    def __init__(self,
-                 c: Config,
-                 threshold: float = 0.5,
-                 copy: bool = True,
-                 filter_source: FilterSource = FilterSource.Auto,
-                 field_name: str = "probs"):
-        super().__init__(c)
+    config = get_module_config(FILTER_DETECTIONS, builder)
 
-        # Probability to consider a detection
-        self._threshold = threshold
-        self._copy = copy
+    field_name = config.get("field_name", "probs")
+    threshold = config.get("threshold", 0.5)
+    filter_source = config.get("filter_source", "AUTO")
+    copy = config.get("copy", True)
 
-        self._filter_source = filter_source
-        self._field_name = field_name
+    schema_config = config.get("schema", None)
+    input_message_type = schema_config.get("input_message_type", None)
+    encoding = schema_config.get("encoding", None)
 
-    @property
-    def name(self) -> str:
-        return "filter"
+    message_type = pickle.loads(bytes(input_message_type, encoding))
 
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Accepted input types for this stage are returned.
+    def find_detections(x: MultiMessage, filter_source) -> typing.Union[cp.ndarray, np.ndarray]:
 
-        Returns
-        -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiMessage`, ]
-            Accepted input types.
-
-        """
-        if self._filter_source == FilterSource.TENSOR:
-            return (MultiResponseMessage, )
-        else:
-            return (MultiMessage, )
-
-    def supports_cpp_node(self):
-        # Enable support by default
-        return True
-
-    def _find_detections(self, x: MultiMessage) -> typing.Union[cp.ndarray, np.ndarray]:
         # Determind the filter source
-        if self._filter_source == FilterSource.TENSOR:
-            filter_source = x.get_output(self._field_name)
+        if filter_source == FilterSource.TENSOR:
+            filter_source = x.get_output(field_name)
         else:
-            filter_source = x.get_meta(self._field_name).values
+            filter_source = x.get_meta(field_name).values
 
         if (isinstance(filter_source, np.ndarray)):
             array_mod = np
@@ -128,7 +94,7 @@ class FilterDetectionsStage(SinglePortStage):
             array_mod = cp
 
         # Get per row detections
-        detections = (filter_source > self._threshold)
+        detections = (filter_source > threshold)
 
         if (len(detections.shape) > 1):
             detections = detections.any(axis=1)
@@ -138,7 +104,7 @@ class FilterDetectionsStage(SinglePortStage):
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(self, x: MultiMessage) -> MultiMessage:
+    def filter_copy(x: MultiMessage) -> MultiMessage:
         """
         This function uses a threshold value to filter the messages.
 
@@ -156,10 +122,11 @@ class FilterDetectionsStage(SinglePortStage):
         if x is None:
             return None
 
-        true_pairs = self._find_detections(x)
+        true_pairs = find_detections(x, filter_source)
+
         return x.copy_ranges(true_pairs)
 
-    def filter_slice(self, x: MultiMessage) -> typing.List[MultiMessage]:
+    def filter_slice(x: MultiMessage) -> typing.List[MultiMessage]:
         """
         This function uses a threshold value to filter the messages.
 
@@ -177,7 +144,7 @@ class FilterDetectionsStage(SinglePortStage):
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
         output_list = []
         if x is not None:
-            true_pairs = self._find_detections(x)
+            true_pairs = find_detections(x, filter_source)
             for pair in true_pairs:
                 pair = tuple(pair.tolist())
                 if ((pair[1] - pair[0]) > 0):
@@ -185,35 +152,28 @@ class FilterDetectionsStage(SinglePortStage):
 
         return output_list
 
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        (parent_node, message_type) = input_stream
-        if self._filter_source == FilterSource.Auto:
-            if (typing_utils.issubtype(message_type, MultiResponseMessage)):
-                self._filter_source = FilterSource.TENSOR
-            else:
-                self._filter_source = FilterSource.DATAFRAME
-
-            logger.debug(
-                f"filter_source was set to Auto, infering a filter source of {self._filter_source} based on an input "
-                "message type of {message_type}")
-
-        if self._build_cpp_node():
-            node = _stages.FilterDetectionsStage(builder,
-                                                 self.unique_name,
-                                                 self._threshold,
-                                                 self._copy,
-                                                 self._filter_source,
-                                                 self._field_name)
+    if filter_source == "AUTO":
+        if (typing_utils.issubtype(message_type, MultiResponseMessage)):
+            filter_source = FilterSource.TENSOR
         else:
-            if self._copy:
-                node = builder.make_node(self.unique_name, self.filter_copy)
-            else:
-                # Convert list back to individual messages
-                def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-                    obs.pipe(ops.map(self.filter_slice), ops.flatten()).subscribe(sub)
+            filter_source = FilterSource.DATAFRAME
 
-                node = builder.make_node_full(self.unique_name, flatten_fn)
+        logger.debug(f"filter_source was set to Auto, infering a filter source of {filter_source} based on an input "
+                     "message type of {message_type}")
+    elif filter_source == "DATAFRAME":
+        filter_source = FilterSource.DATAFRAME
+    else:
+        raise Exception("Unknown filter source: {}".format(filter_source))
 
-        builder.make_edge(parent_node, node)
+    if copy:
+        node = builder.make_node(FILTER_DETECTIONS, filter_copy)
+    else:
+        # Convert list back to individual messages
+        def flatten_fn(obs: mrc.Observable, sub: mrc.Subscriber):
+            obs.pipe(ops.map(filter_slice), ops.flatten()).subscribe(sub)
 
-        return node, message_type
+        node = builder.make_node_full(FILTER_DETECTIONS, flatten_fn)
+
+    # Register input and output port for a module.
+    builder.register_module_input("input", node)
+    builder.register_module_output("output", node)

@@ -68,7 +68,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     disable_pre_filtering : bool, default = False
         Enabling this option will skip pre-filtering of json messages. This is only useful when inputs are known to be
         valid json.
-    auto_offset_reset : `AutoOffsetReset`, default = AutoOffsetReset.LATEST, case_sensitive = False
+    auto_offset_reset : `AutoOffsetReset`, case_sensitive = False
         Sets the value for the configuration option 'auto.offset.reset'. See the kafka documentation for more
         information on the effects of each value."
     stop_after: int, default = 0
@@ -86,7 +86,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
                  poll_interval: str = "10millis",
                  disable_commit: bool = False,
                  disable_pre_filtering: bool = False,
-                 auto_offset_reset: AutoOffsetReset = "latest",
+                 auto_offset_reset: AutoOffsetReset = AutoOffsetReset.LATEST,
                  stop_after: int = 0,
                  async_commits: bool = True):
         super().__init__(c)

@@ -24,9 +24,7 @@
 // prevent from moving this into the third-party section
 #include <experimental/iterator>  // for make_ostream_joiner
 // clang-format on
-#include <functional>   // for multiplies
 #include <iterator>     // for begin, end
-#include <numeric>      // for accumulate
 #include <ostream>      // for operator<<, ostream, stringstream
 #include <string>       // for char_traits, string
 #include <type_traits>  // for decay_t
@@ -62,7 +60,7 @@ void TensorUtils::set_contiguous_stride(const std::vector<TensorIndex>& shape, s
 bool TensorUtils::has_contiguous_stride(const std::vector<TensorIndex>& shape, const shape_type_t& stride)
 {
     DCHECK_EQ(shape.size(), stride.size());
-    auto count = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+    auto count = get_elem_count(shape);
     return (shape[0] * stride[0] == count);
 }
 
