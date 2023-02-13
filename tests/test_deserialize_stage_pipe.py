@@ -51,7 +51,8 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
     pipe.set_source(py_file_source)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, include_index_col=False))
+    pipe.add_stage(
+        WriteToFileStage(config, filename=out_file, overwrite=False, include_index_col=(output_type == "json")))
     pipe.run()
 
     assert_path_exists(out_file)
@@ -91,7 +92,8 @@ def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_inde
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, include_index_col=False))
+    pipe.add_stage(
+        WriteToFileStage(config, filename=out_file, overwrite=False, include_index_col=(output_type == "json")))
     pipe.run()
 
     assert_path_exists(out_file)
