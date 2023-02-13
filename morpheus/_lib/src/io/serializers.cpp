@@ -144,7 +144,7 @@ std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
 {
     if (!include_index_col)
     {
-        LOG(WARNING) << "Ignoring include_index_col=false as this isn't supported by CuDF";
+        LOG(WARNING) << "Ignoring include_index_col=false as this isn't supported by cuDF";
     }
 
     std::string results;
