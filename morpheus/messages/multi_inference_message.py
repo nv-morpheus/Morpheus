@@ -55,7 +55,7 @@ def get_input(instance, name: str):
         If input name does not exist in message container.
     """
     try:
-        return instance.get_tensors()[name]
+        return instance.get_tensor(name)
     except KeyError:
         raise AttributeError
 
@@ -75,9 +75,8 @@ def set_input(instance, name: str, value):
         Value to set for input.
     """
     # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-    tensors = instance.get_tensors()
-    tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-    instance.set_tensors(tensors)
+    tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+    instance.set_tensor(name, tensor)
 
 
 @dataclasses.dataclass(init=False)
@@ -196,10 +195,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
         self.__dict__ = d
 
     def __getattr__(self, name: str) -> typing.Any:
-        try:
-            return self.get_input(name)
-        except KeyError:
-            raise AttributeError
+        return self.get_input(name)
 
     def get_input(self, name: str):
         """
@@ -217,11 +213,10 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
         Raises
         ------
-        KeyError
+        AttributeError
             When no matching input tensor exists.
         """
-        tensors = self.memory.get_tensors()
-        return tensors[name][self.offset:self.offset + self.count, :]
+        return self.memory.get_input(name)[self.offset:self.offset + self.count, :]
 
     def get_slice(self, start, stop):
         """

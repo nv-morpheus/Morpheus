@@ -49,7 +49,7 @@ def get_output(instance: "ResponseMemory", name: str):
 
     """
     try:
-        return instance.get_tensors()[name]
+        return instance.get_tensor(name)
     except KeyError:
         raise AttributeError
 
@@ -70,9 +70,8 @@ def set_output(instance: "ResponseMemory", name: str, value):
     """
 
     # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-    tensors = instance.get_tensors()
-    tensors[name] = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-    instance.set_tensors(tensors)
+    tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+    instance.set_tensor(name, tensor)
 
 
 @dataclasses.dataclass(init=False)
@@ -99,7 +98,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
             If input name does not exist in message container.
         """
         try:
-            return self.get_tensors()[name]
+            return self.get_tensor(name)
         except KeyError:
             raise AttributeError
 
@@ -179,10 +178,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
         return {key: self.get_output(key) for key in tensors.keys()}
 
     def __getattr__(self, name: str) -> typing.Any:
-        try:
-            return self.get_output(name)
-        except KeyError:
-            raise AttributeError
+        return self.get_output(name)
 
     def get_output(self, name: str):
         """
@@ -199,8 +195,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
             Inference output.
 
         """
-        tensors = self.memory.get_tensors()
-        return tensors[name][self.offset:self.offset + self.count, :]
+        return self.memory.get_output(name)[self.offset:self.offset + self.count, :]
 
     def copy_output_ranges(self, ranges, mask=None):
         """

@@ -62,7 +62,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
     def set_tensors(self, tensors):
         """
         Overwrite the tensors stored by this instance. If the length of the tensors has changed, then the `count`
-        properte should also be updated.
+        property should also be updated.
 
         Parameters
         ----------
@@ -70,3 +70,36 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
             Collection of tensors uniquely identified by a name.
         """
         self._tensors = tensors
+
+    def get_tensor(self, name):
+        """
+        Get the Tensor stored in the TensorMemory container identified by `name`.
+
+        Parameters
+        ----------
+        name : str
+            Tensor key name.
+
+        Returns
+        -------
+        cupy.ndarray
+            Tensor.
+
+        Raises
+        ------
+        KeyError
+            When no matching tensor exists.
+        """
+        return self._tensors[name]
+
+    def set_tensor(self, name, tensor):
+        """
+        Update the tensor identified by `name`. If the length of the tensor has changed, then the `count`
+        property should also be updated.
+
+        Parameters
+        ----------
+        tensors : typing.Dict[str, cupy.ndarray]
+            Collection of tensors uniquely identified by a name.
+        """
+        self._tensors[name] = tensor
