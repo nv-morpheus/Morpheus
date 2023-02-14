@@ -26,6 +26,8 @@ filterwarnings = [
    'ignore:Warning the df property returns a copy, please use the copy_dataframe method or the mutable_dataframe context manager to modify the DataFrame in-place instead.',
 ]
 
+testpaths = ["tests"]
+
 addopts = "--benchmark-disable"
 
 [tool.yapfignore]
