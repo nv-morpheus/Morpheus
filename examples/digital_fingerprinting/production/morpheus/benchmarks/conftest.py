@@ -45,10 +45,11 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
         output_json["machine_info"]["gpu_" + str(i)]["temperature"] = f"{gpu.temperature} C"
         output_json["machine_info"]["gpu_" + str(i)]["uuid"] = gpu.uuid
 
-    line_count = 0
-    byte_count = 0
-
     for bench in output_json['benchmarks']:
+
+        line_count = 0
+        byte_count = 0
+
         if "file_path" in PIPELINES_CONF[bench["name"]]:
             source_file = PIPELINES_CONF[bench["name"]]["file_path"]
             source_file = path.join(curr_dir, source_file)
