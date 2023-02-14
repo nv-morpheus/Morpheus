@@ -17,11 +17,11 @@
 
 #include "morpheus/objects/dev_mem_info.hpp"
 
+#include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
+
 #include <glog/logging.h>  // for DCHECK
 
 #include <cstdint>     // for uint8_t
-#include <functional>  // for multiplies
-#include <numeric>     // for accumulate
 #include <utility>     // for move
 
 namespace morpheus {
@@ -50,7 +50,7 @@ std::size_t DevMemInfo::bytes() const
 
 std::size_t DevMemInfo::count() const
 {
-    return std::accumulate(m_shape.begin(), m_shape.end(), 1, std::multiplies<>());
+    return TensorUtils::get_elem_count(m_shape);
 }
 
 std::size_t DevMemInfo::offset_bytes() const

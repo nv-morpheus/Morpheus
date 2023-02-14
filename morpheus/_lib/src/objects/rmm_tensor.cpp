@@ -21,7 +21,7 @@
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/tensor_util.hpp"  // for get_element_stride
+#include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count & get_element_stride
 
 #include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>            // for DCHECK_LT, COMPACT_GOOGLE_LOG_FATAL, DCHECK, DCHECK_EQ, LogMessageFatal
@@ -34,7 +34,7 @@
 #include <functional>  // for multiplies, plus, minus
 #include <iterator>    // for back_insert_iterator, back_inserter
 #include <memory>
-#include <numeric>  // for accumulate, transform_reduce
+#include <numeric>  // for transform_reduce
 #include <ostream>  // needed for logging
 #include <vector>
 
@@ -83,7 +83,7 @@ DType RMMTensor::dtype() const
 
 std::size_t RMMTensor::count() const
 {
-    return std::accumulate(m_shape.begin(), m_shape.end(), 1, std::multiplies<>());
+    return TensorUtils::get_elem_count(m_shape);
 }
 
 std::size_t RMMTensor::bytes() const
