@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import dataclasses
+import logging
 import typing
 
 import cupy as cp
@@ -23,6 +24,9 @@ from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.tensor_memory import TensorMemory
+from morpheus.utils.logger import deprecated_message_warning
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(init=False)
@@ -84,6 +88,10 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
         Probabilities tensor
     """
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
+
+    def __new__(cls, *args, **kwargs):
+        deprecated_message_warning(logger, cls, ResponseMemory)
+        return super(ResponseMemory, cls).__new__(cls, *args, **kwargs)
 
     def __init__(self, count, probs):
         super().__init__(count, tensors={'probs': probs})
@@ -265,15 +273,33 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
 
         return self.get_output("probs")
 
+    def __new__(cls, *args, **kwargs):
+        deprecated_message_warning(logger, cls, MultiResponseMessage)
+        return super(MultiResponseMessage, cls).__new__(cls, *args, **kwargs)
+
 
 @dataclasses.dataclass
-class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
+class MultiResponseAEMessage(MultiResponseMessage, cpp_class=None):
     """
     A stronger typed version of `MultiResponseProbsMessage` that is used for inference workloads that return a
     probability array. Helps ensure the proper outputs are set and eases debugging.
     """
 
     user_id: str = None
+
+    @property
+    def probs(self):
+        """
+        Probabilities of prediction.
+
+        Returns
+        -------
+        cupy.ndarray
+            probabilities
+
+        """
+
+        return self.get_output("probs")
 
     def copy_ranges(self, ranges):
         """
