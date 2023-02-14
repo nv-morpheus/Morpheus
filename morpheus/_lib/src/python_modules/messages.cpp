@@ -157,7 +157,17 @@ PYBIND11_MODULE(messages, m)
              py::return_value_policy::move)
         .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
-    py::class_<InferenceMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
+    py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
+        .def(py::init<>(&TensorMemoryInterfaceProxy::init),
+             py::arg("count"),
+             py::arg("tensors") = CupyUtil::py_tensor_map_t())
+        .def_readonly("count", &TensorMemory::count)
+        .def("get_tensors", &TensorMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
+        .def("set_tensors", &TensorMemoryInterfaceProxy::set_tensors)
+        .def("get_tensor", &TensorMemoryInterfaceProxy::get_tensor, py::return_value_policy::move)
+        .def("set_tensor", &TensorMemoryInterfaceProxy::set_tensor);
+
+    py::class_<InferenceMemory, TensorMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
         .def(py::init<>(&InferenceMemoryInterfaceProxy::init),
              py::arg("count"),
              py::arg("tensors") = CupyUtil::py_tensor_map_t())
@@ -246,17 +256,7 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("offset", &MultiInferenceFILMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
 
-    py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
-        .def(py::init<>(&TensorMemoryInterfaceProxy::init),
-             py::arg("count"),
-             py::arg("tensors") = CupyUtil::py_tensor_map_t())
-        .def_readonly("count", &TensorMemory::count)
-        .def("get_tensors", &TensorMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
-        .def("set_tensors", &TensorMemoryInterfaceProxy::set_tensors)
-        .def("get_tensor", &TensorMemoryInterfaceProxy::get_tensor, py::return_value_policy::move)
-        .def("set_tensor", &TensorMemoryInterfaceProxy::set_tensor);
-
-    py::class_<ResponseMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
+    py::class_<ResponseMemory, TensorMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def(py::init<>(&ResponseMemoryInterfaceProxy::init),
              py::arg("count"),
              py::arg("tensors") = CupyUtil::py_tensor_map_t())
