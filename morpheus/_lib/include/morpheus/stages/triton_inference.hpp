@@ -51,11 +51,11 @@ namespace morpheus {
  * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
  */
 class InferenceClientStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
 {
   public:
     using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -85,7 +85,7 @@ class InferenceClientStage
     /**
      * TODO(Documentation)
      */
-    bool is_default_grpc_port(std::string &server_url);
+    bool is_default_grpc_port(std::string& server_url);
 
     /**
      * TODO(Documentation)

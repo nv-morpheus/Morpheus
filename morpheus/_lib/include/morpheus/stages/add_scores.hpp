@@ -48,12 +48,11 @@ namespace morpheus {
  * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
  * Label indexes will be looked up in the idx2label property.
  */
-class AddScoresStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-                                                     std::shared_ptr<MultiResponseProbsMessage>>
+class AddScoresStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseMessage>, std::shared_ptr<MultiResponseMessage>>
 {
   public:
-    using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseMessage>, std::shared_ptr<MultiResponseMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -64,7 +63,9 @@ class AddScoresStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiRespon
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
      */
-    AddScoresStage(std::size_t num_class_labels, std::map<std::size_t, std::string> idx2label);
+    AddScoresStage(std::size_t num_class_labels,
+                   std::map<std::size_t, std::string> idx2label,
+                   std::string tensor_name = "probs");
 
     /**
      * TODO(Documentation)
@@ -73,6 +74,7 @@ class AddScoresStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiRespon
 
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
+    std::string m_tensor_name;
 };
 
 /****** AddScoresStageInterfaceProxy******************/
@@ -93,7 +95,8 @@ struct AddScoresStageInterfaceProxy
     static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(mrc::segment::Builder& builder,
                                                                       const std::string& name,
                                                                       std::size_t num_class_labels,
-                                                                      std::map<std::size_t, std::string> idx2label);
+                                                                      std::map<std::size_t, std::string> idx2label,
+                                                                      std::string tensor_name);
 };
 
 #pragma GCC visibility pop

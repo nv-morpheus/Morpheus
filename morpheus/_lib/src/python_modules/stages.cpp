@@ -68,7 +68,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("name"),
              py::arg("threshold"),
              py::arg("num_class_labels"),
-             py::arg("idx2label"));
+             py::arg("idx2label"),
+             py::arg("tensor_name") = "probs");
 
     py::class_<mrc::segment::Object<AddScoresStage>,
                mrc::segment::ObjectProperties,
@@ -77,7 +78,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("builder"),
              py::arg("name"),
              py::arg("num_class_labels"),
-             py::arg("idx2label"));
+             py::arg("idx2label"),
+             py::arg("tensor_name") = "probs");
 
     py::class_<mrc::segment::Object<DeserializeStage>,
                mrc::segment::ObjectProperties,

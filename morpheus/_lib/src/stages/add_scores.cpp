@@ -39,10 +39,13 @@
 namespace morpheus {
 // Component public implementations
 // ************ AddScoresStage **************************** //
-AddScoresStage::AddScoresStage(std::size_t num_class_labels, std::map<std::size_t, std::string> idx2label) :
+AddScoresStage::AddScoresStage(std::size_t num_class_labels,
+                               std::map<std::size_t, std::string> idx2label,
+                               std::string tensor_name) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_num_class_labels(num_class_labels),
-  m_idx2label(std::move(idx2label))
+  m_idx2label(std::move(idx2label)),
+  m_tensor_name(std::move(tensor_name))
 {
     CHECK(m_idx2label.size() <= m_num_class_labels) << "idx2label should represent a subset of the class_labels";
 }
@@ -52,7 +55,7 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
-                const auto& probs = x->get_probs();
+                const auto& probs = x->get_output(m_tensor_name);
                 const auto& shape = probs.get_shape();
 
                 CHECK(shape.size() == 2 && shape[1] == m_num_class_labels)
@@ -90,8 +93,10 @@ std::shared_ptr<mrc::segment::Object<AddScoresStage>> AddScoresStageInterfacePro
     mrc::segment::Builder& builder,
     const std::string& name,
     std::size_t num_class_labels,
-    std::map<std::size_t, std::string> idx2label)
+    std::map<std::size_t, std::string> idx2label,
+    std::string tensor_name)
 {
-    return builder.construct_object<AddScoresStage>(name, num_class_labels, std::move(idx2label));
+    return builder.construct_object<AddScoresStage>(
+        name, num_class_labels, std::move(idx2label), std::move(tensor_name));
 }
 }  // namespace morpheus

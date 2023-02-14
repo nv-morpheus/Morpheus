@@ -48,12 +48,11 @@ namespace morpheus {
  * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
  * inference stage. Label indexes will be looked up in the idx2label property.
  */
-class AddClassificationsStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-                                                              std::shared_ptr<MultiResponseProbsMessage>>
+class AddClassificationsStage
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseMessage>, std::shared_ptr<MultiResponseMessage>>
 {
   public:
-    using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+    using base_t = mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseMessage>, std::shared_ptr<MultiResponseMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;
@@ -67,7 +66,8 @@ class AddClassificationsStage : public mrc::pymrc::PythonNode<std::shared_ptr<Mu
      */
     AddClassificationsStage(float threshold,
                             std::size_t num_class_labels,
-                            std::map<std::size_t, std::string> idx2label);
+                            std::map<std::size_t, std::string> idx2label,
+                            std::string tensor_name = "probs");
 
   private:
     /**
@@ -78,6 +78,7 @@ class AddClassificationsStage : public mrc::pymrc::PythonNode<std::shared_ptr<Mu
     float m_threshold;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
+    std::string m_tensor_name;
 };
 
 /****** AddClassificationStageInterfaceProxy******************/
@@ -102,7 +103,8 @@ struct AddClassificationStageInterfaceProxy
         const std::string& name,
         float threshold,
         std::size_t num_class_labels,
-        std::map<std::size_t, std::string> idx2label);
+        std::map<std::size_t, std::string> idx2label,
+        std::string tensor_name);
 };
 
 #pragma GCC visibility pop
