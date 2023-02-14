@@ -25,82 +25,52 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.tensor_memory import TensorMemory
 
 
-def get_output(instance: "ResponseMemory", name: str):
-    """
-    Getter function used with DataClassProp for getting inference output from message containers derived
-    from ResponseMemory.
-
-    Parameters
-    ----------
-    instance : `ResponseMemory`
-        Message container holding tensors.
-    name : str
-        Key used to do lookup in tensors dict of message container.
-
-    Returns
-    -------
-    cupy.ndarray
-        Tensors corresponding to name.
-
-    Raises
-    ------
-    AttributeError
-        If output name does not exist in message container.
-
-    """
-    try:
-        return instance.get_tensor(name)
-    except KeyError:
-        raise AttributeError
-
-
-def set_output(instance: "ResponseMemory", name: str, value):
-    """
-    Setter function used with DataClassProp for setting output in message containers derived
-    from ResponseMemory.
-
-    Parameters
-    ----------
-    instance : `ResponseMemory`
-        Message container holding tensors.
-    name : str
-        Key used to do lookup in tensors dict of message container.
-    value : cupy.ndarray
-        Value to set for input.
-    """
-
-    # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-    tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-    instance.set_tensor(name, tensor)
-
-
 @dataclasses.dataclass(init=False)
 class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
     """Output memory block holding the results of inference."""
 
     def get_output(self, name: str):
         """
-        Return the output tensor specified by `name`.
+        Getter function used with DataClassProp for getting inference output from message containers derived
+        from ResponseMemory.
 
         Parameters
         ----------
         name : str
-            Name of output tensor.
+            Key used to do lookup in tensors dict of message container.
 
         Returns
         -------
         cupy.ndarray
-            Tensor corresponding to name.
+            Tensors corresponding to name.
 
         Raises
         ------
         AttributeError
-            If input name does not exist in message container.
+            If output name does not exist in message container.
+
         """
         try:
             return self.get_tensor(name)
         except KeyError:
             raise AttributeError
+
+    def set_output(self, name: str, value):
+        """
+        Setter function used with DataClassProp for setting output in message containers derived
+        from ResponseMemory.
+
+        Parameters
+        ----------
+        name : str
+            Key used to do lookup in tensors dict of message container.
+        value : cupy.ndarray
+            Value to set for input.
+        """
+
+        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
+        tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+        self.set_tensor(name, tensor)
 
 
 @dataclasses.dataclass(init=False)
@@ -113,7 +83,7 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
     probs : cupy.ndarray
         Probabilities tensor
     """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_output, set_output)
+    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
 
     def __init__(self, count, probs):
         super().__init__(count, tensors={'probs': probs})
@@ -136,7 +106,7 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
         Explainability Dataframe, for each feature a column will exist with a name in the form of: `{feature}_z_loss`
         containing the loss z-score along with `max_abs_z` and `mean_abs_z` columns
     """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_output, set_output)
+    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
     user_id = ""
     explain_df = None
 

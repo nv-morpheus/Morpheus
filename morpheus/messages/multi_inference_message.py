@@ -31,52 +31,46 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
     hold generic tensor data in cupy arrays.
     """
 
+    def get_input(self, name: str):
+        """
+        Getter function used with DataClassProp for getting inference input from message containers derived
+        from InferenceMemory.
 
-def get_input(instance, name: str):
-    """
-    Getter function used with DataClassProp for getting inference input from message containers derived
-    from InferenceMemory.
+        Parameters
+        ----------
+        name : str
+            Key used to do lookup in inputs dict of message container.
 
-    Parameters
-    ----------
-    instance : `InferenceMemory`
-        Message container holding inputs.
-    name : str
-        Key used to do lookup in inputs dict of message container.
+        Returns
+        -------
+        cupy.ndarray
+            Inputs corresponding to name.
 
-    Returns
-    -------
-    cupy.ndarray
-        Inputs corresponding to name.
+        Raises
+        ------
+        AttributeError
+            If input name does not exist in message container.
+        """
+        try:
+            return self.get_tensor(name)
+        except KeyError:
+            raise AttributeError
 
-    Raises
-    ------
-    AttributeError
-        If input name does not exist in message container.
-    """
-    try:
-        return instance.get_tensor(name)
-    except KeyError:
-        raise AttributeError
+    def set_input(self, name: str, value):
+        """
+        Setter function used with DataClassProp for setting inference input in message containers derived
+        from InferenceMemory.
 
-
-def set_input(instance, name: str, value):
-    """
-    Setter function used with DataClassProp for setting inference input in message containers derived
-    from InferenceMemory.
-
-    Parameters
-    ----------
-    instance : `InferenceMemory`
-        Message container holding inputs.
-    name : str
-        Key used to do lookup in inputs dict of message container.
-    value : cupy.ndarray
-        Value to set for input.
-    """
-    # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-    tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-    instance.set_tensor(name, tensor)
+        Parameters
+        ----------
+        name : str
+            Key used to do lookup in inputs dict of message container.
+        value : cupy.ndarray
+            Value to set for input.
+        """
+        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
+        tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
+        self.set_tensor(name, tensor)
 
 
 @dataclasses.dataclass(init=False)
@@ -96,9 +90,9 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
     """
-    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
-    input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
+    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
+    input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
 
     def __init__(self, count, input_ids, input_mask, seq_ids):
         super().__init__(count, tensors={'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
@@ -119,8 +113,8 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
     """
-    input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
+    input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
 
     def __init__(self, count, input__0, seq_ids):
         super().__init__(count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
@@ -140,8 +134,8 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
     """
 
-    input: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(get_input, set_input)
+    input: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
 
     def __init__(self, count, input, seq_ids):
         super().__init__(count, tensors={'input': input, 'seq_ids': seq_ids})
