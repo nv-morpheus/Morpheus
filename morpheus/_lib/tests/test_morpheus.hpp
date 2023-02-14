@@ -19,12 +19,16 @@
 
 #include <glog/logging.h>  // IWYU pragma: keep
 #include <gtest/gtest.h>   // IWYU pragma: keep
+#include <pybind11/embed.h>
 
 #include <filesystem>
 
-#define TEST_CLASS(name)                      \
-    class Test##name : public ::testing::Test \
-    {}
+
+#define TEST_CLASS(name)                                                             \
+    class __attribute__((visibility("default"))) Test##name : public ::testing::Test \
+    {                                                                                \
+        void SetUp() override {}                                                     \
+    }
 
 namespace morpheus::test {
 

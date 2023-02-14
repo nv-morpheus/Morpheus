@@ -39,8 +39,8 @@ void MessageControl::message(const nlohmann::json& message)
 std::shared_ptr<MessageMeta> MessageControl::payload()
 {
     // TODO(Devin): do something else
-    auto temp = std::move(m_data);
-    m_data    = nullptr;
+    auto temp = std::move(m_payload);
+    m_payload = nullptr;
 
     return temp;
 }
@@ -48,7 +48,7 @@ std::shared_ptr<MessageMeta> MessageControl::payload()
 void MessageControl::payload(const std::shared_ptr<MessageMeta>& payload)
 {
     // TODO(Devin): can we just overwrite?
-    m_data = payload;
+    m_payload = payload;
 }
 
 /*** Proxy Implementations ***/

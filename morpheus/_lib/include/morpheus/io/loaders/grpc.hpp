@@ -20,6 +20,7 @@
 #include "morpheus/io/data_loader.hpp"
 
 namespace morpheus {
+#pragma GCC visibility push(default)
 /**
  * @brief Very simple raw data loader that takes payload data on the control message and returns it
  *
@@ -32,4 +33,5 @@ class GRPCDataLoader : public Loader
 
     std::shared_ptr<MessageMeta> load(MessageControl& message) override;
 };
+#pragma GCC visibility pop
 }  // namespace morpheus

@@ -29,7 +29,6 @@ DataLoader::DataLoader() : m_loaders{} {}
 std::shared_ptr<MessageMeta> DataLoader::load(MessageControl& control_message)
 {
     auto payload = control_message.message();
-
     if (payload.contains("loader_id"))
     {
         // TODO
@@ -44,9 +43,9 @@ std::shared_ptr<MessageMeta> DataLoader::load(MessageControl& control_message)
     throw std::runtime_error("No loader registered for message: " + control_message.message().dump());
 }
 
-void DataLoader::register_loader(const std::string& loader_id, std::shared_ptr<Loader> loader)
+void DataLoader::register_loader(const std::string& loader_id, std::shared_ptr<Loader> loader, bool overwrite)
 {
-    if (m_loaders.find(loader_id) != m_loaders.end())
+    if (!overwrite and m_loaders.find(loader_id) != m_loaders.end())
     {
         throw std::runtime_error("Loader already registered with id: " + loader_id);
     }
@@ -56,11 +55,16 @@ void DataLoader::register_loader(const std::string& loader_id, std::shared_ptr<L
     m_loaders[loader_id] = std::move(loader);
 }
 
-void DataLoader::remove_loader(const std::string& loader_id)
+void DataLoader::remove_loader(const std::string& loader_id, bool throw_if_not_found)
 {
     if (m_loaders.find(loader_id) == m_loaders.end())
     {
-        throw std::runtime_error("Loader not registered with id: " + loader_id);
+        if (throw_if_not_found)
+        {
+            throw std::runtime_error("Loader not registered with id: " + loader_id);
+        }
+
+        return;
     }
 
     VLOG(2) << "Removing data loader: " << loader_id << std::endl;

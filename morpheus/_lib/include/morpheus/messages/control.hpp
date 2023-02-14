@@ -49,7 +49,7 @@ class MessageControl
     std::shared_ptr<MessageMeta> payload();
 
   private:
-    std::shared_ptr<MessageMeta> m_data{};
+    std::shared_ptr<MessageMeta> m_payload{nullptr};
     nlohmann::json m_message{};
 };
 

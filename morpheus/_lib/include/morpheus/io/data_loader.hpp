@@ -25,6 +25,7 @@
 
 namespace morpheus {
 
+#pragma GCC visibility push(default)
 class Loader
 {
   public:
@@ -42,11 +43,12 @@ class DataLoader
     // Probably a MessageMeta?
     std::shared_ptr<MessageMeta> load(MessageControl& control_message);
 
-    void register_loader(const std::string& loader_id, std::shared_ptr<Loader> loader);
+    void register_loader(const std::string& loader_id, std::shared_ptr<Loader> loader, bool overwrite = true);
 
-    void remove_loader(const std::string& loader_id);
+    void remove_loader(const std::string& loader_id, bool throw_if_not_found = true);
 
   private:
     std::map<std::string, std::shared_ptr<Loader>> m_loaders{};
 };
+#pragma GCC visibility pop
 }  // namespace morpheus
