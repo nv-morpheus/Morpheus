@@ -87,24 +87,25 @@ get_payload_size(rte_ipv4_hdr* packet_l3, rte_tcp_hdr* packet_l4)
 __device__ bool
 is_http_packet(uint8_t* payload, uint8_t payload_size)
 {
-  if (payload_size < 3)
-  {
-    return false;
-  }
+  return true;
+  // if (payload_size < 3)
+  // {
+  //   return false;
+  // }
 
-  if (payload[0] == 'G' and payload[1] == 'E' and payload[2] == 'T') {
-    return true;
-  }
+  // if (payload[0] == 'G' and payload[1] == 'E' and payload[2] == 'T') {
+  //   return true;
+  // }
 
-  if (payload_size < 4) {
-    return false;
-  }
+  // if (payload_size < 4) {
+  //   return false;
+  // }
 
-  if (payload[0] == 'P' and payload[1] == 'O' and payload[2] == 'S' and payload[3] == 'T') {
-    return true;
-  }
+  // if (payload[0] == 'P' and payload[1] == 'O' and payload[2] == 'S' and payload[3] == 'T') {
+  //   return true;
+  // }
 
-  return false;
+  // return false;
 }
 
 __global__ void _packet_receive_kernel(

@@ -106,8 +106,8 @@ build_rxq_pipe(
 	rxq_pipe_cfg.match = &rxq_match;
 	rxq_pipe_cfg.port = port;
 
-	rxq_match.out_src_ip.type = DOCA_FLOW_IP4_ADDR;
-	rxq_match.out_src_ip.ipv4_addr = source_ip_filter;
+	// rxq_match.out_src_ip.type = DOCA_FLOW_IP4_ADDR;
+	// rxq_match.out_src_ip.ipv4_addr = source_ip_filter;
 	rxq_match.out_l4_type = IPPROTO_TCP;
 
 	rss_queues[0] = dpdk_rxq_idx;
