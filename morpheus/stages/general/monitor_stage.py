@@ -193,7 +193,7 @@ class MonitorStage(SinglePortStage):
 
         self._determine_count_fn = determine_count_fn
 
-        self._log_level = log_level
+        self._log_level = log_level.value
         self._enabled = None  # defined on first call to _is_enabled
 
     @property
