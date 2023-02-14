@@ -19,10 +19,12 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <algorithm>  // IWYU pragma: keep
-#include <iosfwd>     // for ostream
-#include <string>     // for string
-#include <vector>     // for vector
+#include <algorithm>   // IWYU pragma: keep
+#include <functional>  // for multiplies
+#include <iosfwd>      // for ostream
+#include <numeric>     // for accumulate
+#include <string>      // for string
+#include <vector>      // for vector
 // <algorithm> is needed for copy, min_element & transform
 
 namespace morpheus {
@@ -105,6 +107,19 @@ struct TensorUtils
         });
 
         return tensor_stride;
+    }
+
+    /**
+     * @brief Compute the number of elements in a tensor based on the shape
+     *
+     * @tparam IndexT
+     * @param shape
+     * @return IndexT
+     */
+    template <typename IndexT>
+    static inline IndexT get_elem_count(const std::vector<IndexT>& shape)
+    {
+        return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
     }
 };
 
