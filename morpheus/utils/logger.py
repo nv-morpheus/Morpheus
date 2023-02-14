@@ -25,8 +25,8 @@ import click
 import mrc
 from tqdm import tqdm
 
-
 LogLevels = Enum('LogLevels', logging._nameToLevel)
+
 
 class TqdmLoggingHandler(logging.Handler):
     """
