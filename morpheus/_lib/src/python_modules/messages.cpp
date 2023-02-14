@@ -188,6 +188,8 @@ PYBIND11_MODULE(messages, m)
         .def("set_tensors", &InferenceMemoryNLPInterfaceProxy::set_tensors)
         .def("get_tensor", &InferenceMemoryNLPInterfaceProxy::get_tensor, py::return_value_policy::move)
         .def("set_tensor", &InferenceMemoryNLPInterfaceProxy::set_tensor)
+        .def("get_input", &InferenceMemoryNLPInterfaceProxy::get_tensor, py::return_value_policy::move)
+        .def("set_input", &InferenceMemoryNLPInterfaceProxy::set_tensor)
         .def_property("input_ids",
                       &InferenceMemoryNLPInterfaceProxy::get_input_ids,
                       &InferenceMemoryNLPInterfaceProxy::set_input_ids)
@@ -207,6 +209,8 @@ PYBIND11_MODULE(messages, m)
         .def("set_tensors", &InferenceMemoryFILInterfaceProxy::set_tensors)
         .def("get_tensor", &InferenceMemoryFILInterfaceProxy::get_tensor, py::return_value_policy::move)
         .def("set_tensor", &InferenceMemoryFILInterfaceProxy::set_tensor)
+        .def("get_input", &InferenceMemoryFILInterfaceProxy::get_tensor, py::return_value_policy::move)
+        .def("set_set", &InferenceMemoryFILInterfaceProxy::set_tensor)
         .def_property("input__0",
                       &InferenceMemoryFILInterfaceProxy::get_input__0,
                       &InferenceMemoryFILInterfaceProxy::set_input__0)
@@ -277,8 +281,8 @@ PYBIND11_MODULE(messages, m)
         .def("set_tensor", &ResponseMemoryProbsInterfaceProxy::set_tensor)
         .def("get_output", &ResponseMemoryProbsInterfaceProxy::get_tensor, py::return_value_policy::move)
         .def("set_output", &ResponseMemoryProbsInterfaceProxy::set_tensor)
-        .def("get_probs", &ResponseMemoryProbsInterfaceProxy::get_probs, py::return_value_policy::move)
-        .def("set_probs", &ResponseMemoryProbsInterfaceProxy::set_probs);
+        .def_property(
+            "probs", &ResponseMemoryProbsInterfaceProxy::get_probs, &ResponseMemoryProbsInterfaceProxy::set_probs);
 
     py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(m, "MultiResponseMessage")
         .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),
