@@ -26,6 +26,7 @@ mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 cd ${MORPHEUS_ROOT}
+git submodule update --init --recursive
 
 # For non-gpu hosts nproc will correctly report the number of cores we are able to use
 # On a GPU host however nproc will report the total number of cores and PARALLEL_LEVEL
