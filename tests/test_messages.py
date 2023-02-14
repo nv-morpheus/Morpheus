@@ -26,7 +26,7 @@ from morpheus import messages
 from morpheus.messages import tensor_memory
 
 
-@mock.patch('morpheus.utils.logger.deprecated_message_warning')
+@mock.patch('morpheus.messages.multi_response_message.deprecated_message_warning')
 def check_message(python_type: type,
                   cpp_type: type,
                   should_be_cpp: bool,
