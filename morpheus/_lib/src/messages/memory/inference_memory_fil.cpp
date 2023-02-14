@@ -83,13 +83,11 @@ std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(cudf:
 
 pybind11::object InferenceMemoryFILInterfaceProxy::get_input__0(InferenceMemoryFIL& self)
 {
-    std::cerr << "get_input__0\n";
     return CupyUtil::tensor_to_cupy(self.get_input__0());
 }
 
 void InferenceMemoryFILInterfaceProxy::set_input__0(InferenceMemoryFIL& self, pybind11::object cupy_values)
 {
-    std::cerr << "set_input__0\n";
     self.set_input__0(CupyUtil::cupy_to_tensor(cupy_values));
 }
 
