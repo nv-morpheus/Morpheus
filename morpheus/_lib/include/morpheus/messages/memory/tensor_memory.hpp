@@ -118,7 +118,40 @@ struct TensorMemoryInterfaceProxy
      */
     static CupyUtil::py_tensor_map_t get_tensors(TensorMemory& self);
 
+    /**
+     * @brief Set the tensors object converting a map of CuPy arrays to Tensors
+     *
+     * @param self
+     * @param tensors
+     */
     static void set_tensors(TensorMemory& self, CupyUtil::py_tensor_map_t tensors);
+
+    /**
+     * @brief Get the output tensor
+     *
+     * @param self
+     * @param name
+     * @return const TensorObject&
+     */
+    static const TensorObject& get_tensor_object(TensorMemory& self, const std::string& name);
+
+    /**
+     * @brief Get the tensor object identified by `name`
+     *
+     * @param self
+     * @param name
+     * @return pybind11::object
+     * @throws pybind11::key_error When no matching tensor exists.
+     */
+    static pybind11::object get_tensor(TensorMemory& self, const std::string name);
+
+    /**
+     * @brief Set the tensor object identified by `name`
+     *
+     * @param self
+     * @param cupy_tensor
+     */
+    static void set_tensor(TensorMemory& self, const std::string name, const pybind11::object& cupy_tensor);
 };
 
 #pragma GCC visibility pop

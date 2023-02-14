@@ -72,7 +72,7 @@ class ResponseMemory : public TensorMemory
  * @brief Interface proxy, used to insulate python bindings.
  *
  */
-struct ResponseMemoryInterfaceProxy
+struct ResponseMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize a ResponseMemory object, and return a shared pointer to the result. Each array in
@@ -83,27 +83,6 @@ struct ResponseMemoryInterfaceProxy
      * @return std::shared_ptr<ResponseMemory>
      */
     static std::shared_ptr<ResponseMemory> init(std::size_t count, CupyUtil::py_tensor_map_t tensors);
-
-    /**
-     * @brief Get the output object
-     *
-     * @param self
-     * @param name
-     * @return pybind11::object
-     */
-    static pybind11::object get_output(ResponseMemory& self, const std::string& name);
-
-    /**
-     * @brief Get the output tensor object
-     *
-     * @param self
-     * @param name
-     * @return TensorObject
-     */
-    static TensorObject get_output_tensor(ResponseMemory& self, const std::string& name);
-
-    static CupyUtil::py_tensor_map_t get_tensors(ResponseMemory& self);
-    static void set_tensors(ResponseMemory& self, CupyUtil::py_tensor_map_t tensors);
 };
 #pragma GCC visibility pop
 

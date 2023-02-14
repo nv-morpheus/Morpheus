@@ -69,7 +69,7 @@ class InferenceMemory : public TensorMemory
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct InferenceMemoryInterfaceProxy
+struct InferenceMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize a InferenceMemory object, and return a shared pointer to the result. Each array in
@@ -80,17 +80,6 @@ struct InferenceMemoryInterfaceProxy
      * @return std::shared_ptr<InferenceMemory>
      */
     static std::shared_ptr<InferenceMemory> init(std::size_t count, CupyUtil::py_tensor_map_t tensors);
-
-    /**
-     * @brief Get the count object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t get_count(InferenceMemory& self);
-
-    static CupyUtil::py_tensor_map_t get_tensors(InferenceMemory& self);
-    static void set_tensors(InferenceMemory& self, CupyUtil::py_tensor_map_t tensors);
 };
 #pragma GCC visibility pop
 

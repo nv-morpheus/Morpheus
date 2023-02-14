@@ -79,7 +79,7 @@ class ResponseMemoryProbs : public ResponseMemory
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
-struct ResponseMemoryProbsInterfaceProxy
+struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize a ResponseMemoryProbs object, and return a shared pointer to the result
@@ -91,28 +91,21 @@ struct ResponseMemoryProbsInterfaceProxy
     static std::shared_ptr<ResponseMemoryProbs> init(cudf::size_type count, pybind11::object probs);
 
     /**
-     * @brief Get messages count in the response memory probs object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(ResponseMemoryProbs& self);
-
-    /**
-     * @brief Get the response memory probs object
+     * @brief Get the response memory probs object (alias for `get_tensor("probs")`)
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_probs(ResponseMemoryProbs& self);
 
     /**
-     * @brief Set the response memory probs object
+     * @brief Set the response memory probs object (alias for `set_tensor("probs", cupy_value)`)
      *
      * @param self
      * @param cupy_values
      */
-    static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values);
+    static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_value);
 };
 #pragma GCC visibility pop
 

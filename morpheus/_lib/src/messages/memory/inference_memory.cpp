@@ -40,19 +40,4 @@ std::shared_ptr<InferenceMemory> InferenceMemoryInterfaceProxy::init(std::size_t
     return std::make_shared<InferenceMemory>(count, std::move(CupyUtil::cupy_to_tensors(tensors)));
 }
 
-std::size_t InferenceMemoryInterfaceProxy::get_count(InferenceMemory& self)
-{
-    return self.count;
-}
-
-CupyUtil::py_tensor_map_t InferenceMemoryInterfaceProxy::get_tensors(InferenceMemory& self)
-{
-    return CupyUtil::tensors_to_cupy(self.tensors);
-}
-
-void InferenceMemoryInterfaceProxy::set_tensors(InferenceMemory& self, CupyUtil::py_tensor_map_t tensors)
-{
-    self.tensors = std::move(CupyUtil::cupy_to_tensors(tensors));
-}
-
 }  // namespace morpheus

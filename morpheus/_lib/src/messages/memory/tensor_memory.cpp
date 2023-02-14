@@ -17,6 +17,10 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 
+#include "morpheus/utilities/cupy_util.hpp"
+
+#include <pybind11/pybind11.h>  // for key_error & object
+
 #include <string>
 #include <vector>
 
@@ -63,6 +67,29 @@ CupyUtil::py_tensor_map_t TensorMemoryInterfaceProxy::get_tensors(TensorMemory& 
 void TensorMemoryInterfaceProxy::set_tensors(TensorMemory& self, CupyUtil::py_tensor_map_t tensors)
 {
     self.tensors = std::move(CupyUtil::cupy_to_tensors(tensors));
+}
+
+const TensorObject& TensorMemoryInterfaceProxy::get_tensor_object(TensorMemory& self, const std::string& name)
+{
+    const auto tensor_itr = self.tensors.find(name);
+    if (tensor_itr == self.tensors.end())
+    {
+        throw pybind11::key_error{};
+    }
+
+    return tensor_itr->second;
+}
+
+pybind11::object TensorMemoryInterfaceProxy::get_tensor(TensorMemory& self, const std::string name)
+{
+    return CupyUtil::tensor_to_cupy(TensorMemoryInterfaceProxy::get_tensor_object(self, name));
+}
+
+void TensorMemoryInterfaceProxy::set_tensor(TensorMemory& self,
+                                            const std::string name,
+                                            const pybind11::object& cupy_tensor)
+{
+    self.tensors.insert_or_assign(name, CupyUtil::cupy_to_tensor(cupy_tensor));
 }
 
 }  // namespace morpheus

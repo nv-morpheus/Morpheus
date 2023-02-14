@@ -93,7 +93,7 @@ class InferenceMemoryFIL : public InferenceMemory
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
-struct InferenceMemoryFILInterfaceProxy
+struct InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryFIL object, and return a shared pointer to the result
@@ -107,23 +107,6 @@ struct InferenceMemoryFILInterfaceProxy
     static std::shared_ptr<InferenceMemoryFIL> init(cudf::size_type count,
                                                     pybind11::object input__0,
                                                     pybind11::object seq_ids);
-
-    /**
-     * Get messages count in the inference memory instance
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(InferenceMemoryFIL& self);
-
-    /**
-     * Return the requested tensor for a given name
-     *
-     * @param self
-     * @param name Tensor name
-     * @return TensorObject
-     */
-    static TensorObject get_tensor(InferenceMemoryFIL& self, const std::string& name);
 
     /**
      * @brief Returns the 'input__0' as cupy array

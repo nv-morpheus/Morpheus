@@ -102,7 +102,7 @@ class InferenceMemoryNLP : public InferenceMemory
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct InferenceMemoryNLPInterfaceProxy
+struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryNLP object, and return a shared pointer to the result
@@ -118,14 +118,6 @@ struct InferenceMemoryNLPInterfaceProxy
                                                     pybind11::object input_ids,
                                                     pybind11::object input_mask,
                                                     pybind11::object seq_ids);
-
-    /**
-     * Get messages count in the inference memory object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(InferenceMemoryNLP& self);
 
     /**
      * @brief : Returns token-ids for each string padded with 0s to max_length as python object

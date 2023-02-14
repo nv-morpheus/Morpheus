@@ -104,11 +104,6 @@ std::shared_ptr<InferenceMemoryNLP> InferenceMemoryNLPInterfaceProxy::init(cudf:
                                                 std::move(CupyUtil::cupy_to_tensor(seq_ids)));
 }
 
-std::size_t InferenceMemoryNLPInterfaceProxy::count(InferenceMemoryNLP& self)
-{
-    return self.count;
-}
-
 pybind11::object InferenceMemoryNLPInterfaceProxy::get_input_ids(InferenceMemoryNLP& self)
 {
     return CupyUtil::tensor_to_cupy(self.get_input_ids());

@@ -66,11 +66,6 @@ std::shared_ptr<ResponseMemoryProbs> ResponseMemoryProbsInterfaceProxy::init(cud
     return std::make_shared<ResponseMemoryProbs>(count, std::move(CupyUtil::cupy_to_tensor(probs)));
 }
 
-std::size_t ResponseMemoryProbsInterfaceProxy::count(ResponseMemoryProbs& self)
-{
-    return self.count;
-}
-
 pybind11::object ResponseMemoryProbsInterfaceProxy::get_probs(ResponseMemoryProbs& self)
 {
     return CupyUtil::tensor_to_cupy(self.get_probs());
