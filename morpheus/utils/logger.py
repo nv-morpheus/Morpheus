@@ -218,3 +218,10 @@ def deprecated_stage_warning(logger, cls, name):
                     "It has no effect and acts as a pass through stage."),
                    cls.__name__,
                    name)
+
+
+def deprecated_message_warning(logger, cls, new_cls_name):
+    """
+    Log a warning about a deprecated message
+    """
+    logger.warning(("The '%s' message has been deprecated in favor of '%s'. "), cls.__name__, new_cls_name)

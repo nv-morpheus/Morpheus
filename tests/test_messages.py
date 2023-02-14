@@ -15,6 +15,7 @@
 
 import importlib
 import os
+from unittest import mock
 
 import cupy as cp
 import pytest
@@ -25,7 +26,14 @@ from morpheus import messages
 from morpheus.messages import tensor_memory
 
 
-def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp_class: bool, args: tuple):
+@mock.patch('morpheus.utils.logger.deprecated_message_warning')
+def check_message(python_type: type,
+                  cpp_type: type,
+                  should_be_cpp: bool,
+                  no_cpp_class: bool,
+                  args: tuple,
+                  is_deprecated: bool,
+                  mock_deprecated_fn: mock.MagicMock):
     instance = python_type(*args)
 
     # Check that the C++ type is set in the class
@@ -39,72 +47,89 @@ def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp
     expected_class = cpp_type if should_be_cpp and cpp_type is not None else python_type
     assert instance.__class__ is expected_class
 
+    if is_deprecated:
+        mock_deprecated_fn.assert_called_once()
+    else:
+        mock_deprecated_fn.assert_not_called()
+
 
 def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 
-    check_message(messages.MessageMeta, _messages.MessageMeta, should_be_cpp, no_cpp_class, (None, ))
+    check_message(messages.MessageMeta, _messages.MessageMeta, should_be_cpp, no_cpp_class, (None, ), False)
 
     # UserMessageMeta doesn't contain a C++ impl, so we should
     # always received the python impl
-    check_message(messages.UserMessageMeta, None, should_be_cpp, no_cpp_class, (None, None))
+    check_message(messages.UserMessageMeta, None, should_be_cpp, no_cpp_class, (None, None), False)
 
-    check_message(messages.MultiMessage, _messages.MultiMessage, should_be_cpp, no_cpp_class, (None, 0, 1))
+    check_message(messages.MultiMessage, _messages.MultiMessage, should_be_cpp, no_cpp_class, (None, 0, 1), False)
 
-    check_message(tensor_memory.TensorMemory, _messages.TensorMemory, should_be_cpp, no_cpp_class, (1, ))
-    check_message(messages.InferenceMemory, _messages.InferenceMemory, should_be_cpp, no_cpp_class, (1, ))
+    check_message(tensor_memory.TensorMemory, _messages.TensorMemory, should_be_cpp, no_cpp_class, (1, ), False)
+    check_message(messages.InferenceMemory, _messages.InferenceMemory, should_be_cpp, no_cpp_class, (1, ), False)
 
     cp_array = cp.zeros((1, 2))
 
     check_message(messages.InferenceMemoryNLP,
                   _messages.InferenceMemoryNLP,
                   should_be_cpp,
-                  no_cpp_class, (1, cp_array, cp_array, cp_array))
+                  no_cpp_class, (1, cp_array, cp_array, cp_array),
+                  False)
 
     check_message(messages.InferenceMemoryFIL,
                   _messages.InferenceMemoryFIL,
                   should_be_cpp,
-                  no_cpp_class, (1, cp_array, cp_array))
+                  no_cpp_class, (1, cp_array, cp_array),
+                  False)
 
     # No C++ impl, should always get the Python class
-    check_message(messages.InferenceMemoryAE, None, should_be_cpp, no_cpp_class, (1, cp_array, cp_array))
+    check_message(messages.InferenceMemoryAE, None, should_be_cpp, no_cpp_class, (1, cp_array, cp_array), False)
 
     check_message(messages.MultiInferenceMessage,
                   _messages.MultiInferenceMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (None, 0, 1, None, 0, 1),
+                  False)
 
     check_message(messages.MultiInferenceNLPMessage,
                   _messages.MultiInferenceNLPMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (None, 0, 1, None, 0, 1),
+                  False)
 
     check_message(messages.MultiInferenceFILMessage,
                   _messages.MultiInferenceFILMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (None, 0, 1, None, 0, 1),
+                  False)
 
-    check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, (1, ))
+    check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, (1, ), False)
 
     check_message(messages.ResponseMemoryProbs,
                   _messages.ResponseMemoryProbs,
                   should_be_cpp,
-                  no_cpp_class, (1, cp_array))
+                  no_cpp_class, (1, cp_array),
+                  True)
 
     # No C++ impl
-    check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, (1, cp_array))
+    check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, (1, cp_array), False)
 
     check_message(messages.MultiResponseMessage,
                   _messages.MultiResponseMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (None, 0, 1, None, 0, 1),
+                  False)
 
     check_message(messages.MultiResponseProbsMessage,
                   _messages.MultiResponseProbsMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (None, 0, 1, None, 0, 1),
+                  True)
 
     # No C++ impl
-    check_message(messages.MultiResponseAEMessage, None, should_be_cpp, no_cpp_class, (None, 0, 1, None, 0, 1, ''))
+    check_message(messages.MultiResponseAEMessage,
+                  None,
+                  should_be_cpp,
+                  no_cpp_class, (None, 0, 1, None, 0, 1, ''),
+                  False)
 
 
 def test_constructor_cpp(config):
