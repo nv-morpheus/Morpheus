@@ -55,8 +55,8 @@ export DISPLAY_ARTIFACT_URL="${DISPLAY_URL}${ARTIFACT_ENDPOINT}/"
 
 # Set sccache env vars
 export SCCACHE_S3_KEY_PREFIX=morpheus-${NVARCH}
-export SCCACHE_BUCKET=rapids-sccache
-export SCCACHE_REGION="${AWS_DEFAULT_REGION}"
+export SCCACHE_BUCKET=rapids-sccache-east
+export SCCACHE_REGION="us-east-2"
 export SCCACHE_IDLE_TIMEOUT=32768
 #export SCCACHE_LOG=debug
 
