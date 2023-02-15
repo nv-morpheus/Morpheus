@@ -47,15 +47,22 @@ class AddClassificationsStage(SinglePortStage):
         the Config.class_labels property.
     prefix : str, default = ""
         Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
-
+    output_name : str, default = "probs"
+        Name of the output tensor containing the probabilities
     """
 
-    def __init__(self, c: Config, threshold: float = 0.5, labels: typing.List[str] = None, prefix: str = ""):
+    def __init__(self,
+                 c: Config,
+                 threshold: float = 0.5,
+                 labels: typing.List[str] = None,
+                 prefix: str = "",
+                 output_name: str = "probs"):
         super().__init__(c)
 
         self._feature_length = c.feature_length
         self._threshold = threshold
         self._prefix = prefix
+        self._output_name = output_name
         self._class_labels = c.class_labels
         self._labels = labels if labels is not None and len(labels) > 0 else c.class_labels
 
@@ -96,11 +103,13 @@ class AddClassificationsStage(SinglePortStage):
 
     def _add_labels(self, x: MultiResponseProbsMessage):
 
-        if (x.probs.shape[1] != len(self._class_labels)):
-            raise RuntimeError("Label count does not match output of model. Label count: {}, Model output: {}".format(
-                len(self._class_labels), x.probs.shape[1]))
+        probs = x.get_output(self._output_name)
 
-        probs_np = (x.probs > self._threshold).astype(bool).get()
+        if (probs.shape[1] != len(self._class_labels)):
+            raise RuntimeError("Label count does not match output of model. Label count: {}, Model output: {}".format(
+                len(self._class_labels), probs.shape[1]))
+
+        probs_np = (probs > self._threshold).astype(bool).get()
 
         for i, label in self._idx2label.items():
             x.set_meta(label, probs_np[:, i].tolist())
@@ -117,7 +126,8 @@ class AddClassificationsStage(SinglePortStage):
                                                      self.unique_name,
                                                      self._threshold,
                                                      len(self._class_labels),
-                                                     self._idx2label)
+                                                     self._idx2label,
+                                                     output_name=self._output_name)
         else:
             stream = builder.make_node(self.unique_name, self._add_labels)
 

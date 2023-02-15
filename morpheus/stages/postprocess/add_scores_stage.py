@@ -48,17 +48,21 @@ class AddScoresStage(SinglePortStage):
         Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
     probs_type : `morpheus._lib.common.TypeId`, default = "float32"
         Datatype of the scores columns.
+    output_name : str, default = "probs"
+        Name of the output tensor containing the probabilities
     """
 
     def __init__(self,
                  c: Config,
                  labels: typing.List[str] = None,
                  prefix: str = "",
-                 probs_type: TypeId = TypeId.FLOAT32):
+                 probs_type: TypeId = TypeId.FLOAT32,
+                 output_name: str = "probs"):
         super().__init__(c)
 
         self._feature_length = c.feature_length
         self._prefix = prefix
+        self._output_name = output_name
         self._class_labels = c.class_labels
         self._labels = labels if labels is not None and len(labels) > 0 else c.class_labels
 
@@ -98,12 +102,13 @@ class AddScoresStage(SinglePortStage):
         return True
 
     def _add_labels(self, x: MultiResponseProbsMessage):
+        probs = x.get_output(self._output_name)
 
-        if (x.probs.shape[1] != len(self._class_labels)):
+        if (probs.shape[1] != len(self._class_labels)):
             raise RuntimeError("Label count does not match output of model. Label count: {}, Model output: {}".format(
-                len(self._class_labels), x.probs.shape[1]))
+                len(self._class_labels), probs.shape[1]))
 
-        probs_np = x.probs.get()
+        probs_np = probs.get()
 
         for i, label in self._idx2label.items():
             x.set_meta(label, probs_np[:, i].tolist())
@@ -115,7 +120,11 @@ class AddScoresStage(SinglePortStage):
 
         # Convert the messages to rows of strings
         if self._build_cpp_node():
-            stream = _stages.AddScoresStage(builder, self.unique_name, len(self._class_labels), self._idx2label)
+            stream = _stages.AddScoresStage(builder,
+                                            self.unique_name,
+                                            len(self._class_labels),
+                                            self._idx2label,
+                                            output_name=self._output_name)
         else:
             stream = builder.make_node(self.unique_name, self._add_labels)
 

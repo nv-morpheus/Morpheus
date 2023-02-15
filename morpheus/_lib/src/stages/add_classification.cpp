@@ -47,12 +47,12 @@ namespace morpheus {
 AddClassificationsStage::AddClassificationsStage(float threshold,
                                                  std::size_t num_class_labels,
                                                  std::map<std::size_t, std::string> idx2label,
-                                                 std::string tensor_name) :
+                                                 std::string output_name) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_threshold(threshold),
   m_num_class_labels(num_class_labels),
   m_idx2label(std::move(idx2label)),
-  m_tensor_name(std::move(tensor_name))
+  m_output_name(std::move(output_name))
 {
     CHECK(m_idx2label.size() <= m_num_class_labels) << "idx2label should represent a subset of the class_labels";
 }
@@ -62,7 +62,7 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
-                const auto& probs = x->get_output(m_tensor_name);
+                const auto& probs = x->get_output(m_output_name);
                 const auto& shape = probs.get_shape();
 
                 // Depending on the input the stride is given in bytes or elements, convert to elements
@@ -124,10 +124,10 @@ std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> AddClassification
     float threshold,
     std::size_t num_class_labels,
     std::map<std::size_t, std::string> idx2label,
-    std::string tensor_name)
+    std::string output_name)
 {
     auto stage = builder.construct_object<AddClassificationsStage>(
-        name, threshold, num_class_labels, std::move(idx2label), std::move(tensor_name));
+        name, threshold, num_class_labels, std::move(idx2label), std::move(output_name));
 
     return stage;
 }

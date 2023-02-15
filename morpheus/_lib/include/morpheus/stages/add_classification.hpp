@@ -63,11 +63,12 @@ class AddClassificationsStage
      * @param threshold : Threshold to consider true/false for each class
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
+     * @param output_name : Name of the output tensor containing probabilities
      */
     AddClassificationsStage(float threshold,
                             std::size_t num_class_labels,
                             std::map<std::size_t, std::string> idx2label,
-                            std::string tensor_name = "probs");
+                            std::string output_name = "probs");
 
   private:
     /**
@@ -78,7 +79,7 @@ class AddClassificationsStage
     float m_threshold;
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
-    std::string m_tensor_name;
+    std::string m_output_name;
 };
 
 /****** AddClassificationStageInterfaceProxy******************/
@@ -96,6 +97,7 @@ struct AddClassificationStageInterfaceProxy
      * @param threshold : Threshold to consider true/false for each class
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
+     * @param output_name : Name of the output tensor containing probabilities
      * @return std::shared_ptr<mrc::segment::Object<AddClassificationsStage>>
      */
     static std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> init(
@@ -104,7 +106,7 @@ struct AddClassificationStageInterfaceProxy
         float threshold,
         std::size_t num_class_labels,
         std::map<std::size_t, std::string> idx2label,
-        std::string tensor_name);
+        std::string output_name);
 };
 
 #pragma GCC visibility pop

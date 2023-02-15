@@ -62,10 +62,11 @@ class AddScoresStage
      *
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
+     * @param output_name : Name of the output tensor containing probabilities
      */
     AddScoresStage(std::size_t num_class_labels,
                    std::map<std::size_t, std::string> idx2label,
-                   std::string tensor_name = "probs");
+                   std::string output_name = "probs");
 
     /**
      * TODO(Documentation)
@@ -74,7 +75,7 @@ class AddScoresStage
 
     std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
-    std::string m_tensor_name;
+    std::string m_output_name;
 };
 
 /****** AddScoresStageInterfaceProxy******************/
@@ -90,13 +91,14 @@ struct AddScoresStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
+     * @param output_name : Name of the output tensor containing probabilities
      * @return std::shared_ptr<mrc::segment::Object<AddScoresStage>>
      */
     static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(mrc::segment::Builder& builder,
                                                                       const std::string& name,
                                                                       std::size_t num_class_labels,
                                                                       std::map<std::size_t, std::string> idx2label,
-                                                                      std::string tensor_name);
+                                                                      std::string output_name);
 };
 
 #pragma GCC visibility pop

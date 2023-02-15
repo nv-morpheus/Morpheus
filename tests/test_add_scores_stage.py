@@ -48,7 +48,7 @@ def test_constructor(config):
 @pytest.mark.use_python
 def test_add_labels(config):
     mock_message = mock.MagicMock()
-    mock_message.probs = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
+    mock_message.get_output.return_value = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
 
     config.class_labels = ['frogs', 'lizards', 'toads']
 
@@ -62,7 +62,7 @@ def test_add_labels(config):
     ])
 
     wrong_shape = mock.MagicMock()
-    wrong_shape.probs = cp.array([[0.1, 0.5], [0.2, 0.6]])
+    mock_message.get_output.return_value = cp.array([[0.1, 0.5], [0.2, 0.6]])
     pytest.raises(RuntimeError, a._add_labels, wrong_shape)
 
 
