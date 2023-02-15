@@ -138,12 +138,12 @@ def run_pipeline(train_users,
 
     derive_args.init()
 
-    config: Config = generate_ae_config(labels_file="data/columns_ae_azure.txt",
+    config: Config = generate_ae_config(log_type="azure",
                                         userid_column_name="username",
                                         timestamp_column_name="timestamp")
 
     schema_builder = SchemaBuilder(config)
-    schema: Schema = schema_builder.build_azure_schema()
+    schema: Schema = schema_builder.build_schema()
 
     encoding = "latin1"
 
@@ -161,8 +161,8 @@ def run_pipeline(train_users,
             "namespace": MODULE_NAMESPACE,
             "period": "D",
             "sampling_rate_s": sample_rate_s,
-            "start_time": derive_args.start_time,
-            "end_time": derive_args.end_time,
+            "start_time": derive_args.time_fields.start_time,
+            "end_time": derive_args.time_fields.end_time,
             "iso_date_regex_pattern": iso_date_regex_pattern
         },
         FILE_TO_DF: {

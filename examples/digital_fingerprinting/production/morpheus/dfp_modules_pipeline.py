@@ -17,7 +17,9 @@ import typing
 from datetime import datetime
 
 import click
-import dfp.modules.dfp_inference_pipeline  # noqa: F401
+import dfp.modules.dfp_inf  # noqa: F401
+import dfp.modules.dfp_preproc  # noqa: F401
+import dfp.modules.dfp_tra  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
@@ -28,12 +30,29 @@ from dfp.utils.schema_utils import SchemaBuilder
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
-from morpheus.pipeline import LinearPipeline
+from morpheus.pipeline.pipeline import Pipeline
+from morpheus.stages.general.broadcast_stage import BroadcastStage
 from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
 
 
 @click.command()
+@click.option(
+    "--log_type",
+    type=click.Choice(["duo", "azure"], case_sensitive=False),
+    help=(""),
+)
+@click.option(
+    "--pipeline_type",
+    type=click.Choice(["infer", "train", "train_and_infer"], case_sensitive=False),
+    help=(""),
+)
+@click.option(
+    "--train_users",
+    type=click.Choice(["all", "generic", "individual", "none"], case_sensitive=False),
+    help=("Indicates whether or not to train per user or a generic model for all users. "
+          "Selecting none runs the inference pipeline."),
+)
 @click.option(
     "--skip_user",
     multiple=True,
@@ -54,10 +73,16 @@ from morpheus.stages.general.monitor_stage import MonitorStage
     help="The start of the time window, if undefined start_date will be `now()-duration`",
 )
 @click.option(
-    "--duration",
+    "--inference_duration",
     type=str,
     default="1d",
-    help="The duration to run starting from start_time",
+    help="The inference duration to run starting from start_time",
+)
+@click.option(
+    "--training_duration",
+    type=str,
+    default="60d",
+    help="The training duration to run starting from start_time",
 )
 @click.option(
     "--cache_dir",
@@ -90,10 +115,14 @@ from morpheus.stages.general.monitor_stage import MonitorStage
               type=str,
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
-def run_pipeline(skip_user: typing.Tuple[str],
+def run_pipeline(log_type: str,
+                 pipeline_type,
+                 train_users,
+                 skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
                  start_time: datetime,
-                 duration,
+                 inference_duration: str,
+                 training_duration: str,
                  cache_dir,
                  log_level,
                  sample_rate_s,
@@ -102,35 +131,75 @@ def run_pipeline(skip_user: typing.Tuple[str],
     derive_args = DeriveArgs(skip_user,
                              only_user,
                              start_time,
-                             duration,
+                             inference_duration,
+                             training_duration,
                              log_level,
                              cache_dir,
                              sample_rate_s,
+                             log_type,
                              tracking_uri=kwargs["tracking_uri"],
-                             source="azure")
+                             pipeline_type=pipeline_type,
+                             train_users=train_users)
 
     derive_args.init()
 
-    config: Config = generate_ae_config(log_type="azure",
-                                        userid_column_name="username",
-                                        timestamp_column_name="timestamp")
+    config: Config = generate_ae_config(log_type, userid_column_name="username", timestamp_column_name="timestamp")
 
-    schema_builder = SchemaBuilder(config)
+    schema_builder = SchemaBuilder(config, log_type)
     schema: Schema = schema_builder.build_schema()
 
     config_generator = ConfigGenerator(config, derive_args, schema)
 
-    module_conf = config_generator.inf_pipe_module_conf()
+    conf = config_generator.get_conf()
 
-    # Create a linear pipeline object
-    pipeline = LinearPipeline(config)
+    # Create a pipeline object
+    pipeline = Pipeline(config)
 
-    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
+    source_stage = pipeline.add_stage(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the DFP Inference pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_conf, input_port_name="input", output_port_name="output"))
+    preproc_stage = pipeline.add_stage(
+        LinearModulesStage(config, conf.get("preproc"), input_port_name="input", output_port_name="output"))
 
-    pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate", smoothing=0.001))
+    pipeline.add_edge(source_stage, preproc_stage)
+
+    if "training" in conf and "inference" in conf:
+        broadcast_stage = pipeline.add_stage(BroadcastStage(config, output_port_count=2))
+
+        pipeline.add_edge(preproc_stage, broadcast_stage)
+
+        inf_stage = pipeline.add_stage(
+            LinearModulesStage(config, conf.get("inference"), input_port_name="input", output_port_name="output"))
+
+        tra_stage = pipeline.add_stage(
+            LinearModulesStage(config, conf.get("training"), input_port_name="input", output_port_name="output"))
+
+        inf_mntr_stage = pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate",
+                                                         smoothing=0.001))
+        tra_mntr_stage = pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
+
+        pipeline.add_edge(broadcast_stage.output_ports[0], inf_stage)
+        pipeline.add_edge(broadcast_stage.output_ports[1], tra_stage)
+        pipeline.add_edge(inf_stage, inf_mntr_stage)
+        pipeline.add_edge(tra_stage, tra_mntr_stage)
+
+    elif "training" in conf:
+
+        tra_stage = pipeline.add_stage(
+            LinearModulesStage(config, conf.get("training"), input_port_name="input", output_port_name="output"))
+        mntr_stage = pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
+        pipeline.add_edge(preproc_stage, tra_stage)
+        pipeline.add_edge(tra_stage, mntr_stage)
+
+    elif "inference" in conf:
+        inf_stage = pipeline.add_stage(
+            LinearModulesStage(config, conf.get("inference"), input_port_name="input", output_port_name="output"))
+        mntr_stage = pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate", smoothing=0.001))
+        pipeline.add_edge(preproc_stage, inf_stage)
+        pipeline.add_edge(inf_stage, mntr_stage)
+
+    else:
+        raise Exception("Required keys not found in the configuration to trigger the pipeline")
 
     # Run the pipeline
     pipeline.run()

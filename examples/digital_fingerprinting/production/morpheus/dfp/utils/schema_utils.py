@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
+from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
 
@@ -28,7 +28,7 @@ from morpheus.utils.column_info import StringCatColumn
 from morpheus.utils.column_info import create_increment_col
 
 
-@dataclasses.dataclass
+@dataclass
 class Schema:
     source: DataFrameInputSchema
     preprocess: DataFrameInputSchema
@@ -36,10 +36,20 @@ class Schema:
 
 class SchemaBuilder:
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, log_type: str):
         self._config = config
+        self._log_type = log_type
 
-    def build_azure_schema(self) -> Schema:
+    def build_schema(self):
+
+        if self._log_type == "duo":
+            return self._build_duo_schema()
+        elif self._log_type == "azure":
+            return self._build_azure_schema()
+        else:
+            raise Exception("No matching schema found for log type : {}".format(self._log_type))
+
+    def _build_azure_schema(self) -> Schema:
         # Specify the column names to ensure all data is uniform
         source_column_info = [
             DateTimeColumn(name=self._config.ae.timestamp_column_name, dtype=datetime, input_name="time"),
@@ -93,7 +103,7 @@ class SchemaBuilder:
 
         return schema
 
-    def build_duo_schema(self) -> Schema:
+    def _build_duo_schema(self) -> Schema:
 
         # Specify the column names to ensure all data is uniform
         source_column_info = [
