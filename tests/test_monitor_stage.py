@@ -15,6 +15,8 @@
 # limitations under the License.
 
 import inspect
+import logging
+import os
 from unittest import mock
 
 import pytest
@@ -22,13 +24,17 @@ import pytest
 import cudf
 
 from morpheus.messages import MultiMessage
+from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.utils.logger import set_log_level
+from utils import TEST_DIRS
 
 
 def test_constructor(config):
     # Intentionally not making assumptions about the defaults other than they exist
     # and still create a valid stage.
-    m = MonitorStage(config)
+    m = MonitorStage(config, log_level=logging.WARNING)
     assert m.name == "monitor"
 
     # Just ensure that we get a valid non-empty tuple
@@ -50,7 +56,7 @@ def test_constructor(config):
 def test_on_start(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    m = MonitorStage(config)
+    m = MonitorStage(config, log_level=logging.WARNING)
     assert m._progress is None
 
     m.on_start()
@@ -63,7 +69,7 @@ def test_on_start(mock_morph_tqdm, config):
 def test_stop(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    m = MonitorStage(config)
+    m = MonitorStage(config, log_level=logging.WARNING)
     assert m._progress is None
 
     # Calling on_stop is a noop if we are stopped
@@ -79,7 +85,7 @@ def test_stop(mock_morph_tqdm, config):
 def test_refresh(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    m = MonitorStage(config)
+    m = MonitorStage(config, log_level=logging.WARNING)
     assert m._progress is None
 
     m.on_start()
@@ -99,7 +105,7 @@ def test_build_single(mock_morph_tqdm, mock_operators, config):
     mock_segment.make_node_full.return_value = mock_stream
     mock_input = mock.MagicMock()
 
-    m = MonitorStage(config)
+    m = MonitorStage(config, log_level=logging.WARNING)
     m._build_single(mock_segment, mock_input)
     m.on_start()
 
@@ -123,7 +129,7 @@ def test_build_single(mock_morph_tqdm, mock_operators, config):
 
 
 def test_auto_count_fn(config):
-    m = MonitorStage(config)
+    m = MonitorStage(config, log_level=logging.WARNING)
 
     assert m._auto_count_fn(None) is None
     assert m._auto_count_fn([]) is None
@@ -148,7 +154,7 @@ def test_auto_count_fn(config):
 def test_progress_sink(mock_morph_tqdm, config):
     mock_morph_tqdm.return_value = mock_morph_tqdm
 
-    m = MonitorStage(config)
+    m = MonitorStage(config, log_level=logging.WARNING)
     m.on_start()
 
     m._progress_sink(None)
@@ -158,3 +164,31 @@ def test_progress_sink(mock_morph_tqdm, config):
     m._progress_sink(MultiMessage(None, 0, 12))
     assert inspect.isfunction(m._determine_count_fn)
     mock_morph_tqdm.update.assert_called_once_with(n=12)
+
+
+@pytest.mark.usefixtures("reset_loglevel")
+@pytest.mark.parametrize('morpheus_log_level',
+                         [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
+@mock.patch('mrc.Builder.make_node_full')
+@mock.patch('mrc.Builder.make_edge')
+def test_log_level(mock_make_edge, mock_make_node_full, config, morpheus_log_level):
+    """
+    Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
+    """
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+
+    set_log_level(morpheus_log_level)
+    monitor_stage_level = logging.INFO
+
+    should_be_included = (morpheus_log_level <= monitor_stage_level)
+
+    pipe = LinearPipeline(config)
+    pipe.set_source(FileSourceStage(config, filename=input_file))
+
+    ms = MonitorStage(config, log_level=monitor_stage_level)
+
+    pipe.add_stage(ms)
+    pipe.run()
+
+    expected_call_count = 1 if should_be_included else 0
+    assert mock_make_node_full.call_count == expected_call_count

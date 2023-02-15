@@ -486,6 +486,22 @@ def _wrap_set_log_level(log_level: int):
 
 
 @pytest.fixture(scope="function")
+def reset_loglevel():
+    """
+    Fixture restores the log level after running the given test.
+    """
+    import mrc
+
+    from morpheus.utils.logger import set_log_level
+
+    old_level = mrc.logging.get_level()
+
+    yield
+
+    set_log_level(old_level)
+
+
+@pytest.fixture(scope="function")
 def loglevel_debug():
     """
     Sets the logging level to `logging.DEBUG` for this function only.
