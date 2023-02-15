@@ -43,6 +43,17 @@ def test_has_unique_index(config, tmp_path, dup_row):
     assert not meta.has_unique_index()
 
 
+@pytest.mark.parametrize("dup_row", [0, 1, 8, 18, 19])
+def test_replace_non_unique_index(config, tmp_path, dup_row):
+    dup_file = create_df_with_dup_ids(tmp_path, dup_row=dup_row)
+    meta = MessageMeta(read_file_to_df(dup_file, df_type='cudf'))
+    assert not meta.has_unique_index()
+
+    meta.replace_non_unique_index()
+    assert meta.has_unique_index()
+    assert meta.df.index.is_unique
+
+
 def test_mutable_dataframe(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
 
