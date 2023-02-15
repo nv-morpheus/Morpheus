@@ -39,21 +39,19 @@ class DeriveArgs:
                  skip_user: str,
                  only_user: str,
                  start_time: str,
-                 infer_duration: str,
-                 train_duration: str,
-                 log_level: str,
+                 log_level: int,
                  cache_dir: str,
                  sample_rate_s: str,
+                 duration: str,
                  log_type: str,
                  tracking_uri: str,
-                 pipeline_type: str = None,
+                 workload_type: str = None,
                  train_users: str = None):
 
         self._skip_users = list(skip_user)
         self._only_users = list(only_user)
         self._start_time = start_time
-        self._infer_duration = infer_duration
-        self._train_duration = train_duration
+        self._duration = duration
         self._log_level = log_level
         self._train_users = train_users
         self._cache_dir = cache_dir
@@ -61,7 +59,7 @@ class DeriveArgs:
         self._tracking_uri = tracking_uri
         self._sample_rate_s = sample_rate_s
         self._log_type = log_type
-        self._pipeline_type = pipeline_type
+        self._workload_type = workload_type
 
         self._include_generic = None
         self._include_individual = None
@@ -70,11 +68,12 @@ class DeriveArgs:
         self._model_name_formatter = "DFP-%s-{user_id}" % (log_type)
         self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (log_type)
 
-        train_flag = (train_users is not None and train_users != "none")
+        train_flag = (train_users is not None and train_users)
 
-        self._is_training = (train_flag and pipeline_type != "infer")
-        self._is_train_and_infer = (train_flag and pipeline_type == "train_and_infer")
-        self._is_inference = not (self._is_training or self._is_train_and_infer)
+        self._is_training = (train_flag and workload_type != "infer")
+        self._is_train_and_infer = (train_flag and workload_type == "train_and_infer")
+        self._is_inference = not (self._is_training or self._is_train_and_infer or workload_type == "train"
+                                  or workload_type == "train_and_infer")
 
     def verify_init(func):
 
@@ -86,20 +85,8 @@ class DeriveArgs:
         return wrapper
 
     def _configure_logging(self):
-
         configure_logging(log_level=self._log_level)
         logging.getLogger("mlflow").setLevel(self._log_level)
-
-        if (len(self._only_users) > 0 and len(self._only_users) > 0):
-            logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
-
-        logger.info("Running training pipeline with the following options: ")
-        logger.info("Train generic_user: %s", self._include_generic)
-        logger.info("Skipping users: %s", self._skip_users)
-        logger.info("Start Time: %s", self._start_time)
-        logger.info("Training duration: %s", self._train_duration)
-        logger.info("Inference duration: %s", self._infer_duration)
-        logger.info("Cache Dir: %s", self._cache_dir)
 
     @property
     @verify_init
@@ -112,14 +99,8 @@ class DeriveArgs:
         return self._include_generic
 
     @property
-    @verify_init
-    def infer_duration(self):
-        return self._infer_duration
-
-    @property
-    @verify_init
-    def train_duration(self):
-        return self._train_duration
+    def duration(self):
+        return self._duration
 
     @property
     @verify_init
@@ -160,6 +141,10 @@ class DeriveArgs:
         return self._is_training
 
     @property
+    def is_inference(self):
+        return self._is_inference
+
+    @property
     def experiment_name_formatter(self):
         return self._experiment_name_formatter
 
@@ -192,24 +177,29 @@ class DeriveArgs:
         logger.info("Tracking URI: %s", mlflow.get_tracking_uri())
 
     def _set_time_fields(self):
-        if self._is_train_and_infer:
-            logger.info("Inline training is triggered. Ovverriding 'training_duration' with 'inference_duration'.")
-            self._train_duration = self._infer_duration
-            self._time_fields = self._create_time_fields(self._infer_duration)
-        elif self._is_training:
-            self._time_fields = self._create_time_fields(self._train_duration)
-        elif self._is_inference:
-            self._time_fields = self._create_time_fields(self._infer_duration)
+        if self._is_train_and_infer or self._is_training or self._is_inference:
+            self._time_fields = self._create_time_fields(self._duration)
         else:
-            raise Exception("Unable to update time fields.")
+            raise Exception(
+                "Invalid arguments, when --workload_type is 'train' or 'train_and_infer' --train_users must be passed.")
 
     def init(self):
+        self._configure_logging()
         self._set_time_fields()
         self._set_include_generic()
         self._set_include_individual()
-        self._configure_logging()
         self._set_mlflow_tracking_uri()
         self._initialized = True
+
+        if (len(self._only_users) > 0 and len(self._only_users) > 0):
+            logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
+
+        logger.info("Running training pipeline with the following options: ")
+        logger.info("Train generic_user: %s", self._include_generic)
+        logger.info("Skipping users: %s", self._skip_users)
+        logger.info("Start Time: %s", self._start_time)
+        logger.info("Duration: %s", self._duration)
+        logger.info("Cache Dir: %s", self._cache_dir)
 
 
 def pyobj2str(pyobj, encoding):

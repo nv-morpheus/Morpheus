@@ -123,8 +123,8 @@ def dfp_rolling_window(builder: mrc.Builder):
 
             # Otherwise return a new message
             return MultiDFPMessage(meta=DFPMessageMeta(df=train_df, user_id=user_id),
-                                   mess_offset=train_offset,
-                                   mess_count=found_count)
+                                   mess_offset=0,
+                                   mess_count=len(train_df))
 
     def on_data(message: DFPMessageMeta):
 

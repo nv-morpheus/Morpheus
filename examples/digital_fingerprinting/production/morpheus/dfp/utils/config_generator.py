@@ -60,7 +60,7 @@ class ConfigGenerator:
 
         conf = {}
 
-        conf["preproc"] = self.get_preproc_conf()
+        conf["preproc"] = self.preproc_conf()
 
         if self._derive_args.is_train_and_infer:
             conf["training"] = self.train_conf()
@@ -72,7 +72,7 @@ class ConfigGenerator:
 
         return conf
 
-    def get_preproc_conf(self):
+    def preproc_conf(self):
 
         module_conf = {
             "module_id": DFP_PREPROC,
@@ -130,7 +130,7 @@ class ConfigGenerator:
                 "namespace": MODULE_NAMESPACE,
                 "min_history": 1,
                 "min_increment": 0,
-                "max_history": self._derive_args.infer_duration,
+                "max_history": "1d",
                 "cache_dir": self._derive_args.cache_dir,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
@@ -178,7 +178,7 @@ class ConfigGenerator:
                 "module_id": WRITE_TO_FILE,
                 "module_name": "write_to_file",
                 "namespace": MODULE_NAMESPACE,
-                "filename": "dfp_detections_{}.csv".format(self._derive_args.source),
+                "filename": "dfp_detections_{}.csv".format(self._derive_args.log_type),
                 "overwrite": True
             }
         }
@@ -186,6 +186,7 @@ class ConfigGenerator:
         return module_conf
 
     def train_conf(self):
+
         module_conf = {
             "module_id": DFP_TRA,
             "module_name": "dfp_tra",
@@ -196,7 +197,7 @@ class ConfigGenerator:
                 "namespace": MODULE_NAMESPACE,
                 "min_history": 300,
                 "min_increment": 300,
-                "max_history": self._derive_args.train_duration,
+                "max_history": self._derive_args.duration,
                 "cache_dir": self._derive_args.cache_dir,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
@@ -300,7 +301,7 @@ class ConfigGenerator:
                 "namespace": MODULE_NAMESPACE,
                 "min_history": 1,
                 "min_increment": 0,
-                "max_history": self._derive_args.infer_duration,
+                "max_history": "1d",
                 "cache_dir": self._derive_args.cache_dir,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
@@ -403,7 +404,7 @@ class ConfigGenerator:
                 "namespace": MODULE_NAMESPACE,
                 "min_history": 300,
                 "min_increment": 300,
-                "max_history": self._derive_args.train_duration,
+                "max_history": self._derive_args.duration,
                 "cache_dir": self._derive_args.cache_dir,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },

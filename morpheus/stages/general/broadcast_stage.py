@@ -27,11 +27,20 @@ logger = logging.getLogger(__name__)
 
 class BroadcastStage(Stage):
     """
+    Depending on the number of output ports specified, this stage broadcast messages to one or more nodes.
+
+
+    Parameters
+    ----------
+    output_port_count : int
+        Output port count to broad cast messages.
     """
 
     def __init__(self, c: Config, output_port_count: int = 2):
 
         super().__init__(c)
+
+        assert output_port_count > 0
 
         self._create_ports(1, output_port_count)
         self._output_port_count = output_port_count
@@ -62,6 +71,11 @@ class BroadcastStage(Stage):
         """
         return (typing.Any, )
 
+    def _get_broadcast_node(self, builder) -> Broadcast:
+        # Create a broadcast node
+        node = Broadcast(builder, "broadcast")
+        return node
+
     def _build(self, builder: mrc.Builder, in_stream_pairs: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
         assert len(in_stream_pairs) == 1, "Only 1 input supported"
@@ -69,18 +83,15 @@ class BroadcastStage(Stage):
         in_stream_node = in_stream_pairs[0][0]
         output_type = in_stream_pairs[0][1]
 
-        # Create a broadcast node
-        broadcast_node = Broadcast(builder, "broadcast")
-        builder.make_edge(in_stream_node, broadcast_node)
+        node = self._get_broadcast_node(builder)
 
-        if self._output_port_count <= 0:
-            raise ValueError("Output port count must be greater than 0")
+        builder.make_edge(in_stream_node, node)
 
         out_stream_pairs = []
 
         count = 0
         while (count < self._output_port_count):
-            out_stream_pairs.append((broadcast_node, output_type))
+            out_stream_pairs.append((node, output_type))
             count += 1
 
         return out_stream_pairs

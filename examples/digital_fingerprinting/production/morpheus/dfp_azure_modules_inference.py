@@ -56,7 +56,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 @click.option(
     "--duration",
     type=str,
-    default="1d",
+    default="60d",
     help="The duration to run starting from start_time",
 )
 @click.option(
@@ -102,20 +102,20 @@ def run_pipeline(skip_user: typing.Tuple[str],
     derive_args = DeriveArgs(skip_user,
                              only_user,
                              start_time,
-                             duration,
                              log_level,
                              cache_dir,
                              sample_rate_s,
-                             tracking_uri=kwargs["tracking_uri"],
-                             source="azure")
+                             duration,
+                             log_type="azure",
+                             tracking_uri=kwargs["tracking_uri"])
 
     derive_args.init()
 
-    config: Config = generate_ae_config(log_type="azure",
+    config: Config = generate_ae_config(derive_args.log_type,
                                         userid_column_name="username",
                                         timestamp_column_name="timestamp")
 
-    schema_builder = SchemaBuilder(config)
+    schema_builder = SchemaBuilder(config, derive_args.log_type)
     schema: Schema = schema_builder.build_schema()
 
     config_generator = ConfigGenerator(config, derive_args, schema)

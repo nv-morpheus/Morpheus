@@ -111,21 +111,21 @@ def run_pipeline(train_users,
     derive_args = DeriveArgs(skip_user,
                              only_user,
                              start_time,
-                             duration,
                              log_level,
                              cache_dir,
                              sample_rate_s,
+                             duration,
+                             log_type="azure",
                              tracking_uri=kwargs["tracking_uri"],
-                             source="azure",
                              train_users=train_users)
 
     derive_args.init()
 
-    config: Config = generate_ae_config(log_type="azure",
+    config: Config = generate_ae_config(derive_args.log_type,
                                         userid_column_name="username",
                                         timestamp_column_name="timestamp")
 
-    schema_builder = SchemaBuilder(config)
+    schema_builder = SchemaBuilder(config, derive_args.log_type)
     schema: Schema = schema_builder.build_schema()
 
     config_generator = ConfigGenerator(config, derive_args, schema)

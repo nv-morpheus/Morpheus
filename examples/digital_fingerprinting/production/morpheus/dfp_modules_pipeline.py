@@ -40,16 +40,18 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 @click.option(
     "--log_type",
     type=click.Choice(["duo", "azure"], case_sensitive=False),
-    help=(""),
+    required=True,
+    help=("Indicates what type of logs are going to be used in the workload."),
 )
 @click.option(
-    "--pipeline_type",
+    "--workload_type",
     type=click.Choice(["infer", "train", "train_and_infer"], case_sensitive=False),
-    help=(""),
+    required=True,
+    help=("Workload type either inference or training or inference + training"),
 )
 @click.option(
     "--train_users",
-    type=click.Choice(["all", "generic", "individual", "none"], case_sensitive=False),
+    type=click.Choice(["all", "generic", "individual"], case_sensitive=False),
     help=("Indicates whether or not to train per user or a generic model for all users. "
           "Selecting none runs the inference pipeline."),
 )
@@ -73,13 +75,7 @@ from morpheus.stages.general.monitor_stage import MonitorStage
     help="The start of the time window, if undefined start_date will be `now()-duration`",
 )
 @click.option(
-    "--inference_duration",
-    type=str,
-    default="1d",
-    help="The inference duration to run starting from start_time",
-)
-@click.option(
-    "--training_duration",
+    "--duration",
     type=str,
     default="60d",
     help="The training duration to run starting from start_time",
@@ -116,29 +112,27 @@ from morpheus.stages.general.monitor_stage import MonitorStage
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
 def run_pipeline(log_type: str,
-                 pipeline_type,
-                 train_users,
+                 workload_type: str,
+                 train_users: str,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
                  start_time: datetime,
-                 inference_duration: str,
-                 training_duration: str,
-                 cache_dir,
-                 log_level,
-                 sample_rate_s,
+                 duration: str,
+                 cache_dir: str,
+                 log_level: int,
+                 sample_rate_s: int,
                  **kwargs):
 
     derive_args = DeriveArgs(skip_user,
                              only_user,
                              start_time,
-                             inference_duration,
-                             training_duration,
                              log_level,
                              cache_dir,
                              sample_rate_s,
+                             duration,
                              log_type,
                              tracking_uri=kwargs["tracking_uri"],
-                             pipeline_type=pipeline_type,
+                             workload_type=workload_type,
                              train_users=train_users)
 
     derive_args.init()
@@ -194,9 +188,10 @@ def run_pipeline(log_type: str,
     elif "inference" in conf:
         inf_stage = pipeline.add_stage(
             LinearModulesStage(config, conf.get("inference"), input_port_name="input", output_port_name="output"))
-        mntr_stage = pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate", smoothing=0.001))
+        inf_mntr_stage = pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate",
+                                                         smoothing=0.001))
         pipeline.add_edge(preproc_stage, inf_stage)
-        pipeline.add_edge(inf_stage, mntr_stage)
+        pipeline.add_edge(inf_stage, inf_mntr_stage)
 
     else:
         raise Exception("Required keys not found in the configuration to trigger the pipeline")
