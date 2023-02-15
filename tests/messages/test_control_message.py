@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import cudf
 import morpheus.messages as messages
 import morpheus._lib.messages as _messages
 
@@ -50,6 +50,22 @@ def test_control_message_set():
 
     assert "test" in control_message.message()
     assert control_message.message()["test"] == "test_cm"
+
+
+def test_control_message_set_and_get_payload():
+    df = cudf.DataFrame({
+        'col1': [1, 2, 3, 4, 5],
+        'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
+        'col3': ['a', 'b', 'c', 'd', 'e'],
+        'col4': [True, False, True, False, True]
+    })
+    msg = _messages.MessageControl()
+    payload = messages.MessageMeta(df)
+    msg.payload(payload)
+
+    payload2 = msg.payload()
+    assert payload2 is not None
+    assert payload.df == payload2.df
 
 
 if (__name__ == "__main__"):

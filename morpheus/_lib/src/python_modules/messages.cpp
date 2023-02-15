@@ -132,6 +132,11 @@ PYBIND11_MODULE(messages, py_mod)
         .def("message",
              pybind11::overload_cast<MessageControl&, py::dict&>(&ControlMessageProxy::message),
              py::arg("message"),
+             py::return_value_policy::reference_internal)
+        .def(
+            "payload", pybind11::overload_cast<>(&MessageControl::payload), py::return_value_policy::reference_internal)
+        .def("payload",
+             pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&MessageControl::payload),
              py::return_value_policy::reference_internal);
 
     // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
@@ -264,8 +269,7 @@ PYBIND11_MODULE(messages, py_mod)
              &ResponseMemoryInterfaceProxy::get_output_tensor,
              py::return_value_policy::reference_internal);
 
-    py::class_<ResponseMemoryProbs, ResponseMemory, std::shared_ptr<ResponseMemoryProbs>>(py_mod,
-                                                                                          "ResponseMemoryProbs")
+    py::class_<ResponseMemoryProbs, ResponseMemory, std::shared_ptr<ResponseMemoryProbs>>(py_mod, "ResponseMemoryProbs")
         .def(py::init<>(&ResponseMemoryProbsInterfaceProxy::init), py::arg("count"), py::arg("probs"))
         .def_property_readonly("count", &ResponseMemoryProbsInterfaceProxy::count)
         .def_property(

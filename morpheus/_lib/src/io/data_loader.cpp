@@ -36,7 +36,9 @@ std::shared_ptr<MessageMeta> DataLoader::load(MessageControl& control_message)
         auto loader           = m_loaders.find(loader_id);
         if (loader != m_loaders.end())
         {
-            return loader->second->load(control_message);
+            VLOG(5) << "Loading data using loader: " << loader_id
+                    << " for message: " << control_message.message().dump() << std::endl;
+            return std::move(loader->second->load(control_message));
         }
     }
 

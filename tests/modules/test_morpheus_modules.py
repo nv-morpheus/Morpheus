@@ -17,6 +17,9 @@
 import time
 
 import mrc
+import cudf
+import tempfile
+import os
 
 import morpheus._lib.messages as _messages
 import morpheus.modules  # Used to load and register morpheus modules
@@ -53,15 +56,34 @@ def test_get_module():
     module_instance = fn_constructor("ModuleDataLoaderTest", config)
 
 
-def test_init_module():
+packet_count = 5
+packets_received = 0
+
+
+def test_payload_loader_module():
     def init_wrapper(builder: mrc.Builder):
+        df = cudf.DataFrame({
+            'col1': [1, 2, 3, 4, 5],
+            'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
+            'col3': ['a', 'b', 'c', 'd', 'e'],
+            'col4': [True, False, True, False, True]
+        })
+
         def gen_data():
+            global packet_count
             config = {"loader_id": "payload"}
-            for i in range(10):
-                yield messages.MessageControl(config)
+
+            payload = messages.MessageMeta(df)
+            for i in range(packet_count):
+                msg = messages.MessageControl(config)
+                msg.payload(payload)
+
+                yield msg
 
         def on_next(data):
-            pass
+            global packets_received
+            packets_received += 1
+            assert (data.df == df)
 
         def on_error():
             pass
@@ -76,7 +98,8 @@ def test_init_module():
 
         source = builder.make_source("source", gen_data)
 
-        config = {}
+        config = {"loaders": "payload"}
+        # This will unpack the config and forward it's payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
         sink = builder.make_sink("sink", on_next, on_error, on_complete)
@@ -95,9 +118,114 @@ def test_init_module():
     executor.start()
     executor.join()
 
+    assert (packets_received == packet_count)
+
+
+def test_file_loader_module():
+    global packets_received
+    packets_received = 0
+
+    df = cudf.DataFrame({
+        'col1': [1, 2, 3, 4, 5],
+        'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
+        'col3': ['a', 'b', 'c', 'd', 'e'],
+        'col4': [True, False, True, False, True]
+    }, columns=['col1', 'col2', 'col3', 'col4'])
+
+    files = []
+    file_types = ["csv", "parquet", "orc"]
+    for ftype in file_types:
+        _tempfile = tempfile.NamedTemporaryFile(suffix=f".{ftype}", delete=False)
+        filename = _tempfile.name
+
+        if ftype == "csv":
+            df.to_csv(filename, index=False)
+        elif ftype == "parquet":
+            df.to_parquet(filename)
+        elif ftype == "orc":
+            df.to_orc(filename)
+
+        files.append((filename, ftype))
+
+    def init_wrapper(builder: mrc.Builder):
+        def gen_data():
+            global packet_count
+
+            for f in files:
+                # Check with the file type
+                config = {
+                    "loader_id": "file",
+                    "strategy": "aggregate",
+                    "files": [
+                        {
+                            "path": f[0],
+                            "type": f[1]
+                        }
+                    ]
+                }
+                msg = messages.MessageControl(config)
+                yield msg
+
+                # Make sure we can auto-detect the file type
+                config = {
+                    "loader_id": "file",
+                    "strategy": "aggregate",
+                    "files": [
+                        {
+                            "path": f[0],
+                        }
+                    ]
+                }
+                msg = messages.MessageControl(config)
+                yield msg
+
+        def on_next(data):
+            global packets_received
+            packets_received += 1
+            assert (data.df == df)
+
+        def on_error():
+            pass
+
+        def on_complete():
+            pass
+
+        registry = mrc.ModuleRegistry
+
+        fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
+        assert fn_constructor is not None
+
+        source = builder.make_source("source", gen_data)
+
+        config = {"loaders": "file"}
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
+
+        sink = builder.make_sink("sink", on_next, on_error, on_complete)
+
+        builder.make_edge(source, data_loader.input_port("input"))
+        builder.make_edge(data_loader.output_port("output"), sink)
+
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
+
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
+
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+    executor.start()
+    executor.join()
+
+    assert (packets_received == len(files) * 2)
+
+    for f in files:
+        os.remove(f[0])
+
 
 if (__name__ == "__main__"):
     test_contains_namespace()
     test_is_version_compatible()
     test_get_module()
-    test_init_module()
+    test_payload_loader_module()
+    test_file_loader_module()

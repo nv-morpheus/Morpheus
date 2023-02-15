@@ -41,8 +41,6 @@ namespace py = pybind11;
 using namespace morpheus;
 using namespace morpheus::test;
 
-bool TestIO::m_initialized{false};
-
 TEST_F(TestDataLoader, DataLoaderInitializationTest)
 {
     auto data_loader = DataLoader();
