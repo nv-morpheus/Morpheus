@@ -106,15 +106,24 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         -------
         int
             number of messages in the MessageMeta.df.
-
         """
 
         return len(self._df)
 
     def has_unique_index(self) -> bool:
+        """
+        Returns True if the index of the underlying DataFrame is unique
+        Returns
+        -------
+        bool
+        """
         return self._df.index.is_unique
 
     def replace_non_unique_index(self):
+        """
+        Replaces the index in the underlying dataframe if the existing one is not unique.
+        """
+
         if (not self.has_unique_index()):
             # Reset the index preserving the original index in a new column
             with self.mutable_dataframe() as df:

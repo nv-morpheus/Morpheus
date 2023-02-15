@@ -200,6 +200,10 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
      */
     void return_obj(pybind11::object&& obj);
 
+    /**
+     * @brief Replaces the index in the underlying dataframe.
+     *
+     */
     void replace_non_unique_index();
 
   private:
