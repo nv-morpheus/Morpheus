@@ -23,9 +23,8 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -63,7 +62,7 @@ class InferenceWorker:
 
         pass
 
-    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseProbsMessage:
+    def build_output_message(self, x: MultiInferenceMessage) -> MultiResponseMessage:
         """
         Create initial inference response message with result values initialized to zero. Results will be
         set in message as each inference mini-batch is processed.
@@ -75,21 +74,21 @@ class InferenceWorker:
 
         Returns
         -------
-        `morpheus.pipeline.messages.MultiResponseProbsMessage`
+        `morpheus.pipeline.messages.MultiResponseMessage`
             Response message with probabilities calculated from inference results.
         """
 
         dims = self.calc_output_dims(x)
         output_dims = (x.mess_count, *dims[1:])
 
-        memory = ResponseMemoryProbs(count=output_dims[0], probs=cp.zeros(output_dims))
+        memory = ResponseMemory(count=output_dims[0], tensors={'probs': cp.zeros(output_dims)})
 
-        output_message = MultiResponseProbsMessage(meta=x.meta,
-                                                   mess_offset=x.mess_offset,
-                                                   mess_count=x.mess_count,
-                                                   memory=memory,
-                                                   offset=0,
-                                                   count=memory.count)
+        output_message = MultiResponseMessage(meta=x.meta,
+                                              mess_offset=x.mess_offset,
+                                              mess_count=x.mess_count,
+                                              memory=memory,
+                                              offset=0,
+                                              count=memory.count)
         return output_message
 
     @abstractmethod
@@ -217,7 +216,7 @@ class InferenceStage(MultiMessageStage):
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
 
         stream = input_stream[0]
-        out_type = MultiResponseProbsMessage
+        out_type = MultiResponseMessage
 
         def py_inference_fn(obs: mrc.Observable, sub: mrc.Subscriber):
 
@@ -243,7 +242,7 @@ class InferenceStage(MultiMessageStage):
 
                     completion_future = mrc.Future()
 
-                    def set_output_fut(resp: ResponseMemoryProbs, b, batch_future: mrc.Future):
+                    def set_output_fut(resp: ResponseMemory, b, batch_future: mrc.Future):
                         nonlocal outstanding_requests
                         m = self._convert_one_response(memory, b, resp)
 
@@ -344,9 +343,9 @@ class InferenceStage(MultiMessageStage):
         return out_resp
 
     @staticmethod
-    def _convert_response(x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[ResponseMemoryProbs]]):
+    def _convert_response(x: typing.Tuple[typing.List[MultiInferenceMessage], typing.List[ResponseMemory]]):
 
-        # Convert a MultiResponse into a MultiResponseProbsMessage
+        # Convert a MultiInferenceMessage into a MultiResponseMessage
         in_message = x[0]
         out_message = x[1]
 
@@ -356,8 +355,7 @@ class InferenceStage(MultiMessageStage):
         total_mess_count = reduce(lambda y, z: y + z.mess_count, in_message, 0)
 
         # Create a message data to store the entire list
-        memory = ResponseMemoryProbs(count=total_mess_count,
-                                     probs=cp.zeros((total_mess_count, out_message[0].probs.shape[1])))
+        probs = cp.zeros((total_mess_count, out_message[0].get_output('probs').shape[1]))
 
         saved_meta = in_message[0].meta
         saved_offset = in_message[0].mess_offset
@@ -374,7 +372,7 @@ class InferenceStage(MultiMessageStage):
             # Two scenarios:
             if (inf.mess_count == inf.count):
                 # In message and out message have same count. Just use probs as is
-                memory.probs[inf.offset:inf.offset + inf.count, :] = res.probs
+                probs[inf.offset:inf.offset + inf.count, :] = res.get_output('probs')
             else:
                 assert inf.count == res.count
 
@@ -382,21 +380,23 @@ class InferenceStage(MultiMessageStage):
 
                 # Out message has more reponses, so we have to do key based blending of probs
                 for i, idx in enumerate(mess_ids):
-                    memory.probs[idx, :] = cp.maximum(memory.probs[idx, :], res.probs[i, :])
+                    probs[idx, :] = cp.maximum(probs[idx, :], res.get_output('probs')[i, :])
 
             saved_count += inf.mess_count
 
         assert saved_count == total_mess_count, "Did not set every element in output"
 
-        return MultiResponseProbsMessage(meta=saved_meta,
-                                         mess_offset=saved_offset,
-                                         mess_count=saved_count,
-                                         memory=memory,
-                                         offset=0,
-                                         count=memory.count)
+        memory = ResponseMemory(count=total_mess_count, tensors={'probs': probs})
+
+        return MultiResponseMessage(meta=saved_meta,
+                                    mess_offset=saved_offset,
+                                    mess_count=saved_count,
+                                    memory=memory,
+                                    offset=0,
+                                    count=memory.count)
 
     @staticmethod
-    def _convert_one_response(memory: ResponseMemory, inf: MultiInferenceMessage, res: ResponseMemoryProbs):
+    def _convert_one_response(memory: ResponseMemory, inf: MultiInferenceMessage, res: ResponseMemory):
         # Make sure we have a continuous list
         # assert inf.mess_offset == saved_offset + saved_count
 
@@ -410,7 +410,7 @@ class InferenceStage(MultiMessageStage):
             assert seq_count == res.count
 
             # In message and out message have same count. Just use probs as is
-            probs[seq_offset:seq_offset + seq_count, :] = res.probs
+            probs[seq_offset:seq_offset + seq_count, :] = res.get_output('probs')
         else:
             assert inf.count == res.count
 
@@ -418,11 +418,11 @@ class InferenceStage(MultiMessageStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                probs[idx, :] = cp.maximum(probs[idx, :], res.probs[i, :])
+                probs[idx, :] = cp.maximum(probs[idx, :], res.get_output('probs')[i, :])
 
-        return MultiResponseProbsMessage(meta=inf.meta,
-                                         mess_offset=inf.mess_offset,
-                                         mess_count=inf.mess_count,
-                                         memory=memory,
-                                         offset=inf.offset,
-                                         count=inf.count)
+        return MultiResponseMessage(meta=inf.meta,
+                                    mess_offset=inf.mess_offset,
+                                    mess_count=inf.mess_count,
+                                    memory=memory,
+                                    offset=inf.offset,
+                                    count=inf.count)

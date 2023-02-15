@@ -21,7 +21,7 @@ import morpheus._lib.stages as _stages
 from morpheus._lib.common import TypeId
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -91,17 +91,17 @@ class AddScoresStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseProbsMessage`, ]
+        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ]
             Accepted input types.
 
         """
-        return (MultiResponseProbsMessage, )
+        return (MultiResponseMessage, )
 
     def supports_cpp_node(self):
         # Enable support by default
         return True
 
-    def _add_labels(self, x: MultiResponseProbsMessage):
+    def _add_labels(self, x: MultiResponseMessage):
         probs = x.get_output(self._output_name)
 
         if (probs.shape[1] != len(self._class_labels)):

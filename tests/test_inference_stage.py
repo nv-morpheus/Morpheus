@@ -20,7 +20,7 @@ from unittest import mock
 import cupy as cp
 import pytest
 
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import ResponseMemory
 from morpheus.stages.inference import inference_stage
 from utils import IW
 
@@ -39,7 +39,7 @@ def _mk_message(count=1, mess_count=1, offset=0, mess_offset=0):
     m.offset = offset
     m.mess_offset = mess_offset
     m.mess_count = mess_count
-    m.probs = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
+    m.set_output('probs', cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]]))
     m.seq_ids = cp.array([list(range(count)), list(range(count)), list(range(count))])
     m.get_input.return_value = cp.array([[0, 1, 2], [0, 1, 2], [0, 1, 2]])
     return m
@@ -153,7 +153,7 @@ def test_py_inf_fn_on_next(mock_ops, mock_future, config):
 
     IW.process.assert_called_once()
     set_output_fut = IW.process.call_args[0][1]
-    set_output_fut(ResponseMemoryProbs(count=1, probs=cp.zeros((1, 2))))
+    set_output_fut(ResponseMemory(count=1, tensors={'probs': cp.zeros((1, 2))}))
     mock_future.set_result.assert_called_once()
 
 
@@ -231,32 +231,32 @@ def test_convert_response(config):
     mm2 = _mk_message(mess_offset=1)
 
     out_msg1 = _mk_message()
-    out_msg1.probs = cp.array([[0.1, 0.5, 0.8]])
+    out_msg1.get_output.return_value = cp.array([[0.1, 0.5, 0.8]])
 
     out_msg2 = _mk_message(mess_offset=1)
-    out_msg2.probs = cp.array([[0.1, 0.5, 0.8]])
+    out_msg2.get_output.return_value = cp.array([[0.1, 0.5, 0.8]])
 
     resp = inference_stage.InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
     assert resp.meta == mm1.meta
     assert resp.mess_offset == 0
     assert resp.mess_count == 2
-    assert isinstance(resp.memory, ResponseMemoryProbs)
+    assert isinstance(resp.memory, ResponseMemory)
     assert resp.offset == 0
     assert resp.count == 2
-    assert resp.memory.probs.tolist() == [[0.1, 0.5, 0.8], [0, 0, 0]]
+    assert resp.memory.get_output('probs').tolist() == [[0.1, 0.5, 0.8], [0, 0, 0]]
 
     mm2.count = 2
-    out_msg2.probs = cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]])
+    out_msg2.get_output.return_value = cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]])
     mm2.seq_ids = cp.array([[0], [1]])
     out_msg2.count = 2
     resp = inference_stage.InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
     assert resp.meta == mm1.meta
     assert resp.mess_offset == 0
     assert resp.mess_count == 2
-    assert isinstance(resp.memory, ResponseMemoryProbs)
+    assert isinstance(resp.memory, ResponseMemory)
     assert resp.offset == 0
     assert resp.count == 2
-    assert resp.memory.probs.tolist() == [[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]]
+    assert resp.memory.get_output('probs').tolist() == [[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]]
 
 
 def test_convert_response_errors():
@@ -268,10 +268,10 @@ def test_convert_response_errors():
     mm2 = _mk_message(mess_offset=12)
 
     out_msg1 = _mk_message()
-    out_msg1.probs = cp.array([[0.1, 0.5, 0.8]])
+    out_msg1.get_output.return_value = cp.array([[0.1, 0.5, 0.8]])
 
     out_msg2 = _mk_message(mess_offset=1)
-    out_msg2.probs = cp.array([[0.1, 0.5, 0.8]])
+    out_msg2.get_output.return_value = cp.array([[0.1, 0.5, 0.8]])
 
     pytest.raises(AssertionError, inference_stage.InferenceStage._convert_response, ([mm1, mm2], [out_msg1, out_msg2]))
 
@@ -294,10 +294,10 @@ def test_convert_response_errors():
 @pytest.mark.use_python
 def test_convert_one_response(config):
     # Test first branch where `inf.mess_count == inf.count`
-    mem = ResponseMemoryProbs(1, probs=cp.zeros((1, 3)))
+    mem = ResponseMemory(1, tensors={'probs': cp.zeros((1, 3))})
 
     inf = _mk_message()
-    res = ResponseMemoryProbs(count=1, probs=cp.array([[1, 2, 3]]))
+    res = ResponseMemory(count=1, tensors={'probs': cp.array([[1, 2, 3]])})
 
     mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
     assert mpm.meta == inf.meta
@@ -310,15 +310,15 @@ def test_convert_one_response(config):
     # Test for the second branch
     inf.mess_count = 2
     inf.seq_ids = cp.array([[0], [1]])
-    res = ResponseMemoryProbs(count=1, probs=cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2]]))
+    res = ResponseMemory(count=1, tensors={'probs': cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2]])})
 
-    mem = ResponseMemoryProbs(1, probs=cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]]))
+    mem = ResponseMemory(1, tensors={'probs': cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]])})
     mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
     assert mem.get_output('probs').tolist() == [[0.1, 0.6, 0.8], [5.6, 6.7, 9.2]]
 
 
 def test_convert_one_response_error():
-    mem = ResponseMemoryProbs(1, probs=cp.zeros((1, 3)))
+    mem = ResponseMemory(1, tensors={'probs': cp.zeros((1, 3))})
     inf = _mk_message(mess_count=2)
     res = _mk_message(count=2)
 

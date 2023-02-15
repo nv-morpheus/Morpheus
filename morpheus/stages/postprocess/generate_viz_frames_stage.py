@@ -32,7 +32,7 @@ import cudf
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import AsyncIOProducerConsumerQueue
@@ -79,11 +79,11 @@ class GenerateVizFramesStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple[morpheus.pipeline.messages.MultiResponseProbsMessage, ]
+        typing.Tuple[morpheus.pipeline.messages.MultiResponseMessage, ]
             Accepted input types
 
         """
-        return (MultiResponseProbsMessage, )
+        return (MultiResponseMessage, )
 
     def supports_cpp_node(self):
         return False
@@ -106,7 +106,7 @@ class GenerateVizFramesStage(SinglePortStage):
         """
         return int(round(x / 1000.0) * 1000)
 
-    def _to_vis_df(self, x: MultiResponseProbsMessage):
+    def _to_vis_df(self, x: MultiResponseMessage):
 
         idx2label = {
             0: 'address',
@@ -131,8 +131,9 @@ class GenerateVizFramesStage(SinglePortStage):
 
         df["data"] = df["data"].apply(indent_data)
 
-        pass_thresh = (x.probs >= 0.5).any(axis=1)
-        max_arg = x.probs.argmax(axis=1)
+        probs = x.get_output('probs')
+        pass_thresh = (probs >= 0.5).any(axis=1)
+        max_arg = probs.argmax(axis=1)
 
         condlist = [pass_thresh]
 
@@ -240,7 +241,7 @@ class GenerateVizFramesStage(SinglePortStage):
 
         def node_fn(input, output):
 
-            def write_batch(x: MultiResponseProbsMessage):
+            def write_batch(x: MultiResponseMessage):
 
                 sink = pa.BufferOutputStream()
 

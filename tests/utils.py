@@ -30,8 +30,8 @@ from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ResponseMemory
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.inference import inference_stage
 
@@ -56,7 +56,7 @@ TEST_DIRS = TestDirectories()
 @register_stage("unittest-conv-msg")
 class ConvMsg(SinglePortStage):
     """
-    Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage
+    Simple test stage to convert a MultiMessage to a MultiResponseMessage
     Basically a cheap replacement for running an inference stage.
 
     Setting `expected_data_file` to the path of a cav/json file will cause the probs array to be read from file.
@@ -104,14 +104,14 @@ class ConvMsg(SinglePortStage):
         else:
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
-        memory = ResponseMemoryProbs(count=len(probs), probs=probs)
-        return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
+        memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
+        return MultiResponseMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
 
     def _build_single(self, builder: mrc.Builder, input_stream):
         stream = builder.make_node(self.unique_name, self._conv_message)
         builder.make_edge(input_stream[0], stream)
 
-        return stream, MultiResponseProbsMessage
+        return stream, MultiResponseMessage
 
 
 class IW(inference_stage.InferenceWorker):

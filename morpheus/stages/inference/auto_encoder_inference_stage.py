@@ -161,7 +161,7 @@ class AutoEncoderInferenceStage(InferenceStage):
         # Two scenarios:
         if (inf.mess_count == inf.count):
             # In message and out message have same count. Just use probs as is
-            probs[inf.offset:inf.count + inf.offset, :] = res.probs
+            probs[inf.offset:inf.count + inf.offset, :] = res.get_output('probs')
         else:
             assert inf.count == res.count
 
@@ -169,7 +169,7 @@ class AutoEncoderInferenceStage(InferenceStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                probs[idx, :] = cp.maximum(probs[idx, :], res.probs[i, :])
+                probs[idx, :] = cp.maximum(probs[idx, :], res.get_output('probs')[i, :])
 
         return MultiResponseAEMessage(meta=inf.meta,
                                       mess_offset=inf.mess_offset,

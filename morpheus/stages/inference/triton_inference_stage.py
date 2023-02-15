@@ -36,7 +36,6 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -686,16 +685,16 @@ class TritonInferenceNLP(_TritonInferenceWorker):
             "output": "probs",
         }
 
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemoryProbs:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
 
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
 
         if (self._needs_logits):
             output = {key: 1.0 / (1.0 + np.exp(-val)) for key, val in output.items()}
 
-        mem = ResponseMemoryProbs(
+        mem = ResponseMemory(
             count=output["probs"].shape[0],
-            probs=cp.array(output["probs"]),  # For now, only support one output
+            tensors={'probs': cp.array(output["probs"])}  # For now, only support one output
         )
 
         return mem
@@ -761,7 +760,7 @@ class TritonInferenceFIL(_TritonInferenceWorker):
             "output__0": "probs",
         }
 
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemoryProbs:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
 
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
 
@@ -769,9 +768,9 @@ class TritonInferenceFIL(_TritonInferenceWorker):
             if (len(val.shape) == 1):
                 output[key] = np.expand_dims(val, 1)
 
-        mem = ResponseMemoryProbs(
+        mem = ResponseMemory(
             count=output["probs"].shape[0],
-            probs=cp.array(output["probs"]),  # For now, only support one output
+            tensors={'probs': cp.array(output["probs"])}  # For now, only support one output
         )
 
         return mem
@@ -838,7 +837,7 @@ class TritonInferenceAE(_TritonInferenceWorker):
         # Enable support by default
         return False
 
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemoryProbs:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
 
         import torch
 
@@ -860,9 +859,9 @@ class TritonInferenceAE(_TritonInferenceWorker):
         ae_scores = cp.asarray(net_loss)
         ae_scores = ae_scores.reshape((batch.count, 1))
 
-        mem = ResponseMemoryProbs(
+        mem = ResponseMemory(
             count=batch.count,
-            probs=ae_scores,  # For now, only support one output
+            tensors={'probs': ae_scores}  # For now, only support one output
         )
 
         return mem

@@ -129,7 +129,7 @@ def check_response_memory_probs_and_ae(cls):
     m = cls(count=count, probs=test_data)
     assert m.count == count
     compare_tensors(m.get_tensors(), {'probs': test_data})
-    assert (m.probs == test_data).all()
+    assert (m.get_output('probs') == test_data).all()
     return m
 
 
