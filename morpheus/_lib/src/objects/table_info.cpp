@@ -310,7 +310,7 @@ void MutableTableInfo::return_obj(pybind11::object&& obj)
     m_checked_out_ref_count = -1;
 }
 
-void MutableTableInfo::reset_index()
+void MutableTableInfo::replace_non_unique_index()
 {
     namespace py = pybind11;
     using namespace py::literals;

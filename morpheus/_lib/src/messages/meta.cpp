@@ -109,7 +109,7 @@ void MessageMeta::replace_non_unique_index()
     if (!table.has_unique_index())
     {
         LOG(WARNING) << "Non unique index found in dataframe, generating new index.";
-        table.reset_index();
+        table.replace_non_unique_index();
     }
 }
 

@@ -200,7 +200,7 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
      */
     void return_obj(pybind11::object&& obj);
 
-    void reset_index();
+    void replace_non_unique_index();
 
   private:
     // We use a unique_lock here to enforce exclusive access
