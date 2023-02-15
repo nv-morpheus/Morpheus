@@ -157,8 +157,9 @@ cudf::size_type TableInfoBase::num_rows() const
 
 pybind11::object TableInfoBase::copy_to_py_object() const
 {
-    const auto offset = m_data.table_view.column(0).offset();
-    const auto stop   = offset + this->num_rows();
+    const auto offset   = m_data.table_view.column(0).offset();
+    const auto num_rows = this->num_rows();
+    const auto stop     = offset + num_rows;
 
     {
         namespace py = pybind11;
@@ -169,8 +170,20 @@ pybind11::object TableInfoBase::copy_to_py_object() const
         // Compute the DF slice in python
         auto index_slice = py::slice(py::int_(offset), py::int_(stop), py::none());
 
-        auto py_slice = df.attr("loc")[py::make_tuple(df.attr("index")[index_slice], m_data.column_names)];
+        auto index = df.attr("index");
+        py::object idx;
+        if (index.attr("is_unique").cast<bool>())
+        {
+            idx = index[index_slice];
+        }
+        else
+        {
+            auto cupy_zeros  = py::module_::import("cupy").attr("zeros");
+            idx              = cupy_zeros(num_rows, "bool");
+            idx[index_slice] = true;
+        }
 
+        auto py_slice  = df.attr("loc")[py::make_tuple(idx, m_data.column_names)];
         auto copied_df = py_slice.attr("copy")();
 
         return copied_df;

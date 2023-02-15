@@ -104,7 +104,10 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        idx = self.meta._df.index[self.mess_offset:self.mess_offset + self.mess_count]
+        if (self.meta.has_unique_index()):
+            idx = self.meta._df.index[self.mess_offset:self.mess_offset + self.mess_count]
+        else:
+            idx = self._ranges_to_mask(self.meta._df, [(self.mess_offset, self.mess_offset + self.mess_count)])
 
         if (isinstance(idx, cudf.RangeIndex)):
             idx = slice(idx.start, idx.stop - 1, idx.step)
@@ -147,12 +150,17 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
         with self.meta.mutable_dataframe() as df:
+            if (df.index.is_unique):
+                idx = self.meta._df.index[self.mess_offset:self.mess_offset + self.mess_count]
+            else:
+                idx = self._ranges_to_mask(df, [(self.mess_offset, self.mess_offset + self.mess_count)])
+
             if (columns is None):
                 # Set all columns
-                df.loc[df.index[self.mess_offset:self.mess_offset + self.mess_count], :] = value
+                df.loc[idx, :] = value
             else:
                 # If its a single column or list of columns, this is the same
-                df.loc[df.index[self.mess_offset:self.mess_offset + self.mess_count], columns] = value
+                df.loc[idx, columns] = value
 
     def get_slice(self, start, stop):
         """
