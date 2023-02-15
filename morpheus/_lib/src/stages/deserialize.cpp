@@ -45,9 +45,7 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
             [this, &output](sink_type_t x) {
                 if (!x->has_unique_index())
                 {
-                    LOG(WARNING) << "Non unique index found in dataframe, generating new index.";
-                    auto table = x->get_mutable_info();
-                    table.reset_index();
+                    x->replace_non_unique_index();
                 }
 
                 // Make one large MultiMessage

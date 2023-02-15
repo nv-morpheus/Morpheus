@@ -127,7 +127,8 @@ PYBIND11_MODULE(messages, m)
         .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
         .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp)
-        .def("has_unique_index", &MessageMetaInterfaceProxy::has_unique_index);
+        .def("has_unique_index", &MessageMetaInterfaceProxy::has_unique_index)
+        .def("replace_non_unique_index", &MessageMetaInterfaceProxy::replace_non_unique_index);
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(m, "MultiMessage")
         .def(py::init<>(&MultiMessageInterfaceProxy::init),

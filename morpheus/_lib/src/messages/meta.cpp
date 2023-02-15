@@ -99,6 +99,20 @@ bool MessageMeta::has_unique_index() const
     return table.has_unique_index();
 }
 
+void MessageMeta::replace_non_unique_index()
+{
+    auto table = this->get_mutable_info();
+
+    // Check to ensure we do (or still do) have a non-unique index. Presumably the caller already made a call to
+    // `has_unique_index` but there could have been a race condition between the first call to has_unique_index and
+    // the acquisition of the mutex. Re-check here to ensure some other thread didn't already fix the index
+    if (!table.has_unique_index())
+    {
+        LOG(WARNING) << "Non unique index found in dataframe, generating new index.";
+        table.reset_index();
+    }
+}
+
 /********** MessageMetaInterfaceProxy **********/
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&& data_frame)
 {
@@ -147,9 +161,16 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::stri
 
 bool MessageMetaInterfaceProxy::has_unique_index(MessageMeta& self)
 {
-    // Release any GIL
+    // Release the GIL
     py::gil_scoped_release no_gil;
     return self.has_unique_index();
+}
+
+void MessageMetaInterfaceProxy::replace_non_unique_index(MessageMeta& self)
+{
+    // Release the GIL
+    py::gil_scoped_release no_gil;
+    return self.replace_non_unique_index();
 }
 
 SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
@@ -173,6 +194,11 @@ MutableTableInfo SlicedMessageMeta::get_mutable_info() const
 }
 
 bool SlicedMessageMeta::has_unique_index() const
+{
+    throw std::runtime_error{"Unable to determine index uniqueness from a slice."};
+}
+
+void SlicedMessageMeta::replace_non_unique_index()
 {
     throw std::runtime_error{"Unable to determine index uniqueness from a slice."};
 }

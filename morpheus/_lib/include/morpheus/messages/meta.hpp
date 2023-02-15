@@ -76,6 +76,12 @@ class MessageMeta
     virtual bool has_unique_index() const;
 
     /**
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique.
+     *
+     */
+    virtual void replace_non_unique_index();
+
+    /**
      * @brief Create MessageMeta cpp object from a python object
      *
      * @param data_table
@@ -127,6 +133,8 @@ class SlicedMessageMeta : public MessageMeta
 
     bool has_unique_index() const override;
 
+    void replace_non_unique_index() override;
+
   private:
     cudf::size_type m_start{0};
     cudf::size_type m_stop{-1};
@@ -176,6 +184,7 @@ struct MessageMetaInterfaceProxy
     static MutableTableCtxMgr mutable_dataframe(MessageMeta& self);
 
     static bool has_unique_index(MessageMeta& self);
+    static void replace_non_unique_index(MessageMeta& self);
 };
 
 #pragma GCC visibility pop

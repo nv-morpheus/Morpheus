@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import dataclasses
+import logging
 import threading
 import warnings
 
@@ -20,6 +21,8 @@ import pandas as pd
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
+
+logger = logging.getLogger(__name__)
 
 
 class MutableTableCtxMgr:
@@ -110,6 +113,17 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
 
     def has_unique_index(self) -> bool:
         return self._df.index.is_unique
+
+    def replace_non_unique_index(self):
+        if (not self.has_unique_index()):
+            # Reset the index preserving the original index in a new column
+            with self.mutable_dataframe() as df:
+                # We could have had a race condition between calling has_unique_index() and acquiring the mutex.
+                # Perform a second check here while we hold the lock.
+                if (not df.index.is_unique):
+                    logger.warning("Non unique index found in dataframe, generating new index.")
+                    df.index.name = "_index_" + (df.index.name or "")
+                    df.reset_index(inplace=True)
 
 
 @dataclasses.dataclass(init=False)
