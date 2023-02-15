@@ -81,11 +81,12 @@ def test_set_meta(config):
     assert mm2.get_meta_list(None) == mm2.get_meta().to_arrow().to_pylist()
 
 
-def test_duplicate_ids(config, tmp_path):
+@pytest.mark.parametrize("dup_row", [0, 1, 8, 18, 19])  # test for dups at the front, middle and the tail
+def test_duplicate_ids(config, tmp_path, dup_row):
     """
     Test for dataframe with duplicate IDs issue #686
     """
-    dup_file = create_df_with_dup_ids(tmp_path)
+    dup_file = create_df_with_dup_ids(tmp_path, dup_row=dup_row)
 
     dup_df = read_file_to_df(dup_file, file_type=FileTypes.Auto, df_type='cudf')
     assert not dup_df.index.is_unique

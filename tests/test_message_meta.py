@@ -26,14 +26,15 @@ from utils import TEST_DIRS
 from utils import create_df_with_dup_ids
 
 
-def test_has_unique_index(config, tmp_path):
+@pytest.mark.parametrize("dup_row", [0, 1, 8, 18, 19])  # test for dups at the front, middle and the tail
+def test_has_unique_index(config, tmp_path, dup_row):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
     df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
     assert df.index.is_unique
     meta = MessageMeta(df)
     assert meta.has_unique_index()
 
-    dup_file = create_df_with_dup_ids(tmp_path)
+    dup_file = create_df_with_dup_ids(tmp_path, dup_row=dup_row)
 
     dup_df = read_file_to_df(dup_file, file_type=FileTypes.Auto, df_type='cudf')
     assert not dup_df.index.is_unique

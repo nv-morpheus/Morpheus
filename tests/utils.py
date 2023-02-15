@@ -233,9 +233,10 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
     assert os.path.exists(filename)
 
 
-def create_df_with_dup_ids(tmp_path: str) -> str:
+def create_df_with_dup_ids(tmp_path: str, dup_row=8) -> str:
     """
-    Helper method to test issue #686, takes the filter_probs.csv and duplicates id=7
+    Helper method to test issue #686, takes the filter_probs.csv and sets the id in row `dup_row` to the id of the
+    previous row (or the next row if dup_row==0)
     """
     df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), file_type=FileTypes.Auto)
     assert df.index.is_unique
@@ -243,7 +244,13 @@ def create_df_with_dup_ids(tmp_path: str) -> str:
     data = df_to_csv(df, include_header=True, include_index_col=True, strip_newline=True)
 
     # Duplicate id=7
-    data[9] = data[9].replace('8', '7', 1)
+    dup_row_idx = dup_row + 1  # account for the header row
+    if dup_row > 0:
+        new_idx_val = dup_row - 1
+    else:
+        new_idx_val = 1
+
+    data[dup_row_idx] = data[dup_row_idx].replace(str(dup_row), str(new_idx_val), 1)
 
     dup_file = os.path.join(tmp_path, 'dup_id.csv')
     with open(dup_file, 'w') as fh:
