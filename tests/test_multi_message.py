@@ -40,9 +40,9 @@ def test_copy_ranges(config, df_type):
     assert meta.has_unique_index()
     assert meta.count == len(df)
 
-    mm = MultiMessage(meta, 0, len(df))
+    mm = MultiMessage(meta, 0, meta.count)
     assert mm.meta.count == len(df)
-    assert len(mm.get_meta()) == len(df)
+    assert len(mm.get_meta()) == meta.count
 
     mm2 = mm.copy_ranges([(2, 6)])
     assert len(mm2.meta.df) == 4
@@ -68,7 +68,7 @@ def test_set_meta(config):
 
     meta = MessageMeta(df)
     assert meta.has_unique_index()
-    mm = MultiMessage(meta, 0, len(df))
+    mm = MultiMessage(meta, 0, meta.count)
 
     mm2 = mm.copy_ranges([(2, 6), (12, 15)])
     assert len(mm2.get_meta()) == 7
@@ -98,11 +98,12 @@ def test_duplicate_ids(config, tmp_path):
     with meta.mutable_dataframe() as mut_df:
         assert len(mut_df) == len(dup_df)
 
+    # C++ fails here the copy returns 22 rows
     assert len(meta.copy_dataframe()) == len(dup_df)
 
     mm = MultiMessage(meta, 0, meta.count)
 
-    # Fails mm.get_meta_list(None) returns 22 rows
+    # Python fails here mm.get_meta_list(None) returns 22 rows
     assert mm.get_meta_list(None) == dup_df.to_arrow().to_pylist()
 
     meta = MessageMeta(dup_df)
