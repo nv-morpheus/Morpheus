@@ -18,11 +18,14 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
+from enum import Enum
 
 import appdirs
 import click
 import mrc
 from tqdm import tqdm
+
+LogLevels = Enum('LogLevels', logging._nameToLevel)
 
 
 class TqdmLoggingHandler(logging.Handler):
