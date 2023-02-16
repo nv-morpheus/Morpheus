@@ -19,6 +19,8 @@ import warnings
 import pandas as pd
 
 import morpheus._lib.messages as _messages
+from morpheus._lib.common import FileTypes
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_base import MessageBase
 
 
@@ -79,6 +81,13 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         super().__init__()
         self._mutex = threading.RLock()
         self._df = df
+
+    @classmethod
+    def make_from_file(cls, filename: str):
+        if (cls._should_use_cpp()):
+            return cls._cpp_class.make_from_file(filename)
+        else:
+            return MessageMeta(read_file_to_df(filename, file_type=FileTypes.Auto, df_type="cudf"))
 
     @property
     def df(self) -> pd.DataFrame:
