@@ -37,8 +37,8 @@ class NonLinearModulesStage(Stage):
         Module configuration.
     input_port_name : str
         Name of the input port for the registered module.
-    output_port_name : str
-        Name of the output port for the registered module.
+    output_port_name_prefix : str
+        Prefix name of the output ports for the registered module.
     output_port_count : str
         Number of output ports for the registered module.
     input_type : default `typing.Any`
@@ -52,7 +52,7 @@ class NonLinearModulesStage(Stage):
                  c: Config,
                  module_config: typing.Dict,
                  input_port_name: str,
-                 output_port_name: str,
+                 output_port_name_prefix: str,
                  output_port_count: int,
                  input_type=typing.Any,
                  output_type=typing.Any):
@@ -63,7 +63,7 @@ class NonLinearModulesStage(Stage):
         self._ouput_type = output_type
         self._module_config = module_config
         self._input_port_name = input_port_name
-        self._output_port_name = output_port_name
+        self._output_port_name_prefix = output_port_name_prefix
 
         assert output_port_count > 0, "Output port count must be >= 1"
 
@@ -98,7 +98,7 @@ class NonLinearModulesStage(Stage):
 
     def _build(self, builder: mrc.Builder, in_stream_pairs: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
-        assert len(in_stream_pairs) == 1, "Only 1 input supported"
+        assert len(in_stream_pairs) == 1, "Only 1 input is supported"
 
         in_stream_node = in_stream_pairs[0][0]
 
@@ -112,7 +112,7 @@ class NonLinearModulesStage(Stage):
 
         count = 0
         while (count < self._output_port_count):
-            out_port = f"output-{count}"
+            out_port = f"{self._output_port_name_prefix}-{count}"
             out_stream_pairs.append((module.output_port(out_port), self._ouput_type))
             count += 1
 

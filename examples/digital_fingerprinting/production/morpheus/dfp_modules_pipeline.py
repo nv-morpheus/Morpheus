@@ -118,6 +118,7 @@ def run_pipeline(log_type: str,
                  cache_dir: str,
                  log_level: int,
                  sample_rate_s: int,
+                 tracking_uri,
                  **kwargs):
 
     derive_args = DeriveArgs(skip_user,
@@ -128,7 +129,7 @@ def run_pipeline(log_type: str,
                              sample_rate_s,
                              duration,
                              log_type,
-                             kwargs["tracking_uri"],
+                             tracking_uri,
                              workload_type,
                              train_users)
 
@@ -159,25 +160,24 @@ def run_pipeline(log_type: str,
         NonLinearModulesStage(config,
                               module_config,
                               input_port_name="input",
-                              output_port_name="output",
+                              output_port_name_prefix="output",
                               output_port_count=output_port_count))
 
     pipeline.add_edge(source_stage, dfp_deployment_stage)
 
-    dfp_output_ports = dfp_deployment_stage.output_ports
-    if len(dfp_output_ports) > 1:
+    if len(dfp_deployment_stage.output_ports) > 1:
         tra_mntr_stage = MonitorStage(config, description="DFPTraining Pipeline rate", smoothing=0.001)
         inf_mntr_stage = MonitorStage(config, description="DFPInference Pipeline rate", smoothing=0.001)
 
         tra_mntr_stage = pipeline.add_stage(tra_mntr_stage)
         inf_mntr_stage = pipeline.add_stage(inf_mntr_stage)
 
-        pipeline.add_edge(dfp_output_ports[0], tra_mntr_stage)
-        pipeline.add_edge(dfp_output_ports[1], inf_mntr_stage)
+        pipeline.add_edge(dfp_deployment_stage.output_ports[0], tra_mntr_stage)
+        pipeline.add_edge(dfp_deployment_stage.output_ports[1], inf_mntr_stage)
     else:
         monitor_stage = MonitorStage(config, description=f"{workload} Pipeline rate", smoothing=0.001)
         monitor_stage = pipeline.add_stage(monitor_stage)
-        pipeline.add_edge(dfp_output_ports[0], monitor_stage)
+        pipeline.add_edge(dfp_deployment_stage.output_ports[0], monitor_stage)
 
     # Run the pipeline
     pipeline.run()

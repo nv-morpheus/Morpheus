@@ -40,7 +40,7 @@ class BroadcastStage(Stage):
 
         super().__init__(c)
 
-        assert output_port_count > 0
+        assert output_port_count > 0, "Output port count must be >= 1"
 
         self._create_ports(1, output_port_count)
         self._output_port_count = output_port_count
@@ -78,7 +78,7 @@ class BroadcastStage(Stage):
 
     def _build(self, builder: mrc.Builder, in_stream_pairs: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
-        assert len(in_stream_pairs) == 1, "Only 1 input supported"
+        assert len(in_stream_pairs) == 1, "Only 1 input is supported"
 
         in_stream_node = in_stream_pairs[0][0]
         output_type = in_stream_pairs[0][1]
