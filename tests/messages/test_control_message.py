@@ -31,25 +31,25 @@ def test_control_message_get():
     raw_control_message = _messages.MessageControl({"test": "test_rcm"})
     control_message = messages.MessageControl({"test": "test_cm"})
 
-    assert "test" in raw_control_message.message()
-    assert raw_control_message.message()["test"] == "test_rcm"
+    assert "test" in raw_control_message.config()
+    assert raw_control_message.config()["test"] == "test_rcm"
 
-    assert "test" in control_message.message()
-    assert control_message.message()["test"] == "test_cm"
+    assert "test" in control_message.config()
+    assert control_message.config()["test"] == "test_cm"
 
 
 def test_control_message_set():
     raw_control_message = _messages.MessageControl()
     control_message = messages.MessageControl()
 
-    raw_control_message.message({"test": "test_rcm"})
-    control_message.message({"test": "test_cm"})
+    raw_control_message.config({"test": "test_rcm"})
+    control_message.config({"test": "test_cm"})
 
-    assert "test" in raw_control_message.message()
-    assert raw_control_message.message()["test"] == "test_rcm"
+    assert "test" in raw_control_message.config()
+    assert raw_control_message.config()["test"] == "test_rcm"
 
-    assert "test" in control_message.message()
-    assert control_message.message()["test"] == "test_cm"
+    assert "test" in control_message.config()
+    assert control_message.config()["test"] == "test_cm"
 
 
 def test_control_message_set_and_get_payload():
