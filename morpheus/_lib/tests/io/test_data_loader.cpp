@@ -21,18 +21,8 @@
 #include "morpheus/io/loaders/all.hpp"
 #include "morpheus/messages/control.hpp"
 
-#include <mrc/core/executor.hpp>
-#include <mrc/engine/pipeline/ipipeline.hpp>
-#include <mrc/modules/segment_modules.hpp>
-#include <mrc/node/rx_sink.hpp>
-#include <mrc/node/rx_source.hpp>
-#include <mrc/options/options.hpp>
-#include <mrc/options/topology.hpp>
-#include <mrc/pipeline/pipeline.hpp>
-#include <mrc/segment/builder.hpp>
 #include <nlohmann/json.hpp>
 
-#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -53,7 +43,7 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
     nlohmann::json config;
     config["loader_id"] = "";
 
-    std::vector<std::string> loaders = {"grpc", "payload", "rest"};
+    std::vector<std::string> loaders = {"payload"};
     for (auto& loader : loaders)
     {
         config["loader_id"] = loader;
@@ -62,10 +52,7 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
         EXPECT_THROW(data_loader.load(msg), std::runtime_error);
     }
 
-    // data_loader.register_loader("file", std::make_unique<FileDataLoader>());
-    data_loader.add_loader("grpc", std::make_unique<GRPCDataLoader>());
     data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
-    data_loader.add_loader("rest", std::make_unique<RESTDataLoader>());
 
     for (auto& loader : loaders)
     {
@@ -81,16 +68,16 @@ TEST_F(TestDataLoader, DataLoaderRemoveLoaderTest)
     auto data_loader = DataLoader();
 
     nlohmann::json config;
-    config["loader_id"] = "grpc";
+    config["loader_id"] = "payload";
 
     auto msg = MessageControl(config);
 
     EXPECT_THROW(data_loader.load(msg), std::runtime_error);
-    data_loader.add_loader("grpc", std::make_unique<GRPCDataLoader>());
+    data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
 
     EXPECT_NO_THROW(data_loader.load(msg));
 
-    data_loader.remove_loader("grpc");
+    data_loader.remove_loader("payload");
     EXPECT_THROW(data_loader.load(msg), std::runtime_error);
 }
 

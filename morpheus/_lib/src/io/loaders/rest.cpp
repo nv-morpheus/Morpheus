@@ -25,6 +25,8 @@ std::shared_ptr<MessageMeta> RESTDataLoader::load(MessageControl& message)
     VLOG(30) << "Called RESTDataLoader::load()";
 
     // TODO(Devin): Implement this
+    throw std::runtime_error("RESTDataLoader::load() not implemented yet");
+
     return std::move(message.payload());
 }
 }  // namespace morpheus

@@ -17,6 +17,8 @@
 
 #include "test_morpheus.hpp"
 
+#include "morpheus/io/data_loader_registry.hpp"
+#include "morpheus/io/loaders/all.hpp"
 #include "morpheus/messages/meta.hpp"
 
 #include <pybind11/pybind11.h>
@@ -46,6 +48,15 @@ bool TestWithPythonInterpreter::m_initialized = false;
 void TestWithPythonInterpreter::SetUp()
 {
     initialize_interpreter();
+
+    LoaderRegistry::register_constructor(
+        "file", []() { return std::make_unique<FileDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "grpc", []() { return std::make_unique<GRPCDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "payload", []() { return std::make_unique<PayloadDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "rest", []() { return std::make_unique<RESTDataLoader>(); }, false);
 }
 
 void TestWithPythonInterpreter::TearDown() {}

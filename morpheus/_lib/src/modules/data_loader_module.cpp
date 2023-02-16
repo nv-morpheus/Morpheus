@@ -17,6 +17,7 @@
 
 #include "morpheus/modules/data_loader_module.hpp"
 
+#include "morpheus/io/data_loader_registry.hpp"
 #include "morpheus/io/loaders/all.hpp"
 #include "morpheus/messages/meta.hpp"
 
@@ -46,25 +47,14 @@ void DataLoaderModule::initialize(mrc::segment::Builder& builder)
         auto loader_list = config()["loaders"];
         for (json::iterator it = loader_list.begin(); it != loader_list.end(); ++it)
         {
-            if (*it == "file")
+            auto loader_id = it->get<std::string>();
+            if (LoaderRegistry::contains(loader_id))
             {
-                m_data_loader.add_loader("file", std::make_unique<FileDataLoader>());
-            }
-            else if (*it == "grpc")
-            {
-                m_data_loader.add_loader("grpc", std::make_unique<GRPCDataLoader>());
-            }
-            else if (*it == "payload")
-            {
-                m_data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
-            }
-            else if (*it == "rest")
-            {
-                m_data_loader.add_loader("rest", std::make_unique<RESTDataLoader>());
+                m_data_loader.add_loader(loader_id, LoaderRegistry::get_constructor(*it));
             }
             else
             {
-                throw std::runtime_error("Unknown or unsupported loader type: " + (*it).dump());
+                throw std::runtime_error("Unknown or unsupported loader type: " + loader_id);
             }
         }
     }

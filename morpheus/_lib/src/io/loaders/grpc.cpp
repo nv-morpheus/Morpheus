@@ -25,6 +25,8 @@ std::shared_ptr<MessageMeta> GRPCDataLoader::load(MessageControl& message)
     VLOG(30) << "Called GRPCDataLoader::load()";
 
     // TODO(Devin): Implement this
+    throw std::runtime_error("GRPCDataLoader::load() not implemented yet");
+
     return std::move(message.payload());
 }
 }  // namespace morpheus

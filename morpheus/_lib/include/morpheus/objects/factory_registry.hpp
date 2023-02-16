@@ -41,6 +41,7 @@ class FactoryRegistry
         return m_object_constructors.count(name) > 0;
     }
 
+    // TODO(Devin): Rename -- this isn't a constructor, its creating an instance
     static std::shared_ptr<ObjectReturnTypeT> get_constructor(const std::string& name)
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
