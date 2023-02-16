@@ -111,15 +111,15 @@ cudf::io::table_with_metadata load_table_from_file(const std::string& filename)
 int get_index_col_count(cudf::io::table_with_metadata& data_table)
 {
     int index_col_count = 0;
+    auto& col_names     = data_table.metadata.column_names;
 
     // Check if we have a first column with INT64 data type
-    if (data_table.metadata.schema_info.size() >= 1 &&
-        data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
+    if (col_names.size() >= 1 && data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
     {
         std::regex index_regex(R"((unnamed: 0|id))", std::regex_constants::ECMAScript | std::regex_constants::icase);
 
         // Get the column name
-        auto col_name = data_table.metadata.schema_info[0].name;
+        auto col_name = col_names[0];
 
         // Check it against some common terms
         if (std::regex_search(col_name, index_regex))
@@ -127,7 +127,7 @@ int get_index_col_count(cudf::io::table_with_metadata& data_table)
             // Also, if its the hideous 'Unnamed: 0', then just use an empty string
             if (col_name == "Unnamed: 0")
             {
-                data_table.metadata.schema_info[0].name = "";
+                col_names[0] = "";
             }
 
             index_col_count = 1;
