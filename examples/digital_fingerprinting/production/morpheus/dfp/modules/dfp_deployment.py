@@ -49,8 +49,6 @@ def dfp_inf(builder: mrc.Builder):
 
     preproc_module = load_module(preproc_conf, builder=builder)
 
-    out_streams = []
-
     if (train_conf is not None and infer_conf is not None):
 
         # Load module from registry.
@@ -60,6 +58,7 @@ def dfp_inf(builder: mrc.Builder):
         # Create broadcast node to fork the pipeline.
         boradcast_node = Broadcast(builder, "broadcast")
 
+        # Make an edge between modules
         builder.make_edge(preproc_module.output_port("output"), boradcast_node)
         builder.make_edge(boradcast_node, infer_module.input_port("input"))
         builder.make_edge(boradcast_node, train_module.input_port("input"))
@@ -79,9 +78,10 @@ def dfp_inf(builder: mrc.Builder):
     else:
         raise Exception("Expected DFP deployment workload_types are not found.")
 
-    # Register input and output port for a module.
+    # Register input port for a module.
     builder.register_module_input("input", preproc_module.input_port("input"))
 
+    # Register output ports for a module.
     for i in range(output_port_count):
         # Output ports are registered in increment order.
         builder.register_module_output(f"output-{i}", out_streams[i])

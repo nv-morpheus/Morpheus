@@ -130,7 +130,7 @@ def run_pipeline(train_users,
 
     config_generator = ConfigGenerator(config, derive_args, schema)
 
-    module_conf = config_generator.tra_pipe_module_conf()
+    module_config = config_generator.tra_pipe_module_config()
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -138,7 +138,7 @@ def run_pipeline(train_users,
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the full DFP Training pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_conf, input_port_name="input", output_port_name="output"))
+    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
 
     pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
 

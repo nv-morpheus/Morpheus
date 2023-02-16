@@ -19,7 +19,6 @@ from datetime import datetime
 import click
 import dfp.modules.dfp_deployment  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
-from dfp.utils.config_generator import TRAINING_AND_INFERENCE
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.derive_args import DeriveArgs
@@ -129,21 +128,26 @@ def run_pipeline(log_type: str,
                              sample_rate_s,
                              duration,
                              log_type,
-                             tracking_uri=kwargs["tracking_uri"],
-                             workload_type=workload_type,
-                             train_users=train_users)
+                             kwargs["tracking_uri"],
+                             workload_type,
+                             train_users)
 
     derive_args.init()
 
-    config: Config = generate_ae_config(log_type, userid_column_name="username", timestamp_column_name="timestamp")
+    userid_column_name = "username"
+    timestamp_column_name = "timestamp"
+
+    config: Config = generate_ae_config(log_type, userid_column_name, timestamp_column_name)
 
     schema_builder = SchemaBuilder(config, log_type)
     schema: Schema = schema_builder.build_schema()
 
     config_generator = ConfigGenerator(config, derive_args, schema)
 
-    conf = config_generator.get_conf()
-    workload = conf.get("workload")
+    module_config = config_generator.get_module_config()
+
+    workload = module_config.get("workload")
+    output_port_count = module_config.get("output_port_count")
 
     # Create a pipeline object
     pipeline = Pipeline(config)
@@ -153,23 +157,27 @@ def run_pipeline(log_type: str,
     # Here we add a wrapped module that implements the DFP Deployment
     dfp_deployment_stage = pipeline.add_stage(
         NonLinearModulesStage(config,
-                              conf,
+                              module_config,
                               input_port_name="input",
                               output_port_name="output",
-                              output_port_count=conf.get("output_port_count")))
+                              output_port_count=output_port_count))
 
     pipeline.add_edge(source_stage, dfp_deployment_stage)
 
-    if workload == TRAINING_AND_INFERENCE:
-        inf_mntr_stage = pipeline.add_stage(
-            MonitorStage(config, description="DFPInference Pipeline rate", smoothing=0.001))
-        tra_mntr_stage = pipeline.add_stage(
-            MonitorStage(config, description="DFPTraining Pipeline rate", smoothing=0.001))
-        pipeline.add_edge(dfp_deployment_stage.output_ports[0], tra_mntr_stage)
-        pipeline.add_edge(dfp_deployment_stage.output_ports[1], inf_mntr_stage)
+    dfp_output_ports = dfp_deployment_stage.output_ports
+    if len(dfp_output_ports) > 1:
+        tra_mntr_stage = MonitorStage(config, description="DFPTraining Pipeline rate", smoothing=0.001)
+        inf_mntr_stage = MonitorStage(config, description="DFPInference Pipeline rate", smoothing=0.001)
+
+        tra_mntr_stage = pipeline.add_stage(tra_mntr_stage)
+        inf_mntr_stage = pipeline.add_stage(inf_mntr_stage)
+
+        pipeline.add_edge(dfp_output_ports[0], tra_mntr_stage)
+        pipeline.add_edge(dfp_output_ports[1], inf_mntr_stage)
     else:
-        mntr_stage = pipeline.add_stage(MonitorStage(config, description=f"{workload} Pipeline rate", smoothing=0.001))
-        pipeline.add_edge(dfp_deployment_stage.output_ports[0], mntr_stage)
+        monitor_stage = MonitorStage(config, description=f"{workload} Pipeline rate", smoothing=0.001)
+        monitor_stage = pipeline.add_stage(monitor_stage)
+        pipeline.add_edge(dfp_output_ports[0], monitor_stage)
 
     # Run the pipeline
     pipeline.run()

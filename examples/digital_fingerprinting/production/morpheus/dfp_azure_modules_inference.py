@@ -120,7 +120,7 @@ def run_pipeline(skip_user: typing.Tuple[str],
 
     config_generator = ConfigGenerator(config, derive_args, schema)
 
-    module_conf = config_generator.inf_pipe_module_conf()
+    module_config = config_generator.inf_pipe_module_config()
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -128,7 +128,7 @@ def run_pipeline(skip_user: typing.Tuple[str],
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the DFP Inference pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_conf, input_port_name="input", output_port_name="output"))
+    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
 
     pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate", smoothing=0.001))
 

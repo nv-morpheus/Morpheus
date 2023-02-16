@@ -45,8 +45,6 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 
-TRAINING_AND_INFERENCE = "Training and Inference"
-
 
 class ConfigGenerator:
 
@@ -59,34 +57,33 @@ class ConfigGenerator:
         self._preprocess_schema_str = pyobj2str(schema.preprocess, encoding=encoding)
         self._input_message_type = pyobj2str(MultiMessage, encoding)
 
-    def get_conf(self):
+    def get_module_config(self):
 
-        conf = {}
+        module_config = {}
 
-        conf["module_id"] = DFP_DEPLOYMENT
-        conf["module_name"] = "dfp_deployment"
-        conf["namespace"] = MODULE_NAMESPACE
-        conf["output_port_count"] = 1
+        module_config["module_id"] = DFP_DEPLOYMENT
+        module_config["module_name"] = "dfp_deployment"
+        module_config["namespace"] = MODULE_NAMESPACE
+        module_config["output_port_count"] = 1
 
-        conf[DFP_PREPROC] = self.preproc_conf()
+        module_config[DFP_PREPROC] = self.preproc_module_config()
 
         if self._derive_args.is_train_and_infer:
-            conf[DFP_TRA] = self.train_conf()
-            conf[DFP_INF] = self.infer_conf()
-            conf["output_port_count"] = 2
-            conf["workload"] = TRAINING_AND_INFERENCE
+            module_config[DFP_TRA] = self.train_module_config()
+            module_config[DFP_INF] = self.infer_module_config()
+            module_config["output_port_count"] = 2
         elif self._derive_args.is_training:
-            conf[DFP_TRA] = self.train_conf()
-            conf["workload"] = DFP_TRAINING
+            module_config[DFP_TRA] = self.train_module_config()
+            module_config["workload"] = DFP_TRAINING
         else:
-            conf[DFP_INF] = self.infer_conf()
-            conf["workload"] = DFP_INFERENCE
+            module_config[DFP_INF] = self.infer_module_config()
+            module_config["workload"] = DFP_INFERENCE
 
-        return conf
+        return module_config
 
-    def preproc_conf(self):
+    def preproc_module_config(self):
 
-        module_conf = {
+        module_config = {
             "module_id": DFP_PREPROC,
             "module_name": "dfp_preproc",
             "namespace": MODULE_NAMESPACE,
@@ -129,10 +126,10 @@ class ConfigGenerator:
             }
         }
 
-        return module_conf
+        return module_config
 
-    def infer_conf(self):
-        module_conf = {
+    def infer_module_config(self):
+        module_config = {
             "module_id": DFP_INF,
             "module_name": "dfp_inf",
             "namespace": MODULE_NAMESPACE,
@@ -195,11 +192,11 @@ class ConfigGenerator:
             }
         }
 
-        return module_conf
+        return module_config
 
-    def train_conf(self):
+    def train_module_config(self):
 
-        module_conf = {
+        module_config = {
             "module_id": DFP_TRA,
             "module_name": "dfp_tra",
             "namespace": MODULE_NAMESPACE,
@@ -262,11 +259,11 @@ class ConfigGenerator:
             }
         }
 
-        return module_conf
+        return module_config
 
-    def inf_pipe_module_conf(self):
+    def inf_pipe_module_config(self):
 
-        module_conf = {
+        module_config = {
             "module_id": DFP_INFERENCE_PIPELINE,
             "module_name": "dfp_inference_pipeline",
             "namespace": MODULE_NAMESPACE,
@@ -366,10 +363,10 @@ class ConfigGenerator:
             }
         }
 
-        return module_conf
+        return module_config
 
-    def tra_pipe_module_conf(self):
-        module_conf = {
+    def tra_pipe_module_config(self):
+        module_config = {
             "module_id": DFP_TRAINING_PIPELINE,
             "module_name": "dfp_training_pipeline",
             "namespace": MODULE_NAMESPACE,
@@ -469,7 +466,7 @@ class ConfigGenerator:
             }
         }
 
-        return module_conf
+        return module_config
 
 
 def generate_ae_config(log_type: str,
