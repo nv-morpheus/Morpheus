@@ -17,20 +17,22 @@
 
 
 # Args used in FROM commands must come first
-ARG FROM_IMAGE="gpuci/miniforge-cuda"
+ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
+ARG CUDA_FULL_VER=11.5.1
 ARG CUDA_VER=11.5
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
+ARG PYTHON_VER=3.8
 
 # ============ Stage: base ============
 # Configure the base conda environment
-FROM ${FROM_IMAGE}:${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
+FROM ${FROM_IMAGE}:cuda${CUDA_FULL_VER}-base-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
 # Required arguments
+ARG PYTHON_VER
 ARG IMAGE_TYPE=base
 ARG RAPIDS_CHANNEL=rapidsai-nightly
 ARG RAPIDS_VER=22.10
-ARG PYTHON_VER=3.8
 ARG CONDA_CHANNEL=rapidsai
 
 # Temp option to set conda channel_alias property during build

@@ -22,7 +22,8 @@ DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 
 # Build args
-FROM_IMAGE=${FROM_IMAGE:-"gpuci/miniforge-cuda"}
+FROM_IMAGE=${FROM_IMAGE:-"rapidsai/mambaforge-cuda"}
+CUDA_FULL_VER=${CUDA_VER:-11.5.1}
 CUDA_VER=${CUDA_VER:-11.5}
 LINUX_DISTRO=${LINUX_DISTRO:-ubuntu}
 LINUX_VER=${LINUX_VER:-20.04}
@@ -50,6 +51,7 @@ export DOCKER_BUILDKIT=1
 echo "Building morpheus:${DOCKER_TAG}..."
 echo "   FROM_IMAGE      : ${FROM_IMAGE}"
 echo "   CUDA_VER        : ${CUDA_VER}"
+echo "   CUDA_FULL_VER   : ${CUDA_FULL_VER}"
 echo "   LINUX_DISTRO    : ${LINUX_DISTRO}"
 echo "   LINUX_VER       : ${LINUX_VER}"
 echo "   RAPIDS_VER      : ${RAPIDS_VER}"
