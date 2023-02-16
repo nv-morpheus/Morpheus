@@ -29,11 +29,13 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.serializers import df_to_csv
+from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.inference import inference_stage
+from morpheus.utils.atomic_integer import AtomicInteger
 
 
 class TestDirectories(object):
@@ -112,6 +114,60 @@ class ConvMsg(SinglePortStage):
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiResponseProbsMessage
+
+
+@register_stage("unittest-dfp-length-check")
+class DFPLengthChecker(SinglePortStage):
+    """
+    Verifies that the incoming MessageMeta classes are of a specific length
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+
+    expected_length : int
+        Expected length of incoming messages
+
+    num_exact: int
+        Number of messages to check. For a datasource with 2000 records if we expect the first message to be of lenth
+        1024, the next message will contain only 976. The first `num_exact` messages will be checked with `==` and `<=`
+        after that.
+    """
+
+    def __init__(self, c: Config, expected_length: int, num_exact: int = 1):
+        super().__init__(c)
+
+        self._expected_length = expected_length
+        self._num_exact = num_exact
+        self._num_received = AtomicInteger(0)
+
+    @property
+    def name(self) -> str:
+        return "dfp-length-check"
+
+    def accepted_types(self) -> typing.Tuple:
+        return (MessageMeta)
+
+    def supports_cpp_node(self):
+        return False
+
+    def _length_checker(self, x: MessageMeta):
+        msg_num = self._num_received.get_and_inc()
+        if msg_num < self._num_exact:
+            assert x.count == self._expected_length, \
+                f"Unexpected number of rows in message number {msg_num}: {x.count} != {self._num_exact}"
+        else:
+            assert x.count <= self._expected_length, \
+                f"Unexpected number of rows in message number {msg_num}: {x.count} > {self._num_exact}"
+
+        return x
+
+    def _build_single(self, builder: mrc.Builder, input_stream):
+        node = builder.make_node(self.unique_name, self._length_checker)
+        builder.make_edge(input_stream[0], node)
+
+        return node, input_stream[1]
 
 
 class IW(inference_stage.InferenceWorker):
