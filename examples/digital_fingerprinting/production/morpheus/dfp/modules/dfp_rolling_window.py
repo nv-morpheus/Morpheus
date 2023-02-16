@@ -119,8 +119,6 @@ def dfp_rolling_window(builder: mrc.Builder):
                 raise RuntimeError(("Overlapping rolling history detected. "
                                     "Rolling history can only be used with non-overlapping batches"))
 
-            train_offset = train_df.index.get_loc(first_row_idx)
-
             # Otherwise return a new message
             return MultiDFPMessage(meta=DFPMessageMeta(df=train_df, user_id=user_id),
                                    mess_offset=0,

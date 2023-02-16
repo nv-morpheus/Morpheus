@@ -16,7 +16,6 @@ import logging
 import typing
 
 import mrc
-from mrc.core.node import Broadcast
 
 from morpheus.config import Config
 from morpheus.pipeline.stage import Stage
