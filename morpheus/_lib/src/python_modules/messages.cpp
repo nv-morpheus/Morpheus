@@ -29,10 +29,11 @@
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/data_table.hpp"
+#include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <mrc/channel/status.hpp>  // for Status
-#include <mrc/node/edge_connector.hpp>
+#include <mrc/edge/edge_connector.hpp>
 #include <mrc/node/port_registry.hpp>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
@@ -86,34 +87,45 @@ PYBIND11_MODULE(messages, m)
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
 
-    mrc::node::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
+    py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(m, "MutableTableCtxMgr")
+        .def("__enter__", &MutableTableCtxMgr::enter, py::return_value_policy::reference)
+        .def("__exit__", &MutableTableCtxMgr::exit)
+        .def("__getattr__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__getitem__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__setattr__", &MutableTableCtxMgr::throw_usage_error)
+        .def("__setitem__", &MutableTableCtxMgr::throw_usage_error);
 
     py::class_<MessageMeta, std::shared_ptr<MessageMeta>>(m, "MessageMeta")
         .def(py::init<>(&MessageMetaInterfaceProxy::init_python), py::arg("df"))
         .def_property_readonly("count", &MessageMetaInterfaceProxy::count)
-        .def_property_readonly("df", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
+        .def_property_readonly("df", &MessageMetaInterfaceProxy::df_property, py::return_value_policy::move)
+        .def("copy_dataframe", &MessageMetaInterfaceProxy::get_data_frame, py::return_value_policy::move)
+        .def("mutable_dataframe", &MessageMetaInterfaceProxy::mutable_dataframe, py::return_value_policy::move)
         .def_static("make_from_file", &MessageMetaInterfaceProxy::init_cpp);
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(m, "MultiMessage")
@@ -125,13 +137,13 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
         .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &)>(&MultiMessageInterfaceProxy::get_meta),
+             static_cast<pybind11::object (*)(MultiMessage&)>(&MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &, std::string)>(&MultiMessageInterfaceProxy::get_meta),
+             static_cast<pybind11::object (*)(MultiMessage&, std::string)>(&MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("get_meta",
-             static_cast<pybind11::object (*)(MultiMessage &, std::vector<std::string>)>(
+             static_cast<pybind11::object (*)(MultiMessage&, std::vector<std::string>)>(
                  &MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
         .def("set_meta", &MultiMessageInterfaceProxy::set_meta, py::return_value_policy::move)

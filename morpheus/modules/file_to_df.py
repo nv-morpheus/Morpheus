@@ -56,6 +56,7 @@ def file_to_df(builder: mrc.Builder):
 
     config = get_module_config(FILE_TO_DF, builder)
 
+    timestamp_column_name = config.get("timestamp_column_name", None)
     schema_config = config.get("schema", None)
     schema_str = schema_config.get("schema_str", None)
     encoding = schema_config.get("encoding", None)
@@ -211,7 +212,7 @@ def file_to_df(builder: mrc.Builder):
         output_df: pd.DataFrame = pd.concat(dfs)
 
         # Finally sort by timestamp and then reset the index
-        output_df.sort_values(by=["timestamp"], inplace=True)
+        output_df.sort_values(by=[timestamp_column_name], inplace=True)
 
         output_df.reset_index(drop=True, inplace=True)
 

@@ -22,14 +22,14 @@
 #include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory::tensor_map_t
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"         // for DType
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/objects/triton_in_out.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
-#include "morpheus/utilities/type_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
+#include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
@@ -44,9 +44,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <functional>  // for multiplies
 #include <memory>
-#include <numeric>  // for accumulate
 #include <sstream>
 #include <stdexcept>    // for runtime_error, out_of_range
 #include <type_traits>  // for declval
@@ -72,11 +70,6 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
     }
 }
 
-template <typename IndexT>
-inline IndexT get_elem_count(const std::vector<IndexT>& shape)
-{
-    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
-}
 }  // namespace
 
 namespace morpheus {
@@ -122,7 +115,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                     // First dimension will always end up being the number of rows in the dataframe
                     total_shape[0]  = static_cast<TensorIndex>(x->mess_count);
-                    auto elem_count = get_elem_count(total_shape);
+                    auto elem_count = TensorUtils::get_elem_count(total_shape);
 
                     // Create the output memory
                     auto output_buffer = std::make_shared<rmm::device_buffer>(

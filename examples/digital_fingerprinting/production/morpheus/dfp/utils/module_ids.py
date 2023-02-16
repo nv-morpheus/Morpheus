@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,3 +18,7 @@ DFP_ROLLING_WINDOW = "DFPRollingWindow"
 DFP_SPLIT_USERS = "DFPSplitUsers"
 DFP_MODEL_TRAIN_DEPLOY = "DFPModelTrainDeploy"
 DFP_TRAINING = "DFPTraining"
+DFP_TRAINING_PIPELINE = "DFPTrainingPipeline"
+DFP_INFERENCE_PIPELINE = "DFPInferencePipeline"
+DFP_INFERENCE = "DFPInference"
+DFP_POST_PROCESSING = "DFPPostProcessing"

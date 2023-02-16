@@ -17,6 +17,7 @@ import typing
 
 import mrc
 
+from morpheus._lib.common import TypeId
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
@@ -67,7 +68,9 @@ class AddClassificationsStage(SinglePortStage):
                 logger.warning("The label '%s' is not in Config.class_labels and will be ignored", label)
                 continue
 
-            self._idx2label[self._class_labels.index(label)] = self._prefix + label
+            prefixed_label = self._prefix + label
+            self._idx2label[self._class_labels.index(label)] = prefixed_label
+            self._needed_columns[prefixed_label] = TypeId.BOOL8
 
         assert len(self._idx2label) > 0, "No labels were added to the stage"
 

@@ -17,6 +17,8 @@
 
 #include "morpheus/stages/serialize.hpp"
 
+#include "morpheus/messages/meta.hpp"
+
 #include <pybind11/gil.h>  // for gil_scoped_acquire
 
 #include <exception>
@@ -82,7 +84,7 @@ bool SerializeStage::exclude_column(const std::string &column) const
     return match_column(m_exclude, column);
 }
 
-TableInfo SerializeStage::get_meta(sink_type_t &msg)
+std::shared_ptr<SlicedMessageMeta> SerializeStage::get_meta(sink_type_t& msg)
 {
     // If none of the columns match the include regex patterns or are all are excluded this has the effect
     // of including all of the rows since calling msg->get_meta({}) will return a view with all columns.
@@ -99,7 +101,8 @@ TableInfo SerializeStage::get_meta(sink_type_t &msg)
         }
     }
 
-    return msg->get_meta(m_column_names);
+    return std::make_shared<SlicedMessageMeta>(
+        msg->meta, msg->mess_offset, msg->mess_offset + msg->mess_count, m_column_names);
 }
 
 SerializeStage::subscribe_fn_t SerializeStage::build_operator()
@@ -107,13 +110,9 @@ SerializeStage::subscribe_fn_t SerializeStage::build_operator()
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t msg) {
-                auto table_info = this->get_meta(msg);
-                std::shared_ptr<MessageMeta> meta;
-                {
-                    pybind11::gil_scoped_acquire gil;
-                    meta = MessageMeta::create_from_python(std::move(table_info.as_py_object()));
-                }
-                output.on_next(std::move(meta));
+                auto next_meta = this->get_meta(msg);
+
+                output.on_next(std::move(next_meta));
             },
             [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
             [&]() { output.on_completed(); }));

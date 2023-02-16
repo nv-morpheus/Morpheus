@@ -103,6 +103,14 @@ def pytest_addoption(parser: pytest.Parser):
         help="Run benchmark tests that would otherwise be skipped",
     )
 
+    parser.addoption(
+        "--log_level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "FATAL"],
+        dest="log_level",
+        help="A specific log level to use during testing. Defaults to WARNING if not set.",
+    )
+
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):
     """
@@ -349,6 +357,8 @@ def _camouflage_is_running():
 
     from utils import TEST_DIRS
 
+    logger = logging.getLogger(f"morpheus.{__name__}")
+
     root_dir = TEST_DIRS.mock_triton_servers_dir
     startup_timeout = 5
     shutdown_timeout = 5
@@ -361,44 +371,51 @@ def _camouflage_is_running():
         is_running = wait_for_camouflage(timeout=0.0)
 
         if (is_running):
-            logging.warning("Camoflage already running. Skipping startup")
+            logger.warning("Camoflage already running. Skipping startup")
             launch_camouflage = False
             is_running = True
 
     # Actually launch camoflague
     if launch_camouflage:
-        popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
-                                 cwd=root_dir,
-                                 stderr=subprocess.DEVNULL,
-                                 stdout=subprocess.DEVNULL,
-                                 preexec_fn=_set_pdeathsig(signal.SIGTERM))
+        try:
+            popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
+                                     cwd=root_dir,
+                                     stderr=subprocess.DEVNULL,
+                                     stdout=subprocess.DEVNULL,
+                                     preexec_fn=_set_pdeathsig(signal.SIGTERM))
 
-        logging.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
+            logger.info("Launched camouflage in %s with pid: %s", root_dir, popen.pid)
 
-        if not wait_for_camouflage(timeout=startup_timeout):
+            if not wait_for_camouflage(timeout=startup_timeout):
 
-            if popen.poll() is not None:
-                raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
-                    popen.poll(), os.path.join(root_dir, 'camouflage.log')))
+                if popen.poll() is not None:
+                    raise RuntimeError("camouflage server exited with status code={} details in: {}".format(
+                        popen.poll(), os.path.join(root_dir, 'camouflage.log')))
 
-            raise RuntimeError("Failed to launch camouflage server")
+                raise RuntimeError("Failed to launch camouflage server")
 
-        # Must have been started by this point
-        yield True
+            # Must have been started by this point
+            yield True
 
-        logging.info("Killing pid {}".format(popen.pid))
+        except Exception:
+            # Log the error and rethrow
+            logger.exception("Error launching camouflage")
+            raise
+        finally:
 
-        elapsed_time = 0.0
-        sleep_time = 0.1
-        stopped = False
+            logger.info("Killing camouflage with pid {}".format(popen.pid))
 
-        # It takes a little while to shutdown
-        while not stopped and elapsed_time < shutdown_timeout:
-            popen.kill()
-            stopped = (popen.poll() is not None)
-            if not stopped:
-                time.sleep(sleep_time)
-                elapsed_time += sleep_time
+            elapsed_time = 0.0
+            sleep_time = 0.1
+            stopped = False
+
+            # It takes a little while to shutdown
+            while not stopped and elapsed_time < shutdown_timeout:
+                popen.kill()
+                stopped = (popen.poll() is not None)
+                if not stopped:
+                    time.sleep(sleep_time)
+                    elapsed_time += sleep_time
 
     else:
 
@@ -428,7 +445,7 @@ def launch_mock_triton(_camouflage_is_running):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def configure_tests_logging():
+def configure_tests_logging(pytestconfig: pytest.Config):
     """
     Sets the base logging settings for the entire test suite to ensure logs are generated. Automatically detects if a
     debugger is attached and lowers the logging level to DEBUG.
@@ -437,7 +454,7 @@ def configure_tests_logging():
 
     from morpheus.utils.logger import configure_logging
 
-    log_level = logging.WARN
+    log_level = logging.WARNING
 
     # Check if a debugger is attached. If so, choose DEBUG for the logging level. Otherwise, only WARN
     trace_func = sys.gettrace()
@@ -448,6 +465,12 @@ def configure_tests_logging():
         if (trace_module is not None and trace_module.find("pydevd") != -1):
             log_level = logging.DEBUG
 
+    config_log_level = pytestconfig.getoption("log_level")
+
+    # Overwrite the logging level if specified
+    if (config_log_level is not None):
+        log_level = logging.getLevelName(config_log_level)
+
     configure_logging(log_level=log_level)
 
 
@@ -456,6 +479,22 @@ def _wrap_set_log_level(log_level: int):
 
     # Save the previous logging level
     old_level = set_log_level(log_level)
+
+    yield
+
+    set_log_level(old_level)
+
+
+@pytest.fixture(scope="function")
+def reset_loglevel():
+    """
+    Fixture restores the log level after running the given test.
+    """
+    import mrc
+
+    from morpheus.utils.logger import set_log_level
+
+    old_level = mrc.logging.get_level()
 
     yield
 

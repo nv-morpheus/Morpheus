@@ -104,16 +104,16 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        idx = self.meta.df.index[self.mess_offset:self.mess_offset + self.mess_count]
+        idx = self.meta._df.index[self.mess_offset:self.mess_offset + self.mess_count]
 
         if (isinstance(idx, cudf.RangeIndex)):
             idx = slice(idx.start, idx.stop - 1, idx.step)
 
         if (columns is None):
-            return self.meta.df.loc[idx, :]
+            return self.meta._df.loc[idx, :]
         else:
             # If its a str or list, this is the same
-            return self.meta.df.loc[idx, columns]
+            return self.meta._df.loc[idx, columns]
 
     def get_meta_list(self, col_name: str = None):
         """
@@ -146,12 +146,13 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             `Series` or `Dataframe` is passed, rows will be matched by index.
 
         """
-        if (columns is None):
-            # Set all columns
-            self.meta.df.loc[self.meta.df.index[self.mess_offset:self.mess_offset + self.mess_count], :] = value
-        else:
-            # If its a single column or list of columns, this is the same
-            self.meta.df.loc[self.meta.df.index[self.mess_offset:self.mess_offset + self.mess_count], columns] = value
+        with self.meta.mutable_dataframe() as df:
+            if (columns is None):
+                # Set all columns
+                df.loc[df.index[self.mess_offset:self.mess_offset + self.mess_count], :] = value
+            else:
+                # If its a single column or list of columns, this is the same
+                df.loc[df.index[self.mess_offset:self.mess_offset + self.mess_count], columns] = value
 
     def get_slice(self, start, stop):
         """

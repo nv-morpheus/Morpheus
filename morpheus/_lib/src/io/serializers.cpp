@@ -93,7 +93,7 @@ std::string df_to_csv(const TableInfo& tbl, bool include_header, bool include_in
     return out_stream.str();
 }
 
-void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col)
+void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_header, bool include_index_col, bool flush)
 {
     auto column_names         = tbl.get_column_names();
     cudf::size_type start_col = 1;
@@ -115,16 +115,31 @@ void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_head
                                .false_value("False"s);
 
     cudf::io::table_metadata metadata{};
+
     if (include_header)
     {
         metadata.column_names = column_names;
-        options_builder       = options_builder.metadata(&metadata);
+
+        // After cuDF PR #11364, use schema_info instead of column_names (actually just set both)
+        metadata.schema_info = std::vector<cudf::io::column_name_info>();
+
+        for (auto& name : column_names)
+        {
+            metadata.schema_info.emplace_back(cudf::io::column_name_info{name});
+        }
+
+        options_builder = options_builder.metadata(&metadata);
     }
 
     cudf::io::write_csv(options_builder.build(), rmm::mr::get_current_device_resource());
+
+    if (flush)
+    {
+        sink.flush();
+    }
 }
 
-std::string df_to_json(const TableInfo& tbl, bool include_index_col)
+std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
 {
     std::string results;
     // no cpp impl for to_json, instead python module converts to pandas and calls to_json
@@ -132,11 +147,14 @@ std::string df_to_json(const TableInfo& tbl, bool include_index_col)
         py::gil_scoped_acquire gil;
         py::object StringIO = py::module_::import("io").attr("StringIO");
 
-        auto df         = tbl.as_py_object();
+        auto df = tbl.checkout_obj();
+
         auto buffer     = StringIO();
         py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true, "index"_a = include_index_col);
         df.attr("to_json")(buffer, **kwargs);
         buffer.attr("seek")(0);
+
+        tbl.return_obj(std::move(df));
 
         py::object pyresults = buffer.attr("getvalue")();
         results              = pyresults.cast<std::string>();
@@ -145,7 +163,7 @@ std::string df_to_json(const TableInfo& tbl, bool include_index_col)
     return results;
 }
 
-void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_index_col)
+void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col, bool flush)
 {
     // Unlike df_to_csv, we use the ostream overload to call the string overload because there is no C++
     // implementation of to_json
@@ -153,7 +171,11 @@ void df_to_json(const TableInfo& tbl, std::ostream& out_stream, bool include_ind
 
     // Now write the contents to the stream
     out_stream.write(output.data(), output.size());
-    out_stream.flush();
+
+    if (flush)
+    {
+        out_stream.flush();
+    }
 }
 
 }  // namespace morpheus

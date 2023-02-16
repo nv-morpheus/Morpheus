@@ -18,6 +18,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -30,8 +31,10 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import ConvMsg
+from utils import assert_path_exists
 
 
+@pytest.mark.slow
 def test_add_classifications_stage_pipe(config, tmp_path):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
@@ -51,7 +54,7 @@ def test_add_classifications_stage_pipe(config, tmp_path):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
     expected = (input_data > threshold)
@@ -66,6 +69,7 @@ def test_add_classifications_stage_pipe(config, tmp_path):
     assert output_np.tolist() == expected.tolist()
 
 
+@pytest.mark.slow
 def test_add_classifications_stage_multi_segment_pipe(config, tmp_path):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
@@ -90,7 +94,7 @@ def test_add_classifications_stage_multi_segment_pipe(config, tmp_path):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
     expected = (input_data > threshold)

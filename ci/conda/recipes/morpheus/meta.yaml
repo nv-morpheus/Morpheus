@@ -18,7 +18,7 @@
 {% set py_version=environ.get('CONDA_PY', '3.8') %}
 {% set cuda_version='.'.join(environ.get('CUDA', '11.5').split('.')[:2]) %}
 {% set cuda_major=cuda_version.split('.')[0] %}
-{% set rapids_version = "22.08" %}
+{% set rapids_version = "22.10" %}
 
 package:
   name: morpheus-split
@@ -55,39 +55,42 @@ outputs:
         - ccache
         - ninja
       host:
-        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
+        - cuda-python <=11.7.0
+        - cudatoolkit {{ cuda_version }}.*
         - cudf {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
         - librdkafka 1.7
+        - mrc {{ minor_version }}
         - pip
         - pybind11-stubgen 0.10.5
         - python {{ python }}
         - rapidjson 1.1
         - scikit-build >=0.12
-        - mrc {{ minor_version }}
         - versioneer-518
       run:
         # Runtime only requirements. This + setup.y is the definitive runtime requirement list
         - click >=8
-        - configargparse 1.5
-        - cuda-python <=11.7.0 # Remove when Issue #251 is closed
-        - cudf {{ rapids_version }}
-        - cudf_kafka {{ rapids_version }}
+        - configargparse 1.5.*
+        - cuda-python <=11.7.0 # Needed to ensure cudatoolkit and not cuda-toolkit is installed
+        - cudf
+        - cudf_kafka {{ rapids_version }}.*
         - cupy # Version determined from cudf
-        - datacompy 0.8
+        - datacompy 0.8.*
         - distributed
-        - docker-py 5.0
+        - docker-py 5.0.*
         - grpcio # Version determined from cudf
+        - libmrc
         - mlflow >1.29,<2
-        - networkx 2.8
-        - numpydoc 1.4
-        - pandas 1.3
-        - pluggy 1.0
+        - mrc
+        - networkx 2.8.*
+        - numpydoc 1.4.*
+        - pandas 1.3.*
+        - pluggy 1.0.*
         - python
-        - tqdm 4
-        - typing_utils 0.1
-        - watchdog 2.1
+        - tqdm 4.*
+        - typing_utils 0.1.*
+        - watchdog 2.1.*
 
     test:
       requires:

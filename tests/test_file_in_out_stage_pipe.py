@@ -26,21 +26,28 @@ from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from utils import TEST_DIRS
+from utils import assert_path_exists
 
 
+@pytest.mark.slow
+@pytest.mark.parametrize("flush", [False, True])
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_file_rw_pipe(tmp_path, config, output_type):
+@pytest.mark.parametrize("repeat", [1, 2, 5])
+def test_file_rw_pipe(tmp_path, config, output_type, flush, repeat: int):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    pipe.set_source(FileSourceStage(config, filename=input_file, repeat=repeat))
+    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False, flush=flush))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
+
+    # Repeat the input data
+    input_data = np.tile(input_data, (repeat, 1))
 
     if output_type == "csv":
         # The output data will contain an additional id column that we will need to slice off
@@ -55,6 +62,7 @@ def test_file_rw_pipe(tmp_path, config, output_type):
     assert output_data.tolist() == input_data.tolist()
 
 
+@pytest.mark.slow
 @pytest.mark.use_python
 @pytest.mark.usefixtures("chdir_tmpdir")
 def test_to_file_no_path(tmp_path, config):
@@ -72,9 +80,10 @@ def test_to_file_no_path(tmp_path, config):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(tmp_path / out_file)
+    assert_path_exists(tmp_path / out_file)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 def test_file_rw_multi_segment_pipe(tmp_path, config, output_type):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
@@ -86,7 +95,7 @@ def test_file_rw_multi_segment_pipe(tmp_path, config, output_type):
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
     pipe.run()
 
-    assert os.path.exists(out_file)
+    assert_path_exists(out_file)
 
     input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
 

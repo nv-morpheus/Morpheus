@@ -64,11 +64,13 @@ class WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
      * @param mode : Reference to the mode for opening a file
      * @param file_type : FileTypes
      * @param include_index_col : Write out the index as a column, by default true
+     * @param flush : When `true` flush the output buffer to disk on each message.
      */
-    WriteToFileStage(const std::string &filename,
+    WriteToFileStage(const std::string& filename,
                      std::ios::openmode mode = std::ios::out,
                      FileTypes file_type     = FileTypes::Auto,
-                     bool include_index_col  = true);
+                     bool include_index_col  = true,
+                     bool flush              = false);
 
   private:
     /**
@@ -81,21 +83,22 @@ class WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
      *
      * @param msg
      */
-    void write_json(sink_type_t &msg);
+    void write_json(sink_type_t& msg);
 
     /**
      * @brief Write messages (rows in a DataFrame) to a CSV format
      *
      * @param msg
      */
-    void write_csv(sink_type_t &msg);
+    void write_csv(sink_type_t& msg);
 
     subscribe_fn_t build_operator();
 
     bool m_is_first{};
     bool m_include_index_col;
+    bool m_flush;
     std::ofstream m_fstream;
-    std::function<void(sink_type_t &)> m_write_func;
+    std::function<void(sink_type_t&)> m_write_func;
 };
 
 /****** WriteToFileStageInterfaceProxy******************/
@@ -113,6 +116,7 @@ struct WriteToFileStageInterfaceProxy
      * @param mode : Reference to the mode for opening a file
      * @param file_type : FileTypes
      * @param include_index_col : Write out the index as a column, by default true
+     * @param flush : When `true` flush the output buffer to disk on each message.
      * @return std::shared_ptr<mrc::segment::Object<WriteToFileStage>>
      */
     static std::shared_ptr<mrc::segment::Object<WriteToFileStage>> init(mrc::segment::Builder& builder,
@@ -120,7 +124,8 @@ struct WriteToFileStageInterfaceProxy
                                                                         const std::string& filename,
                                                                         const std::string& mode = "w",
                                                                         FileTypes file_type     = FileTypes::Auto,
-                                                                        bool include_index_col  = true);
+                                                                        bool include_index_col  = true,
+                                                                        bool flush              = false);
 };
 
 #pragma GCC visibility pop
