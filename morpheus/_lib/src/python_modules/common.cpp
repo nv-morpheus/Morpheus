@@ -70,6 +70,7 @@ PYBIND11_MODULE(common, _module)
 
     _module.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
 
+    // TODO(Devin): Add support for other file types (e.g. parquet, etc.)
     py::enum_<FileTypes>(_module,
                          "FileTypes",
                          "The type of files that the `FileSourceStage` can read and `WriteToFileStage` can write. Use "

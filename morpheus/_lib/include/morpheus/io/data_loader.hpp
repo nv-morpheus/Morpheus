@@ -40,11 +40,26 @@ class DataLoader
     DataLoader();
     ~DataLoader() = default;
 
-    // Probably a MessageMeta?
+    /**
+     * @brief Load data described by a control message
+     * @param control_message
+     * @return
+     */
     std::shared_ptr<MessageMeta> load(MessageControl& control_message);
 
-    void register_loader(const std::string& loader_id, std::shared_ptr<Loader> loader, bool overwrite = true);
+    /**
+     * @brief Register a loader instance with the data loader
+     * @param loader_id
+     * @param loader
+     * @param overwrite
+     */
+    void add_loader(const std::string& loader_id, std::shared_ptr<Loader> loader, bool overwrite = true);
 
+    /**
+     * @brief Remove a loader instance from the data loader
+     * @param loader_id
+     * @param throw_if_not_found
+     */
     void remove_loader(const std::string& loader_id, bool throw_if_not_found = true);
 
   private:

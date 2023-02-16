@@ -24,7 +24,6 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/utils/type_utils.hpp>
 #include <nlohmann/json.hpp>
-#include <pybind11/pybind11.h>
 
 #include <string>
 
@@ -42,28 +41,36 @@ DataLoaderModule::DataLoaderModule(std::string module_name, nlohmann::json _conf
 void DataLoaderModule::initialize(mrc::segment::Builder& builder)
 {
     // TODO(Devin): Modularize loader lookups, and standardize this a bit more
-    if (config().contains("loaders"))
+    if (config().contains("loaders") and config()["loaders"].size() > 0)
     {
         auto loader_list = config()["loaders"];
         for (json::iterator it = loader_list.begin(); it != loader_list.end(); ++it)
         {
             if (*it == "file")
             {
-                m_data_loader.register_loader("file", std::make_unique<FileDataLoader>());
+                m_data_loader.add_loader("file", std::make_unique<FileDataLoader>());
             }
             else if (*it == "grpc")
             {
-                m_data_loader.register_loader("grpc", std::make_unique<GRPCDataLoader>());
+                m_data_loader.add_loader("grpc", std::make_unique<GRPCDataLoader>());
             }
             else if (*it == "payload")
             {
-                m_data_loader.register_loader("payload", std::make_unique<PayloadDataLoader>());
+                m_data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
             }
             else if (*it == "rest")
             {
-                m_data_loader.register_loader("rest", std::make_unique<RESTDataLoader>());
+                m_data_loader.add_loader("rest", std::make_unique<RESTDataLoader>());
+            }
+            else
+            {
+                throw std::runtime_error("Unknown or unsupported loader type: " + (*it).dump());
             }
         }
+    }
+    else
+    {
+        LOG(WARNING) << "No loaders specified in config";
     }
 
     auto loader_node = builder.make_node<std::shared_ptr<MessageControl>, std::shared_ptr<MessageMeta>>(

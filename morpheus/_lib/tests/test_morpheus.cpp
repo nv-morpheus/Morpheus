@@ -71,7 +71,7 @@ std::filesystem::path get_morpheus_root()
     return std::filesystem::path{root};
 }
 
-std::string create_mock_dataframe(std::vector<std::string> cols, std::vector<std::string> dtypes, std::size_t rows)
+std::string create_mock_csv_file(std::vector<std::string> cols, std::vector<std::string> dtypes, std::size_t rows)
 {
     assert(cols.size() == dtypes.size());
     static std::vector<std::string> random_strings = {"field1", "test123", "abc", "xyz", "123", "foo", "bar", "baz"};
@@ -102,7 +102,7 @@ std::string create_mock_dataframe(std::vector<std::string> cols, std::vector<std
             }
             else
             {
-                throw std::runtime_error("Unsupported dtype");
+                throw std::runtime_error(dtypes[col] + ": No");
             }
         }
         sstream.seekp(-1, std::ios::cur);  // Remove last comma
@@ -116,7 +116,7 @@ std::shared_ptr<MessageMeta> create_mock_msg_meta(std::vector<std::string> cols,
                                                   std::vector<std::string> dtypes,
                                                   std::size_t rows)
 {
-    auto string_df = create_mock_dataframe(cols, dtypes, rows);
+    auto string_df = create_mock_csv_file(cols, dtypes, rows);
 
     pybind11::gil_scoped_acquire gil;
     pybind11::module_ mod_cudf;

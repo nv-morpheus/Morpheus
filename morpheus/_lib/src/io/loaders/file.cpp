@@ -43,7 +43,7 @@ std::shared_ptr<MessageMeta> FileDataLoader::load(MessageControl& message)
     mod_cudf           = cache_handle.get_module("cudf");
 
     // TODO(Devin) : error checking + improve robustness
-    auto config = message.message();
+    auto config = message.config();
     if (!config.contains("files"))
     {
         throw std::runtime_error("'File Loader' control message specified no files to load");
@@ -53,7 +53,7 @@ std::shared_ptr<MessageMeta> FileDataLoader::load(MessageControl& message)
     std::string strategy = config.value("strategy", "aggregate");
     if (strategy != "aggregate")
     {
-        throw std::runtime_error("Only 'merge' strategy is currently supported");
+        throw std::runtime_error("Only 'aggregate' strategy is currently supported");
     }
 
     auto files           = config["files"];
@@ -71,6 +71,7 @@ std::shared_ptr<MessageMeta> FileDataLoader::load(MessageControl& message)
 
         VLOG(5) << "Loading file: " << file.dump(2);
 
+        // TODO(Devin): Any extensions missing?
         auto current_df = mod_cudf.attr("DataFrame")();
         if (extension == "csv")
         {

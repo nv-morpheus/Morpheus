@@ -72,3 +72,4 @@ if (__name__ == "__main__"):
     test_control_message_init()
     test_control_message_get()
     test_control_message_set()
+    test_control_message_set_and_get_payload()

@@ -26,6 +26,18 @@ import morpheus.modules  # Used to load and register morpheus modules
 import morpheus.messages as messages
 
 
+def on_next(data):
+    pass
+
+
+def on_error():
+    pass
+
+
+def on_complete():
+    pass
+
+
 def test_contains_namespace():
     registry = mrc.ModuleRegistry
 
@@ -56,11 +68,115 @@ def test_get_module():
     module_instance = fn_constructor("ModuleDataLoaderTest", config)
 
 
+def test_get_module_with_bad_config_no_loaders():
+    def init_wrapper(builder: mrc.Builder):
+        def gen_data():
+            for i in range(packet_count):
+                config = {"loader_id": "payload"}
+                msg = messages.MessageControl(config)
+                yield msg
+
+        source = builder.make_source("source", gen_data)
+
+        config = {"loaders": []}
+        # This will unpack the config and forward it's payload (MessageMeta) to the sink
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
+
+        sink = builder.make_sink("sink", on_next, on_error, on_complete)
+
+        builder.make_edge(source, data_loader.input_port("input"))
+        builder.make_edge(data_loader.output_port("output"), sink)
+
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
+
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
+
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+
+    try:
+        executor.start()
+        assert (False, "This should fail, because no loaders were specified in the config and none were added.")
+        executor.join()
+    except Exception:
+        pass
+
+
+def test_get_module_with_bad_loader_type():
+    def init_wrapper(builder: mrc.Builder):
+        def gen_data():
+            for i in range(packet_count):
+                config = {"loader_id": "payload"}
+                msg = messages.MessageControl(config)
+                yield msg
+
+        source = builder.make_source("source", gen_data)
+
+        config = {"loaders": ["not_a_loader(tm)"]}
+        # This will unpack the config and forward it's payload (MessageMeta) to the sink
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
+
+        sink = builder.make_sink("sink", on_next, on_error, on_complete)
+
+        builder.make_edge(source, data_loader.input_port("input"))
+        builder.make_edge(data_loader.output_port("output"), sink)
+
+    pipeline = mrc.Pipeline()
+    try:
+        pipeline.make_segment("main", init_wrapper)
+        assert (False, "This should fail, because the loader type is not a valid loader")
+    except Exception:
+        pass
+
+
+def test_get_module_with_bad_control_message():
+    def init_wrapper(builder: mrc.Builder):
+        def gen_data():
+            for i in range(packet_count):
+                config = {"loader_id": "not_a_loader(tm)"}
+                msg = messages.MessageControl(config)
+                yield msg
+
+        source = builder.make_source("source", gen_data)
+
+        config = {"loaders": ["payload"]}
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
+        data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
+
+        sink = builder.make_sink("sink", on_next, on_error, on_complete)
+
+        builder.make_edge(source, data_loader.input_port("input"))
+        builder.make_edge(data_loader.output_port("output"), sink)
+
+    pipeline = mrc.Pipeline()
+    pipeline.make_segment("main", init_wrapper)
+
+    options = mrc.Options()
+    options.topology.user_cpuset = "0-1"
+
+    executor = mrc.Executor(options)
+    executor.register_pipeline(pipeline)
+
+    try:
+        executor.start()
+        assert (False, "We should never get here, because the control message specifies an invalid loader")
+        executor.join()
+    except Exception:
+        pass
+
+
 packet_count = 5
 packets_received = 0
 
 
 def test_payload_loader_module():
+    registry = mrc.ModuleRegistry
+
+    fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
+    assert fn_constructor is not None
+
     def init_wrapper(builder: mrc.Builder):
         df = cudf.DataFrame({
             'col1': [1, 2, 3, 4, 5],
@@ -80,29 +196,18 @@ def test_payload_loader_module():
 
                 yield msg
 
-        def on_next(data):
+        def _on_next(data):
             global packets_received
             packets_received += 1
             assert (data.df == df)
 
-        def on_error():
-            pass
-
-        def on_complete():
-            pass
-
-        registry = mrc.ModuleRegistry
-
-        fn_constructor = registry.get_module_constructor("DataLoader", "morpheus")
-        assert fn_constructor is not None
-
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": "payload"}
-        # This will unpack the config and forward it's payload (MessageMeta) to the sink
+        config = {"loaders": ["payload"]}
+        # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
-        sink = builder.make_sink("sink", on_next, on_error, on_complete)
+        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
 
         builder.make_edge(source, data_loader.input_port("input"))
         builder.make_edge(data_loader.output_port("output"), sink)
@@ -179,16 +284,10 @@ def test_file_loader_module():
                 msg = messages.MessageControl(config)
                 yield msg
 
-        def on_next(data):
+        def _on_next(data):
             global packets_received
             packets_received += 1
             assert (data.df == df)
-
-        def on_error():
-            pass
-
-        def on_complete():
-            pass
 
         registry = mrc.ModuleRegistry
 
@@ -197,11 +296,11 @@ def test_file_loader_module():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": "file"}
+        config = {"loaders": ["file"]}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
-        sink = builder.make_sink("sink", on_next, on_error, on_complete)
+        sink = builder.make_sink("sink", _on_next, on_error, on_complete)
 
         builder.make_edge(source, data_loader.input_port("input"))
         builder.make_edge(data_loader.output_port("output"), sink)

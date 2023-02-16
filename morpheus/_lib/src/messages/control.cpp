@@ -24,50 +24,49 @@ namespace py = pybind11;
 
 namespace morpheus {
 
-MessageControl::MessageControl(const nlohmann::json& message) : m_message(message) {}
+MessageControl::MessageControl(const nlohmann::json& config) : m_config(config) {}
 
-const nlohmann::json& MessageControl::message() const
+const nlohmann::json& MessageControl::config() const
 {
-    return m_message;
+    return m_config;
 }
 
-void MessageControl::message(const nlohmann::json& message)
+void MessageControl::config(const nlohmann::json& config)
 {
-    m_message = message;
+    m_config = config;
 }
 
 std::shared_ptr<MessageMeta> MessageControl::payload()
 {
-    // TODO(Devin): do something else
     auto temp = std::move(m_payload);
-    m_payload = nullptr;
+    // TODO(Devin): Decide if we copy or steal the payload
+    // m_payload = nullptr;
 
     return temp;
 }
 
 void MessageControl::payload(const std::shared_ptr<MessageMeta>& payload)
 {
-    // TODO(Devin): can we just overwrite?
     m_payload = payload;
 }
 
 /*** Proxy Implementations ***/
 
-std::shared_ptr<MessageControl> ControlMessageProxy::create(py::dict& message)
+std::shared_ptr<MessageControl> ControlMessageProxy::create(py::dict& config)
 {
-    return std::make_shared<MessageControl>(mrc::pymrc::cast_from_pyobject(message));
+    return std::make_shared<MessageControl>(mrc::pymrc::cast_from_pyobject(config));
 }
 
-py::dict ControlMessageProxy::message(MessageControl& self)
+py::dict ControlMessageProxy::config(MessageControl& self)
 {
-    auto dict = mrc::pymrc::cast_from_json(self.message());
+    auto dict = mrc::pymrc::cast_from_json(self.config());
 
     return dict;
 }
 
-void ControlMessageProxy::message(MessageControl& self, py::dict& message)
+void ControlMessageProxy::config(MessageControl& self, py::dict& config)
 {
-    self.message(mrc::pymrc::cast_from_pyobject(message));
+    self.config(mrc::pymrc::cast_from_pyobject(config));
 }
 
 }  // namespace morpheus

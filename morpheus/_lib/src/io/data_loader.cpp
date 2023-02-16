@@ -28,24 +28,23 @@ DataLoader::DataLoader() : m_loaders{} {}
 
 std::shared_ptr<MessageMeta> DataLoader::load(MessageControl& control_message)
 {
-    auto payload = control_message.message();
+    auto payload = control_message.config();
     if (payload.contains("loader_id"))
     {
-        // TODO
-        std::string loader_id = payload["loader_id"];
-        auto loader           = m_loaders.find(loader_id);
+        auto loader_id = payload["loader_id"];
+        auto loader    = m_loaders.find(loader_id);
         if (loader != m_loaders.end())
         {
-            VLOG(5) << "Loading data using loader: " << loader_id
-                    << " for message: " << control_message.message().dump() << std::endl;
+            VLOG(5) << "Loading data using loader: " << loader_id << " for message: " << control_message.config().dump()
+                    << std::endl;
             return std::move(loader->second->load(control_message));
         }
     }
 
-    throw std::runtime_error("No loader registered for message: " + control_message.message().dump());
+    throw std::runtime_error("No loader registered for message: " + control_message.config().dump());
 }
 
-void DataLoader::register_loader(const std::string& loader_id, std::shared_ptr<Loader> loader, bool overwrite)
+void DataLoader::add_loader(const std::string& loader_id, std::shared_ptr<Loader> loader, bool overwrite)
 {
     if (!overwrite and m_loaders.find(loader_id) != m_loaders.end())
     {

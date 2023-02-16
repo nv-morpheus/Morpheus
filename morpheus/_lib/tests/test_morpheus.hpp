@@ -63,7 +63,7 @@ class TestWithPythonInterpreter : public ::testing::Test
  */
 std::filesystem::path get_morpheus_root();
 
-std::string create_mock_dataframe(std::vector<std::string> cols, std::vector<std::string> dtypes, std::size_t rows);
+std::string create_mock_csv_file(std::vector<std::string> cols, std::vector<std::string> dtypes, std::size_t rows);
 
 std::shared_ptr<MessageMeta> create_mock_msg_meta(std::vector<std::string> cols,
                                                   std::vector<std::string> dtypes,

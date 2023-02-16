@@ -19,5 +19,6 @@
 
 #include "file.hpp"
 #include "grpc.hpp"
+#include "lambda.hpp"
 #include "payload.hpp"
 #include "rest.hpp"

@@ -63,9 +63,9 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
     }
 
     // data_loader.register_loader("file", std::make_unique<FileDataLoader>());
-    data_loader.register_loader("grpc", std::make_unique<GRPCDataLoader>());
-    data_loader.register_loader("payload", std::make_unique<PayloadDataLoader>());
-    data_loader.register_loader("rest", std::make_unique<RESTDataLoader>());
+    data_loader.add_loader("grpc", std::make_unique<GRPCDataLoader>());
+    data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
+    data_loader.add_loader("rest", std::make_unique<RESTDataLoader>());
 
     for (auto& loader : loaders)
     {
@@ -76,13 +76,31 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
     }
 }
 
+TEST_F(TestDataLoader, DataLoaderRemoveLoaderTest)
+{
+    auto data_loader = DataLoader();
+
+    nlohmann::json config;
+    config["loader_id"] = "grpc";
+
+    auto msg = MessageControl(config);
+
+    EXPECT_THROW(data_loader.load(msg), std::runtime_error);
+    data_loader.add_loader("grpc", std::make_unique<GRPCDataLoader>());
+
+    EXPECT_NO_THROW(data_loader.load(msg));
+
+    data_loader.remove_loader("grpc");
+    EXPECT_THROW(data_loader.load(msg), std::runtime_error);
+}
+
 /**
  * @brief Check that we can send a control message, with a raw data payload and load it correctly.
  */
 TEST_F(TestDataLoader, PayloadLoaderTest)
 {
     auto data_loader = DataLoader();
-    data_loader.register_loader("payload", std::make_unique<PayloadDataLoader>());
+    data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
 
     nlohmann::json config;
     config["loader_id"] = "payload";
@@ -102,9 +120,9 @@ TEST_F(TestDataLoader, PayloadLoaderTest)
 TEST_F(TestDataLoader, FileLoaderTest)
 {
     auto data_loader = DataLoader();
-    data_loader.register_loader("file", std::make_unique<FileDataLoader>());
+    data_loader.add_loader("file", std::make_unique<FileDataLoader>());
 
-    auto string_df = create_mock_dataframe({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
+    auto string_df = create_mock_csv_file({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
 
     char temp_file[] = "/tmp/morpheus_test_XXXXXXXX";
     int fd           = mkstemp(temp_file);
@@ -115,8 +133,10 @@ TEST_F(TestDataLoader, FileLoaderTest)
 
     nlohmann::json config;
     config["loader_id"] = "file";
-    config["strategy"]  = "merge";
-    config["files"]     = {std::string(temp_file)};
+    config["strategy"]  = "aggregate";
+    config["files"]     = nlohmann::json::array();
+
+    config["files"].push_back({{"path", std::string(temp_file)}, {"type", "csv"}});
 
     auto msg = MessageControl(config);
 

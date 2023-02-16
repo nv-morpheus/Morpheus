@@ -15,25 +15,20 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "morpheus/io/loaders/lambda.hpp"
 
-#include "morpheus/io/data_loader.hpp"
-#include "morpheus/messages/meta.hpp"
+#include <memory>
 
 namespace morpheus {
-#pragma GCC visibility push(default)
-/**
- * @brief Very simple raw data loader that takes a list of files containing data that can be converted into a cuDF
- * DataFrame. Loads the files into a cuDF DataFrame and returns a MessageMeta containing the DataFrame.
- *
- */
-class FileDataLoader : public Loader
+LambdaLoader::LambdaLoader(std::function<std::shared_ptr<MessageMeta>(MessageControl&)> lambda_load)
+    : m_lambda_load(lambda_load)
 {
-  public:
-    FileDataLoader()  = default;
-    ~FileDataLoader() = default;
+}
 
-    std::shared_ptr<MessageMeta> load(MessageControl& message) override;
-};
-#pragma GCC visibility pop
+std::shared_ptr<MessageMeta> LambdaLoader::load(MessageControl& message)
+{
+    VLOG(30) << "Called LambdaLoader::load()";
+
+    return std::move(m_lambda_load(message));
+}
 }  // namespace morpheus

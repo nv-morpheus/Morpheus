@@ -30,35 +30,43 @@ class MessageControl
 {
   public:
     MessageControl() = default;
-    MessageControl(const nlohmann::json& message);
+    MessageControl(const nlohmann::json& config);
 
     /**
-     * @brief Set the message object
-     * @param message
+     * @brief Set the config object
+     * @param config
      */
-    void message(const nlohmann::json& message);
+    void config(const nlohmann::json& config);
 
     /**
-     *
+     * @brief Get the config object
      * @return
      */
-    const nlohmann::json& message() const;
+    const nlohmann::json& config() const;
 
+    /**
+     * @brief Set the payload object
+     * @param payload
+     */
     void payload(const std::shared_ptr<MessageMeta>& payload);
 
+    /**
+     * @brief Get the payload object
+     * @return Shared pointer to the message payload
+     */
     std::shared_ptr<MessageMeta> payload();
 
   private:
     std::shared_ptr<MessageMeta> m_payload{nullptr};
-    nlohmann::json m_message{};
+    nlohmann::json m_config{};
 };
 
 struct ControlMessageProxy
 {
-    static std::shared_ptr<MessageControl> create(pybind11::dict& message);
+    static std::shared_ptr<MessageControl> create(pybind11::dict& config);
 
-    static pybind11::dict message(MessageControl& self);
-    static void message(MessageControl& self, pybind11::dict& message);
+    static pybind11::dict config(MessageControl& self);
+    static void config(MessageControl& self, pybind11::dict& config);
 };
 
 #pragma GCC visibility pop

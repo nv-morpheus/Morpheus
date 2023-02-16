@@ -19,6 +19,9 @@
 #include "test_messages.hpp"
 
 #include "morpheus/messages/control.hpp"
+#include "morpheus/messages/meta.hpp"
+
+#include <memory>
 
 using namespace morpheus;
 using namespace morpheus::test;
@@ -32,21 +35,40 @@ TEST_F(TestControlMessage, InitializationTest)
 
     auto msg_two = MessageControl(config);
 
-    ASSERT_EQ(msg_two.message().contains("some_value"), true);
-    ASSERT_EQ(msg_two.message()["some_value"], "42");
+    ASSERT_EQ(msg_two.config().contains("some_value"), true);
+    ASSERT_EQ(msg_two.config()["some_value"], "42");
 }
 
 TEST_F(TestControlMessage, SetMessageTest)
 {
     auto msg = MessageControl();
 
-    ASSERT_EQ(msg.message().contains("some_value"), false);
+    ASSERT_EQ(msg.config().contains("some_value"), false);
 
     auto config          = nlohmann::json();
     config["some_value"] = "42";
 
-    msg.message(config);
+    msg.config(config);
 
-    ASSERT_EQ(msg.message().contains("some_value"), true);
-    ASSERT_EQ(msg.message()["some_value"], "42");
+    ASSERT_EQ(msg.config().contains("some_value"), true);
+    ASSERT_EQ(msg.config()["some_value"], "42");
+}
+
+TEST_F(TestControlMessage, PayloadTest)
+{
+    auto msg = MessageControl();
+
+    ASSERT_EQ(msg.payload(), nullptr);
+
+    auto null_payload = std::shared_ptr<MessageMeta>(nullptr);
+
+    msg.payload(null_payload);
+
+    ASSERT_EQ(msg.payload(), null_payload);
+
+    auto data_payload = create_mock_msg_meta({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
+
+    msg.payload(data_payload);
+
+    ASSERT_EQ(msg.payload(), data_payload);
 }

@@ -17,9 +17,11 @@ message(STATUS "Adding library: morpheus")
 add_library(morpheus
     # Keep these sorted!
     ${MORPHEUS_LIB_ROOT}/src/io/data_loader.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/data_loader_registry.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/deserializers.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/loaders/file.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/loaders/grpc.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/lambda.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/loaders/payload.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/loaders/rest.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/serializers.cpp

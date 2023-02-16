@@ -20,13 +20,6 @@
 #include "../test_morpheus.hpp"  // IWYU pragma: associated
 
 namespace morpheus::test {
-class TestMessages : public ::testing::Test
-{
-  protected:
-    void SetUp() override {}
 
-    void TearDown() override {}
-};
-
-using TestControlMessage = TestMessages;
+using TestControlMessage = TestWithPythonInterpreter;  // NOLINT
 }  // namespace morpheus::test

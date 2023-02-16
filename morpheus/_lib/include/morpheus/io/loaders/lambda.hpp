@@ -18,22 +18,24 @@
 #pragma once
 
 #include "morpheus/io/data_loader.hpp"
-#include "morpheus/messages/meta.hpp"
 
 namespace morpheus {
 #pragma GCC visibility push(default)
 /**
- * @brief Very simple raw data loader that takes a list of files containing data that can be converted into a cuDF
- * DataFrame. Loads the files into a cuDF DataFrame and returns a MessageMeta containing the DataFrame.
+ * @brief Very simple raw data loader that takes payload data on the control message and returns it
  *
  */
-class FileDataLoader : public Loader
+class LambdaLoader : public Loader
 {
   public:
-    FileDataLoader()  = default;
-    ~FileDataLoader() = default;
+    LambdaLoader() = delete;
+    LambdaLoader(std::function<std::shared_ptr<MessageMeta>(MessageControl&)> lambda_load);
+    ~LambdaLoader() = default;
 
     std::shared_ptr<MessageMeta> load(MessageControl& message) override;
+
+  private:
+    std::function<std::shared_ptr<MessageMeta>(MessageControl&)> m_lambda_load;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
