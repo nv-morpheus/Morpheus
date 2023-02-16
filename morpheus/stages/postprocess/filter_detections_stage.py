@@ -69,7 +69,7 @@ class FilterDetectionsStage(SinglePortStage):
         Threshold to classify, default is 0.5.
     copy : bool
         Whether or not to perform a copy.
-    filter_source : `from morpheus._lib.common.FilterSource`, default = 'auto'
+    filter_source : `from morpheus._lib.common.FilterSource`, case_sensitive = False
         Indicate if we are operating on is an output tensor or a field in the DataFrame.
         Choosing `Auto` will default to `TENSOR` when the incoming message contains output tensorts and `DATAFRAME`
         otherwise.

@@ -66,7 +66,7 @@ The following instructions are for developers who are getting started with the M
 All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
  - `PYTHON_VER`: The desired Python version. Minimum required is `3.8`
- - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.08`
+ - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.10`
  - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.5`
 
 
@@ -74,12 +74,19 @@ All of the following instructions assume several variables have been set:
 
 ```bash
 export PYTHON_VER=3.8
-export RAPIDS_VER=22.08
+export RAPIDS_VER=22.10
 export CUDA_VER=11.5
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
 ```
+
+Ensure all submodules are checked out:
+
+```bash
+git submodule update --init --recursive
+```
+
 The large model and data files in this repo are stored using [Git Large File Storage (LFS)](https://git-lfs.github.com/). These files will be required for running the training/validation scripts and example pipelines for the Morpheus pre-trained models.
 
 By default only those files stored in LFS strictly needed for running Morpheus are included when the Morpheus repository is cloned. Additional datasets can be downloaded using the `scripts/fetch_data.py` script. See the section [Git LFS](README.md#git-lfs) of the [README.md](README.md) file for details on this.
@@ -181,12 +188,19 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 1. Set up env variables and clone the repo:
    ```bash
    export PYTHON_VER=3.8
-   export RAPIDS_VER=22.08
+   export RAPIDS_VER=22.10
    export CUDA_VER=11.5
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT
    ```
+
+1. Ensure all submodules are checked out:
+
+```bash
+git submodule update --init --recursive
+```
+
 1. Create the morpheus Conda environment
    ```bash
    mamba env create -f ./docker/conda/environments/cuda${CUDA_VER}_dev.yml

@@ -35,9 +35,11 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
         output_json["machine_info"]["gpu_" + str(i)]["temperature"] = f"{gpu.temperature} C"
         output_json["machine_info"]["gpu_" + str(i)]["uuid"] = gpu.uuid
 
-    line_count = 0
-    byte_count = 0
     for bench in output_json['benchmarks']:
+
+        line_count = 0
+        byte_count = 0
+
         if "file_path" in E2E_TEST_CONFIGS[bench["name"]]:
             source_file = E2E_TEST_CONFIGS[bench["name"]]["file_path"]
             line_count = len(open(source_file).readlines())
