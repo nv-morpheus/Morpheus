@@ -20,6 +20,7 @@ add_executable(test_libmorpheus
   # test_cuda.cu
   io/test_data_loader.cpp
   io/test_data_loader_registry.cpp
+  io/test_loaders.cpp
   messages/test_control_message.cpp
   modules/test_data_loader_module.cpp
   test_main.cpp

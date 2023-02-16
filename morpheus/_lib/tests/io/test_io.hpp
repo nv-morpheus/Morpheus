@@ -22,6 +22,7 @@
 namespace morpheus::test {
 
 TEST_CLASS(DataLoaderRegistry);
+TEST_CLASS(Loader);
 
 using TestDataLoader = TestWithPythonInterpreter;  // NOLINT
 }  // namespace morpheus::test

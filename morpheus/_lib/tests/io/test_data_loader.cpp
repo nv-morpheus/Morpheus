@@ -132,4 +132,5 @@ TEST_F(TestDataLoader, FileLoaderTest)
     data_file.close();
 
     auto mm2 = data_loader.load(msg);
+    unlink(temp_file);
 }
