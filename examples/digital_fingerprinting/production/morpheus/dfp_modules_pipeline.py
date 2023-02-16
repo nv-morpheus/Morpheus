@@ -17,10 +17,9 @@ import typing
 from datetime import datetime
 
 import click
-import dfp.modules.dfp_inf  # noqa: F401
-import dfp.modules.dfp_preproc  # noqa: F401
-import dfp.modules.dfp_tra  # noqa: F401
+import dfp.modules.dfp_deployment  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
+from dfp.utils.config_generator import TRAINING_AND_INFERENCE
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.derive_args import DeriveArgs
@@ -31,9 +30,8 @@ from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
-from morpheus.stages.general.broadcast_stage import BroadcastStage
-from morpheus.stages.general.linear_modules_stage import LinearModulesStage
 from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.general.nonlinear_modules_stage import NonLinearModulesStage
 
 
 @click.command()
@@ -145,56 +143,33 @@ def run_pipeline(log_type: str,
     config_generator = ConfigGenerator(config, derive_args, schema)
 
     conf = config_generator.get_conf()
+    workload = conf.get("workload")
 
     # Create a pipeline object
     pipeline = Pipeline(config)
 
     source_stage = pipeline.add_stage(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
-    # Here we add a wrapped module that implements the DFP Inference pipeline
-    preproc_stage = pipeline.add_stage(
-        LinearModulesStage(config, conf.get("preproc"), input_port_name="input", output_port_name="output"))
+    # Here we add a wrapped module that implements the DFP Deployment
+    dfp_deployment_stage = pipeline.add_stage(
+        NonLinearModulesStage(config,
+                              conf,
+                              input_port_name="input",
+                              output_port_name="output",
+                              output_port_count=conf.get("output_port_count")))
 
-    pipeline.add_edge(source_stage, preproc_stage)
+    pipeline.add_edge(source_stage, dfp_deployment_stage)
 
-    if "training" in conf and "inference" in conf:
-        broadcast_stage = pipeline.add_stage(BroadcastStage(config, output_port_count=2))
-
-        pipeline.add_edge(preproc_stage, broadcast_stage)
-
-        inf_stage = pipeline.add_stage(
-            LinearModulesStage(config, conf.get("inference"), input_port_name="input", output_port_name="output"))
-
-        tra_stage = pipeline.add_stage(
-            LinearModulesStage(config, conf.get("training"), input_port_name="input", output_port_name="output"))
-
-        inf_mntr_stage = pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate",
-                                                         smoothing=0.001))
-        tra_mntr_stage = pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
-
-        pipeline.add_edge(broadcast_stage.output_ports[0], inf_stage)
-        pipeline.add_edge(broadcast_stage.output_ports[1], tra_stage)
-        pipeline.add_edge(inf_stage, inf_mntr_stage)
-        pipeline.add_edge(tra_stage, tra_mntr_stage)
-
-    elif "training" in conf:
-
-        tra_stage = pipeline.add_stage(
-            LinearModulesStage(config, conf.get("training"), input_port_name="input", output_port_name="output"))
-        mntr_stage = pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
-        pipeline.add_edge(preproc_stage, tra_stage)
-        pipeline.add_edge(tra_stage, mntr_stage)
-
-    elif "inference" in conf:
-        inf_stage = pipeline.add_stage(
-            LinearModulesStage(config, conf.get("inference"), input_port_name="input", output_port_name="output"))
-        inf_mntr_stage = pipeline.add_stage(MonitorStage(config, description="Inference Pipeline rate",
-                                                         smoothing=0.001))
-        pipeline.add_edge(preproc_stage, inf_stage)
-        pipeline.add_edge(inf_stage, inf_mntr_stage)
-
+    if workload == TRAINING_AND_INFERENCE:
+        inf_mntr_stage = pipeline.add_stage(
+            MonitorStage(config, description="DFPInference Pipeline rate", smoothing=0.001))
+        tra_mntr_stage = pipeline.add_stage(
+            MonitorStage(config, description="DFPTraining Pipeline rate", smoothing=0.001))
+        pipeline.add_edge(dfp_deployment_stage.output_ports[0], tra_mntr_stage)
+        pipeline.add_edge(dfp_deployment_stage.output_ports[1], inf_mntr_stage)
     else:
-        raise Exception("Required keys not found in the configuration to trigger the pipeline")
+        mntr_stage = pipeline.add_stage(MonitorStage(config, description=f"{workload} Pipeline rate", smoothing=0.001))
+        pipeline.add_edge(dfp_deployment_stage.output_ports[0], mntr_stage)
 
     # Run the pipeline
     pipeline.run()

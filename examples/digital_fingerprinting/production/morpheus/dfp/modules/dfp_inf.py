@@ -18,7 +18,6 @@ import dfp.modules.dfp_data_prep  # noqa: F401
 import dfp.modules.dfp_inference  # noqa: F401
 import dfp.modules.dfp_postprocessing  # noqa: F401
 import dfp.modules.dfp_rolling_window  # noqa: F401
-import dfp.modules.dfp_split_users  # noqa: F401
 import mrc
 
 import morpheus.modules.filter_detections  # noqa: F401

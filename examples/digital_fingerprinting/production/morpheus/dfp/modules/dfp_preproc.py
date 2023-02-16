@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @register_module(DFP_PREPROC, MODULE_NAMESPACE)
 def dfp_preproc(builder: mrc.Builder):
     """
-    This module function allows for the consolidation of multiple dfp pipeline modules relevent to inference
+    This module function allows for the consolidation of multiple dfp pipeline modules relevent to inference/training
     process into a single module.
 
     Parameters
@@ -53,12 +53,12 @@ def dfp_preproc(builder: mrc.Builder):
     # Load modules
     file_batcher_module = load_module(file_batcher_conf, builder=builder)
     file_to_dataframe_module = load_module(file_to_df_conf, builder=builder)
-    dfp_split_users_modules = load_module(dfp_split_users_conf, builder=builder)
+    dfp_split_users_module = load_module(dfp_split_users_conf, builder=builder)
 
     # Make an edge between the modules.
     builder.make_edge(file_batcher_module.output_port("output"), file_to_dataframe_module.input_port("input"))
-    builder.make_edge(file_to_dataframe_module.output_port("output"), dfp_split_users_modules.input_port("input"))
+    builder.make_edge(file_to_dataframe_module.output_port("output"), dfp_split_users_module.input_port("input"))
 
     # Register input and output port for a module.
     builder.register_module_input("input", file_batcher_module.input_port("input"))
-    builder.register_module_output("output", dfp_split_users_modules.output_port("output"))
+    builder.register_module_output("output", dfp_split_users_module.output_port("output"))

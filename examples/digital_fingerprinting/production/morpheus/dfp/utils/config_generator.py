@@ -17,6 +17,7 @@ import os
 from dfp.utils.derive_args import DeriveArgs
 from dfp.utils.derive_args import pyobj2str
 from dfp.utils.module_ids import DFP_DATA_PREP
+from dfp.utils.module_ids import DFP_DEPLOYMENT
 from dfp.utils.module_ids import DFP_INF
 from dfp.utils.module_ids import DFP_INFERENCE
 from dfp.utils.module_ids import DFP_INFERENCE_PIPELINE
@@ -44,6 +45,8 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 
+TRAINING_AND_INFERENCE = "Training and Inference"
+
 
 class ConfigGenerator:
 
@@ -60,15 +63,24 @@ class ConfigGenerator:
 
         conf = {}
 
-        conf["preproc"] = self.preproc_conf()
+        conf["module_id"] = DFP_DEPLOYMENT
+        conf["module_name"] = "dfp_deployment"
+        conf["namespace"] = MODULE_NAMESPACE
+        conf["output_port_count"] = 1
+
+        conf[DFP_PREPROC] = self.preproc_conf()
 
         if self._derive_args.is_train_and_infer:
-            conf["training"] = self.train_conf()
-            conf["inference"] = self.infer_conf()
+            conf[DFP_TRA] = self.train_conf()
+            conf[DFP_INF] = self.infer_conf()
+            conf["output_port_count"] = 2
+            conf["workload"] = TRAINING_AND_INFERENCE
         elif self._derive_args.is_training:
-            conf["training"] = self.train_conf()
+            conf[DFP_TRA] = self.train_conf()
+            conf["workload"] = DFP_TRAINING
         else:
-            conf["inference"] = self.infer_conf()
+            conf[DFP_INF] = self.infer_conf()
+            conf["workload"] = DFP_INFERENCE
 
         return conf
 
@@ -126,7 +138,7 @@ class ConfigGenerator:
             "namespace": MODULE_NAMESPACE,
             DFP_ROLLING_WINDOW: {
                 "module_id": DFP_ROLLING_WINDOW,
-                "module_name": "dfp_rolling_window",
+                "module_name": "dfp_rolling_window_infer",
                 "namespace": MODULE_NAMESPACE,
                 "min_history": 1,
                 "min_increment": 0,
@@ -136,7 +148,7 @@ class ConfigGenerator:
             },
             DFP_DATA_PREP: {
                 "module_id": DFP_DATA_PREP,
-                "module_name": "dfp_data_prep",
+                "module_name": "dfp_data_prep_infer",
                 "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
@@ -193,7 +205,7 @@ class ConfigGenerator:
             "namespace": MODULE_NAMESPACE,
             DFP_ROLLING_WINDOW: {
                 "module_id": DFP_ROLLING_WINDOW,
-                "module_name": "dfp_rolling_window",
+                "module_name": "dfp_rolling_window_tra",
                 "namespace": MODULE_NAMESPACE,
                 "min_history": 300,
                 "min_increment": 300,
@@ -203,7 +215,7 @@ class ConfigGenerator:
             },
             DFP_DATA_PREP: {
                 "module_id": DFP_DATA_PREP,
-                "module_name": "dfp_data_prep",
+                "module_name": "dfp_data_prep_tra",
                 "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
