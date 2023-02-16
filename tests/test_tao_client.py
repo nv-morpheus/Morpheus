@@ -20,12 +20,11 @@ import pytest
 from requests.models import Response
 from requests.sessions import Session
 
-from morpheus.pipeline.training.tao_client import TaoApiClient
-from morpheus.pipeline.training.tao_client import generate_schema_url
-from morpheus.pipeline.training.tao_client import vaildate_apikey
+from morpheus.io.tao_client import TaoApiClient
+from morpheus.io.tao_client import apikey_type_check
+from morpheus.io.tao_client import generate_schema_url
 
 
-@pytest.mark.use_python
 def test_generate_schema_url():
 
     actual = generate_schema_url(url="localhost:32080", ssl=False)
@@ -48,19 +47,17 @@ def test_generate_schema_url():
     assert actual == expected
 
 
-@pytest.mark.use_python
-def test_vaildate_apikey():
+def test_apikey_type_check():
 
-    vaildate_apikey("test_api_key")
-
-    with pytest.raises(ValueError):
-        vaildate_apikey("")
+    apikey_type_check("test_api_key")
 
     with pytest.raises(ValueError):
-        vaildate_apikey(123459)
+        apikey_type_check("")
+
+    with pytest.raises(ValueError):
+        apikey_type_check(123459)
 
 
-@pytest.mark.use_python
 def get_tao_client():
     mock_creds = {"user_id": "X20109876", "token": "TOkJJTkw6WkxKRDpNWk9ZOkRVN0o6"}
     tao_client = TaoApiClient("test_api_key", "localhost:32080")
@@ -69,7 +66,6 @@ def get_tao_client():
     return tao_client
 
 
-@pytest.mark.use_python
 def test_create_dataset_resource():
     tao_client = get_tao_client()
 
@@ -102,7 +98,6 @@ def test_create_dataset_resource():
         tao_client.create_resource("dataset", data=data)
 
 
-@pytest.mark.use_python
 def test_create_model_resource():
     tao_client = get_tao_client()
 
@@ -124,7 +119,6 @@ def test_create_model_resource():
         tao_client.create_resource("random_kind", data=data)
 
 
-@pytest.mark.use_python
 def test_partial_update_resource():
 
     tao_client = get_tao_client()
@@ -166,7 +160,6 @@ def test_update_resource():
     assert isinstance(resp_json, dict)
 
 
-@pytest.mark.use_python
 def test_get_specs_schema():
     tao_client = get_tao_client()
 
@@ -188,7 +181,6 @@ def test_get_specs_schema():
     assert isinstance(resp_json, dict)
 
 
-@pytest.mark.use_python
 def test_close():
     tao_client = get_tao_client()
 
@@ -199,7 +191,6 @@ def test_close():
     assert tao_client.session is None
 
 
-@pytest.mark.use_python
 def test_upload_resource(tmpdir):
     input_data = tmpdir.join("input_dataset.txt")
 
@@ -222,7 +213,6 @@ def test_upload_resource(tmpdir):
     assert isinstance(resp_json, dict)
 
 
-@pytest.mark.use_python
 def test_download_resource(tmpdir):
     tao_client = get_tao_client()
 

@@ -30,16 +30,17 @@ _DATASET_ACTIONS = typing.Literal["convert", "convert_index", "convert_efficient
 _MODEL_ACTIONS = typing.Literal["train", "evaluate", "prune", "retrain", "export", "inference"]
 
 
-def validate_kind(func):
+def validate_kind(func: typing.Callable) -> typing.Callable:
     """
     Validates given endpoint category.
 
     Parameters
     ----------
-    func : Function that requires wrapping.
+    func : typing.Callable
+        Function that requires wrapping.
     Returns
     -------
-    inner_func
+    inner_func : typing.Callable
         Encapsulated function.
     """
 
@@ -58,16 +59,17 @@ def validate_kind(func):
     return inner_func
 
 
-def validate_actions(func):
+def validate_actions(func: typing.Callable) -> typing.Callable:
     """
     Validates TAO actions.
 
     Parameters
     ----------
-    func : Function that requires wrapping.
+    func : typing.Callable
+        Function that requires wrapping.
     Returns
     -------
-    inner_func
+    inner_func : typing.Callable
         Encapsulated function.
     """
 
@@ -101,7 +103,22 @@ def validate_actions(func):
     return inner_func
 
 
-def generate_schema_url(url, ssl):
+def generate_schema_url(url: str, ssl: bool) -> str:
+    """
+    Generates url with schema.
+
+    Parameters
+    ----------
+    url : str
+        URL
+    ssl : str
+        Determines whether to use HTTP or HTTPS in the schema.
+    Returns
+    -------
+    url : str
+        Schema attached url.
+    """
+
     if url.startswith("http://") or url.startswith("https://"):
         raise ValueError("URL should not include the scheme")
 
@@ -111,17 +128,43 @@ def generate_schema_url(url, ssl):
     return url
 
 
-def vaildate_apikey(apikey):
+def apikey_type_check(apikey: str):
+    """
+    Verify API key type.
+
+    Parameters
+    ----------
+    apikey : str
+        NGC API key
+    """
+
     if not isinstance(apikey, str):
         raise ValueError('API key must be a string')
 
     if not apikey:
         raise ValueError('API key can not be an empty string')
 
-    return apikey
-
 
 class TaoApiClient():
+    """
+    This serves as a client wrapper for TAO REST endpoints. This class gives you the flexibility to upload and delete
+    datasets, run training or inference processes, and update configurations on the TAO toolkit API server.
+
+    Parameters
+    ----------
+    apikey : str
+        NGC API key.
+    url : str
+        TAO toolkit API URL.
+    ssl : str
+        Determines whether to use HTTP or HTTPS in the schema.
+    cert : str
+        Client side certificate.
+    server_side_cert : str
+        Server side certificate.
+    proxies : typing.Dict[str, str]
+        Defines the HTTP and HTTPS connections.
+    """
 
     def __init__(self,
                  apikey: str,
@@ -131,7 +174,8 @@ class TaoApiClient():
                  server_side_cert: bool = True,
                  proxies: typing.Dict[str, str] = None):
 
-        self._apikey = vaildate_apikey(apikey)
+        apikey_type_check(apikey)
+        self._apikey = apikey
         self._parsed_url = generate_schema_url(url, ssl)
         self._base_uri = f"{self._parsed_url}/api/v1"
         self._ssl = ssl
@@ -147,6 +191,9 @@ class TaoApiClient():
             self._session.proxies.update(proxies)
 
     def authorize(self):
+        """
+        This function establishes a session and authorizes with the TAO toolkit API server.
+        """
 
         endpoint = f"{self._base_uri}/login/{self._apikey}"
 
@@ -166,15 +213,15 @@ class TaoApiClient():
             self._session.headers.update({'Authorization': 'Bearer ' + json_resp.get("token")})
 
     @property
-    def base_uri(self):
+    def base_uri(self) -> str:
         return self._base_uri
 
     @property
-    def user_uri(self):
+    def user_uri(self) -> str:
         return self._user_uri
 
     @property
-    def session(self):
+    def session(self) -> requests.Session:
         return self._session
 
     @validate_kind
