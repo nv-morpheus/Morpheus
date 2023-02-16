@@ -158,12 +158,10 @@ class DFPRollingWindowStage(SinglePortStage):
                 raise RuntimeError(("Overlapping rolling history detected. "
                                     "Rolling history can only be used with non-overlapping batches"))
 
-            train_offset = train_df.index.get_loc(first_row_idx)
-
             # Otherwise return a new message
             return MultiDFPMessage(meta=DFPMessageMeta(df=train_df, user_id=user_id),
-                                   mess_offset=train_offset,
-                                   mess_count=found_count)
+                                   mess_offset=0,
+                                   mess_count=len(train_df))
 
     def on_data(self, message: DFPMessageMeta):
 
