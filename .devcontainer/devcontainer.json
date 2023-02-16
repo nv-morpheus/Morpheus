@@ -40,7 +40,8 @@
         "HOST_MORPHEUS_ROOT": "${localWorkspaceFolder}",
         "MORPHEUS_ROOT": "${containerWorkspaceFolder}",
         "DEFAULT_CONDA_ENV": "morpheus",
-        "MAMBA_NO_BANNER": "1"
+        "MAMBA_NO_BANNER": "1",
+        "VAULT_HOST": "https://vault.ops.k8s.rapids.ai"
     },
 
     "initializeCommand": [ "${localWorkspaceFolder}/.devcontainer/initialize-command.sh" ],

@@ -16,8 +16,18 @@
 
 set -e
 
-COMPOSE_FILE="${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml"
+# Replicates the install instructions from the CI runner image
+sudo apt update
 
-docker compose -f $COMPOSE_FILE up -d zookeeper kafka
-export ZOOKEEPER_HOST=$(docker compose -f $COMPOSE_FILE exec zookeper hostname -i)
-export KAFKA_HOST=$(docker compose -f $COMPOSE_FILE exec kafka hostname -i)
+# Install openjdk
+sudo apt install -y openjdk-11-jdk
+
+# Clone the repo into home and run setup.py develop
+
+if [[ ! -d ~/pytest-kafka ]]; then
+    git clone https://gitlab.com/karolinepauls/pytest-kafka.git ~/pytest-kafka
+fi;
+
+cd ~/pytest-kafka
+
+python setup.py develop
