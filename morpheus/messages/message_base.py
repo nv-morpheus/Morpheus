@@ -48,10 +48,14 @@ class MessageBase(metaclass=MessageImpl):
     class has an associated C++ implementation (`cpp_class`), returns the Python implementation for all others.
     """
 
+    @classmethod
+    def _should_use_cpp(cls):
+        return getattr(cls, "_cpp_class", None) is not None and CppConfig.get_should_use_cpp()
+
     def __new__(cls, *args, **kwargs):
 
         # If _cpp_class is set, and use_cpp is enabled, create the C++ instance
-        if (getattr(cls, "_cpp_class", None) is not None and CppConfig.get_should_use_cpp()):
+        if (cls._should_use_cpp()):
             return cls._cpp_class(*args, **kwargs)
 
         # Otherwise, do the default init
