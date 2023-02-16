@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-#include "morpheus/io/loaders/lambda.hpp"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
@@ -31,7 +30,6 @@
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/data_table.hpp"
-#include "morpheus/objects/factory_registry.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/version.hpp"
@@ -141,14 +139,7 @@ PYBIND11_MODULE(messages, _module)
              pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&MessageControl::payload),
              py::return_value_policy::move);
 
-    py::class_<FactoryRegistry<Loader>, std::shared_ptr<FactoryRegistry<Loader>>>(_module, "DataLoaderRegistry")
-        .def_static(
-            "register_loader",
-            &FactoryRegistryProxy<Loader>::register_proxy_constructor<std::shared_ptr<MessageMeta>, MessageControl&>,
-            py::arg("name"),
-            py::arg("loader"));
-
-    // Context manager for Mutable Dataframes. Attempting to use it outside of a with block will raise an exception
+    // Context manager for Mutable Dataframes. Attempting to use it outside a with block will raise an exception
     py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(_module, "MutableTableCtxMgr")
         .def("__enter__", &MutableTableCtxMgr::enter, py::return_value_policy::reference)
         .def("__exit__", &MutableTableCtxMgr::exit)

@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "morpheus/io/data_loader_registry.hpp"
+#include "morpheus/io/loaders/all.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 #include "morpheus/objects/fiber_queue.hpp"
 #include "morpheus/objects/file_types.hpp"
@@ -25,6 +27,7 @@
 #include "morpheus/version.hpp"
 
 #include <mrc/utils/string_utils.hpp>
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 
 #include <memory>
@@ -43,6 +46,27 @@ PYBIND11_MODULE(common, _module)
 
     // Load the cudf helpers
     load_cudf_helpers();
+
+    LoaderRegistry::register_constructor(
+        "file", []() { return std::make_unique<FileDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "grpc", []() { return std::make_unique<GRPCDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "payload", []() { return std::make_unique<PayloadDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "rest", []() { return std::make_unique<RESTDataLoader>(); }, false);
+
+    py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
+        .def_static("contains", &LoaderRegistry::contains)
+        .def_static("register_loader",
+                    &LoaderRegistryProxy::register_proxy_constructor,
+                    py::arg("name"),
+                    py::arg("loader"),
+                    py::arg("throw_if_exists") = true)
+        .def_static("unregister_loader",
+                    &LoaderRegistry::unregister_constructor,
+                    py::arg("name"),
+                    py::arg("throw_if_not_exists") = true);
 
     py::class_<TensorObject>(_module, "Tensor")
         .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);

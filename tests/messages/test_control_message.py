@@ -14,11 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import cudf
-import morpheus.messages as messages
 import morpheus._lib.messages as _messages
+import morpheus.messages as messages
 
 
+@pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_init():
     raw_control_message_one = _messages.MessageControl()
     raw_control_message_two = _messages.MessageControl({"test": "test"})
@@ -27,6 +29,7 @@ def test_control_message_init():
     control_message_two = messages.MessageControl({"test": "test"})
 
 
+@pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_get():
     raw_control_message = _messages.MessageControl({"test": "test_rcm"})
     control_message = messages.MessageControl({"test": "test_cm"})
@@ -38,6 +41,7 @@ def test_control_message_get():
     assert control_message.config()["test"] == "test_cm"
 
 
+@pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_set():
     raw_control_message = _messages.MessageControl()
     control_message = messages.MessageControl()
@@ -52,6 +56,7 @@ def test_control_message_set():
     assert control_message.config()["test"] == "test_cm"
 
 
+@pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_set_and_get_payload():
     df = cudf.DataFrame({
         'col1': [1, 2, 3, 4, 5],
@@ -59,7 +64,8 @@ def test_control_message_set_and_get_payload():
         'col3': ['a', 'b', 'c', 'd', 'e'],
         'col4': [True, False, True, False, True]
     })
-    msg = _messages.MessageControl()
+
+    msg = messages.MessageControl()
     payload = messages.MessageMeta(df)
     msg.payload(payload)
 

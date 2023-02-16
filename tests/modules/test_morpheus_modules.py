@@ -21,7 +21,6 @@ import cudf
 import tempfile
 import os
 
-import morpheus._lib.messages as _messages
 import morpheus.modules  # Used to load and register morpheus modules
 import morpheus.messages as messages
 

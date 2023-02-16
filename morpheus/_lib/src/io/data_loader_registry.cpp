@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "morpheus/io/data_loader_registry.hpp"
+
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/io/loaders/lambda.hpp"
 #include "morpheus/messages/meta.hpp"
@@ -24,21 +26,39 @@ namespace morpheus {
 template <>
 std::map<std::string, std::function<std::shared_ptr<Loader>()>> FactoryRegistry<Loader>::m_object_constructors{};
 
+template <>
+std::mutex FactoryRegistry<Loader>::m_mutex{};
+
 template class FactoryRegistry<Loader>;
 
-template <>
-template <>
-void FactoryRegistryProxy<Loader>::register_proxy_constructor(
+void LoaderRegistryProxy::register_proxy_constructor(
     const std::string& name,
-    std::function<std::shared_ptr<MessageMeta>(MessageControl& control_message)> proxy_constructor)
+    std::function<std::shared_ptr<MessageMeta>(MessageControl& control_message)> proxy_constructor,
+    bool throw_if_exists)
 {
-    FactoryRegistry<Loader>::register_constructor(name, [proxy_constructor]() {
-        return std::make_shared<LambdaLoader>([proxy_constructor](MessageControl& control_message) {
-            return std::move(proxy_constructor(control_message));
-        });
-    });
+    FactoryRegistry<Loader>::register_constructor(
+        name,
+        [proxy_constructor]() {
+            return std::make_shared<LambdaLoader>([proxy_constructor](MessageControl& control_message) {
+                return std::move(proxy_constructor(control_message));
+            });
+        },
+        throw_if_exists);
 
     register_factory_cleanup_fn(name);
+}
+
+void LoaderRegistryProxy::register_factory_cleanup_fn(const std::string& name)
+{
+    {
+        auto at_exit = pybind11::module_::import("atexit");
+        at_exit.attr("register")(pybind11::cpp_function([name]() {
+            VLOG(2) << "(atexit) Unregistering loader: " << name;
+
+            // Try unregister -- ignore if already unregistered
+            FactoryRegistry<Loader>::unregister_constructor(name, false);
+        }));
+    }
 }
 
 }  // namespace morpheus

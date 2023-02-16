@@ -14,6 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#pragma once
+
 #include "morpheus/io/data_loader.hpp"
 
 #include <mrc/utils/type_utils.hpp>
@@ -23,6 +26,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 
 namespace morpheus {
@@ -31,8 +35,18 @@ template <typename ObjectReturnTypeT>
 class FactoryRegistry
 {
   public:
+    static bool contains(const std::string& name)
+    {
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+        return m_object_constructors.count(name) > 0;
+    }
+
     static std::shared_ptr<ObjectReturnTypeT> get_constructor(const std::string& name)
     {
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+        VLOG(2) << "Retrieving factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
+                << ")";
+
         if (m_object_constructors.count(name) == 0)
         {
             throw std::runtime_error("Unknown data loader: " + name);
@@ -41,53 +55,44 @@ class FactoryRegistry
     }
 
     static void register_constructor(const std::string& name,
-                                     const std::function<std::shared_ptr<ObjectReturnTypeT>()>& loader_fn)
+                                     const std::function<std::shared_ptr<ObjectReturnTypeT>()>& loader_fn,
+                                     bool throw_if_exists = true)
     {
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+        VLOG(2) << "Registering factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
+                << ")";
         if (m_object_constructors.count(name) > 0)
         {
-            throw std::runtime_error("Duplicate data loader registration: " + name);
+            if (throw_if_exists)
+            {
+                throw std::runtime_error("Duplicate data loader registration: " + name);
+            }
         }
         m_object_constructors[name] = loader_fn;
     }
 
-    static void unregister_constructor(const std::string& name, bool optional = false)
+    static void unregister_constructor(const std::string& name, bool throw_if_missing = true)
     {
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+        VLOG(2) << "Un-registering factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
+                << ")";
         if (m_object_constructors.count(name) == 0)
         {
-            if (optional)
+            if (throw_if_missing)
             {
-                return;
+                throw std::runtime_error("Unknown data loader: " + name);
             }
-            throw std::runtime_error("Unknown data loader: " + name);
+
+            return;
         }
         m_object_constructors.erase(name);
     }
 
   private:
-    static std::map<std::string, std::function<std::shared_ptr<Loader>()>> m_object_constructors;
+    static std::mutex m_mutex;
+    static std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>()>> m_object_constructors;
 };
 
-// TODO(Devin): this shouldn't be templated, and should be specific to Loader
-template <typename ObjectReturnTypeT>
-struct FactoryRegistryProxy
-{
-    template <typename ReturnTypeT, typename... ArgsT>
-    static void register_proxy_constructor(const std::string& name,
-                                           std::function<ReturnTypeT(ArgsT...)> proxy_constructor);
-
-    static void register_factory_cleanup_fn(const std::string& name)
-    {
-        {
-            auto at_exit = pybind11::module_::import("atexit");
-            at_exit.attr("register")(pybind11::cpp_function([name]() {
-                VLOG(2) << "(atexit) Unregistering loader: " << name;
-
-                // Try unregister -- ignore if already unregistered
-                FactoryRegistry<Loader>::unregister_constructor(name, true);
-            }));
-        }
-    }
-};
 #pragma GCC visibility pop
 
 }  // namespace morpheus
