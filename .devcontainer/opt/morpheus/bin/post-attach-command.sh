@@ -17,8 +17,6 @@
 # Ensure our ~/.config directory has the correct permissions. If ~/.config did
 # not exist, and you mount ~/.config/gh from the host, then ~/.config will be
 # created with root permissions which can break things
-sudo mkdir -p ~/.config
-sudo chown ${USER}:${USER} ~/.config
 
 conda_env_find(){
     conda env list | grep "${@}" >/dev/null 2>/dev/null
@@ -29,6 +27,6 @@ ENV_NAME=${ENV_NAME:-morpheus}
 sed -ri "s/conda activate base/conda activate $ENV_NAME/g" ~/.bashrc;
 
 if conda_env_find "${ENV_NAME}" ; \
-then mamba env update --name ${ENV_NAME} -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.5_dev.yml; \
+then mamba env update --name ${ENV_NAME} -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.5_dev.yml --prune; \
 else mamba env create --name ${ENV_NAME} -f ${MORPHEUS_ROOT}/docker/conda/environments/cuda11.5_dev.yml; \
 fi
