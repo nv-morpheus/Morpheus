@@ -33,13 +33,13 @@ template class FactoryRegistry<Loader>;
 
 void LoaderRegistryProxy::register_proxy_constructor(
     const std::string& name,
-    std::function<std::shared_ptr<MessageMeta>(MessageControl& control_message)> proxy_constructor,
+    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl> control_message)> proxy_constructor,
     bool throw_if_exists)
 {
     FactoryRegistry<Loader>::register_constructor(
         name,
         [proxy_constructor]() {
-            return std::make_shared<LambdaLoader>([proxy_constructor](MessageControl& control_message) {
+            return std::make_shared<LambdaLoader>([proxy_constructor](std::shared_ptr<MessageControl> control_message) {
                 return std::move(proxy_constructor(control_message));
             });
         },

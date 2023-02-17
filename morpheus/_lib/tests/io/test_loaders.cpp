@@ -57,7 +57,7 @@ TEST_F(TestLoader, LoaderFileTest)
     data_file << string_df;
     data_file.close();
 
-    auto msg    = MessageControl(config);
+    auto msg    = std::make_shared<MessageControl>(config);
     auto loader = FileDataLoader();
 
     EXPECT_NO_THROW(loader.load(msg));
@@ -67,7 +67,7 @@ TEST_F(TestLoader, LoaderFileTest)
 
 TEST_F(TestLoader, LoaderGRPCTest)
 {
-    auto msg    = MessageControl();
+    auto msg    = std::make_shared<MessageControl>();
     auto loader = GRPCDataLoader();
 
     EXPECT_THROW(loader.load(msg), std::runtime_error);
@@ -75,7 +75,7 @@ TEST_F(TestLoader, LoaderGRPCTest)
 
 TEST_F(TestLoader, LoaderPayloadTest)
 {
-    auto msg    = MessageControl();
+    auto msg    = std::make_shared<MessageControl>();
     auto loader = PayloadDataLoader();
 
     EXPECT_NO_THROW(loader.load(msg));
@@ -83,7 +83,7 @@ TEST_F(TestLoader, LoaderPayloadTest)
 
 TEST_F(TestLoader, LoaderRESTTest)
 {
-    auto msg    = MessageControl();
+    auto msg    = std::make_shared<MessageControl>();
     auto loader = RESTDataLoader();
 
     EXPECT_THROW(loader.load(msg), std::runtime_error);

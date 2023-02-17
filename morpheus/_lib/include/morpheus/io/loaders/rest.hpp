@@ -31,7 +31,7 @@ class RESTDataLoader : public Loader
     RESTDataLoader()  = default;
     ~RESTDataLoader() = default;
 
-    std::shared_ptr<MessageMeta> load(MessageControl& message) override;
+    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

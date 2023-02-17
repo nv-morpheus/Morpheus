@@ -63,9 +63,9 @@ void DataLoaderModule::initialize(mrc::segment::Builder& builder)
         LOG(WARNING) << "No loaders specified in config";
     }
 
-    auto loader_node = builder.make_node<std::shared_ptr<MessageControl>, std::shared_ptr<MessageMeta>>(
+    auto loader_node = builder.make_node<std::shared_ptr<MessageControl>, std::shared_ptr<MessageControl>>(
         "input", rxcpp::operators::map([this](std::shared_ptr<MessageControl> control_message) {
-            return m_data_loader.load(*control_message);
+            return m_data_loader.load(control_message);
         }));
 
     register_input_port("input", loader_node);

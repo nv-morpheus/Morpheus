@@ -20,13 +20,11 @@
 #include <memory>
 
 namespace morpheus {
-std::shared_ptr<MessageMeta> GRPCDataLoader::load(MessageControl& message)
+std::shared_ptr<MessageControl> GRPCDataLoader::load(std::shared_ptr<MessageControl> message)
 {
     VLOG(30) << "Called GRPCDataLoader::load()";
 
     // TODO(Devin): Implement this
     throw std::runtime_error("GRPCDataLoader::load() not implemented yet");
-
-    return std::move(message.payload());
 }
 }  // namespace morpheus

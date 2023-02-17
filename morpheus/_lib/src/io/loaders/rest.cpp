@@ -20,13 +20,11 @@
 #include <memory>
 
 namespace morpheus {
-std::shared_ptr<MessageMeta> RESTDataLoader::load(MessageControl& message)
+std::shared_ptr<MessageControl> RESTDataLoader::load(std::shared_ptr<MessageControl> message)
 {
     VLOG(30) << "Called RESTDataLoader::load()";
 
     // TODO(Devin): Implement this
     throw std::runtime_error("RESTDataLoader::load() not implemented yet");
-
-    return std::move(message.payload());
 }
 }  // namespace morpheus

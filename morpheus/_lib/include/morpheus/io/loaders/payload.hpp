@@ -33,7 +33,7 @@ class PayloadDataLoader : public Loader
     PayloadDataLoader()  = default;
     ~PayloadDataLoader() = default;
 
-    std::shared_ptr<MessageMeta> load(MessageControl& control_message) override;
+    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> control_message) final;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

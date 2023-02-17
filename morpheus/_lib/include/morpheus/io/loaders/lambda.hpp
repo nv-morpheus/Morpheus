@@ -29,13 +29,13 @@ class LambdaLoader : public Loader
 {
   public:
     LambdaLoader() = delete;
-    LambdaLoader(std::function<std::shared_ptr<MessageMeta>(MessageControl&)> lambda_load);
+    LambdaLoader(std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> lambda_load);
     ~LambdaLoader() = default;
 
-    std::shared_ptr<MessageMeta> load(MessageControl& message) override;
+    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
 
   private:
-    std::function<std::shared_ptr<MessageMeta>(MessageControl&)> m_lambda_load;
+    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> m_lambda_load;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus
