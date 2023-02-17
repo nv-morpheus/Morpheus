@@ -28,7 +28,7 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/objects/triton_in_out.hpp"
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/stage_util.hpp"  // for foreach_map
+#include "morpheus/utilities/stage_util.hpp"   // for foreach_map
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
@@ -58,6 +58,8 @@
 namespace {
 
 using namespace morpheus;
+using tensor_map_t = TensorMemory::tensor_map_t;
+using buffer_map_t = std::map<std::string, std::shared_ptr<rmm::device_buffer>>;
 
 // Component-private free functions.
 void InferenceClientStage__check_triton_errors(triton::client::Error status,
@@ -75,11 +77,11 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
     }
 }
 
-std::map<std::string, TensorObject> build_response_outputs(std::size_t count,
-                                                           const std::vector<TritonInOut>& model_outputs)
+void build_output_tensors(std::size_t count,
+                          const std::vector<TritonInOut>& model_outputs,
+                          buffer_map_t& output_buffers,
+                          tensor_map_t& output_tensors)
 {
-    std::map<std::string, TensorObject> response_outputs;
-
     // Create the output memory blocks
     for (auto& model_output : model_outputs)
     {
@@ -93,14 +95,14 @@ std::map<std::string, TensorObject> build_response_outputs(std::size_t count,
         auto output_buffer = std::make_shared<rmm::device_buffer>(elem_count * model_output.datatype.item_size(),
                                                                   rmm::cuda_stream_per_thread);
 
+        output_buffers[model_output.mapped_name] = output_buffer;
+
         // Triton results are always in row-major as required by the KServe protocol
         // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
         std::vector<TensorIndex> stride{total_shape[1], 1};
-        response_outputs[model_output.mapped_name] =
+        output_tensors[model_output.mapped_name] =
             Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0);
     }
-
-    return response_outputs;
 }
 
 std::vector<int32_t> get_seq_ids(const InferenceClientStage::sink_type_t& message)
@@ -161,15 +163,17 @@ std::shared_ptr<const triton::client::InferRequestedOutput> build_output(const T
     return out_shared;
 }
 
-void reduce_outputs(const InferenceClientStage::sink_type_t& x, std::map<std::string, TensorObject>& response_outputs)
+void reduce_outputs(const InferenceClientStage::sink_type_t& x,
+                    buffer_map_t& output_buffers,
+                    tensor_map_t& output_tensors)
 {
     // When our tensor lengths are longer than our dataframe we will need to use the seq_ids array to
     // lookup how the values should map back into the dataframe.
     auto host_seq_ids = get_seq_ids(x);
 
-    std::map<std::string, TensorObject> reduced_outputs;
+    tensor_map_t reduced_outputs;
 
-    for (const auto& output : response_outputs)
+    for (const auto& output : output_tensors)
     {
         DCHECK(std::dynamic_pointer_cast<RMMTensor>(output.second.get_tensor()) != nullptr);
         auto tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
@@ -191,11 +195,11 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, std::map<std::st
         std::vector<std::size_t> reduced_shape{tensor_shape};
         reduced_shape[0] = x->mess_count;
 
-        auto reduced_buffer =
-            MatxUtil::reduce_max(DevMemInfo{tensor->get_buffer(), tensor->dtype(), tensor_shape, tensor_stride},
-                                 host_seq_ids,
-                                 0,
-                                 reduced_shape);
+        auto& buffer        = output_buffers[output.first];
+        auto reduced_buffer = MatxUtil::reduce_max(
+            DevMemInfo{buffer, tensor->dtype(), tensor_shape, tensor_stride}, host_seq_ids, 0, reduced_shape);
+
+        output_buffers[output.first] = reduced_buffer;
 
         reduced_outputs[output.first] =
             Tensor::create(std::move(reduced_buffer),
@@ -205,14 +209,14 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, std::map<std::st
                            0);
     }
 
-    response_outputs = std::move(reduced_outputs);
+    output_tensors = std::move(reduced_outputs);
 }
 
-void apply_logits(std::map<std::string, TensorObject>& response_outputs)
+void apply_logits(buffer_map_t& output_buffers, tensor_map_t& output_tensors)
 {
-    std::map<std::string, TensorObject> logit_outputs;
+    tensor_map_t logit_outputs;
 
-    for (const auto& output : response_outputs)
+    for (const auto& output : output_tensors)
     {
         DCHECK(std::dynamic_pointer_cast<RMMTensor>(output.second.get_tensor()) != nullptr);
         auto input_tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
@@ -231,14 +235,17 @@ void apply_logits(std::map<std::string, TensorObject>& response_outputs)
         std::vector<std::size_t> input_stride(stride.size());
         std::copy(stride.cbegin(), stride.cend(), input_stride.begin());
 
-        auto output_buffer =
-            MatxUtil::logits(DevMemInfo{input_tensor->get_buffer(), input_tensor->dtype(), input_shape, input_stride});
+        auto& buffer = output_buffers[output.first];
+
+        auto output_buffer = MatxUtil::logits(DevMemInfo{buffer, input_tensor->dtype(), input_shape, input_stride});
+
+        output_buffers[output.first] = output_buffer;
 
         // For logits the input and output shapes will be the same
         logit_outputs[output.first] = Tensor::create(std::move(output_buffer), input_tensor->dtype(), shape, stride, 0);
     }
 
-    response_outputs = std::move(logit_outputs);
+    output_tensors = std::move(logit_outputs);
 }
 
 }  // namespace
@@ -279,8 +286,9 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 // input is too large and needs to be broken up in chunks in the pre-process stage. When this is the
                 // case we will reduce the rows in the response outputs such that we have a single response for each
                 // row int he dataframe.
-                std::map<std::string, TensorObject> response_outputs =
-                    build_response_outputs(x->count, m_model_outputs);
+                tensor_map_t output_tensors;
+                buffer_map_t output_buffers;
+                build_output_tensors(x->count, m_model_outputs, output_buffers, output_tensors);
 
                 for (size_t start = 0; start < x->count; start += m_max_batch_size)
                 {
@@ -328,7 +336,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         size_t output_ptr_size    = 0;
                         CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
 
-                        auto output_tensor = response_outputs[model_output.mapped_name].slice(
+                        auto output_tensor = output_tensors[model_output.mapped_name].slice(
                             {static_cast<cudf::size_type>(start), 0}, {static_cast<cudf::size_type>(stop), -1});
 
                         DCHECK_EQ(stop - start, output_shape[0]);
@@ -341,18 +349,18 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                 if (x->mess_count != x->count)
                 {
-                    reduce_outputs(x, response_outputs);
+                    reduce_outputs(x, output_buffers, output_tensors);
                 }
 
                 // If we need to do logits, do that here
                 if (m_needs_logits)
                 {
-                    apply_logits(response_outputs);
+                    apply_logits(output_buffers, output_tensors);
                 }
 
                 // Final output of all mini-batches
                 auto response_mem_probs =
-                    std::make_shared<ResponseMemoryProbs>(x->mess_count, std::move(response_outputs));
+                    std::make_shared<ResponseMemoryProbs>(x->mess_count, std::move(output_tensors));
                 auto response = std::make_shared<MultiResponseProbsMessage>(x->meta,
                                                                             x->mess_offset,
                                                                             x->mess_count,
