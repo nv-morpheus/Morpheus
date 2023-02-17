@@ -55,7 +55,7 @@
         },
         {
             "type":"bind",
-            "source": "${localWorkspaceFolder}/.cache/conda",
+            "source": "${localWorkspaceFolder}/../.conda",
             "target": "/home/coder/.conda"
         },
         {

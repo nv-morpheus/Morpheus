@@ -18,7 +18,7 @@
 docker network inspect morpheus >/dev/null 2>&1 || docker network create morpheus
 
 # create the parent conda folder so it's found when mounting
-mkdir -p .cache/conda
+mkdir -p ../.conda
 
 # create a config directory if it does not exist so it's found when mounting
 mkdir -p ../.config
