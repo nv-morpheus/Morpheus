@@ -17,7 +17,7 @@
 
 
 # Args used in FROM commands must come first
-ARG FROM_IMAGE="nvidia/cuda"
+ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
 ARG CUDA_SHORT_VER=11.5
 ARG CUDA_VER=11.5.1
 ARG LINUX_DISTRO=ubuntu
@@ -26,7 +26,7 @@ ARG PYTHON_VER=3.8
 
 # ============ Stage: base ============
 # Configure the base conda environment
-FROM ${FROM_IMAGE}:cuda${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
+FROM ${FROM_IMAGE}:cuda${CUDA_VER}-base-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
 # Required arguments
 ARG PYTHON_VER
@@ -50,6 +50,9 @@ RUN apt-get update &&\
     apt-get install --no-install-recommends -y \
         bc \
         build-essential \
+        cuda-gdb-${CUDA_SHORT_VER} \
+        cuda-cudart-dev-${CUDA_SHORT_VER} \
+        cuda-cupti-dev-${CUDA_SHORT_VER} \
         curl \
         git-lfs \
         jq \
