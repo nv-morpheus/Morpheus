@@ -38,10 +38,10 @@ std::shared_ptr<MessageControl> Loader::load(std::shared_ptr<MessageControl> mes
 
 std::shared_ptr<MessageControl> DataLoader::load(std::shared_ptr<MessageControl> control_message)
 {
-    auto payload = control_message->config();
-    if (payload.contains("loader_id"))
+    auto config = control_message->config();
+    if (config.contains("loader_id"))
     {
-        auto loader_id = payload["loader_id"];
+        auto loader_id = config["loader_id"];
         auto loader    = m_loaders.find(loader_id);
         if (loader != m_loaders.end())
         {
