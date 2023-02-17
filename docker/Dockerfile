@@ -53,15 +53,15 @@ RUN apt-get update &&\
         bc \
         build-essential \
         cuda-gdb-${CUDA_PKG_VER} \
-        cuda-cudart-dev-${CUDA_PKG_VER} \
-        cuda-cupti-dev-${CUDA_PKG_VER} \
-        libcufft-dev-${CUDA_PKG_VER} \
-        libcurand-dev-${CUDA_PKG_VER} \
-        libcusolver-dev-${CUDA_PKG_VER} \
+        cuda-cudart-${CUDA_PKG_VER} \
+        cuda-cupti-${CUDA_PKG_VER} \
         curl \
         git-lfs \
         jq \
-        libcublas-dev-${CUDA_PKG_VER} \
+        libcublas-${CUDA_PKG_VER} \
+        libcufft-${CUDA_PKG_VER} \
+        libcurand-${CUDA_PKG_VER} \
+        libcusolver-${CUDA_PKG_VER} \
         openssh-client \
         pkg-config \
         tar \
@@ -190,9 +190,17 @@ FROM conda_env_dev as development
 # Copy the source
 # COPY . ./
 
+ARG CUDA_PKG_VER
+
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
+        cuda-cudart-dev-${CUDA_PKG_VER} \
+        cuda-cupti-dev-${CUDA_PKG_VER} \
+        libcufft-dev-${CUDA_PKG_VER} \
+        libcurand-dev-${CUDA_PKG_VER} \
+        libcusolver-dev-${CUDA_PKG_VER} \
+        libcublas-dev-${CUDA_PKG_VER} \
         nodejs \
         npm && \
     apt clean && \
