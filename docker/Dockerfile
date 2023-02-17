@@ -36,6 +36,14 @@ ARG RAPIDS_CHANNEL=rapidsai-nightly
 ARG RAPIDS_VER=22.10
 ARG CONDA_CHANNEL=rapidsai
 
+ARG DEV_LIBS=cuda-cudart-dev-${CUDA_PKG_VER} \
+    cuda-cupti-dev-${CUDA_PKG_VER} \
+    libcufft-dev-${CUDA_PKG_VER} \
+    libcurand-dev-${CUDA_PKG_VER} \
+    libcusolver-dev-${CUDA_PKG_VER} \
+    libcublas-dev-${CUDA_PKG_VER}
+
+
 # Temp option to set conda channel_alias property during build
 ARG CONDA_CHANNEL_ALIAS
 
@@ -138,6 +146,16 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
 FROM base as conda_bld_morpheus
 
 ARG CONDA_CHANNEL_ALIAS
+ARG DEV_LIBS
+ARG CUDA_PKG_VER
+
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt install --no-install-recommends -y \
+        ${DEV_LIBS} \
+        cuda-nvml-dev-${CUDA_PKG_VER} && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the source
 COPY . ./
@@ -191,16 +209,12 @@ FROM conda_env_dev as development
 # COPY . ./
 
 ARG CUDA_PKG_VER
+ARG DEV_LIBS
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        cuda-cudart-dev-${CUDA_PKG_VER} \
-        cuda-cupti-dev-${CUDA_PKG_VER} \
-        libcufft-dev-${CUDA_PKG_VER} \
-        libcurand-dev-${CUDA_PKG_VER} \
-        libcusolver-dev-${CUDA_PKG_VER} \
-        libcublas-dev-${CUDA_PKG_VER} \
+        ${DEV_LIBS} \
         nodejs \
         npm && \
     apt clean && \
