@@ -19,6 +19,7 @@
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
 ARG CUDA_SHORT_VER=11.5
+ARG CUDA_PKG_VER=11-5
 ARG CUDA_VER=11.5.1
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
@@ -43,6 +44,7 @@ ARG TENSORRT_VERSION=8.2.1.3
 
 # Capture argument used for FROM
 ARG CUDA_SHORT_VER
+ARG CUDA_PKG_VER
 
 # Install dependencies to build
 RUN apt-get update &&\
@@ -50,12 +52,13 @@ RUN apt-get update &&\
     apt-get install --no-install-recommends -y \
         bc \
         build-essential \
-        cuda-gdb-${CUDA_SHORT_VER} \
-        cuda-cudart-dev-${CUDA_SHORT_VER} \
-        cuda-cupti-dev-${CUDA_SHORT_VER} \
+        cuda-gdb-${CUDA_PKG_VER} \
+        cuda-cudart-dev-${CUDA_PKG_VER} \
+        cuda-cupti-dev-${CUDA_PKG_VER} \
         curl \
         git-lfs \
         jq \
+        libcublas-dev-${CUDA_PKG_VER} \
         openssh-client \
         pkg-config \
         tar \
