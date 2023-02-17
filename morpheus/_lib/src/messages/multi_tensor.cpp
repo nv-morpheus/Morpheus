@@ -40,17 +40,17 @@ MultiTensorMessage::MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> me
   count(count)
 {}
 
-const TensorObject MultiTensorMessage::get_tensor(const std::string &name) const
+const TensorObject MultiTensorMessage::get_tensor(const std::string& name) const
 {
     return get_tensor_impl(name);
 }
 
-TensorObject MultiTensorMessage::get_tensor(const std::string &name)
+TensorObject MultiTensorMessage::get_tensor(const std::string& name)
 {
     return get_tensor_impl(name);
 }
 
-TensorObject MultiTensorMessage::get_tensor_impl(const std::string &name) const
+TensorObject MultiTensorMessage::get_tensor_impl(const std::string& name) const
 {
     CHECK(this->memory->has_tensor(name)) << "Cound not find tensor: " << name;
 
@@ -64,7 +64,7 @@ TensorObject MultiTensorMessage::get_tensor_impl(const std::string &name) const
                                              {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
-void MultiTensorMessage::set_tensor(const std::string &name, const TensorObject &value)
+void MultiTensorMessage::set_tensor(const std::string& name, const TensorObject& value)
 {
     // Get the input slice first
     auto slice = this->get_tensor(name);
@@ -99,7 +99,7 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
 }
 
 void MultiTensorMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                          const std::vector<std::pair<size_t, size_t>> &ranges,
+                                          const std::vector<std::pair<size_t, size_t>>& ranges,
                                           size_t num_selected_rows) const
 {
     DCHECK(std::dynamic_pointer_cast<MultiTensorMessage>(new_message) != nullptr);
@@ -112,7 +112,7 @@ void MultiTensorMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_mess
 }
 
 std::shared_ptr<TensorMemory> MultiTensorMessage::copy_input_ranges(
-    const std::vector<std::pair<size_t, size_t>> &ranges, size_t num_selected_rows) const
+    const std::vector<std::pair<size_t, size_t>>& ranges, size_t num_selected_rows) const
 {
     auto offset_ranges = apply_offset_to_ranges(offset, ranges);
     auto tensors       = memory->copy_tensor_ranges(offset_ranges, num_selected_rows);
