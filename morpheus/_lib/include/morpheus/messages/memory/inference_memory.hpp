@@ -17,7 +17,9 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for TensorObject
 #include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/types.hpp"  // for tensor_map_t
 
 #include <cstddef>
 #include <string>

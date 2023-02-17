@@ -17,9 +17,9 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for TensorObject
 #include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for tensor_map_t
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
@@ -57,14 +57,14 @@ class ResponseMemoryProbs : public ResponseMemory
      * @param count
      * @param tensors
      */
-    ResponseMemoryProbs(size_t count, tensor_map_t &&tensors);
+    ResponseMemoryProbs(size_t count, tensor_map_t&& tensors);
 
     /**
      * @brief Returns the tensor named 'probs', throws a `std::runtime_error` if it does not exist
      *
      * @return const TensorObject&
      */
-    const TensorObject &get_probs() const;
+    const TensorObject& get_probs() const;
 
     /**
      * @brief Update the tensor named 'probs'
@@ -96,7 +96,7 @@ struct ResponseMemoryProbsInterfaceProxy
      * @param self
      * @return std::size_t
      */
-    static std::size_t count(ResponseMemoryProbs &self);
+    static std::size_t count(ResponseMemoryProbs& self);
 
     /**
      * @brief Get the response memory probs object
@@ -104,7 +104,7 @@ struct ResponseMemoryProbsInterfaceProxy
      * @param self
      * @return pybind11::object
      */
-    static pybind11::object get_probs(ResponseMemoryProbs &self);
+    static pybind11::object get_probs(ResponseMemoryProbs& self);
 
     /**
      * @brief Set the response memory probs object
@@ -112,7 +112,7 @@ struct ResponseMemoryProbsInterfaceProxy
      * @param self
      * @param cupy_values
      */
-    static void set_probs(ResponseMemoryProbs &self, pybind11::object cupy_values);
+    static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values);
 };
 #pragma GCC visibility pop
 

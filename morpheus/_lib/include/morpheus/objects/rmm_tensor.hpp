@@ -19,7 +19,7 @@
 
 #include "morpheus/objects/dtype.hpp"          // for DType
 #include "morpheus/objects/tensor_object.hpp"  // for ITensor
-#include "morpheus/types.hpp"                  // for VectorIndex
+#include "morpheus/types.hpp"                  // for RankType, VectorIndex
 
 #include <rmm/device_buffer.hpp>
 

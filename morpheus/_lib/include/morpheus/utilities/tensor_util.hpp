@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/types.hpp"  // for TensorIndex
+#include "morpheus/types.hpp"  // for shape_type_t, TensorIndex
 
 #include <algorithm>   // IWYU pragma: keep
 #include <functional>  // for multiplies

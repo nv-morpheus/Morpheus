@@ -17,8 +17,9 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for TensorObject
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"  // for tensor_map_t
 
 #include <pybind11/pytypes.h>
 
@@ -53,7 +54,7 @@ class ResponseMemory : public TensorMemory
      * @param count
      * @param tensors
      */
-    ResponseMemory(size_t count, tensor_map_t &&tensors);
+    ResponseMemory(size_t count, tensor_map_t&& tensors);
 
     /**
      * @brief Checks if a tensor named `name` exists in `tensors`
@@ -62,7 +63,7 @@ class ResponseMemory : public TensorMemory
      * @return true
      * @return false
      */
-    bool has_output(const std::string &name) const;
+    bool has_output(const std::string& name) const;
 };
 
 /****** ResponseMemoryInterfaceProxy *************************/
@@ -80,7 +81,7 @@ struct ResponseMemoryInterfaceProxy
      * @param name
      * @return pybind11::object
      */
-    static pybind11::object get_output(ResponseMemory &self, const std::string &name);
+    static pybind11::object get_output(ResponseMemory& self, const std::string& name);
 
     /**
      * @brief Get the output tensor object
@@ -89,7 +90,7 @@ struct ResponseMemoryInterfaceProxy
      * @param name
      * @return TensorObject
      */
-    static TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
+    static TensorObject get_output_tensor(ResponseMemory& self, const std::string& name);
 };
 #pragma GCC visibility pop
 
