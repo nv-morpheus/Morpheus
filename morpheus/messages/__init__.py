@@ -21,6 +21,7 @@ Message classes, which contain data being transfered between pipeline stages
 from morpheus.messages.message_base import MessageBase
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.message_meta import UserMessageMeta
+from morpheus.messages.message_control import MessageControl
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.messages.multi_inference_message import InferenceMemory
@@ -43,6 +44,7 @@ __all__ = [
     "InferenceMemoryFIL",
     "InferenceMemoryNLP",
     "MessageBase",
+    "MessageControl",
     "MessageMeta",
     "MultiAEMessage",
     "MultiInferenceFILMessage",

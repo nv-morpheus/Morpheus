@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -15,15 +15,25 @@
  * limitations under the License.
  */
 
-#include <gflags/gflags.h>  // for ParseCommandLineFlags
-#include <glog/logging.h>
-#include <gtest/gtest.h>  // IWYU pragma: keep
+#pragma once
 
-int main(int argc, char** argv)
+#include "morpheus/io/data_loader.hpp"
+#include "morpheus/messages/meta.hpp"
+
+namespace morpheus {
+#pragma GCC visibility push(default)
+/**
+ * @brief Very simple raw data loader that takes a list of files containing data that can be converted into a cuDF
+ * DataFrame. Loads the files into a cuDF DataFrame and returns a MessageMeta containing the DataFrame.
+ *
+ */
+class FileDataLoader : public Loader
 {
-    FLAGS_alsologtostderr = true;  // Log to console
-    ::google::InitGoogleLogging("morpheus::test_libmorpheus");
-    ::testing::InitGoogleTest(&argc, argv);
-    ::google::ParseCommandLineFlags(&argc, &argv, true);
-    return RUN_ALL_TESTS();
-}
+  public:
+    FileDataLoader()  = default;
+    ~FileDataLoader() = default;
+
+    std::shared_ptr<MessageMeta> load(MessageControl& message) override;
+};
+#pragma GCC visibility pop
+}  // namespace morpheus

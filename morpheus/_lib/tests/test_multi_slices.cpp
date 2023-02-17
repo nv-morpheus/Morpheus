@@ -46,6 +46,7 @@
 #include <vector>
 
 using namespace morpheus;
+using namespace morpheus::test;
 namespace py = pybind11;
 
 namespace {
@@ -62,7 +63,8 @@ TEST_CLASS(MultiSlices);
 
 TEST_F(TestMultiSlices, Ranges)
 {
-    std::filesystem::path morpheus_root{std::getenv("MORPHEUS_ROOT")};
+    std::filesystem::path morpheus_root = get_morpheus_root();
+
     auto input_file = morpheus_root / "tests/tests_data/filter_probs.csv";
 
     auto table_m = load_table_from_file(input_file);

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -15,15 +15,20 @@
  * limitations under the License.
  */
 
-#include <gflags/gflags.h>  // for ParseCommandLineFlags
-#include <glog/logging.h>
-#include <gtest/gtest.h>  // IWYU pragma: keep
+#include "morpheus/io/loaders/lambda.hpp"
 
-int main(int argc, char** argv)
+#include <memory>
+
+namespace morpheus {
+LambdaLoader::LambdaLoader(std::function<std::shared_ptr<MessageMeta>(MessageControl&)> lambda_load)
+    : m_lambda_load(lambda_load)
 {
-    FLAGS_alsologtostderr = true;  // Log to console
-    ::google::InitGoogleLogging("morpheus::test_libmorpheus");
-    ::testing::InitGoogleTest(&argc, argv);
-    ::google::ParseCommandLineFlags(&argc, &argv, true);
-    return RUN_ALL_TESTS();
 }
+
+std::shared_ptr<MessageMeta> LambdaLoader::load(MessageControl& message)
+{
+    VLOG(30) << "Called LambdaLoader::load()";
+
+    return std::move(m_lambda_load(message));
+}
+}  // namespace morpheus

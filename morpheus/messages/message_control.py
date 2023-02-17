@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2021-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,4 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import morpheus._lib.modules
+import morpheus._lib.messages as _messages
+from morpheus.messages.message_base import MessageBase
+
+
+class MessageControl(MessageBase, cpp_class=_messages.MessageControl):
+    def __init__(self, *arg, **kwargs):
+        super().__init__(*arg, **kwargs)

@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 
-#include <gflags/gflags.h>  // for ParseCommandLineFlags
-#include <glog/logging.h>
-#include <gtest/gtest.h>  // IWYU pragma: keep
+#include "morpheus/io/loaders/payload.hpp"
 
-int main(int argc, char** argv)
+#include <memory>
+
+namespace morpheus {
+std::shared_ptr<MessageMeta> PayloadDataLoader::load(MessageControl& message)
 {
-    FLAGS_alsologtostderr = true;  // Log to console
-    ::google::InitGoogleLogging("morpheus::test_libmorpheus");
-    ::testing::InitGoogleTest(&argc, argv);
-    ::google::ParseCommandLineFlags(&argc, &argv, true);
-    return RUN_ALL_TESTS();
+    VLOG(30) << "Called PayloadDataLoader::load()";
+    return std::move(message.payload());
 }
+}  // namespace morpheus

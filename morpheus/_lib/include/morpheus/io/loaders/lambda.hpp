@@ -1,4 +1,4 @@
-/**
+/*
  * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -15,15 +15,27 @@
  * limitations under the License.
  */
 
-#include <gflags/gflags.h>  // for ParseCommandLineFlags
-#include <glog/logging.h>
-#include <gtest/gtest.h>  // IWYU pragma: keep
+#pragma once
 
-int main(int argc, char** argv)
+#include "morpheus/io/data_loader.hpp"
+
+namespace morpheus {
+#pragma GCC visibility push(default)
+/**
+ * @brief Very simple raw data loader that takes payload data on the control message and returns it
+ *
+ */
+class LambdaLoader : public Loader
 {
-    FLAGS_alsologtostderr = true;  // Log to console
-    ::google::InitGoogleLogging("morpheus::test_libmorpheus");
-    ::testing::InitGoogleTest(&argc, argv);
-    ::google::ParseCommandLineFlags(&argc, &argv, true);
-    return RUN_ALL_TESTS();
-}
+  public:
+    LambdaLoader() = delete;
+    LambdaLoader(std::function<std::shared_ptr<MessageMeta>(MessageControl&)> lambda_load);
+    ~LambdaLoader() = default;
+
+    std::shared_ptr<MessageMeta> load(MessageControl& message) override;
+
+  private:
+    std::function<std::shared_ptr<MessageMeta>(MessageControl&)> m_lambda_load;
+};
+#pragma GCC visibility pop
+}  // namespace morpheus

@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "morpheus/io/data_loader_registry.hpp"
+#include "morpheus/io/loaders/all.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 #include "morpheus/objects/fiber_queue.hpp"
 #include "morpheus/objects/file_types.hpp"
@@ -22,7 +24,10 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/version.hpp"
 
+#include <mrc/utils/string_utils.hpp>
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 
 #include <memory>
@@ -30,9 +35,9 @@
 namespace morpheus {
 namespace py = pybind11;
 
-PYBIND11_MODULE(common, m)
+PYBIND11_MODULE(common, _module)
 {
-    m.doc() = R"pbdoc(
+    _module.doc() = R"pbdoc(
         -----------------------
         .. currentmodule:: morpheus.common
         .. autosummary::
@@ -42,16 +47,37 @@ PYBIND11_MODULE(common, m)
     // Load the cudf helpers
     load_cudf_helpers();
 
-    py::class_<TensorObject>(m, "Tensor")
+    LoaderRegistry::register_constructor(
+        "file", []() { return std::make_unique<FileDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "grpc", []() { return std::make_unique<GRPCDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "payload", []() { return std::make_unique<PayloadDataLoader>(); }, false);
+    LoaderRegistry::register_constructor(
+        "rest", []() { return std::make_unique<RESTDataLoader>(); }, false);
+
+    py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
+        .def_static("contains", &LoaderRegistry::contains)
+        .def_static("register_loader",
+                    &LoaderRegistryProxy::register_proxy_constructor,
+                    py::arg("name"),
+                    py::arg("loader"),
+                    py::arg("throw_if_exists") = true)
+        .def_static("unregister_loader",
+                    &LoaderRegistry::unregister_constructor,
+                    py::arg("name"),
+                    py::arg("throw_if_not_exists") = true);
+
+    py::class_<TensorObject>(_module, "Tensor")
         .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
 
-    py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
+    py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(_module, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))
         .def("get", &FiberQueueInterfaceProxy::get, py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("put", &FiberQueueInterfaceProxy::put, py::arg("item"), py::arg("block") = true, py::arg("timeout") = 0.0)
         .def("close", &FiberQueueInterfaceProxy::close);
 
-    py::enum_<TypeId>(m, "TypeId", "Supported Morpheus types")
+    py::enum_<TypeId>(_module, "TypeId", "Supported Morpheus types")
         .value("EMPTY", TypeId::EMPTY)
         .value("INT8", TypeId::INT8)
         .value("INT16", TypeId::INT16)
@@ -66,9 +92,10 @@ PYBIND11_MODULE(common, m)
         .value("BOOL8", TypeId::BOOL8)
         .value("STRING", TypeId::STRING);
 
-    m.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
+    _module.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
 
-    py::enum_<FileTypes>(m,
+    // TODO(Devin): Add support for other file types (e.g. parquet, etc.)
+    py::enum_<FileTypes>(_module,
                          "FileTypes",
                          "The type of files that the `FileSourceStage` can read and `WriteToFileStage` can write. Use "
                          "'auto' to determine from the file extension.")
@@ -76,18 +103,15 @@ PYBIND11_MODULE(common, m)
         .value("JSON", FileTypes::JSON)
         .value("CSV", FileTypes::CSV);
 
-    m.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
+    _module.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
 
     py::enum_<FilterSource>(
-        m, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
+        _module, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
         .value("Auto", FilterSource::Auto)
         .value("TENSOR", FilterSource::TENSOR)
         .value("DATAFRAME", FilterSource::DATAFRAME);
 
-#ifdef VERSION_INFO
-    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
-#else
-    m.attr("__version__") = "dev";
-#endif
+    _module.attr("__version__") =
+        MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
 }
 }  // namespace morpheus

@@ -16,8 +16,16 @@ message(STATUS "Adding library: morpheus")
 
 add_library(morpheus
     # Keep these sorted!
+    ${MORPHEUS_LIB_ROOT}/src/io/data_loader.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/data_loader_registry.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/deserializers.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/file.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/grpc.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/lambda.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/payload.cpp
+    ${MORPHEUS_LIB_ROOT}/src/io/loaders/rest.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/serializers.cpp
+    ${MORPHEUS_LIB_ROOT}/src/messages/control.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory_fil.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory_nlp.cpp
@@ -32,20 +40,20 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_response.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_response_probs.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_tensor.cpp
+    ${MORPHEUS_LIB_ROOT}/src/modules/data_loader_module.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/fiber_queue.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/file_types.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/mutable_table_ctx_mgr.cpp
-    ${MORPHEUS_LIB_ROOT}/src/objects/wrapped_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/python_data_table.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/rmm_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/tensor.cpp
+    ${MORPHEUS_LIB_ROOT}/src/objects/wrapped_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_classification.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_scores.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/deserialize.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/file_source.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/filter_detection.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/kafka_source.cpp
-    ${MORPHEUS_LIB_ROOT}/src/stages/preallocate.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/preprocess_fil.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/preprocess_nlp.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/serialize.cpp
