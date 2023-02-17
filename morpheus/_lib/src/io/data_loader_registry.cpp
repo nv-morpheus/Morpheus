@@ -31,12 +31,12 @@ std::mutex FactoryRegistry<Loader>::m_mutex{};
 
 template class FactoryRegistry<Loader>;
 
-void LoaderRegistryProxy::register_proxy_constructor(
+void LoaderRegistryProxy::register_proxy_factory_fn(
     const std::string& name,
     std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl> control_message)> proxy_constructor,
     bool throw_if_exists)
 {
-    FactoryRegistry<Loader>::register_constructor(
+    FactoryRegistry<Loader>::register_factory_fn(
         name,
         [proxy_constructor]() {
             return std::make_shared<LambdaLoader>([proxy_constructor](std::shared_ptr<MessageControl> control_message) {
@@ -56,7 +56,7 @@ void LoaderRegistryProxy::register_factory_cleanup_fn(const std::string& name)
             VLOG(2) << "(atexit) Unregistering loader: " << name;
 
             // Try unregister -- ignore if already unregistered
-            FactoryRegistry<Loader>::unregister_constructor(name, false);
+            FactoryRegistry<Loader>::unregister_factory_fn(name, false);
         }));
     }
 }

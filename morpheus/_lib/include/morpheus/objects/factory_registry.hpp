@@ -41,8 +41,19 @@ class FactoryRegistry
         return m_object_constructors.count(name) > 0;
     }
 
+    static std::vector<std::string> list()
+    {
+        std::lock_guard<decltype(m_mutex)> lock(m_mutex);
+        std::vector<std::string> names;
+        for (const auto& [name, _] : m_object_constructors)
+        {
+            names.push_back(name);
+        }
+        return names;
+    }
+
     // TODO(Devin): Rename -- this isn't a constructor, its creating an instance
-    static std::shared_ptr<ObjectReturnTypeT> get_constructor(const std::string& name)
+    static std::shared_ptr<ObjectReturnTypeT> create_object_from_factory(const std::string& name)
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
         VLOG(2) << "Retrieving factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
@@ -55,9 +66,9 @@ class FactoryRegistry
         return m_object_constructors[name]();
     }
 
-    static void register_constructor(const std::string& name,
-                                     const std::function<std::shared_ptr<ObjectReturnTypeT>()>& loader_fn,
-                                     bool throw_if_exists = true)
+    static void register_factory_fn(const std::string& name,
+                                    const std::function<std::shared_ptr<ObjectReturnTypeT>()>& loader_fn,
+                                    bool throw_if_exists = true)
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
         VLOG(2) << "Registering factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
@@ -72,7 +83,7 @@ class FactoryRegistry
         m_object_constructors[name] = loader_fn;
     }
 
-    static void unregister_constructor(const std::string& name, bool throw_if_missing = true)
+    static void unregister_factory_fn(const std::string& name, bool throw_if_missing = true)
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
         VLOG(2) << "Un-registering factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()

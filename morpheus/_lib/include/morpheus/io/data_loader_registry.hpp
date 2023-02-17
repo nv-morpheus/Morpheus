@@ -36,7 +36,7 @@ using LoaderRegistry = FactoryRegistry<Loader>;  // NOLINT
 
 struct LoaderRegistryProxy
 {
-    static void register_proxy_constructor(
+    static void register_proxy_factory_fn(
         const std::string& name,
         std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> proxy_constructor,
         bool throw_if_exists = true);
