@@ -30,7 +30,7 @@
 namespace {}
 
 namespace morpheus {
-std::shared_ptr<MessageMeta> FileDataLoader::load(MessageControl& message)
+std::shared_ptr<MessageControl> FileDataLoader::load(std::shared_ptr<MessageControl> message)
 {
     namespace py = pybind11;
     VLOG(30) << "Called FileDataLoader::load()";
@@ -43,7 +43,7 @@ std::shared_ptr<MessageMeta> FileDataLoader::load(MessageControl& message)
     mod_cudf           = cache_handle.get_module("cudf");
 
     // TODO(Devin) : error checking + improve robustness
-    auto config = message.config();
+    auto config = message->config();
     if (!config.contains("files"))
     {
         throw std::runtime_error("'File Loader' control message specified no files to load");
@@ -117,6 +117,7 @@ std::shared_ptr<MessageMeta> FileDataLoader::load(MessageControl& message)
         }
     }
 
-    return MessageMeta::create_from_python(std::move(dataframe));
+    message->payload(MessageMeta::create_from_python(std::move(dataframe)));
+    return message;
 }
 }  // namespace morpheus

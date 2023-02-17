@@ -47,7 +47,7 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
     for (auto& loader : loaders)
     {
         config["loader_id"] = loader;
-        auto msg            = MessageControl(config);
+        auto msg            = std::make_shared<MessageControl>(config);
 
         EXPECT_THROW(data_loader.load(msg), std::runtime_error);
     }
@@ -57,7 +57,7 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
     for (auto& loader : loaders)
     {
         config["loader_id"] = loader;
-        auto msg            = MessageControl(config);
+        auto msg            = std::make_shared<MessageControl>(config);
 
         EXPECT_NO_THROW(data_loader.load(msg));
     }
@@ -70,7 +70,7 @@ TEST_F(TestDataLoader, DataLoaderRemoveLoaderTest)
     nlohmann::json config;
     config["loader_id"] = "payload";
 
-    auto msg = MessageControl(config);
+    auto msg = std::make_shared<MessageControl>(config);
 
     EXPECT_THROW(data_loader.load(msg), std::runtime_error);
     data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
@@ -92,12 +92,13 @@ TEST_F(TestDataLoader, PayloadLoaderTest)
     nlohmann::json config;
     config["loader_id"] = "payload";
 
-    auto msg = MessageControl(config);
+    auto msg = std::make_shared<MessageControl>(config);
 
     auto mm = create_mock_msg_meta({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
-    msg.payload(mm);
+    msg->payload(mm);
 
-    auto mm2 = data_loader.load(msg);
+    auto msg2 = data_loader.load(msg);
+    auto mm2  = msg2->payload();
     EXPECT_EQ(mm, mm2);
 }
 
@@ -125,7 +126,7 @@ TEST_F(TestDataLoader, FileLoaderTest)
 
     config["files"].push_back({{"path", std::string(temp_file)}, {"type", "csv"}});
 
-    auto msg = MessageControl(config);
+    auto msg = std::make_shared<MessageControl>(config);
 
     std::fstream data_file(temp_file, std::ios::out | std::ios::binary | std::ios::trunc);
     data_file << string_df;

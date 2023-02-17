@@ -20,9 +20,9 @@
 #include <memory>
 
 namespace morpheus {
-std::shared_ptr<MessageMeta> PayloadDataLoader::load(MessageControl& message)
+std::shared_ptr<MessageControl> PayloadDataLoader::load(std::shared_ptr<MessageControl> message)
 {
     VLOG(30) << "Called PayloadDataLoader::load()";
-    return std::move(message.payload());
+    return std::move(message);
 }
 }  // namespace morpheus

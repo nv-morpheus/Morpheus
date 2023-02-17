@@ -24,7 +24,7 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 /**
  * @brief Very simple raw data loader that takes a list of files containing data that can be converted into a cuDF
- * DataFrame. Loads the files into a cuDF DataFrame and returns a MessageMeta containing the DataFrame.
+ * DataFrame. Loads the files into a cuDF DataFrame and returns a MessageControl containing the DataFrame.
  *
  */
 class FileDataLoader : public Loader
@@ -33,7 +33,7 @@ class FileDataLoader : public Loader
     FileDataLoader()  = default;
     ~FileDataLoader() = default;
 
-    std::shared_ptr<MessageMeta> load(MessageControl& message) override;
+    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

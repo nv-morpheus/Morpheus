@@ -23,10 +23,18 @@ from morpheus._lib.common import DataLoaderRegistry
 def test_loader_registry_contains():
     assert (not DataLoaderRegistry.contains("not_a_loader"))
 
-    assert (DataLoaderRegistry.contains("file"))
-    assert (DataLoaderRegistry.contains("grpc"))
-    assert (DataLoaderRegistry.contains("payload"))
-    assert (DataLoaderRegistry.contains("rest"))
+    should_have = ["file", "grpc", "payload", "rest"]
+    for loader in should_have:
+        # Make sure all the loaders we expect to be in the registry are
+        assert (DataLoaderRegistry.contains(loader))
+
+    loaders = DataLoaderRegistry.list()
+    for loader in should_have:
+        # Make sure all the loaders in the registry are in the list
+        assert (loader in loaders)
+
+        # Make sure all the loaders in the list are contained in the registry
+        assert (DataLoaderRegistry.contains(loader))
 
 
 def test_loader_registry_register_loader():
@@ -44,7 +52,9 @@ def test_loader_registry_register_loader():
             else:
                 df = df.append(cudf.read_csv(filepath))
 
-        return messages.MessageMeta(df)
+        control_message.payload(messages.MessageMeta(df))
+
+        return control_message
 
     # Should be able to register a new loader
     DataLoaderRegistry.register_loader("test_loader_registry_register_loader", test_loader)
@@ -76,7 +86,9 @@ def test_loader_registry_unregister_loader():
             else:
                 df = df.append(cudf.read_csv(filepath))
 
-        return messages.MessageMeta(df)
+        control_message.payload(messages.MessageMeta(df))
+
+        return control_message
 
     # Should be able to register a new loader
     DataLoaderRegistry.register_loader("test_loader_registry_unregister_loader", test_loader)

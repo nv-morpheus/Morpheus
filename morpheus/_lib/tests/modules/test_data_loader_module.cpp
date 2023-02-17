@@ -176,7 +176,7 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
     using namespace mrc::modules;
     using namespace mrc;
 
-    using sp_msg_meta_t = std::shared_ptr<MessageMeta>;
+    using sp_msg_meta_t = std::shared_ptr<MessageControl>;
     using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
 
     std::size_t packet_count{0};

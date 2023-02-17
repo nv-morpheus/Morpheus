@@ -29,9 +29,10 @@ namespace morpheus {
 class Loader
 {
   public:
-    virtual ~Loader() = default;
+    ~Loader() = default;
 
-    virtual std::shared_ptr<MessageMeta> load(MessageControl& message) = 0;
+    virtual std::shared_ptr<MessageMeta> payload(std::shared_ptr<MessageControl> message);
+    virtual std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message);
 };
 
 class DataLoader
@@ -45,7 +46,7 @@ class DataLoader
      * @param control_message
      * @return
      */
-    std::shared_ptr<MessageMeta> load(MessageControl& control_message);
+    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> control_message);
 
     /**
      * @brief Register a loader instance with the data loader

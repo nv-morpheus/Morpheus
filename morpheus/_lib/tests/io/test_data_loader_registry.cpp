@@ -41,16 +41,16 @@ TEST_F(TestDataLoaderRegistry, LoaderRegistryRegisterLoaderTest)
     ASSERT_FALSE(LoaderRegistry::contains("LoaderRegistryRegisterLoaderTest"));
 
     // Should be able to register a loader
-    LoaderRegistry::register_constructor("LoaderRegistryRegisterLoaderTest",
-                                         []() { return std::make_unique<PayloadDataLoader>(); });
+    LoaderRegistry::register_factory_fn("LoaderRegistryRegisterLoaderTest",
+                                        []() { return std::make_unique<PayloadDataLoader>(); });
     ASSERT_TRUE(LoaderRegistry::contains("LoaderRegistryRegisterLoaderTest"));
 
     // Should be able to overwrite an existing loader if we request it
-    EXPECT_NO_THROW(LoaderRegistry::register_constructor(
+    EXPECT_NO_THROW(LoaderRegistry::register_factory_fn(
         "LoaderRegistryRegisterLoaderTest", []() { return std::make_unique<PayloadDataLoader>(); }, false));
 
-    EXPECT_THROW(LoaderRegistry::register_constructor("LoaderRegistryRegisterLoaderTest",
-                                                      []() { return std::make_unique<PayloadDataLoader>(); }),
+    EXPECT_THROW(LoaderRegistry::register_factory_fn("LoaderRegistryRegisterLoaderTest",
+                                                     []() { return std::make_unique<PayloadDataLoader>(); }),
                  std::runtime_error);
 }
 
@@ -59,14 +59,14 @@ TEST_F(TestDataLoaderRegistry, LoaderRegistryUnregisterLoaderTest)
     ASSERT_FALSE(LoaderRegistry::contains("LoaderRegistryUnregisterLoaderTest"));
 
     // Should be able to register a loader
-    LoaderRegistry::register_constructor("LoaderRegistryUnregisterLoaderTest",
-                                         []() { return std::make_unique<PayloadDataLoader>(); });
+    LoaderRegistry::register_factory_fn("LoaderRegistryUnregisterLoaderTest",
+                                        []() { return std::make_unique<PayloadDataLoader>(); });
     ASSERT_TRUE(LoaderRegistry::contains("LoaderRegistryUnregisterLoaderTest"));
 
     // Should be able to unregister a loader
-    LoaderRegistry::unregister_constructor("LoaderRegistryUnregisterLoaderTest");
+    LoaderRegistry::unregister_factory_fn("LoaderRegistryUnregisterLoaderTest");
     ASSERT_FALSE(LoaderRegistry::contains("LoaderRegistryUnregisterLoaderTest"));
 
-    ASSERT_THROW(LoaderRegistry::unregister_constructor("LoaderRegistryUnregisterLoaderTest"), std::runtime_error);
-    ASSERT_NO_THROW(LoaderRegistry::unregister_constructor("LoaderRegistryUnregisterLoaderTest", false));
+    ASSERT_THROW(LoaderRegistry::unregister_factory_fn("LoaderRegistryUnregisterLoaderTest"), std::runtime_error);
+    ASSERT_NO_THROW(LoaderRegistry::unregister_factory_fn("LoaderRegistryUnregisterLoaderTest", false));
 }

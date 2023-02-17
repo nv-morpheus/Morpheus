@@ -25,7 +25,7 @@ import morpheus.modules  # Used to load and register morpheus modules
 import morpheus.messages as messages
 
 
-def on_next(data):
+def on_next(control_msg):
     pass
 
 
@@ -195,10 +195,10 @@ def test_payload_loader_module():
 
                 yield msg
 
-        def _on_next(data):
+        def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert (data.df == df)
+            assert (control_msg.payload().df == df)
 
         source = builder.make_source("source", gen_data)
 
@@ -283,10 +283,10 @@ def test_file_loader_module():
                 msg = messages.MessageControl(config)
                 yield msg
 
-        def _on_next(data):
+        def _on_next(control_msg):
             global packets_received
             packets_received += 1
-            assert (data.df == df)
+            assert (control_msg.payload().df == df)
 
         registry = mrc.ModuleRegistry
 

@@ -49,13 +49,13 @@ void TestWithPythonInterpreter::SetUp()
 {
     initialize_interpreter();
 
-    LoaderRegistry::register_constructor(
+    LoaderRegistry::register_factory_fn(
         "file", []() { return std::make_unique<FileDataLoader>(); }, false);
-    LoaderRegistry::register_constructor(
+    LoaderRegistry::register_factory_fn(
         "grpc", []() { return std::make_unique<GRPCDataLoader>(); }, false);
-    LoaderRegistry::register_constructor(
+    LoaderRegistry::register_factory_fn(
         "payload", []() { return std::make_unique<PayloadDataLoader>(); }, false);
-    LoaderRegistry::register_constructor(
+    LoaderRegistry::register_factory_fn(
         "rest", []() { return std::make_unique<RESTDataLoader>(); }, false);
 }
 

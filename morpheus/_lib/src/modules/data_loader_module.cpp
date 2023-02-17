@@ -50,7 +50,7 @@ void DataLoaderModule::initialize(mrc::segment::Builder& builder)
             auto loader_id = it->get<std::string>();
             if (LoaderRegistry::contains(loader_id))
             {
-                m_data_loader.add_loader(loader_id, LoaderRegistry::get_constructor(*it));
+                m_data_loader.add_loader(loader_id, LoaderRegistry::create_object_from_factory(*it));
             }
             else
             {
@@ -63,9 +63,9 @@ void DataLoaderModule::initialize(mrc::segment::Builder& builder)
         LOG(WARNING) << "No loaders specified in config";
     }
 
-    auto loader_node = builder.make_node<std::shared_ptr<MessageControl>, std::shared_ptr<MessageMeta>>(
+    auto loader_node = builder.make_node<std::shared_ptr<MessageControl>, std::shared_ptr<MessageControl>>(
         "input", rxcpp::operators::map([this](std::shared_ptr<MessageControl> control_message) {
-            return m_data_loader.load(*control_message);
+            return m_data_loader.load(control_message);
         }));
 
     register_input_port("input", loader_node);
