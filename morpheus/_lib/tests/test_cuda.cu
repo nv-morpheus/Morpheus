@@ -18,6 +18,7 @@
 #include "test_morpheus.hpp"
 
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp" // for TensorIndex
 
 #include <mrc/cuda/common.hpp> // for MRC_CHECK_CUDA
 #include <mrc/cuda/sync.hpp> // for enqueue_stream_sync_event

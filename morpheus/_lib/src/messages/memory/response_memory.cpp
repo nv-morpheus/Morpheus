@@ -17,6 +17,7 @@
 
 #include "morpheus/messages/memory/response_memory.hpp"
 
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <pybind11/pytypes.h>
@@ -28,15 +29,15 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemory****************************************/
 ResponseMemory::ResponseMemory(size_t count) : TensorMemory(count) {}
-ResponseMemory::ResponseMemory(size_t count, tensor_map_t &&tensors) : TensorMemory(count, std::move(tensors)) {}
+ResponseMemory::ResponseMemory(size_t count, tensor_map_t&& tensors) : TensorMemory(count, std::move(tensors)) {}
 
-bool ResponseMemory::has_output(const std::string &name) const
+bool ResponseMemory::has_output(const std::string& name) const
 {
     return this->has_tensor(name);
 }
 
 /****** ResponseMemoryInterfaceProxy *************************/
-pybind11::object ResponseMemoryInterfaceProxy::get_output(ResponseMemory &self, const std::string &name)
+pybind11::object ResponseMemoryInterfaceProxy::get_output(ResponseMemory& self, const std::string& name)
 {
     // Directly return the tensor object
     if (!self.has_tensor(name))
@@ -47,7 +48,7 @@ pybind11::object ResponseMemoryInterfaceProxy::get_output(ResponseMemory &self, 
     return CupyUtil::tensor_to_cupy(self.tensors[name]);
 }
 
-TensorObject ResponseMemoryInterfaceProxy::get_output_tensor(ResponseMemory &self, const std::string &name)
+TensorObject ResponseMemoryInterfaceProxy::get_output_tensor(ResponseMemory& self, const std::string& name)
 {
     // Directly return the tensor object
     if (!self.has_tensor(name))

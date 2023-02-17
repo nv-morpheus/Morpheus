@@ -17,8 +17,9 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for TensorObject
 #include "morpheus/objects/dtype.hpp"
-#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
 #include <rmm/device_buffer.hpp>
 
@@ -61,7 +62,7 @@ class Tensor
     /**
      * TODO(Documentation)
      */
-    void *data() const;
+    void* data() const;
 
     /**
      * TODO(Documentation)

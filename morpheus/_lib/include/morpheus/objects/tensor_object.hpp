@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/types.hpp"  // for RankType, TensorIndex
 #include "morpheus/utilities/string_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
@@ -43,15 +44,6 @@
 // IWYU pragma: no_include <ext/new_allocator.h>
 
 namespace morpheus {
-
-/**
- * @addtogroup objects
- * @{
- * @file
- */
-
-using TensorIndex = long long;  // NOLINT
-using RankType    = int;        // NOLINT
 
 namespace detail {
 

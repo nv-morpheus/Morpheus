@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/forward.hpp"  // for TensorObject
 
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -47,7 +47,7 @@ struct CupyUtil
     /**
      * TODO(Documentation)
      */
-    static pybind11::object tensor_to_cupy(const TensorObject &tensor);
+    static pybind11::object tensor_to_cupy(const TensorObject& tensor);
 
     /**
      * TODO(Documentation)

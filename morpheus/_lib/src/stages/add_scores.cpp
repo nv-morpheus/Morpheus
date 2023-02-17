@@ -18,7 +18,8 @@
 #include "morpheus/stages/add_scores.hpp"
 
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for TensorIndex
 
 #include <glog/logging.h>
 #include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t

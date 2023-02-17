@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>  // for size_type
@@ -43,7 +44,7 @@ InferenceMemoryNLP::InferenceMemoryNLP(std::size_t count,
     this->tensors["seq_ids"]    = std::move(seq_ids);
 }
 
-const TensorObject &InferenceMemoryNLP::get_input_ids() const
+const TensorObject& InferenceMemoryNLP::get_input_ids() const
 {
     auto found = this->tensors.find("input_ids");
     if (found == this->tensors.end())
@@ -59,7 +60,7 @@ void InferenceMemoryNLP::set_input_ids(TensorObject input_ids)
     this->tensors["input_ids"] = std::move(input_ids);
 }
 
-const TensorObject &InferenceMemoryNLP::get_input_mask() const
+const TensorObject& InferenceMemoryNLP::get_input_mask() const
 {
     auto found = this->tensors.find("input_mask");
     if (found == this->tensors.end())
@@ -75,7 +76,7 @@ void InferenceMemoryNLP::set_input_mask(TensorObject input_mask)
     this->tensors["input_mask"] = std::move(input_mask);
 }
 
-const TensorObject &InferenceMemoryNLP::get_seq_ids() const
+const TensorObject& InferenceMemoryNLP::get_seq_ids() const
 {
     auto found = this->tensors.find("seq_ids");
     if (found == this->tensors.end())
@@ -104,37 +105,37 @@ std::shared_ptr<InferenceMemoryNLP> InferenceMemoryNLPInterfaceProxy::init(cudf:
                                                 std::move(CupyUtil::cupy_to_tensor(seq_ids)));
 }
 
-std::size_t InferenceMemoryNLPInterfaceProxy::count(InferenceMemoryNLP &self)
+std::size_t InferenceMemoryNLPInterfaceProxy::count(InferenceMemoryNLP& self)
 {
     return self.count;
 }
 
-pybind11::object InferenceMemoryNLPInterfaceProxy::get_input_ids(InferenceMemoryNLP &self)
+pybind11::object InferenceMemoryNLPInterfaceProxy::get_input_ids(InferenceMemoryNLP& self)
 {
     return CupyUtil::tensor_to_cupy(self.get_input_ids());
 }
 
-void InferenceMemoryNLPInterfaceProxy::set_input_ids(InferenceMemoryNLP &self, pybind11::object cupy_values)
+void InferenceMemoryNLPInterfaceProxy::set_input_ids(InferenceMemoryNLP& self, pybind11::object cupy_values)
 {
     self.set_input_ids(CupyUtil::cupy_to_tensor(cupy_values));
 }
 
-pybind11::object InferenceMemoryNLPInterfaceProxy::get_input_mask(InferenceMemoryNLP &self)
+pybind11::object InferenceMemoryNLPInterfaceProxy::get_input_mask(InferenceMemoryNLP& self)
 {
     return CupyUtil::tensor_to_cupy(self.get_input_mask());
 }
 
-void InferenceMemoryNLPInterfaceProxy::set_input_mask(InferenceMemoryNLP &self, pybind11::object cupy_values)
+void InferenceMemoryNLPInterfaceProxy::set_input_mask(InferenceMemoryNLP& self, pybind11::object cupy_values)
 {
     return self.set_input_mask(CupyUtil::cupy_to_tensor(cupy_values));
 }
 
-pybind11::object InferenceMemoryNLPInterfaceProxy::get_seq_ids(InferenceMemoryNLP &self)
+pybind11::object InferenceMemoryNLPInterfaceProxy::get_seq_ids(InferenceMemoryNLP& self)
 {
     return CupyUtil::tensor_to_cupy(self.get_seq_ids());
 }
 
-void InferenceMemoryNLPInterfaceProxy::set_seq_ids(InferenceMemoryNLP &self, pybind11::object cupy_values)
+void InferenceMemoryNLPInterfaceProxy::set_seq_ids(InferenceMemoryNLP& self, pybind11::object cupy_values)
 {
     return self.set_seq_ids(CupyUtil::cupy_to_tensor(cupy_values));
 }

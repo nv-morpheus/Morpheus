@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/forward.hpp"  // for TensorObject
+#include "morpheus/types.hpp"    // for TensorIndex & tensor_map_t
 
 #include <cstddef>  // for size_t
 #include <map>
@@ -43,8 +44,6 @@ namespace morpheus {
 class TensorMemory
 {
   public:
-    using tensor_map_t = std::map<std::string, TensorObject>;
-
     /**
      * @brief Construct a new Tensor Memory object
      *
@@ -58,7 +57,7 @@ class TensorMemory
      * @param count
      * @param tensors
      */
-    TensorMemory(size_t count, tensor_map_t &&tensors);
+    TensorMemory(size_t count, tensor_map_t&& tensors);
     virtual ~TensorMemory() = default;
 
     size_t count{0};
@@ -71,7 +70,7 @@ class TensorMemory
      * @return true
      * @return false
      */
-    bool has_tensor(const std::string &name) const;
+    bool has_tensor(const std::string& name) const;
 
     /**
      * @brief Copy tensor ranges
@@ -80,7 +79,7 @@ class TensorMemory
      * @param num_selected_rows
      * @return tensor_map_t
      */
-    tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>> &ranges,
+    tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
                                     size_t num_selected_rows) const;
 };
 

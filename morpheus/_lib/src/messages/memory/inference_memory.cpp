@@ -17,6 +17,8 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+
 #include <string>
 #include <utility>  // for move
 

@@ -19,6 +19,8 @@
 
 #include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for TensorIndex
 
 #include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
 #include <pybind11/cast.h>

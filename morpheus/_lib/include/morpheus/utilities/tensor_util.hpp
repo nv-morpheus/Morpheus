@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
 #include <algorithm>   // IWYU pragma: keep
 #include <functional>  // for multiplies
@@ -43,8 +43,6 @@ namespace morpheus {
  */
 struct TensorUtils
 {
-    using shape_type_t = std::vector<TensorIndex>;
-
     /**
      * @brief Write a formatted shape to a stream
      *
