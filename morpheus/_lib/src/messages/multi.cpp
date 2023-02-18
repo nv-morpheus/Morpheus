@@ -18,8 +18,8 @@
 #include "morpheus/messages/multi.hpp"
 
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/objects/dtype.hpp"  // for TypeId, DType
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/dtype.hpp"          // for TypeId, DType
+#include "morpheus/objects/table_info.hpp"     // for TableInfo
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice

@@ -17,11 +17,11 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for TensorObject
 #include "morpheus/messages/memory/response_memory_probs.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_response.hpp"
-#include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
@@ -51,7 +51,7 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
     /**
      * @brief Default copy constructor
      */
-    MultiResponseProbsMessage(const MultiResponseProbsMessage &other) = default;
+    MultiResponseProbsMessage(const MultiResponseProbsMessage& other) = default;
 
     /**
      * Construct a new Multi Response Probs Message object
@@ -83,7 +83,7 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
      *
      * @param probs
      */
-    void set_probs(const TensorObject &probs);
+    void set_probs(const TensorObject& probs);
 };
 
 /****** MultiResponseProbsMessageInterfaceProxy *************************/
@@ -117,7 +117,7 @@ struct MultiResponseProbsMessageInterfaceProxy
      * @param self
      * @return std::shared_ptr<morpheus::ResponseMemoryProbs>
      */
-    static std::shared_ptr<morpheus::ResponseMemoryProbs> memory(MultiResponseProbsMessage &self);
+    static std::shared_ptr<morpheus::ResponseMemoryProbs> memory(MultiResponseProbsMessage& self);
 
     /**
      * @brief Message offset in response memory probs object
@@ -125,7 +125,7 @@ struct MultiResponseProbsMessageInterfaceProxy
      * @param self
      * @return std::size_t
      */
-    static std::size_t offset(MultiResponseProbsMessage &self);
+    static std::size_t offset(MultiResponseProbsMessage& self);
 
     /**
      * @brief Messages count in response memory probs object
@@ -133,7 +133,7 @@ struct MultiResponseProbsMessageInterfaceProxy
      * @param self
      * @return std::size_t
      */
-    static std::size_t count(MultiResponseProbsMessage &self);
+    static std::size_t count(MultiResponseProbsMessage& self);
 
     /**
      * @brief Return the `probs` (probabilities) output tensor
@@ -141,7 +141,7 @@ struct MultiResponseProbsMessageInterfaceProxy
      * @param self
      * @return pybind11::object
      */
-    static pybind11::object probs(MultiResponseProbsMessage &self);
+    static pybind11::object probs(MultiResponseProbsMessage& self);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

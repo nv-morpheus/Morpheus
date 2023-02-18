@@ -17,9 +17,10 @@
 
 #include "morpheus/messages/meta.hpp"
 
+#include "morpheus/objects/data_table.hpp"  // for IDataTable
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/objects/python_data_table.hpp"
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/utilities/table_util.hpp"
 

@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "morpheus/objects/dtype.hpp"
-#include "morpheus/types.hpp"  // for RankType, TensorIndex
+#include "morpheus/objects/dtype.hpp"  // for DType
+#include "morpheus/types.hpp"          // for RankType, TensorIndex
 #include "morpheus/utilities/string_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy

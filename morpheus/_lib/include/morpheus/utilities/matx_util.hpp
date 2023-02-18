@@ -17,10 +17,10 @@
 
 #pragma once
 
-#include "morpheus/objects/dev_mem_info.hpp"
-#include "morpheus/objects/dtype.hpp"
+#include "morpheus/forward.hpp"  // for TypeId
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for DevMemInfo
 
 #include <cstddef>
 #include <memory>

@@ -18,6 +18,7 @@
 #include "morpheus/stages/file_source.hpp"
 
 #include "morpheus/io/deserializers.hpp"
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
 
 #include <cudf/column/column.hpp>  // for column
 #include <cudf/io/csv.hpp>

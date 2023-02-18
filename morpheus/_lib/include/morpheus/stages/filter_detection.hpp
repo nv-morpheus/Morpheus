@@ -18,8 +18,8 @@
 #pragma once
 
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/filter_source.hpp"
+#include "morpheus/types.hpp"  // for DevMemInfo
 
 #include <mrc/channel/status.hpp>          // for Status
 #include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t

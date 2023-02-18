@@ -18,8 +18,8 @@
 #include "morpheus/utilities/matx_util.hpp"
 
 #include "morpheus/objects/dev_mem_info.hpp"
-#include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/objects/dtype.hpp"  // for TypeId
 
 #include <mrc/cuda/sync.hpp>
 

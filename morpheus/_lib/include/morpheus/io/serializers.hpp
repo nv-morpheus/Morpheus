@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/forward.hpp"  // for TableInfo
 
 #include <ostream>
 #include <string>

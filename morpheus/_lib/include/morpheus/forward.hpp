@@ -17,8 +17,22 @@
 
 #pragma once
 
+#include <cstdint>  // for int32_t
+
 namespace morpheus {
 
+// Dtype
+enum class TypeId : int32_t;
+struct DType;
+
+// Tables
+struct IDataTable;
+struct MutableTableInfo;
+struct TableInfo;
+struct TableInfoData;
+
+// Tensors
+class DevMemInfo;
 struct TensorObject;
 
 }  // namespace morpheus

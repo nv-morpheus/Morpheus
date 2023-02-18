@@ -20,7 +20,7 @@
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>

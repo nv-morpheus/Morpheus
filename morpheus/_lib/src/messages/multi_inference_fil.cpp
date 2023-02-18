@@ -20,6 +20,7 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 
 #include <cudf/types.hpp>
 
@@ -43,7 +44,7 @@ const TensorObject MultiInferenceFILMessage::get_input__0() const
     return this->get_input("input__0");
 }
 
-void MultiInferenceFILMessage::set_input__0(const TensorObject &input__0)
+void MultiInferenceFILMessage::set_input__0(const TensorObject& input__0)
 {
     this->set_input("input__0", input__0);
 }
@@ -53,7 +54,7 @@ const TensorObject MultiInferenceFILMessage::get_seq_ids() const
     return this->get_input("seq_ids");
 }
 
-void MultiInferenceFILMessage::set_seq_ids(const TensorObject &seq_ids)
+void MultiInferenceFILMessage::set_seq_ids(const TensorObject& seq_ids)
 {
     this->set_input("seq_ids", seq_ids);
 }
@@ -71,18 +72,18 @@ std::shared_ptr<MultiInferenceFILMessage> MultiInferenceFILMessageInterfaceProxy
 }
 
 std::shared_ptr<morpheus::InferenceMemory> MultiInferenceFILMessageInterfaceProxy::memory(
-    MultiInferenceFILMessage &self)
+    MultiInferenceFILMessage& self)
 {
     DCHECK(std::dynamic_pointer_cast<morpheus::InferenceMemory>(self.memory) != nullptr);
     return std::static_pointer_cast<morpheus::InferenceMemory>(self.memory);
 }
 
-std::size_t MultiInferenceFILMessageInterfaceProxy::offset(MultiInferenceFILMessage &self)
+std::size_t MultiInferenceFILMessageInterfaceProxy::offset(MultiInferenceFILMessage& self)
 {
     return self.offset;
 }
 
-std::size_t MultiInferenceFILMessageInterfaceProxy::count(MultiInferenceFILMessage &self)
+std::size_t MultiInferenceFILMessageInterfaceProxy::count(MultiInferenceFILMessage& self)
 {
     return self.count;
 }

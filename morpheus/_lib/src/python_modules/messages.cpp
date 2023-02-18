@@ -30,6 +30,8 @@
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
+#include "morpheus/objects/table_info.hpp"     // for MutableTableInfo
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <mrc/channel/status.hpp>  // for Status

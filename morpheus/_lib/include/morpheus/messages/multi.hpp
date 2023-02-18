@@ -17,9 +17,8 @@
 
 #pragma once
 
-#include "morpheus/forward.hpp"  // for TensorObject
+#include "morpheus/forward.hpp"  // for TableInfo, TensorObject
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/objects/table_info.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cudf/types.hpp>

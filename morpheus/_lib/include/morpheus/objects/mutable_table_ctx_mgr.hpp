@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for MutableTableInfo
 #include "morpheus/messages/meta.hpp"
 
 #include <pybind11/pytypes.h>  // for object

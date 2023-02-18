@@ -17,16 +17,14 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for MutableTableInfo, TableInfo, TableInfoData
+
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
 #include <shared_mutex>
 
 namespace morpheus {
-
-struct TableInfoData;
-struct TableInfo;
-struct MutableTableInfo;
 
 /****** Component public implementations *******************/
 /****** IDataTable******************************************/

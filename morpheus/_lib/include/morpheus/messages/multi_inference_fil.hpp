@@ -17,10 +17,10 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"                           // for TensorObject
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/meta.hpp"                     // for MessageMeta
 #include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
 

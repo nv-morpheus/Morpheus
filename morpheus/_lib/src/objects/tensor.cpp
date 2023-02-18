@@ -17,7 +17,7 @@
 
 #include "morpheus/objects/tensor.hpp"
 
-#include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride

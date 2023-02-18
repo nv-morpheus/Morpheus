@@ -17,8 +17,8 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for TensorObject
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>  // for size_type
 #include <pybind11/pytypes.h>

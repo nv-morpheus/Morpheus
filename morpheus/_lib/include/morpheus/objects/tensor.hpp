@@ -17,9 +17,8 @@
 
 #pragma once
 
-#include "morpheus/forward.hpp"  // for TensorObject
-#include "morpheus/objects/dtype.hpp"
-#include "morpheus/types.hpp"  // for TensorIndex
+#include "morpheus/forward.hpp"  // for DType, TensorObject
+#include "morpheus/types.hpp"    // for TensorIndex
 
 #include <rmm/device_buffer.hpp>
 

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/objects/dtype.hpp"          // for DType
+#include "morpheus/forward.hpp"                // for DType
 #include "morpheus/objects/tensor_object.hpp"  // for ITensor
 #include "morpheus/types.hpp"                  // for RankType, VectorIndex
 

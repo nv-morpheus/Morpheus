@@ -17,6 +17,8 @@
 
 #include "morpheus/io/serializers.hpp"
 
+#include "morpheus/objects/table_info.hpp"  // for TableInfo
+
 #include <cudf/io/csv.hpp>
 #include <cudf/io/data_sink.hpp>
 #include <cudf/io/types.hpp>  // for column_name_info, sink_info, table_metadata

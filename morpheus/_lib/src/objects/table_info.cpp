@@ -17,7 +17,8 @@
 
 #include "morpheus/objects/table_info.hpp"
 
-#include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/data_table.hpp"  // for IDataTable
+#include "morpheus/objects/dtype.hpp"       // for DType
 
 #include <cudf/copying.hpp>
 #include <cudf/table/table_view.hpp>

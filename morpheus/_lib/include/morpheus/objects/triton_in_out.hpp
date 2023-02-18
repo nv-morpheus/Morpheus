@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/dtype.hpp"  // for DType
 
 #include <string>
 #include <vector>

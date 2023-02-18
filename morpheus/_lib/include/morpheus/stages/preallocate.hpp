@@ -17,9 +17,9 @@
 
 #pragma once
 
+#include "morpheus/forward.hpp"  // for DType, TypeId
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/objects/dtype.hpp"  // for TypeId
 
 #include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
 #include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t

@@ -18,6 +18,7 @@
 #include "morpheus/stages/write_to_file.hpp"  // IWYU pragma: accosiated
 
 #include "morpheus/io/serializers.hpp"
+#include "morpheus/objects/table_info.hpp"  // for MutableTableInfo
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>

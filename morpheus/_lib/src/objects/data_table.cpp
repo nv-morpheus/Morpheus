@@ -17,7 +17,7 @@
 
 #include "morpheus/objects/data_table.hpp"
 
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info.hpp"  // for MutableTableInfo, TableInfo, TableInfoData
 
 #include <glog/logging.h>
 

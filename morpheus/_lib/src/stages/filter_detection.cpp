@@ -20,6 +20,7 @@
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"          // for DataType
+#include "morpheus/objects/table_info.hpp"     // for TableInfo
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex
 #include "morpheus/utilities/matx_util.hpp"

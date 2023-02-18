@@ -17,6 +17,8 @@
 
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 
+#include "morpheus/objects/table_info.hpp"  // for MutableTableInfo
+
 #include <pybind11/gil.h>
 
 namespace morpheus {

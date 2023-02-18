@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "morpheus/objects/data_table.hpp"
-#include "morpheus/objects/dtype.hpp"
+#include "morpheus/forward.hpp"  // for IDataTable
+#include "morpheus/forward.hpp"
 
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table_view.hpp>
