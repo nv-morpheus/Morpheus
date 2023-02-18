@@ -17,7 +17,6 @@
 
 #include "morpheus/stages/preallocate.hpp"
 
-#include "morpheus/objects/dtype.hpp"       // for DType, TypeId
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 
 #include <exception>
