@@ -37,7 +37,7 @@ outputs:
         # Note: Setting a default value here will overwrite the value from the
         # shell! Defaults should be set in the run_conda_build.sh script
         - CMAKE_CUDA_ARCHITECTURES
-        - MORPHEUS_BUILD_PYTHON_STUBS
+        - MORPHEUS_PYTHON_BUILD_STUBS
         - MORPHEUS_CACHE_DIR
         - PARALLEL_LEVEL
       run_exports:
