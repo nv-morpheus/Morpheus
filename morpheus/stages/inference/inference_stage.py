@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import typing
 from abc import abstractmethod
 from functools import partial
@@ -29,6 +30,8 @@ from morpheus.messages import ResponseMemoryProbs
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
+
+logger = logging.getLogger(__name__)
 
 
 class InferenceWorker:
@@ -226,6 +229,7 @@ class InferenceStage(MultiMessageStage):
             worker.init()
 
             outstanding_requests = 0
+            log_enabled = False
 
             def on_next(x: MultiInferenceMessage):
                 nonlocal outstanding_requests
@@ -251,9 +255,18 @@ class InferenceStage(MultiMessageStage):
 
                         batch_future.set_result(m)
 
+                        # logger.debug(f"[Recieved]: Outstanding Requests: {outstanding_requests}")
+
                     fut_list.append(completion_future)
 
+                    if (log_enabled):
+                        print(f"Processing Offset: {batch.offset}, Count: {batch.count}")
+
                     worker.process(batch, partial(set_output_fut, b=batch, batch_future=completion_future))
+
+                    # logger.debug(
+                    #     f"[Sent    ]: Outstanding Requests: {outstanding_requests}. Size: {batch.count}, Offset: {batch.offset}"
+                    # )
 
                 for f in fut_list:
                     f.result()

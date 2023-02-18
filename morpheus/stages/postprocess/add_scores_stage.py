@@ -18,8 +18,8 @@ import typing
 import mrc
 
 import morpheus._lib.stages as _stages
-from morpheus._lib.common import TypeId
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -46,7 +46,7 @@ class AddScoresStage(SinglePortStage):
         the Config.class_labels property.
     prefix : str, default = ""
         Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
-    probs_type : `morpheus._lib.common.TypeId`, default = "float32"
+    probs_type : `morpheus.common.TypeId`, default = "float32"
         Datatype of the scores columns.
     """
 

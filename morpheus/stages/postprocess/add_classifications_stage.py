@@ -17,8 +17,8 @@ import typing
 
 import mrc
 
-from morpheus._lib.common import TypeId
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage

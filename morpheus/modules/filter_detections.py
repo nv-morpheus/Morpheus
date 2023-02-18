@@ -22,7 +22,7 @@ import numpy as np
 import typing_utils
 from mrc.core import operators as ops
 
-from morpheus._lib.common import FilterSource
+from morpheus.common import FilterSource
 from morpheus.messages import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.utils.module_ids import FILTER_DETECTIONS

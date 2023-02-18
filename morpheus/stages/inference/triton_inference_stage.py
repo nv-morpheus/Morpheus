@@ -163,9 +163,9 @@ class ResourcePool:
         ----------
         obj : typing.Any
             An item to be added to the queue.
+        """
 
         self._queue.put(obj)
-        """
 
 
 class InputWrapper:
@@ -576,9 +576,14 @@ class _TritonInferenceWorker(InferenceWorker):
                         result: tritonclient.InferResult,
                         error: tritonclient.InferenceServerException):
 
+        if (b.count != 32):
+            logger.debug(f"Got partial response: {b.count}")
+
         # If its an error, return that here
         if (error is not None):
             raise error
+
+        # logger.info(f"Got response. Offset: {b.offset}, Count: {b.count}")
 
         # Build response
         response_mem = self._build_response(b, result)
@@ -610,11 +615,17 @@ class _TritonInferenceWorker(InferenceWorker):
 
         outputs = [tritonclient.InferRequestedOutput(output.name) for output in self._outputs.values()]
 
+        # logger.info(f"Making request. Offset: {batch.offset}, Count: {batch.count}")
+
+        if (batch.count != 32):
+            logger.debug(f"Sending partial request: {batch.count}")
+
         # Inference call
         self._triton_client.async_infer(model_name=self._model_name,
                                         inputs=inputs,
                                         callback=partial(self._infer_callback, cb, mem, batch),
-                                        outputs=outputs)
+                                        outputs=outputs,
+                                        client_timeout=10.0)
 
 
 class TritonInferenceNLP(_TritonInferenceWorker):

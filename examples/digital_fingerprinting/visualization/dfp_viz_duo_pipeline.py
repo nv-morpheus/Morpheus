@@ -36,7 +36,7 @@ from dfp.stages.dfp_viz_postproc import DFPVizPostprocStage
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.regex_utils import iso_date_regex
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import get_package_relative_file
 from morpheus.cli.utils import load_labels_file
