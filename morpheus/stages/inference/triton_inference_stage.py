@@ -163,10 +163,9 @@ class ResourcePool:
         ----------
         obj : typing.Any
             An item to be added to the queue.
-
-        self._queue.put(obj)
         """
 
+        self._queue.put(obj)
 
 class InputWrapper:
     """
