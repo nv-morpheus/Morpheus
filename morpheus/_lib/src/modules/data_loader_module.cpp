@@ -37,19 +37,25 @@ DataLoaderModule::DataLoaderModule(std::string module_name) : SegmentModule(modu
 
 DataLoaderModule::DataLoaderModule(std::string module_name, nlohmann::json _config) :
   SegmentModule(std::move(module_name), std::move(_config))
-{}
-
-void DataLoaderModule::initialize(mrc::segment::Builder& builder)
 {
-    if (config().contains("loaders") and config()["loaders"].size() > 0)
+    if (config().contains("loaders") and config()["loaders"].is_array() and !config()["loaders"].empty())
     {
         auto loader_list = config()["loaders"];
         for (json::iterator it = loader_list.begin(); it != loader_list.end(); ++it)
         {
-            auto loader_id = it->get<std::string>();
+            auto loader_id_it = it.value().find("id");
+            if (loader_id_it == it.value().end())
+            {
+                throw std::runtime_error("Loader id not specified");
+            }
+
+            auto loader_id         = loader_id_it.value().get<std::string>();
+            auto loader_properties = it->value("properties", json({}));
             if (LoaderRegistry::contains(loader_id))
             {
-                m_data_loader.add_loader(loader_id, LoaderRegistry::create_object_from_factory(*it));
+                VLOG(2) << "Adding loader: " << loader_id << " with properties: " << loader_properties.dump(2);
+                m_data_loader.add_loader(loader_id,
+                                         LoaderRegistry::create_object_from_factory(loader_id, loader_properties));
             }
             else
             {
@@ -59,9 +65,12 @@ void DataLoaderModule::initialize(mrc::segment::Builder& builder)
     }
     else
     {
-        LOG(WARNING) << "No loaders specified in config";
+        LOG(WARNING) << "No loaders specified in config: " << config().dump(2);
     }
+}
 
+void DataLoaderModule::initialize(mrc::segment::Builder& builder)
+{
     auto loader_node = builder.make_node<std::shared_ptr<MessageControl>, std::shared_ptr<MessageControl>>(
         "input", rxcpp::operators::map([this](std::shared_ptr<MessageControl> control_message) {
             return m_data_loader.load(control_message);

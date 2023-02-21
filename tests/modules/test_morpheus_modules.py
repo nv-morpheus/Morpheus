@@ -113,7 +113,15 @@ def test_get_module_with_bad_loader_type():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": ["not_a_loader(tm)"]}
+        config = {"loaders": [
+            {
+                "id": "not_a_loader(tm)",
+                "properties": {
+                    "file_types": "something",
+                    "prop2": "something else"
+                }
+            }
+        ]}
         # This will unpack the config and forward it's payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
@@ -140,7 +148,15 @@ def test_get_module_with_bad_control_message():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": ["payload"]}
+        config = {"loaders": [
+            {
+                "id": "payload",
+                "properties": {
+                    "file_types": "something",
+                    "prop2": "something else"
+                }
+            }
+        ]}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
@@ -202,7 +218,15 @@ def test_payload_loader_module():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": ["payload"]}
+        config = {"loaders": [
+            {
+                "id": "payload",
+                "properties": {
+                    "file_types": "something",
+                    "prop2": "something else"
+                }
+            }
+        ]}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
@@ -295,7 +319,15 @@ def test_file_loader_module():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": ["file"]}
+        config = {"loaders": [
+            {
+                "id": "file",
+                "properties": {
+                    "file_types": "something",
+                    "prop2": "something else"
+                }
+            }
+        ]}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
