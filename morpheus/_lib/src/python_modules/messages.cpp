@@ -125,19 +125,21 @@ PYBIND11_MODULE(messages, _module)
 
     // TODO(Devin): Circle back on return value policy choices
     py::class_<MessageControl, std::shared_ptr<MessageControl>>(_module, "MessageControl")
-        .def(py::init<>())
-        .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)), py::return_value_policy::move)
+        .def(py::init<>(), py::return_value_policy::reference_internal)
+        .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)),
+             py::return_value_policy::reference_internal)
         .def("config",
              pybind11::overload_cast<MessageControl&>(&ControlMessageProxy::config),
-             py::return_value_policy::move)
+             py::return_value_policy::reference_internal)
         .def("config",
              pybind11::overload_cast<MessageControl&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"),
-             py::return_value_policy::move)
-        .def("payload", pybind11::overload_cast<>(&MessageControl::payload), py::return_value_policy::move)
+             py::return_value_policy::reference_internal)
+        .def(
+            "payload", pybind11::overload_cast<>(&MessageControl::payload), py::return_value_policy::reference_internal)
         .def("payload",
              pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&MessageControl::payload),
-             py::return_value_policy::move);
+             py::return_value_policy::reference_internal);
 
     // Context manager for Mutable Dataframes. Attempting to use it outside a with block will raise an exception
     py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(_module, "MutableTableCtxMgr")

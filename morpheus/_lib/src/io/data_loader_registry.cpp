@@ -23,12 +23,6 @@
 #include "morpheus/objects/factory_registry.hpp"
 
 namespace morpheus {
-template <>
-std::map<std::string, std::function<std::shared_ptr<Loader>()>> FactoryRegistry<Loader>::m_object_constructors{};
-
-template <>
-std::mutex FactoryRegistry<Loader>::m_mutex{};
-
 template class FactoryRegistry<Loader>;
 
 void LoaderRegistryProxy::register_proxy_factory_fn(
