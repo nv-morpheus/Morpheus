@@ -31,8 +31,17 @@ class Loader
   public:
     ~Loader() = default;
 
+    Loader() = default;
+    Loader(nlohmann::json config);
+
     virtual std::shared_ptr<MessageMeta> payload(std::shared_ptr<MessageControl> message);
     virtual std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message);
+
+  protected:
+    nlohmann::json config() const;
+
+  private:
+    nlohmann::json m_config{};
 };
 
 class DataLoader

@@ -28,8 +28,10 @@ namespace morpheus {
 class RESTDataLoader : public Loader
 {
   public:
-    RESTDataLoader()  = default;
     ~RESTDataLoader() = default;
+
+    RESTDataLoader() = default;
+    RESTDataLoader(nlohmann::json config);
 
     std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
 };

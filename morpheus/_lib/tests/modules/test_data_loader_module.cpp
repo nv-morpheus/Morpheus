@@ -45,7 +45,6 @@ using namespace morpheus::test;
 //    using namespace mrc::modules;
 //    using namespace mrc;
 //
-//    using sp_msg_meta_t = std::shared_ptr<MessageMeta>;
 //    using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
 //
 //    std::size_t packet_count{0};
@@ -87,7 +86,7 @@ using namespace morpheus::test;
 //        });
 //
 //        builder.make_edge(source, data_loader_module->input_port("input"));
-//        auto sink = builder.make_sink<sp_msg_meta_t>("sink", [&packet_count](sp_msg_meta_t input) {
+//        auto sink = builder.make_sink<sp_msg_ctrl_t>("sink", [&packet_count](sp_msg_ctrl_t input) {
 //            packet_count++;
 //            VLOG(30) << "Received message";
 //        });
@@ -120,7 +119,6 @@ using namespace morpheus::test;
 //     using namespace mrc::modules;
 //     using namespace mrc;
 //
-//     using sp_msg_meta_t = std::shared_ptr<MessageMeta>;
 //     using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
 //
 //     std::size_t packet_count{0};
@@ -145,7 +143,7 @@ using namespace morpheus::test;
 //         });
 //
 //         builder.make_edge(source, data_loader_module->input_port("input"));
-//         auto sink = builder.make_sink<sp_msg_meta_t>("sink", [&packet_count](sp_msg_meta_t input) {
+//         auto sink = builder.make_sink<sp_msg_ctrl_t>("sink", [&packet_count](sp_msg_ctrl_t input) {
 //             packet_count++;
 //             VLOG(10) << "Received message";
 //         });
@@ -176,7 +174,6 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
     using namespace mrc::modules;
     using namespace mrc;
 
-    using sp_msg_meta_t = std::shared_ptr<MessageControl>;
     using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
 
     std::size_t packet_count{0};
@@ -202,7 +199,7 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
 
         std::size_t x;
         builder.make_edge(source, data_loader_module->input_port("input"));
-        auto sink = builder.make_sink<sp_msg_meta_t>("sink", [&packet_count](sp_msg_meta_t input) {
+        auto sink = builder.make_sink<sp_msg_ctrl_t>("sink", [&packet_count](sp_msg_ctrl_t input) {
             packet_count++;
             VLOG(10) << "Received message";
         });
@@ -233,7 +230,6 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
 //     using namespace mrc::modules;
 //     using namespace mrc;
 //
-//     using sp_msg_meta_t = std::shared_ptr<MessageMeta>;
 //     using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
 //
 //     std::size_t packet_count{0};
@@ -258,7 +254,7 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
 //         });
 //
 //         builder.make_edge(source, data_loader_module->input_port("input"));
-//         auto sink = builder.make_sink<sp_msg_meta_t>("sink", [&packet_count](sp_msg_meta_t input) {
+//         auto sink = builder.make_sink<sp_msg_ctrl_t>("sink", [&packet_count](sp_msg_ctrl_t input) {
 //             packet_count++;
 //             VLOG(10) << "Received message";
 //         });

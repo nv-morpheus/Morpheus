@@ -28,9 +28,11 @@ namespace morpheus {
 class LambdaLoader : public Loader
 {
   public:
-    LambdaLoader() = delete;
-    LambdaLoader(std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> lambda_load);
     ~LambdaLoader() = default;
+
+    LambdaLoader() = delete;
+    LambdaLoader(std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> lambda_load,
+                 nlohmann::json config = {});
 
     std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
 

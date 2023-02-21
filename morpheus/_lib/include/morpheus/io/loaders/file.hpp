@@ -30,8 +30,10 @@ namespace morpheus {
 class FileDataLoader : public Loader
 {
   public:
-    FileDataLoader()  = default;
     ~FileDataLoader() = default;
+
+    FileDataLoader() = default;
+    FileDataLoader(nlohmann::json config);
 
     std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
 };

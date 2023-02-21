@@ -20,6 +20,8 @@
 #include <memory>
 
 namespace morpheus {
+RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
+
 std::shared_ptr<MessageControl> RESTDataLoader::load(std::shared_ptr<MessageControl> message)
 {
     VLOG(30) << "Called RESTDataLoader::load()";

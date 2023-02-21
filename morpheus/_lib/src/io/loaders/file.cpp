@@ -30,6 +30,9 @@
 namespace {}
 
 namespace morpheus {
+
+FileDataLoader::FileDataLoader(nlohmann::json config) : Loader(config) {}
+
 std::shared_ptr<MessageControl> FileDataLoader::load(std::shared_ptr<MessageControl> message)
 {
     namespace py = pybind11;
