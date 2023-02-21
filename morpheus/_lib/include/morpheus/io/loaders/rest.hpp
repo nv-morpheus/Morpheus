@@ -19,6 +19,8 @@
 
 #include "morpheus/io/data_loader.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace morpheus {
 #pragma GCC visibility push(default)
 /**
@@ -33,7 +35,7 @@ class RESTDataLoader : public Loader
     RESTDataLoader() = default;
     RESTDataLoader(nlohmann::json config);
 
-    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
+    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message, nlohmann::json task) final;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

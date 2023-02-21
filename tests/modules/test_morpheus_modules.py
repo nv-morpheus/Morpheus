@@ -71,7 +71,15 @@ def test_get_module_with_bad_config_no_loaders():
     def init_wrapper(builder: mrc.Builder):
         def gen_data():
             for i in range(packet_count):
-                config = {"loader_id": "payload"}
+                config = {
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "payload",
+                            "strategy": "aggregate"
+                        }
+                    }]
+                }
                 msg = messages.MessageControl(config)
                 yield msg
 
@@ -107,7 +115,15 @@ def test_get_module_with_bad_loader_type():
     def init_wrapper(builder: mrc.Builder):
         def gen_data():
             for i in range(packet_count):
-                config = {"loader_id": "payload"}
+                config = {
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "payload",
+                            "strategy": "aggregate"
+                        }
+                    }]
+                }
                 msg = messages.MessageControl(config)
                 yield msg
 
@@ -142,7 +158,15 @@ def test_get_module_with_bad_control_message():
     def init_wrapper(builder: mrc.Builder):
         def gen_data():
             for i in range(packet_count):
-                config = {"loader_id": "not_a_loader(tm)"}
+                config = {
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "not_a_loader(tm)",
+                            "strategy": "aggregate"
+                        }
+                    }]
+                }
                 msg = messages.MessageControl(config)
                 yield msg
 
@@ -202,7 +226,15 @@ def test_payload_loader_module():
 
         def gen_data():
             global packet_count
-            config = {"loader_id": "payload"}
+            config = {
+                "tasks": [{
+                    "type": "load",
+                    "properties": {
+                        "loader_id": "payload",
+                        "strategy": "aggregate"
+                    }
+                }]
+            }
 
             payload = messages.MessageMeta(df)
             for i in range(packet_count):
@@ -282,27 +314,37 @@ def test_file_loader_module():
             for f in files:
                 # Check with the file type
                 config = {
-                    "loader_id": "file",
-                    "strategy": "aggregate",
-                    "files": [
-                        {
-                            "path": f[0],
-                            "type": f[1]
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "file",
+                            "strategy": "aggregate",
+                            "files": [
+                                {
+                                    "path": f[0],
+                                    "type": f[1]
+                                }
+                            ]
                         }
-                    ]
+                    }]
                 }
                 msg = messages.MessageControl(config)
                 yield msg
 
                 # Make sure we can auto-detect the file type
                 config = {
-                    "loader_id": "file",
-                    "strategy": "aggregate",
-                    "files": [
-                        {
-                            "path": f[0],
+                    "tasks": [{
+                        "type": "load",
+                        "properties": {
+                            "loader_id": "file",
+                            "strategy": "aggregate",
+                            "files": [
+                                {
+                                    "path": f[0],
+                                }
+                            ]
                         }
-                    ]
+                    }]
                 }
                 msg = messages.MessageControl(config)
                 yield msg

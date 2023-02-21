@@ -228,19 +228,24 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
     std::size_t packet_count{0};
 
     auto init_wrapper = [&packet_count](segment::Builder& builder) {
-        json config;
-        config["loaders"] = {{{"id", "payload"}, {"properties", {{"prop1", "prop1_value"}}}}};
+        json module_config;
+        module_config["loaders"] = {{{"id", "payload"}, {"properties", {{"prop1", "prop1_value"}}}}};
 
-        auto data_loader_module = builder.make_module<DataLoaderModule>("DataLoaderTest", config);
+        auto data_loader_module = builder.make_module<DataLoaderModule>("DataLoaderTest", module_config);
 
         auto source = builder.make_source<sp_msg_ctrl_t>("source", [](rxcpp::subscriber<sp_msg_ctrl_t>& sub) {
             if (sub.is_subscribed())
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    nlohmann::json config;
-                    config["loader_id"] = "payload";
-                    sub.on_next(std::make_shared<MessageControl>(config));
+                    nlohmann::json message_config;
+                    message_config["tasks"] = {{{"type", "load"},
+                                                {"properties",
+                                                 {
+                                                     {"loader_id", "payload"},
+                                                 }}}};
+
+                    sub.on_next(std::make_shared<MessageControl>(message_config));
                 }
             }
 

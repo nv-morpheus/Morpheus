@@ -21,6 +21,7 @@
 #include "morpheus/messages/meta.hpp"
 
 #include <boost/filesystem.hpp>
+#include <nlohmann/json.hpp>
 #include <pybind11/pybind11.h>
 #include <pymrc/utilities/object_cache.hpp>
 
@@ -33,7 +34,7 @@ namespace morpheus {
 
 FileDataLoader::FileDataLoader(nlohmann::json config) : Loader(config) {}
 
-std::shared_ptr<MessageControl> FileDataLoader::load(std::shared_ptr<MessageControl> message)
+std::shared_ptr<MessageControl> FileDataLoader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
 {
     namespace py = pybind11;
     VLOG(30) << "Called FileDataLoader::load()";
@@ -46,21 +47,21 @@ std::shared_ptr<MessageControl> FileDataLoader::load(std::shared_ptr<MessageCont
     mod_cudf           = cache_handle.get_module("cudf");
 
     // TODO(Devin) : error checking + improve robustness
-    auto config = message->config();
-    if (!config.contains("files"))
+    auto task_properties = task["properties"];
+    if (!task_properties["files"].is_array() or task_properties.empty())
     {
         throw std::runtime_error("'File Loader' control message specified no files to load");
     }
 
-    // TODO(Devin) : Migrate this to use the cudf::io interface
-    std::string strategy = config.value("strategy", "aggregate");
+    std::string strategy = task_properties.value("strategy", "aggregate");
     if (strategy != "aggregate")
     {
         throw std::runtime_error("Only 'aggregate' strategy is currently supported");
     }
 
-    auto files           = config["files"];
+    auto files           = task_properties["files"];
     py::object dataframe = py::none();
+    // TODO(Devin) : Migrate this to use the cudf::io interface
     for (auto& file : files)
     {
         boost::filesystem::path path(file.value("path", ""));

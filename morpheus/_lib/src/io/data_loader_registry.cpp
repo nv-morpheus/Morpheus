@@ -22,20 +22,25 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/factory_registry.hpp"
 
+#include <nlohmann/json.hpp>
+#include <pymrc/utils.hpp>
+
 namespace morpheus {
 template class FactoryRegistry<Loader>;
 
 void LoaderRegistryProxy::register_proxy_factory_fn(
     const std::string& name,
-    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl> control_message)> proxy_constructor,
+    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl> control_message, pybind11::dict task)>
+        proxy_constructor,
     bool throw_if_exists)
 {
     FactoryRegistry<Loader>::register_factory_fn(
         name,
         [proxy_constructor](nlohmann::json config) {
             return std::make_shared<LambdaLoader>(
-                [proxy_constructor](std::shared_ptr<MessageControl> control_message) {
-                    return std::move(proxy_constructor(control_message));
+                [proxy_constructor](std::shared_ptr<MessageControl> control_message, nlohmann::json task) {
+                    auto py_task = mrc::pymrc::cast_from_json(task);
+                    return std::move(proxy_constructor(control_message, py_task));
                 },
                 config);
         },

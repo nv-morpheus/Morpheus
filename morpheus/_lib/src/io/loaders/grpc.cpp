@@ -17,12 +17,14 @@
 
 #include "morpheus/io/loaders/grpc.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <memory>
 
 namespace morpheus {
 GRPCDataLoader::GRPCDataLoader(nlohmann::json config) : Loader(config) {}
 
-std::shared_ptr<MessageControl> GRPCDataLoader::load(std::shared_ptr<MessageControl> message)
+std::shared_ptr<MessageControl> GRPCDataLoader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
 {
     VLOG(30) << "Called GRPCDataLoader::load()";
 

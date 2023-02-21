@@ -17,12 +17,14 @@
 
 #include "morpheus/io/loaders/payload.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <memory>
 
 namespace morpheus {
 PayloadDataLoader::PayloadDataLoader(nlohmann::json config) : Loader(config) {}
 
-std::shared_ptr<MessageControl> PayloadDataLoader::load(std::shared_ptr<MessageControl> message)
+std::shared_ptr<MessageControl> PayloadDataLoader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
 {
     VLOG(30) << "Called PayloadDataLoader::load()";
     return std::move(message);

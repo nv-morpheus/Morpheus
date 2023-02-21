@@ -18,6 +18,7 @@
 #include "morpheus/io/loaders/file_list.hpp"
 
 #include <boost/filesystem.hpp>
+#include <nlohmann/json.hpp>
 
 #include <memory>
 
@@ -25,7 +26,9 @@ namespace morpheus {
 
 FileListLoader::FileListLoader(nlohmann::json config) : Loader(config) {}
 
-std::shared_ptr<MessageControl> FileListLoader::load(std::shared_ptr<MessageControl> control_message)
+// TODO(Devin): This is a temporary implementation
+std::shared_ptr<MessageControl> FileListLoader::load(std::shared_ptr<MessageControl> control_message,
+                                                     nlohmann::json task)
 {
     VLOG(30) << "Called FileListLoader::load()";
 

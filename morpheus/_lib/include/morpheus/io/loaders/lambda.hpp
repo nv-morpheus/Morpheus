@@ -19,6 +19,8 @@
 
 #include "morpheus/io/data_loader.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace morpheus {
 #pragma GCC visibility push(default)
 /**
@@ -31,13 +33,14 @@ class LambdaLoader : public Loader
     ~LambdaLoader() = default;
 
     LambdaLoader() = delete;
-    LambdaLoader(std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> lambda_load,
-                 nlohmann::json config = {});
+    LambdaLoader(
+        std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>, nlohmann::json)> lambda_load,
+        nlohmann::json config = {});
 
-    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
+    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message, nlohmann::json task) final;
 
   private:
-    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> m_lambda_load;
+    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>, nlohmann::json)> m_lambda_load;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

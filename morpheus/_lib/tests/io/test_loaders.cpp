@@ -46,21 +46,28 @@ TEST_F(TestLoader, LoaderFileTest)
         GTEST_SKIP() << "Failed to create temporary file, skipping test";
     }
 
-    nlohmann::json config;
-    config["loader_id"] = "file";
-    config["strategy"]  = "aggregate";
-    config["files"]     = nlohmann::json::array();
+    nlohmann::json message_config;
+    message_config["tasks"] = {{{"type", "load"},
+                                {"properties",
+                                 {
+                                     {"loader_id", "file"},
+                                     {"strategy", "aggregate"},
+                                     {"files",
+                                      {
+                                          {{"path", std::string(temp_file)}, {"type", "csv"}},
+                                      }},
+                                 }}}};
 
-    config["files"].push_back({{"path", std::string(temp_file)}, {"type", "csv"}});
+    auto task = message_config["tasks"][0];
 
     std::fstream data_file(temp_file, std::ios::out | std::ios::binary | std::ios::trunc);
     data_file << string_df;
     data_file.close();
 
-    auto msg    = std::make_shared<MessageControl>(config);
+    auto msg    = std::make_shared<MessageControl>(message_config);
     auto loader = FileDataLoader();
 
-    EXPECT_NO_THROW(loader.load(msg));
+    EXPECT_NO_THROW(loader.load(msg, task));
 
     unlink(temp_file);
 }
@@ -68,23 +75,26 @@ TEST_F(TestLoader, LoaderFileTest)
 TEST_F(TestLoader, LoaderGRPCTest)
 {
     auto msg    = std::make_shared<MessageControl>();
+    auto task   = nlohmann::json();
     auto loader = GRPCDataLoader();
 
-    EXPECT_THROW(loader.load(msg), std::runtime_error);
+    EXPECT_THROW(loader.load(msg, task), std::runtime_error);
 }
 
 TEST_F(TestLoader, LoaderPayloadTest)
 {
     auto msg    = std::make_shared<MessageControl>();
+    auto task   = nlohmann::json();
     auto loader = PayloadDataLoader();
 
-    EXPECT_NO_THROW(loader.load(msg));
+    EXPECT_NO_THROW(loader.load(msg, task));
 }
 
 TEST_F(TestLoader, LoaderRESTTest)
 {
     auto msg    = std::make_shared<MessageControl>();
+    auto task   = nlohmann::json();
     auto loader = RESTDataLoader();
 
-    EXPECT_THROW(loader.load(msg), std::runtime_error);
+    EXPECT_THROW(loader.load(msg, task), std::runtime_error);
 }

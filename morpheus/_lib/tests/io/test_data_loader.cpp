@@ -40,14 +40,19 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
 {
     auto data_loader = DataLoader();
 
-    nlohmann::json config;
-    config["loader_id"] = "";
+    nlohmann::json message_config;
+    message_config["tasks"] = {{{"type", "load"},
+                                {"properties",
+                                 {
+                                     {"loader_id", "payload"},
+                                 }}}};
 
     std::vector<std::string> loaders = {"payload"};
     for (auto& loader : loaders)
     {
-        config["loader_id"] = loader;
-        auto msg            = std::make_shared<MessageControl>(config);
+        message_config["tasks"][0]["properties"]["loader_id"] = loader;
+
+        auto msg = std::make_shared<MessageControl>(message_config);
 
         EXPECT_THROW(data_loader.load(msg), std::runtime_error);
     }
@@ -56,8 +61,9 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
 
     for (auto& loader : loaders)
     {
-        config["loader_id"] = loader;
-        auto msg            = std::make_shared<MessageControl>(config);
+        message_config["tasks"][0]["properties"]["loader_id"] = loader;
+
+        auto msg = std::make_shared<MessageControl>(message_config);
 
         EXPECT_NO_THROW(data_loader.load(msg));
     }
@@ -67,10 +73,14 @@ TEST_F(TestDataLoader, DataLoaderRemoveLoaderTest)
 {
     auto data_loader = DataLoader();
 
-    nlohmann::json config;
-    config["loader_id"] = "payload";
+    nlohmann::json message_config;
+    message_config["tasks"] = {{{"type", "load"},
+                                {"properties",
+                                 {
+                                     {"loader_id", "payload"},
+                                 }}}};
 
-    auto msg = std::make_shared<MessageControl>(config);
+    auto msg = std::make_shared<MessageControl>(message_config);
 
     EXPECT_THROW(data_loader.load(msg), std::runtime_error);
     data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
@@ -89,10 +99,14 @@ TEST_F(TestDataLoader, PayloadLoaderTest)
     auto data_loader = DataLoader();
     data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
 
-    nlohmann::json config;
-    config["loader_id"] = "payload";
+    nlohmann::json message_config;
+    message_config["tasks"] = {{{"type", "load"},
+                                {"properties",
+                                 {
+                                     {"loader_id", "payload"},
+                                 }}}};
 
-    auto msg = std::make_shared<MessageControl>(config);
+    auto msg = std::make_shared<MessageControl>(message_config);
 
     auto mm = create_mock_msg_meta({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
     msg->payload(mm);
@@ -119,14 +133,19 @@ TEST_F(TestDataLoader, FileLoaderTest)
         GTEST_SKIP() << "Failed to create temporary file, skipping test";
     }
 
-    nlohmann::json config;
-    config["loader_id"] = "file";
-    config["strategy"]  = "aggregate";
-    config["files"]     = nlohmann::json::array();
+    nlohmann::json message_config;
+    message_config["tasks"] = {{{"type", "load"},
+                                {"properties",
+                                 {
+                                     {"loader_id", "file"},
+                                     {"strategy", "aggregate"},
+                                     {"files",
+                                      {
+                                          {{"path", std::string(temp_file)}, {"type", "csv"}},
+                                      }},
+                                 }}}};
 
-    config["files"].push_back({{"path", std::string(temp_file)}, {"type", "csv"}});
-
-    auto msg = std::make_shared<MessageControl>(config);
+    auto msg = std::make_shared<MessageControl>(message_config);
 
     std::fstream data_file(temp_file, std::ios::out | std::ios::binary | std::ios::trunc);
     data_file << string_df;

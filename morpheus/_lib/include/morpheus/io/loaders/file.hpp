@@ -20,6 +20,8 @@
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/messages/meta.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace morpheus {
 #pragma GCC visibility push(default)
 /**
@@ -35,7 +37,7 @@ class FileDataLoader : public Loader
     FileDataLoader() = default;
     FileDataLoader(nlohmann::json config);
 
-    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
+    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message, nlohmann::json task) final;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

@@ -41,27 +41,63 @@ std::shared_ptr<MessageMeta> Loader::payload(std::shared_ptr<MessageControl> mes
     return std::move(message->payload());
 }
 
-std::shared_ptr<MessageControl> Loader::load(std::shared_ptr<MessageControl> message)
+std::shared_ptr<MessageControl> Loader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
 {
     return std::move(message);
 }
 
 std::shared_ptr<MessageControl> DataLoader::load(std::shared_ptr<MessageControl> control_message)
 {
-    auto config = control_message->config();
-    if (config.contains("loader_id"))
+    auto config   = control_message->config();
+    auto tasks_it = config.find("tasks");
+    // TODO(Devin): Do we want to contemplate multiple load tasks on a single message?
+    for (auto task_it = tasks_it->begin(); task_it != tasks_it->end(); ++task_it)
     {
-        auto loader_id = config["loader_id"];
-        auto loader    = m_loaders.find(loader_id);
+        auto task      = task_it.value();
+        auto task_type = task.find("type");
+        if (task_type == task.end() or task_type.value() != "load")
+        {
+            continue;
+        }
+
+        // TODO(Devin): Temporary check, should be impossible to create a ControlMessage with an invalid schema
+        // once schema checking is incorporated.
+        //       "type": "load",
+        //        "properties": {
+        //          "loader_id": "fsspec",
+        //          "strategy": "aggregate",
+        //          "files": [
+        //            {
+        //              "path": "file_path",
+        //              "type": "csv"
+        //            },
+        //            {
+        //              "path": "file_path_2"
+        //            }
+        //          ]
+        //        }
+        if (!task.contains("properties"))
+        {
+            throw std::runtime_error("Invalid task specification: missing properties.");
+        }
+
+        auto loader_id = task["properties"]["loader_id"];
+
+        auto loader = m_loaders.find(loader_id);
         if (loader != m_loaders.end())
         {
             VLOG(5) << "Loading data using loader: " << loader_id
                     << " for message: " << control_message->config().dump() << std::endl;
-            return std::move(loader->second->load(control_message));
+
+            tasks_it->erase(task_it);
+            return std::move(loader->second->load(control_message, task));
+        }
+        else
+        {
+            throw std::runtime_error("Attempt to load using an unknown or unregistered data loader: " +
+                                     loader_id.get<std::string>());
         }
     }
-
-    throw std::runtime_error("No loader registered for message: " + control_message->config().dump());
 }
 
 void DataLoader::add_loader(const std::string& loader_id, std::shared_ptr<Loader> loader, bool overwrite)

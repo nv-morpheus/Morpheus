@@ -17,19 +17,22 @@
 
 #include "morpheus/io/loaders/lambda.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <memory>
 
 namespace morpheus {
-LambdaLoader::LambdaLoader(std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> lambda_load,
-                           nlohmann::json config) :
+LambdaLoader::LambdaLoader(
+    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>, nlohmann::json)> lambda_load,
+    nlohmann::json config) :
   Loader(config),
   m_lambda_load(lambda_load)
 {}
 
-std::shared_ptr<MessageControl> LambdaLoader::load(std::shared_ptr<MessageControl> message)
+std::shared_ptr<MessageControl> LambdaLoader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
 {
     VLOG(30) << "Called LambdaLoader::load()";
 
-    return std::move(m_lambda_load(message));
+    return std::move(m_lambda_load(message, task));
 }
 }  // namespace morpheus

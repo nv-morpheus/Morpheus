@@ -38,11 +38,12 @@ def test_loader_registry_contains():
 
 
 def test_loader_registry_register_loader():
-    def test_loader(control_message: messages.MessageControl):
-        config = control_message.config()
-        if ('files' not in config):
+    def test_loader(control_message: messages.MessageControl, task: dict):
+        task_properties = task['properties']
+        if ('files' not in task_properties):
             raise ValueError("No files specified in config")
-        files = config['files']
+
+        files = task_properties['files']
 
         df = None
         for file in files:
@@ -72,11 +73,12 @@ def test_loader_registry_register_loader():
 
 
 def test_loader_registry_unregister_loader():
-    def test_loader(control_message: messages.MessageControl):
-        config = control_message.config()
-        if ('files' not in config):
+    def test_loader(control_message: messages.MessageControl, task: dict):
+        task_properties = task['properties']
+        if ('files' not in task_properties):
             raise ValueError("No files specified in config")
-        files = config['files']
+
+        files = task_properties['files']
 
         df = None
         for file in files:

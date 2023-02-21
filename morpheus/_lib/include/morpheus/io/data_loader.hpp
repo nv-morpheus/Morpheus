@@ -35,7 +35,7 @@ class Loader
     Loader(nlohmann::json config);
 
     virtual std::shared_ptr<MessageMeta> payload(std::shared_ptr<MessageControl> message);
-    virtual std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message);
+    virtual std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message, nlohmann::json task);
 
   protected:
     nlohmann::json config() const;
