@@ -271,7 +271,7 @@ class DFPConfig():
         stages_conf["sampling_rate_s"] = 0
         stages_conf["cache_dir"] = "./.cache/dfp"
         stages_conf["include_generic"] = True
-        stages_conf["include_individual"] = []
+        stages_conf["include_individual"] = False
         stages_conf["skip_users"] = []
         stages_conf["only_users"] = []
         stages_conf["model_name_formatter"] = self._get_model_name_formatter()

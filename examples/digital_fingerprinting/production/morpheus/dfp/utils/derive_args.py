@@ -14,6 +14,7 @@
 
 import logging
 import pickle
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -26,18 +27,25 @@ from morpheus.utils.logger import configure_logging
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class TimeFields:
+    start_time: datetime
+    end_time: datetime
+
+
 class DeriveArgs:
 
     def __init__(self,
                  skip_user: str,
                  only_user: str,
                  start_time: str,
-                 duration: str,
-                 log_level: str,
+                 log_level: int,
                  cache_dir: str,
                  sample_rate_s: str,
-                 source: str,
+                 duration: str,
+                 log_type: str,
                  tracking_uri: str,
+                 workload_type: str = None,
                  train_users: str = None):
 
         self._skip_users = list(skip_user)
@@ -47,15 +55,25 @@ class DeriveArgs:
         self._log_level = log_level
         self._train_users = train_users
         self._cache_dir = cache_dir
-        self._include_generic = None
-        self._include_individual = None
         self._initialized = False
         self._tracking_uri = tracking_uri
         self._sample_rate_s = sample_rate_s
-        self._source = source
-        self._model_name_formatter = "DFP-%s-{user_id}" % (source)
-        self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (source)
-        self._is_training = (train_users is not None and train_users != "none")
+        self._log_type = log_type
+        self._workload_type = workload_type
+
+        self._include_generic = None
+        self._include_individual = None
+        self._time_fields: TimeFields = None
+
+        self._model_name_formatter = "DFP-%s-{user_id}" % (log_type)
+        self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (log_type)
+
+        train_flag = (train_users is not None and train_users)
+
+        self._is_training = (train_flag and workload_type != "infer")
+        self._is_train_and_infer = (train_flag and workload_type == "train_and_infer")
+        self._is_inference = not (self._is_training or self._is_train_and_infer or workload_type == "train"
+                                  or workload_type == "train_and_infer")
 
     def verify_init(func):
 
@@ -67,29 +85,13 @@ class DeriveArgs:
         return wrapper
 
     def _configure_logging(self):
-
         configure_logging(log_level=self._log_level)
         logging.getLogger("mlflow").setLevel(self._log_level)
 
-        if (len(self._only_users) > 0 and len(self._only_users) > 0):
-            logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
-
-        logger.info("Running training pipeline with the following options: ")
-        logger.info("Train generic_user: %s", self._include_generic)
-        logger.info("Skipping users: %s", self._skip_users)
-        logger.info("Start Time: %s", self._start_time)
-        logger.info("Duration: %s", self._duration)
-        logger.info("Cache Dir: %s", self._cache_dir)
-
     @property
     @verify_init
-    def start_time(self):
-        return self._start_time
-
-    @property
-    @verify_init
-    def end_time(self):
-        return self._end_time
+    def time_fields(self):
+        return self._time_fields
 
     @property
     @verify_init
@@ -97,13 +99,18 @@ class DeriveArgs:
         return self._include_generic
 
     @property
+    def duration(self):
+        return self._duration
+
+    @property
+    @verify_init
+    def is_train_and_infer(self):
+        return self._is_train_and_infer
+
+    @property
     @verify_init
     def include_individual(self):
         return self._include_individual
-
-    @property
-    def duration(self):
-        return self._duration
 
     @property
     def sample_rate_s(self):
@@ -122,8 +129,8 @@ class DeriveArgs:
         return self._cache_dir
 
     @property
-    def source(self):
-        return self._source
+    def log_type(self):
+        return self._log_type
 
     @property
     def model_name_formatter(self):
@@ -132,6 +139,10 @@ class DeriveArgs:
     @property
     def is_training(self):
         return self._is_training
+
+    @property
+    def is_inference(self):
+        return self._is_inference
 
     @property
     def experiment_name_formatter(self):
@@ -143,16 +154,20 @@ class DeriveArgs:
     def _set_include_individual(self):
         self._include_individual = self._train_users != "generic"
 
-    def _update_start_stop_time(self):
-        duration = timedelta(seconds=pd.Timedelta(self._duration).total_seconds())
+    def _create_time_fields(self, duration) -> TimeFields:
+        duration = timedelta(seconds=pd.Timedelta(duration).total_seconds())
         if self._start_time is None:
-            self._end_time = datetime.now(tz=timezone.utc)
-            self._start_time = self._end_time - duration
+            end_time = datetime.now(tz=timezone.utc)
+            self._start_time = end_time - duration
         else:
             if self._start_time.tzinfo is None:
                 self._start_time = self._start_time.replace(tzinfo=timezone.utc)
 
-            self._end_time = self._start_time + duration
+            end_time = self._start_time + duration
+
+        tf = TimeFields(self._start_time, end_time)
+
+        return tf
 
     def _set_mlflow_tracking_uri(self):
         if self._tracking_uri is None:
@@ -161,13 +176,30 @@ class DeriveArgs:
         mlflow.set_tracking_uri(self._tracking_uri)
         logger.info("Tracking URI: %s", mlflow.get_tracking_uri())
 
+    def _set_time_fields(self):
+        if self._is_train_and_infer or self._is_training or self._is_inference:
+            self._time_fields = self._create_time_fields(self._duration)
+        else:
+            raise Exception(
+                "Invalid arguments, when --workload_type is 'train' or 'train_and_infer' --train_users must be passed.")
+
     def init(self):
-        self._update_start_stop_time()
+        self._configure_logging()
+        self._set_time_fields()
         self._set_include_generic()
         self._set_include_individual()
-        self._configure_logging()
         self._set_mlflow_tracking_uri()
         self._initialized = True
+
+        if (len(self._only_users) > 0 and len(self._only_users) > 0):
+            logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
+
+        logger.info("Running training pipeline with the following options: ")
+        logger.info("Train generic_user: %s", self._include_generic)
+        logger.info("Skipping users: %s", self._skip_users)
+        logger.info("Start Time: %s", self._start_time)
+        logger.info("Duration: %s", self._duration)
+        logger.info("Cache Dir: %s", self._cache_dir)
 
 
 def pyobj2str(pyobj, encoding):

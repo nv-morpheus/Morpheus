@@ -111,26 +111,26 @@ def run_pipeline(train_users,
     derive_args = DeriveArgs(skip_user,
                              only_user,
                              start_time,
-                             duration,
                              log_level,
                              cache_dir,
                              sample_rate_s,
+                             duration,
+                             log_type="duo",
                              tracking_uri=kwargs["tracking_uri"],
-                             source="duo",
                              train_users=train_users)
 
     derive_args.init()
 
-    config: Config = generate_ae_config(labels_file="data/columns_ae_duo.txt",
+    config: Config = generate_ae_config(derive_args.log_type,
                                         userid_column_name="username",
                                         timestamp_column_name="timestamp")
 
-    schema_builder = SchemaBuilder(config)
-    schema: Schema = schema_builder.build_duo_schema()
+    schema_builder = SchemaBuilder(config, derive_args.log_type)
+    schema: Schema = schema_builder.build_schema()
 
     config_generator = ConfigGenerator(config, derive_args, schema)
 
-    module_conf = config_generator.tra_pipe_module_conf()
+    module_config = config_generator.tra_pipe_module_config()
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -138,7 +138,7 @@ def run_pipeline(train_users,
     pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the full DFP Training pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_conf, input_port_name="input", output_port_name="output"))
+    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
 
     pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
 

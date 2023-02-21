@@ -17,7 +17,7 @@ import typing
 from datetime import datetime
 
 import click
-import dfp.modules.dfp_training_pipeline  # noqa: F401
+import dfp.modules.dfp_deployment  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
@@ -28,17 +28,27 @@ from dfp.utils.schema_utils import SchemaBuilder
 from morpheus.cli.utils import get_log_levels
 from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
-from morpheus.pipeline import LinearPipeline
-from morpheus.stages.general.linear_modules_stage import LinearModulesStage
+from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.general.nonlinear_modules_stage import NonLinearModulesStage
 
 
 @click.command()
 @click.option(
+    "--log_type",
+    type=click.Choice(["duo", "azure"], case_sensitive=False),
+    required=True,
+    help=("Indicates what type of logs are going to be used in the workload."),
+)
+@click.option(
+    "--workload_type",
+    type=click.Choice(["infer", "train", "train_and_infer"], case_sensitive=False),
+    required=True,
+    help=("Workload type either inference or training or inference + training"),
+)
+@click.option(
     "--train_users",
     type=click.Choice(["all", "generic", "individual"], case_sensitive=False),
-    default="generic",
-    show_default=True,
     help=("Indicates whether or not to train per user or a generic model for all users. "
           "Selecting none runs the inference pipeline."),
 )
@@ -65,7 +75,13 @@ from morpheus.stages.general.monitor_stage import MonitorStage
     "--duration",
     type=str,
     default="60d",
-    help="The duration to run starting from start_time",
+    help="The training duration to run starting from start_time",
+)
+@click.option(
+    "--use_cpp",
+    type=click.BOOL,
+    default=False,
+    help=("Indicates what type of logs are going to be used in the workload."),
 )
 @click.option(
     "--cache_dir",
@@ -98,14 +114,18 @@ from morpheus.stages.general.monitor_stage import MonitorStage
               type=str,
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
-def run_pipeline(train_users,
+def run_pipeline(log_type: str,
+                 workload_type: str,
+                 train_users: str,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
                  start_time: datetime,
-                 duration,
-                 cache_dir,
-                 log_level,
-                 sample_rate_s,
+                 duration: str,
+                 cache_dir: str,
+                 log_level: int,
+                 sample_rate_s: int,
+                 tracking_uri,
+                 use_cpp,
                  **kwargs):
 
     derive_args = DeriveArgs(skip_user,
@@ -115,32 +135,56 @@ def run_pipeline(train_users,
                              cache_dir,
                              sample_rate_s,
                              duration,
-                             log_type="azure",
-                             tracking_uri=kwargs["tracking_uri"],
-                             train_users=train_users)
+                             log_type,
+                             tracking_uri,
+                             workload_type,
+                             train_users)
 
     derive_args.init()
 
-    config: Config = generate_ae_config(derive_args.log_type,
-                                        userid_column_name="username",
-                                        timestamp_column_name="timestamp")
+    userid_column_name = "username"
+    timestamp_column_name = "timestamp"
 
-    schema_builder = SchemaBuilder(config, derive_args.log_type)
+    config: Config = generate_ae_config(log_type, userid_column_name, timestamp_column_name, use_cpp=use_cpp)
+
+    schema_builder = SchemaBuilder(config, log_type)
     schema: Schema = schema_builder.build_schema()
 
     config_generator = ConfigGenerator(config, derive_args, schema)
 
-    module_config = config_generator.tra_pipe_module_config()
+    module_config = config_generator.get_module_config()
 
-    # Create a linear pipeline object
-    pipeline = LinearPipeline(config)
+    workload = module_config.get("workload")
+    output_port_count = module_config.get("output_port_count")
 
-    pipeline.set_source(MultiFileSource(config, filenames=list(kwargs["input_file"])))
+    # Create a pipeline object
+    pipeline = Pipeline(config)
 
-    # Here we add a wrapped module that implements the full DFP Training pipeline
-    pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input", output_port_name="output"))
+    source_stage = pipeline.add_stage(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
-    pipeline.add_stage(MonitorStage(config, description="Training Pipeline rate", smoothing=0.001))
+    # Here we add a wrapped module that implements the DFP Deployment
+    dfp_deployment_stage = pipeline.add_stage(
+        NonLinearModulesStage(config,
+                              module_config,
+                              input_port_name="input",
+                              output_port_name_prefix="output",
+                              output_port_count=output_port_count))
+
+    pipeline.add_edge(source_stage, dfp_deployment_stage)
+
+    if len(dfp_deployment_stage.output_ports) > 1:
+        tra_mntr_stage = MonitorStage(config, description="DFPTraining Pipeline rate", smoothing=0.001)
+        inf_mntr_stage = MonitorStage(config, description="DFPInference Pipeline rate", smoothing=0.001)
+
+        tra_mntr_stage = pipeline.add_stage(tra_mntr_stage)
+        inf_mntr_stage = pipeline.add_stage(inf_mntr_stage)
+
+        pipeline.add_edge(dfp_deployment_stage.output_ports[0], tra_mntr_stage)
+        pipeline.add_edge(dfp_deployment_stage.output_ports[1], inf_mntr_stage)
+    else:
+        monitor_stage = MonitorStage(config, description=f"{workload} Pipeline rate", smoothing=0.001)
+        monitor_stage = pipeline.add_stage(monitor_stage)
+        pipeline.add_edge(dfp_deployment_stage.output_ports[0], monitor_stage)
 
     # Run the pipeline
     pipeline.run()

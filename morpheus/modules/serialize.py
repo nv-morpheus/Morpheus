@@ -19,6 +19,9 @@ from functools import partial
 
 import mrc
 
+import cudf
+import pandas as pd
+
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.module_ids import MODULE_NAMESPACE
@@ -47,6 +50,7 @@ def serialize(builder: mrc.Builder):
     exclude_columns = config.get("exclude", [r'^ID$', r'^_ts_'])
     fixed_columns = config.get("fixed_columns", True)
     columns = config.get("columns", None)
+    use_cpp = config.get("use_cpp", False)
 
     def convert_to_df(x: MultiMessage,
                       include_columns: typing.Pattern,
@@ -88,6 +92,9 @@ def serialize(builder: mrc.Builder):
 
         # Get metadata from columns
         df = x.get_meta(columns)
+
+        if (isinstance(df, pd.DataFrame) and use_cpp):
+            df = cudf.from_pandas(df)
 
         return MessageMeta(df=df)
 
