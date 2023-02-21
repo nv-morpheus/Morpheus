@@ -36,6 +36,7 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
 MODEL_MAX_BATCH_SIZE = 1024
 
+
 def test_resource_pool():
     create_fn = mock.MagicMock()
 
