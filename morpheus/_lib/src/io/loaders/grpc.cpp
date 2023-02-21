@@ -20,6 +20,8 @@
 #include <memory>
 
 namespace morpheus {
+GRPCDataLoader::GRPCDataLoader(nlohmann::json config) : Loader(config) {}
+
 std::shared_ptr<MessageControl> GRPCDataLoader::load(std::shared_ptr<MessageControl> message)
 {
     VLOG(30) << "Called GRPCDataLoader::load()";

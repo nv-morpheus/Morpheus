@@ -30,8 +30,10 @@ namespace morpheus {
 class PayloadDataLoader : public Loader
 {
   public:
-    PayloadDataLoader()  = default;
     ~PayloadDataLoader() = default;
+
+    PayloadDataLoader() = default;
+    PayloadDataLoader(nlohmann::json config);
 
     std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> control_message) final;
 };

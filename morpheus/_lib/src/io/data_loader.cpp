@@ -26,6 +26,16 @@ namespace morpheus {
 
 DataLoader::DataLoader() : m_loaders{} {}
 
+Loader::Loader(nlohmann::json config)
+{
+    m_config = std::move(config);
+}
+
+nlohmann::json Loader::config() const
+{
+    return m_config;
+}
+
 std::shared_ptr<MessageMeta> Loader::payload(std::shared_ptr<MessageControl> message)
 {
     return std::move(message->payload());

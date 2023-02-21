@@ -22,6 +22,9 @@
 #include <memory>
 
 namespace morpheus {
+
+FileListLoader::FileListLoader(nlohmann::json config) : Loader(config) {}
+
 std::shared_ptr<MessageControl> FileListLoader::load(std::shared_ptr<MessageControl> control_message)
 {
     VLOG(30) << "Called FileListLoader::load()";

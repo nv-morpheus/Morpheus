@@ -20,10 +20,11 @@
 #include <memory>
 
 namespace morpheus {
-LambdaLoader::LambdaLoader(std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> lambda_load)
-    : m_lambda_load(lambda_load)
-{
-}
+LambdaLoader::LambdaLoader(std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>)> lambda_load,
+                           nlohmann::json config) :
+  Loader(config),
+  m_lambda_load(lambda_load)
+{}
 
 std::shared_ptr<MessageControl> LambdaLoader::load(std::shared_ptr<MessageControl> message)
 {

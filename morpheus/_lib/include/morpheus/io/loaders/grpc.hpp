@@ -28,8 +28,10 @@ namespace morpheus {
 class GRPCDataLoader : public Loader
 {
   public:
-    GRPCDataLoader()  = default;
     ~GRPCDataLoader() = default;
+
+    GRPCDataLoader() = default;
+    GRPCDataLoader(nlohmann::json config);
 
     std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message) final;
 };

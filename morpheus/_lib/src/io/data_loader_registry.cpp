@@ -23,12 +23,6 @@
 #include "morpheus/objects/factory_registry.hpp"
 
 namespace morpheus {
-template <>
-std::map<std::string, std::function<std::shared_ptr<Loader>()>> FactoryRegistry<Loader>::m_object_constructors{};
-
-template <>
-std::mutex FactoryRegistry<Loader>::m_mutex{};
-
 template class FactoryRegistry<Loader>;
 
 void LoaderRegistryProxy::register_proxy_factory_fn(
@@ -38,10 +32,12 @@ void LoaderRegistryProxy::register_proxy_factory_fn(
 {
     FactoryRegistry<Loader>::register_factory_fn(
         name,
-        [proxy_constructor]() {
-            return std::make_shared<LambdaLoader>([proxy_constructor](std::shared_ptr<MessageControl> control_message) {
-                return std::move(proxy_constructor(control_message));
-            });
+        [proxy_constructor](nlohmann::json config) {
+            return std::make_shared<LambdaLoader>(
+                [proxy_constructor](std::shared_ptr<MessageControl> control_message) {
+                    return std::move(proxy_constructor(control_message));
+                },
+                config);
         },
         throw_if_exists);
 

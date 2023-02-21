@@ -20,6 +20,8 @@
 #include <memory>
 
 namespace morpheus {
+PayloadDataLoader::PayloadDataLoader(nlohmann::json config) : Loader(config) {}
+
 std::shared_ptr<MessageControl> PayloadDataLoader::load(std::shared_ptr<MessageControl> message)
 {
     VLOG(30) << "Called PayloadDataLoader::load()";

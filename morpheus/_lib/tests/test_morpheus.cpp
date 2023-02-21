@@ -50,13 +50,13 @@ void TestWithPythonInterpreter::SetUp()
     initialize_interpreter();
 
     LoaderRegistry::register_factory_fn(
-        "file", []() { return std::make_unique<FileDataLoader>(); }, false);
+        "file", [](nlohmann::json config) { return std::make_unique<FileDataLoader>(config); }, false);
     LoaderRegistry::register_factory_fn(
-        "grpc", []() { return std::make_unique<GRPCDataLoader>(); }, false);
+        "grpc", [](nlohmann::json config) { return std::make_unique<GRPCDataLoader>(config); }, false);
     LoaderRegistry::register_factory_fn(
-        "payload", []() { return std::make_unique<PayloadDataLoader>(); }, false);
+        "payload", [](nlohmann::json config) { return std::make_unique<PayloadDataLoader>(config); }, false);
     LoaderRegistry::register_factory_fn(
-        "rest", []() { return std::make_unique<RESTDataLoader>(); }, false);
+        "rest", [](nlohmann::json config) { return std::make_unique<RESTDataLoader>(config); }, false);
 }
 
 void TestWithPythonInterpreter::TearDown() {}

@@ -41,16 +41,20 @@ TEST_F(TestDataLoaderRegistry, LoaderRegistryRegisterLoaderTest)
     ASSERT_FALSE(LoaderRegistry::contains("LoaderRegistryRegisterLoaderTest"));
 
     // Should be able to register a loader
-    LoaderRegistry::register_factory_fn("LoaderRegistryRegisterLoaderTest",
-                                        []() { return std::make_unique<PayloadDataLoader>(); });
+    LoaderRegistry::register_factory_fn("LoaderRegistryRegisterLoaderTest", [](nlohmann::json config) {
+        return std::make_unique<PayloadDataLoader>(config);
+    });
     ASSERT_TRUE(LoaderRegistry::contains("LoaderRegistryRegisterLoaderTest"));
 
     // Should be able to overwrite an existing loader if we request it
     EXPECT_NO_THROW(LoaderRegistry::register_factory_fn(
-        "LoaderRegistryRegisterLoaderTest", []() { return std::make_unique<PayloadDataLoader>(); }, false));
+        "LoaderRegistryRegisterLoaderTest",
+        [](nlohmann::json config) { return std::make_unique<PayloadDataLoader>(config); },
+        false));
 
-    EXPECT_THROW(LoaderRegistry::register_factory_fn("LoaderRegistryRegisterLoaderTest",
-                                                     []() { return std::make_unique<PayloadDataLoader>(); }),
+    EXPECT_THROW(LoaderRegistry::register_factory_fn(
+                     "LoaderRegistryRegisterLoaderTest",
+                     [](nlohmann::json config) { return std::make_unique<PayloadDataLoader>(config); }),
                  std::runtime_error);
 }
 
@@ -59,8 +63,9 @@ TEST_F(TestDataLoaderRegistry, LoaderRegistryUnregisterLoaderTest)
     ASSERT_FALSE(LoaderRegistry::contains("LoaderRegistryUnregisterLoaderTest"));
 
     // Should be able to register a loader
-    LoaderRegistry::register_factory_fn("LoaderRegistryUnregisterLoaderTest",
-                                        []() { return std::make_unique<PayloadDataLoader>(); });
+    LoaderRegistry::register_factory_fn("LoaderRegistryUnregisterLoaderTest", [](nlohmann::json config) {
+        return std::make_unique<PayloadDataLoader>(config);
+    });
     ASSERT_TRUE(LoaderRegistry::contains("LoaderRegistryUnregisterLoaderTest"));
 
     // Should be able to unregister a loader

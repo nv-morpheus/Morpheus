@@ -53,7 +53,8 @@ class FactoryRegistry
     }
 
     // TODO(Devin): Rename -- this isn't a constructor, its creating an instance
-    static std::shared_ptr<ObjectReturnTypeT> create_object_from_factory(const std::string& name)
+    static std::shared_ptr<ObjectReturnTypeT> create_object_from_factory(const std::string& name,
+                                                                         nlohmann::json config = {})
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
         VLOG(2) << "Retrieving factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
@@ -63,11 +64,12 @@ class FactoryRegistry
         {
             throw std::runtime_error("Unknown data loader: " + name);
         }
-        return m_object_constructors[name]();
+
+        return m_object_constructors[name](config);
     }
 
     static void register_factory_fn(const std::string& name,
-                                    const std::function<std::shared_ptr<ObjectReturnTypeT>()>& loader_fn,
+                                    const std::function<std::shared_ptr<ObjectReturnTypeT>(nlohmann::json)>& loader_fn,
                                     bool throw_if_exists = true)
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
@@ -102,14 +104,15 @@ class FactoryRegistry
 
   private:
     static std::mutex m_mutex;
-    static std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>()>> m_object_constructors;
+    static std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>(nlohmann::json)>>
+        m_object_constructors;
 };
 
 template <typename ObjectReturnTypeT>
 std::mutex FactoryRegistry<ObjectReturnTypeT>::m_mutex;
 
 template <typename ObjectReturnTypeT>
-std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>()>>
+std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>(nlohmann::json)>>
     FactoryRegistry<ObjectReturnTypeT>::m_object_constructors;
 
 #pragma GCC visibility pop
