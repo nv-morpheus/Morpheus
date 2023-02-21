@@ -47,7 +47,7 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
 
     config = get_module_config(FILE_BATCHER, builder)
 
-    TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_object"])
+    TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_name"])
 
     iso_date_regex_pattern = config.get("iso_date_regex_pattern", None)
     start_time = config.get("start_time", None)
@@ -56,6 +56,16 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
     period = config.get("period", None)
 
     iso_date_regex = re.compile(iso_date_regex_pattern)
+
+    message_config = {
+        "loader_id": FILE_TO_DF_LOADER,
+        "timestamp_column_name": config.get("timestamp_column_name"),
+        "schema": config.get("schema"),
+        "file_type": config.get("file_type"),
+        "filter_null": config.get("filter_null"),
+        "parser_kwargs": config.get("parser_kwargs"),
+        "cache_dir": config.get("cache_dir")
+    }
 
     def on_data(file_objects: fsspec.core.OpenFiles):
 
@@ -68,7 +78,7 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
             if ((start_time is not None and ts < start_time) or (end_time is not None and ts > end_time)):
                 continue
 
-            ts_and_files.append(TimestampFileObj(ts, file_object))
+            ts_and_files.append(TimestampFileObj(ts, file_object.full_name))
 
         # sort the incoming data by date
         ts_and_files.sort(key=lambda x: x.timestamp)
@@ -95,25 +105,14 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
 
         timestamps = []
         full_names = []
-        file_objs = []
-        for (ts, file_object) in ts_and_files:
+        for (ts, file_name) in ts_and_files:
             timestamps.append(ts)
-            full_names.append(file_object.full_name)
-            file_objs.append(file_object)
+            full_names.append(file_name)
 
         df["ts"] = timestamps
         df["key"] = full_names
-        df["objects"] = file_objs
 
-        message_config = {
-            "loader_id": FILE_TO_DF_LOADER,
-            "timestamp_column_name": config.get("timestamp_column_name"),
-            "schema": config.get("schema"),
-            "file_type": config.get("file_type"),
-            "filter_null": config.get("filter_null"),
-            "parser_kwargs": config.get("parser_kwargs"),
-            "cache_dir": config.get("cache_dir")
-        }
+        nonlocal message_config
 
         out_messages = []
 
