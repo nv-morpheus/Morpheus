@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_module(DFP_DEPLOYMENT, MODULE_NAMESPACE)
-def dfp_inf(builder: mrc.Builder):
+def dfp_deployment(builder: mrc.Builder):
 
     module_config = get_module_config(DFP_DEPLOYMENT, builder)
 

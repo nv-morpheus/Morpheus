@@ -78,6 +78,12 @@ from morpheus.stages.general.nonlinear_modules_stage import NonLinearModulesStag
     help="The training duration to run starting from start_time",
 )
 @click.option(
+    "--use_cpp",
+    type=click.BOOL,
+    default=False,
+    help=("Indicates what type of logs are going to be used in the workload."),
+)
+@click.option(
     "--cache_dir",
     type=str,
     default="./.cache/dfp",
@@ -119,6 +125,7 @@ def run_pipeline(log_type: str,
                  log_level: int,
                  sample_rate_s: int,
                  tracking_uri,
+                 use_cpp,
                  **kwargs):
 
     derive_args = DeriveArgs(skip_user,
@@ -138,7 +145,7 @@ def run_pipeline(log_type: str,
     userid_column_name = "username"
     timestamp_column_name = "timestamp"
 
-    config: Config = generate_ae_config(log_type, userid_column_name, timestamp_column_name)
+    config: Config = generate_ae_config(log_type, userid_column_name, timestamp_column_name, use_cpp=use_cpp)
 
     schema_builder = SchemaBuilder(config, log_type)
     schema: Schema = schema_builder.build_schema()

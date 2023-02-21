@@ -51,6 +51,7 @@ def dfp_data_prep(builder: mrc.Builder):
     schema = pickle.loads(bytes(schema_str, encoding))
 
     def process_features(message: MultiDFPMessage):
+
         if (message is None):
             return None
 

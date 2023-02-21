@@ -37,6 +37,8 @@ from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.messages.multi_message import MultiMessage
+from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
+from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import FILTER_DETECTIONS
@@ -95,12 +97,7 @@ class ConfigGenerator:
                 "sampling_rate_s": self._derive_args.sample_rate_s,
                 "start_time": self._derive_args.time_fields.start_time,
                 "end_time": self._derive_args.time_fields.end_time,
-                "iso_date_regex_pattern": iso_date_regex_pattern
-            },
-            FILE_TO_DF: {
-                "module_id": FILE_TO_DF,
-                "module_name": "FILE_TO_DF",
-                "namespace": MODULE_NAMESPACE,
+                "iso_date_regex_pattern": iso_date_regex_pattern,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
@@ -111,6 +108,12 @@ class ConfigGenerator:
                 "schema": {
                     "schema_str": self._source_schema_str, "encoding": self._encoding
                 }
+            },
+            DATA_LOADER: {
+                "module_id": DATA_LOADER,
+                "module_name": "FileToDFDataLoader",
+                "namespace": MODULE_NAMESPACE,
+                "loaders": [FILE_TO_DF_LOADER]
             },
             DFP_SPLIT_USERS: {
                 "module_id": DFP_SPLIT_USERS,
@@ -181,7 +184,8 @@ class ConfigGenerator:
                 "module_id": SERIALIZE,
                 "module_name": "serialize",
                 "namespace": MODULE_NAMESPACE,
-                "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id']
+                "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id'],
+                "use_cpp": CppConfig.get_should_use_cpp()
             },
             WRITE_TO_FILE: {
                 "module_id": WRITE_TO_FILE,

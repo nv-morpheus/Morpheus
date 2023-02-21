@@ -17,11 +17,13 @@ import typing
 
 import mrc
 import numpy as np
+import pandas as pd
 from dfp.utils.logging_timer import log_time
 from mrc.core import operators as ops
 
 import cudf
 
+from morpheus.messages import MessageControl
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -56,34 +58,34 @@ def dfp_split_users(builder: mrc.Builder):
     # Map of user ids to total number of messages. Keeps indexes monotonic and increasing per user
     user_index_map: typing.Dict[str, int] = {}
 
-    def extract_users(message: cudf.DataFrame):
+    def extract_users(message: MessageControl):
         if (message is None):
             return []
 
+        df = message.payload().df
         with log_time(logger.debug) as log_info:
 
-            if (isinstance(message, cudf.DataFrame)):
+            if (isinstance(df, cudf.DataFrame)):
                 # Convert to pandas because cudf is slow at this
-                message = message.to_pandas()
+                df = df.to_pandas()
+                df[timestamp_column_name] = pd.to_datetime(df[timestamp_column_name], utc=True)
 
             split_dataframes: typing.Dict[str, cudf.DataFrame] = {}
 
             # If we are skipping users, do that here
             if (len(skip_users) > 0):
-                message = message[~message[userid_column_name].isin(skip_users)]
+                df = df[~df[userid_column_name].isin(skip_users)]
 
             if (len(only_users) > 0):
-                message = message[message[userid_column_name].isin(only_users)]
+                df = df[df[userid_column_name].isin(only_users)]
 
             # Split up the dataframes
             if (include_generic):
-                split_dataframes[fallback_username] = message
+                split_dataframes[fallback_username] = df
 
             if (include_individual):
 
-                split_dataframes.update(
-                    {username: user_df
-                     for username, user_df in message.groupby("username", sort=False)})
+                split_dataframes.update({username: user_df for username, user_df in df.groupby("username", sort=False)})
 
             output_messages: typing.List[DFPMessageMeta] = []
 
@@ -108,9 +110,9 @@ def dfp_split_users(builder: mrc.Builder):
                 log_info.set_log(
                     ("Batch split users complete. Input: %s rows from %s to %s. "
                      "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
-                    len(message),
-                    message[timestamp_column_name].min(),
-                    message[timestamp_column_name].max(),
+                    len(df),
+                    df[timestamp_column_name].min(),
+                    df[timestamp_column_name].max(),
                     len(rows_per_user),
                     np.min(rows_per_user),
                     np.max(rows_per_user),

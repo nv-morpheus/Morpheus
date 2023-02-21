@@ -22,7 +22,9 @@ import mrc
 import pandas as pd
 from mrc.core import operators as ops
 
+from morpheus.messages import MessageControl
 from morpheus.utils.file_utils import date_extractor
+from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
@@ -32,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_module(FILE_BATCHER, MODULE_NAMESPACE)
-def file_batcher(builder: mrc.Builder):
+def file_batcher(builder: mrc.Builder) -> MessageControl:
     """
     This module loads the input files, removes files that are older than the chosen window of time,
     and then groups the remaining files by period that fall inside the window.
@@ -103,7 +105,17 @@ def file_batcher(builder: mrc.Builder):
         df["key"] = full_names
         df["objects"] = file_objs
 
-        output_batches = []
+        message_config = {
+            "loader_id": FILE_TO_DF_LOADER,
+            "timestamp_column_name": config.get("timestamp_column_name"),
+            "schema": config.get("schema"),
+            "file_type": config.get("file_type"),
+            "filter_null": config.get("filter_null"),
+            "parser_kwargs": config.get("parser_kwargs"),
+            "cache_dir": config.get("cache_dir")
+        }
+
+        out_messages = []
 
         if len(df) > 0:
             # Now split by the batching settings
@@ -114,14 +126,12 @@ def file_batcher(builder: mrc.Builder):
             n_groups = len(period_gb)
             for group in period_gb.groups:
                 period_df = period_gb.get_group(group)
+                filenames = period_df["key"].to_list()
+                message_config["files"] = (filenames, n_groups)
+                message = MessageControl(message_config)
+                out_messages.append(message)
 
-                obj_list = fsspec.core.OpenFiles(period_df["objects"].to_list(),
-                                                 mode=file_objects.mode,
-                                                 fs=file_objects.fs)
-
-                output_batches.append((obj_list, n_groups))
-
-        return output_batches
+        return out_messages
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
