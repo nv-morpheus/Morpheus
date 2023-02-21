@@ -167,6 +167,7 @@ class ResourcePool:
 
         self._queue.put(obj)
 
+
 class InputWrapper:
     """
     This class is a wrapper around a CUDA shared memory object shared between this process and a Triton server instance.
