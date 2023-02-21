@@ -115,6 +115,16 @@ void RMMTensor::get_stride(std::vector<TensorIndex>& s) const
     std::copy(m_stride.begin(), m_stride.end(), s.begin());
 }
 
+rmm::cuda_stream_view RMMTensor::get_stream() const
+{
+    return m_md->stream();
+}
+
+rmm::mr::device_memory_resource* RMMTensor::get_memory_resource() const
+{
+    return m_md->memory_resource();
+}
+
 bool RMMTensor::is_compact() const
 {
     TensorIndex ttl = 1;
