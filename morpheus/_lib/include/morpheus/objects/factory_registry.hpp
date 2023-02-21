@@ -105,6 +105,13 @@ class FactoryRegistry
     static std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>()>> m_object_constructors;
 };
 
+template <typename ObjectReturnTypeT>
+std::mutex FactoryRegistry<ObjectReturnTypeT>::m_mutex;
+
+template <typename ObjectReturnTypeT>
+std::map<std::string, std::function<std::shared_ptr<ObjectReturnTypeT>()>>
+    FactoryRegistry<ObjectReturnTypeT>::m_object_constructors;
+
 #pragma GCC visibility pop
 
 }  // namespace morpheus

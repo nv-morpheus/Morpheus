@@ -41,7 +41,6 @@ DataLoaderModule::DataLoaderModule(std::string module_name, nlohmann::json _conf
 
 void DataLoaderModule::initialize(mrc::segment::Builder& builder)
 {
-    // TODO(Devin): Modularize loader lookups, and standardize this a bit more
     if (config().contains("loaders") and config()["loaders"].size() > 0)
     {
         auto loader_list = config()["loaders"];
