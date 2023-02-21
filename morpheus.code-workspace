@@ -44,7 +44,8 @@
 		],
 		"python.linting.flake8Enabled": true,
 		"python.linting.pylintArgs": [
-			"--rcfile=${workspaceFolder}/.pylintrc"
+			"--rcfile=${workspaceFolder}/.pylintrc",
+			"--init-hook=import sys; sys.path.append(\"${workspaceFolder}\")",
 		],
 		"python.linting.pylintEnabled": true,
 		"rewrap.wrappingColumn": 120,

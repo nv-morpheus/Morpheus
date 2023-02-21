@@ -16,6 +16,7 @@
 
 import csv
 import os
+import queue
 from unittest import mock
 
 import numpy as np
@@ -35,25 +36,25 @@ from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
 
 MODEL_MAX_BATCH_SIZE = 1024
 
-
-@pytest.mark.use_python
 def test_resource_pool():
     create_fn = mock.MagicMock()
 
     # If called a third time this will raise a StopIteration exception
     create_fn.side_effect = range(2)
 
-    rp = ResourcePool(create_fn)
+    rp = ResourcePool[int](create_fn=create_fn, max_size=2)
+
     assert rp._queue.qsize() == 0
 
-    assert rp.borrow() == 0
+    # Check for normal allocation
+    assert rp.borrow_obj() == 0
     assert rp._queue.qsize() == 0
-    assert rp._added_count == 1
+    assert rp.added_count == 1
     create_fn.assert_called_once()
 
-    assert rp.borrow() == 1
+    assert rp.borrow_obj() == 1
     assert rp._queue.qsize() == 0
-    assert rp._added_count == 2
+    assert rp.added_count == 2
     assert create_fn.call_count == 2
 
     rp.return_obj(0)
@@ -61,15 +62,57 @@ def test_resource_pool():
     rp.return_obj(1)
     assert rp._queue.qsize() == 2
 
-    assert rp.borrow() == 0
+    assert rp.borrow_obj() == 0
     assert rp._queue.qsize() == 1
     assert rp._added_count == 2
     assert create_fn.call_count == 2
 
-    assert rp.borrow() == 1
+    assert rp.borrow_obj() == 1
     assert rp._queue.qsize() == 0
     assert rp._added_count == 2
     assert create_fn.call_count == 2
+
+
+def test_resource_pool_overallocate():
+    create_fn = mock.MagicMock()
+
+    # If called a third time this will raise a StopIteration exception
+    create_fn.side_effect = range(5)
+
+    rp = ResourcePool[int](create_fn=create_fn, max_size=2)
+
+    assert rp.borrow_obj() == 0
+    assert rp.borrow_obj() == 1
+
+    with pytest.raises(queue.Empty):
+        rp.borrow_obj(timeout=0)
+
+
+def test_resource_pool_large_count():
+    create_fn = mock.MagicMock()
+    create_fn.side_effect = range(10000)
+
+    rp = ResourcePool[int](create_fn=create_fn, max_size=10000)
+
+    for _ in range(10000):
+        rp.borrow_obj(timeout=0)
+
+    assert rp._queue.qsize() == 0
+    assert create_fn.call_count == 10000
+
+
+def test_resource_pool_create_raises_error():
+    create_fn = mock.MagicMock()
+    create_fn.side_effect = (10, RuntimeError, 20)
+
+    rp = ResourcePool[int](create_fn=create_fn, max_size=10)
+
+    assert rp.borrow_obj() == 10
+
+    with pytest.raises(RuntimeError):
+        rp.borrow_obj()
+
+    assert rp.borrow_obj() == 20
 
 
 @pytest.mark.slow
