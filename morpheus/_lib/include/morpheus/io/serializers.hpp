@@ -19,7 +19,7 @@
 
 #include "morpheus/forward.hpp"  // for TableInfo
 
-#include <ostream>
+#include <iosfwd>
 #include <string>
 
 namespace morpheus {
