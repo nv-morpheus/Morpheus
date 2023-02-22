@@ -44,7 +44,7 @@ RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]
 
 ARG TRITON_DIR=/mlflow/triton-inference-server
-ARG TRITON_VER=r22.10
+ARG TRITON_VER=r23.01
 
 RUN mkdir ${TRITON_DIR} && \
     cd ${TRITON_DIR} && \
@@ -57,7 +57,7 @@ RUN ln -sf ${TRITON_DIR}/server/deploy/mlflow-triton-plugin/scripts/publish_mode
     mkdir /mlflow/artifacts
 
 # remedy for CVE-2015-20107
-RUN find / -name '*mailcap*.*py*' | xargs rm
+RUN find / -name '*mailcap*.*py*' -delete
 
 # remedy for CVE-2022-42919
 RUN find / -path '*multiprocessing/util.py' -exec sed -i 's/=\s*_platform_supports_abstract_sockets()/= False/g' {} +
