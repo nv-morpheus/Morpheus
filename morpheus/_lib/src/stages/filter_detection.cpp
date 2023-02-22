@@ -57,24 +57,6 @@ FilterDetectionsStage::FilterDetectionsStage(float threshold,
     CHECK(m_filter_source != FilterSource::Auto);  // The python stage should determine this
 }
 
-DevMemInfo FilterDetectionsStage::get_tensor_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x)
-{
-    // The pipeline build will check to ensure that our input is a MultiResponseMessage
-    const auto& filter_source = std::static_pointer_cast<morpheus::MultiTensorMessage>(x)->get_tensor(m_field_name);
-    CHECK(filter_source.rank() > 0 && filter_source.rank() <= 2)
-        << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
-           "arrays";
-
-    auto buffer = std::make_shared<rmm::device_buffer>(filter_source.bytes(), rmm::cuda_stream_per_thread);
-
-    MRC_CHECK_CUDA(cudaMemcpy(
-        buffer->data(), static_cast<const uint8_t*>(filter_source.data()), buffer->size(), cudaMemcpyDeviceToDevice));
-
-    // Depending on the input the stride is given in bytes or elements, convert to elements
-    auto stride = morpheus::TensorUtils::get_element_stride<std::size_t, std::size_t>(filter_source.get_stride());
-    return {buffer, filter_source.dtype(), filter_source.get_shape(), stride};
-}
-
 TensorObject FilterDetectionsStage::get_tensor_thresholds(const std::shared_ptr<morpheus::MultiMessage>& x)
 {
     const auto& tensor_obj = std::static_pointer_cast<morpheus::MultiTensorMessage>(x)->get_tensor(m_field_name);
@@ -82,36 +64,10 @@ TensorObject FilterDetectionsStage::get_tensor_thresholds(const std::shared_ptr<
         << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
            "arrays";
 
-    const auto num_rows    = tensor_obj.shape(0);
     const auto num_columns = tensor_obj.shape(1);
-
-    bool by_row = (num_columns > 1);
+    bool by_row            = (num_columns > 1);
 
     return MatxUtil::threshold(tensor_obj, m_threshold, by_row);
-}
-
-DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x)
-{
-    auto table_info = x->get_meta(m_field_name);
-
-    // since we only asked for one column, we know its the first
-    const auto& col = table_info.get_column(0);
-    auto dtype      = morpheus::DType::from_cudf(col.type().id());
-    auto num_rows   = static_cast<std::size_t>(col.size());
-
-    auto buffer = std::make_shared<rmm::device_buffer>(num_rows * dtype.item_size(), rmm::cuda_stream_per_thread);
-
-    MRC_CHECK_CUDA(cudaMemcpy(buffer->data(),
-                              static_cast<const uint8_t*>(col.head<uint8_t>() + col.offset() * dtype.item_size()),
-                              buffer->size(),
-                              cudaMemcpyDeviceToDevice));
-
-    return {
-        buffer,
-        std::move(dtype),
-        {num_rows, 1},
-        {1, 0},
-    };
 }
 
 TensorObject FilterDetectionsStage::get_column_thresholds(const std::shared_ptr<morpheus::MultiMessage>& x)
@@ -125,45 +81,30 @@ TensorObject FilterDetectionsStage::get_column_thresholds(const std::shared_ptr<
 
     void* column_data = const_cast<uint8_t*>(col.head<uint8_t>() + col.offset() * dtype.item_size());
 
-    return MatxUtil::threshold(column_data, m_threshold, false, dtype, {num_rows, 1}, {1, 0});
+    return MatxUtil::threshold(column_data, m_threshold, false, dtype, {num_rows, 1}, {1, 1});
 }
 
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        std::function<DevMemInfo(const std::shared_ptr<morpheus::MultiMessage>& x)> get_filter_source;
         std::function<TensorObject(const std::shared_ptr<morpheus::MultiMessage>& x)> get_thresholds;
 
         if (m_filter_source == FilterSource::TENSOR)
         {
-            get_filter_source = [this](auto x) { return get_tensor_filter_source(x); };
-            get_thresholds    = [this](auto x) { return get_tensor_thresholds(x); };
+            get_thresholds = [this](auto x) { return get_tensor_thresholds(x); };
         }
         else
         {
-            get_filter_source = [this](auto x) { return get_column_filter_source(x); };
-            get_thresholds    = [this](auto x) { return get_column_thresholds(x); };
+            get_thresholds = [this](auto x) { return get_column_thresholds(x); };
         }
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output, &get_filter_source](sink_type_t x) {
-                auto tmp_buffer = get_filter_source(x);
+            [this, &output, &get_thresholds](sink_type_t x) {
+                auto thresh_bool_tensor = get_thresholds(x);
 
-                const auto num_rows    = tmp_buffer.shape(0);
-                const auto num_columns = tmp_buffer.shape(1);
+                const auto num_rows = thresh_bool_tensor.shape(0);
 
-                bool by_row = (num_columns > 1);
-
-                // Now call the threshold function
-                auto thresh_bool_buffer = MatxUtil::threshold(tmp_buffer, m_threshold, by_row);
-
-                std::vector<uint8_t> host_bool_values(num_rows);
-
-                // Copy bools back to host
-                MRC_CHECK_CUDA(cudaMemcpy(host_bool_values.data(),
-                                          thresh_bool_buffer->data(),
-                                          thresh_bool_buffer->size(),
-                                          cudaMemcpyDeviceToHost));
+                auto host_bool_values = thresh_bool_tensor.get_host_data<uint8_t>();
 
                 // Only used when m_copy is true
                 std::vector<std::pair<std::size_t, std::size_t>> selected_ranges;
