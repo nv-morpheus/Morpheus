@@ -18,14 +18,18 @@
 #include "morpheus/stages/serialize.hpp"
 
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/objects/table_info.hpp"
 
-#include <pybind11/gil.h>  // for gil_scoped_acquire
+#include <mrc/channel/status.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
+#include <mrc/segment/object.hpp>
 
 #include <exception>
+#include <functional>
 #include <memory>
 #include <string>
-#include <type_traits>  // for declval
-#include <utility>      // for move
+#include <utility>  // for move
 // IWYU thinks basic_stringbuf & map are needed for the regex constructor
 // IWYU pragma: no_include <map>
 // IWYU pragma: no_include <sstream>
@@ -37,8 +41,8 @@ constexpr std::regex_constants::syntax_option_type RegexOptions =
 
 // Component public implementations
 // ************ WriteToFileStage **************************** //
-SerializeStage::SerializeStage(const std::vector<std::string> &include,
-                               const std::vector<std::string> &exclude,
+SerializeStage::SerializeStage(const std::vector<std::string>& include,
+                               const std::vector<std::string>& exclude,
                                bool fixed_columns) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_fixed_columns{fixed_columns}
@@ -47,17 +51,17 @@ SerializeStage::SerializeStage(const std::vector<std::string> &include,
     make_regex_objs(exclude, m_exclude);
 }
 
-void SerializeStage::make_regex_objs(const std::vector<std::string> &regex_strs, std::vector<std::regex> &regex_objs)
+void SerializeStage::make_regex_objs(const std::vector<std::string>& regex_strs, std::vector<std::regex>& regex_objs)
 {
-    for (const auto &s : regex_strs)
+    for (const auto& s : regex_strs)
     {
         regex_objs.emplace_back(std::regex{s, RegexOptions});
     }
 }
 
-bool SerializeStage::match_column(const std::vector<std::regex> &patterns, const std::string &column) const
+bool SerializeStage::match_column(const std::vector<std::regex>& patterns, const std::string& column) const
 {
-    for (const auto &re : patterns)
+    for (const auto& re : patterns)
     {
         if (std::regex_match(column, re))
         {
@@ -67,7 +71,7 @@ bool SerializeStage::match_column(const std::vector<std::regex> &patterns, const
     return false;
 }
 
-bool SerializeStage::include_column(const std::string &column) const
+bool SerializeStage::include_column(const std::string& column) const
 {
     if (m_include.empty())
     {
@@ -79,7 +83,7 @@ bool SerializeStage::include_column(const std::string &column) const
     }
 }
 
-bool SerializeStage::exclude_column(const std::string &column) const
+bool SerializeStage::exclude_column(const std::string& column) const
 {
     return match_column(m_exclude, column);
 }
@@ -92,7 +96,7 @@ std::shared_ptr<SlicedMessageMeta> SerializeStage::get_meta(sink_type_t& msg)
     if (!m_fixed_columns || m_column_names.empty())
     {
         m_column_names.clear();
-        for (const auto &c : msg->get_meta().get_column_names())
+        for (const auto& c : msg->get_meta().get_column_names())
         {
             if (include_column(c) && !exclude_column(c))
             {

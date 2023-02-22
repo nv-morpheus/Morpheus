@@ -17,7 +17,6 @@
 
 #include "morpheus/stages/triton_inference.hpp"
 
-#include "morpheus/messages/memory/inference_memory.hpp"       // for InferenceMemory
 #include "morpheus/messages/memory/response_memory_probs.hpp"  // for ResponseMemoryProbs
 #include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory::tensor_map_t
 #include "morpheus/messages/multi_response_probs.hpp"
@@ -34,7 +33,11 @@
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
 #include <http_client.h>
+#include <mrc/channel/status.hpp>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
+#include <mrc/segment/object.hpp>
 #include <nlohmann/json.hpp>
 #include <pymrc/node.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
@@ -44,10 +47,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <memory>
 #include <sstream>
-#include <stdexcept>    // for runtime_error, out_of_range
-#include <type_traits>  // for declval
+#include <stdexcept>  // for runtime_error, out_of_range
 #include <utility>
 // IWYU pragma: no_include <initializer_list>
 
@@ -404,7 +407,7 @@ void InferenceClientStage::connect_with_server()
             bytes *= y;
         }
 
-        std::string mapped_name = input.at("name").get<std::string>();
+        auto mapped_name = input.at("name").get<std::string>();
 
         if (m_inout_mapping.find(mapped_name) != m_inout_mapping.end())
         {
@@ -437,7 +440,7 @@ void InferenceClientStage::connect_with_server()
             bytes *= y;
         }
 
-        std::string mapped_name = output.at("name").get<std::string>();
+        auto mapped_name = output.at("name").get<std::string>();
 
         if (m_inout_mapping.find(mapped_name) != m_inout_mapping.end())
         {

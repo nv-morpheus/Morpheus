@@ -17,15 +17,19 @@
 
 #include "morpheus/stages/deserialize.hpp"
 
+#include <mrc/channel/status.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
 #include <algorithm>  // for min
 #include <cstddef>
 #include <exception>
+#include <functional>
 #include <memory>
-#include <type_traits>  // for declval
 #include <utility>
 
 namespace morpheus {

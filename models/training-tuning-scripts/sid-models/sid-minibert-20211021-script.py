@@ -21,14 +21,20 @@ python sid-minibert-20210614-script.py \
 """
 
 import argparse
+
 import torch
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import multilabel_confusion_matrix
 from torch.nn import BCEWithLogitsLoss
-from transformers import AutoModelForSequenceClassification, AdamW
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import DataLoader
+from torch.utils.data import TensorDataset
 from torch.utils.data.dataset import random_split
 from torch.utils.dlpack import from_dlpack
-from sklearn.metrics import (f1_score, accuracy_score, multilabel_confusion_matrix)
 from tqdm import trange
+from transformers import AdamW
+from transformers import AutoModelForSequenceClassification
+
 import cudf
 from cudf.core.subword_tokenizer import SubwordTokenizer
 

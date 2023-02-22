@@ -19,18 +19,25 @@
 
 #include "morpheus/utilities/stage_util.hpp"
 
+#include <cudf/column/column.hpp>
 #include <cudf/io/csv.hpp>
 #include <cudf/io/json.hpp>
 #include <cudf/scalar/scalar.hpp>  // for string_scalar
 #include <cudf/strings/replace.hpp>
+#include <cudf/strings/strings_column_view.hpp>
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
 #include <cudf/types.hpp>        // for cudf::type_id
+#include <ext/alloc_traits.h>
 #include <glog/logging.h>
+#include <stddef.h>
 
 #include <algorithm>
 #include <filesystem>
+#include <memory>
 #include <ostream>  // needed for logging
 #include <regex>
+#include <stdexcept>
+#include <utility>
 
 namespace morpheus {
 

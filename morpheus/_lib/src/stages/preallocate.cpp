@@ -19,6 +19,8 @@
 
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 
+#include <mrc/segment/object.hpp>
+
 #include <exception>
 
 namespace {

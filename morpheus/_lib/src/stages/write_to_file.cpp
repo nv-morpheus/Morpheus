@@ -21,13 +21,16 @@
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>
+#include <mrc/channel/status.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
+#include <mrc/segment/object.hpp>
 
 #include <exception>
 #include <memory>
 #include <stdexcept>  // for invalid_argument, runtime_error
 #include <string>
-#include <type_traits>  // for declval (indirectly via templates)
-#include <utility>      // for forward, move, addressof
+#include <utility>  // for forward, move, addressof
 
 namespace morpheus {
 

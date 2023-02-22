@@ -41,7 +41,7 @@ class TestTensor : public ::testing::Test
 TEST_F(TestTensor, UtilsShapeString)
 {
     TensorUtils::shape_type_t shape = {100, 10, 1};
-    auto shape_str                = TensorUtils::shape_to_string(shape);
+    auto shape_str                  = TensorUtils::shape_to_string(shape);
     EXPECT_TRUE(shape_str == std::string("(100, 10, 1)"));
 }
 

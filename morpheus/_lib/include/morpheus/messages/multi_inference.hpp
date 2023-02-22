@@ -29,8 +29,6 @@
 #include <cstddef>
 #include <memory>
 #include <string>
-#include <utility>  // for pair
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations********************/
@@ -54,7 +52,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
     /**
      * @brief Default copy constructor
      */
-    MultiInferenceMessage(const MultiInferenceMessage &other) = default;
+    MultiInferenceMessage(const MultiInferenceMessage& other) = default;
     /**
      * @brief Construct a new Multi Inference Message object
      *
@@ -79,7 +77,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param name
      * @return const TensorObject
      */
-    const TensorObject get_input(const std::string &name) const;
+    const TensorObject get_input(const std::string& name) const;
 
     /**
      * @brief Returns the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.
@@ -87,12 +85,12 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param name
      * @return TensorObject
      */
-    TensorObject get_input(const std::string &name);
+    TensorObject get_input(const std::string& name);
 
     /**
      * Update the value of ain input tensor. The tensor must already exist, otherwise this will halt on a fatal error.
      */
-    void set_input(const std::string &name, const TensorObject &value);
+    void set_input(const std::string& name, const TensorObject& value);
 };
 
 /****** MultiInferenceMessageInterfaceProxy****************/
@@ -126,7 +124,7 @@ struct MultiInferenceMessageInterfaceProxy
      * @param self
      * @return std::shared_ptr<morpheus::InferenceMemory>
      */
-    static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceMessage &self);
+    static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceMessage& self);
 
     /**
      * @brief Get message offset
@@ -134,7 +132,7 @@ struct MultiInferenceMessageInterfaceProxy
      * @param self
      * @return std::size_t
      */
-    static std::size_t offset(MultiInferenceMessage &self);
+    static std::size_t offset(MultiInferenceMessage& self);
 
     /**
      * @brief Get messages count
@@ -142,7 +140,7 @@ struct MultiInferenceMessageInterfaceProxy
      * @param self
      * @return std::size_t
      */
-    static std::size_t count(MultiInferenceMessage &self);
+    static std::size_t count(MultiInferenceMessage& self);
 
     /**
      * @brief Get  'input_id' tensor as a python object, throws a `std::runtime_error` if it does not exist
@@ -151,7 +149,7 @@ struct MultiInferenceMessageInterfaceProxy
      * @param name
      * @return pybind11::object
      */
-    static pybind11::object get_input(MultiInferenceMessage &self, const std::string &name);
+    static pybind11::object get_input(MultiInferenceMessage& self, const std::string& name);
 
     /**
      * @brief Get the shared pointer of a sliced batches based on offsets supplied. Automatically calculates the correct
@@ -162,7 +160,7 @@ struct MultiInferenceMessageInterfaceProxy
      * @param stop  : Stop offset address
      * @return std::shared_ptr<MultiInferenceMessage>
      */
-    static std::shared_ptr<MultiInferenceMessage> get_slice(MultiInferenceMessage &self,
+    static std::shared_ptr<MultiInferenceMessage> get_slice(MultiInferenceMessage& self,
                                                             std::size_t start,
                                                             std::size_t stop);
 };

@@ -17,7 +17,11 @@
 
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 
+#include <pybind11/detail/common.h>
 #include <pybind11/gil.h>
+
+#include <ostream>
+#include <utility>
 
 namespace morpheus {
 

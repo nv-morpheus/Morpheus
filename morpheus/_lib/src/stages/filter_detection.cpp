@@ -20,24 +20,31 @@
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"         // for DataType
+#include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
-#include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
-#include <glog/logging.h>            // for CHECK, CHECK_NE
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
+#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
+#include <cudf/column/column_view.hpp>
+#include <cudf/types.hpp>
+#include <glog/logging.h>  // for CHECK, CHECK_NE
+#include <mrc/channel/status.hpp>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
+#include <mrc/segment/object.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
 #include <cstddef>
 #include <cstdint>  // for uint8_t
 #include <exception>
+#include <functional>
 #include <memory>
 #include <ostream>  // needed for glog
 #include <string>
-#include <type_traits>  // for declval (indirectly via templates)
-#include <utility>      // for pair
+#include <utility>  // for pair
 // IWYU thinks we need ext/new_allocator.h for size_t for some reason
 // IWYU pragma: no_include <ext/new_allocator.h>
 
