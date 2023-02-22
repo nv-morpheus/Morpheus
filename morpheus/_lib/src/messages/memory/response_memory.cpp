@@ -19,8 +19,6 @@
 
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include <pybind11/pybind11.h>  // for key_error & object
-
 #include <string>
 #include <utility>  // for move
 

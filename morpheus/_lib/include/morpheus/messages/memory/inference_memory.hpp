@@ -19,8 +19,6 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 
-#include <pybind11/pytypes.h>  // for object
-
 #include <cstddef>  // for size_t
 #include <map>
 #include <string>
