@@ -57,6 +57,7 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
 
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
+    #TODO (Devin): add support for accessing the config within the Loader's execution context
     message_config = {
         "loader_id": FILE_TO_DF_LOADER,
         "timestamp_column_name": config.get("timestamp_column_name"),

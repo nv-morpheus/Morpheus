@@ -23,6 +23,7 @@ from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
+from morpheus.messages import MessageControl
 
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_DATA_PREP
@@ -72,7 +73,22 @@ def dfp_data_prep(builder: mrc.Builder):
                          message.get_meta(timestamp_column_name).max(),
                          duration)
 
-        return message
+        # TODO(Devin): Updated to use control message passing.
+        message_config = {
+            "tasks": [
+                {
+                    "type": "inference",
+                    "params": {
+                        "user_id": message.get_meta("user_id")
+                        "data": "payload"
+                    }
+                }
+            ]
+        }
+        control_message = MessageControl(message_config)
+        control_message.payload(message)
+
+        return control_message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(process_features)).subscribe(sub)

@@ -113,7 +113,11 @@ class ConfigGenerator:
                 "module_id": DATA_LOADER,
                 "module_name": "FileToDFDataLoader",
                 "namespace": MODULE_NAMESPACE,
-                "loaders": [FILE_TO_DF_LOADER]
+                "loaders": [
+                    {
+                        "id": FILE_TO_DF_LOADER
+                    }
+                ]
             },
             DFP_SPLIT_USERS: {
                 "module_id": DFP_SPLIT_USERS,
@@ -478,7 +482,6 @@ def generate_ae_config(log_type: str,
                        timestamp_column_name: str,
                        use_cpp: bool = False,
                        num_threads: int = os.cpu_count()):
-
     config = Config()
 
     CppConfig.set_should_use_cpp(use_cpp)

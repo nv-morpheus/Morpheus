@@ -47,14 +47,45 @@ const std::string MessageControl::s_config_schema = R"(
                             {
                                 "if": {
                                     "properties": {
-                                        "type": { "const": "load" }
+                                        "type": { "const": "load" },
+                                        "loader_id": { "const": "file" }
                                     }
                                 },
                                 "then": {
-                                    "required": ["loader_id", "strategy"],
+                                    "required": ["loader_id", "strategy", "files"],
                                     "properties": {
-                                        "loader_id": { "type": "string" },
-                                        "strategy": { "type": "string" }
+                                        "loader_id": { "type": "string", "enum": ["file"] },
+                                        "strategy": { "type": "string" },
+                                        "files": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": ["path", "type"],
+                                                "properties": {
+                                                    "path": { "type": "string" },
+                                                    "type": { "type": "string" }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "type": { "const": "load" },
+                                        "loader_id": { "const": "file_list" }
+                                    }
+                                },
+                                "then": {
+                                    "required": ["loader_id", "strategy", "directories"],
+                                    "properties": {
+                                        "loader_id": { "type": "string", "enum": ["file_list"] },
+                                        "strategy": { "type": "string" },
+                                        "directories": {
+                                            "type": "array",
+                                            "items": { "type": "string" }
+                                        }
                                     }
                                 }
                             },
