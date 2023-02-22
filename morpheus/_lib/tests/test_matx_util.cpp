@@ -57,7 +57,7 @@ TEST_F(TestMatxUtil, ReduceMax1d)
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
     DevMemInfo dm{input_buffer, dtype, {input.size(), 1}, {1, 0}};
-    std::vector<int64_t> output_shape{static_cast<int64_t>(expected_output.size()), 1};
+    std::vector<std::size_t> output_shape{expected_output.size(), 1};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     std::vector<float> output(expected_output.size());
@@ -111,7 +111,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
     DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {num_cols, 1}};
-    std::vector<int64_t> output_shape{static_cast<int64_t>(expected_rows), static_cast<int64_t>(num_cols)};
+    std::vector<std::size_t> output_shape{expected_rows, num_cols};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
@@ -172,7 +172,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     EXPECT_EQ(expected_rows * num_cols, expected_output.size());
 
     DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {1, num_rows}};
-    std::vector<int64_t> output_shape{static_cast<int64_t>(expected_rows), static_cast<int64_t>(num_cols)};
+    std::vector<std::size_t> output_shape{expected_rows, num_cols};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
@@ -184,5 +184,131 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     for (std::size_t i = 0; i < output.size(); ++i)
     {
         EXPECT_DOUBLE_EQ(output[i], expected_output[i]);
+    }
+}
+
+TEST_F(TestMatxUtil, Cast)
+{
+    std::vector<float> float_vec{5.1, 2.2, 8.3, 9.4, 8.5, 2.6, 1.7, 8.1};
+
+    DType float_type(TypeId::FLOAT32);
+
+    auto float_buffer =
+        std::make_shared<rmm::device_buffer>(float_vec.size() * float_type.item_size(), rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(float_buffer->data(), float_vec.data(), float_buffer->size(), cudaMemcpyHostToDevice));
+
+    DevMemInfo dm{float_buffer, float_type, {4, 2}, {1, 4}};
+
+    DType double_type(TypeId::FLOAT64);
+    auto double_buffer = MatxUtil::cast(dm, double_type.type_id());
+    EXPECT_EQ(float_vec.size() * double_type.item_size(), double_buffer->size());
+
+    std::vector<double> double_vec(float_vec.size());
+    MRC_CHECK_CUDA(cudaMemcpy(double_vec.data(), double_buffer->data(), double_buffer->size(), cudaMemcpyDeviceToHost));
+
+    EXPECT_EQ(double_vec.size(), float_vec.size());
+    for (std::size_t i = 0; i < double_vec.size(); ++i)
+    {
+        EXPECT_DOUBLE_EQ(double_vec[i], float_vec[i]);
+    }
+}
+
+TEST_F(TestMatxUtil, Threshold)
+{
+    // clang-format off
+    // disabling clang-format to illustrate row-major layout
+
+    std::vector<float> input
+    {
+        1.0, 0.2, 0.7, 0.9,
+        1.0, 0.6, 0.1, 0.9,
+        0.2, 0.8, 1.0, 0.9,
+        0.1, 0.4, 0.1, 0.3,
+        0.8, 1.0, 1.0, 0.8
+    };
+
+    std::vector<bool> expected_output
+    {
+        true,  false, true,  true,
+        true,  true,  false, true,
+        false, true,  true,  true,
+        false, false, false, false,
+        true,  true,  true,  true,
+    };
+    // clang-format on
+
+    std::size_t num_cols = 4;
+    std::size_t num_rows = 5;
+    EXPECT_EQ(num_cols * num_rows, input.size());
+
+    DType dtype(TypeId::FLOAT32);
+
+    std::size_t buff_size = input.size() * dtype.item_size();
+    auto input_buffer     = std::make_shared<rmm::device_buffer>(buff_size, rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
+
+    DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {num_cols, 1}};
+
+    auto output = MatxUtil::threshold(dm, 0.5, false);
+
+    // output and output_by_row are holding 1-byte bool values, so the byte size and element size should be the same
+    EXPECT_EQ(output->size(), expected_output.size());
+
+    std::vector<uint8_t> host_byte_outut(expected_output.size());
+
+    MRC_CHECK_CUDA(cudaMemcpy(host_byte_outut.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
+
+    for (std::size_t i = 0; i < host_byte_outut.size(); ++i)
+    {
+        bool output_val = host_byte_outut[i];
+        EXPECT_EQ(output_val, expected_output[i]);
+    }
+}
+
+TEST_F(TestMatxUtil, ThresholdByRow)
+{
+    // clang-format off
+    // disabling clang-format to illustrate row-major layout
+
+    std::vector<float> input
+    {
+        1.0, 0.2, 0.7, 0.9,
+        1.0, 0.6, 0.1, 0.9,
+        0.2, 0.8, 1.0, 0.9,
+        0.1, 0.4, 0.1, 0.3,
+        0.8, 1.0, 1.0, 0.8
+    };
+
+    std::vector<bool> expected_output{true, true, true, false, true};
+    // clang-format on
+
+    std::size_t num_cols = 4;
+    std::size_t num_rows = 5;
+    EXPECT_EQ(num_cols * num_rows, input.size());
+
+    DType dtype(TypeId::FLOAT32);
+
+    std::size_t buff_size = input.size() * dtype.item_size();
+    auto input_buffer     = std::make_shared<rmm::device_buffer>(buff_size, rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
+
+    DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {num_cols, 1}};
+
+    auto output = MatxUtil::threshold(dm, 0.5, true);
+
+    // output and output_by_row are holding 1-byte bool values, so the byte size and element size should be the same
+    EXPECT_EQ(output->size(), expected_output.size());
+
+    std::vector<uint8_t> host_byte_outut(expected_output.size());
+
+    MRC_CHECK_CUDA(cudaMemcpy(host_byte_outut.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
+
+    for (std::size_t i = 0; i < host_byte_outut.size(); ++i)
+    {
+        bool output_val = host_byte_outut[i];
+        EXPECT_EQ(output_val, expected_output[i]);
     }
 }
