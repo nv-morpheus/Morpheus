@@ -147,6 +147,7 @@ RUN apt update && \
         cuda-cudart-dev-${CUDA_PKG_VER} \
         cuda-cupti-dev-${CUDA_PKG_VER} \
         cuda-nvml-dev-${CUDA_PKG_VER} \
+        cuda-nvtx-${CUDA_PKG_VER} \
         libcufft-dev-${CUDA_PKG_VER} \
         libcurand-dev-${CUDA_PKG_VER} \
         libcusolver-dev-${CUDA_PKG_VER} \
@@ -212,6 +213,7 @@ RUN apt update && \
     apt install --no-install-recommends -y \
         cuda-cudart-dev-${CUDA_PKG_VER} \
         cuda-cupti-dev-${CUDA_PKG_VER} \
+        cuda-nvtx-${CUDA_PKG_VER} \
         libcufft-dev-${CUDA_PKG_VER} \
         libcurand-dev-${CUDA_PKG_VER} \
         libcusolver-dev-${CUDA_PKG_VER} \
