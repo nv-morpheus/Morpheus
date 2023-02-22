@@ -58,6 +58,7 @@ ARG CUDA_PKG_VER
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
+    cuda-nvtx-${CUDA_PKG_VER} \
     libcublas-dev-${CUDA_PKG_VER} \
     libcufft-dev-${CUDA_PKG_VER} \
     libcurand-dev-${CUDA_PKG_VER} \
