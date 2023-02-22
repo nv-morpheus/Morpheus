@@ -18,16 +18,12 @@
 #include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
 #include "morpheus/messages/multi_tensor.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"          // for DataType
+#include "morpheus/objects/dtype.hpp"          // for DType
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
-#include <cuda_runtime.h>            // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
-#include <glog/logging.h>            // for CHECK, CHECK_NE
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
-#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
+#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
+#include <glog/logging.h>  // for CHECK, CHECK_N
 
 #include <cstddef>
 #include <cstdint>  // for uint8_t

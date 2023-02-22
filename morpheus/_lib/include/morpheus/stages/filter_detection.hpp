@@ -27,7 +27,6 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>  // for Object
 #include <pymrc/node.hpp>
-#include <rmm/device_buffer.hpp>  // for device_buffer
 #include <rxcpp/rx.hpp>
 
 #include <cstddef>  // for size_t
