@@ -29,9 +29,9 @@
 #include <cudf/types.hpp>        // for cudf::type_id
 #include <ext/alloc_traits.h>
 #include <glog/logging.h>
-#include <stddef.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <ostream>  // needed for logging
