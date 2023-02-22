@@ -38,6 +38,8 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
     std::string module_type_name() const override;
 
   private:
+    static const std::string s_config_schema;  // NOLINT
+
     DataLoader m_data_loader{};
 };
 #pragma GCC visibility pop

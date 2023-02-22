@@ -92,12 +92,12 @@ std::shared_ptr<MessageControl> DataLoader::load(std::shared_ptr<MessageControl>
             tasks_it->erase(task_it);
             return std::move(loader->second->load(control_message, task));
         }
-        else
-        {
-            throw std::runtime_error("Attempt to load using an unknown or unregistered data loader: " +
-                                     loader_id.get<std::string>());
-        }
+
+        throw std::runtime_error("Attempt to load using an unknown or unregistered data loader: " +
+                                 loader_id.get<std::string>());
     }
+
+    return std::move(control_message);
 }
 
 void DataLoader::add_loader(const std::string& loader_id, std::shared_ptr<Loader> loader, bool overwrite)

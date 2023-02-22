@@ -57,6 +57,8 @@ class MessageControl
     std::shared_ptr<MessageMeta> payload();
 
   private:
+    static const std::string s_config_schema;  // NOLINT
+
     std::shared_ptr<MessageMeta> m_payload{nullptr};
     nlohmann::json m_config{};
 };

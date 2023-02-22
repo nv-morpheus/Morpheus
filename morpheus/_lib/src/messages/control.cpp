@@ -24,6 +24,61 @@ namespace py = pybind11;
 
 namespace morpheus {
 
+const std::string MessageControl::s_config_schema = R"(
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ControlMessage",
+    "type": "object",
+    "required": ["tasks"],
+    "properties": {
+        "tasks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["type", "properties"],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": ["load", "inference", "training"]
+                    },
+                    "properties": {
+                        "type": "object",
+                        "allOf": [
+                            {
+                                "if": {
+                                    "properties": {
+                                        "type": { "const": "load" }
+                                    }
+                                },
+                                "then": {
+                                    "required": ["loader_id", "strategy"],
+                                    "properties": {
+                                        "loader_id": { "type": "string" },
+                                        "strategy": { "type": "string" }
+                                    }
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "type": { "enum": ["inference", "training"] }
+                                    }
+                                },
+                                "then": {
+                                    "properties": {
+                                        "params": { "type": "object" }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
+)";
+
 MessageControl::MessageControl(const nlohmann::json& config) : m_config(config) {}
 
 const nlohmann::json& MessageControl::config() const

@@ -33,11 +33,42 @@ using nlohmann::json;
 
 namespace morpheus {
 
+const std::string DataLoaderModule::s_config_schema = R"(
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "DataLoaderModule",
+    "type": "object",
+    "required": ["loaders"],
+    "properties": {
+        "loaders": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "properties": {
+                        "type": "object"
+                    }
+                }
+            }
+        }
+    }
+}
+)";
+
 DataLoaderModule::DataLoaderModule(std::string module_name) : SegmentModule(module_name) {}
 
 DataLoaderModule::DataLoaderModule(std::string module_name, nlohmann::json _config) :
   SegmentModule(std::move(module_name), std::move(_config))
 {
+    if (config().contains("loaders"))
+    {
+        // TODO(Devin): Add schema validation
+    }
+
     if (config().contains("loaders") and config()["loaders"].is_array() and !config()["loaders"].empty())
     {
         auto loader_list = config()["loaders"];
