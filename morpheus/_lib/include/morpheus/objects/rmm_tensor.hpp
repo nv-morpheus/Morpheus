@@ -74,13 +74,13 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex>& dims) const override;
+    std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex> &dims) const override;
 
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<ITensor> slice(const std::vector<TensorIndex>& min_dims,
-                                   const std::vector<TensorIndex>& max_dims) const override;
+    std::shared_ptr<ITensor> slice(const std::vector<TensorIndex> &min_dims,
+                                   const std::vector<TensorIndex> &max_dims) const override;
 
     /**
      * @brief Creates a depp copy of the specified rows specified as vector<pair<start, stop>> not inclusive
@@ -90,7 +90,7 @@ class RMMTensor : public ITensor
      * @param num_rows
      * @return std::shared_ptr<ITensor>
      */
-    std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+    std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>> &selected_rows,
                                        TensorIndex num_rows) const override;
 
     /**
@@ -121,31 +121,17 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    void* data() const override;
+    void *data() const override;
 
     /**
      * TODO(Documentation)
      */
-    void get_shape(std::vector<TensorIndex>& s) const;
+    void get_shape(std::vector<TensorIndex> &s) const;
 
     /**
      * TODO(Documentation)
      */
-    void get_stride(std::vector<TensorIndex>& s) const;
-
-    /**
-     * @brief Get the cuda stream used by the underlying rmm buffer
-     *
-     * @return auto
-     */
-    rmm::cuda_stream_view get_stream() const;
-
-    /**
-     * @brief Get the memory resource used by the underlying rmm buffer
-     *
-     * @return auto
-     */
-    rmm::mr::device_memory_resource* get_memory_resource() const;
+    void get_stride(std::vector<TensorIndex> &s) const;
 
     // Tensor reshape(std::vector<TensorIndex> shape)
     // {
