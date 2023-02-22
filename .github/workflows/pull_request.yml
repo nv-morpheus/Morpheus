@@ -31,8 +31,8 @@ jobs:
     uses: ./.github/workflows/ci_pipe.yml
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
-      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-230213
-      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230213
+      container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-230214
+      test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230214
     secrets:
       GHA_AWS_ACCESS_KEY_ID: ${{ secrets.GHA_AWS_ACCESS_KEY_ID }}
       GHA_AWS_SECRET_ACCESS_KEY: ${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}
