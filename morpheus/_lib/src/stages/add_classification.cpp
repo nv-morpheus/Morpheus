@@ -17,23 +17,15 @@
 
 #include "morpheus/stages/add_classification.hpp"
 
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"         // for DType
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/dtype.hpp"          // for DType
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
-#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
-#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
-#include <rmm/device_buffer.hpp>     // for device_buffer
 
-#include <algorithm>  // for min_element, transform
 #include <cstddef>
 #include <exception>
-#include <functional>  // for divides, bind, placeholders
 #include <memory>
 #include <ostream>      // needed for logging
 #include <type_traits>  // for declval
