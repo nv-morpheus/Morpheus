@@ -21,10 +21,10 @@ from mrc.core import operators as ops
 
 from dask.distributed import Client
 
-from morpheus._lib.messages import MessageMeta
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
+from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
