@@ -15,18 +15,22 @@
  * limitations under the License.
  */
 
+#include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 
 #include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/objects/tensor.hpp" // for Tensor::create
 
 #include <mrc/cuda/sync.hpp>
 
 #include <cudf/utilities/type_dispatcher.hpp>
+#include <glog/logging.h>
 #include <matx.h>
 #include <mrc/cuda/sync.hpp>
 
+#include <algorithm> // for std::copy
 #include <memory>
 
 namespace morpheus {
@@ -368,6 +372,46 @@ namespace morpheus {
         mrc::enqueue_stream_sync_event(output->stream()).get();
 
         return output;
+    }
+
+    TensorObject
+    MatxUtil::threshold(const TensorObject &input,
+                        double thresh_val, bool by_row) {
+        const auto input_shape = input.get_shape();
+        const auto rows = static_cast<std::size_t>(input_shape[0]);
+        const auto cols = static_cast<std::size_t>(input_shape[1]);
+
+        std::vector<TensorIndex> output_shape{input_shape.cbegin(), input_shape.cend()};
+        std::vector<TensorIndex> output_stride;
+        std::size_t output_size = sizeof(bool) * rows;
+        if (!by_row)
+        {
+            output_size *= cols;
+            const auto input_stride = input.get_stride();
+            output_stride.resize(input_stride.size());
+            std::copy(input_stride.cbegin(), input_stride.cend(), output_stride.begin());
+        }
+        else
+        {
+            output_shape[1] = 1;
+            output_stride.push_back(1);
+        }
+
+        // Now create the output array of bools
+        DCHECK(std::dynamic_pointer_cast<RMMTensor>(input.get_tensor()) != nullptr);
+        auto input_tensor = std::static_pointer_cast<RMMTensor>(input.get_tensor());
+        auto output = std::make_unique<rmm::device_buffer>(output_size, input_tensor->get_stream(), input_tensor->get_memory_resource());
+
+        cudf::type_dispatcher(cudf::data_type{input.dtype().cudf_type_id()},
+                              MatxUtil__MatxThreshold{rows, cols, by_row, output->stream()},
+                              input.data(),
+                              output->data(),
+                              thresh_val,
+                              input.get_stride());
+
+        mrc::enqueue_stream_sync_event(output->stream()).get();
+
+        return Tensor::create(std::move(output), DType::create<bool>(), output_shape, output_stride);
     }
 
     std::shared_ptr<rmm::device_buffer>

@@ -73,24 +73,8 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 const std::size_t num_rows    = shape[0];
                 const std::size_t num_columns = shape[1];
 
-                // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
-                auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
-
-                MRC_CHECK_CUDA(
-                    cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
-
                 // Now call the threshold function
-                auto thresh_bool_buffer =
-                    MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride}, m_threshold, false);
-
-                std::vector<TensorIndex> tensor_shape(shape.size());
-                std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());
-
-                std::vector<TensorIndex> tensor_stride(stride.size());
-                std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
-
-                auto tensor_obj =
-                    Tensor::create(thresh_bool_buffer, DType::create<bool>(), tensor_shape, tensor_stride);
+                auto tensor_obj = MatxUtil::threshold(probs, m_threshold, false);
 
                 std::vector<std::string> columns(m_idx2label.size());
                 std::vector<TensorObject> tensors(m_idx2label.size());
