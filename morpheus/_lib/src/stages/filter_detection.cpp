@@ -18,8 +18,8 @@
 #include "morpheus/stages/filter_detection.hpp"  // IWYU pragma: accosiated
 
 #include "morpheus/messages/multi_tensor.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"         // for DataType
+#include "morpheus/objects/dev_mem_info.hpp"   // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"          // for DataType
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
@@ -28,7 +28,6 @@
 #include <glog/logging.h>            // for CHECK, CHECK_NE
 #include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
-#include <rmm/device_buffer.hpp>     // for device_buffer
 
 #include <cstddef>
 #include <cstdint>  // for uint8_t
@@ -76,6 +75,21 @@ DevMemInfo FilterDetectionsStage::get_tensor_filter_source(const std::shared_ptr
     return {buffer, filter_source.dtype(), filter_source.get_shape(), stride};
 }
 
+TensorObject FilterDetectionsStage::get_tensor_thresholds(const std::shared_ptr<morpheus::MultiMessage>& x)
+{
+    const auto& tensor_obj = std::static_pointer_cast<morpheus::MultiTensorMessage>(x)->get_tensor(m_field_name);
+    CHECK(tensor_obj.rank() > 0 && tensor_obj.rank() <= 2)
+        << "C++ impl of the FilterDetectionsStage currently only supports one and two dimensional "
+           "arrays";
+
+    const auto num_rows    = tensor_obj.shape(0);
+    const auto num_columns = tensor_obj.shape(1);
+
+    bool by_row = (num_columns > 1);
+
+    return MatxUtil::threshold(tensor_obj, m_threshold, by_row);
+}
+
 DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x)
 {
     auto table_info = x->get_meta(m_field_name);
@@ -100,18 +114,35 @@ DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr
     };
 }
 
+TensorObject FilterDetectionsStage::get_column_thresholds(const std::shared_ptr<morpheus::MultiMessage>& x)
+{
+    auto table_info = x->get_meta(m_field_name);
+
+    // since we only asked for one column, we know its the first
+    const auto& col = table_info.get_column(0);
+    auto dtype      = morpheus::DType::from_cudf(col.type().id());
+    auto num_rows   = static_cast<std::size_t>(col.size());
+
+    void* column_data = const_cast<uint8_t*>(col.head<uint8_t>() + col.offset() * dtype.item_size());
+
+    return MatxUtil::threshold(column_data, m_threshold, false, dtype, {num_rows, 1}, {1, 0});
+}
+
 FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         std::function<DevMemInfo(const std::shared_ptr<morpheus::MultiMessage>& x)> get_filter_source;
+        std::function<TensorObject(const std::shared_ptr<morpheus::MultiMessage>& x)> get_thresholds;
 
         if (m_filter_source == FilterSource::TENSOR)
         {
             get_filter_source = [this](auto x) { return get_tensor_filter_source(x); };
+            get_thresholds    = [this](auto x) { return get_tensor_thresholds(x); };
         }
         else
         {
             get_filter_source = [this](auto x) { return get_column_filter_source(x); };
+            get_thresholds    = [this](auto x) { return get_column_thresholds(x); };
         }
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(

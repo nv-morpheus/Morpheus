@@ -27,6 +27,7 @@
 #include <mrc/segment/builder.hpp>
 #include <mrc/segment/object.hpp>  // for Object
 #include <pymrc/node.hpp>
+#include <rmm/device_buffer.hpp>  // for device_buffer
 #include <rxcpp/rx.hpp>
 
 #include <cstddef>  // for size_t
@@ -94,6 +95,8 @@ class FilterDetectionsStage
     subscribe_fn_t build_operator();
     DevMemInfo get_tensor_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
     DevMemInfo get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
+    TensorObject get_tensor_thresholds(const std::shared_ptr<morpheus::MultiMessage>& x);
+    TensorObject get_column_thresholds(const std::shared_ptr<morpheus::MultiMessage>& x);
 
     float m_threshold;
     bool m_copy;

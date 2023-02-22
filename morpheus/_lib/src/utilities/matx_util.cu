@@ -376,18 +376,19 @@ namespace morpheus {
 
     TensorObject
     MatxUtil::threshold(const TensorObject &input,
-                        double thresh_val, bool by_row) {
+                        double thresh_val,
+                        bool by_row) {
         const auto input_shape = input.get_shape();
         const auto rows = static_cast<std::size_t>(input_shape[0]);
         const auto cols = static_cast<std::size_t>(input_shape[1]);
 
+        const auto input_stride = input.get_stride();
         std::vector<TensorIndex> output_shape{input_shape.cbegin(), input_shape.cend()};
         std::vector<TensorIndex> output_stride;
         std::size_t output_size = sizeof(bool) * rows;
         if (!by_row)
         {
             output_size *= cols;
-            const auto input_stride = input.get_stride();
             output_stride.resize(input_stride.size());
             std::copy(input_stride.cbegin(), input_stride.cend(), output_stride.begin());
         }
@@ -407,7 +408,47 @@ namespace morpheus {
                               input.data(),
                               output->data(),
                               thresh_val,
-                              input.get_stride());
+                              input_stride);
+
+        mrc::enqueue_stream_sync_event(output->stream()).get();
+
+        return Tensor::create(std::move(output), DType::create<bool>(), output_shape, output_stride);
+    }
+
+    TensorObject
+    MatxUtil::threshold(void* input_data,
+                        double thresh_val,
+                        bool by_row,
+                        const DType& dtype,
+                        const std::vector<std::size_t>& input_shape,
+                        const std::vector<std::size_t>& input_stride) {
+        const auto rows = input_shape[0];
+        const auto cols = input_shape[1];
+
+        std::vector<TensorIndex> output_shape{input_shape.cbegin(), input_shape.cend()};
+        std::vector<TensorIndex> output_stride;
+        std::size_t output_size = sizeof(bool) * rows;
+        if (!by_row)
+        {
+            output_size *= cols;
+            output_stride.resize(input_stride.size());
+            std::copy(input_stride.cbegin(), input_stride.cend(), output_stride.begin());
+        }
+        else
+        {
+            output_shape[1] = 1;
+            output_stride.push_back(1);
+        }
+
+        // Now create the output array of bools
+        auto output = std::make_unique<rmm::device_buffer>(output_size, rmm::cuda_stream_per_thread);
+
+        cudf::type_dispatcher(cudf::data_type{dtype.cudf_type_id()},
+                              MatxUtil__MatxThreshold{rows, cols, by_row, output->stream()},
+                              input_data,
+                              output->data(),
+                              thresh_val,
+                              input_stride);
 
         mrc::enqueue_stream_sync_event(output->stream()).get();
 
