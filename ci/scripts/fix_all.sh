@@ -71,7 +71,7 @@ if [[ "${SKIP_IWYU}" == "" && "${CPP_MODIFIED_FILES}" != "" ]]; then
 
    if [[ -x "${IWYU_TOOL}" ]]; then
       echo "Running include-what-you-use from '${IWYU_TOOL}'..."
-      ${IWYU_TOOL} -j $(nproc) -p ${BUILD_DIR} ${CPP_MODIFIED_FILES[@]} | fix_includes.py --nosafe_headers --nocomments 2>&1
+      ${IWYU_TOOL} -j $(nproc) -p ${BUILD_DIR} morpheus | fix_includes.py --nosafe_headers --nocomments 2>&1
    else
       echo "Skipping include-what-you-use. Could not find iwyu_tool.py at '${IWYU_TOOL}'"
    fi

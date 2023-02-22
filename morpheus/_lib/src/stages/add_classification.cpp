@@ -26,11 +26,7 @@
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
-#include <mrc/channel/status.hpp>
-#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
-#include <mrc/segment/object.hpp>
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 

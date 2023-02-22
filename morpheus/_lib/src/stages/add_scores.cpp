@@ -20,10 +20,6 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 
 #include <glog/logging.h>
-#include <mrc/channel/status.hpp>
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <mrc/segment/object.hpp>          // for Object
 
 #include <cstddef>  // for size_t
 #include <exception>

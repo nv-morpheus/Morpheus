@@ -27,11 +27,8 @@
 #include <cudf/io/json.hpp>
 #include <glog/logging.h>
 #include <librdkafka/rdkafkacpp.h>
-#include <mrc/channel/status.hpp>
-#include <mrc/node/source_properties.hpp>
 #include <mrc/runnable/context.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>  // for SharedFuture
 #include <nlohmann/json.hpp>
 #include <pymrc/node.hpp>

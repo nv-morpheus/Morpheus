@@ -23,7 +23,6 @@
 #include <glog/logging.h>  // for CHECK
 
 #include <map>
-#include <memory>
 #include <sstream>  // Needed by MORPHEUS_CONCAT_STR
 #include <stdexcept>
 #include <string>

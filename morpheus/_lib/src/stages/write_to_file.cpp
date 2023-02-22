@@ -21,10 +21,6 @@
 #include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>
-#include <mrc/channel/status.hpp>
-#include <mrc/node/sink_properties.hpp>
-#include <mrc/node/source_properties.hpp>
-#include <mrc/segment/object.hpp>
 
 #include <exception>
 #include <memory>

@@ -22,10 +22,7 @@
 
 #include <cudf/types.hpp>
 #include <glog/logging.h>
-#include <mrc/channel/status.hpp>
-#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>  // for str_attr_accessor
 #include <pybind11/pytypes.h>   // for pybind11::int_
