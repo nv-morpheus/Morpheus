@@ -41,25 +41,6 @@ if [[ "${SKIP_COPYRIGHT}" == "" ]]; then
    fi
 fi
 
-# Run clang-format
-if [[ "${SKIP_CLANG_FORMAT}" == "" ]]; then
-
-   # If IGNORE_GIT_DIFF is enabled, use all files
-   if [[ "${IGNORE_GIT_DIFF}" == "1" ]]; then
-      echo "Running clang-format from '${SCRIPT_DIR}/run-clang-format.py'..."
-      python3 ${SCRIPT_DIR}/run-clang-format.py -inplace -regex "${CPP_FILE_REGEX}" ./ 2>&1
-   else
-      CLANG_FORMAT_DIFF=$(find_clang_format_diff)
-
-      if [[ -x "${CLANG_FORMAT_DIFF}" ]]; then
-         echo "Running clang-format from '${CLANG_FORMAT_DIFF}'..."
-         get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_FORMAT_DIFF} -p1 -i -sort-includes 2>&1
-      else
-         echo "Skipping clang-format. Could not find clang-format-diff at '${CLANG_FORMAT_DIFF}'"
-      fi
-   fi
-fi
-
 # Run clang-tidy
 if [[ "${SKIP_CLANG_TIDY}" == "" ]]; then
 
@@ -69,7 +50,7 @@ if [[ "${SKIP_CLANG_TIDY}" == "" ]]; then
       export CLANG_TIDY=$(find_clang_tidy)
 
       echo "Running clang-tidy from '${CLANG_TIDY}'..."
-      ${SCRIPT_DIR}/run_clang_tidy_for_ci.sh -p ${BUILD_DIR} -fix 2>&1
+      run-clang-tidy -clang-tidy-binary ${SCRIPT_DIR}/run_clang_tidy_for_ci.sh -j 0 -p ${BUILD_DIR} -fix -quiet ${CPP_MODIFIED_FILES[@]} 2>&1
    else
       CLANG_TIDY_DIFF=$(find_clang_tidy_diff)
 
@@ -90,9 +71,28 @@ if [[ "${SKIP_IWYU}" == "" && "${CPP_MODIFIED_FILES}" != "" ]]; then
 
    if [[ -x "${IWYU_TOOL}" ]]; then
       echo "Running include-what-you-use from '${IWYU_TOOL}'..."
-      ${IWYU_TOOL} -j $(nproc) -p ${BUILD_DIR} ${CPP_MODIFIED_FILES[@]} 2>&1
+      ${IWYU_TOOL} -j $(nproc) -p ${BUILD_DIR} ${CPP_MODIFIED_FILES[@]} | fix_includes.py --nosafe_headers --nocomments 2>&1
    else
       echo "Skipping include-what-you-use. Could not find iwyu_tool.py at '${IWYU_TOOL}'"
+   fi
+fi
+
+# Run clang-format (Should be after IWYU because that messes up include ordering)
+if [[ "${SKIP_CLANG_FORMAT}" == "" ]]; then
+
+   # If IGNORE_GIT_DIFF is enabled, use all files
+   if [[ "${IGNORE_GIT_DIFF}" == "1" ]]; then
+      echo "Running clang-format from '${SCRIPT_DIR}/run-clang-format.py'..."
+      python3 ${SCRIPT_DIR}/run-clang-format.py -inplace -regex "${CPP_FILE_REGEX}" ./ 2>&1
+   else
+      CLANG_FORMAT_DIFF=$(find_clang_format_diff)
+
+      if [[ -x "${CLANG_FORMAT_DIFF}" ]]; then
+         echo "Running clang-format from '${CLANG_FORMAT_DIFF}'..."
+         get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_FORMAT_DIFF} -p1 -i -sort-includes 2>&1
+      else
+         echo "Skipping clang-format. Could not find clang-format-diff at '${CLANG_FORMAT_DIFF}'"
+      fi
    fi
 fi
 
