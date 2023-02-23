@@ -110,12 +110,10 @@
 			],
             "settings": {
                 "cmake.cmakePath": "/tmp/.current-conda-env/bin/cmake",
-                "cmake.languageSupport.dotnetPath": "/usr/bin/dotnet"
+                "cmake.languageSupport.dotnetPath": "/usr/bin/dotnet",
+                "C_Cpp.intelliSenseEngine": "disabled",
+                "python.terminal.activateEnvironment": false
             }
         }
     },
-    "settings": {
-        "C_Cpp.intelliSenseEngine": "disabled",
-        "python.terminal.activateEnvironment": false
-    }
 }
