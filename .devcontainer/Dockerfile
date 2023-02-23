@@ -16,6 +16,3 @@
 FROM rapidsai/devcontainers:23.04-cuda11.8-mambaforge-ubuntu22.04 AS base
 
 ENV PATH="${PATH}:/workspaces/morpheus/.devcontainer/bin"
-
-COPY home/.gdbinit /home/coder/.gdbinit
-COPY home/.config/gdb/enable_conda_libstd_pretty_print.py /home/coder/.config/gdb/enable_conda_libstd_pretty_print.py
