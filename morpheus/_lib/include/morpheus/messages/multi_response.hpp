@@ -54,7 +54,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
     /**
      * @brief Default copy constructor
      */
-    MultiResponseMessage(const MultiResponseMessage &other) = default;
+    MultiResponseMessage(const MultiResponseMessage& other) = default;
 
     /**
      * @brief Construct a new Multi Response Message object
@@ -80,7 +80,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param name
      * @return const TensorObject
      */
-    const TensorObject get_output(const std::string &name) const;
+    const TensorObject get_output(const std::string& name) const;
 
     /**
      * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
@@ -88,7 +88,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param name
      * @return TensorObject
      */
-    TensorObject get_output(const std::string &name);
+    TensorObject get_output(const std::string& name);
 
     /**
      * @brief Update the value of a given output tensor. The tensor must already exist, otherwise this will halt on a
@@ -97,7 +97,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param name
      * @param value
      */
-    void set_output(const std::string &name, const TensorObject &value);
+    void set_output(const std::string& name, const TensorObject& value);
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/
@@ -130,7 +130,7 @@ struct MultiResponseMessageInterfaceProxy
      *
      * @return std::shared_ptr<ResponseMemory>
      */
-    static std::shared_ptr<ResponseMemory> memory(MultiResponseMessage &self);
+    static std::shared_ptr<ResponseMemory> memory(MultiResponseMessage& self);
 
     /**
      * @brief Message offset in response memory probs object
@@ -138,7 +138,7 @@ struct MultiResponseMessageInterfaceProxy
      * @param self
      * @return std::size_t
      */
-    static std::size_t offset(MultiResponseMessage &self);
+    static std::size_t offset(MultiResponseMessage& self);
 
     /**
      * @brief Messages count in response memory probs object
@@ -146,7 +146,7 @@ struct MultiResponseMessageInterfaceProxy
      * @param self
      * @return std::size_t
      */
-    static std::size_t count(MultiResponseMessage &self);
+    static std::size_t count(MultiResponseMessage& self);
 
     /**
      * @brief Returns the output tensor for a given name
@@ -155,7 +155,7 @@ struct MultiResponseMessageInterfaceProxy
      * @param name : Tensor name
      * @return pybind11::object
      */
-    static pybind11::object get_output(MultiResponseMessage &self, const std::string &name);
+    static pybind11::object get_output(MultiResponseMessage& self, const std::string& name);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

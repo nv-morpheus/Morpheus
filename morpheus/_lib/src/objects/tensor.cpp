@@ -45,9 +45,9 @@ Tensor::Tensor(std::shared_ptr<rmm::device_buffer> buffer,
   m_offset(init_offset)
 {}
 
-void *Tensor::data() const
+void* Tensor::data() const
 {
-    return static_cast<uint8_t *>(m_device_buffer->data()) + m_offset;
+    return static_cast<uint8_t*>(m_device_buffer->data()) + m_offset;
 }
 
 size_t Tensor::bytes_count() const
