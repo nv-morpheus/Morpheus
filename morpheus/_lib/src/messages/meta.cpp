@@ -136,7 +136,7 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::stri
 {
     // Load the file
     auto df_with_meta   = load_table_from_file(filename);
-    int index_col_count = get_index_col_count(df_with_meta);
+    int index_col_count = prepare_df_index(df_with_meta);
 
     return MessageMeta::create_from_cpp(std::move(df_with_meta), index_col_count);
 }

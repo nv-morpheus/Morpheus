@@ -58,12 +58,20 @@ cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& js
 
 /**
  * @brief Returns the number of index columns in `data_table`, in practice this will be a `0` or `1`
+ *
+ * @param data_table : Table which contains the data and it's metadata
+ * @return int
+ */
+int get_index_col_count(const cudf::io::table_with_metadata& data_table);
+
+/**
+ * @brief Returns the number of index columns in `data_table`, in practice this will be a `0` or `1`
  * If `data_table` contains a column named "Unnamed: 0" it will be renamed to ""
  *
  * @param data_table : Table which contains the data and it's metadata
  * @return int
  */
-int get_index_col_count(cudf::io::table_with_metadata& data_table);
+int prepare_df_index(cudf::io::table_with_metadata& data_table);
 
 #pragma GCC visibility pop
 /** @} */  // end of group
