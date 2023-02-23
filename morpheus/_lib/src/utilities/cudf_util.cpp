@@ -44,11 +44,11 @@ void morpheus::load_cudf_helpers()
     }
 }
 
-pybind11::object morpheus::proxy_table_from_table_with_metadata(cudf::io::table_with_metadata &&table,
+pybind11::object morpheus::proxy_table_from_table_with_metadata(cudf::io::table_with_metadata&& table,
                                                                 int index_col_count)
 {
     return pybind11::reinterpret_steal<pybind11::object>(
-        (PyObject *)make_table_from_table_with_metadata(std::move(table), index_col_count));
+        (PyObject*)make_table_from_table_with_metadata(std::move(table), index_col_count));
 }
 
 morpheus::TableInfoData morpheus::proxy_table_info_data_from_table(pybind11::object table)

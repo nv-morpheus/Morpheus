@@ -85,7 +85,7 @@ class InferenceClientStage
     /**
      * TODO(Documentation)
      */
-    bool is_default_grpc_port(std::string &server_url);
+    bool is_default_grpc_port(std::string& server_url);
 
     /**
      * TODO(Documentation)
