@@ -15,10 +15,13 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "tests")
 
+find_package(pybind11 REQUIRED)
+
 # Keep all source files sorted
 add_executable(test_libmorpheus
   # test_cuda.cu
   test_deserializers.cpp
+  test_file_in_out.cpp
   test_main.cpp
   test_matx_util.cpp
   test_morpheus.cpp

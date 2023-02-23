@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "test_morpheus.hpp"
+
 #include <filesystem>
 #include <stdexcept>
 
