@@ -36,13 +36,13 @@ ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : Res
     this->tensors["probs"] = std::move(probs);
 }
 
-ResponseMemoryProbs::ResponseMemoryProbs(size_t count, tensor_map_t &&tensors) :
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, tensor_map_t&& tensors) :
   ResponseMemory(count, std::move(tensors))
 {
     CHECK(has_tensor("probs")) << "Tensor: 'probs' not found in memory";
 }
 
-const TensorObject &ResponseMemoryProbs::get_probs() const
+const TensorObject& ResponseMemoryProbs::get_probs() const
 {
     auto found = this->tensors.find("probs");
     if (found == this->tensors.end())
@@ -66,17 +66,17 @@ std::shared_ptr<ResponseMemoryProbs> ResponseMemoryProbsInterfaceProxy::init(cud
     return std::make_shared<ResponseMemoryProbs>(count, std::move(CupyUtil::cupy_to_tensor(probs)));
 }
 
-std::size_t ResponseMemoryProbsInterfaceProxy::count(ResponseMemoryProbs &self)
+std::size_t ResponseMemoryProbsInterfaceProxy::count(ResponseMemoryProbs& self)
 {
     return self.count;
 }
 
-pybind11::object ResponseMemoryProbsInterfaceProxy::get_probs(ResponseMemoryProbs &self)
+pybind11::object ResponseMemoryProbsInterfaceProxy::get_probs(ResponseMemoryProbs& self)
 {
     return CupyUtil::tensor_to_cupy(self.get_probs());
 }
 
-void ResponseMemoryProbsInterfaceProxy::set_probs(ResponseMemoryProbs &self, pybind11::object cupy_values)
+void ResponseMemoryProbsInterfaceProxy::set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values)
 {
     self.set_probs(CupyUtil::cupy_to_tensor(cupy_values));
 }

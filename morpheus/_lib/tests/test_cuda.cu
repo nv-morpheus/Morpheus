@@ -19,8 +19,12 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <mrc/cuda/common.hpp> // for MRC_CHECK_CUDA
-#include <mrc/cuda/sync.hpp> // for enqueue_stream_sync_event
+#include <cuda/memory_resource>
+#include <cuda_runtime.h>
+#include <matx.h>
+#include <matx_type_utils.h>
+#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <mrc/cuda/sync.hpp>    // for enqueue_stream_sync_event
 #include <mrc/memory/adaptors.hpp>
 #include <mrc/memory/buffer.hpp>
 #include <mrc/memory/literals.hpp>
@@ -29,13 +33,6 @@
 #include <mrc/memory/resources/host/pinned_memory_resource.hpp>
 #include <mrc/memory/resources/logging_resource.hpp>
 #include <mrc/ucx/context.hpp>
-
-#include <cuda/memory_resource>
-#include <cuda_runtime.h>
-
-#include <matx.h>
-#include <matx_type_utils.h>
-
 #include <xtensor/xarray.hpp>
 #include <xtensor/xtensor.hpp>
 
@@ -47,7 +44,6 @@ using namespace mrc::memory::literals;
 using namespace morpheus;
 
 using RankType = int;
-
 
 class TestCuda : public ::testing::Test
 {
@@ -150,7 +146,6 @@ TEST_F(TestCuda, Tensor2D)
 
     CHECK_EQ(one_d.data(), two_d.data());
 }
-
 
 TEST_F(TestCuda, Shape)
 {

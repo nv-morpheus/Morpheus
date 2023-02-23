@@ -35,7 +35,7 @@ namespace morpheus {
  * @return std::vector<return_t>
  */
 template <typename FuncT, typename SeqT>
-auto foreach_map(const SeqT &seq, FuncT func)
+auto foreach_map(const SeqT& seq, FuncT func)
 {
     using value_t  = typename SeqT::const_reference;
     using return_t = decltype(func(std::declval<value_t>()));

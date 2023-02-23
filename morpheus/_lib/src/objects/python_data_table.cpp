@@ -30,7 +30,7 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** PyDataTable****************************************/
-PyDataTable::PyDataTable(pybind11::object &&py_table) : m_py_table(std::move(py_table)) {}
+PyDataTable::PyDataTable(pybind11::object&& py_table) : m_py_table(std::move(py_table)) {}
 
 PyDataTable::~PyDataTable()
 {

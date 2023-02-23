@@ -47,7 +47,7 @@ struct CupyUtil
     /**
      * TODO(Documentation)
      */
-    static pybind11::object tensor_to_cupy(const TensorObject &tensor);
+    static pybind11::object tensor_to_cupy(const TensorObject& tensor);
 
     /**
      * TODO(Documentation)
