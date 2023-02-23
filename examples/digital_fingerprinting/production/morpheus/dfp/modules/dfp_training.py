@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+from morpheus.messages.message_meta import MessageMeta
 
 import mrc
 from dfencoder import AutoEncoder
@@ -66,11 +67,16 @@ def dfp_training(builder: mrc.Builder):
 
         for task in tasks:
             if "inference" in task["type"] and "payload" in task["data"]:
-                multi_message = message.payload()
 
-                final_df = multi_message.get_meta()
+                task_params = task["params"]
+                mess_offset = task_params["mess_offset"]
+                mess_count = task_params["mess_count"]
 
-                user_id = task["params"]["user_id"]
+                meta: MessageMeta = message.payload()
+
+                final_df = meta.get_meta_range(mess_offset, mess_count)
+
+                user_id = task_params["user_id"]
 
                 model = AutoEncoder(**model_kwargs)
 
@@ -81,10 +87,7 @@ def dfp_training(builder: mrc.Builder):
                 model.fit(final_df, epochs=epochs)
                 logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-                output_message = MultiAEMessage(multi_message.meta,
-                                                mess_offset=multi_message.mess_offset,
-                                                mess_count=multi_message.mess_count,
-                                                model=model)
+                output_message = MultiAEMessage(meta, mess_offset=mess_offset, mess_count=mess_count, model=model)
 
         return output_message
 

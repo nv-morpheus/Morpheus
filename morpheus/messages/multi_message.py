@@ -104,16 +104,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        idx = self.meta._df.index[self.mess_offset:self.mess_offset + self.mess_count]
-
-        if (isinstance(idx, cudf.RangeIndex)):
-            idx = slice(idx.start, idx.stop - 1, idx.step)
-
-        if (columns is None):
-            return self.meta._df.loc[idx, :]
-        else:
-            # If its a str or list, this is the same
-            return self.meta._df.loc[idx, columns]
+        return self.meta.get_meta_range(self.mess_offset, self.mess_count, columns)
 
     def get_meta_list(self, col_name: str = None):
         """
