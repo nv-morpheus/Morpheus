@@ -30,26 +30,24 @@ using namespace morpheus;
 
 TEST_CLASS(Deserializers);
 
-TEST_F(TestDeserializers, GetIndexColCount)
+TEST_F(TestDeserializers, GetIndexColCountNoIdx)
 {
-    std::filesystem::path morpheus_root{std::getenv("MORPHEUS_ROOT")};
-    auto test_data_dir = morpheus_root / "tests/tests_data";
+    auto test_data_dir = test::get_morpheus_root() / "tests/tests_data";
 
+    // First test a files without an index
+    std::vector<std::filesystem::path> input_files{test_data_dir / "filter_probs.csv",
+                                                   test_data_dir / "filter_probs.jsonlines"};
+    for (const auto& input_file : input_files)
     {
-        // First test a files without an index
-        std::vector<std::filesystem::path> input_files{test_data_dir / "filter_probs.csv",
-                                                       test_data_dir / "filter_probs.jsonlines"};
-        for (const auto& input_file : input_files)
-        {
-            auto table = load_table_from_file(input_file);
-            EXPECT_EQ(get_index_col_count(table), 0);
-        }
+        auto table = load_table_from_file(input_file);
+        EXPECT_EQ(get_index_col_count(table), 0);
     }
+}
 
-    {
-        // now test a file with an index
-        auto input_file = morpheus_root / "tests/tests_data/filter_probs_w_id_col.csv";
-        auto table      = load_table_from_file(input_file);
-        EXPECT_EQ(get_index_col_count(table), 1);
-    }
+TEST_F(TestDeserializers, GetIndexColCountWithIdx)
+{
+    // now test a file with an index
+    auto input_file = test::get_morpheus_root() / "tests/tests_data/filter_probs_w_id_col.csv";
+    auto table      = load_table_from_file(input_file);
+    EXPECT_EQ(get_index_col_count(table), 1);
 }
