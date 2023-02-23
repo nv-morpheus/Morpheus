@@ -41,7 +41,12 @@
         "MORPHEUS_ROOT": "${containerWorkspaceFolder}",
         "DEFAULT_CONDA_ENV": "morpheus",
         "MAMBA_NO_BANNER": "1",
-        "VAULT_HOST": "https://vault.ops.k8s.rapids.ai"
+        "VAULT_HOST": "https://vault.ops.k8s.rapids.ai",
+        "DISPLAY": "${localEnv:DISPLAY:-}",
+        "XAUTHORITY": "${localEnv:XAUTHORITY:-}",
+        "XDG_SESSION_TYPE": "${localEnv:XDG_SESSION_TYPE:-}",
+        "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR:-}",
+        "DBUS_SESSION_BUS_ADDRESS": "${localEnv:DBUS_SESSION_BUS_ADDRESS:-}"
     },
 
     "initializeCommand": [ "${localWorkspaceFolder}/.devcontainer/initialize-command.sh" ],
@@ -52,6 +57,16 @@
             "type": "bind",
             "source": "/tmp/.X11-unix",
             "target": "/tmp/.X11-unix"
+        },
+        {
+            "type": "bind",
+            "source": "${localEnv:XDG_RUNTIME_DIR}",
+            "target": "${localEnv:XDG_RUNTIME_DIR}"
+        },
+        {
+            "type": "bind",
+            "source": "/run/dbus/system_bus_socket",
+            "target": "/run/dbus/system_bus_socket"
         },
         {
             "type":"bind",
@@ -73,6 +88,7 @@
             "source": "${localWorkspaceFolder}/.devcontainer/opt/morpheus",
             "target": "/opt/morpheus"
         },
+
     ],
 
     "features": {
