@@ -132,7 +132,7 @@ struct MatxUtil
     static std::shared_ptr<rmm::device_buffer> reduce_max(const DevMemInfo& input,
                                                           const std::vector<int32_t>& seq_ids,
                                                           size_t seq_id_offset,
-                                                          const std::vector<int64_t>& output_shape);
+                                                          const std::vector<std::size_t>& output_shape);
 };
 /** @} */  // end of group
 }  // namespace morpheus

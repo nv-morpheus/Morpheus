@@ -21,8 +21,8 @@
 
 #include <glog/logging.h>  // for DCHECK
 
-#include <cstdint>     // for uint8_t
-#include <utility>     // for move
+#include <cstdint>  // for uint8_t
+#include <utility>  // for move
 
 namespace morpheus {
 // Component public implementations

@@ -30,20 +30,20 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorObject****************************************/
 /****** TensorObjectInterfaceProxy *************************/
-pybind11::dict TensorObjectInterfaceProxy::cuda_array_interface(TensorObject &self)
+pybind11::dict TensorObjectInterfaceProxy::cuda_array_interface(TensorObject& self)
 {
     pybind11::dict array_interface;
 
     pybind11::list shape_list;
 
-    for (auto &idx : self.get_shape())
+    for (auto& idx : self.get_shape())
     {
         shape_list.append(idx);
     }
 
     pybind11::list stride_list;
 
-    for (auto &idx : self.get_stride())
+    for (auto& idx : self.get_stride())
     {
         stride_list.append(idx * self.dtype_size());
     }

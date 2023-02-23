@@ -39,7 +39,7 @@ namespace morpheus {
  */
 struct TensorObjectInterfaceProxy
 {
-    static pybind11::dict cuda_array_interface(TensorObject &self);
+    static pybind11::dict cuda_array_interface(TensorObject& self);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

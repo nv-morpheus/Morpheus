@@ -18,9 +18,9 @@
 #pragma once
 
 #include <morpheus/messages/multi.hpp>  // for MultiMessage
-#include <pymrc/node.hpp>               // for PythonNode
 #include <mrc/segment/builder.hpp>      // for Segment Builder
 #include <mrc/segment/object.hpp>       // for Segment Object
+#include <pymrc/node.hpp>               // for PythonNode
 
 #include <memory>
 #include <string>
@@ -47,8 +47,8 @@ class PassThruStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessage
 
 struct PassThruStageInterfaceProxy
 {
-    static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder &builder,
-                                                                     const std::string &name);
+    static std::shared_ptr<mrc::segment::Object<PassThruStage>> init(mrc::segment::Builder& builder,
+                                                                     const std::string& name);
 };
 
 #pragma GCC visibility pop

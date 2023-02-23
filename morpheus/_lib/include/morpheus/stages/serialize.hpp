@@ -65,18 +65,18 @@ class SerializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiMessag
      * @param fixed_columns : When `True` `SerializeStage` will assume that the Dataframe in all messages contain
      * the same columns as the first message received.
      */
-    SerializeStage(const std::vector<std::string> &include,
-                   const std::vector<std::string> &exclude,
+    SerializeStage(const std::vector<std::string>& include,
+                   const std::vector<std::string>& exclude,
                    bool fixed_columns = true);
 
   private:
-    void make_regex_objs(const std::vector<std::string> &regex_strs, std::vector<std::regex> &regex_objs);
+    void make_regex_objs(const std::vector<std::string>& regex_strs, std::vector<std::regex>& regex_objs);
 
-    bool match_column(const std::vector<std::regex> &patterns, const std::string &column) const;
+    bool match_column(const std::vector<std::regex>& patterns, const std::string& column) const;
 
-    bool include_column(const std::string &column) const;
+    bool include_column(const std::string& column) const;
 
-    bool exclude_column(const std::string &column) const;
+    bool exclude_column(const std::string& column) const;
 
     std::shared_ptr<SlicedMessageMeta> get_meta(sink_type_t& msg);
 
