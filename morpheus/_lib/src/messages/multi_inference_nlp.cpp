@@ -45,7 +45,7 @@ const TensorObject MultiInferenceNLPMessage::get_input_ids() const
     return this->get_input("input_ids");
 }
 
-void MultiInferenceNLPMessage::set_input_ids(const TensorObject &input_ids)
+void MultiInferenceNLPMessage::set_input_ids(const TensorObject& input_ids)
 {
     this->set_input("input_ids", input_ids);
 }
@@ -55,7 +55,7 @@ const TensorObject MultiInferenceNLPMessage::get_input_mask() const
     return this->get_input("input_mask");
 }
 
-void MultiInferenceNLPMessage::set_input_mask(const TensorObject &input_mask)
+void MultiInferenceNLPMessage::set_input_mask(const TensorObject& input_mask)
 {
     this->set_input("input_mask", input_mask);
 }
@@ -65,7 +65,7 @@ const TensorObject MultiInferenceNLPMessage::get_seq_ids() const
     return this->get_input("seq_ids");
 }
 
-void MultiInferenceNLPMessage::set_seq_ids(const TensorObject &seq_ids)
+void MultiInferenceNLPMessage::set_seq_ids(const TensorObject& seq_ids)
 {
     this->set_input("seq_ids", seq_ids);
 }
@@ -84,23 +84,23 @@ std::shared_ptr<MultiInferenceNLPMessage> MultiInferenceNLPMessageInterfaceProxy
 }
 
 std::shared_ptr<morpheus::InferenceMemory> MultiInferenceNLPMessageInterfaceProxy::memory(
-    MultiInferenceNLPMessage &self)
+    MultiInferenceNLPMessage& self)
 {
     DCHECK(std::dynamic_pointer_cast<morpheus::InferenceMemory>(self.memory) != nullptr);
     return std::static_pointer_cast<morpheus::InferenceMemory>(self.memory);
 }
 
-std::size_t MultiInferenceNLPMessageInterfaceProxy::offset(MultiInferenceNLPMessage &self)
+std::size_t MultiInferenceNLPMessageInterfaceProxy::offset(MultiInferenceNLPMessage& self)
 {
     return self.offset;
 }
 
-std::size_t MultiInferenceNLPMessageInterfaceProxy::count(MultiInferenceNLPMessage &self)
+std::size_t MultiInferenceNLPMessageInterfaceProxy::count(MultiInferenceNLPMessage& self)
 {
     return self.count;
 }
 
-pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_ids(MultiInferenceNLPMessage &self)
+pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_ids(MultiInferenceNLPMessage& self)
 {
     // Get and convert
     auto tensor = self.get_input_ids();
@@ -108,7 +108,7 @@ pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_ids(MultiInferenc
     return CupyUtil::tensor_to_cupy(tensor);
 }
 
-pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_mask(MultiInferenceNLPMessage &self)
+pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_mask(MultiInferenceNLPMessage& self)
 {
     // Get and convert
     auto tensor = self.get_input_mask();
@@ -116,7 +116,7 @@ pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_mask(MultiInferen
     return CupyUtil::tensor_to_cupy(tensor);
 }
 
-pybind11::object MultiInferenceNLPMessageInterfaceProxy::seq_ids(MultiInferenceNLPMessage &self)
+pybind11::object MultiInferenceNLPMessageInterfaceProxy::seq_ids(MultiInferenceNLPMessage& self)
 {
     // Get and convert
     auto tensor = self.get_seq_ids();
