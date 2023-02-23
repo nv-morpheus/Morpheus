@@ -32,6 +32,13 @@
 #include <ostream>  // needed for logging
 #include <regex>
 
+namespace {
+const std::regex IndexRegex(R"(^\s*(unnamed: 0|id)\s*$)",
+                            std::regex_constants::ECMAScript | std::regex_constants::icase);
+
+const std::regex UnnamedRegex(R"(^\s*unnamed: 0\s*$)", std::regex_constants::ECMAScript | std::regex_constants::icase);
+}  // namespace
+
 namespace morpheus {
 
 std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_metadata& table)
@@ -116,13 +123,11 @@ int get_index_col_count(const cudf::io::table_with_metadata& data_table)
     // Check if we have a first column with INT64 data type
     if (col_names.size() >= 1 && data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
     {
-        std::regex index_regex(R"((unnamed: 0|id))", std::regex_constants::ECMAScript | std::regex_constants::icase);
-
         // Get the column name
         const auto& col_name = col_names[0];
 
         // Check it against some common terms
-        if (std::regex_search(col_name, index_regex))
+        if (std::regex_search(col_name, IndexRegex))
         {
             index_col_count = 1;
         }
@@ -141,7 +146,7 @@ int prepare_df_index(cudf::io::table_with_metadata& data_table)
         auto& col_name  = col_names[0];
 
         // Also, if its the hideous 'Unnamed: 0', then just use an empty string
-        if (col_name == "Unnamed: 0")
+        if (std::regex_search(col_name, UnnamedRegex))
         {
             col_name.clear();
         }
