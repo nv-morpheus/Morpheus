@@ -124,11 +124,11 @@ void MessageControl::config(const nlohmann::json& config)
 
 std::shared_ptr<MessageMeta> MessageControl::payload()
 {
-    auto temp = std::move(m_payload);
-    // TODO(Devin): Decide if we copy or steal the payload
-    // m_payload = nullptr;
+    // auto temp = std::move(m_payload);
+    //  TODO(Devin): Decide if we copy or steal the payload
+    //  m_payload = nullptr;
 
-    return temp;
+    return m_payload;
 }
 
 void MessageControl::payload(const std::shared_ptr<MessageMeta>& payload)

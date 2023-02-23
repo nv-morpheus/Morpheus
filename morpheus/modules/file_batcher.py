@@ -57,17 +57,6 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
 
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
-    #TODO (Devin): add support for accessing the config within the Loader's execution context
-    message_config = {
-        "loader_id": FILE_TO_DF_LOADER,
-        "timestamp_column_name": config.get("timestamp_column_name"),
-        "schema": config.get("schema"),
-        "file_type": config.get("file_type"),
-        "filter_null": config.get("filter_null"),
-        "parser_kwargs": config.get("parser_kwargs"),
-        "cache_dir": config.get("cache_dir")
-    }
-
     def on_data(file_objects: fsspec.core.OpenFiles):
 
         # Determine the date of the file, and apply the window filter if we have one
@@ -96,7 +85,6 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
                 ts = ts_and_files[idx].timestamp
 
                 if ((ts - ts_last).seconds >= sampling_rate_s):
-
                     ts_and_files.append(ts_and_files[idx])
                     ts_last = ts
             else:
@@ -113,8 +101,6 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
         df["ts"] = timestamps
         df["key"] = full_names
 
-        nonlocal message_config
-
         out_messages = []
 
         if len(df) > 0:
@@ -127,7 +113,38 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
             for group in period_gb.groups:
                 period_df = period_gb.get_group(group)
                 filenames = period_df["key"].to_list()
-                message_config["files"] = (filenames, n_groups)
+
+                message_config = {}
+                load_task = {
+                    "type": "load",
+                    "properties": {
+                        "loader_id": FILE_TO_DF_LOADER,
+                        "files": filenames,
+                        "n_groups": n_groups,
+                        "batcher_config": {  # TODO(Devin): remove this
+                            "timestamp_column_name": config.get("timestamp_column_name"),
+                            "schema": config.get("schema"),
+                            "file_type": config.get("file_type"),
+                            "filter_null": config.get("filter_null"),
+                            "parser_kwargs": config.get("parser_kwargs"),
+                            "cache_dir": config.get("cache_dir")
+                        }
+                    }
+                }
+
+                task_infer = {
+                    "type": "inference",
+                    "properties": {
+                    }
+                }
+
+                task_train = {
+                    "type": "training",
+                    "properties": {
+                    }
+                }
+
+                message_config["tasks"] = [task_infer, task_train, load_task]
                 message = MessageControl(message_config)
                 out_messages.append(message)
 

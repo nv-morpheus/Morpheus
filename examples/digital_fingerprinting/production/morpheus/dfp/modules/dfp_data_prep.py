@@ -16,14 +16,16 @@ import logging
 import pickle
 import time
 
+import cudf
 import mrc
 from mrc.core import operators as ops
 
+from ..messages.multi_dfp_message import DFPMessageMeta
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
-from morpheus.messages import MessageControl
+from morpheus.messages import MessageControl, MessageMeta, MultiMessage
 
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_DATA_PREP
@@ -51,7 +53,8 @@ def dfp_data_prep(builder: mrc.Builder):
 
     schema = pickle.loads(bytes(schema_str, encoding))
 
-    def process_features(message: MultiDFPMessage):
+    # def process_features(message: MultiDFPMessage):
+    def process_features(message: MessageControl):
 
         if (message is None):
             return None
@@ -59,36 +62,26 @@ def dfp_data_prep(builder: mrc.Builder):
         start_time = time.time()
 
         # Process the columns
-        df_processed = process_dataframe(message.get_meta_dataframe(), schema)
+        payload = message.payload()
+        # df_processed = process_dataframe(message.get_meta_dataframe(), schema)
+        df_processed_pandas = payload.df.to_pandas()
+        df_processed = process_dataframe(df_processed_pandas, schema)
 
         # Apply the new dataframe, only the rows in the offset
-        message.set_meta_dataframe(list(df_processed.columns), df_processed)
+        # message.set_meta_dataframe(list(df_processed.columns), df_processed)
+        message.payload(MessageMeta(cudf.DataFrame(df_processed)))
 
         if logger.isEnabledFor(logging.DEBUG):
             duration = (time.time() - start_time) * 1000.0
 
-            logger.debug("Preprocessed %s data for logs in %s to %s in %s ms",
-                         message.mess_count,
-                         message.get_meta(timestamp_column_name).min(),
-                         message.get_meta(timestamp_column_name).max(),
-                         duration)
+            # TODO(Devin): Fix this
+            # logger.debug("Preprocessed %s data for logs in %s to %s in %s ms",
+            #             message.mess_count,
+            #             message.get_meta(timestamp_column_name).min(),
+            #             message.get_meta(timestamp_column_name).max(),
+            #             duration)
 
-        # TODO(Devin): Updated to use control message passing.
-        message_config = {
-            "tasks": [
-                {
-                    "type": "inference",
-                    "params": {
-                        "user_id": message.get_meta("user_id")
-                        "data": "payload"
-                    }
-                }
-            ]
-        }
-        control_message = MessageControl(message_config)
-        control_message.payload(message)
-
-        return control_message
+        return message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(process_features)).subscribe(sub)

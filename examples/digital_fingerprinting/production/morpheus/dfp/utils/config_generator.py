@@ -113,11 +113,9 @@ class ConfigGenerator:
                 "module_id": DATA_LOADER,
                 "module_name": "FileToDFDataLoader",
                 "namespace": MODULE_NAMESPACE,
-                "loaders": [
-                    {
-                        "id": FILE_TO_DF_LOADER
-                    }
-                ]
+                "loaders": [{
+                    "id": FILE_TO_DF_LOADER
+                }]
             },
             DFP_SPLIT_USERS: {
                 "module_id": DFP_SPLIT_USERS,
