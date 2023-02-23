@@ -61,6 +61,8 @@ def dfp_data_prep(builder: mrc.Builder) -> MessageControl:
 
         # Process the columns
         df_processed = process_dataframe(message.get_meta_dataframe(), schema)
+        
+        message.set_meta_dataframe(list(df_processed.columns), df_processed)
 
         if logger.isEnabledFor(logging.DEBUG):
             duration = (time.time() - start_time) * 1000.0
@@ -73,7 +75,7 @@ def dfp_data_prep(builder: mrc.Builder) -> MessageControl:
         message_config = {"tasks": [{"type": "inference", "params": {"user_id": message.user_id, "data": "payload"}}]}
 
         control_message = MessageControl(message_config)
-        multi_message = MultiMessage(meta=df_processed, mess_offset=message.mess_offset, mess_count=message.mess_count)
+        multi_message = MultiMessage(meta=message.meta, mess_offset=message.mess_offset, mess_count=message.mess_count)
         control_message.payload(multi_message)
 
         return control_message
