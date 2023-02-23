@@ -58,7 +58,6 @@
 namespace {
 
 using namespace morpheus;
-using tensor_map_t = TensorMemory::tensor_map_t;
 using buffer_map_t = std::map<std::string, std::shared_ptr<rmm::device_buffer>>;
 
 // Component-private free functions.
