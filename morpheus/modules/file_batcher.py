@@ -57,14 +57,20 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
 
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
-    message_config = {
-        "loader_id": FILE_TO_DF_LOADER,
-        "timestamp_column_name": config.get("timestamp_column_name"),
-        "schema": config.get("schema"),
-        "file_type": config.get("file_type"),
-        "filter_null": config.get("filter_null"),
-        "parser_kwargs": config.get("parser_kwargs"),
-        "cache_dir": config.get("cache_dir")
+    message_control_conf = {
+        "tasks": [{
+            "type": "load",
+            "properties": {
+                "loader_id": FILE_TO_DF_LOADER,
+                "strategy": "aggregate",
+                "timestamp_column_name": config.get("timestamp_column_name"),
+                "schema": config.get("schema"),
+                "file_type": config.get("file_type"),
+                "filter_null": config.get("filter_null"),
+                "parser_kwargs": config.get("parser_kwargs"),
+                "cache_dir": config.get("cache_dir")
+            }
+        }]
     }
 
     def on_data(file_objects: fsspec.core.OpenFiles):
@@ -112,7 +118,7 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
         df["ts"] = timestamps
         df["key"] = full_names
 
-        nonlocal message_config
+        nonlocal message_control_conf
 
         out_messages = []
 
@@ -126,8 +132,8 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
             for group in period_gb.groups:
                 period_df = period_gb.get_group(group)
                 filenames = period_df["key"].to_list()
-                message_config["files"] = (filenames, n_groups)
-                message = MessageControl(message_config)
+                message_control_conf["tasks"][0]["properties"]["files"] = (filenames, n_groups)
+                message = MessageControl(message_control_conf)
                 out_messages.append(message)
 
         return out_messages

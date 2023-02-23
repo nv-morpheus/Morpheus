@@ -15,6 +15,7 @@
 import logging
 import pickle
 import time
+from morpheus.messages.multi_message import MultiMessage
 
 import mrc
 from mrc.core import operators as ops
@@ -23,6 +24,7 @@ from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
+from morpheus.messages.message_control import MessageControl
 
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_DATA_PREP
@@ -31,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_module(DFP_DATA_PREP, MODULE_NAMESPACE)
-def dfp_data_prep(builder: mrc.Builder):
+def dfp_data_prep(builder: mrc.Builder) -> MessageControl:
     """
     This module function prepares data for either inference or model training.
 
@@ -60,9 +62,6 @@ def dfp_data_prep(builder: mrc.Builder):
         # Process the columns
         df_processed = process_dataframe(message.get_meta_dataframe(), schema)
 
-        # Apply the new dataframe, only the rows in the offset
-        message.set_meta_dataframe(list(df_processed.columns), df_processed)
-
         if logger.isEnabledFor(logging.DEBUG):
             duration = (time.time() - start_time) * 1000.0
 
@@ -71,8 +70,13 @@ def dfp_data_prep(builder: mrc.Builder):
                          message.get_meta(timestamp_column_name).min(),
                          message.get_meta(timestamp_column_name).max(),
                          duration)
+        message_config = {"tasks": [{"type": "inference", "params": {"user_id": message.user_id, "data": "payload"}}]}
 
-        return message
+        control_message = MessageControl(message_config)
+        multi_message = MultiMessage(meta=df_processed, mess_offset=message.mess_offset, mess_count=message.mess_count)
+        control_message.payload(multi_message)
+
+        return control_message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(process_features)).subscribe(sub)
