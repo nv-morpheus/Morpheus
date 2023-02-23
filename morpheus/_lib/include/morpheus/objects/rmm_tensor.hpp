@@ -29,6 +29,7 @@
 #include <vector>
 
 namespace morpheus {
+#pragma GCC visibility push(default)
 /****** Component public implementations *******************/
 /****** RMMTensor****************************************/
 
@@ -165,5 +166,7 @@ class RMMTensor : public ITensor
     std::vector<TensorIndex> m_shape;
     std::vector<TensorIndex> m_stride;
 };
+
+#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus
