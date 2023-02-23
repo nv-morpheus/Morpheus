@@ -83,7 +83,7 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
     sliced_message->offset = start;
     sliced_message->count  = stop - start;
 
-    // If we have more inference rows than message rows, we need to use the seq_ids to figure out the slicing. This
+    // If we have more tensor rows than message rows, we need to use the seq_ids to figure out the slicing. This
     // will be slow and should be avoided at all costs
     if (this->count != this->mess_count && this->memory->has_tensor("seq_ids"))
     {
