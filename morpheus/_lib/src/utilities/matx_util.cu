@@ -39,7 +39,7 @@ using tensorShape_2d = std::array<matx::index_t, 2>;
  * TODO(Documentation)
  */
 struct MatxUtil__MatxCast
-{  // NOLINT
+{
     size_t element_count;
     rmm::cuda_stream_view stream;
 
@@ -108,14 +108,14 @@ struct MatxUtil__MatxCreateSegIds
         (col0 = range_col).run(stream.value());
         (col2 = fea_len - 1).run(stream.value());
     }
-};  // NOLINT
+};
 
 // ************ MatxUtil__MatxLogits**************//
 /**
  * TODO(Documentation)
  */
 struct MatxUtil__MatxLogits
-{  // NOLINT
+{
     size_t element_count;
     rmm::cuda_stream_view stream;
 
@@ -142,14 +142,14 @@ struct MatxUtil__MatxLogits
 
         (output_tensor = (InputT)1 / ((InputT)1 + matx::exp((InputT)-1 * input_tensor))).run(stream.value());
     }
-};  // NOLINT
+};
 
 // ************ MatxUtil__MatxTranspose**************//
 /**
  * TODO(Documentation)
  */
 struct MatxUtil__MatxTranspose
-{  // NOLINT
+{
     size_t element_count;
     rmm::cuda_stream_view stream;
     size_t rows;
@@ -185,7 +185,7 @@ struct MatxUtil__MatxTranspose
  * TODO(Documentation)
  */
 struct MatxUtil__MatxThreshold
-{  // NOLINT
+{
     size_t rows;
     size_t cols;
     bool by_row;
