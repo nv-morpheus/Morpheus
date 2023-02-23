@@ -49,6 +49,11 @@
     "remoteUser": "coder",
     "mounts": [
         {
+            "type": "bind",
+            "source": "/tmp/.X11-unix",
+            "target": "/tmp/.X11-unix"
+        },
+        {
             "type":"bind",
             "source": "/var/run/docker.sock",
             "target": "/var/run/docker.sock"
