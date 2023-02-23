@@ -434,6 +434,8 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::threshold(const DevMemInfo& input,
     return output;
 }
 
+// TODO: re-work devmeminfo to hold a void* and a memory descriptor (keep current constructor as a conveinence method)
+// mem descriptor class which is currently empty should hold the cuda stream and the rmm memory_resource
 TensorObject MatxUtil::threshold(const TensorObject &input, double thresh_val, bool by_row)
 {
     return MatxUtil::threshold(input.data(), thresh_val, by_row, input.dtype(), input.get_shape(), input.get_stride());
