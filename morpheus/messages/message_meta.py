@@ -83,11 +83,14 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         self._df = df
 
     @classmethod
-    def make_from_file(cls, filename: str):
+    def make_from_file(cls, filename: str, reader_args: dict = None, **consturctor_args):
         if (cls._should_use_cpp()):
             return cls._cpp_class.make_from_file(filename)
         else:
-            return MessageMeta(read_file_to_df(filename, file_type=FileTypes.Auto, df_type="cudf"))
+            if reader_args is None:
+                reader_args = {"file_type": FileTypes.Auto, "df_type": "cudf"}
+
+            return cls(read_file_to_df(filename, **reader_args), **consturctor_args)
 
     @property
     def df(self) -> pd.DataFrame:
@@ -137,6 +140,11 @@ class UserMessageMeta(MessageMeta, cpp_class=None):
         super().__init__(df)
         self.user_id = user_id
 
+    @classmethod
+    def make_from_file(cls, filename: str, user_id: str):
+        reader_args = {"file_type": FileTypes.Auto, "df_type": "pandas"}
+        return super(UserMessageMeta, cls).make_from_file(filename, reader_args=reader_args, user_id=user_id)
+
 
 @dataclasses.dataclass(init=False)
 class AppShieldMessageMeta(MessageMeta, cpp_class=None):
@@ -155,3 +163,8 @@ class AppShieldMessageMeta(MessageMeta, cpp_class=None):
     def __init__(self, df: pd.DataFrame, source: str) -> None:
         super().__init__(df)
         self.source = source
+
+    @classmethod
+    def make_from_file(cls, filename: str, source: str):
+        reader_args = {"file_type": FileTypes.Auto, "df_type": "pandas"}
+        return super(AppShieldMessageMeta, cls).make_from_file(filename, reader_args=reader_args, source=source)
