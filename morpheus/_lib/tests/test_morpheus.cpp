@@ -40,8 +40,6 @@ void TestWithPythonInterpreter::initialize_interpreter() const
     if (!m_initialized)
     {
         pybind11::initialize_interpreter();
-        pybind11::scoped_interpreter gil;
-        load_cudf_helpers();
         m_initialized = true;
     }
 }
