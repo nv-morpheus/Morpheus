@@ -84,6 +84,42 @@ class TensorMemory
      */
     CupyUtil::tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
                                               size_t num_selected_rows) const;
+
+    /**
+     * @brief Set the tensor object identified by `name`
+     *
+     * @param name
+     * @param tensor
+     * @throws std::length_error If the number of rows in `tensor` does not match `count`.
+     */
+    void set_tensor(const std::string& name, TensorObject&& tensor);
+
+    /**
+     * @brief Set the tensors object
+     *
+     * @param tensors
+     * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
+     */
+    void set_tensors(CupyUtil::tensor_map_t&& tensors);
+
+  protected:
+    /**
+     * @brief Checks if the number of rows in `tensor` matches count
+     *
+     * @param tensor
+     * @throws std::length_error If the number of rows in `tensor` do not match `count`.
+     */
+    void check_tensor_length(const TensorObject& tensor);
+
+    /**
+     * @brief Checks each tesnor in `tensors` verifying that the number of rows matches count
+     *
+     * @param tensor
+     * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
+     *
+     * @param tensors
+     */
+    void check_tensors_length(const CupyUtil::tensor_map_t& tensors);
 };
 
 /****** TensorMemoryInterfaceProxy *************************/

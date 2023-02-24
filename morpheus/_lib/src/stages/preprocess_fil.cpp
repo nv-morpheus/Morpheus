@@ -116,7 +116,8 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                                    0);
 
                 // Build the results
-                auto memory = std::make_shared<InferenceMemoryFIL>(x->mess_count, input__0, seg_ids);
+                auto memory =
+                    std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seg_ids));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);

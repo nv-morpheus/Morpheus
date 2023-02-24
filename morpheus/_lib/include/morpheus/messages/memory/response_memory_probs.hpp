@@ -50,7 +50,7 @@ class ResponseMemoryProbs : public ResponseMemory
      * @param count
      * @param probs
      */
-    ResponseMemoryProbs(size_t count, TensorObject probs);
+    ResponseMemoryProbs(size_t count, TensorObject&& probs);
     /**
      * @brief Construct a new Response Memory Probs object
      *
@@ -71,7 +71,7 @@ class ResponseMemoryProbs : public ResponseMemory
      *
      * @param probs
      */
-    void set_probs(TensorObject probs);
+    void set_probs(TensorObject&& probs);
 };
 
 /****** ResponseMemoryProbsInterfaceProxy*******************/

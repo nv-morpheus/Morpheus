@@ -52,7 +52,7 @@ class InferenceMemoryFIL : public InferenceMemory
      * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more
      * inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      */
-    InferenceMemoryFIL(size_t count, TensorObject input__0, TensorObject seq_ids);
+    InferenceMemoryFIL(size_t count, TensorObject&& input__0, TensorObject&& seq_ids);
 
     /**
      * @brief Returns the 'input__0' tensor, throws a `std::runtime_error` if it does not exist
@@ -77,7 +77,7 @@ class InferenceMemoryFIL : public InferenceMemory
      * @throw std::runtime_error
      * @throw std::runtime_error
      */
-    void set_input__0(TensorObject input_ids);
+    void set_input__0(TensorObject&& input_ids);
 
     /**
      * @brief Sets a tensor named 'seq_ids'
@@ -85,7 +85,7 @@ class InferenceMemoryFIL : public InferenceMemory
      * @param seq_ids
      * @throw std::runtime_error
      */
-    void set_seq_ids(TensorObject seq_ids);
+    void set_seq_ids(TensorObject&& seq_ids);
 };
 
 /****** InferenceMemoryFILInterfaceProxy *************************/

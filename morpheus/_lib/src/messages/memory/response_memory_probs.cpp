@@ -31,9 +31,9 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemoryProbs****************************************/
-ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : ResponseMemory(count)
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject&& probs) : ResponseMemory(count)
 {
-    this->tensors["probs"] = std::move(probs);
+    set_tensor("probs", std::move(probs));
 }
 
 ResponseMemoryProbs::ResponseMemoryProbs(size_t count, CupyUtil::tensor_map_t&& tensors) :
@@ -53,9 +53,9 @@ const TensorObject& ResponseMemoryProbs::get_probs() const
     return found->second;
 }
 
-void ResponseMemoryProbs::set_probs(TensorObject probs)
+void ResponseMemoryProbs::set_probs(TensorObject&& probs)
 {
-    this->tensors["probs"] = std::move(probs);
+    set_tensor("probs", std::move(probs));
 }
 
 /****** ResponseMemoryProbsInterfaceProxy *************************/
