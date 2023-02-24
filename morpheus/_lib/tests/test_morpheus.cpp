@@ -17,10 +17,34 @@
 
 #include "test_morpheus.hpp"
 
+#include "morpheus/utilities/cudf_util.hpp"
+
+#include <pybind11/embed.h>
+
 #include <filesystem>
 #include <stdexcept>
 
 namespace morpheus::test {
+
+bool TestWithPythonInterpreter::m_initialized = false;
+
+void TestWithPythonInterpreter::SetUp()
+{
+    initialize_interpreter();
+}
+
+void TestWithPythonInterpreter::TearDown() {}
+
+void TestWithPythonInterpreter::initialize_interpreter() const
+{
+    if (!m_initialized)
+    {
+        pybind11::initialize_interpreter();
+        pybind11::scoped_interpreter gil;
+        load_cudf_helpers();
+        m_initialized = true;
+    }
+}
 
 std::filesystem::path get_morpheus_root()
 {
