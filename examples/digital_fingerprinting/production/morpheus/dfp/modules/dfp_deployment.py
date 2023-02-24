@@ -30,7 +30,7 @@ from ..utils.module_ids import DFP_INF
 from ..utils.module_ids import DFP_PREPROC
 from ..utils.module_ids import DFP_TRA
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_DEPLOYMENT, MODULE_NAMESPACE)

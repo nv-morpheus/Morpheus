@@ -43,7 +43,7 @@ from ..utils.module_ids import DFP_POST_PROCESSING
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_INFERENCE_PIPELINE, MODULE_NAMESPACE)

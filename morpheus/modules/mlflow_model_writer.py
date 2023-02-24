@@ -131,9 +131,6 @@ def mlflow_model_writer(builder: mrc.Builder):
     def on_data(message: MultiAEMessage):
 
         user = message.meta.user_id
-        df = message.meta.df
-
-        print(df.columns, flush=True)
 
         model: AutoEncoder = message.model
 

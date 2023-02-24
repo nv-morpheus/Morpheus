@@ -17,7 +17,6 @@ import time
 from datetime import datetime
 
 import mrc
-import numpy as np
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
@@ -27,7 +26,7 @@ from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_POST_PROCESSING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_POST_PROCESSING, MODULE_NAMESPACE)

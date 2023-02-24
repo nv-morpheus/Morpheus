@@ -28,10 +28,9 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
-from ..messages.multi_dfp_message import DFPMessageMeta
 from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_SPLIT_USERS, MODULE_NAMESPACE)

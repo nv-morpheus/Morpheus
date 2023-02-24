@@ -14,7 +14,6 @@
 
 import logging
 import os
-import json
 import typing
 from contextlib import contextmanager
 
@@ -28,13 +27,12 @@ from mrc.core import operators as ops
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
-from morpheus.messages import MessageControl, MessageMeta
+from morpheus.messages import MessageControl
+from morpheus.messages import MessageMeta
 
-from ..messages.multi_dfp_message import DFPMessageMeta
-from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_ROLLING_WINDOW, MODULE_NAMESPACE)

@@ -27,7 +27,7 @@ from morpheus.utils.module_utils import register_module
 from morpheus.messages.message_control import MessageControl
 from ..utils.module_ids import DFP_TRAINING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_TRAINING, MODULE_NAMESPACE)
@@ -55,7 +55,6 @@ def dfp_training(builder: mrc.Builder):
                          "(0, 1) range".format(validation_size))
 
     def on_data(message: MessageControl):
-        print("*****TRAINING ON_DATA*****", flush=True)
         if (message is None):
             return None
 
@@ -68,7 +67,6 @@ def dfp_training(builder: mrc.Builder):
 
         # TODO (Devin): this is one reason why we can't have data_prep decide on control message type, because its
         # not tied to the downstream train/infer task
-        print("*****PROCESSING TASKS*****", flush=True)
         for task in tasks:
             if "training" in task["type"]:
                 params = task["properties"]

@@ -27,7 +27,7 @@ from morpheus.utils.module_utils import register_module
 from ..utils.module_ids import DFP_MODEL_TRAIN_DEPLOY
 from ..utils.module_ids import DFP_TRAINING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_MODEL_TRAIN_DEPLOY, MODULE_NAMESPACE)

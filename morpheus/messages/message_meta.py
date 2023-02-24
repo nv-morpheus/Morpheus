@@ -115,7 +115,8 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
                        message_count: int,
                        columns: typing.Union[None, str, typing.List[str]] = None):
         """
-        Return column values from `morpheus.pipeline.messages.MessageMeta.df` from the specified start offset until the message count.
+        Return column values from `morpheus.pipeline.messages.MessageMeta.df` from the specified start offset
+        until the message count.
 
         Parameters
         ----------
