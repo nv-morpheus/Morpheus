@@ -57,7 +57,11 @@ class ResponseMemoryProbs : public ResponseMemory
      * @param count
      * @param tensors
      */
+<<<<<<< HEAD
     ResponseMemoryProbs(size_t count, CupyUtil::tensor_map_t&& tensors);
+=======
+    ResponseMemoryProbs(size_t count, tensor_map_t&& tensors);
+>>>>>>> branch-23.03
 
     /**
      * @brief Returns the tensor named 'probs', throws a `std::runtime_error` if it does not exist
@@ -100,12 +104,12 @@ struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
     static pybind11::object get_probs(ResponseMemoryProbs& self);
 
     /**
-     * @brief Set the response memory probs object (alias for `set_tensor("probs", cupy_value)`)
+     * @brief Set the response memory probs object (alias for `set_tensor("probs", cupy_values)`)
      *
      * @param self
      * @param cupy_values
      */
-    static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_value);
+    static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values);
 };
 #pragma GCC visibility pop
 
