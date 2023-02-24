@@ -328,7 +328,7 @@ def checkCopyright_main():
 
     logging.debug("File count before filter(): %s", len(files))
 
-    # Now filter the files down based on the exclue/include
+    # Now filter the files down based on the exclude/include
     files = gitutils.filter_files(files, path_filter=checkThisFile)
 
     logging.info("Checking files (%s):\n   %s", len(files), "\n   ".join(files))
