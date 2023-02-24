@@ -78,20 +78,14 @@ void TensorMemoryInterfaceProxy::set_tensors(TensorMemory& self, CupyUtil::py_te
     self.tensors = std::move(CupyUtil::cupy_to_tensors(tensors));
 }
 
-const TensorObject& TensorMemoryInterfaceProxy::get_tensor_object(TensorMemory& self, const std::string& name)
+pybind11::object TensorMemoryInterfaceProxy::get_tensor(TensorMemory& self, const std::string name)
 {
-    const auto tensor_itr = self.tensors.find(name);
-    if (tensor_itr == self.tensors.end())
+    if (!self.has_tensor(name))
     {
         throw pybind11::key_error{};
     }
 
-    return tensor_itr->second;
-}
-
-pybind11::object TensorMemoryInterfaceProxy::get_tensor(TensorMemory& self, const std::string name)
-{
-    return CupyUtil::tensor_to_cupy(TensorMemoryInterfaceProxy::get_tensor_object(self, name));
+    return CupyUtil::tensor_to_cupy(self.tensors[name]);
 }
 
 void TensorMemoryInterfaceProxy::set_tensor(TensorMemory& self,

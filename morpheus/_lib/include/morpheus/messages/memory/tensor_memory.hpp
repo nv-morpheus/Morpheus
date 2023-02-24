@@ -127,15 +127,6 @@ struct TensorMemoryInterfaceProxy
     static void set_tensors(TensorMemory& self, CupyUtil::py_tensor_map_t tensors);
 
     /**
-     * @brief Get the output tensor
-     *
-     * @param self
-     * @param name
-     * @return const TensorObject&
-     */
-    static const TensorObject& get_tensor_object(TensorMemory& self, const std::string& name);
-
-    /**
      * @brief Get the tensor object identified by `name`
      *
      * @param self
