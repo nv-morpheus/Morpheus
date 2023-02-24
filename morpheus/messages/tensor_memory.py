@@ -43,8 +43,12 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
                                                               compare=False,
                                                               hash=False)
 
-    def __init__(self, count: int, tensors: typing.Dict[str, cp.ndarray] = {}):
+    def __init__(self, count: int, tensors: typing.Dict[str, cp.ndarray] = None):
         self.count = count
+
+        if tensors is None:
+            tensors = {}
+
         self._tensors = tensors
 
     def get_tensors(self):

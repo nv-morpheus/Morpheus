@@ -27,8 +27,9 @@
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/objects/triton_in_out.hpp"
+#include "morpheus/utilities/cupy_util.hpp"
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/stage_util.hpp"  // for foreach_map
+#include "morpheus/utilities/stage_util.hpp"   // for foreach_map
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
@@ -58,7 +59,7 @@
 namespace {
 
 using namespace morpheus;
-using tensor_map_t = TensorMemory::tensor_map_t;
+using tensor_map_t = CupyUtil::tensor_map_t;
 using buffer_map_t = std::map<std::string, std::shared_ptr<rmm::device_buffer>>;
 
 // Component-private free functions.
