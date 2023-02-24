@@ -100,7 +100,7 @@ struct TensorMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<TensorMemory>
      */
-    static std::shared_ptr<TensorMemory> init(std::size_t count, CupyUtil::py_tensor_map_t tensors);
+    static std::shared_ptr<TensorMemory> init(std::size_t count, pybind11::object& tensors);
 
     /**
      * @brief Get the count object

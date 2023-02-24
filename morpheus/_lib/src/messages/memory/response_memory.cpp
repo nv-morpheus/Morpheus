@@ -19,6 +19,9 @@
 
 #include "morpheus/utilities/cupy_util.hpp"
 
+#include <pybind11/pybind11.h>  // for object
+#include <pybind11/stl.h>
+
 #include <string>
 #include <utility>  // for move
 
@@ -35,9 +38,17 @@ bool ResponseMemory::has_output(const std::string& name) const
 }
 
 /****** ResponseMemoryInterfaceProxy *************************/
-std::shared_ptr<ResponseMemory> ResponseMemoryInterfaceProxy::init(std::size_t count, CupyUtil::py_tensor_map_t tensors)
+std::shared_ptr<ResponseMemory> ResponseMemoryInterfaceProxy::init(std::size_t count, pybind11::object& tensors)
 {
-    return std::make_shared<ResponseMemory>(count, std::move(CupyUtil::cupy_to_tensors(tensors)));
+    if (tensors.is_none())
+    {
+        return std::make_shared<ResponseMemory>(count);
+    }
+    else
+    {
+        return std::make_shared<ResponseMemory>(
+            count, std::move(CupyUtil::cupy_to_tensors(tensors.cast<CupyUtil::py_tensor_map_t>())));
+    }
 }
 
 }  // namespace morpheus

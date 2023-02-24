@@ -77,7 +77,7 @@ struct InferenceMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<InferenceMemory>
      */
-    static std::shared_ptr<InferenceMemory> init(std::size_t count, CupyUtil::py_tensor_map_t tensors);
+    static std::shared_ptr<InferenceMemory> init(std::size_t count, pybind11::object& tensors);
 };
 #pragma GCC visibility pop
 

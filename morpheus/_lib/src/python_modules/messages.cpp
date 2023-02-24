@@ -158,9 +158,7 @@ PYBIND11_MODULE(messages, m)
         .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
-        .def(py::init<>(&TensorMemoryInterfaceProxy::init),
-             py::arg("count"),
-             py::arg("tensors") = CupyUtil::py_tensor_map_t())
+        .def(py::init<>(&TensorMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &TensorMemory::count)
         .def("get_tensors", &TensorMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &TensorMemoryInterfaceProxy::set_tensors, py::arg("tensors"))
@@ -168,9 +166,7 @@ PYBIND11_MODULE(messages, m)
         .def("set_tensor", &TensorMemoryInterfaceProxy::set_tensor, py::arg("name"), py::arg("tensor"));
 
     py::class_<InferenceMemory, TensorMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
-        .def(py::init<>(&InferenceMemoryInterfaceProxy::init),
-             py::arg("count"),
-             py::arg("tensors") = CupyUtil::py_tensor_map_t())
+        .def(py::init<>(&InferenceMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &InferenceMemory::count)
         .def("get_tensors", &InferenceMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &InferenceMemoryInterfaceProxy::set_tensors, py::arg("tensors"))
@@ -263,9 +259,7 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
 
     py::class_<ResponseMemory, TensorMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
-        .def(py::init<>(&ResponseMemoryInterfaceProxy::init),
-             py::arg("count"),
-             py::arg("tensors") = CupyUtil::py_tensor_map_t())
+        .def(py::init<>(&ResponseMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &ResponseMemory::count)
         .def("get_tensors", &ResponseMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &ResponseMemoryInterfaceProxy::set_tensors, py::arg("tensors"))

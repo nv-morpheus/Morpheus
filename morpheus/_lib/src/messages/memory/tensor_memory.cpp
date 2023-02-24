@@ -20,6 +20,7 @@
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <pybind11/pybind11.h>  // for key_error & object
+#include <pybind11/stl.h>
 
 #include <string>
 #include <vector>
@@ -49,9 +50,17 @@ CupyUtil::tensor_map_t TensorMemory::copy_tensor_ranges(const std::vector<std::p
 }
 
 /****** TensorMemoryInterfaceProxy *************************/
-std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count, CupyUtil::py_tensor_map_t tensors)
+std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count, pybind11::object& tensors)
 {
-    return std::make_shared<TensorMemory>(count, std::move(CupyUtil::cupy_to_tensors(tensors)));
+    if (tensors.is_none())
+    {
+        return std::make_shared<TensorMemory>(count);
+    }
+    else
+    {
+        return std::make_shared<TensorMemory>(
+            count, std::move(CupyUtil::cupy_to_tensors(tensors.cast<CupyUtil::py_tensor_map_t>())));
+    }
 }
 
 std::size_t TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
