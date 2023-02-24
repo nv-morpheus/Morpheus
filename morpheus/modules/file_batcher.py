@@ -131,17 +131,9 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
                     }
                 }
 
-                task_infer = {
-                    "type": "inference",
-                    "properties": {
-                    }
-                }
+                task_infer = {"type": "inference", "properties": {}}
 
-                task_train = {
-                    "type": "training",
-                    "properties": {
-                    }
-                }
+                task_train = {"type": "training", "properties": {}}
 
                 message_config["tasks"] = [task_infer, task_train, load_task]
                 message = MessageControl(message_config)

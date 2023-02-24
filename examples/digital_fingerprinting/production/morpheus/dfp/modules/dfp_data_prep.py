@@ -20,14 +20,11 @@ import cudf
 import mrc
 from mrc.core import operators as ops
 
-from ..messages.multi_dfp_message import DFPMessageMeta
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
-from morpheus.messages import MessageControl, MessageMeta, MultiMessage
-
-from ..messages.multi_dfp_message import MultiDFPMessage
+from morpheus.messages import MessageControl, MessageMeta
 from ..utils.module_ids import DFP_DATA_PREP
 
 logger = logging.getLogger(__name__)

@@ -17,5 +17,6 @@ from morpheus.messages.message_base import MessageBase
 
 
 class MessageControl(MessageBase, cpp_class=_messages.MessageControl):
+
     def __init__(self, *arg, **kwargs):
         super().__init__(*arg, **kwargs)

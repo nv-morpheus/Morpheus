@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-from morpheus.messages.message_meta import MessageMeta
 
 import cudf
 import mrc

@@ -14,6 +14,7 @@
 
 import logging
 import time
+from morpheus.cli.utils import get_log_levels
 
 import mrc
 import cudf
@@ -28,7 +29,7 @@ from morpheus.messages import MessageControl
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
-
+import pandas as pd
 from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_INFERENCE
 
@@ -71,6 +72,7 @@ def dfp_inference(builder: mrc.Builder):
 
         payload = control_message.payload()
         df_user = payload.df.to_pandas()
+        df_user[timestamp_column_name] = pd.to_datetime(df_user[timestamp_column_name], utc=True)
 
         try:
             model_cache: ModelCache = get_model(user_id)
@@ -86,15 +88,25 @@ def dfp_inference(builder: mrc.Builder):
 
         post_model_time = time.time()
 
-        print("*** RUNNING DFP Inference ***")
         results_df = loaded_model.get_results(df_user, return_abs=True)
-        print(results_df)
+
+        include_cols = set(df_user.columns) - set(results_df.columns)
+
+        for col in include_cols:
+            results_df[col] = df_user[col].copy(True)
+
+        results_df = cudf.from_pandas(results_df)
 
         # Create an output message to allow setting meta
         dfp_mm = DFPMessageMeta(results_df, user_id=user_id)
-        output_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(results_df))
 
-        output_message.set_meta(list(results_df.columns), results_df)
+        # TODO using MultiAEMessage instead MultiDFPMessage for user_id to be avaiable in following stages.
+        # output_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(results_df))
+
+        output_message = MultiAEMessage(dfp_mm, mess_offset=0, mess_count=len(results_df), model=loaded_model)
+
+        # TODO this is not working. For work around look line 93-96
+        # output_message.set_meta(list(results_df.columns), results_df)
 
         output_message.set_meta('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
 
@@ -102,13 +114,12 @@ def dfp_inference(builder: mrc.Builder):
             load_model_duration = (post_model_time - start_time) * 1000.0
             get_anomaly_duration = (time.time() - post_model_time) * 1000.0
 
-            logger.debug(
-                "Completed inference for user %s. Model load: %s ms, Model infer: %s ms. Start: %s, End: %s",
-                user_id,
-                load_model_duration,
-                get_anomaly_duration,
-                df_user[timestamp_column_name].min(),
-                df_user[timestamp_column_name].max())
+            logger.debug("Completed inference for user %s. Model load: %s ms, Model infer: %s ms. Start: %s, End: %s",
+                         user_id,
+                         load_model_duration,
+                         get_anomaly_duration,
+                         df_user[timestamp_column_name].min(),
+                         df_user[timestamp_column_name].max())
 
         return output_message
 
@@ -117,7 +128,8 @@ def dfp_inference(builder: mrc.Builder):
         for task in config['tasks']:
             if task['type'] == 'inference':
                 # TODO(Devin): Decide on what to do if we have multiple inference tasks
-                process_task(control_message, task)
+                out_message = process_task(control_message, task)
+                return out_message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data)).subscribe(sub)

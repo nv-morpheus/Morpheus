@@ -59,7 +59,7 @@ def file_to_df_loader(message: MessageControl, task: dict):
     cache_dir = batcher_config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
-    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
 
     cache_dir = os.path.join(cache_dir, "file_cache")
 
@@ -103,14 +103,13 @@ def file_to_df_loader(message: MessageControl, task: dict):
 
         return s3_df
 
-    def get_or_create_dataframe_from_s3_batch(
-            file_name_batch: typing.Tuple[typing.List[str], int]) -> typing.Tuple[cudf.DataFrame, bool]:
+    def get_or_create_dataframe_from_s3_batch(file_name_batch: typing.List[str]) -> typing.Tuple[cudf.DataFrame, bool]:
 
         if (not file_name_batch):
             return None, False
 
-        file_list = fsspec.open_files(file_name_batch[0])
-        batch_count = file_name_batch[1]
+        file_list = fsspec.open_files(file_name_batch)
+        # batch_count = file_name_batch[1]
 
         fs: fsspec.AbstractFileSystem = file_list.fs
 
@@ -127,7 +126,7 @@ def file_to_df_loader(message: MessageControl, task: dict):
         if (os.path.exists(batch_cache_location)):
             output_df = pd.read_pickle(batch_cache_location)
             output_df["origin_hash"] = objects_hash_hex
-            output_df["batch_count"] = batch_count
+            # output_df["batch_count"] = batch_count
 
             return (output_df, True)
 
@@ -183,20 +182,20 @@ def file_to_df_loader(message: MessageControl, task: dict):
         except Exception:
             logger.warning("Failed to save batch cache. Skipping cache for this batch.", exc_info=True)
 
-        output_df["batch_count"] = batch_count
+        # output_df["batch_count"] = batch_count
         output_df["origin_hash"] = objects_hash_hex
 
         return (output_df, False)
 
-    def convert_to_dataframe(file_name_batch: typing.Tuple[typing.List[str], int]):
+    def convert_to_dataframe(filenames: typing.List[str]):
 
-        if (not file_name_batch):
+        if (not filenames):
             return None
 
         start_time = time.time()
 
         try:
-            output_df, cache_hit = get_or_create_dataframe_from_s3_batch(file_name_batch)
+            output_df, cache_hit = get_or_create_dataframe_from_s3_batch(filenames)
 
             duration = (time.time() - start_time) * 1000.0
 
