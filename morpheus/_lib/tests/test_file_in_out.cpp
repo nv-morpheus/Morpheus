@@ -41,7 +41,8 @@ std::string read_file(const std::filesystem::path& file_path)
     return buff.str();
 }
 
-TEST_CLASS(FileInOut);
+class TestFileInOut : public morpheus::test::TestWithPythonInterpreter
+{};
 
 TEST_F(TestFileInOut, RoundTripCSV)
 {
