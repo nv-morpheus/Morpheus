@@ -57,11 +57,7 @@ class ResponseMemoryProbs : public ResponseMemory
      * @param count
      * @param tensors
      */
-<<<<<<< HEAD
     ResponseMemoryProbs(size_t count, CupyUtil::tensor_map_t&& tensors);
-=======
-    ResponseMemoryProbs(size_t count, tensor_map_t&& tensors);
->>>>>>> branch-23.03
 
     /**
      * @brief Returns the tensor named 'probs', throws a `std::runtime_error` if it does not exist
