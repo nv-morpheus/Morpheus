@@ -43,8 +43,20 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         if tensors is None:
             tensors = {}
+        else:
+            self._check_tensors(tensors)
 
         self._tensors = tensors
+
+    def _check_tensors(self, tensors: typing.Dict[str, cp.ndarray]):
+        for tensor in tensors.values():
+            self._check_tensor(tensor)
+
+    def _check_tensor(self, tensor: cp.ndarray):
+        if (tensor.shape[0] != self.count):
+            class_name = type(self).__name__
+            raise ValueError(
+                f"The number rows in tensor {tensor.shape[0]} does not match {class_name}.count of {self.count}")
 
     def get_tensors(self):
         """
@@ -68,6 +80,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         tensors : typing.Dict[str, cupy.ndarray]
             Collection of tensors uniquely identified by a name.
         """
+        self._check_tensors(tensors)
         self._tensors = tensors
 
     def get_tensor(self, name):
@@ -101,4 +114,5 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         tensors : typing.Dict[str, cupy.ndarray]
             Collection of tensors uniquely identified by a name.
         """
+        self._check_tensor(tensor)
         self._tensors[name] = tensor

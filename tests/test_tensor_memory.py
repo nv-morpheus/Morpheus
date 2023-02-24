@@ -150,3 +150,25 @@ def test_response_memory_ae(config):
 
 def test_response_memory_probs(config):
     check_response_memory_probs_and_ae(ResponseMemoryProbs)
+
+
+@pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
+def test_constructor_length_error(config, tensor_cls):
+    count = 10
+    tensors = {"a": cp.zeros(count), "b": cp.ones(count)}
+    pytest.raises(ValueError, tensor_cls, count - 1, tensors)
+
+
+@pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
+def test_set_tensor_length_error(config, tensor_cls):
+    count = 10
+    m = tensor_cls(count)
+    pytest.raises(ValueError, m.set_tensor, 'a', cp.zeros(count + 1))
+
+
+@pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
+def test_set_tensors_length_error(config, tensor_cls):
+    count = 10
+    tensors = {"a": cp.zeros(count), "b": cp.ones(count)}
+    m = tensor_cls(count + 1)
+    pytest.raises(ValueError, m.set_tensors, tensors)
