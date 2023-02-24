@@ -17,8 +17,6 @@
 
 #include "test_morpheus.hpp"
 
-#include "morpheus/utilities/cudf_util.hpp"
-
 #include <pybind11/embed.h>
 
 #include <filesystem>

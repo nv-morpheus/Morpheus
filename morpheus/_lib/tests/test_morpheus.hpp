@@ -19,7 +19,6 @@
 
 #include <glog/logging.h>  // IWYU pragma: keep
 #include <gtest/gtest.h>   // IWYU pragma: keep
-#include <pybind11/embed.h>
 
 #include <filesystem>
 
