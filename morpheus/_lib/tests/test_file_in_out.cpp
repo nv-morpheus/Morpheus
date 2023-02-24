@@ -26,6 +26,7 @@
 #include <cudf/io/types.hpp>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
+#include <pybind11/pybind11.h>
 
 #include <cstddef>
 #include <filesystem>
