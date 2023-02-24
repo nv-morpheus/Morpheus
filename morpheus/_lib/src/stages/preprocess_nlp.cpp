@@ -36,9 +36,9 @@
 
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <map>
 #include <memory>
-#include <type_traits>  // for declval
 #include <utility>
 
 namespace morpheus {
