@@ -15,10 +15,12 @@
 import logging
 from morpheus.messages.message_meta import MessageMeta
 
+import cudf
 import mrc
 from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
+from ..messages.multi_dfp_message import MultiDFPMessage, DFPMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
@@ -54,7 +56,7 @@ def dfp_training(builder: mrc.Builder):
                          "(0, 1) range".format(validation_size))
 
     def on_data(message: MessageControl):
-
+        print("*****TRAINING ON_DATA*****", flush=True)
         if (message is None):
             return None
 
@@ -65,29 +67,37 @@ def dfp_training(builder: mrc.Builder):
 
         output_message = None
 
+        # TODO (Devin): this is one reason why we can't have data_prep decide on control message type, because its
+        # not tied to the downstream train/infer task
+        print("*****PROCESSING TASKS*****", flush=True)
         for task in tasks:
-            if "inference" in task["type"] and "payload" in task["data"]:
+            if "training" in task["type"]:
+                params = task["properties"]
+                if (params["data"] != "payload"):
+                    raise RuntimeError("Training module only supports payload data at the moment")
+                # multi_message = message.payload()
 
-                task_params = task["params"]
-                mess_offset = task_params["mess_offset"]
-                mess_count = task_params["mess_count"]
+                # final_df = multi_message.get_meta()
+                message_meta = message.payload()
 
-                meta: MessageMeta = message.payload()
-
-                final_df = meta.get_meta_range(mess_offset, mess_count)
-
-                user_id = task_params["user_id"]
+                user_id = params["user_id"]
+                final_df = message_meta.df.to_pandas()
 
                 model = AutoEncoder(**model_kwargs)
 
                 # Only train on the feature columns
-                final_df = final_df[final_df.columns.intersection(feature_columns)]
+                train_df = final_df[final_df.columns.intersection(feature_columns)]
 
                 logger.debug("Training AE model for user: '%s'...", user_id)
-                model.fit(final_df, epochs=epochs)
+                model.fit(train_df, epochs=epochs)
                 logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-                output_message = MultiAEMessage(meta, mess_offset=mess_offset, mess_count=mess_count, model=model)
+                dfp_mm = DFPMessageMeta(cudf.DataFrame(final_df), user_id=user_id)
+                multi_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(final_df))
+                output_message = MultiAEMessage(multi_message.meta,
+                                                mess_offset=multi_message.mess_offset,
+                                                mess_count=multi_message.mess_count,
+                                                model=model)
 
         return output_message
 

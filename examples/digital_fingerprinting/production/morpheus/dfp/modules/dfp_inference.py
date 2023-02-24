@@ -16,12 +16,15 @@ import logging
 import time
 
 import mrc
+import cudf
 from dfp.utils.model_cache import ModelCache
 from dfp.utils.model_cache import ModelManager
 from mlflow.tracking.client import MlflowClient
 from mrc.core import operators as ops
 
+from ..messages.multi_dfp_message import MultiDFPMessage, DFPMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.messages import MessageControl
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -56,14 +59,18 @@ def dfp_inference(builder: mrc.Builder):
 
         return model_manager.load_user_model(client, user_id=user, fallback_user_ids=[fallback_user])
 
-    def on_data(message: MultiDFPMessage):
-        if (not message or message.mess_count == 0):
-            return None
-
+    def process_task(control_message: MessageControl, task: dict):
         start_time = time.time()
 
-        df_user = message.get_meta()
-        user_id = message.user_id
+        task_params = task['properties']
+        data_source = task_params['data']
+        if (data_source != "payload"):
+            raise ValueError("Unsupported data source: {}".format(data_source))
+
+        user_id = task_params['user_id']
+
+        payload = control_message.payload()
+        df_user = payload.df.to_pandas()
 
         try:
             model_cache: ModelCache = get_model(user_id)
@@ -79,13 +86,13 @@ def dfp_inference(builder: mrc.Builder):
 
         post_model_time = time.time()
 
+        print("*** RUNNING DFP Inference ***")
         results_df = loaded_model.get_results(df_user, return_abs=True)
+        print(results_df)
 
         # Create an output message to allow setting meta
-        output_message = MultiAEMessage(message.meta,
-                                        mess_offset=message.mess_offset,
-                                        mess_count=message.mess_count,
-                                        model=loaded_model)
+        dfp_mm = DFPMessageMeta(results_df, user_id=user_id)
+        output_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(results_df))
 
         output_message.set_meta(list(results_df.columns), results_df)
 
@@ -95,14 +102,22 @@ def dfp_inference(builder: mrc.Builder):
             load_model_duration = (post_model_time - start_time) * 1000.0
             get_anomaly_duration = (time.time() - post_model_time) * 1000.0
 
-            logger.debug("Completed inference for user %s. Model load: %s ms, Model infer: %s ms. Start: %s, End: %s",
-                         user_id,
-                         load_model_duration,
-                         get_anomaly_duration,
-                         df_user[timestamp_column_name].min(),
-                         df_user[timestamp_column_name].max())
+            logger.debug(
+                "Completed inference for user %s. Model load: %s ms, Model infer: %s ms. Start: %s, End: %s",
+                user_id,
+                load_model_duration,
+                get_anomaly_duration,
+                df_user[timestamp_column_name].min(),
+                df_user[timestamp_column_name].max())
 
         return output_message
+
+    def on_data(control_message: MessageControl):
+        config = control_message.config()
+        for task in config['tasks']:
+            if task['type'] == 'inference':
+                # TODO(Devin): Decide on what to do if we have multiple inference tasks
+                process_task(control_message, task)
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data)).subscribe(sub)

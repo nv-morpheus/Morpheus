@@ -44,22 +44,23 @@ dask_cluster = None
 
 
 @register_loader(FILE_TO_DF_LOADER)
-def file_to_df_loader(message: MessageControl):
+def file_to_df_loader(message: MessageControl, task: dict):
+    task_properties = task["properties"]
+    files = task_properties.get("files", None)
+    batcher_config = task_properties["batcher_config"]
 
-    config = message.config()
-
-    files = config.get("files", None)
-    timestamp_column_name = config.get("timestamp_column_name", None)
-    schema_config = config.get("schema", None)
-    schema_str = schema_config.get("schema_str", None)
-    encoding = schema_config.get("encoding", None)
-    file_type = config.get("file_type", None)
-    filter_null = config.get("filter_null", None)
-    parser_kwargs = config.get("parser_kwargs", None)
-    cache_dir = config.get("cache_dir", None)
+    timestamp_column_name = batcher_config.get("timestamp_column_name", None)
+    schema_batcher_config = batcher_config.get("schema", None)
+    schema_str = schema_batcher_config.get("schema_str", None)
+    encoding = schema_batcher_config.get("encoding", None)
+    file_type = batcher_config.get("file_type", None)
+    filter_null = batcher_config.get("filter_null", None)
+    parser_kwargs = batcher_config.get("parser_kwargs", None)
+    cache_dir = batcher_config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
-                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+
     cache_dir = os.path.join(cache_dir, "file_cache")
 
     # Load input schema
@@ -219,7 +220,6 @@ def file_to_df_loader(message: MessageControl):
 
 
 def get_dask_cluster(download_method: str):
-
     global dask_cluster
 
     if dask_cluster is None:
@@ -242,7 +242,6 @@ def get_dask_cluster(download_method: str):
 
 
 def get_dask_client(dask_cluster):
-
     from dask.distributed import Client
     dask_client = Client(get_dask_cluster(dask_cluster))
     logger.debug("Creating dask client %s ... Done.", dask_client)
@@ -251,7 +250,6 @@ def get_dask_client(dask_cluster):
 
 
 def close_dask_cluster():
-
     if (dask_cluster is not None):
         logger.debug("Stopping dask cluster...")
         dask_cluster.close()

@@ -23,7 +23,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus.messages import MessageControl
+from morpheus.messages import MessageControl, MessageMeta
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -84,10 +84,9 @@ def dfp_split_users(builder: mrc.Builder):
                 split_dataframes[fallback_username] = df
 
             if (include_individual):
-
                 split_dataframes.update({username: user_df for username, user_df in df.groupby("username", sort=False)})
 
-            output_messages: typing.List[DFPMessageMeta] = []
+            output_messages: typing.List[MessageControl] = []
 
             for user_id in sorted(split_dataframes.keys()):
 
@@ -102,22 +101,33 @@ def dfp_split_users(builder: mrc.Builder):
                 user_df.index = range(current_user_count, current_user_count + len(user_df))
                 user_index_map[user_id] = current_user_count + len(user_df)
 
-                output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
+                control_config = message.config()
+                for task in control_config["tasks"]:
+                    # TODO: This is a hack
+                    task["properties"]["user_id"] = user_id
+                    task["properties"]["data"] = "payload"
 
-            rows_per_user = [len(x.df) for x in output_messages]
+                control_message = MessageControl(control_config)
+                user_cudf = cudf.from_pandas(user_df)
+                control_message.payload(MessageMeta(df=user_cudf))
 
-            if (len(output_messages) > 0):
-                log_info.set_log(
-                    ("Batch split users complete. Input: %s rows from %s to %s. "
-                     "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
-                    len(df),
-                    df[timestamp_column_name].min(),
-                    df[timestamp_column_name].max(),
-                    len(rows_per_user),
-                    np.min(rows_per_user),
-                    np.max(rows_per_user),
-                    np.mean(rows_per_user),
-                )
+                # output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
+                output_messages.append(control_message)
+
+                rows_per_user = [len(msg.payload().df.to_pandas()) for msg in output_messages]
+
+                if (len(output_messages) > 0):
+                    log_info.set_log(
+                        ("Batch split users complete. Input: %s rows from %s to %s. "
+                         "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
+                        len(df),
+                        df[timestamp_column_name].min(),
+                        df[timestamp_column_name].max(),
+                        len(rows_per_user),
+                        np.min(rows_per_user),
+                        np.max(rows_per_user),
+                        np.mean(rows_per_user),
+                    )
 
             return output_messages
 

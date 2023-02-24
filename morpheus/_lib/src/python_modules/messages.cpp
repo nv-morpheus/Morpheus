@@ -133,13 +133,9 @@ PYBIND11_MODULE(messages, _module)
              py::return_value_policy::reference_internal)
         .def("config",
              pybind11::overload_cast<MessageControl&, py::dict&>(&ControlMessageProxy::config),
-             py::arg("config"),
-             py::return_value_policy::reference_internal)
-        .def(
-            "payload", pybind11::overload_cast<>(&MessageControl::payload), py::return_value_policy::reference_internal)
-        .def("payload",
-             pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&MessageControl::payload),
-             py::return_value_policy::reference_internal);
+             py::arg("config"))
+        .def("payload", pybind11::overload_cast<>(&MessageControl::payload), py::return_value_policy::move)
+        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&MessageControl::payload));
 
     // Context manager for Mutable Dataframes. Attempting to use it outside a with block will raise an exception
     py::class_<MutableTableCtxMgr, std::shared_ptr<MutableTableCtxMgr>>(_module, "MutableTableCtxMgr")

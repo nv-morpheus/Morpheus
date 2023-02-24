@@ -47,14 +47,45 @@ const std::string MessageControl::s_config_schema = R"(
                             {
                                 "if": {
                                     "properties": {
-                                        "type": { "const": "load" }
+                                        "type": { "const": "load" },
+                                        "loader_id": { "const": "file" }
                                     }
                                 },
                                 "then": {
-                                    "required": ["loader_id", "strategy"],
+                                    "required": ["loader_id", "strategy", "files"],
                                     "properties": {
-                                        "loader_id": { "type": "string" },
-                                        "strategy": { "type": "string" }
+                                        "loader_id": { "type": "string", "enum": ["file"] },
+                                        "strategy": { "type": "string" },
+                                        "files": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": ["path", "type"],
+                                                "properties": {
+                                                    "path": { "type": "string" },
+                                                    "type": { "type": "string" }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "if": {
+                                    "properties": {
+                                        "type": { "const": "load" },
+                                        "loader_id": { "const": "file_list" }
+                                    }
+                                },
+                                "then": {
+                                    "required": ["loader_id", "strategy", "directories"],
+                                    "properties": {
+                                        "loader_id": { "type": "string", "enum": ["file_list"] },
+                                        "strategy": { "type": "string" },
+                                        "directories": {
+                                            "type": "array",
+                                            "items": { "type": "string" }
+                                        }
                                     }
                                 }
                             },
@@ -93,11 +124,11 @@ void MessageControl::config(const nlohmann::json& config)
 
 std::shared_ptr<MessageMeta> MessageControl::payload()
 {
-    auto temp = std::move(m_payload);
-    // TODO(Devin): Decide if we copy or steal the payload
-    // m_payload = nullptr;
+    // auto temp = std::move(m_payload);
+    //  TODO(Devin): Decide if we copy or steal the payload
+    //  m_payload = nullptr;
 
-    return temp;
+    return m_payload;
 }
 
 void MessageControl::payload(const std::shared_ptr<MessageMeta>& payload)

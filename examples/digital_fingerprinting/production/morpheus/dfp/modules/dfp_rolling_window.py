@@ -14,9 +14,11 @@
 
 import logging
 import os
+import json
 import typing
 from contextlib import contextmanager
 
+import cudf
 import mrc
 import pandas as pd
 from dfp.utils.cached_user_window import CachedUserWindow
@@ -26,6 +28,7 @@ from mrc.core import operators as ops
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
+from morpheus.messages import MessageControl, MessageMeta
 
 from ..messages.multi_dfp_message import DFPMessageMeta
 from ..messages.multi_dfp_message import MultiDFPMessage
@@ -76,13 +79,15 @@ def dfp_rolling_window(builder: mrc.Builder):
 
         yield user_cache
 
-    def build_window(message: DFPMessageMeta) -> MultiDFPMessage:
+    def build_window(message: MessageMeta, params: dict) -> MessageMeta:
 
-        user_id = message.user_id
+        user_id = params["user_id"]
 
         with get_user_cache(user_id) as user_cache:
 
-            incoming_df = message.get_df()
+            # incoming_df = message.get_df()
+            incoming_df = message.df.to_pandas()
+            incoming_df[timestamp_column_name] = pd.to_datetime(incoming_df[timestamp_column_name], utc=True)
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
                 # Then our incoming dataframe wasnt even covered by the window. Generate warning
@@ -90,12 +95,16 @@ def dfp_rolling_window(builder: mrc.Builder):
                              "Consider deleting the rolling window cache and restarting."))
                 return None
 
+            user_cache.save()
+
             # Exit early if we dont have enough data
             if (user_cache.count < min_history):
+                logger.debug("Not enough data to train")
                 return None
 
             # We have enough data, but has enough time since the last training taken place?
             if (user_cache.total_count - user_cache.last_train_count < min_increment):
+                logger.debug("Elapsed time since last train is too short")
                 return None
 
             # Save the last train statistics
@@ -119,35 +128,48 @@ def dfp_rolling_window(builder: mrc.Builder):
                 raise RuntimeError(("Overlapping rolling history detected. "
                                     "Rolling history can only be used with non-overlapping batches"))
 
-            # Otherwise return a new message
-            return MultiDFPMessage(meta=DFPMessageMeta(df=train_df, user_id=user_id),
-                                   mess_offset=0,
-                                   mess_count=len(train_df))
+            # TODO(Devin): Optimize
+            return MessageMeta(cudf.from_pandas(train_df))
 
-    def on_data(message: DFPMessageMeta):
+            # Otherwise return a new message
+            # return MultiDFPMessage(meta=DFPMessageMeta(df=train_df, user_id=user_id),
+            #                       mess_offset=0,
+            #                       mess_count=len(train_df))
+
+    def on_data(message: MessageControl):
+        config = message.config()
+        payload = message.payload()
+
+        for task in config["tasks"]:
+            if task["type"] == "load":
+                params = task["properties"]
 
         with log_time(logger.debug) as log_info:
 
-            result = build_window(message)
+            result = build_window(payload, params)  # Return a MessageMeta
 
             if (result is not None):
 
                 log_info.set_log(
                     ("Rolling window complete for %s in {duration:0.2f} ms. "
                      "Input: %s rows from %s to %s. Output: %s rows from %s to %s"),
-                    message.user_id,
-                    len(message.df),
-                    message.df[timestamp_column_name].min(),
-                    message.df[timestamp_column_name].max(),
-                    result.mess_count,
-                    result.get_meta(timestamp_column_name).min(),
-                    result.get_meta(timestamp_column_name).max(),
+                    params["user_id"],
+                    len(payload.df),
+                    payload.df[timestamp_column_name].min(),
+                    payload.df[timestamp_column_name].max(),
+                    result.count,
+                    result.df[timestamp_column_name].min(),
+                    result.df[timestamp_column_name].max(),
                 )
             else:
                 # Dont print anything
                 log_info.disable()
+                return None
 
-            return result
+        message.payload(result)
+
+        # print(json.dumps(message.config(), indent=4), flush=True)
+        return message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)

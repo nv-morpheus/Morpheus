@@ -131,6 +131,9 @@ def mlflow_model_writer(builder: mrc.Builder):
     def on_data(message: MultiAEMessage):
 
         user = message.meta.user_id
+        df = message.meta.df
+
+        print(df.columns, flush=True)
 
         model: AutoEncoder = message.model
 
@@ -178,7 +181,7 @@ def mlflow_model_writer(builder: mrc.Builder):
 
                 # Use the prepare_df function to setup the direct inputs to the model. Only include features
                 # returned by prepare_df to show the actual inputs to the model (any extra are discarded)
-                input_df = message.get_meta().iloc[0:1]
+                input_df = message.get_meta().iloc[0:1].to_pandas()
                 prepared_df = model.prepare_df(input_df)
                 output_values = model.get_anomaly_score(input_df)
 
