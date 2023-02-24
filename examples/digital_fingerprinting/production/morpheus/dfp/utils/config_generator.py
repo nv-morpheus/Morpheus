@@ -170,7 +170,7 @@ class ConfigGenerator:
                 "module_name": "filter_detections",
                 "namespace": MODULE_NAMESPACE,
                 "field_name": "mean_abs_z",
-                "threshold": 2.0,
+                "threshold": 1.0,
                 "filter_source": "DATAFRAME",
                 "schema": {
                     "input_message_type": self._input_message_type, "encoding": self._encoding
@@ -210,8 +210,8 @@ class ConfigGenerator:
                 "module_id": DFP_ROLLING_WINDOW,
                 "module_name": "dfp_rolling_window_tra",
                 "namespace": MODULE_NAMESPACE,
-                "min_history": 300,
-                "min_increment": 300,
+                "min_history": 30,
+                "min_increment": 0,
                 "max_history": self._derive_args.duration,
                 "cache_dir": self._derive_args.cache_dir,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
@@ -342,7 +342,7 @@ class ConfigGenerator:
                 "module_name": "filter_detections",
                 "namespace": MODULE_NAMESPACE,
                 "field_name": "mean_abs_z",
-                "threshold": 2.0,
+                "threshold": 1.0,
                 "filter_source": "DATAFRAME",
                 "schema": {
                     "input_message_type": self._input_message_type, "encoding": self._encoding

@@ -86,15 +86,13 @@ def dfp_inference(builder: mrc.Builder):
 
         post_model_time = time.time()
 
+        print("*** RUNNING DFP Inference ***")
         results_df = loaded_model.get_results(df_user, return_abs=True)
+        print(results_df)
 
         # Create an output message to allow setting meta
         dfp_mm = DFPMessageMeta(results_df, user_id=user_id)
-        multi_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(results_df))
-        output_message = MultiAEMessage(multi_message.meta,
-                                        mess_offset=multi_message.mess_offset,
-                                        mess_count=multi_message.mess_count,
-                                        model=loaded_model)
+        output_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(results_df))
 
         output_message.set_meta(list(results_df.columns), results_df)
 

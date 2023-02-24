@@ -74,12 +74,11 @@ def dfp_data_prep(builder: mrc.Builder):
         if logger.isEnabledFor(logging.DEBUG):
             duration = (time.time() - start_time) * 1000.0
 
-            # TODO(Devin): Fix this
-            # logger.debug("Preprocessed %s data for logs in %s to %s in %s ms",
-            #             message.mess_count,
-            #             message.get_meta(timestamp_column_name).min(),
-            #             message.get_meta(timestamp_column_name).max(),
-            #             duration)
+            logger.debug("Preprocessed %s data for logs in %s to %s in %s ms",
+                         message.count,
+                         df_processed[timestamp_column_name].min(),
+                         df_processed[timestamp_column_name].max(),
+                         duration)
 
         return message
 

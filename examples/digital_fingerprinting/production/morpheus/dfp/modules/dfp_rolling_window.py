@@ -14,6 +14,7 @@
 
 import logging
 import os
+import json
 import typing
 from contextlib import contextmanager
 
@@ -94,12 +95,16 @@ def dfp_rolling_window(builder: mrc.Builder):
                              "Consider deleting the rolling window cache and restarting."))
                 return None
 
+            user_cache.save()
+
             # Exit early if we dont have enough data
             if (user_cache.count < min_history):
+                logger.debug("Not enough data to train")
                 return None
 
             # We have enough data, but has enough time since the last training taken place?
             if (user_cache.total_count - user_cache.last_train_count < min_increment):
+                logger.debug("Elapsed time since last train is too short")
                 return None
 
             # Save the last train statistics
@@ -132,7 +137,6 @@ def dfp_rolling_window(builder: mrc.Builder):
             #                       mess_count=len(train_df))
 
     def on_data(message: MessageControl):
-
         config = message.config()
         payload = message.payload()
 
@@ -162,9 +166,10 @@ def dfp_rolling_window(builder: mrc.Builder):
                 log_info.disable()
                 return None
 
-            message.payload(result)
+        message.payload(result)
 
-            return message
+        # print(json.dumps(message.config(), indent=4), flush=True)
+        return message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)

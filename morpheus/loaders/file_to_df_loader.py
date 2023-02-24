@@ -59,7 +59,7 @@ def file_to_df_loader(message: MessageControl, task: dict):
     cache_dir = batcher_config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
-        "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
 
     cache_dir = os.path.join(cache_dir, "file_cache")
 
