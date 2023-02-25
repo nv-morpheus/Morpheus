@@ -22,6 +22,7 @@
 #include "morpheus/messages/multi_inference.hpp"
 
 #include <cudf/types.hpp>
+#include <glog/logging.h>
 
 #include <memory>
 #include <utility>

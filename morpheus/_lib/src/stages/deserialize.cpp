@@ -24,8 +24,8 @@
 #include <algorithm>  // for min
 #include <cstddef>
 #include <exception>
+#include <functional>
 #include <memory>
-#include <type_traits>  // for declval
 #include <utility>
 
 namespace morpheus {
