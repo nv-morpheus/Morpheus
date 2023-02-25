@@ -57,8 +57,13 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
 
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
-    def on_data(file_objects: fsspec.core.OpenFiles):
+    def on_data(message_control: MessageControl):
         # Determine the date of the file, and apply the window filter if we have one
+        message_config = message_control.config()
+        files = message_config["tasks"][0]["properties"]["files"]
+
+        file_objects: fsspec.core.OpenFiles = fsspec.open_files(files)
+
         ts_and_files = []
         for file_object in file_objects:
             ts = date_extractor(file_object, iso_date_regex)

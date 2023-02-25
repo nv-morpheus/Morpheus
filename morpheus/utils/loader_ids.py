@@ -13,3 +13,4 @@
 # limitations under the License.
 
 FILE_TO_DF_LOADER = "FileToDFLoader"
+FILE_LIST_LOADER = "FileListLoader"
