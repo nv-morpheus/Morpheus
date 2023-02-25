@@ -22,6 +22,7 @@
 #include <cudf/io/types.hpp>  // for column_name_info, sink_info, table_metadata
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <glog/logging.h>
 #include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>

@@ -24,10 +24,11 @@
 #include "morpheus/utilities/table_util.hpp"
 
 #include <cudf/io/types.hpp>
+#include <glog/logging.h>
 #include <pybind11/gil.h>
 #include <pybind11/pytypes.h>
-#include <pyerrors.h>
-#include <warnings.h>
+#include <pyerrors.h>  // for PyExc_DeprecationWarning
+#include <warnings.h>  // for PyErr_WarnEx
 
 #include <memory>
 #include <utility>
