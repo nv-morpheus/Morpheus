@@ -17,10 +17,9 @@
 
 #pragma once
 
-#include "morpheus/forward.hpp"  // for TypeId
-#include "morpheus/objects/rmm_tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/types.hpp"  // for DevMemInfo
+#include "morpheus/forward.hpp"  // for DevMemInfo, TypeId
+
+#include <rmm/device_buffer.hpp>  // for device_buffer
 
 #include <cstddef>
 #include <memory>

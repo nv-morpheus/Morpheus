@@ -22,8 +22,10 @@
 
 #include <cudf/utilities/traits.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
+#include <glog/logging.h>
 #include <matx.h>
 #include <mrc/cuda/sync.hpp>
+#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread, cuda_stream_view
 
 #include <array>
 #include <memory>
