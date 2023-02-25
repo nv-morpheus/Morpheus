@@ -21,11 +21,13 @@
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>
+#include <glog/logging.h>
 #include <pybind11/pytypes.h>
 
 #include <cstddef>
 #include <map>  // this->tensors is a map
 #include <memory>
+#include <ostream>
 #include <stdexcept>  // for runtime_error
 #include <utility>
 

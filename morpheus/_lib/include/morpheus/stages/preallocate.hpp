@@ -21,14 +21,10 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/dtype.hpp"  // for DType, TypeId
 
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
-#include <map>
 #include <memory>
 #include <string>
 #include <tuple>

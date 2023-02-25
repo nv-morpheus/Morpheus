@@ -23,8 +23,6 @@
 #include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>
 
-#include <memory>  // for shared_ptr
-
 namespace morpheus {
 /****** Component public free function implementations******/
 

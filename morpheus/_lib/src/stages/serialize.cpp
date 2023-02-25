@@ -20,13 +20,11 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 
-#include <pybind11/gil.h>  // for gil_scoped_acquire
-
 #include <exception>
+#include <functional>
 #include <memory>
 #include <string>
-#include <type_traits>  // for declval
-#include <utility>      // for move
+#include <utility>  // for move
 // IWYU thinks basic_stringbuf & map are needed for the regex constructor
 // IWYU pragma: no_include <map>
 // IWYU pragma: no_include <sstream>

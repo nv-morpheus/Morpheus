@@ -36,9 +36,8 @@
 #include <exception>
 #include <functional>  // for divides, bind, placeholders
 #include <memory>
-#include <ostream>      // needed for logging
-#include <type_traits>  // for declval
-#include <utility>      // for move
+#include <ostream>  // needed for logging
+#include <utility>  // for move
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
 

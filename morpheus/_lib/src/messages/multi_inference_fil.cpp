@@ -23,6 +23,7 @@
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 
 #include <cudf/types.hpp>
+#include <glog/logging.h>
 
 #include <memory>
 #include <utility>

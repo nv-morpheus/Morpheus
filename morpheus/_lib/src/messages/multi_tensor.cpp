@@ -19,7 +19,6 @@
 
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex
-#include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>  // for cudf::size_type>
 #include <glog/logging.h>

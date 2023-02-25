@@ -29,7 +29,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <ostream>  // needed for logging
 #include <string>
 #include <utility>
 

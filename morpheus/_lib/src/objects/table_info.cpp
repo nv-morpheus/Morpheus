@@ -33,6 +33,7 @@
 #include <cstddef>    // for size_t
 #include <iterator>   // for back_insert_iterator, back_inserter
 #include <memory>
+#include <ostream>
 #include <shared_mutex>
 #include <stdexcept>
 #include <utility>
@@ -238,7 +239,7 @@ void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, 
     const auto num_existing_cols = this->get_data().column_names.size();
     const auto num_rows          = this->get_data().table_view.num_rows();
 
-    // TODO figure out how to do this without the gil
+    // TODO(mdemoret): figure out how to do this without the gil
     {
         namespace py = pybind11;
         pybind11::gil_scoped_acquire gil;

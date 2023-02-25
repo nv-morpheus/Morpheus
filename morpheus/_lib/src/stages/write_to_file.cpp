@@ -27,8 +27,7 @@
 #include <memory>
 #include <stdexcept>  // for invalid_argument, runtime_error
 #include <string>
-#include <type_traits>  // for declval (indirectly via templates)
-#include <utility>      // for forward, move, addressof
+#include <utility>  // for forward, move, addressof
 
 namespace morpheus {
 

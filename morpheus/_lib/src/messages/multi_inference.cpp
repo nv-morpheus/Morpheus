@@ -27,9 +27,7 @@
 #include <glog/logging.h>
 #include <pybind11/pytypes.h>
 
-#include <cstdint>  // for int32_t
 #include <memory>
-#include <ostream>  // needed for logging
 #include <string>
 #include <utility>
 

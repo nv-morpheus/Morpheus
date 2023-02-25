@@ -22,7 +22,11 @@
 #include "morpheus/types.hpp"                  // for shape_type_t, TensorIndex
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils
 
+#include <cuda_runtime.h>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
+#include <mrc/cuda/common.hpp>
+#include <rmm/cuda_stream_view.hpp>
+#include <rmm/device_buffer.hpp>
 
 #include <cstddef>  // for size_t
 #include <memory>   // shared_ptr

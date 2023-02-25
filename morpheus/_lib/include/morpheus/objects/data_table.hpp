@@ -22,7 +22,10 @@
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
+#include <memory>
 #include <shared_mutex>
+#include <string>
+#include <vector>
 
 namespace morpheus {
 

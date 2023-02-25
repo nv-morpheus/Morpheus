@@ -29,8 +29,6 @@
 #include <cstddef>
 #include <memory>
 #include <string>
-#include <utility>  // for pair
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
