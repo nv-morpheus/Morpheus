@@ -210,7 +210,7 @@ class ConfigGenerator:
                 "module_id": DFP_ROLLING_WINDOW,
                 "module_name": "dfp_rolling_window_tra",
                 "namespace": MODULE_NAMESPACE,
-                "min_history": 30,
+                "min_history": 1200,
                 "min_increment": 0,
                 "max_history": self._derive_args.duration,
                 "cache_dir": self._derive_args.cache_dir,

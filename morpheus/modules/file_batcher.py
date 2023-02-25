@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_module(FILE_BATCHER, MODULE_NAMESPACE)
-def file_batcher(builder: mrc.Builder) -> MessageControl:
+def file_batcher(builder: mrc.Builder):
     """
     This module loads the input files, removes files that are older than the chosen window of time,
     and then groups the remaining files by period that fall inside the window.
@@ -100,8 +100,10 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
         df["ts"] = timestamps
         df["key"] = full_names
 
-        out_messages = []
-
+        control_message = MessageControl()
+        # TODO(Devin): remove this
+        control_message.add_task("inference", {})
+        control_message.add_task("training", {})
         if len(df) > 0:
             # Now split by the batching settings
             df_period = df["ts"].dt.to_period(period)
@@ -109,48 +111,33 @@ def file_batcher(builder: mrc.Builder) -> MessageControl:
             period_gb = df.groupby(df_period)
 
             n_groups = len(period_gb)
+            logger.debug("Batching %d files => %d groups", len(df), n_groups)
             for group in period_gb.groups:
                 period_df = period_gb.get_group(group)
                 filenames = period_df["key"].to_list()
 
-                message_config = {}
                 load_task = {
-                    "type": "load",
-                    "properties": {
-                        "loader_id": FILE_TO_DF_LOADER,
-                        "files": filenames,
-                        "n_groups": n_groups,
-                        "batcher_config": {  # TODO(Devin): remove this
-                            "timestamp_column_name": config.get("timestamp_column_name"),
-                            "schema": config.get("schema"),
-                            "file_type": config.get("file_type"),
-                            "filter_null": config.get("filter_null"),
-                            "parser_kwargs": config.get("parser_kwargs"),
-                            "cache_dir": config.get("cache_dir")
-                        }
+                    "loader_id": FILE_TO_DF_LOADER,
+                    "strategy": "aggregate",
+                    "files": filenames,
+                    "n_groups": n_groups,
+                    "batcher_config": {  # TODO(Devin): remove this
+                        "timestamp_column_name": config.get("timestamp_column_name"),
+                        "schema": config.get("schema"),
+                        "file_type": config.get("file_type"),
+                        "filter_null": config.get("filter_null"),
+                        "parser_kwargs": config.get("parser_kwargs"),
+                        "cache_dir": config.get("cache_dir")
                     }
                 }
 
-                task_infer = {
-                    "type": "inference",
-                    "properties": {
-                    }
-                }
+                # Temporary hack to support inference and training tasks
+                control_message.add_task("load", load_task)
 
-                task_train = {
-                    "type": "training",
-                    "properties": {
-                    }
-                }
-
-                message_config["tasks"] = [task_infer, task_train, load_task]
-                message = MessageControl(message_config)
-                out_messages.append(message)
-
-        return out_messages
+        return control_message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
+        obs.pipe(ops.map(on_data)).subscribe(sub)
 
     node = builder.make_node_full(FILE_BATCHER, node_fn)
 

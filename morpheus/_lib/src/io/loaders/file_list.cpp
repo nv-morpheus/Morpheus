@@ -32,14 +32,8 @@ std::shared_ptr<MessageControl> FileListLoader::load(std::shared_ptr<MessageCont
 {
     VLOG(30) << "Called FileListLoader::load()";
 
-    auto config = control_message->config();
-    if (!config.contains("directories"))
-    {
-        throw std::runtime_error("FileListLoader: No directories specified in config");
-    }
-
     auto files       = nlohmann::json::array();
-    auto directories = config["directories"];
+    auto directories = task["directories"];
     for (auto& directory : directories)
     {
         auto dirpath = boost::filesystem::path(directory);
@@ -62,8 +56,9 @@ std::shared_ptr<MessageControl> FileListLoader::load(std::shared_ptr<MessageCont
 
     // TODO(Devin): Improve robustness
     // For now, a directory listing will just create an updated control message with the new file list
-    // Should this be a data frame payload instead?
-    config["data"] = {{"loader_id", "file"}, {"properties", {"files", files}}};
+    // nlohmann::json task_properties = {{"properties", {"loader_id", "file", "files", files}}};
+
+    // TODO(Devin): This is a placeholder implementation -- need to add file list as a payload
 
     return control_message;
 }

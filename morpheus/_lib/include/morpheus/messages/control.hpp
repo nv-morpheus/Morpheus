@@ -29,8 +29,9 @@ class MessageMeta;
 class MessageControl
 {
   public:
-    MessageControl() = default;
+    MessageControl();
     MessageControl(const nlohmann::json& config);
+    MessageControl(const MessageControl& other);  // NO payload copy
 
     /**
      * @brief Set the config object
@@ -43,6 +44,48 @@ class MessageControl
      * @return
      */
     const nlohmann::json& config() const;
+
+    /**
+     * @brief Add a task to the control message
+     * @param task
+     * @param type
+     */
+    void add_task(const std::string& task_type, const nlohmann::json& task);
+
+    /**
+     * @brief Check if a task of a given type exists
+     * @param type
+     * @return
+     */
+    bool has_task(const std::string& task_type) const;
+
+    /**
+     * @brief Get a task of the given type
+     * @param type
+     * @return
+     */
+    const nlohmann::json pop_task(const std::string& task_type);
+
+    /**
+     * @brief Add a metadata key-value pair to the control message
+     * @param key
+     * @param value
+     */
+    void set_metadata(const std::string& key, const nlohmann::json& value);
+
+    /**
+     * @brief Check if a metadata key exists
+     * @param key
+     * @return
+     */
+    bool has_metadata(const std::string& key) const;
+
+    /**
+     * @brief Get the metadata value for a given key
+     * @param key
+     * @return
+     */
+    const nlohmann::json get_metadata(const std::string& key) const;
 
     /**
      * @brief Set the payload object
@@ -60,15 +103,34 @@ class MessageControl
     static const std::string s_config_schema;  // NOLINT
 
     std::shared_ptr<MessageMeta> m_payload{nullptr};
-    nlohmann::json m_config{};
+
+    std::map<std::string, std::size_t> m_task_count{};
+    nlohmann::json m_task_config{};
 };
 
 struct ControlMessageProxy
 {
     static std::shared_ptr<MessageControl> create(pybind11::dict& config);
+    static std::shared_ptr<MessageControl> create(std::shared_ptr<MessageControl> other);
+
+    static std::shared_ptr<MessageControl> copy(MessageControl& self);
 
     static pybind11::dict config(MessageControl& self);
+
+    // Required for proxy conversion of json -> dict in python
     static void config(MessageControl& self, pybind11::dict& config);
+
+    static void add_task(MessageControl& self, const std::string& type, pybind11::dict& task);
+    static pybind11::dict pop_task(MessageControl& self, const std::string& type);
+
+    /**
+     * @brief Set a metadata key-value pair -- value must be json serializable
+     * @param self
+     * @param key
+     * @param value
+     */
+    static void set_metadata(MessageControl& self, const std::string& key, pybind11::object& value);
+    static pybind11::object get_metadata(MessageControl& self, const std::string& key);
 };
 
 #pragma GCC visibility pop

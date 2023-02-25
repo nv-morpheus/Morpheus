@@ -47,19 +47,18 @@ std::shared_ptr<MessageControl> FileDataLoader::load(std::shared_ptr<MessageCont
     mod_cudf           = cache_handle.get_module("cudf");
 
     // TODO(Devin) : error checking + improve robustness
-    auto task_properties = task["properties"];
-    if (!task_properties["files"].is_array() or task_properties.empty())
+    if (!task["files"].is_array() or task.empty())
     {
         throw std::runtime_error("'File Loader' control message specified no files to load");
     }
 
-    std::string strategy = task_properties.value("strategy", "aggregate");
+    std::string strategy = task.value("strategy", "aggregate");
     if (strategy != "aggregate")
     {
         throw std::runtime_error("Only 'aggregate' strategy is currently supported");
     }
 
-    auto files           = task_properties["files"];
+    auto files           = task["files"];
     py::object dataframe = py::none();
     // TODO(Devin) : Migrate this to use the cudf::io interface
     for (auto& file : files)

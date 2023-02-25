@@ -55,11 +55,13 @@ def dfp_split_users(builder: mrc.Builder):
     include_generic = config.get("include_generic", False)
     include_individual = config.get("include_individual", False)
 
-    # Map of user ids to total number of messages. Keeps indexes monotonic and increasing per user
+    # Map of user ids to total number of messages. Keep indexes monotonic and increasing per user
     user_index_map: typing.Dict[str, int] = {}
 
     def extract_users(message: MessageControl):
+        logger.debug("Extracting users from message")
         if (message is None):
+            logger.debug("No message to extract users from")
             return []
 
         df = message.payload().df
@@ -96,23 +98,20 @@ def dfp_split_users(builder: mrc.Builder):
                 user_df = split_dataframes[user_id]
 
                 current_user_count = user_index_map.get(user_id, 0)
+                logger.debug("Current user count: %s", current_user_count)
 
                 # Reset the index so that users see monotonically increasing indexes
                 user_df.index = range(current_user_count, current_user_count + len(user_df))
                 user_index_map[user_id] = current_user_count + len(user_df)
 
-                control_config = message.config()
-                for task in control_config["tasks"]:
-                    # TODO: This is a hack
-                    task["properties"]["user_id"] = user_id
-                    task["properties"]["data"] = "payload"
+                user_control_message = message.copy()
+                user_control_message.set_metadata("user_id", user_id)
 
-                control_message = MessageControl(control_config)
                 user_cudf = cudf.from_pandas(user_df)
-                control_message.payload(MessageMeta(df=user_cudf))
+                user_control_message.payload(MessageMeta(df=user_cudf))
 
                 # output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
-                output_messages.append(control_message)
+                output_messages.append(user_control_message)
 
                 rows_per_user = [len(msg.payload().df.to_pandas()) for msg in output_messages]
 

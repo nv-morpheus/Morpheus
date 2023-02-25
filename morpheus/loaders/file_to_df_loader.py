@@ -45,9 +45,8 @@ dask_cluster = None
 
 @register_loader(FILE_TO_DF_LOADER)
 def file_to_df_loader(message: MessageControl, task: dict):
-    task_properties = task["properties"]
-    files = task_properties.get("files", None)
-    batcher_config = task_properties["batcher_config"]
+    files = task.get("files", None)
+    batcher_config = task["batcher_config"]
 
     timestamp_column_name = batcher_config.get("timestamp_column_name", None)
     schema_batcher_config = batcher_config.get("schema", None)
@@ -211,10 +210,16 @@ def file_to_df_loader(message: MessageControl, task: dict):
 
     pdf = convert_to_dataframe(files)
 
-    df = cudf.from_pandas(pdf)
+    if task.get("strategy", "aggregate") != "aggregate":
+        raise RuntimeError("Only 'aggregate' strategy is supported for file_to_df loader.")
 
-    payload = MessageMeta(df)
-    message.payload(payload)
+    df = cudf.from_pandas(pdf)
+    payload = message.payload()
+    if (payload is None):
+        message.payload(MessageMeta(df))
+    else:
+        with message.payload().mutable_dataframe() as dfm:
+            dfm.concat(df)
 
     return message
 

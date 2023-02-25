@@ -41,17 +41,11 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
     auto data_loader = DataLoader();
 
     nlohmann::json message_config;
-    message_config["tasks"] = {{{"type", "load"},
-                                {"properties",
-                                 {
-                                     {"loader_id", "payload"},
-                                 }}}};
+    message_config["tasks"] = {{{"type", "load"}, {"properties", {{"loader_id", "payload"}}}}};
 
     std::vector<std::string> loaders = {"payload"};
     for (auto& loader : loaders)
     {
-        message_config["tasks"][0]["properties"]["loader_id"] = loader;
-
         auto msg = std::make_shared<MessageControl>(message_config);
 
         EXPECT_THROW(data_loader.load(msg), std::runtime_error);
@@ -61,8 +55,6 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
 
     for (auto& loader : loaders)
     {
-        message_config["tasks"][0]["properties"]["loader_id"] = loader;
-
         auto msg = std::make_shared<MessageControl>(message_config);
 
         EXPECT_NO_THROW(data_loader.load(msg));
@@ -73,22 +65,28 @@ TEST_F(TestDataLoader, DataLoaderRemoveLoaderTest)
 {
     auto data_loader = DataLoader();
 
-    nlohmann::json message_config;
-    message_config["tasks"] = {{{"type", "load"},
-                                {"properties",
-                                 {
-                                     {"loader_id", "payload"},
-                                 }}}};
+    nlohmann::json task_properties;
+    task_properties = {{"loader_id", "payload"}};
 
-    auto msg = std::make_shared<MessageControl>(message_config);
+    auto msg = std::make_shared<MessageControl>();
 
+    // Load should fail if there are no loaders registered
+    msg->add_task("load", task_properties);
     EXPECT_THROW(data_loader.load(msg), std::runtime_error);
+
     data_loader.add_loader("payload", std::make_unique<PayloadDataLoader>());
 
+    // Load should succeed if there is a loader registered
+    msg->add_task("load", task_properties);
     EXPECT_NO_THROW(data_loader.load(msg));
 
+    // Load should fail if the loader is removed
+    msg->add_task("load", task_properties);
     data_loader.remove_loader("payload");
     EXPECT_THROW(data_loader.load(msg), std::runtime_error);
+
+    // Shouldn't fail, because there shouldn't be any load tasks on the control message
+    EXPECT_NO_THROW(data_loader.load(msg));
 }
 
 /**

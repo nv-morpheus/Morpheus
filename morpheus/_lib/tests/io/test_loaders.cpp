@@ -46,28 +46,24 @@ TEST_F(TestLoader, LoaderFileTest)
         GTEST_SKIP() << "Failed to create temporary file, skipping test";
     }
 
-    nlohmann::json message_config;
-    message_config["tasks"] = {{{"type", "load"},
-                                {"properties",
-                                 {
-                                     {"loader_id", "file"},
-                                     {"strategy", "aggregate"},
-                                     {"files",
-                                      {
-                                          {{"path", std::string(temp_file)}, {"type", "csv"}},
-                                      }},
-                                 }}}};
-
-    auto task = message_config["tasks"][0];
+    nlohmann::json task_properties;
+    task_properties = {
+        {"loader_id", "file"},
+        {"strategy", "aggregate"},
+        {"files",
+         {
+             {{"path", std::string(temp_file)}, {"type", "csv"}},
+         }},
+    };
 
     std::fstream data_file(temp_file, std::ios::out | std::ios::binary | std::ios::trunc);
     data_file << string_df;
     data_file.close();
 
-    auto msg    = std::make_shared<MessageControl>(message_config);
+    auto msg    = std::make_shared<MessageControl>();
     auto loader = FileDataLoader();
 
-    EXPECT_NO_THROW(loader.load(msg, task));
+    EXPECT_NO_THROW(loader.load(msg, task_properties));
 
     unlink(temp_file);
 }

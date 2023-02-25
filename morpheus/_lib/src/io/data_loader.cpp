@@ -48,40 +48,11 @@ std::shared_ptr<MessageControl> Loader::load(std::shared_ptr<MessageControl> mes
 
 std::shared_ptr<MessageControl> DataLoader::load(std::shared_ptr<MessageControl> control_message)
 {
-    auto config   = control_message->config();
-    auto tasks_it = config.find("tasks");
-    // TODO(Devin): Do we want to contemplate multiple load tasks on a single message?
-    for (auto task_it = tasks_it->begin(); task_it != tasks_it->end(); ++task_it)
+    // TODO(Devin): Need to revisit to ensure we're handling multiple 'load' messages correctly
+    while (control_message->has_task("load"))
     {
-        auto task      = task_it.value();
-        auto task_type = task.find("type");
-        if (task_type == task.end() or task_type.value() != "load")
-        {
-            continue;
-        }
-
-        // TODO(Devin): Temporary check, should be impossible to create a ControlMessage with an invalid schema
-        // once schema checking is incorporated.
-        //       "type": "load",
-        //        "properties": {
-        //          "loader_id": "fsspec",
-        //          "strategy": "aggregate",
-        //          "files": [
-        //            {
-        //              "path": "file_path",
-        //              "type": "csv"
-        //            },
-        //            {
-        //              "path": "file_path_2"
-        //            }
-        //          ]
-        //        }
-        if (!task.contains("properties"))
-        {
-            throw std::runtime_error("Invalid task specification: missing properties.");
-        }
-
-        auto loader_id = task["properties"]["loader_id"];
+        auto task = control_message->pop_task("load");
+        auto loader_id = task["loader_id"];
 
         auto loader = m_loaders.find(loader_id);
         if (loader != m_loaders.end())
@@ -89,8 +60,7 @@ std::shared_ptr<MessageControl> DataLoader::load(std::shared_ptr<MessageControl>
             VLOG(5) << "Loading data using loader: " << loader_id
                     << " for message: " << control_message->config().dump() << std::endl;
 
-            tasks_it->erase(task_it);
-            return std::move(loader->second->load(control_message, task));
+            loader->second->load(control_message, task);
         }
 
         throw std::runtime_error("Attempt to load using an unknown or unregistered data loader: " +

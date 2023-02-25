@@ -30,28 +30,76 @@ TEST_F(TestControlMessage, InitializationTest)
 {
     auto msg_one = MessageControl();
 
-    auto config          = nlohmann::json();
-    config["some_value"] = "42";
+    auto config = nlohmann::json();
+    nlohmann::json task_properties;
+    task_properties = {
+        {"loader_id", "payload"},
+        {"strategy", "aggregate"},
+    };
+    config["tasks"] = {{{"type", "load"}, {"properties", task_properties}}};
 
     auto msg_two = MessageControl(config);
 
-    ASSERT_EQ(msg_two.config().contains("some_value"), true);
-    ASSERT_EQ(msg_two.config()["some_value"], "42");
+    ASSERT_EQ(msg_two.config().contains("tasks"), true);
 }
 
 TEST_F(TestControlMessage, SetMessageTest)
 {
     auto msg = MessageControl();
 
-    ASSERT_EQ(msg.config().contains("some_value"), false);
+    ASSERT_EQ(msg.config().contains("tasks"), true);
+    ASSERT_EQ(msg.config().contains("nope"), false);
 
-    auto config          = nlohmann::json();
-    config["some_value"] = "42";
+    auto config = nlohmann::json();
+    nlohmann::json task_properties;
+    task_properties = {
+        {"loader_id", "payload"},
+        {"strategy", "aggregate"},
+    };
+    config["tasks"] = {{{"type", "load"}, {"properties", task_properties}}};
 
     msg.config(config);
 
-    ASSERT_EQ(msg.config().contains("some_value"), true);
-    ASSERT_EQ(msg.config()["some_value"], "42");
+    ASSERT_EQ(msg.config().contains("tasks"), true);
+}
+
+TEST_F(TestControlMessage, TaskTest)
+{
+    auto msg = MessageControl();
+
+    ASSERT_EQ(msg.config().contains("some_value"), false);
+
+    auto config = nlohmann::json();
+    nlohmann::json task_properties;
+    task_properties = {
+        {"loader_id", "payload"},
+        {"strategy", "aggregate"},
+    };
+    config["tasks"] = {{{"type", "load"}, {"properties", task_properties}}};
+
+    msg.config(config);
+
+    ASSERT_EQ(msg.config().contains("tasks"), true);
+    ASSERT_EQ(msg.has_task("load"), true);
+    ASSERT_EQ(msg.has_task("inference"), false);
+    ASSERT_EQ(msg.has_task("training"), false);
+    ASSERT_EQ(msg.has_task("custom"), false);
+
+    msg.add_task("inference", {});
+    ASSERT_EQ(msg.has_task("inference"), true);
+
+    msg.pop_task("inference");
+    ASSERT_EQ(msg.has_task("inference"), false);
+
+    msg.add_task("training", {});
+    ASSERT_EQ(msg.has_task("training"), true);
+    msg.pop_task("training");
+    ASSERT_EQ(msg.has_task("training"), false);
+
+    msg.add_task("custom", {});
+    ASSERT_EQ(msg.has_task("custom"), true);
+    msg.pop_task("custom");
+    ASSERT_EQ(msg.has_task("custom"), false);
 }
 
 TEST_F(TestControlMessage, PayloadTest)

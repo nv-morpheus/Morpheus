@@ -128,12 +128,21 @@ PYBIND11_MODULE(messages, _module)
         .def(py::init<>(), py::return_value_policy::reference_internal)
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)),
              py::return_value_policy::reference_internal)
+        .def(py::init(py::overload_cast<std::shared_ptr<MessageControl>>(&ControlMessageProxy::create)),
+             py::return_value_policy::reference_internal)
         .def("config",
              pybind11::overload_cast<MessageControl&>(&ControlMessageProxy::config),
              py::return_value_policy::reference_internal)
         .def("config",
              pybind11::overload_cast<MessageControl&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"))
+        .def("copy", &ControlMessageProxy::copy, py::return_value_policy::reference_internal)
+        .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
+        .def("has_task", &MessageControl::has_task, py::arg("task_type"))
+        .def("pop_task", &ControlMessageProxy::pop_task, py::arg("task_type"))
+        .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
+        .def("has_metadata", &MessageControl::has_metadata, py::arg("key"))
+        .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key"))
         .def("payload", pybind11::overload_cast<>(&MessageControl::payload), py::return_value_policy::move)
         .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&MessageControl::payload));
 

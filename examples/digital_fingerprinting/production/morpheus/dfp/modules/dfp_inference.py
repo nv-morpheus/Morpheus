@@ -62,13 +62,7 @@ def dfp_inference(builder: mrc.Builder):
     def process_task(control_message: MessageControl, task: dict):
         start_time = time.time()
 
-        task_params = task['properties']
-        data_source = task_params['data']
-        if (data_source != "payload"):
-            raise ValueError("Unsupported data source: {}".format(data_source))
-
-        user_id = task_params['user_id']
-
+        user_id = control_message.get_metadata("user_id")
         payload = control_message.payload()
         df_user = payload.df.to_pandas()
 
@@ -86,9 +80,7 @@ def dfp_inference(builder: mrc.Builder):
 
         post_model_time = time.time()
 
-        print("*** RUNNING DFP Inference ***")
         results_df = loaded_model.get_results(df_user, return_abs=True)
-        print(results_df)
 
         # Create an output message to allow setting meta
         dfp_mm = DFPMessageMeta(results_df, user_id=user_id)
@@ -113,11 +105,12 @@ def dfp_inference(builder: mrc.Builder):
         return output_message
 
     def on_data(control_message: MessageControl):
-        config = control_message.config()
-        for task in config['tasks']:
-            if task['type'] == 'inference':
-                # TODO(Devin): Decide on what to do if we have multiple inference tasks
-                process_task(control_message, task)
+        if (control_message is None):
+            return None
+
+        while (control_message.has_task("inference")):
+            task = control_message.pop_task("inference")
+            process_task(control_message, task)
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data)).subscribe(sub)

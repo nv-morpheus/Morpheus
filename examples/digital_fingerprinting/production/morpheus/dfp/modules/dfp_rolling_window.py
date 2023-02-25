@@ -30,8 +30,6 @@ from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 from morpheus.messages import MessageControl, MessageMeta
 
-from ..messages.multi_dfp_message import DFPMessageMeta
-from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 
 logger = logging.getLogger(__name__)
@@ -79,10 +77,7 @@ def dfp_rolling_window(builder: mrc.Builder):
 
         yield user_cache
 
-    def build_window(message: MessageMeta, params: dict) -> MessageMeta:
-
-        user_id = params["user_id"]
-
+    def build_window(message: MessageMeta, user_id: str) -> MessageMeta:
         with get_user_cache(user_id) as user_cache:
 
             # incoming_df = message.get_df()
@@ -96,6 +91,7 @@ def dfp_rolling_window(builder: mrc.Builder):
                 return None
 
             user_cache.save()
+            logger.debug("Saved rolling window cache for %s == %d items", user_id, user_cache.total_count)
 
             # Exit early if we dont have enough data
             if (user_cache.count < min_history):
@@ -131,29 +127,18 @@ def dfp_rolling_window(builder: mrc.Builder):
             # TODO(Devin): Optimize
             return MessageMeta(cudf.from_pandas(train_df))
 
-            # Otherwise return a new message
-            # return MultiDFPMessage(meta=DFPMessageMeta(df=train_df, user_id=user_id),
-            #                       mess_offset=0,
-            #                       mess_count=len(train_df))
-
     def on_data(message: MessageControl):
-        config = message.config()
         payload = message.payload()
-
-        for task in config["tasks"]:
-            if task["type"] == "load":
-                params = task["properties"]
+        user_id = message.get_metadata("user_id")
 
         with log_time(logger.debug) as log_info:
-
-            result = build_window(payload, params)  # Return a MessageMeta
+            result = build_window(payload, user_id)  # Return a MessageMeta
 
             if (result is not None):
-
                 log_info.set_log(
                     ("Rolling window complete for %s in {duration:0.2f} ms. "
                      "Input: %s rows from %s to %s. Output: %s rows from %s to %s"),
-                    params["user_id"],
+                    user_id,
                     len(payload.df),
                     payload.df[timestamp_column_name].min(),
                     payload.df[timestamp_column_name].max(),
@@ -168,7 +153,6 @@ def dfp_rolling_window(builder: mrc.Builder):
 
         message.payload(result)
 
-        # print(json.dumps(message.config(), indent=4), flush=True)
         return message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
