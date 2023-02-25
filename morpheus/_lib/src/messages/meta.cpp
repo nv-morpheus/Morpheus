@@ -31,6 +31,8 @@
 #include <warnings.h>  // for PyErr_WarnEx
 
 #include <memory>
+#include <ostream>    // for operator<< needed by glog
+#include <stdexcept>  // for runtime_error
 #include <utility>
 
 namespace morpheus {

@@ -18,7 +18,6 @@
 #include "morpheus/stages/deserialize.hpp"
 
 #include <mrc/segment/builder.hpp>
-#include <pybind11/gil.h>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 

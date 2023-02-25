@@ -27,11 +27,12 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 #include <rmm/mr/device/per_device_resource.hpp>
 
-#include <array>    // for array
-#include <cstddef>  // for size_t
+#include <array>      // for array
+#include <cstddef>    // for size_t
+#include <exception>  // for exception
 #include <numeric>
 #include <ostream>
 #include <sstream>  // IWYU pragma: keep
