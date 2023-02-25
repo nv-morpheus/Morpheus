@@ -216,11 +216,18 @@ def file_to_df_loader(message: MessageControl, task: dict):
     df = cudf.from_pandas(pdf)
     payload = message.payload()
     if (payload is None):
+        logger.debug("Creating new message with %s rows", len(df))
         message.payload(MessageMeta(df))
+        logger.debug("-- %d", len(message.payload().df))
     else:
-        with message.payload().mutable_dataframe() as dfm:
-            dfm.concat(df)
+        logger.debug("Appending %s rows to existing message", len(df))
+        logger.debug("-- %d", len(message.payload().df))
+        with payload.mutable_dataframe() as dfm:
+            dfm = cudf.concat([dfm, df], ignore_index=True)
+            message.payload(MessageMeta(dfm))
+        logger.debug("-- %d", len(message.payload().df))
 
+    logger.debug("Returning message with %s rows", len(message.payload().df))
     return message
 
 
