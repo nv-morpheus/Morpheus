@@ -70,7 +70,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         """
         return self._tensors
 
-    def set_tensors(self, tensors):
+    def set_tensors(self, tensors: typing.Dict[str, cp.ndarray]):
         """
         Overwrite the tensors stored by this instance. If the length of the tensors has changed, then the `count`
         property should also be updated.
@@ -83,7 +83,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         self._check_tensors(tensors)
         self._tensors = tensors
 
-    def get_tensor(self, name):
+    def get_tensor(self, name: str):
         """
         Get the Tensor stored in the TensorMemory container identified by `name`.
 
@@ -104,7 +104,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         """
         return self._tensors[name]
 
-    def set_tensor(self, name, tensor):
+    def set_tensor(self, name: str, tensor: cp.ndarray):
         """
         Update the tensor identified by `name`. If the length of the tensor has changed, then the `count`
         property should also be updated.

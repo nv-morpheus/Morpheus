@@ -55,7 +55,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
         except KeyError:
             raise AttributeError
 
-    def set_output(self, name: str, value):
+    def set_output(self, name: str, value: cp.ndarray):
         """
         Setter function used with DataClassProp for setting output in message containers derived
         from ResponseMemory.
@@ -85,7 +85,7 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
     """
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
 
-    def __init__(self, count, probs):
+    def __init__(self, count: int, probs: cp.ndarray):
         super().__init__(count, tensors={'probs': probs})
 
 
@@ -110,7 +110,7 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
     user_id = ""
     explain_df = None
 
-    def __init__(self, count, probs):
+    def __init__(self, count: int, probs: cp.ndarray):
         super().__init__(count, tensors={'probs': probs})
 
 

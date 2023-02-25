@@ -56,7 +56,7 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
         except KeyError:
             raise AttributeError
 
-    def set_input(self, name: str, value):
+    def set_input(self, name: str, value: cp.ndarray):
         """
         Setter function used with DataClassProp for setting inference input in message containers derived
         from InferenceMemory.
@@ -94,7 +94,7 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP
     input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
 
-    def __init__(self, count, input_ids, input_mask, seq_ids):
+    def __init__(self, count: int, input_ids: cp.ndarray, input_mask: cp.ndarray, seq_ids: cp.ndarray):
         super().__init__(count, tensors={'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
 
 
@@ -116,7 +116,7 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
     input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
 
-    def __init__(self, count, input__0, seq_ids):
+    def __init__(self, count: int, input__0: cp.ndarray, seq_ids: cp.ndarray):
         super().__init__(count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
 
 
@@ -137,7 +137,7 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
     input: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
     seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
 
-    def __init__(self, count, input, seq_ids):
+    def __init__(self, count: int, input: cp.ndarray, seq_ids: cp.ndarray):
         super().__init__(count, tensors={'input': input, 'seq_ids': seq_ids})
 
 
