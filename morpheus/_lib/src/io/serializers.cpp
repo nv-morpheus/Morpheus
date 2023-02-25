@@ -34,6 +34,7 @@
 #include <numeric>
 #include <ostream>
 #include <sstream>  // IWYU pragma: keep
+#include <utility>
 #include <vector>
 // IWYU pragma: no_include <unordered_map>
 
