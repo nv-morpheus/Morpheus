@@ -37,7 +37,7 @@ from ..utils.module_ids import DFP_SPLIT_USERS
 from ..utils.module_ids import DFP_TRAINING
 from ..utils.module_ids import DFP_TRAINING_PIPELINE
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_TRAINING_PIPELINE, MODULE_NAMESPACE)

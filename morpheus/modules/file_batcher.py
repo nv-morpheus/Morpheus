@@ -57,8 +57,20 @@ def file_batcher(builder: mrc.Builder):
 
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
-    def on_data(file_objects: fsspec.core.OpenFiles):
+    def on_data(control_message: MessageControl):
         # Determine the date of the file, and apply the window filter if we have one
+        # This needs to be in the payload, not a task, because batcher isn't a data loader
+        # TODO(Devin)
+        task = control_message.pop_task("load")
+        files = task["files"]
+
+        # TODO(Devin)
+        data_type = "streaming"
+        if (control_message.has_metadata("data_type")):
+            data_type = control_message.get_metadata("data_type")
+
+        file_objects: fsspec.core.OpenFiles = fsspec.open_files(files)
+
         ts_and_files = []
         for file_object in file_objects:
             ts = date_extractor(file_object, iso_date_regex)
@@ -100,17 +112,14 @@ def file_batcher(builder: mrc.Builder):
         df["ts"] = timestamps
         df["key"] = full_names
 
-        control_message = MessageControl()
-        # TODO(Devin): remove this
-        control_message.add_task("inference", {})
-        control_message.add_task("training", {})
+        # TODO(Devin): Clean this up
+        control_messages = []
         if len(df) > 0:
             # Now split by the batching settings
             df_period = df["ts"].dt.to_period(period)
-
             period_gb = df.groupby(df_period)
-
             n_groups = len(period_gb)
+
             logger.debug("Batching %d files => %d groups", len(df), n_groups)
             for group in period_gb.groups:
                 period_df = period_gb.get_group(group)
@@ -131,15 +140,22 @@ def file_batcher(builder: mrc.Builder):
                     }
                 }
 
-                # Temporary hack to support inference and training tasks
-                control_message.add_task("load", load_task)
+                if (data_type == "payload"):
+                    control_message.add_task("load", load_task)
+                elif (data_type == "streaming"):
+                    batch_control_message = control_messages.copy()
+                    batch_control_message.add_task("load", load_task)
+                    control_messages.append(batch_control_message)
+                else:
+                    raise Exception("Unknown data type")
 
-        control_message.set_metadata("task_priority", "immediate")
+        if (data_type == "payload"):
+            control_messages.append(control_message)
 
-        return control_message
+        return control_messages
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data)).subscribe(sub)
+        obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
 
     node = builder.make_node_full(FILE_BATCHER, node_fn)
 

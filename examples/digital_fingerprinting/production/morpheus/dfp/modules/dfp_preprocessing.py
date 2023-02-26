@@ -33,7 +33,7 @@ from ..utils.module_ids import DFP_PREPROCESSING
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_PREPROCESSING, MODULE_NAMESPACE)

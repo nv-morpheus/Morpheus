@@ -37,7 +37,7 @@ from ..utils.module_ids import DFP_INFERENCE
 from ..utils.module_ids import DFP_POST_PROCESSING
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_INF, MODULE_NAMESPACE)

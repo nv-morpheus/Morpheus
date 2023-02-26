@@ -31,7 +31,7 @@ from morpheus.utils.module_utils import register_module
 from ..utils.module_ids import DFP_PREPROC
 from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_PREPROC, MODULE_NAMESPACE)

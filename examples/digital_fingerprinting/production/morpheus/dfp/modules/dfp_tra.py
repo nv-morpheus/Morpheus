@@ -31,7 +31,7 @@ from ..utils.module_ids import DFP_ROLLING_WINDOW
 from ..utils.module_ids import DFP_TRA
 from ..utils.module_ids import DFP_TRAINING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_TRA, MODULE_NAMESPACE)

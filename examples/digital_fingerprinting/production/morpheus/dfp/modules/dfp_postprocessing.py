@@ -17,7 +17,6 @@ import time
 from datetime import datetime
 
 import mrc
-import numpy as np
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
@@ -27,7 +26,7 @@ from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_POST_PROCESSING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_POST_PROCESSING, MODULE_NAMESPACE)
@@ -47,10 +46,12 @@ def dfp_postprocessing(builder: mrc.Builder):
 
     def process_events(message: MultiAEMessage):
         # Assume that a filter stage preceedes this stage
-        df = message.get_meta()
-        df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-        df.replace(np.nan, 'NaN', regex=True, inplace=True)
-        message.set_meta(None, df)
+        # df = message.get_meta()
+        # df['event_time'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        # df.replace(np.nan, 'NaN', regex=True, inplace=True)
+        # TODO figure out why we are not able to set meta for a whole dataframe, but works for single column.
+        # message.set_meta(None, df)
+        message.set_meta("event_time", datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
 
     def on_data(message: MultiAEMessage):
         if (not message or message.mess_count == 0):

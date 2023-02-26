@@ -131,6 +131,7 @@ def mlflow_model_writer(builder: mrc.Builder):
     def on_data(message: MultiAEMessage):
 
         user = message.meta.user_id
+
         model: AutoEncoder = message.model
 
         model_path = "dfencoder"

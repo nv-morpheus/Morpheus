@@ -190,6 +190,12 @@ void MessageControl::config(const nlohmann::json& config)
     {
         add_task(task.at("type"), task.at("properties"));
     }
+
+    auto& metadata = config["metadata"];
+    for (auto it = metadata.begin(); it != metadata.end(); ++it)
+    {
+        set_metadata(it.key(), it.value());
+    }
 }
 
 std::shared_ptr<MessageMeta> MessageControl::payload()

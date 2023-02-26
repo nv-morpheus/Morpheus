@@ -31,6 +31,7 @@ from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.nonlinear_modules_stage import NonLinearModulesStage
+from morpheus.stages.input.control_message_source_stage import ControlMessageSourceStage
 
 
 @click.command()
@@ -160,7 +161,9 @@ def run_pipeline(log_type: str,
     # Create a pipeline object
     pipeline = Pipeline(config)
 
-    source_stage = pipeline.add_stage(MultiFileSource(config, filenames=list(kwargs["input_file"])))
+    source_stage = pipeline.add_stage(ControlMessageSourceStage(config, filenames=list(kwargs["input_file"])))
+
+    #source_stage = pipeline.add_stage(MultiFileSource(config, filenames=list(kwargs["input_file"])))
 
     # Here we add a wrapped module that implements the DFP Deployment
     dfp_deployment_stage = pipeline.add_stage(

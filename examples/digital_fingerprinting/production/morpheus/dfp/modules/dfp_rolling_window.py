@@ -14,7 +14,6 @@
 
 import logging
 import os
-import json
 import typing
 from contextlib import contextmanager
 
@@ -28,11 +27,12 @@ from mrc.core import operators as ops
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
-from morpheus.messages import MessageControl, MessageMeta
+from morpheus.messages import MessageControl
+from morpheus.messages import MessageMeta
 
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_ROLLING_WINDOW, MODULE_NAMESPACE)
@@ -131,41 +131,49 @@ def dfp_rolling_window(builder: mrc.Builder):
             print("Training finished, returning:", user_id, flush=True)
             return MessageMeta(cudf.from_pandas(train_df))
 
-    def on_data(message: MessageControl):
-        payload = message.payload()
-        user_id = message.get_metadata("user_id")
+    def on_data(control_message: MessageControl):
+        payload = control_message.payload()
+        user_id = control_message.get_metadata("user_id")
 
-        task_priority = None
-        if (message.has_metadata("task_priority")):
-            task_priority = message.get_metadata("task_priority")
+        data_type = "streaming"
+        if (control_message.has_metadata("data_type")):
+            data_type = control_message.get_metadata("data_type")
 
         # If we're an explicit training or inference task, then we dont need to do any rolling window logic
-        if (task_priority is not None and task_priority == "immediate"):
-            return message
+        if (data_type == "payload"):
+            return control_message
+        elif (data_type == "streaming"):
+            with log_time(logger.debug) as log_info:
+                result = build_window(payload, user_id)  # Return a MessageMeta
 
-        with log_time(logger.debug) as log_info:
-            result = build_window(payload, user_id)  # Return a MessageMeta
+                if (result is not None):
+                    log_info.set_log(
+                        ("Rolling window complete for %s in {duration:0.2f} ms. "
+                         "Input: %s rows from %s to %s. Output: %s rows from %s to %s"),
+                        user_id,
+                        len(payload.df),
+                        payload.df[timestamp_column_name].min(),
+                        payload.df[timestamp_column_name].max(),
+                        result.count,
+                        result.df[timestamp_column_name].min(),
+                        result.df[timestamp_column_name].max(),
+                    )
+                else:
+                    # Dont print anything
+                    log_info.disable()
+                    return None
 
-            if (result is not None):
-                log_info.set_log(
-                    ("Rolling window complete for %s in {duration:0.2f} ms. "
-                     "Input: %s rows from %s to %s. Output: %s rows from %s to %s"),
-                    user_id,
-                    len(payload.df),
-                    payload.df[timestamp_column_name].min(),
-                    payload.df[timestamp_column_name].max(),
-                    result.count,
-                    result.df[timestamp_column_name].min(),
-                    result.df[timestamp_column_name].max(),
-                )
-            else:
-                # Dont print anything
-                log_info.disable()
-                return None
+            rw_control_message = MessageControl()
+            rw_control_message.payload(result)
+            # TODO(Devin): Configure based on module config
+            # TODO(Devin): Stop using dfp rolling window for inference, it makes zero sense
+            rw_control_message.add_task("training", {})
+            rw_control_message.set_metadata("user_id", user_id)
+            rw_control_message.set_metadata("data_type", "payload")
 
-        message.payload(result)
-
-        return message
+            return rw_control_message
+        else:
+            raise RuntimeError("Unknown data type")
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)

@@ -28,10 +28,9 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
-from ..messages.multi_dfp_message import DFPMessageMeta
 from ..utils.module_ids import DFP_SPLIT_USERS
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
 @register_module(DFP_SPLIT_USERS, MODULE_NAMESPACE)
@@ -58,13 +57,13 @@ def dfp_split_users(builder: mrc.Builder):
     # Map of user ids to total number of messages. Keep indexes monotonic and increasing per user
     user_index_map: typing.Dict[str, int] = {}
 
-    def extract_users(message: MessageControl):
+    def extract_users(control_message: MessageControl):
         logger.debug("Extracting users from message")
-        if (message is None):
+        if (control_message is None):
             logger.debug("No message to extract users from")
             return []
 
-        df = message.payload().df
+        df = control_message.payload().df
         with log_time(logger.debug) as log_info:
 
             if (isinstance(df, cudf.DataFrame)):
@@ -103,7 +102,7 @@ def dfp_split_users(builder: mrc.Builder):
                 user_df.index = range(current_user_count, current_user_count + len(user_df))
                 user_index_map[user_id] = current_user_count + len(user_df)
 
-                user_control_message = message.copy()
+                user_control_message = control_message.copy()
                 user_control_message.set_metadata("user_id", user_id)
 
                 user_cudf = cudf.from_pandas(user_df)
