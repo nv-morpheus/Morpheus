@@ -78,7 +78,6 @@ def dfp_rolling_window(builder: mrc.Builder):
         yield user_cache
 
     def build_window(message: MessageMeta, user_id: str) -> MessageMeta:
-        print("Building rolling window for:", user_id, flush=True)
         with get_user_cache(user_id) as user_cache:
 
             # incoming_df = message.get_df()
@@ -96,13 +95,11 @@ def dfp_rolling_window(builder: mrc.Builder):
 
             # Exit early if we dont have enough data
             if (user_cache.count < min_history):
-                print("Not enough data to train:", user_id, flush=True)
                 logger.debug("Not enough data to train")
                 return None
 
             # We have enough data, but has enough time since the last training taken place?
             if (user_cache.total_count - user_cache.last_train_count < min_increment):
-                print("Elapsed time since last train is too short:", user_id, flush=True)
                 logger.debug("Elapsed time since last train is too short")
                 return None
 

@@ -5,7 +5,7 @@
         {
           "type": "load",
           "properties": {
-            "loader_id": "fsspec",
+            "loader_id": "file_batcher_debugging",
             "files": [
               "../../../../examples/data/dfp/duo-training-data/*.json"
             ]
@@ -15,6 +15,10 @@
           "type": "training",
           "properties": {
           }
+        },
+        {
+          "type": "inference",
+          "properties": {}
         }
       ],
       "metadata": {
@@ -26,20 +30,19 @@
         {
           "type": "load",
           "properties": {
-            "loader_id": "fsspec",
+            "loader_id": "file_batcher_debugging",
             "files": [
-              "../../../../examples/data/dfp/duo-training-data/*.json"
+              "../../../../examples/data/dfp/duo-inference-data/*.json"
             ]
           }
         },
         {
-          "type": "training",
-          "properties": {
-          }
+          "type": "inference",
+          "properties": {}
         }
       ],
       "metadata": {
-        "data_type": "payload"
+        "data_type": "streaming"
       }
     }
   ]

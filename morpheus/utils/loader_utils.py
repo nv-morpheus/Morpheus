@@ -38,9 +38,11 @@ def register_loader(loder_id):
         # Register a loader if not exists in the registry.
         if not registry.contains(loder_id):
             registry.register_loader(loder_id, func)
+            print("Laoder '{}' was successfully registered.".format(loder_id), flush=True)
             logger.debug("Laoder '{}' was successfully registered.".format(loder_id))
         else:
             logger.debug("Module: '{}' already exists.".format(loder_id))
+            print("Module: '{}' already exists.".format(loder_id), flush=True)
 
         return func
 

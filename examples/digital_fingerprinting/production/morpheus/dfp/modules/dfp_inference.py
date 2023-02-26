@@ -82,19 +82,22 @@ def dfp_inference(builder: mrc.Builder):
 
         results_df = loaded_model.get_results(df_user, return_abs=True)
 
-        #include_cols = set(df_user.columns) - set(results_df.columns)
+        include_cols = set(df_user.columns) - set(results_df.columns)
 
-        #for col in include_cols:
-        #    results_df[col] = df_user[col].copy(True)
+        for col in include_cols:
+            results_df[col] = df_user[col].copy(True)
 
-        #results_df = cudf.from_pandas(results_df)
+        results_df = cudf.from_pandas(results_df)
 
         # Create an output message to allow setting meta
         dfp_mm = DFPMessageMeta(results_df, user_id=user_id)
-        output_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(results_df))
+        multi_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(results_df))
 
+        output_message = MultiAEMessage(multi_message.meta,
+                                        multi_message.mess_offset,
+                                        multi_message.mess_count,
+                                        loaded_model)
         output_message.set_meta(list(results_df.columns), results_df)
-
         output_message.set_meta('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
 
         if logger.isEnabledFor(logging.DEBUG):
