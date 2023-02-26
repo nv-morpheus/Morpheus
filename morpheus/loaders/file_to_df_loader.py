@@ -45,6 +45,9 @@ dask_cluster = None
 
 @register_loader(FILE_TO_DF_LOADER)
 def file_to_df_loader(message: MessageControl, task: dict):
+    if task.get("strategy", "aggregate") != "aggregate":
+        raise RuntimeError("Only 'aggregate' strategy is supported for file_to_df loader.")
+
     files = task.get("files", None)
     batcher_config = task["batcher_config"]
 
@@ -210,24 +213,17 @@ def file_to_df_loader(message: MessageControl, task: dict):
 
     pdf = convert_to_dataframe(files)
 
-    if task.get("strategy", "aggregate") != "aggregate":
-        raise RuntimeError("Only 'aggregate' strategy is supported for file_to_df loader.")
-
     df = cudf.from_pandas(pdf)
     payload = message.payload()
     if (payload is None):
-        logger.debug("Creating new message with %s rows", len(df))
         message.payload(MessageMeta(df))
         logger.debug("-- %d", len(message.payload().df))
     else:
-        logger.debug("Appending %s rows to existing message", len(df))
-        logger.debug("-- %d", len(message.payload().df))
         with payload.mutable_dataframe() as dfm:
             dfm = cudf.concat([dfm, df], ignore_index=True)
             message.payload(MessageMeta(dfm))
-        logger.debug("-- %d", len(message.payload().df))
 
-    logger.debug("Returning message with %s rows", len(message.payload().df))
+    # logger.debug("Returning message with %s rows", len(message.payload().df))
     return message
 
 

@@ -78,6 +78,7 @@ def dfp_rolling_window(builder: mrc.Builder):
         yield user_cache
 
     def build_window(message: MessageMeta, user_id: str) -> MessageMeta:
+        print("Building rolling window for:", user_id, flush=True)
         with get_user_cache(user_id) as user_cache:
 
             # incoming_df = message.get_df()
@@ -86,8 +87,8 @@ def dfp_rolling_window(builder: mrc.Builder):
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
                 # Then our incoming dataframe wasnt even covered by the window. Generate warning
-                logger.warn(("Incoming data preceeded existing history. "
-                             "Consider deleting the rolling window cache and restarting."))
+                logger.warning(("Incoming data preceeded existing history. "
+                                "Consider deleting the rolling window cache and restarting."))
                 return None
 
             user_cache.save()
@@ -95,11 +96,13 @@ def dfp_rolling_window(builder: mrc.Builder):
 
             # Exit early if we dont have enough data
             if (user_cache.count < min_history):
+                print("Not enough data to train:", user_id, flush=True)
                 logger.debug("Not enough data to train")
                 return None
 
             # We have enough data, but has enough time since the last training taken place?
             if (user_cache.total_count - user_cache.last_train_count < min_increment):
+                print("Elapsed time since last train is too short:", user_id, flush=True)
                 logger.debug("Elapsed time since last train is too short")
                 return None
 
@@ -125,11 +128,20 @@ def dfp_rolling_window(builder: mrc.Builder):
                                     "Rolling history can only be used with non-overlapping batches"))
 
             # TODO(Devin): Optimize
+            print("Training finished, returning:", user_id, flush=True)
             return MessageMeta(cudf.from_pandas(train_df))
 
     def on_data(message: MessageControl):
         payload = message.payload()
         user_id = message.get_metadata("user_id")
+
+        task_priority = None
+        if (message.has_metadata("task_priority")):
+            task_priority = message.get_metadata("task_priority")
+
+        # If we're an explicit training or inference task, then we dont need to do any rolling window logic
+        if (task_priority is not None and task_priority == "immediate"):
+            return message
 
         with log_time(logger.debug) as log_info:
             result = build_window(payload, user_id)  # Return a MessageMeta

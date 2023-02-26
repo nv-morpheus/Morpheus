@@ -134,6 +134,8 @@ def file_batcher(builder: mrc.Builder):
                 # Temporary hack to support inference and training tasks
                 control_message.add_task("load", load_task)
 
+        control_message.set_metadata("task_priority", "immediate")
+
         return control_message
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):

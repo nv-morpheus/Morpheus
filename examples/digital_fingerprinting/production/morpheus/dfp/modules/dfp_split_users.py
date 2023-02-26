@@ -91,7 +91,6 @@ def dfp_split_users(builder: mrc.Builder):
             output_messages: typing.List[MessageControl] = []
 
             for user_id in sorted(split_dataframes.keys()):
-
                 if (user_id in skip_users):
                     continue
 

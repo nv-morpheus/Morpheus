@@ -48,8 +48,6 @@ std::shared_ptr<MessageControl> Loader::load(std::shared_ptr<MessageControl> mes
 
 std::shared_ptr<MessageControl> DataLoader::load(std::shared_ptr<MessageControl> control_message)
 {
-    // TODO(Devin): Need to revisit to ensure we're handling multiple 'load' messages correctly
-    std::cerr << control_message->config().dump(2) << std::endl;
     while (control_message->has_task("load"))
     {
         auto task      = control_message->pop_task("load");
