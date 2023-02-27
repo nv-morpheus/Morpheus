@@ -18,10 +18,10 @@
 #include "morpheus/io/deserializers.hpp"
 
 #include "morpheus/utilities/stage_util.hpp"
+#include "morpheus/utilities/cudf_util.hpp" // for proxy_table_from_table_with_metadata
 
 #include <cudf/column/column.hpp>
 #include <cudf/io/csv.hpp>
-#include <cudf/io/json.hpp>
 #include <cudf/scalar/scalar.hpp>  // for string_scalar
 #include <cudf/strings/replace.hpp>
 #include <cudf/strings/strings_column_view.hpp>
@@ -29,6 +29,7 @@
 #include <cudf/types.hpp>        // for cudf::type_id
 #include <ext/alloc_traits.h>
 #include <glog/logging.h>
+#include <pybind11/gil.h> // for gil_scoped_acquire
 
 #include <algorithm>
 #include <cstddef>
@@ -100,26 +101,33 @@ cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& js
     return tbl;
 }
 
-cudf::io::table_with_metadata load_table_from_file(const std::string& filename)
+cudf::io::table_with_metadata load_table_from_file(const std::string& filename, FileTypes file_type)
 {
-    auto file_path = std::filesystem::path(filename);
+    if (file_type == FileTypes::Auto)
+    {
+        file_type = determine_file_type(filename);  // throws if it is unable to determine the type
+    }
 
-    if (file_path.extension() == ".json" || file_path.extension() == ".jsonlines")
+    if (file_type == FileTypes::JSON)
     {
         // First, load the file into json
         auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{filename}).lines(true);
         return load_json_table(options.build());
     }
-    else if (file_path.extension() == ".csv")
+    else  // CSV
     {
         auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{filename});
         return cudf::io::read_csv(options.build());
     }
-    else
-    {
-        LOG(FATAL) << "Unknown extension for file: " << filename;
-        throw std::runtime_error("Unknown extension");
-    }
+}
+
+pybind11::object read_file_to_df(const std::string& filename, FileTypes file_type)
+{
+    auto table = load_table_from_file(filename, file_type);
+    int index_col_count = prepare_df_index(table);
+
+    pybind11::gil_scoped_acquire gil;
+    return proxy_table_from_table_with_metadata(std::move(table), index_col_count);
 }
 
 int get_index_col_count(const cudf::io::table_with_metadata& data_table)

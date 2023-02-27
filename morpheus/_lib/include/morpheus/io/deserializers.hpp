@@ -17,8 +17,11 @@
 
 #pragma once
 
+#include "morpheus/objects/file_types.hpp"  // for FileTypes
+
 #include <cudf/io/json.hpp>
 #include <cudf/io/types.hpp>
+#include <pybind11/pytypes.h>  // for pybind11::object
 
 #include <string>
 #include <vector>
@@ -46,7 +49,8 @@ std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_
  * @param filename : Name of the file that should be loaded into a table
  * @return cudf::io::table_with_metadata
  */
-cudf::io::table_with_metadata load_table_from_file(const std::string& filename);
+cudf::io::table_with_metadata load_table_from_file(const std::string& filename,
+                                                   FileTypes file_type = FileTypes::Auto);
 
 /**
  * @brief Loads a cudf table from a JSON source, replacing any escape characters in the source data that cudf can't
@@ -73,6 +77,15 @@ int get_index_col_count(const cudf::io::table_with_metadata& data_table);
  * @return int
  */
 int prepare_df_index(cudf::io::table_with_metadata& data_table);
+
+/**
+ * @brief Loads a cudf table from either CSV or JSON file returning the DataFrame as a Python object
+ *
+ * @param filename : Name of the file that should be loaded into a table
+ * @return pybind11::object
+ */
+pybind11::object read_file_to_df(const std::string& filename,
+                                 FileTypes file_type = FileTypes::Auto);
 
 #pragma GCC visibility pop
 /** @} */  // end of group
