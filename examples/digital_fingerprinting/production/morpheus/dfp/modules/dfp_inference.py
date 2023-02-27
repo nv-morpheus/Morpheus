@@ -16,19 +16,22 @@ import logging
 import time
 
 import mrc
-import cudf
 import pandas as pd
 from dfp.utils.model_cache import ModelCache
 from dfp.utils.model_cache import ModelManager
 from mlflow.tracking.client import MlflowClient
 from mrc.core import operators as ops
 
-from morpheus.messages.multi_ae_message import MultiAEMessage
-from ..messages.multi_dfp_message import MultiDFPMessage, DFPMessageMeta
+import cudf
+
 from morpheus.messages import MessageControl
+from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
+
+from ..messages.multi_dfp_message import DFPMessageMeta
+from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_INFERENCE
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
@@ -97,7 +100,7 @@ def dfp_inference(builder: mrc.Builder):
                                         multi_message.mess_offset,
                                         multi_message.mess_count,
                                         loaded_model)
-        output_message.set_meta(list(results_df.columns), results_df)
+        # output_message.set_meta(list(results_df.columns), results_df)
         output_message.set_meta('model_version', f"{model_cache.reg_model_name}:{model_cache.reg_model_version}")
 
         if logger.isEnabledFor(logging.DEBUG):

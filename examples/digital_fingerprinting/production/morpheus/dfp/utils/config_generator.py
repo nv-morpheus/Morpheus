@@ -67,20 +67,11 @@ class ConfigGenerator:
         module_config["module_id"] = DFP_DEPLOYMENT
         module_config["module_name"] = "dfp_deployment"
         module_config["namespace"] = MODULE_NAMESPACE
-        module_config["output_port_count"] = 1
 
         module_config[DFP_PREPROC] = self.preproc_module_config()
-
-        if self._derive_args.is_train_and_infer:
-            module_config[DFP_TRA] = self.train_module_config()
-            module_config[DFP_INF] = self.infer_module_config()
-            module_config["output_port_count"] = 2
-        elif self._derive_args.is_training:
-            module_config[DFP_TRA] = self.train_module_config()
-            module_config["workload"] = DFP_TRAINING
-        else:
-            module_config[DFP_INF] = self.infer_module_config()
-            module_config["workload"] = DFP_INFERENCE
+        module_config[DFP_TRA] = self.train_module_config()
+        module_config[DFP_INF] = self.infer_module_config()
+        module_config["output_port_count"] = 2
 
         return module_config
 
@@ -103,6 +94,10 @@ class ConfigGenerator:
                 "module_name": "file_batcher",
                 "namespace": MODULE_NAMESPACE,
                 "period": "D",
+                "sampling_rate_s": self._derive_args.sample_rate_s,
+                "start_time": self._derive_args.time_fields.start_time,
+                "end_time": self._derive_args.time_fields.end_time,
+                "iso_date_regex_pattern": iso_date_regex_pattern,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
@@ -151,7 +146,8 @@ class ConfigGenerator:
                 "min_increment": 0,
                 "max_history": "1d",
                 "cache_dir": self._derive_args.cache_dir,
-                "timestamp_column_name": self._config.ae.timestamp_column_name
+                "timestamp_column_name": self._config.ae.timestamp_column_name,
+                "task_type": "inference"
             },
             DFP_DATA_PREP: {
                 "module_id": DFP_DATA_PREP,
@@ -160,7 +156,8 @@ class ConfigGenerator:
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
-                }
+                },
+                "task_type": "inference"
             },
             DFP_INFERENCE: {
                 "module_id": DFP_INFERENCE,
@@ -219,7 +216,8 @@ class ConfigGenerator:
                 "min_increment": 300,
                 "max_history": self._derive_args.duration,
                 "cache_dir": self._derive_args.cache_dir,
-                "timestamp_column_name": self._config.ae.timestamp_column_name
+                "timestamp_column_name": self._config.ae.timestamp_column_name,
+                "task_type": "training"
             },
             DFP_DATA_PREP: {
                 "module_id": DFP_DATA_PREP,
@@ -228,7 +226,8 @@ class ConfigGenerator:
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
-                }
+                },
+                "task_type": "training"
             },
             DFP_TRAINING: {
                 "module_id": DFP_TRAINING,

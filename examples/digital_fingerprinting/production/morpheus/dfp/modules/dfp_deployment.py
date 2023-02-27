@@ -49,34 +49,19 @@ def dfp_deployment(builder: mrc.Builder):
 
     preproc_module = load_module(preproc_conf, builder=builder)
 
-    if (train_conf is not None and infer_conf is not None):
+    # Load module from registry.
+    infer_module = load_module(infer_conf, builder=builder)
+    train_module = load_module(train_conf, builder=builder)
 
-        # Load module from registry.
-        infer_module = load_module(infer_conf, builder=builder)
-        train_module = load_module(train_conf, builder=builder)
+    # Create broadcast node to fork the pipeline.
+    boradcast_node = Broadcast(builder, "broadcast")
 
-        # Create broadcast node to fork the pipeline.
-        boradcast_node = Broadcast(builder, "broadcast")
+    # Make an edge between modules
+    builder.make_edge(preproc_module.output_port("output"), boradcast_node)
+    builder.make_edge(boradcast_node, infer_module.input_port("input"))
+    builder.make_edge(boradcast_node, train_module.input_port("input"))
 
-        # Make an edge between modules
-        builder.make_edge(preproc_module.output_port("output"), boradcast_node)
-        builder.make_edge(boradcast_node, infer_module.input_port("input"))
-        builder.make_edge(boradcast_node, train_module.input_port("input"))
-
-        out_streams = [train_module.output_port("output"), infer_module.output_port("output")]
-
-    elif infer_conf is not None:
-        infer_module = load_module(infer_conf, builder=builder)
-        builder.make_edge(preproc_module.output_port("output"), infer_module.input_port("input"))
-        out_streams = [infer_module.output_port("output")]
-
-    elif train_conf is not None:
-        train_module = load_module(train_conf, builder=builder)
-        builder.make_edge(preproc_module.output_port("output"), train_module.input_port("input"))
-        out_streams = [train_module.output_port("output")]
-
-    else:
-        raise Exception("Expected DFP deployment workload_types are not found.")
+    out_streams = [train_module.output_port("output"), infer_module.output_port("output")]
 
     # Register input port for a module.
     builder.register_module_input("input", preproc_module.input_port("input"))
