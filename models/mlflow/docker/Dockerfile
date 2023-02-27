@@ -32,8 +32,7 @@ RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt upgrade -y && \
     apt install --no-install-recommends -y \
     git \
-    procps \
-    vim && \
+    procps && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 # but pin python version to avoid some newer CVE
