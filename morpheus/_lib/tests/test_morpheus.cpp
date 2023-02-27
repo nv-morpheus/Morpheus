@@ -15,11 +15,33 @@
  * limitations under the License.
  */
 
+#include "test_morpheus.hpp"
+
+#include <pybind11/embed.h>
+
 #include <cstdlib>
 #include <filesystem>
 #include <stdexcept>
 
 namespace morpheus::test {
+
+bool TestWithPythonInterpreter::m_initialized = false;
+
+void TestWithPythonInterpreter::SetUp()
+{
+    initialize_interpreter();
+}
+
+void TestWithPythonInterpreter::TearDown() {}
+
+void TestWithPythonInterpreter::initialize_interpreter() const
+{
+    if (!m_initialized)
+    {
+        pybind11::initialize_interpreter();
+        m_initialized = true;
+    }
+}
 
 std::filesystem::path get_morpheus_root()
 {
