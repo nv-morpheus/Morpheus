@@ -17,7 +17,8 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+// for TensorObject
+#include "morpheus/objects/tensor_object.hpp"  // IWYU pragma: keep
 
 #include <string>
 #include <vector>

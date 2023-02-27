@@ -17,11 +17,9 @@
 
 #pragma once
 
-#include "morpheus/forward.hpp"  // for TensorObject
-#include "morpheus/types.hpp"    // for TensorIndex & tensor_map_t
+#include "morpheus/types.hpp"  // for TensorIndex & tensor_map_t
 
 #include <cstddef>  // for size_t
-#include <map>
 #include <string>
 #include <utility>  // for pair
 #include <vector>

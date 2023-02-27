@@ -17,13 +17,13 @@
 
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 
-#include "morpheus/objects/table_info.hpp"  // for MutableTableInfo
-#include "morpheus/utilities/string_util.hpp"
+#include "morpheus/objects/table_info.hpp"     // for MutableTableInfo
+#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
 #include <pybind11/detail/common.h>
 #include <pybind11/gil.h>
 
-#include <utility>
+#include <utility>  // for std::move
 
 namespace morpheus {
 

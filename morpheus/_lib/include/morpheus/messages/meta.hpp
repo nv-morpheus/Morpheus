@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/forward.hpp"  // for IDataTable, TableInfo
+#include "morpheus/forward.hpp"  // for IDataTable, MutableTableInfo, TableInfo
 
 #include <cudf/io/types.hpp>
 #include <cudf/types.hpp>  // for size_type
