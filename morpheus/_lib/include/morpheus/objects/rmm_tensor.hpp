@@ -19,6 +19,7 @@
 
 #include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for RankType, shape_type_t, TensorIndex
 
 #include <rmm/device_buffer.hpp>
 
@@ -47,8 +48,8 @@ class RMMTensor : public ITensor
     RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
               size_t offset,
               DType dtype,
-              std::vector<TensorIndex> shape,
-              std::vector<TensorIndex> stride = {});
+              shape_type_t shape,
+              shape_type_t stride = {});
 
     ~RMMTensor() override = default;
 
@@ -75,13 +76,12 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex>& dims) const override;
+    std::shared_ptr<ITensor> reshape(const shape_type_t& dims) const override;
 
     /**
      * TODO(Documentation)
      */
-    std::shared_ptr<ITensor> slice(const std::vector<TensorIndex>& min_dims,
-                                   const std::vector<TensorIndex>& max_dims) const override;
+    std::shared_ptr<ITensor> slice(const shape_type_t& min_dims, const shape_type_t& max_dims) const override;
 
     /**
      * @brief Creates a depp copy of the specified rows specified as vector<pair<start, stop>> not inclusive
@@ -127,12 +127,12 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    void get_shape(std::vector<TensorIndex>& s) const;
+    void get_shape(shape_type_t& s) const;
 
     /**
      * TODO(Documentation)
      */
-    void get_stride(std::vector<TensorIndex>& s) const;
+    void get_stride(shape_type_t& s) const;
 
     // Tensor reshape(std::vector<TensorIndex> shape)
     // {
@@ -162,8 +162,8 @@ class RMMTensor : public ITensor
     DType m_dtype;
 
     // Shape info
-    std::vector<TensorIndex> m_shape;
-    std::vector<TensorIndex> m_stride;
+    shape_type_t m_shape;
+    shape_type_t m_stride;
 };
 
 #pragma GCC visibility pop

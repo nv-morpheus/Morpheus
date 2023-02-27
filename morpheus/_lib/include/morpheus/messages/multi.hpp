@@ -20,6 +20,7 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cudf/types.hpp>
 #include <glog/logging.h>  // for DCHECK_NOTNULL

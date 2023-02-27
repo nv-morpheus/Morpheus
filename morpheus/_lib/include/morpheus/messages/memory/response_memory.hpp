@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for tensor_map_t
 
 #include <pybind11/pytypes.h>
 

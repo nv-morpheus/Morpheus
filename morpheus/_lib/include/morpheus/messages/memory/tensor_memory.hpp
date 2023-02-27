@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for tensor_map_t, TensorIndex
 
 #include <cstddef>  // for size_t
 #include <map>
@@ -43,8 +44,6 @@ namespace morpheus {
 class TensorMemory
 {
   public:
-    using tensor_map_t = std::map<std::string, TensorObject>;
-
     /**
      * @brief Construct a new Tensor Memory object
      *

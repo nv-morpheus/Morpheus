@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for shape_type_t, TensorIndex
 
 #include <algorithm>   // IWYU pragma: keep
 #include <functional>  // for multiplies
@@ -43,8 +44,6 @@ namespace morpheus {
  */
 struct TensorUtils
 {
-    using shape_type_t = std::vector<TensorIndex>;
-
     /**
      * @brief Write a formatted shape to a stream
      *
@@ -67,7 +66,7 @@ struct TensorUtils
      * @param shape
      * @param stride
      */
-    static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::vector<TensorIndex>& stride);
+    static void set_contiguous_stride(const shape_type_t& shape, shape_type_t& stride);
 
     /**
      * @brief Determines if the tensor layout is both contiguous and ordered.
@@ -75,7 +74,7 @@ struct TensorUtils
      * @note A tensor whose values are laid out in the storage starting from the rightmost
      * dimension onward (that is, moving along rows for a 2D tensor) is defined as contiguous.
      */
-    static bool has_contiguous_stride(const std::vector<TensorIndex>& shape, const shape_type_t& stride);
+    static bool has_contiguous_stride(const shape_type_t& shape, const shape_type_t& stride);
 
     /**
      * @brief Validate the shape and stride are compatible
@@ -85,8 +84,7 @@ struct TensorUtils
      * @return true
      * @return false
      */
-    static bool validate_shape_and_stride(const std::vector<TensorIndex>& shape,
-                                          const std::vector<TensorIndex>& stride);
+    static bool validate_shape_and_stride(const shape_type_t& shape, const shape_type_t& stride);
 
     /**
      * @brief Returns a stride expressed in terms of elements given a stride expressed either in terms of bytes or
