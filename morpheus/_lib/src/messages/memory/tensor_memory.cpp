@@ -31,8 +31,8 @@ bool TensorMemory::has_tensor(const std::string& name) const
     return this->tensors.find(name) != this->tensors.end();
 }
 
-TensorMemory::tensor_map_t TensorMemory::copy_tensor_ranges(
-    const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges, size_t num_selected_rows) const
+tensor_map_t TensorMemory::copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
+                                              size_t num_selected_rows) const
 {
     tensor_map_t tensors;
     for (const auto& p : this->tensors)

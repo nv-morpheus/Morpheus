@@ -18,7 +18,7 @@
 #include "morpheus/stages/preprocess_nlp.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
-#include "morpheus/messages/memory/tensor_memory.hpp"     // for TensorMemory::tensor_map_t
+#include "morpheus/messages/memory/tensor_memory.hpp"     // for tensor_map_t
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
