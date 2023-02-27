@@ -18,16 +18,16 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
-ARG CUDA_SHORT_VER=11.5
-ARG CUDA_PKG_VER=11-5
-ARG CUDA_VER=11.5.1
+ARG CUDA_MAJOR_VER=11
+ARG CUDA_MINOR_VER=5
+ARG CUDA_REV_VER=1
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 ARG PYTHON_VER=3.8
 
 # ============ Stage: base ============
 # Configure the base conda environment
-FROM ${FROM_IMAGE}:cuda${CUDA_VER}-base-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
+FROM ${FROM_IMAGE}:cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
 # Required arguments
 ARG PYTHON_VER
@@ -35,7 +35,8 @@ ARG IMAGE_TYPE=base
 ARG RAPIDS_CHANNEL=rapidsai-nightly
 ARG RAPIDS_VER=22.10
 ARG CONDA_CHANNEL=rapidsai
-ARG CUDA_PKG_VER
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
 
 # Temp option to set conda channel_alias property during build
 ARG CONDA_CHANNEL_ALIAS
@@ -43,26 +44,22 @@ ARG CONDA_CHANNEL_ALIAS
 # The TensorRT Version must be the full version (i.e. 7.2.2.3) and match Triton EXACTLY
 ARG TENSORRT_VERSION=8.2.1.3
 
-# Capture argument used for FROM
-ARG CUDA_SHORT_VER
-ARG CUDA_PKG_VER
-
 # Install dependencies to build
 RUN apt-get update &&\
     apt-get upgrade -y &&\
     apt-get install --no-install-recommends -y \
         bc \
         build-essential \
-        cuda-gdb-${CUDA_PKG_VER} \
-        cuda-cudart-${CUDA_PKG_VER} \
-        cuda-cupti-${CUDA_PKG_VER} \
+        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cudart-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         curl \
         git-lfs \
         jq \
-        libcublas-${CUDA_PKG_VER} \
-        libcufft-${CUDA_PKG_VER} \
-        libcurand-${CUDA_PKG_VER} \
-        libcusolver-${CUDA_PKG_VER} \
+        libcublas-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcufft-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcurand-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcusolver-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         openssh-client \
         pkg-config \
         tar \
@@ -121,14 +118,14 @@ FROM conda_env as conda_env_dev
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
-COPY docker/conda/environments/cuda${CUDA_SHORT_VER}_dev.yml ./docker/conda/environments/
+COPY docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml ./docker/conda/environments/
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"} &&\
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_SHORT_VER}_dev.yml &&\
+    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml &&\
     # Remove channel_alias to use the normal channel in the container
     conda config --env --remove-key channel_alias &&\
     # Clean and activate
@@ -139,19 +136,20 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
 FROM base as conda_bld_morpheus
 
 ARG CONDA_CHANNEL_ALIAS
-ARG CUDA_PKG_VER
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        cuda-cudart-dev-${CUDA_PKG_VER} \
-        cuda-cupti-dev-${CUDA_PKG_VER} \
-        cuda-nvml-dev-${CUDA_PKG_VER} \
-        cuda-nvtx-${CUDA_PKG_VER} \
-        libcufft-dev-${CUDA_PKG_VER} \
-        libcurand-dev-${CUDA_PKG_VER} \
-        libcusolver-dev-${CUDA_PKG_VER} \
-        libcublas-dev-${CUDA_PKG_VER} && \
+        cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-nvml-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -174,7 +172,7 @@ FROM conda_env as runtime
 
 # Manually need to install some pip-only dependencies. Once these can get moved to conda, they can be removed.
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
-COPY docker/conda/environments/cuda${CUDA_SHORT_VER}_runtime.yml ./docker/conda/environments/
+COPY docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml ./docker/conda/environments/
 
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
@@ -182,7 +180,7 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     # Install morpheus
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_SHORT_VER}_runtime.yml &&\
+    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml &&\
     # Clean and activate
     conda clean -afy
 
@@ -206,18 +204,19 @@ FROM conda_env_dev as development
 # Copy the source
 # COPY . ./
 
-ARG CUDA_PKG_VER
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
 
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
-        cuda-cudart-dev-${CUDA_PKG_VER} \
-        cuda-cupti-dev-${CUDA_PKG_VER} \
-        cuda-nvtx-${CUDA_PKG_VER} \
-        libcufft-dev-${CUDA_PKG_VER} \
-        libcurand-dev-${CUDA_PKG_VER} \
-        libcusolver-dev-${CUDA_PKG_VER} \
-        libcublas-dev-${CUDA_PKG_VER} \
+        cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         nodejs \
         npm && \
     apt clean && \
