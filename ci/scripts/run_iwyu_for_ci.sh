@@ -18,6 +18,9 @@
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
+# Its possible to fix violations using this script. If any errors are reported, run the following from the repo root:
+# ci/scripts/run_iwyu_for_ci.sh -j 6 -p ./build morpheus | fix_includes.py --nosafe_headers --nocomments
+
 # Call iwyu_tool.py and append IWYU arguments onto the end
 ${IWYU_TOOL_PY:-iwyu_tool.py} "$@" -- \
    -Xiwyu --mapping_file=${REPO_DIR:-${SCRIPT_DIR}/../..}/ci/iwyu/mappings.imp \
@@ -26,4 +29,5 @@ ${IWYU_TOOL_PY:-iwyu_tool.py} "$@" -- \
    -Xiwyu --quoted_includes_first \
    -Xiwyu --cxx17ns \
    -Xiwyu --max_line_length=120 \
+   -Xiwyu --error=1 \
    --driver-mode=g++

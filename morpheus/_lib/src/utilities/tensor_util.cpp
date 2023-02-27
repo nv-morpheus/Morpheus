@@ -19,12 +19,9 @@
 
 #include <glog/logging.h>              // for DCHECK_EQ
 #include <mrc/utils/sort_indexes.hpp>  // for sort_indexes
-
-// clang-format off
+                                       // clang-format off
 // prevent from moving this into the third-party section
 #include <experimental/iterator>  // for make_ostream_joiner
-// clang-format on
-#include <iterator>     // for begin, end
 #include <ostream>      // for operator<<, ostream, stringstream
 #include <string>       // for char_traits, string
 #include <type_traits>  // for decay_t

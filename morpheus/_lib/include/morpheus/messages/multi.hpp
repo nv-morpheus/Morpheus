@@ -145,7 +145,7 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
 {
   public:
     using BaseT::BaseT;
-    virtual ~DerivedMultiMessage() = default;
+    ~DerivedMultiMessage() override = default;
 
     std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
     {
@@ -167,20 +167,20 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
     }
 
   protected:
-    virtual void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override
     {
         return BaseT::get_slice_impl(new_message, start, stop);
     }
 
-    virtual void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                  const std::vector<std::pair<size_t, size_t>>& ranges,
-                                  size_t num_selected_rows) const
+    void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                          const std::vector<std::pair<size_t, size_t>>& ranges,
+                          size_t num_selected_rows) const override
     {
         return BaseT::copy_ranges_impl(new_message, ranges, num_selected_rows);
     }
 
   private:
-    virtual std::shared_ptr<MultiMessage> clone_impl() const
+    std::shared_ptr<MultiMessage> clone_impl() const override
     {
         // Cast `this` to the derived type
         auto derived_this = static_cast<const DerivedT*>(this);

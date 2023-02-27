@@ -27,6 +27,7 @@
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
+#include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <pybind11/cast.h>
