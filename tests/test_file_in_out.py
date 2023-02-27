@@ -21,6 +21,7 @@ import pytest
 
 from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
@@ -135,3 +136,21 @@ def test_file_rw_index_pipe(tmp_path, config, input_file):
     # Somehow 0.7 ends up being 0.7000000000000001
     output_data = np.around(output_data, 2)
     assert output_data.tolist() == validation_data.tolist()
+
+
+@pytest.mark.parametrize("input_file,include_index_col",
+                         [(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), False),
+                          (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs_w_id_col.csv"), True)])
+def test_file_rw(config, tmp_path, input_file, include_index_col):
+    out_file = os.path.join(tmp_path, 'results.csv')
+    df = read_file_to_df(input_file, df_type='cudf')
+
+    assert list(df.columns) == ['v1', 'v2', 'v3', 'v4']
+
+    with open(out_file, 'w') as fh:
+        fh.writelines(df_to_csv(df, include_header=True, include_index_col=include_index_col))
+
+    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
+    output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
+    output_data = np.around(output_data, 2)
+    assert output_data.tolist() == input_data.tolist()

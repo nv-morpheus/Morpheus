@@ -22,10 +22,7 @@ import pytest
 
 from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.io.serializers import df_to_csv
-from morpheus.messages.message_meta import AppShieldMessageMeta
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.message_meta import UserMessageMeta
 from utils import TEST_DIRS
 
 
@@ -71,30 +68,3 @@ def test_copy_dataframe(config):
 
     assert meta.copy_dataframe()['v2'][3] != 47
     assert meta.df != 47
-
-
-@pytest.mark.parametrize('meta_cls,meta_kwargs',
-                         [(MessageMeta, {}), (UserMessageMeta, {
-                             "user_id": "testuser"
-                         }), (AppShieldMessageMeta, {
-                             "source": "testsource"
-                         })])
-def test_make_from_file(config, tmp_path, meta_cls, meta_kwargs):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs_w_id_col.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
-
-    meta = meta_cls.make_from_file(input_file, **meta_kwargs)
-    assert isinstance(meta, meta_cls)
-    for (attr, val) in meta_kwargs.items():
-        assert getattr(meta, attr) == val
-
-    with meta.mutable_dataframe() as df:
-        assert list(df.columns) == ['v1', 'v2', 'v3', 'v4']
-
-        with open(out_file, 'w') as fh:
-            fh.writelines(df_to_csv(df, include_header=True, include_index_col=True))
-
-    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
-    output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-    output_data = np.around(output_data, 2)
-    assert output_data.tolist() == input_data.tolist()
