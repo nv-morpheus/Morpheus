@@ -19,13 +19,13 @@ from morpheus._lib.common import DataLoaderRegistry as registry
 logger = logging.getLogger(__name__)
 
 
-def register_loader(loder_id):
+def register_loader(loader_id):
     """
     Registers a loader if not exists in the dataloader registry.
 
     Parameters
     ----------
-    loder_id : str
+    loader_id : str
         Unique identifier for a loader in the dataloader registry.
 
     Returns
@@ -36,13 +36,11 @@ def register_loader(loder_id):
 
     def inner_func(func):
         # Register a loader if not exists in the registry.
-        if not registry.contains(loder_id):
-            registry.register_loader(loder_id, func)
-            print("Laoder '{}' was successfully registered.".format(loder_id), flush=True)
-            logger.debug("Laoder '{}' was successfully registered.".format(loder_id))
+        if not registry.contains(loader_id):
+            registry.register_loader(loader_id, func)
+            logger.debug("Loader '{}' was successfully registered.".format(loader_id))
         else:
-            logger.debug("Module: '{}' already exists.".format(loder_id))
-            print("Module: '{}' already exists.".format(loder_id), flush=True)
+            logger.debug("Loader: '{}' already exists.".format(loader_id))
 
         return func
 

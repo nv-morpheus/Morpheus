@@ -38,6 +38,7 @@ from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
+from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
@@ -89,15 +90,19 @@ class ConfigGenerator:
             "module_id": DFP_PREPROC,
             "module_name": "dfp_preproc",
             "namespace": MODULE_NAMESPACE,
+            FSSPEC_LOADER: {
+                "module_id": DATA_LOADER,
+                "module_name": "fsspec_dataloader",
+                "namespace": MODULE_NAMESPACE,
+                "loaders": [{
+                    "id": FSSPEC_LOADER
+                }]
+            },
             FILE_BATCHER: {
                 "module_id": FILE_BATCHER,
                 "module_name": "file_batcher",
                 "namespace": MODULE_NAMESPACE,
                 "period": "D",
-                "sampling_rate_s": self._derive_args.sample_rate_s,
-                "start_time": self._derive_args.time_fields.start_time,
-                "end_time": self._derive_args.time_fields.end_time,
-                "iso_date_regex_pattern": iso_date_regex_pattern,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
@@ -109,9 +114,9 @@ class ConfigGenerator:
                     "schema_str": self._source_schema_str, "encoding": self._encoding
                 }
             },
-            DATA_LOADER: {
+            FILE_TO_DF_LOADER: {
                 "module_id": DATA_LOADER,
-                "module_name": "FileToDFDataLoader",
+                "module_name": "file_to_df_dataloader",
                 "namespace": MODULE_NAMESPACE,
                 "loaders": [{
                     "id": FILE_TO_DF_LOADER
