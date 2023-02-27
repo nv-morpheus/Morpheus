@@ -20,6 +20,7 @@
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 
+#include <cudf/utilities/traits.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <matx.h>
 #include <mrc/cuda/sync.hpp>

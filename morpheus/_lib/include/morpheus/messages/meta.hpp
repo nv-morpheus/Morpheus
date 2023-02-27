@@ -27,6 +27,7 @@
 #include <cstddef>  // for size_t
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 #pragma GCC visibility push(default)

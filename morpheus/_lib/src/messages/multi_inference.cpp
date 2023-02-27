@@ -18,7 +18,6 @@
 #include "morpheus/messages/multi_inference.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory::tensor_map_t
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
@@ -27,9 +26,7 @@
 #include <glog/logging.h>
 #include <pybind11/pytypes.h>
 
-#include <cstdint>  // for int32_t
 #include <memory>
-#include <ostream>  // needed for logging
 #include <string>
 #include <utility>
 

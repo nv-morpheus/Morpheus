@@ -28,10 +28,6 @@
         void SetUp() override {}                                                     \
     }
 
-namespace morpheus {
-class MessageMeta;
-}
-
 namespace morpheus::test {
 
 /**
