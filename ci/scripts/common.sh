@@ -29,7 +29,7 @@ export BASE_SHA=${CHANGE_TARGET:-${BASE_SHA:-$(${SCRIPT_DIR}/gitutils.py get_mer
 export COMMIT_SHA=${GIT_COMMIT:-${COMMIT_SHA:-HEAD}}
 
 export CPP_FILE_REGEX='^(\.\/)?(morpheus|tests)\/.*\.(cc|cpp|h|hpp)$'
-export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build).*\.(py|pyx|pxd)$'
+export PYTHON_FILE_REGEX='^(\.\/)?(?!\.|build|external).*\.(py|pyx|pxd)$'
 
 # Use these options to skip any of the checks
 export SKIP_COPYRIGHT=${SKIP_COPYRIGHT:-""}

@@ -22,6 +22,7 @@
 #include <glog/logging.h>  // for DCHECK
 
 #include <cstdint>  // for uint8_t
+#include <ostream>
 #include <utility>  // for move
 
 namespace morpheus {

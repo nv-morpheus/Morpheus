@@ -19,6 +19,7 @@
 
 #include <pybind11/embed.h>
 
+#include <cstdlib>
 #include <filesystem>
 #include <stdexcept>
 
