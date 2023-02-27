@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-#include "morpheus/objects/dtype.hpp"  // for TypeId
+#include "morpheus/io/deserializers.hpp"  // for read_file_to_df
+#include "morpheus/objects/dtype.hpp"     // for TypeId
 #include "morpheus/objects/fiber_queue.hpp"
-#include "morpheus/objects/file_types.hpp"
+#include "morpheus/objects/file_types.hpp"  // for FileTypes, determine_file_type
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
@@ -77,7 +78,8 @@ PYBIND11_MODULE(common, m)
         .value("JSON", FileTypes::JSON)
         .value("CSV", FileTypes::CSV);
 
-    m.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
+    m.def("determine_file_type", &determine_file_type, py::arg("filename"));
+    m.def("read_file_to_df", &read_file_to_df, py::arg("filename"), py::arg("file_type") = FileTypes::Auto);
 
     py::enum_<FilterSource>(
         m, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")
