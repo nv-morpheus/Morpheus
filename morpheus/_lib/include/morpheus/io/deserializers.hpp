@@ -49,8 +49,7 @@ std::vector<std::string> get_column_names_from_table(const cudf::io::table_with_
  * @param filename : Name of the file that should be loaded into a table
  * @return cudf::io::table_with_metadata
  */
-cudf::io::table_with_metadata load_table_from_file(const std::string& filename,
-                                                   FileTypes file_type = FileTypes::Auto);
+cudf::io::table_with_metadata load_table_from_file(const std::string& filename, FileTypes file_type = FileTypes::Auto);
 
 /**
  * @brief Loads a cudf table from a JSON source, replacing any escape characters in the source data that cudf can't
@@ -84,8 +83,7 @@ int prepare_df_index(cudf::io::table_with_metadata& data_table);
  * @param filename : Name of the file that should be loaded into a table
  * @return pybind11::object
  */
-pybind11::object read_file_to_df(const std::string& filename,
-                                 FileTypes file_type = FileTypes::Auto);
+pybind11::object read_file_to_df(const std::string& filename, FileTypes file_type = FileTypes::Auto);
 
 #pragma GCC visibility pop
 /** @} */  // end of group

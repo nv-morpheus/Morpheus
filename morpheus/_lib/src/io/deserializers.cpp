@@ -17,8 +17,8 @@
 
 #include "morpheus/io/deserializers.hpp"
 
+#include "morpheus/utilities/cudf_util.hpp"  // for proxy_table_from_table_with_metadata
 #include "morpheus/utilities/stage_util.hpp"
-#include "morpheus/utilities/cudf_util.hpp" // for proxy_table_from_table_with_metadata
 
 #include <cudf/column/column.hpp>
 #include <cudf/io/csv.hpp>
@@ -29,7 +29,7 @@
 #include <cudf/types.hpp>        // for cudf::type_id
 #include <ext/alloc_traits.h>
 #include <glog/logging.h>
-#include <pybind11/gil.h> // for gil_scoped_acquire
+#include <pybind11/gil.h>  // for gil_scoped_acquire
 
 #include <algorithm>
 #include <cstddef>
@@ -123,7 +123,7 @@ cudf::io::table_with_metadata load_table_from_file(const std::string& filename, 
 
 pybind11::object read_file_to_df(const std::string& filename, FileTypes file_type)
 {
-    auto table = load_table_from_file(filename, file_type);
+    auto table          = load_table_from_file(filename, file_type);
     int index_col_count = prepare_df_index(table);
 
     pybind11::gil_scoped_acquire gil;
