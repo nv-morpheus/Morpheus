@@ -199,7 +199,7 @@ PYBIND11_MODULE(stages, m)
              py::arg("name"),
              py::arg("filename"),
              py::arg("mode")              = "w",
-             py::arg("file_type")         = 0,  // Setting this to FileTypes::AUTO throws a conversion error at runtime
+             py::arg("file_type")         = FileTypes::Auto,
              py::arg("include_index_col") = true,
              py::arg("flush")             = false);
 
