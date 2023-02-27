@@ -17,6 +17,9 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+
+#include <map>
 #include <string>
 #include <vector>
 

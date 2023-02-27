@@ -18,7 +18,7 @@
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/types.hpp"  // for tensor_map_t
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>

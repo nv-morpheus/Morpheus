@@ -17,7 +17,8 @@
 
 #include "morpheus/stages/add_scores.hpp"
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for TensorIndex
 
 #include <glog/logging.h>
 

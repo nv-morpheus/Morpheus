@@ -19,8 +19,9 @@
 
 #include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/rmm_tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils, shape_type_t
+#include "morpheus/objects/tensor_object.hpp"  // for ITensor
+#include "morpheus/types.hpp"                  // for shape_type_t, TensorIndex
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils
 
 #include <cuda_runtime.h>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult

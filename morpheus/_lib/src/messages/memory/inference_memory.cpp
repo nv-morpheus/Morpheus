@@ -17,6 +17,9 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 
+// for TensorObject
+#include "morpheus/objects/tensor_object.hpp"  // IWYU pragma: keep
+
 #include <string>
 #include <utility>  // for move
 
