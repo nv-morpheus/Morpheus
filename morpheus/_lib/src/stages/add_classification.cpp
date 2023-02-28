@@ -17,7 +17,9 @@
 
 #include "morpheus/stages/add_classification.hpp"
 
+#include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/objects/dtype.hpp"          // for DType
+#include "morpheus/objects/tensor.hpp"         // for Tensor::create
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
@@ -64,8 +66,17 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 const std::size_t num_rows    = shape[0];
                 const std::size_t num_columns = shape[1];
 
-                // Now call the threshold function
-                auto tensor_obj = MatxUtil::threshold(probs, m_threshold, false);
+                auto thresh_bool_buffer = MatxUtil::threshold(
+                    {probs.data(), probs.dtype(), probs.get_shape(), probs.get_stride()}, m_threshold, false);
+
+                std::vector<TensorIndex> tensor_shape(shape.size());
+                std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());
+
+                std::vector<TensorIndex> tensor_stride(stride.size());
+                std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
+
+                auto tensor_obj =
+                    Tensor::create(thresh_bool_buffer, DType::create<bool>(), tensor_shape, tensor_stride);
 
                 std::vector<std::string> columns(m_idx2label.size());
                 std::vector<TensorObject> tensors(m_idx2label.size());

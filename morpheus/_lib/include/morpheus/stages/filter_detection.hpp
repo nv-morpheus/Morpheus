@@ -92,8 +92,8 @@ class FilterDetectionsStage
 
   private:
     subscribe_fn_t build_operator();
-    TensorObject get_tensor_thresholds(const std::shared_ptr<morpheus::MultiMessage>& x);
-    TensorObject get_column_thresholds(const std::shared_ptr<morpheus::MultiMessage>& x);
+    DevMemInfo get_tensor_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
+    DevMemInfo get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x);
 
     float m_threshold;
     bool m_copy;
