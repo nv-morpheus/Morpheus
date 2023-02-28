@@ -28,6 +28,7 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_utils import get_config_with_overrides
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
 
@@ -53,14 +54,17 @@ def dfp_inf(builder: mrc.Builder):
     """
 
     config = get_module_config(DFP_INF, builder)
+    config["module_id"] = DFP_INF
+    config["namespace"] = MODULE_NAMESPACE
+    config["module_name"] = "dfp_inf"
 
-    dfp_rolling_window_conf = config.get(DFP_ROLLING_WINDOW, None)
-    dfp_data_prep_conf = config.get(DFP_DATA_PREP, None)
-    dfp_inference_conf = config.get(DFP_INFERENCE, None)
-    filter_detections_conf = config.get(FILTER_DETECTIONS, None)
-    dfp_post_proc_conf = config.get(DFP_POST_PROCESSING, None)
-    serialize_conf = config.get(SERIALIZE, None)
-    write_to_file_conf = config.get(WRITE_TO_FILE, None)
+    dfp_rolling_window_conf = get_config_with_overrides(config, DFP_ROLLING_WINDOW, "dfp_rolling_window")
+    dfp_data_prep_conf = get_config_with_overrides(config, DFP_DATA_PREP, "dfp_data_prep")
+    dfp_inference_conf = get_config_with_overrides(config, DFP_INFERENCE, "dfp_inference")
+    filter_detections_conf = get_config_with_overrides(config, FILTER_DETECTIONS, "filter_detections")
+    dfp_post_proc_conf = get_config_with_overrides(config, DFP_POST_PROCESSING, "dfp_postprocessing")
+    serialize_conf = get_config_with_overrides(config, SERIALIZE, "serialize")
+    write_to_file_conf = get_config_with_overrides(config, WRITE_TO_FILE, "write_to_file")
 
     # Load modules
     dfp_rolling_window_module = load_module(dfp_rolling_window_conf, builder=builder)

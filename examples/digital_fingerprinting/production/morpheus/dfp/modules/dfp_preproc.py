@@ -27,6 +27,7 @@ from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_utils import get_config_with_overrides
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
@@ -50,13 +51,20 @@ def dfp_preproc(builder: mrc.Builder):
     """
 
     config = get_module_config(DFP_PREPROC, builder)
+    config["module_id"] = DFP_PREPROC
+    config["module_name"] = "dfp_preproc"
+    config["namespace"] = MODULE_NAMESPACE
 
-    fsspec_data_loader_conf = config.get(FSSPEC_LOADER, None)
-    file_batcher_conf = config.get(FILE_BATCHER, None)
-    file_to_df_data_loader_conf = config.get(FILE_TO_DF_LOADER, None)
-    dfp_split_users_conf = config.get(DFP_SPLIT_USERS, None)
+    fsspec_data_loader_conf = get_config_with_overrides(config, FSSPEC_LOADER, "fsspec_dataloader")
+    fsspec_data_loader_conf["module_id"] = DATA_LOADER  # Work around some naming issues.
+    file_batcher_conf = get_config_with_overrides(config, FILE_BATCHER, "file_batcher")
+    file_to_df_data_loader_conf = get_config_with_overrides(config, FILE_TO_DF_LOADER, "file_to_df_dataloader")
+    file_to_df_data_loader_conf["module_id"] = DATA_LOADER  # Work around some naming issues.
+    dfp_split_users_conf = get_config_with_overrides(config, DFP_SPLIT_USERS, "dfp_split_users")
 
     # Load modules
+    import json
+    print(json.dumps(fsspec_data_loader_conf, indent=4, default=str))
     fsspec_data_loader_module = load_module(fsspec_data_loader_conf, builder=builder)
     file_batcher_module = load_module(file_batcher_conf, builder=builder)
     file_to_df_data_loader_module = load_module(file_to_df_data_loader_conf, builder=builder)

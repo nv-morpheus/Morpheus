@@ -25,6 +25,7 @@ from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_utils import get_config_with_overrides
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
 
@@ -49,12 +50,15 @@ def dfp_preprocessing(builder: mrc.Builder):
     """
 
     config = get_module_config(DFP_PREPROCESSING, builder)
+    config["module_id"] = DFP_PREPROCESSING
+    config["namespace"] = MODULE_NAMESPACE
+    config["module_name"] = "dfp_preprocessing"
 
-    file_batcher_conf = config.get(FILE_BATCHER, None)
-    file_to_df_conf = config.get(FILE_TO_DF, None)
-    dfp_split_users_conf = config.get(DFP_SPLIT_USERS, None)
-    dfp_rolling_window_conf = config.get(DFP_ROLLING_WINDOW, None)
-    dfp_data_prep_conf = config.get(DFP_DATA_PREP, None)
+    file_batcher_conf = get_config_with_overrides(config, FILE_BATCHER, "file_batcher")
+    file_to_df_conf = get_config_with_overrides(config, FILE_TO_DF, "file_to_df")
+    dfp_split_users_conf = get_config_with_overrides(config, DFP_SPLIT_USERS, "dfp_split_users")
+    dfp_rolling_window_conf = get_config_with_overrides(config, DFP_ROLLING_WINDOW, "dfp_rolling_window")
+    dfp_data_prep_conf = get_config_with_overrides(config, DFP_DATA_PREP, "dfp_data_prep")
 
     # Load modules
     file_batcher_module = load_module(file_batcher_conf, builder=builder)

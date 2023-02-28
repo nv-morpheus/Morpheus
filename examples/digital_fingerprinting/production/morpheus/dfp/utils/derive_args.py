@@ -45,7 +45,6 @@ class DeriveArgs:
                  duration: str,
                  log_type: str,
                  tracking_uri: str,
-                 # workload_type: str = None,
                  train_users: str = None):
 
         self._skip_users = list(skip_user)
@@ -59,7 +58,6 @@ class DeriveArgs:
         self._tracking_uri = tracking_uri
         self._sample_rate_s = sample_rate_s
         self._log_type = log_type
-        # self._workload_type = workload_type
 
         self._include_generic = None
         self._include_individual = None
@@ -68,12 +66,9 @@ class DeriveArgs:
         self._model_name_formatter = "DFP-%s-{user_id}" % (log_type)
         self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (log_type)
 
-        train_flag = (train_users is not None and train_users)
-
-        self._is_training = True  # (train_flag and workload_type != "infer")
-        self._is_train_and_infer = True  # (train_flag and workload_type == "train_and_infer")
-        self._is_inference = True  # not (self._is_training or self._is_train_and_infer or workload_type == "train"
-                                   # or workload_type == "train_and_infer")
+        self._is_training = True
+        self._is_train_and_infer = True
+        self._is_inference = True
 
     def verify_init(func):
 
@@ -171,7 +166,7 @@ class DeriveArgs:
 
     def _set_mlflow_tracking_uri(self):
         if self._tracking_uri is None:
-            raise ValueError("tracking uri should not be None type.")
+            raise ValueError("tracking uri cannot be None.")
         # Initialize ML Flow
         mlflow.set_tracking_uri(self._tracking_uri)
         logger.info("Tracking URI: %s", mlflow.get_tracking_uri())
@@ -191,10 +186,6 @@ class DeriveArgs:
         self._set_mlflow_tracking_uri()
         self._initialized = True
 
-        if (len(self._only_users) > 0 and len(self._only_users) > 0):
-            logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
-
-        logger.info("Running training pipeline with the following options: ")
         logger.info("Train generic_user: %s", self._include_generic)
         logger.info("Skipping users: %s", self._skip_users)
         logger.info("Start Time: %s", self._start_time)
