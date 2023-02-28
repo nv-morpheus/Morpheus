@@ -20,31 +20,19 @@ import morpheus._lib.messages as _messages
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
 @dataclasses.dataclass
-class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessage):
+class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponseMessage):
     """
     This class contains several inference responses as well as the cooresponding message metadata.
-
-    Parameters
-    ----------
-    memory : `ResponseMemory`
-        This is a response container instance for triton inference requests.
-    offset : int
-        Offset of each response message into the `ResponseMemory` block.
-    count : int
-        Inference results size of all responses.
-
     """
-    memory: ResponseMemory = dataclasses.field(repr=False)
-    offset: int
-    count: int
 
     @property
     def outputs(self):
         """
-        Get outputs stored in the ResponseMemory container.
+        Get outputs stored in the ResponseMemory container. Alias for `MultiResponseMessage.tensors`.
 
         Returns
         -------
@@ -52,11 +40,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
             Inference outputs.
 
         """
-        tensors = self.memory.get_tensors()
-        return {key: self.get_output(key) for key in tensors.keys()}
-
-    def __getattr__(self, name: str) -> typing.Any:
-        return self.get_output(name)
+        return self.tensors
 
     def get_output(self, name: str):
         """
