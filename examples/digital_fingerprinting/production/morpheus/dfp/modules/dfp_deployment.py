@@ -24,6 +24,7 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
+from morpheus.utils.module_utils import get_config_with_overrides
 
 from ..utils.module_ids import DFP_DEPLOYMENT
 from ..utils.module_ids import DFP_INF
@@ -35,12 +36,11 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 
 @register_module(DFP_DEPLOYMENT, MODULE_NAMESPACE)
 def dfp_deployment(builder: mrc.Builder):
-
     module_config = get_module_config(DFP_DEPLOYMENT, builder)
 
-    preproc_conf = module_config.get(DFP_PREPROC, None)
-    infer_conf = module_config.get(DFP_INF, None)
-    train_conf = module_config.get(DFP_TRA, None)
+    preproc_conf = get_config_with_overrides(module_config, DFP_PREPROC, "dfp_preproc")
+    infer_conf = get_config_with_overrides(module_config, DFP_INF, "dfp_inference")
+    train_conf = get_config_with_overrides(module_config, DFP_TRA, "dfp_training")
 
     if "output_port_count" not in module_config:
         raise Exception("Missing required attribute 'output_port_count'")

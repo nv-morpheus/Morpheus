@@ -57,21 +57,7 @@ def file_batcher(builder: mrc.Builder):
 
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
-    def on_data(control_message: MessageControl):
-        # Determine the date of the file, and apply the window filter if we have one
-        # This needs to be in the payload, not a task, because batcher isn't a data loader
-        # TODO(Devin)
-        # task = control_message.pop_task("load")
-        # files = task["files"]
-
-        # TODO(Devin)
-        data_type = "streaming"
-        if (control_message.has_metadata("data_type")):
-            data_type = control_message.get_metadata("data_type")
-
-        df = control_message.payload().df
-        files = df.files.to_arrow().to_pylist()
-
+    def build_fs_filename_df(files):
         file_objects: fsspec.core.OpenFiles = fsspec.open_files(files)
 
         ts_and_files = []
@@ -87,7 +73,6 @@ def file_batcher(builder: mrc.Builder):
         # sort the incoming data by date
         ts_and_files.sort(key=lambda x: x.timestamp)
 
-        # Create a dataframe with the incoming metadata
         if ((len(ts_and_files) > 1) and (sampling_rate_s > 0)):
             file_sampled_list = []
 
@@ -104,56 +89,71 @@ def file_batcher(builder: mrc.Builder):
             else:
                 ts_and_files = file_sampled_list
 
-        df = pd.DataFrame()
-
         timestamps = []
         full_names = []
         for (ts, file_name) in ts_and_files:
             timestamps.append(ts)
             full_names.append(file_name)
 
+        df = pd.DataFrame()
         df["ts"] = timestamps
         df["key"] = full_names
 
-        # TODO(Devin): Clean this up
+        return df
+
+    def generate_cms_for_batch_periods(control_message: MessageControl, period_gb, n_groups):
+        data_type = control_message.get_metadata("data_type")
+
         control_messages = []
-        if len(df) > 0:
-            # Now split by the batching settings
-            df_period = df["ts"].dt.to_period(period)
-            period_gb = df.groupby(df_period)
-            n_groups = len(period_gb)
+        for group in period_gb.groups:
+            period_df = period_gb.get_group(group)
+            filenames = period_df["key"].to_list()
 
-            logger.debug("Batching %d files => %d groups", len(df), n_groups)
-            for group in period_gb.groups:
-                period_df = period_gb.get_group(group)
-                filenames = period_df["key"].to_list()
-
-                load_task = {
-                    "loader_id": FILE_TO_DF_LOADER,
-                    "strategy": "aggregate",
-                    "files": filenames,
-                    "n_groups": n_groups,
-                    "batcher_config": {  # TODO(Devin): remove this
-                        "timestamp_column_name": config.get("timestamp_column_name"),
-                        "schema": config.get("schema"),
-                        "file_type": config.get("file_type"),
-                        "filter_null": config.get("filter_null"),
-                        "parser_kwargs": config.get("parser_kwargs"),
-                        "cache_dir": config.get("cache_dir")
-                    }
+            load_task = {
+                "loader_id": FILE_TO_DF_LOADER,
+                "strategy": "aggregate",
+                "files": filenames,
+                "n_groups": n_groups,
+                "batcher_config": {  # TODO(Devin): remove this
+                    "timestamp_column_name": config.get("timestamp_column_name"),
+                    "schema": config.get("schema"),
+                    "file_type": config.get("file_type"),
+                    "filter_null": config.get("filter_null"),
+                    "parser_kwargs": config.get("parser_kwargs"),
+                    "cache_dir": config.get("cache_dir")
                 }
+            }
 
-                if (data_type == "payload"):
-                    control_message.add_task("load", load_task)
-                elif (data_type == "streaming"):
-                    batch_control_message = control_message.copy()
-                    batch_control_message.add_task("load", load_task)
-                    control_messages.append(batch_control_message)
-                else:
-                    raise Exception("Unknown data type")
+            if (data_type == "payload"):
+                control_message.add_task("load", load_task)
+            elif (data_type == "streaming"):
+                batch_control_message = control_message.copy()
+                batch_control_message.add_task("load", load_task)
+                control_messages.append(batch_control_message)
+            else:
+                raise Exception("Unknown data type")
 
         if (data_type == "payload"):
             control_messages.append(control_message)
+
+        return control_messages
+
+    def on_data(control_message: MessageControl):
+        df = control_message.payload().df
+        files = df.files.to_arrow().to_pylist()
+        ts_filenames_df = build_fs_filename_df(files)
+
+        control_messages = []
+        if len(ts_filenames_df) > 0:
+            # Now split by the batching settings
+            df_period = ts_filenames_df["ts"].dt.to_period(period)
+            period_gb = ts_filenames_df.groupby(df_period)
+            n_groups = len(period_gb)
+
+            logger.debug("Batching %d files => %d groups", len(ts_filenames_df), n_groups)
+
+            control_messages = generate_cms_for_batch_periods(control_message,
+                                                              period_gb, n_groups)
 
         return control_messages
 

@@ -5,7 +5,7 @@
         {
           "type": "load",
           "properties": {
-            "loader_id": "file_batcher_debugging",
+            "loader_id": "fsspec",
             "files": [
               "../../../../examples/data/dfp/duo-training-data/*.json"
             ]
@@ -30,7 +30,7 @@
         {
           "type": "load",
           "properties": {
-            "loader_id": "file_batcher_debugging",
+            "loader_id": "fsspec",
             "files": [
               "../../../../examples/data/dfp/duo-inference-data/*.json"
             ]

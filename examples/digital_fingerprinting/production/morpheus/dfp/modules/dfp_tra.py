@@ -25,6 +25,7 @@ from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
+from morpheus.utils.module_utils import get_config_with_overrides
 
 from ..utils.module_ids import DFP_DATA_PREP
 from ..utils.module_ids import DFP_ROLLING_WINDOW
@@ -47,11 +48,14 @@ def dfp_tra(builder: mrc.Builder):
     """
 
     config = get_module_config(DFP_TRA, builder)
+    config["module_id"] = DFP_TRA
+    config["namespace"] = MODULE_NAMESPACE
+    config["module_name"] = "dfp_tra"
 
-    dfp_rolling_window_conf = config.get(DFP_ROLLING_WINDOW, None)
-    dfp_data_prep_conf = config.get(DFP_DATA_PREP, None)
-    dfp_training_conf = config.get(DFP_TRAINING, None)
-    mlflow_model_writer_conf = config.get(MLFLOW_MODEL_WRITER, None)
+    dfp_rolling_window_conf = get_config_with_overrides(config, DFP_ROLLING_WINDOW, "dfp_rolling_window")
+    dfp_data_prep_conf = get_config_with_overrides(config, DFP_DATA_PREP, "dfp_data_prep")
+    dfp_training_conf = get_config_with_overrides(config, DFP_TRAINING, "dfp_training")
+    mlflow_model_writer_conf = get_config_with_overrides(config, MLFLOW_MODEL_WRITER, "mlflow_model_writer")
 
     # Load modules
     dfp_rolling_window_module = load_module(dfp_rolling_window_conf, builder=builder)

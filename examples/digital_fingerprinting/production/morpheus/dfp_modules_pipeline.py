@@ -41,12 +41,6 @@ from morpheus.stages.input.control_message_source_stage import ControlMessageSou
     help=("Indicates what type of logs are going to be used in the workload."),
 )
 @click.option(
-    "--workload_type",
-    type=click.Choice(["infer", "train", "train_and_infer"], case_sensitive=False),
-    required=True,
-    help=("Workload type either inference or training or inference + training"),
-)
-@click.option(
     "--train_users",
     type=click.Choice(["all", "generic", "individual"], case_sensitive=False),
     help=("Indicates whether or not to train per user or a generic model for all users. "
@@ -115,7 +109,6 @@ from morpheus.stages.input.control_message_source_stage import ControlMessageSou
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
 def run_pipeline(log_type: str,
-                 workload_type: str,
                  train_users: str,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -127,8 +120,10 @@ def run_pipeline(log_type: str,
                  tracking_uri,
                  use_cpp,
                  **kwargs):
+    if (skip_user and only_user):
+        logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
-    derive_args = DeriveArgs(skip_user,
+    derived_args = DeriveArgs(skip_user,
                              only_user,
                              start_time,
                              log_level,
@@ -137,20 +132,24 @@ def run_pipeline(log_type: str,
                              duration,
                              log_type,
                              tracking_uri,
-                             workload_type,
                              train_users)
 
-    derive_args.init()
+    derived_args.init()
 
+    # Default user_id column -- override with ControlMessage
     userid_column_name = "username"
+    # Default timestamp column -- override with ControlMessage
     timestamp_column_name = "timestamp"
 
     config: Config = generate_ae_config(log_type, userid_column_name, timestamp_column_name, use_cpp=use_cpp)
 
+    # Construct the data frame Schema used to normalize incoming data
     schema_builder = SchemaBuilder(config, log_type)
     schema: Schema = schema_builder.build_schema()
 
-    config_generator = ConfigGenerator(config, derive_args, schema)
+    # Create config helper used to generate config parameters for the DFP module
+    # This will populate to the minimum configuration parameters with intelligent default values
+    config_generator = ConfigGenerator(config, derived_args, schema)
 
     module_config = config_generator.get_module_config()
 
@@ -171,7 +170,7 @@ def run_pipeline(log_type: str,
 
     train_moniter_stage = pipeline.add_stage(
         MonitorStage(config, description="DFP Training Pipeline rate", smoothing=0.001))
-    
+
     infer_moniter_stage = pipeline.add_stage(
         MonitorStage(config, description="DFP Inference Pipeline rate", smoothing=0.001))
 

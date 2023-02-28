@@ -65,8 +65,6 @@ def dfp_rolling_window(builder: mrc.Builder):
         # Determine cache location
         cache_location = os.path.join(cache_dir, f"{user_id}.pkl")
 
-        user_cache = None
-
         user_cache = user_cache_map.get(user_id, None)
 
         if (user_cache is None):

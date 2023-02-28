@@ -52,7 +52,6 @@ from morpheus.utils.module_ids import WRITE_TO_FILE
 class ConfigGenerator:
 
     def __init__(self, config: Config, derive_args: DeriveArgs, schema: Schema, encoding: str = "latin1"):
-
         self._config = config
         self._derive_args = derive_args
         self._encoding = encoding
@@ -61,7 +60,6 @@ class ConfigGenerator:
         self._input_message_type = pyobj2str(MultiMessage, encoding)
 
     def get_module_config(self):
-
         module_config = {}
 
         module_config["module_id"] = DFP_DEPLOYMENT
@@ -76,23 +74,13 @@ class ConfigGenerator:
         return module_config
 
     def preproc_module_config(self):
-
         module_config = {
-            "module_id": DFP_PREPROC,
-            "module_name": "dfp_preproc",
-            "namespace": MODULE_NAMESPACE,
             FSSPEC_LOADER: {
-                "module_id": DATA_LOADER,
-                "module_name": "fsspec_dataloader",
-                "namespace": MODULE_NAMESPACE,
                 "loaders": [{
                     "id": FSSPEC_LOADER
                 }]
             },
             FILE_BATCHER: {
-                "module_id": FILE_BATCHER,
-                "module_name": "file_batcher",
-                "namespace": MODULE_NAMESPACE,
                 "period": "D",
                 "sampling_rate_s": self._derive_args.sample_rate_s,
                 "start_time": self._derive_args.time_fields.start_time,
@@ -110,17 +98,11 @@ class ConfigGenerator:
                 }
             },
             FILE_TO_DF_LOADER: {
-                "module_id": DATA_LOADER,
-                "module_name": "file_to_df_dataloader",
-                "namespace": MODULE_NAMESPACE,
                 "loaders": [{
                     "id": FILE_TO_DF_LOADER
                 }]
             },
             DFP_SPLIT_USERS: {
-                "module_id": DFP_SPLIT_USERS,
-                "module_name": "dfp_split_users",
-                "namespace": MODULE_NAMESPACE,
                 "include_generic": self._derive_args.include_generic,
                 "include_individual": self._derive_args.include_individual,
                 "skip_users": self._derive_args.skip_users,
@@ -139,9 +121,6 @@ class ConfigGenerator:
             "module_name": "dfp_inf",
             "namespace": MODULE_NAMESPACE,
             DFP_ROLLING_WINDOW: {
-                "module_id": DFP_ROLLING_WINDOW,
-                "module_name": "dfp_rolling_window_infer",
-                "namespace": MODULE_NAMESPACE,
                 "min_history": 1,
                 "min_increment": 0,
                 "max_history": "1d",
@@ -150,9 +129,6 @@ class ConfigGenerator:
                 "task_type": "inference"
             },
             DFP_DATA_PREP: {
-                "module_id": DFP_DATA_PREP,
-                "module_name": "dfp_data_prep_infer",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
@@ -160,17 +136,11 @@ class ConfigGenerator:
                 "task_type": "inference"
             },
             DFP_INFERENCE: {
-                "module_id": DFP_INFERENCE,
-                "module_name": "dfp_inference",
-                "namespace": MODULE_NAMESPACE,
                 "model_name_formatter": self._derive_args.model_name_formatter,
                 "fallback_username": self._config.ae.fallback_username,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
             FILTER_DETECTIONS: {
-                "module_id": FILTER_DETECTIONS,
-                "module_name": "filter_detections",
-                "namespace": MODULE_NAMESPACE,
                 "field_name": "mean_abs_z",
                 "threshold": 2.0,
                 "filter_source": "DATAFRAME",
@@ -179,22 +149,13 @@ class ConfigGenerator:
                 }
             },
             DFP_POST_PROCESSING: {
-                "module_id": DFP_POST_PROCESSING,
-                "module_name": "dfp_post_processing",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
             SERIALIZE: {
-                "module_id": SERIALIZE,
-                "module_name": "serialize",
-                "namespace": MODULE_NAMESPACE,
                 "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id'],
                 "use_cpp": CppConfig.get_should_use_cpp()
             },
             WRITE_TO_FILE: {
-                "module_id": WRITE_TO_FILE,
-                "module_name": "write_to_file",
-                "namespace": MODULE_NAMESPACE,
                 "filename": "dfp_detections_{}.csv".format(self._derive_args.log_type),
                 "overwrite": True
             }
@@ -203,15 +164,8 @@ class ConfigGenerator:
         return module_config
 
     def train_module_config(self):
-
         module_config = {
-            "module_id": DFP_TRA,
-            "module_name": "dfp_tra",
-            "namespace": MODULE_NAMESPACE,
             DFP_ROLLING_WINDOW: {
-                "module_id": DFP_ROLLING_WINDOW,
-                "module_name": "dfp_rolling_window_tra",
-                "namespace": MODULE_NAMESPACE,
                 "min_history": 300,
                 "min_increment": 300,
                 "max_history": self._derive_args.duration,
@@ -220,9 +174,6 @@ class ConfigGenerator:
                 "task_type": "training"
             },
             DFP_DATA_PREP: {
-                "module_id": DFP_DATA_PREP,
-                "module_name": "dfp_data_prep_tra",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
@@ -230,9 +181,6 @@ class ConfigGenerator:
                 "task_type": "training"
             },
             DFP_TRAINING: {
-                "module_id": DFP_TRAINING,
-                "module_name": "dfp_training",
-                "namespace": MODULE_NAMESPACE,
                 "model_kwargs": {
                     "encoder_layers": [512, 500],  # layers of the encoding part
                     "decoder_layers": [512],  # layers of the decoding part
@@ -253,9 +201,6 @@ class ConfigGenerator:
                 "validation_size": 0.10
             },
             MLFLOW_MODEL_WRITER: {
-                "module_id": MLFLOW_MODEL_WRITER,
-                "module_name": "mlflow_model_writer",
-                "namespace": MODULE_NAMESPACE,
                 "model_name_formatter": self._derive_args.model_name_formatter,
                 "experiment_name_formatter": self._derive_args.experiment_name_formatter,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
@@ -272,15 +217,8 @@ class ConfigGenerator:
         return module_config
 
     def inf_pipe_module_config(self):
-
         module_config = {
-            "module_id": DFP_INFERENCE_PIPELINE,
-            "module_name": "dfp_inference_pipeline",
-            "namespace": MODULE_NAMESPACE,
             FILE_BATCHER: {
-                "module_id": FILE_BATCHER,
-                "module_name": "file_batcher",
-                "namespace": MODULE_NAMESPACE,
                 "period": "D",
                 "sampling_rate_s": self._derive_args.sample_rate_s,
                 "start_time": self._derive_args.time_fields.start_time,
@@ -288,9 +226,6 @@ class ConfigGenerator:
                 "iso_date_regex_pattern": iso_date_regex_pattern
             },
             FILE_TO_DF: {
-                "module_id": FILE_TO_DF,
-                "module_name": "FILE_TO_DF",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
@@ -303,9 +238,6 @@ class ConfigGenerator:
                 }
             },
             DFP_SPLIT_USERS: {
-                "module_id": DFP_SPLIT_USERS,
-                "module_name": "dfp_split_users",
-                "namespace": MODULE_NAMESPACE,
                 "include_generic": self._derive_args.include_generic,
                 "include_individual": self._derive_args.include_individual,
                 "skip_users": self._derive_args.skip_users,
@@ -315,9 +247,6 @@ class ConfigGenerator:
                 "fallback_username": self._config.ae.fallback_username
             },
             DFP_ROLLING_WINDOW: {
-                "module_id": DFP_ROLLING_WINDOW,
-                "module_name": "dfp_rolling_window",
-                "namespace": MODULE_NAMESPACE,
                 "min_history": 1,
                 "min_increment": 0,
                 "max_history": "1d",
@@ -325,26 +254,17 @@ class ConfigGenerator:
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
             DFP_DATA_PREP: {
-                "module_id": DFP_DATA_PREP,
-                "module_name": "dfp_data_prep",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
                 }
             },
             DFP_INFERENCE: {
-                "module_id": DFP_INFERENCE,
-                "module_name": "dfp_inference",
-                "namespace": MODULE_NAMESPACE,
                 "model_name_formatter": self._derive_args.model_name_formatter,
                 "fallback_username": self._config.ae.fallback_username,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
             FILTER_DETECTIONS: {
-                "module_id": FILTER_DETECTIONS,
-                "module_name": "filter_detections",
-                "namespace": MODULE_NAMESPACE,
                 "field_name": "mean_abs_z",
                 "threshold": 1.0,
                 "filter_source": "DATAFRAME",
@@ -353,21 +273,12 @@ class ConfigGenerator:
                 }
             },
             DFP_POST_PROCESSING: {
-                "module_id": DFP_POST_PROCESSING,
-                "module_name": "dfp_post_processing",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
             SERIALIZE: {
-                "module_id": SERIALIZE,
-                "module_name": "serialize",
-                "namespace": MODULE_NAMESPACE,
                 "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id']
             },
             WRITE_TO_FILE: {
-                "module_id": WRITE_TO_FILE,
-                "module_name": "write_to_file",
-                "namespace": MODULE_NAMESPACE,
                 "filename": "dfp_detections_{}.csv".format(self._derive_args.log_type),
                 "overwrite": True
             }
@@ -377,13 +288,7 @@ class ConfigGenerator:
 
     def tra_pipe_module_config(self):
         module_config = {
-            "module_id": DFP_TRAINING_PIPELINE,
-            "module_name": "dfp_training_pipeline",
-            "namespace": MODULE_NAMESPACE,
             FILE_BATCHER: {
-                "module_id": FILE_BATCHER,
-                "module_name": "file_batcher",
-                "namespace": MODULE_NAMESPACE,
                 "period": "D",
                 "sampling_rate_s": self._derive_args.sample_rate_s,
                 "start_time": self._derive_args.time_fields.start_time,
@@ -391,9 +296,6 @@ class ConfigGenerator:
                 "iso_date_regex_pattern": iso_date_regex_pattern
             },
             FILE_TO_DF: {
-                "module_id": FILE_TO_DF,
-                "module_name": "FILE_TO_DF",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
@@ -406,9 +308,6 @@ class ConfigGenerator:
                 }
             },
             DFP_SPLIT_USERS: {
-                "module_id": DFP_SPLIT_USERS,
-                "module_name": "dfp_split_users",
-                "namespace": MODULE_NAMESPACE,
                 "include_generic": self._derive_args.include_generic,
                 "include_individual": self._derive_args.include_individual,
                 "skip_users": self._derive_args.skip_users,
@@ -418,9 +317,6 @@ class ConfigGenerator:
                 "fallback_username": self._config.ae.fallback_username
             },
             DFP_ROLLING_WINDOW: {
-                "module_id": DFP_ROLLING_WINDOW,
-                "module_name": "dfp_rolling_window",
-                "namespace": MODULE_NAMESPACE,
                 "min_history": 300,
                 "min_increment": 300,
                 "max_history": self._derive_args.duration,
@@ -428,18 +324,12 @@ class ConfigGenerator:
                 "timestamp_column_name": self._config.ae.timestamp_column_name
             },
             DFP_DATA_PREP: {
-                "module_id": DFP_DATA_PREP,
-                "module_name": "dfp_data_prep",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
                 }
             },
             DFP_TRAINING: {
-                "module_id": DFP_TRAINING,
-                "module_name": "dfp_training",
-                "namespace": MODULE_NAMESPACE,
                 "model_kwargs": {
                     "encoder_layers": [512, 500],  # layers of the encoding part
                     "decoder_layers": [512],  # layers of the decoding part
@@ -460,9 +350,6 @@ class ConfigGenerator:
                 "validation_size": 0.10
             },
             MLFLOW_MODEL_WRITER: {
-                "module_id": MLFLOW_MODEL_WRITER,
-                "module_name": "mlflow_model_writer",
-                "namespace": MODULE_NAMESPACE,
                 "model_name_formatter": self._derive_args.model_name_formatter,
                 "experiment_name_formatter": self._derive_args.experiment_name_formatter,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,

@@ -134,6 +134,16 @@ def verify_module_meta_fields(config: typing.Dict):
         raise KeyError("Required attribute 'module_name' is missing in the module configuration.")
 
 
+def get_config_with_overrides(config, module_id, module_name, module_namespace="morpheus"):
+    sub_config = config.get(module_id, None)
+
+    sub_config.setdefault("module_id", module_id)
+    sub_config.setdefault("module_name", module_name)
+    sub_config.setdefault("namespace", module_namespace)
+
+    return sub_config
+
+
 def get_module_config(module_id: str, builder: mrc.Builder):
     """
     Returns the module configuration for the specified module id.
