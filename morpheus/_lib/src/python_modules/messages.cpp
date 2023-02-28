@@ -28,6 +28,7 @@
 #include "morpheus/messages/multi_inference_nlp.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
@@ -85,6 +86,7 @@ PYBIND11_MODULE(messages, m)
 
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiTensorMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
@@ -92,6 +94,12 @@ PYBIND11_MODULE(messages, m)
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiTensorMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
+
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
@@ -99,10 +107,16 @@ PYBIND11_MODULE(messages, m)
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
@@ -110,8 +124,14 @@ PYBIND11_MODULE(messages, m)
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
+
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
