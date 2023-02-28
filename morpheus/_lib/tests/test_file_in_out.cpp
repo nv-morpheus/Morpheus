@@ -56,6 +56,9 @@ class TestFileInOut : public morpheus::test::TestWithPythonInterpreter
         morpheus::test::TestWithPythonInterpreter::SetUp();
         {
             pybind11::gil_scoped_acquire gil;
+
+            // Initially I ran into an issue bootstrapping cudf, I was able to work-around the issue, details in:
+            // https://github.com/rapidsai/cudf/issues/12862
             load_cudf_helpers();
         }
     }
