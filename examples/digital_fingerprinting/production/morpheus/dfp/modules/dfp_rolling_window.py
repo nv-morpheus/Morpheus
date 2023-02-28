@@ -126,7 +126,6 @@ def dfp_rolling_window(builder: mrc.Builder):
                                     "Rolling history can only be used with non-overlapping batches"))
 
             # TODO(Devin): Optimize
-            print("Training finished, returning:", user_id, flush=True)
             return MessageMeta(cudf.from_pandas(train_df))
 
     def on_data(control_message: MessageControl):
