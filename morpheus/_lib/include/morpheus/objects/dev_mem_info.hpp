@@ -19,6 +19,7 @@
 
 #include "morpheus/objects/dtype.hpp"
 
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
 
 #include <cstddef>  // for size_t
@@ -41,6 +42,35 @@ namespace morpheus {
 class DevMemInfo
 {
   public:
+    /**
+     * @brief Construct a new DevMemInfo object. If `memory_resource` is null the value returned by
+     * `rmm::mr::get_current_device_resource()` will be used.
+     *
+     * @param data
+     * @param dtype
+     * @param shape
+     * @param stride
+     * @param offset_bytes
+     * @param stream
+     * @param memory_resource
+     */
+    DevMemInfo(void* data,
+               DType dtype,
+               std::vector<std::size_t> shape,
+               std::vector<std::size_t> stride,
+               size_t offset_bytes                              = 0,
+               rmm::cuda_stream_view stream                     = rmm::cuda_stream_per_thread,
+               rmm::mr::device_memory_resource* memory_resource = nullptr);
+
+    /**
+     * @brief Construct a new DevMemInfo object from an existing `rmm::device_buffer`.
+     *
+     * @param buffer
+     * @param dtype
+     * @param shape
+     * @param stride
+     * @param offset_bytes
+     */
     DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                DType dtype,
                std::vector<std::size_t> shape,
@@ -77,8 +107,8 @@ class DevMemInfo
     std::unique_ptr<rmm::device_buffer> make_new_buffer(std::size_t bytes) const;
 
   private:
-    // Buffer of data
-    std::shared_ptr<rmm::device_buffer> m_buffer;
+    // Pointer to the head of our data
+    void* m_data;
 
     // Type of elements in the buffer
     const DType m_dtype;
@@ -89,6 +119,12 @@ class DevMemInfo
 
     // Offset from head of data in bytes
     const size_t m_offset_bytes;
+
+    // Cuda stream on which this was allocated
+    rmm::cuda_stream_view m_cuda_stream;
+
+    // Memory resource used for allocation.
+    rmm::mr::device_memory_resource* m_mem_resource;
 };
 
 /** @} */  // end of group

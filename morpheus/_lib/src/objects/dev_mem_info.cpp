@@ -28,19 +28,41 @@
 namespace morpheus {
 // Component public implementations
 // ************ DevMemInfo************************* //
+DevMemInfo::DevMemInfo(void* data,
+                       DType dtype,
+                       std::vector<std::size_t> shape,
+                       std::vector<std::size_t> stride,
+                       size_t offset_bytes,
+                       rmm::cuda_stream_view stream,
+                       rmm::mr::device_memory_resource* memory_resource) :
+  m_data(data),
+  m_dtype(std::move(dtype)),
+  m_shape(std::move(shape)),
+  m_stride(std::move(stride)),
+  m_offset_bytes(offset_bytes),
+  m_cuda_stream(std::move(stream)),
+  m_mem_resource(memory_resource)
+{
+    if (m_mem_resource == nullptr)
+    {
+        m_mem_resource = rmm::mr::get_current_device_resource();
+    }
+}
 
 DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                        DType dtype,
                        std::vector<std::size_t> shape,
                        std::vector<std::size_t> stride,
                        size_t offset_bytes) :
-  m_buffer(std::move(buffer)),
+  m_data(buffer->data()),
   m_dtype(std::move(dtype)),
   m_shape(std::move(shape)),
   m_stride(std::move(stride)),
-  m_offset_bytes(offset_bytes)
+  m_offset_bytes(offset_bytes),
+  m_cuda_stream(buffer->stream()),
+  m_mem_resource(buffer->memory_resource())
 {
-    DCHECK(m_offset_bytes + this->bytes() <= m_buffer->size())
+    DCHECK(m_offset_bytes + this->bytes() <= buffer->size())
         << "Inconsistent dimensions, values would extend past the end of the device_buffer";
 }
 
@@ -91,11 +113,11 @@ std::size_t DevMemInfo::stride(std::size_t idx) const
 
 std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(std::size_t bytes) const
 {
-    return std::make_unique<rmm::device_buffer>(bytes, m_buffer->stream(), m_buffer->memory_resource());
+    return std::make_unique<rmm::device_buffer>(bytes, m_cuda_stream, m_mem_resource);
 }
 
 void* DevMemInfo::data() const
 {
-    return static_cast<uint8_t*>(m_buffer->data()) + m_offset_bytes;
+    return static_cast<uint8_t*>(m_data) + m_offset_bytes;
 }
 }  // namespace morpheus
