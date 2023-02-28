@@ -17,18 +17,19 @@ import os
 import typing
 from contextlib import contextmanager
 
-import cudf
 import mrc
 import pandas as pd
 from dfp.utils.cached_user_window import CachedUserWindow
 from dfp.utils.logging_timer import log_time
 from mrc.core import operators as ops
 
+import cudf
+
+from morpheus.messages import MessageControl
+from morpheus.messages import MessageMeta
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
-from morpheus.messages import MessageControl
-from morpheus.messages import MessageMeta
 
 from ..utils.module_ids import DFP_ROLLING_WINDOW
 
@@ -47,7 +48,7 @@ def dfp_rolling_window(builder: mrc.Builder):
     """
 
     config = get_module_config(DFP_ROLLING_WINDOW, builder)
-
+    task_type = config.get("task_type", None)
     timestamp_column_name = config.get("timestamp_column_name", None)
     min_history = config.get("min_history", None)
     max_history = config.get("max_history", None)
@@ -129,6 +130,10 @@ def dfp_rolling_window(builder: mrc.Builder):
             return MessageMeta(cudf.from_pandas(train_df))
 
     def on_data(control_message: MessageControl):
+
+        if not control_message.has_task(task_type):
+            return None
+
         payload = control_message.payload()
         user_id = control_message.get_metadata("user_id")
 
@@ -164,7 +169,7 @@ def dfp_rolling_window(builder: mrc.Builder):
             rw_control_message.payload(result)
             # TODO(Devin): Configure based on module config
             # TODO(Devin): Stop using dfp rolling window for inference, it makes zero sense
-            rw_control_message.add_task("training", {})
+            rw_control_message.add_task(task_type, {})
             rw_control_message.set_metadata("user_id", user_id)
             rw_control_message.set_metadata("data_type", "payload")
 

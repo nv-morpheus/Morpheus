@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FILE_TO_DF_LOADER = "FileToDFLoader"
-FILE_LIST_LOADER = "FileListLoader"
+FILE_TO_DF_LOADER = "file_to_df"
+FSSPEC_LOADER = "fsspec"

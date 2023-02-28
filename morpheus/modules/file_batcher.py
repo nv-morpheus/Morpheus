@@ -61,13 +61,16 @@ def file_batcher(builder: mrc.Builder):
         # Determine the date of the file, and apply the window filter if we have one
         # This needs to be in the payload, not a task, because batcher isn't a data loader
         # TODO(Devin)
-        task = control_message.pop_task("load")
-        files = task["files"]
+        # task = control_message.pop_task("load")
+        # files = task["files"]
 
         # TODO(Devin)
         data_type = "streaming"
         if (control_message.has_metadata("data_type")):
             data_type = control_message.get_metadata("data_type")
+
+        df = control_message.payload().df
+        files = df.files.to_arrow().to_pylist()
 
         file_objects: fsspec.core.OpenFiles = fsspec.open_files(files)
 
@@ -143,7 +146,7 @@ def file_batcher(builder: mrc.Builder):
                 if (data_type == "payload"):
                     control_message.add_task("load", load_task)
                 elif (data_type == "streaming"):
-                    batch_control_message = control_messages.copy()
+                    batch_control_message = control_message.copy()
                     batch_control_message.add_task("load", load_task)
                     control_messages.append(batch_control_message)
                 else:

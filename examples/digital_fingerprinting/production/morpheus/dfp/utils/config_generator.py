@@ -38,6 +38,7 @@ from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
+from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
@@ -66,20 +67,11 @@ class ConfigGenerator:
         module_config["module_id"] = DFP_DEPLOYMENT
         module_config["module_name"] = "dfp_deployment"
         module_config["namespace"] = MODULE_NAMESPACE
-        module_config["output_port_count"] = 1
 
         module_config[DFP_PREPROC] = self.preproc_module_config()
-
-        if self._derive_args.is_train_and_infer:
-            module_config[DFP_TRA] = self.train_module_config()
-            module_config[DFP_INF] = self.infer_module_config()
-            module_config["output_port_count"] = 2
-        elif self._derive_args.is_training:
-            module_config[DFP_TRA] = self.train_module_config()
-            module_config["workload"] = DFP_TRAINING
-        else:
-            module_config[DFP_INF] = self.infer_module_config()
-            module_config["workload"] = DFP_INFERENCE
+        module_config[DFP_TRA] = self.train_module_config()
+        module_config[DFP_INF] = self.infer_module_config()
+        module_config["output_port_count"] = 2
 
         return module_config
 
@@ -89,6 +81,14 @@ class ConfigGenerator:
             "module_id": DFP_PREPROC,
             "module_name": "dfp_preproc",
             "namespace": MODULE_NAMESPACE,
+            FSSPEC_LOADER: {
+                "module_id": DATA_LOADER,
+                "module_name": "fsspec_dataloader",
+                "namespace": MODULE_NAMESPACE,
+                "loaders": [{
+                    "id": FSSPEC_LOADER
+                }]
+            },
             FILE_BATCHER: {
                 "module_id": FILE_BATCHER,
                 "module_name": "file_batcher",
@@ -109,9 +109,9 @@ class ConfigGenerator:
                     "schema_str": self._source_schema_str, "encoding": self._encoding
                 }
             },
-            DATA_LOADER: {
+            FILE_TO_DF_LOADER: {
                 "module_id": DATA_LOADER,
-                "module_name": "FileToDFDataLoader",
+                "module_name": "file_to_df_dataloader",
                 "namespace": MODULE_NAMESPACE,
                 "loaders": [{
                     "id": FILE_TO_DF_LOADER
@@ -146,7 +146,8 @@ class ConfigGenerator:
                 "min_increment": 0,
                 "max_history": "1d",
                 "cache_dir": self._derive_args.cache_dir,
-                "timestamp_column_name": self._config.ae.timestamp_column_name
+                "timestamp_column_name": self._config.ae.timestamp_column_name,
+                "task_type": "inference"
             },
             DFP_DATA_PREP: {
                 "module_id": DFP_DATA_PREP,
@@ -155,7 +156,8 @@ class ConfigGenerator:
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
-                }
+                },
+                "task_type": "inference"
             },
             DFP_INFERENCE: {
                 "module_id": DFP_INFERENCE,
@@ -214,7 +216,8 @@ class ConfigGenerator:
                 "min_increment": 300,
                 "max_history": self._derive_args.duration,
                 "cache_dir": self._derive_args.cache_dir,
-                "timestamp_column_name": self._config.ae.timestamp_column_name
+                "timestamp_column_name": self._config.ae.timestamp_column_name,
+                "task_type": "training"
             },
             DFP_DATA_PREP: {
                 "module_id": DFP_DATA_PREP,
@@ -223,7 +226,8 @@ class ConfigGenerator:
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
-                }
+                },
+                "task_type": "training"
             },
             DFP_TRAINING: {
                 "module_id": DFP_TRAINING,
