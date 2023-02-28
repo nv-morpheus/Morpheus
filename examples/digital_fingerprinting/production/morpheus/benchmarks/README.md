@@ -35,13 +35,13 @@ To provide your own calibration or use other `pytest-benchmark` features with th
 
 Morpheus pipeline configurations for each workflow are managed using [pipelines_conf.json](./resource/pipelines_conf.json). For example, this is the Morpheus configuration for  `duo_training_modules`:
 ```
-"test_dfp_training_duo_modules_e2e": {
-    "file_path": "../../../../data/dfp/duo-training-data/*.json",
-    "num_threads": 8,
-    "pipeline_batch_size": 1024,
-    "edge_buffer_size": 4,
-    "start_time": "2022-08-01",
-    "duration": "60d"
+"test_dfp_modules_azure_training_e2e": {
+      "message_path": "./resource/control_message_azure_training.json",
+      "num_threads": 12,
+      "pipeline_batch_size": 256,
+      "edge_buffer_size": 128,
+      "start_time": "2022-08-01",
+      "duration": "60d"
 },
 ...
 ```
@@ -61,14 +61,18 @@ The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to
 `<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
 - `test_dfp_inference_azure_stages_e2e`
 - `test_dfp_inference_duo_stages_e2e`
-- `test_dfp_training_azure_modules_e2e`
 - `test_dfp_training_azure_stages_e2e`
-- `test_dfp_training_duo_modules_e2e`
 - `test_dfp_training_duo_stages_e2e`
+- `test_dfp_modules_duo_training_e2e`
+- `test_dfp_modules_azure_training_e2e`
+- `test_dfp_modules_duo_inference_e2e`
+- `test_dfp_modules_azure_inference_e2e`
+- `test_dfp_modules_duo_e2e`
+- `test_dfp_modules_azure_e2e`
 
 For example, to run E2E benchmarks on the DFP training (modules) workflow on the duo logs:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_training_duo_modules_e2e
+pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_modules_duo_training_e2e
 ```
 
 To run E2E benchmarks on all workflows:

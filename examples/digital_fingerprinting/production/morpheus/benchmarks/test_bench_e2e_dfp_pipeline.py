@@ -19,8 +19,8 @@ import os
 import typing
 
 # flake8 warnings are silenced by the addition of noqa.
-import dfp.modules.dfp_model_train_deploy  # noqa: F401
-import dfp.modules.dfp_preprocessing  # noqa: F401
+import dfp.modules.dfp_deployment  # noqa: F401
+import dfp.modules.dfp_preprocessing
 import pytest
 from dfp.messages.multi_dfp_message import MultiDFPMessage
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
@@ -46,7 +46,10 @@ from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
-from morpheus.stages.general.linear_modules_stage import LinearModulesStage
+from morpheus.pipeline.pipeline import Pipeline  # noqa: F401
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.general.multi_port_module_stage import MultiPortModuleStage
+from morpheus.stages.input.control_message_source_stage import ControlMessageSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
@@ -60,25 +63,24 @@ PIPELINES_CONF = load_json("resource/pipelines_conf.json")
 set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
 
 
-def dfp_training_pipeline_modules(config: Config, modules_conf: typing.Dict[str, any], filenames: typing.List[str]):
+def dfp_modules_pipeline(config: Config, modules_conf: typing.Dict[str, any], filenames: typing.List[str]):
 
     configure_logging(log_level=logging.INFO)
 
-    pipeline = LinearPipeline(config)
-    pipeline.set_source(MultiFileSource(config, filenames=filenames))
-    pipeline.add_stage(
-        LinearModulesStage(config,
-                           modules_conf["preprocessing"],
-                           input_port_name="input",
-                           output_port_name="output",
-                           output_type=MultiDFPMessage))
-    pipeline.add_stage(
-        LinearModulesStage(config,
-                           modules_conf["train_deploy"],
-                           input_port_name="input",
-                           output_port_name="output",
-                           output_type=MultiDFPMessage))
-    pipeline.build()
+    pipeline = Pipeline(config)
+
+    source_stage = pipeline.add_stage(ControlMessageSourceStage(config, filenames=filenames))
+
+    # Here we add a wrapped module that implements the DFP Deployment
+    dfp_deployment_stage = pipeline.add_stage(
+        MultiPortModuleStage(config,
+                             modules_conf,
+                             input_port_name="input",
+                             output_port_name_prefix="output",
+                             output_port_count=modules_conf.get("output_port_count")))
+
+    pipeline.add_edge(source_stage, dfp_deployment_stage)
+
     pipeline.run()
 
 
@@ -180,34 +182,6 @@ def dfp_inference_pipeline_stages(config: Config,
 
 
 @pytest.mark.benchmark
-def test_dfp_training_duo_modules_e2e(benchmark: typing.Any):
-
-    feature_columns = [
-        "accessdevicebrowser",
-        "accessdeviceos",
-        "authdevicename",
-        "reason",
-        "result",
-        "locincrement",
-        "logcount",
-    ]
-
-    pipeline_conf = PIPELINES_CONF.get("test_dfp_training_duo_modules_e2e")
-
-    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="duo", modules_conf=MODULES_CONF)
-
-    config = dfp_config.get_config()
-    filenames = dfp_config.get_filenames()
-
-    source_schema = get_duo_source_schema(config)
-    preprocess_schema = get_duo_preprocess_schema(config)
-
-    dfp_config.update_modules_conf(source_schema, preprocess_schema)
-
-    benchmark(dfp_training_pipeline_modules, config, dfp_config.modules_conf, filenames)
-
-
-@pytest.mark.benchmark
 def test_dfp_training_duo_stages_e2e(benchmark: typing.Any):
 
     feature_columns = [
@@ -232,36 +206,6 @@ def test_dfp_training_duo_stages_e2e(benchmark: typing.Any):
     preprocess_schema = get_duo_preprocess_schema(config)
 
     benchmark(dfp_training_pipeline_stages, config, stages_conf, source_schema, preprocess_schema, filenames)
-
-
-@pytest.mark.benchmark
-def test_dfp_training_azure_modules_e2e(benchmark: typing.Any):
-
-    feature_columns = [
-        "appDisplayName",
-        "clientAppUsed",
-        "deviceDetailbrowser",
-        "deviceDetaildisplayName",
-        "deviceDetailoperatingSystem",
-        "statusfailureReason",
-        "appincrement",
-        "locincrement",
-        "logcount"
-    ]
-
-    pipeline_conf = PIPELINES_CONF.get("test_dfp_training_azure_modules_e2e")
-
-    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="azure", modules_conf=MODULES_CONF)
-
-    config = dfp_config.get_config()
-    filenames = dfp_config.get_filenames()
-
-    source_schema = get_azure_source_schema(config)
-    preprocess_schema = get_azure_preprocess_schema(config)
-
-    dfp_config.update_modules_conf(source_schema, preprocess_schema)
-
-    benchmark(dfp_training_pipeline_modules, config, dfp_config.modules_conf, filenames)
 
 
 @pytest.mark.benchmark
@@ -365,3 +309,177 @@ def test_dfp_inference_duo_stages_e2e(benchmark: typing.Any, tmp_path):
               preprocess_schema,
               filenames,
               output_filepath)
+
+
+@pytest.mark.benchmark
+def test_dfp_modules_duo_training_e2e(benchmark: typing.Any):
+
+    feature_columns = [
+        "accessdevicebrowser",
+        "accessdeviceos",
+        "authdevicename",
+        "reason",
+        "result",
+        "locincrement",
+        "logcount",
+    ]
+
+    pipeline_conf = PIPELINES_CONF.get("test_dfp_modules_duo_training_e2e")
+
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="duo", modules_conf=MODULES_CONF)
+
+    config = dfp_config.get_config()
+    filenames = dfp_config.get_filenames()
+
+    source_schema = get_duo_source_schema(config)
+    preprocess_schema = get_duo_preprocess_schema(config)
+
+    dfp_config.update_modules_conf(source_schema, preprocess_schema)
+
+    benchmark(dfp_modules_pipeline, config, dfp_config.modules_conf, filenames)
+
+
+@pytest.mark.benchmark
+def test_dfp_modules_azure_training_e2e(benchmark: typing.Any):
+
+    feature_columns = [
+        "appDisplayName",
+        "clientAppUsed",
+        "deviceDetailbrowser",
+        "deviceDetaildisplayName",
+        "deviceDetailoperatingSystem",
+        "statusfailureReason",
+        "appincrement",
+        "locincrement",
+        "logcount"
+    ]
+
+    pipeline_conf = PIPELINES_CONF.get("test_dfp_modules_azure_training_e2e")
+
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="azure", modules_conf=MODULES_CONF)
+
+    config = dfp_config.get_config()
+    filenames = dfp_config.get_filenames()
+
+    source_schema = get_azure_source_schema(config)
+    preprocess_schema = get_azure_preprocess_schema(config)
+
+    dfp_config.update_modules_conf(source_schema, preprocess_schema)
+
+    benchmark(dfp_modules_pipeline, config, dfp_config.modules_conf, filenames)
+
+
+@pytest.mark.benchmark
+def test_dfp_modules_duo_inference_e2e(benchmark: typing.Any):
+
+    feature_columns = [
+        "accessdevicebrowser",
+        "accessdeviceos",
+        "authdevicename",
+        "reason",
+        "result",
+        "locincrement",
+        "logcount",
+    ]
+
+    pipeline_conf = PIPELINES_CONF.get("test_dfp_modules_duo_inference_e2e")
+
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="duo", modules_conf=MODULES_CONF)
+
+    config = dfp_config.get_config()
+    filenames = dfp_config.get_filenames()
+
+    source_schema = get_duo_source_schema(config)
+    preprocess_schema = get_duo_preprocess_schema(config)
+
+    dfp_config.update_modules_conf(source_schema, preprocess_schema)
+
+    benchmark(dfp_modules_pipeline, config, dfp_config.modules_conf, filenames)
+
+
+@pytest.mark.benchmark
+def test_dfp_modules_azure_inference_e2e(benchmark: typing.Any):
+
+    feature_columns = [
+        "appDisplayName",
+        "clientAppUsed",
+        "deviceDetailbrowser",
+        "deviceDetaildisplayName",
+        "deviceDetailoperatingSystem",
+        "statusfailureReason",
+        "appincrement",
+        "locincrement",
+        "logcount"
+    ]
+
+    pipeline_conf = PIPELINES_CONF.get("test_dfp_modules_azure_inference_e2e")
+
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="azure", modules_conf=MODULES_CONF)
+
+    config = dfp_config.get_config()
+    filenames = dfp_config.get_filenames()
+
+    source_schema = get_azure_source_schema(config)
+    preprocess_schema = get_azure_preprocess_schema(config)
+
+    dfp_config.update_modules_conf(source_schema, preprocess_schema)
+
+    benchmark(dfp_modules_pipeline, config, dfp_config.modules_conf, filenames)
+
+
+@pytest.mark.benchmark
+def test_dfp_modules_duo_e2e(benchmark: typing.Any):
+
+    feature_columns = [
+        "accessdevicebrowser",
+        "accessdeviceos",
+        "authdevicename",
+        "reason",
+        "result",
+        "locincrement",
+        "logcount",
+    ]
+
+    pipeline_conf = PIPELINES_CONF.get("test_dfp_modules_duo_e2e")
+
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="duo", modules_conf=MODULES_CONF)
+
+    config = dfp_config.get_config()
+    filenames = dfp_config.get_filenames()
+
+    source_schema = get_duo_source_schema(config)
+    preprocess_schema = get_duo_preprocess_schema(config)
+
+    dfp_config.update_modules_conf(source_schema, preprocess_schema)
+
+    benchmark(dfp_modules_pipeline, config, dfp_config.modules_conf, filenames)
+
+
+@pytest.mark.benchmark
+def test_dfp_modules_azure_e2e(benchmark: typing.Any):
+
+    feature_columns = [
+        "appDisplayName",
+        "clientAppUsed",
+        "deviceDetailbrowser",
+        "deviceDetaildisplayName",
+        "deviceDetailoperatingSystem",
+        "statusfailureReason",
+        "appincrement",
+        "locincrement",
+        "logcount"
+    ]
+
+    pipeline_conf = PIPELINES_CONF.get("test_dfp_modules_azure_e2e")
+
+    dfp_config = DFPConfig(pipeline_conf, feature_columns, source="azure", modules_conf=MODULES_CONF)
+
+    config = dfp_config.get_config()
+    filenames = dfp_config.get_filenames()
+
+    source_schema = get_azure_source_schema(config)
+    preprocess_schema = get_azure_preprocess_schema(config)
+
+    dfp_config.update_modules_conf(source_schema, preprocess_schema)
+
+    benchmark(dfp_modules_pipeline, config, dfp_config.modules_conf, filenames)
