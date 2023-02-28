@@ -20,15 +20,16 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <boost/fiber/future/future.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
+#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
 #include <cstddef>  // for size_t
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>

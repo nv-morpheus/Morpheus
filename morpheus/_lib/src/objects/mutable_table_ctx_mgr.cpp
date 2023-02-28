@@ -17,7 +17,12 @@
 
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 
+#include "morpheus/utilities/string_util.hpp"
+
+#include <pybind11/detail/common.h>
 #include <pybind11/gil.h>
+
+#include <utility>
 
 namespace morpheus {
 
@@ -46,11 +51,10 @@ void MutableTableCtxMgr::exit(const py::object& type, const py::object& value, c
 
 void MutableTableCtxMgr::throw_usage_error(pybind11::args args, const pybind11::kwargs& kwargs)
 {
-    std::ostringstream err_msg;
-    err_msg << "Error attempting to use mutable_dataframe outside of context manager. Intended usage :\n";
-    err_msg << "with message_meta.mutable_dataframe() as df:\n";
-    err_msg << "    df['col'] = 5";
-    throw py::attribute_error(err_msg.str());
+    throw py::attribute_error(
+        MORPHEUS_CONCAT_STR("Error attempting to use mutable_dataframe outside of context manager. Intended usage :\n"
+                            "with message_meta.mutable_dataframe() as df:\n"
+                            "    df['col'] = 5"));
 }
 
 }  // namespace morpheus
