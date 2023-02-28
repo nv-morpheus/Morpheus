@@ -22,7 +22,6 @@
 #include "morpheus/objects/python_data_table.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/table_util.hpp"
 
 #include <cudf/io/types.hpp>
 #include <pybind11/gil.h>

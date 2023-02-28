@@ -33,11 +33,9 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <filesystem>
 #include <memory>
 #include <ostream>  // needed for logging
 #include <regex>
-#include <stdexcept>
 #include <utility>
 
 namespace {

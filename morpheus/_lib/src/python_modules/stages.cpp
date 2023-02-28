@@ -17,6 +17,7 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/objects/file_types.hpp"  // for FileTypes
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"

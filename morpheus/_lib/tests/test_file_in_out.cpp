@@ -23,18 +23,20 @@
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <cudf/io/types.hpp>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
-#include <pybind11/pybind11.h>
+#include <pybind11/gil.h>       // for gil_scoped_release, gil_scoped_acquire
+#include <pybind11/pybind11.h>  // IWYU pragma: keep
 
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
-#include <iostream>
+#include <fstream>  // IWYU pragma: keep
+#include <memory>   // for shared_ptr
 #include <sstream>  // for stringstream
 #include <string>
+#include <utility>  // for move
 #include <vector>
+// IWYU pragma: no_include <initializer_list>
 
 using namespace morpheus;
 
