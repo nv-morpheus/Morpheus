@@ -309,6 +309,19 @@ PYBIND11_MODULE(messages, m)
         .def_property(
             "probs", &ResponseMemoryProbsInterfaceProxy::get_probs, &ResponseMemoryProbsInterfaceProxy::set_probs);
 
+    py::class_<MultiTensorMessage, MultiMessage, std::shared_ptr<MultiTensorMessage>>(m, "MultiTensorMessage")
+        .def(py::init<>(&MultiTensorMessageInterfaceProxy::init),
+             py::arg("meta"),
+             py::arg("mess_offset"),
+             py::arg("mess_count"),
+             py::arg("memory"),
+             py::arg("offset"),
+             py::arg("count"))
+        .def_property_readonly("memory", &MultiTensorMessageInterfaceProxy::memory)
+        .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
+        .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
+        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor);
+
     py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(m, "MultiResponseMessage")
         .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),
              py::arg("meta"),
