@@ -44,7 +44,7 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
 
     def get_output(self, name: str):
         """
-        Get output stored in the ResponseMemory container.
+        Get output stored in the ResponseMemory container. Alias for `MultiResponseMessage.get_tensor`.
 
         Parameters
         ----------
@@ -57,11 +57,12 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
             Inference output.
 
         """
-        return self.memory.get_output(name)[self.offset:self.offset + self.count, :]
+        return self.get_tensor(name)
 
     def copy_output_ranges(self, ranges, mask=None):
         """
         Perform a copy of the underlying output tensors for the given `ranges` of rows.
+        Alias for `MultiResponseMessage.copy_output_ranges`
 
         Parameters
         ----------
@@ -78,12 +79,7 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
         -------
         typing.Dict[str, cupy.ndarray]
         """
-        if mask is None:
-            mask = self._ranges_to_mask(self.get_meta(), ranges=ranges)
-
-        # The outputs property method returns a copy with the offsets applied
-        outputs = self.outputs
-        return {key: output[mask] for (key, output) in outputs.items()}
+        return self.copy_tensor_ranges(ranges, mask=mask)
 
     def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
         """
@@ -98,15 +94,13 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
         -------
         `MultiResponseMessage`
         """
-        mask = self._ranges_to_mask(self.get_meta(), ranges)
-        sliced_rows = self.copy_meta_ranges(ranges, mask=mask)
-        sliced_count = len(sliced_rows)
-        sliced_outputs = self.copy_output_ranges(ranges, mask=mask)
-
-        mem = ResponseMemory(count=sliced_count)
-        mem.outputs = sliced_outputs
-
-        return MultiResponseMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)
+        m = super().copy_ranges(ranges)
+        return MultiResponseMessage(meta=m.meta,
+                                    mess_offset=m.mess_offset,
+                                    mess_count=m.mess_count,
+                                    memory=m.memory,
+                                    offset=m.offset,
+                                    count=m.mess_count)
 
     def get_slice(self, start, stop):
         """
