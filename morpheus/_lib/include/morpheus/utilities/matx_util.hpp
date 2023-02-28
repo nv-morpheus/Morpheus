@@ -83,36 +83,6 @@ struct MatxUtil
     static std::shared_ptr<rmm::device_buffer> threshold(const DevMemInfo& input, double thresh_val, bool by_row);
 
     /**
-     * @brief Returns an array of boolean where x[i,j] >= thresh_val, when by_row is true an Nx1 array will be returned
-     * with a true if any value in the row is above the threshold
-     *
-     * @param input
-     * @param thresh_val
-     * @param by_row
-     * @return TensorObject
-     */
-    static TensorObject threshold(const TensorObject& input, double thresh_val, bool by_row);
-
-    /**
-     * @brief Returns an array of boolean where x[i,j] >= thresh_val, when by_row is true an Nx1 array will be returned
-     * with a true if any value in the row is above the threshold
-     *
-     * @param input
-     * @param thresh_val
-     * @param by_row
-     * @param dtype
-     * @param input_shape
-     * @param input_stride
-     * @return TensorObject
-     */
-    static TensorObject threshold(void* input_data,
-                                  double thresh_val,
-                                  bool by_row,
-                                  const DType& dtype,
-                                  const std::vector<std::size_t>& input_shape,
-                                  const std::vector<std::size_t>& input_stride);
-
-    /**
      * @brief Returns a buffer with `output_shape` containing the max value from values in `input` mapped according to
      * `seq_ids`.
      * Ex given a hypothetical input of:
