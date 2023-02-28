@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"  // IWYU pragma: associated
 
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include <glog/logging.h>
-#include <pybind11/pybind11.h>  // for key_error & object
-#include <pybind11/stl.h>
+#include <pybind11/cast.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 
+#include <map>
 #include <sstream>
 #include <stdexcept>  // for std::length_error
 #include <string>

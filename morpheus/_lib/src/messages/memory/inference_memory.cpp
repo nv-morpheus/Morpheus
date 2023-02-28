@@ -17,8 +17,8 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 
-#include <pybind11/pybind11.h>  // for object
-#include <pybind11/stl.h>
+#include <pybind11/cast.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <string>
 #include <utility>  // for move

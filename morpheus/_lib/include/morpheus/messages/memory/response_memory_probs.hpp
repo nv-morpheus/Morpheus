@@ -18,8 +18,8 @@
 #pragma once
 
 #include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_map_t
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>

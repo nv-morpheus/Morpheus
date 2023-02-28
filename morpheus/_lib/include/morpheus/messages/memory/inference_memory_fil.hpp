@@ -25,7 +25,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/

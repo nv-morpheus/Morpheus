@@ -18,10 +18,12 @@
 #pragma once
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_map_t
+
+#include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>  // for size_t
-#include <map>
+#include <memory>   // for shared_ptr
 #include <string>
 
 namespace morpheus {

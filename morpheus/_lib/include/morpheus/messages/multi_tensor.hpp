@@ -22,6 +22,8 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
+#include <pybind11/pytypes.h>  // for object
+
 #include <cstddef>
 #include <memory>
 #include <string>

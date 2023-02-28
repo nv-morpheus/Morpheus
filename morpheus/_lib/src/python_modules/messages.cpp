@@ -32,7 +32,6 @@
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
 #include <boost/fiber/future/future.hpp>
 #include <mrc/channel/status.hpp>  // for Status

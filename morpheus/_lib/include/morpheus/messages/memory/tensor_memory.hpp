@@ -23,7 +23,7 @@
 #include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>  // for size_t
-#include <map>
+#include <memory>   // for shared_ptr
 #include <string>
 #include <utility>  // for pair
 #include <vector>
