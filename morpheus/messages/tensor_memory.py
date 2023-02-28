@@ -111,8 +111,8 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Parameters
         ----------
-        tensors : typing.Dict[str, cupy.ndarray]
-            Collection of tensors uniquely identified by a name.
+        tensor : cupy.ndarray
+            Tensory as a CuPy Array.
         """
         self._check_tensor(tensor)
         self._tensors[name] = tensor
