@@ -19,15 +19,14 @@ import typing
 import cupy as cp
 
 import morpheus._lib.messages as _messages
-from morpheus.messages.memory.inference_memory import InferenceMemory
-from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
 @dataclasses.dataclass
-class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMessage):
+class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferenceMessage):
     """
     This is a container class that holds the InferenceMemory container and the metadata of the data contained
-    within it. Builds on top of the `MultiMessage` class to add additional data for inferencing.
+    within it. Builds on top of the `MultiTensorMessage` class to add additional data for inferencing.
 
     This class requires two separate memory blocks for a batch. One for the message metadata (i.e., start time,
     IP address, etc.) and another for the raw inference inputs (i.e., input_ids, seq_ids). Since there can be
@@ -35,25 +34,12 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
     inference requests) this class stores two different offset and count values. `mess_offset` and
     `mess_count` refer to the offset and count in the message metadata batch and `offset` and `count` index
     into the inference batch data.
-
-    Parameters
-    ----------
-    memory : `InferenceMemory`
-        Inference memory.
-    offset : int
-        Message offset in inference memory instance.
-    count : int
-        Message count in inference memory instance.
-
     """
-    memory: InferenceMemory = dataclasses.field(repr=False)
-    offset: int
-    count: int
 
     @property
     def inputs(self):
         """
-        Get inputs stored in the InferenceMemory container.
+        Get inputs stored in the InferenceMemory container. Alias for `MultiInferenceMessage.tensors`.
 
         Returns
         -------
@@ -61,8 +47,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
             Inference inputs.
 
         """
-        tensors = self.memory.get_tensors()
-        return {key: self.get_input(key) for key in tensors.keys()}
+        return self.tensors
 
     def __getstate__(self):
         return self.__dict__
@@ -71,11 +56,11 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
         self.__dict__ = d
 
     def __getattr__(self, name: str) -> typing.Any:
-        return self.get_input(name)
+        return self.get_tensor(name)
 
     def get_input(self, name: str):
         """
-        Get input stored in the InferenceMemory container.
+        Get input stored in the InferenceMemory container. Alias for `MultiInferenceMessage.get_tensor`.
 
         Parameters
         ----------
@@ -92,7 +77,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
         AttributeError
             When no matching input tensor exists.
         """
-        return self.memory.get_input(name)[self.offset:self.offset + self.count, :]
+        return self.get_tensor(name)
 
     def get_slice(self, start, stop):
         """
