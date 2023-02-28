@@ -29,7 +29,7 @@
 #include <cudf/types.hpp>        // for cudf::type_id
 #include <ext/alloc_traits.h>
 #include <glog/logging.h>
-#include <pybind11/gil.h>  // for gil_scoped_acquire
+#include <pybind11/pybind11.h>  // IWYU pragma: keep
 
 #include <algorithm>
 #include <cstddef>
