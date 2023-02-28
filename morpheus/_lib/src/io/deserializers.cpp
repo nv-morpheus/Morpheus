@@ -37,6 +37,8 @@
 #include <ostream>  // needed for logging
 #include <regex>
 #include <utility>
+// We're already including pybind11.h, and including only gil.h as IWYU suggests yields an undefined symbol error
+// IWYU pragma: no_include <pybind11/gil.h>
 
 namespace {
 const std::regex IndexRegex(R"(^\s*(unnamed: 0|id)\s*$)",
