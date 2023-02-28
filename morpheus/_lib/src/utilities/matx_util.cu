@@ -22,6 +22,7 @@
 #include "morpheus/objects/tensor.hpp"  // for Tensor::create
 #include "morpheus/objects/tensor_object.hpp"
 
+#include <cudf/utilities/traits.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <glog/logging.h>
 #include <matx.h>
