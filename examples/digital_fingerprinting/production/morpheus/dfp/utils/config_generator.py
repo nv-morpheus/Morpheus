@@ -165,13 +165,7 @@ class ConfigGenerator:
 
     def train_module_config(self):
         module_config = {
-            "module_id": DFP_TRA,
-            "module_name": "dfp_tra",
-            "namespace": MODULE_NAMESPACE,
             DFP_ROLLING_WINDOW: {
-                "module_id": DFP_ROLLING_WINDOW,
-                "module_name": "dfp_rolling_window_tra",
-                "namespace": MODULE_NAMESPACE,
                 "min_history": 300,
                 "min_increment": 300,
                 "max_history": self._derive_args.duration,
@@ -180,9 +174,6 @@ class ConfigGenerator:
                 "task_type": "training"
             },
             DFP_DATA_PREP: {
-                "module_id": DFP_DATA_PREP,
-                "module_name": "dfp_data_prep_tra",
-                "namespace": MODULE_NAMESPACE,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
@@ -190,9 +181,6 @@ class ConfigGenerator:
                 "task_type": "training"
             },
             DFP_TRAINING: {
-                "module_id": DFP_TRAINING,
-                "module_name": "dfp_training",
-                "namespace": MODULE_NAMESPACE,
                 "model_kwargs": {
                     "encoder_layers": [512, 500],  # layers of the encoding part
                     "decoder_layers": [512],  # layers of the decoding part
@@ -213,9 +201,6 @@ class ConfigGenerator:
                 "validation_size": 0.10
             },
             MLFLOW_MODEL_WRITER: {
-                "module_id": MLFLOW_MODEL_WRITER,
-                "module_name": "mlflow_model_writer",
-                "namespace": MODULE_NAMESPACE,
                 "model_name_formatter": self._derive_args.model_name_formatter,
                 "experiment_name_formatter": self._derive_args.experiment_name_formatter,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
