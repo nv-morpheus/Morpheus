@@ -45,7 +45,7 @@ class DeriveArgs:
                  duration: str,
                  log_type: str,
                  tracking_uri: str,
-                 workload_type: str = None,
+                 # workload_type: str = None,
                  train_users: str = None):
 
         self._skip_users = list(skip_user)
@@ -59,7 +59,7 @@ class DeriveArgs:
         self._tracking_uri = tracking_uri
         self._sample_rate_s = sample_rate_s
         self._log_type = log_type
-        self._workload_type = workload_type
+        # self._workload_type = workload_type
 
         self._include_generic = None
         self._include_individual = None
@@ -70,10 +70,10 @@ class DeriveArgs:
 
         train_flag = (train_users is not None and train_users)
 
-        self._is_training = (train_flag and workload_type != "infer")
-        self._is_train_and_infer = (train_flag and workload_type == "train_and_infer")
-        self._is_inference = not (self._is_training or self._is_train_and_infer or workload_type == "train"
-                                  or workload_type == "train_and_infer")
+        self._is_training = True  # (train_flag and workload_type != "infer")
+        self._is_train_and_infer = True  # (train_flag and workload_type == "train_and_infer")
+        self._is_inference = True  # not (self._is_training or self._is_train_and_infer or workload_type == "train"
+                                   # or workload_type == "train_and_infer")
 
     def verify_init(func):
 

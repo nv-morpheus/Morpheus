@@ -40,12 +40,14 @@ from morpheus.stages.input.control_message_source_stage import ControlMessageSou
     required=True,
     help=("Indicates what type of logs are going to be used in the workload."),
 )
-@click.option(
-    "--workload_type",
-    type=click.Choice(["infer", "train", "train_and_infer"], case_sensitive=False),
-    required=True,
-    help=("Workload type either inference or training or inference + training"),
-)
+
+# TODO(Devin): Shouldn't be needed anymore
+#@click.option(
+#    "--workload_type",
+#    type=click.Choice(["infer", "train", "train_and_infer"], case_sensitive=False),
+#    required=True,
+#    help=("Workload type either inference or training or inference + training"),
+#)
 @click.option(
     "--train_users",
     type=click.Choice(["all", "generic", "individual"], case_sensitive=False),
@@ -115,7 +117,7 @@ from morpheus.stages.input.control_message_source_stage import ControlMessageSou
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
 def run_pipeline(log_type: str,
-                 workload_type: str,
+                 #workload_type: str,
                  train_users: str,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -137,7 +139,7 @@ def run_pipeline(log_type: str,
                              duration,
                              log_type,
                              tracking_uri,
-                             workload_type,
+                             #workload_type,
                              train_users)
 
     derive_args.init()

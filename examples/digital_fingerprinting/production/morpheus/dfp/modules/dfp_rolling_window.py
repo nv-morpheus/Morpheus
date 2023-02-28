@@ -65,8 +65,6 @@ def dfp_rolling_window(builder: mrc.Builder):
         # Determine cache location
         cache_location = os.path.join(cache_dir, f"{user_id}.pkl")
 
-        user_cache = None
-
         user_cache = user_cache_map.get(user_id, None)
 
         if (user_cache is None):
@@ -126,7 +124,6 @@ def dfp_rolling_window(builder: mrc.Builder):
                                     "Rolling history can only be used with non-overlapping batches"))
 
             # TODO(Devin): Optimize
-            print("Training finished, returning:", user_id, flush=True)
             return MessageMeta(cudf.from_pandas(train_df))
 
     def on_data(control_message: MessageControl):
