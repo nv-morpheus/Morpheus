@@ -16,102 +16,10 @@
 import dataclasses
 import typing
 
-import cupy as cp
-
 import morpheus._lib.messages as _messages
-from morpheus.messages.data_class_prop import DataClassProp
+from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
-from morpheus.messages.tensor_memory import TensorMemory
-
-
-@dataclasses.dataclass(init=False)
-class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
-    """Output memory block holding the results of inference."""
-
-    def get_output(self, name: str):
-        """
-        Getter function used with DataClassProp for getting inference output from message containers derived
-        from ResponseMemory.
-
-        Parameters
-        ----------
-        name : str
-            Key used to do lookup in tensors dict of message container.
-
-        Returns
-        -------
-        cupy.ndarray
-            Tensors corresponding to name.
-
-        Raises
-        ------
-        AttributeError
-            If output name does not exist in message container.
-
-        """
-        try:
-            return self.get_tensor(name)
-        except KeyError:
-            raise AttributeError
-
-    def set_output(self, name: str, value: cp.ndarray):
-        """
-        Setter function used with DataClassProp for setting output in message containers derived
-        from ResponseMemory.
-
-        Parameters
-        ----------
-        name : str
-            Key used to do lookup in tensors dict of message container.
-        value : cupy.ndarray
-            Value to set for input.
-        """
-
-        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-        tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-        self.set_tensor(name, tensor)
-
-
-@dataclasses.dataclass(init=False)
-class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProbs):
-    """
-    Subclass of `ResponseMemory` containng an output tensor named 'probs'.
-
-    Parameters
-    ----------
-    probs : cupy.ndarray
-        Probabilities tensor
-    """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
-
-    def __init__(self, count: int, probs: cp.ndarray):
-        super().__init__(count, tensors={'probs': probs})
-
-
-@dataclasses.dataclass(init=False)
-class ResponseMemoryAE(ResponseMemory, cpp_class=None):
-    """
-    Subclass of `ResponseMemory` specific to the AutoEncoder pipeline.
-
-    Parameters
-    ----------
-    probs : cupy.ndarray
-        Probabilities tensor
-
-    user_id : str
-        User id the inference was performed against.
-
-    explain_df : pd.Dataframe
-        Explainability Dataframe, for each feature a column will exist with a name in the form of: `{feature}_z_loss`
-        containing the loss z-score along with `max_abs_z` and `mean_abs_z` columns
-    """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
-    user_id = ""
-    explain_df = None
-
-    def __init__(self, count: int, probs: cp.ndarray):
-        super().__init__(count, tensors={'probs': probs})
 
 
 @dataclasses.dataclass
@@ -121,22 +29,22 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
     Parameters
     ----------
-    memory : `TensorMemory`
+    memory : `ResponseMemory`
         This is a response container instance for triton inference requests.
     offset : int
-        Offset of each response message into the `TensorMemory` block.
+        Offset of each response message into the `ResponseMemory` block.
     count : int
         Inference results size of all responses.
 
     """
-    memory: TensorMemory = dataclasses.field(repr=False)
+    memory: ResponseMemory = dataclasses.field(repr=False)
     offset: int
     count: int
 
     @property
     def outputs(self):
         """
-        Get outputs stored in the TensorMemory container.
+        Get outputs stored in the ResponseMemory container.
 
         Returns
         -------
@@ -152,7 +60,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
 
     def get_output(self, name: str):
         """
-        Get output stored in the TensorMemory container.
+        Get output stored in the ResponseMemory container.
 
         Parameters
         ----------
@@ -211,7 +119,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
         sliced_count = len(sliced_rows)
         sliced_outputs = self.copy_output_ranges(ranges, mask=mask)
 
-        mem = TensorMemory(count=sliced_count)
+        mem = ResponseMemory(count=sliced_count)
         mem.outputs = sliced_outputs
 
         return MultiResponseMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)

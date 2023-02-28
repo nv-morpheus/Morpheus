@@ -19,132 +19,14 @@ import typing
 import cupy as cp
 
 import morpheus._lib.messages as _messages
-from morpheus.messages.data_class_prop import DataClassProp
+from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.multi_message import MultiMessage
-from morpheus.messages.tensor_memory import TensorMemory
-
-
-@dataclasses.dataclass(init=False)
-class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
-    """
-    This is a base container class for data that will be used for inference stages. This class is designed to
-    hold generic tensor data in cupy arrays.
-    """
-
-    def get_input(self, name: str):
-        """
-        Getter function used with DataClassProp for getting inference input from message containers derived
-        from InferenceMemory.
-
-        Parameters
-        ----------
-        name : str
-            Key used to do lookup in inputs dict of message container.
-
-        Returns
-        -------
-        cupy.ndarray
-            Inputs corresponding to name.
-
-        Raises
-        ------
-        AttributeError
-            If input name does not exist in message container.
-        """
-        try:
-            return self.get_tensor(name)
-        except KeyError:
-            raise AttributeError
-
-    def set_input(self, name: str, value: cp.ndarray):
-        """
-        Setter function used with DataClassProp for setting inference input in message containers derived
-        from InferenceMemory.
-
-        Parameters
-        ----------
-        name : str
-            Key used to do lookup in inputs dict of message container.
-        value : cupy.ndarray
-            Value to set for input.
-        """
-        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-        tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-        self.set_tensor(name, tensor)
-
-
-@dataclasses.dataclass(init=False)
-class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP):
-    """
-    This is a container class for data that needs to be submitted to the inference server for NLP category
-    usecases.
-
-    Parameters
-    ----------
-    input_ids : cupy.ndarray
-        The token-ids for each string padded with 0s to max_length.
-    input_mask : cupy.ndarray
-        The mask for token-ids result where corresponding positions identify valid token-id values.
-    seq_ids : cupy.ndarray
-        Ids used to index from an inference input to a message. Necessary since there can be more inference
-        inputs than messages (i.e., if some messages get broken into multiple inference requests).
-
-    """
-    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-    input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-
-    def __init__(self, count: int, input_ids: cp.ndarray, input_mask: cp.ndarray, seq_ids: cp.ndarray):
-        super().__init__(count, tensors={'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
-
-
-@dataclasses.dataclass(init=False)
-class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL):
-    """
-    This is a container class for data that needs to be submitted to the inference server for FIL category
-    usecases.
-
-    Parameters
-    ----------
-    input__0 : cupy.ndarray
-        Inference input.
-    seq_ids : cupy.ndarray
-        Ids used to index from an inference input to a message. Necessary since there can be more inference
-        inputs than messages (i.e., if some messages get broken into multiple inference requests).
-
-    """
-    input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-
-    def __init__(self, count: int, input__0: cp.ndarray, seq_ids: cp.ndarray):
-        super().__init__(count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
-
-
-@dataclasses.dataclass(init=False)
-class InferenceMemoryAE(InferenceMemory, cpp_class=None):
-    """
-    This is a container class for data that needs to be submitted to the inference server for auto encoder usecases.
-
-    Parameters
-    ----------
-    input : cupy.ndarray
-        Inference input.
-    seq_ids : cupy.ndarray
-        Ids used to index from an inference input to a message. Necessary since there can be more inference
-        inputs than messages (i.e., if some messages get broken into multiple inference requests).
-    """
-
-    input: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-
-    def __init__(self, count: int, input: cp.ndarray, seq_ids: cp.ndarray):
-        super().__init__(count, tensors={'input': input, 'seq_ids': seq_ids})
 
 
 @dataclasses.dataclass
 class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMessage):
     """
-    This is a container class that holds the TensorMemory container and the metadata of the data contained
+    This is a container class that holds the InferenceMemory container and the metadata of the data contained
     within it. Builds on top of the `MultiMessage` class to add additional data for inferencing.
 
     This class requires two separate memory blocks for a batch. One for the message metadata (i.e., start time,
@@ -156,7 +38,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
     Parameters
     ----------
-    memory : `TensorMemory`
+    memory : `InferenceMemory`
         Inference memory.
     offset : int
         Message offset in inference memory instance.
@@ -164,14 +46,14 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
         Message count in inference memory instance.
 
     """
-    memory: TensorMemory = dataclasses.field(repr=False)
+    memory: InferenceMemory = dataclasses.field(repr=False)
     offset: int
     count: int
 
     @property
     def inputs(self):
         """
-        Get inputs stored in the TensorMemory container.
+        Get inputs stored in the InferenceMemory container.
 
         Returns
         -------
@@ -193,7 +75,7 @@ class MultiInferenceMessage(MultiMessage, cpp_class=_messages.MultiInferenceMess
 
     def get_input(self, name: str):
         """
-        Get input stored in the TensorMemory container.
+        Get input stored in the InferenceMemory container.
 
         Parameters
         ----------

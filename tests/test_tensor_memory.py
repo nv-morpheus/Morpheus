@@ -23,14 +23,14 @@ import pytest
 
 from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.messages.multi_inference_message import InferenceMemory
-from morpheus.messages.multi_inference_message import InferenceMemoryAE
-from morpheus.messages.multi_inference_message import InferenceMemoryFIL
-from morpheus.messages.multi_inference_message import InferenceMemoryNLP
-from morpheus.messages.multi_response_message import ResponseMemory
-from morpheus.messages.multi_response_message import ResponseMemoryAE
-from morpheus.messages.multi_response_message import ResponseMemoryProbs
-from morpheus.messages.tensor_memory import TensorMemory
+from morpheus.messages.memory.inference_memory import InferenceMemory
+from morpheus.messages.memory.inference_memory import InferenceMemoryAE
+from morpheus.messages.memory.inference_memory import InferenceMemoryFIL
+from morpheus.messages.memory.inference_memory import InferenceMemoryNLP
+from morpheus.messages.memory.response_memory import ResponseMemory
+from morpheus.messages.memory.response_memory import ResponseMemoryAE
+from morpheus.messages.memory.response_memory import ResponseMemoryProbs
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from utils import TEST_DIRS
 
 INPUT_FILE = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')

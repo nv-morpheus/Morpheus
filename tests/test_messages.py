@@ -22,7 +22,7 @@ import pytest
 import morpheus._lib.messages as _messages
 import morpheus.config
 from morpheus import messages
-from morpheus.messages import tensor_memory
+from morpheus.messages.memory import tensor_memory
 
 
 def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp_class: bool, args: tuple):
