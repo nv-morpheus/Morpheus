@@ -124,14 +124,14 @@ struct MultiResponseMessageInterfaceProxy
                                                       cudf::size_type count);
 
     /**
-     * @brief GReturns a shared pointer of a response memory probs object
+     * @brief Returns a shared pointer of a response memory object
      *
      * @return std::shared_ptr<ResponseMemory>
      */
     static std::shared_ptr<ResponseMemory> memory(MultiResponseMessage& self);
 
     /**
-     * @brief Message offset in response memory probs object
+     * @brief Message offset in response memory object
      *
      * @param self
      * @return std::size_t
@@ -139,7 +139,7 @@ struct MultiResponseMessageInterfaceProxy
     static std::size_t offset(MultiResponseMessage& self);
 
     /**
-     * @brief Messages count in response memory probs object
+     * @brief Messages count in response memory object
      *
      * @param self
      * @return std::size_t

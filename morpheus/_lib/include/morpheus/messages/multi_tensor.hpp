@@ -120,6 +120,64 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     TensorObject get_tensor_impl(const std::string& name) const;
 };
 
+/****** MultiTensorMessageInterfaceProxy *************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct MultiTensorMessageInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a MultiTensorMessage, and return a shared pointer to the result
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
+     * C++ representations of the table
+     * @param mess_offset Offset into the metadata batch
+     * @param mess_count Messages count
+     * @param memory Shared pointer of a tensor memory
+     * @param offset Message offset in inference memory instance
+     * @param count Message count in inference memory instance
+     * @return std::shared_ptr<MultiTensorMessage>
+     */
+    static std::shared_ptr<MultiTensorMessage> init(std::shared_ptr<MessageMeta> meta,
+                                                    std::size_t mess_offset,
+                                                    std::size_t mess_count,
+                                                    std::shared_ptr<TensorMemory> memory,
+                                                    std::size_t offset,
+                                                    std::size_t count);
+
+    /**
+     * @brief GReturns a shared pointer of a tensor memory object
+     *
+     * @return std::shared_ptr<TensorMemory>
+     */
+    static std::shared_ptr<TensorMemory> memory(MultiTensorMessage& self);
+
+    /**
+     * @brief Message offset in tensor memory object
+     *
+     * @param self
+     * @return std::size_t
+     */
+    static std::size_t offset(MultiTensorMessage& self);
+
+    /**
+     * @brief Messages count in tensor memory object
+     *
+     * @param self
+     * @return std::size_t
+     */
+    static std::size_t count(MultiTensorMessage& self);
+
+    /**
+     * @brief Returns the tensor tensor for a given name
+     *
+     * @param self
+     * @param name : Tensor name
+     * @return pybind11::object
+     */
+    static pybind11::object get_tensor(MultiTensorMessage& self, const std::string& name);
+};
+
 #pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus
