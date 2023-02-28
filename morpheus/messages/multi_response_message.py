@@ -193,7 +193,7 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
         outputs = self.outputs
         return {key: output[mask] for (key, output) in outputs.items()}
 
-    def copy_ranges(self, ranges):
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
         """
         Perform a copy of the current message, dataframe and tensors for the given `ranges` of rows.
 
@@ -275,7 +275,7 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
 
     user_id: str = None
 
-    def copy_ranges(self, ranges):
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
         """
         Perform a copy of the current message, dataframe and tensors for the given `ranges` of rows.
 
