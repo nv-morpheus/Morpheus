@@ -29,6 +29,7 @@ from morpheus.messages.message_base import MessageBase
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_message import MultiMessage
+from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.messages.multi_inference_message import MultiInferenceFILMessage
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
@@ -52,6 +53,7 @@ __all__ = [
     "MultiResponseAEMessage",
     "MultiResponseMessage",
     "MultiResponseProbsMessage",
+    "MultiTensorMessage",
     "ResponseMemory",
     "ResponseMemoryAE",
     "ResponseMemoryProbs",

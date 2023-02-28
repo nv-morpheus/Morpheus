@@ -85,7 +85,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
     def get_tensor(self, name: str):
         """
-        Get the Tensor stored in the TensorMemory container identified by `name`.
+        Get the Tensor stored in the container identified by `name`.
 
         Parameters
         ----------
@@ -99,20 +99,24 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Raises
         ------
-        KeyError
-            When no matching tensor exists.
+        AttributeError
+            If output name does not exist in message container.
         """
-        return self._tensors[name]
+        try:
+            return self._tensors[name]
+        except KeyError:
+            raise AttributeError
 
     def set_tensor(self, name: str, tensor: cp.ndarray):
         """
-        Update the tensor identified by `name`. If the length of the tensor has changed, then the `count`
-        property should also be updated.
+        Update the tensor identified by `name`.
 
         Parameters
         ----------
         tensor : cupy.ndarray
             Tensory as a CuPy Array.
         """
-        self._check_tensor(tensor)
-        self._tensors[name] = tensor
+        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
+        reshaped_tensor = tensor if tensor.ndim == 2 else cp.reshape(tensor, (tensor.shape[0], -1))
+        self._check_tensor(reshaped_tensor)
+        self._tensors[name] = reshaped_tensor

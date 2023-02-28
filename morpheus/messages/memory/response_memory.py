@@ -28,8 +28,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
 
     def get_output(self, name: str):
         """
-        Getter function used with DataClassProp for getting inference output from message containers derived
-        from ResponseMemory.
+        Get the Tensor stored in the container identified by `name`. Alias for `ResponseMemory.get_tensor`.
 
         Parameters
         ----------
@@ -47,15 +46,11 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
             If output name does not exist in message container.
 
         """
-        try:
-            return self.get_tensor(name)
-        except KeyError:
-            raise AttributeError
+        return self.get_tensor(name)
 
     def set_output(self, name: str, value: cp.ndarray):
         """
-        Setter function used with DataClassProp for setting output in message containers derived
-        from ResponseMemory.
+        Update the output tensor identified by `name`. Alias for `ResponseMemory.set_tensor`
 
         Parameters
         ----------
@@ -64,10 +59,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
         value : cupy.ndarray
             Value to set for input.
         """
-
-        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-        tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-        self.set_tensor(name, tensor)
+        self.set_tensor(name, value)
 
 
 @dataclasses.dataclass(init=False)

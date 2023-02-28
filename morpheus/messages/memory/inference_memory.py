@@ -31,8 +31,7 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
 
     def get_input(self, name: str):
         """
-        Getter function used with DataClassProp for getting inference input from message containers derived
-        from InferenceMemory.
+        Get the Tensor stored in the container identified by `name`. Alias for `InferenceMemory.get_tensor`.
 
         Parameters
         ----------
@@ -49,15 +48,11 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
         AttributeError
             If input name does not exist in message container.
         """
-        try:
-            return self.get_tensor(name)
-        except KeyError:
-            raise AttributeError
+        return self.get_tensor(name)
 
     def set_input(self, name: str, value: cp.ndarray):
         """
-        Setter function used with DataClassProp for setting inference input in message containers derived
-        from InferenceMemory.
+        Update the input tensor identified by `name`. Alias for `InferenceMemory.set_tensor`
 
         Parameters
         ----------
@@ -66,9 +61,7 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
         value : cupy.ndarray
             Value to set for input.
         """
-        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-        tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-        self.set_tensor(name, tensor)
+        self.set_tensor(name, value)
 
 
 @dataclasses.dataclass(init=False)

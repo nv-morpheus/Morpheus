@@ -16,8 +16,6 @@
 import dataclasses
 import typing
 
-import cupy as cp
-
 import morpheus._lib.messages as _messages
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
