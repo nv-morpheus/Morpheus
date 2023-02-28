@@ -31,12 +31,12 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
 
     def get_input(self, name: str):
         """
-        Get the Tensor stored in the container identified by `name`. Alias for `InferenceMemory.get_tensor`.
+        Get the tensor stored in the container identified by `name`. Alias for `InferenceMemory.get_tensor`.
 
         Parameters
         ----------
         name : str
-            Key used to do lookup in inputs dict of message container.
+            Key used to do lookup in inputs dict of the container.
 
         Returns
         -------
@@ -46,22 +46,22 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
         Raises
         ------
         AttributeError
-            If input name does not exist in message container.
+            If input name does not exist in the container.
         """
         return self.get_tensor(name)
 
-    def set_input(self, name: str, value: cp.ndarray):
+    def set_input(self, name: str, tensor: cp.ndarray):
         """
         Update the input tensor identified by `name`. Alias for `InferenceMemory.set_tensor`
 
         Parameters
         ----------
         name : str
-            Key used to do lookup in inputs dict of message container.
-        value : cupy.ndarray
-            Value to set for input.
+            Key used to do lookup in inputs dict of the container.
+        tensor : cupy.ndarray
+            Tensor as a CuPy array.
         """
-        self.set_tensor(name, value)
+        self.set_tensor(name, tensor)
 
 
 @dataclasses.dataclass(init=False)

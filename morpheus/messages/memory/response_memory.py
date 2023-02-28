@@ -48,18 +48,23 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
         """
         return self.get_tensor(name)
 
-    def set_output(self, name: str, value: cp.ndarray):
+    def set_output(self, name: str, tensor: cp.ndarray):
         """
         Update the output tensor identified by `name`. Alias for `ResponseMemory.set_tensor`
 
         Parameters
         ----------
         name : str
-            Key used to do lookup in tensors dict of message container.
-        value : cupy.ndarray
-            Value to set for input.
+            Key used to do lookup in tensors dict of the container.
+        tensor : cupy.ndarray
+            Tensor as a CuPy array.
+
+        Raises
+        ------
+        ValueError
+            If the number of rows in `tensor` does not match `count`
         """
-        self.set_tensor(name, value)
+        self.set_tensor(name, tensor)
 
 
 @dataclasses.dataclass(init=False)

@@ -100,7 +100,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         Raises
         ------
         AttributeError
-            If output name does not exist in message container.
+            If tensor name does not exist in the container.
         """
         try:
             return self._tensors[name]
@@ -114,7 +114,12 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         Parameters
         ----------
         tensor : cupy.ndarray
-            Tensory as a CuPy Array.
+            Tensor as a CuPy array.
+
+        Raises
+        ------
+        ValueError
+            If the number of rows in `tensor` does not match `count`
         """
         # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
         reshaped_tensor = tensor if tensor.ndim == 2 else cp.reshape(tensor, (tensor.shape[0], -1))
