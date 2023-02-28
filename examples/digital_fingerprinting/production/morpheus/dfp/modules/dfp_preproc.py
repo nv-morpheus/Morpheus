@@ -63,8 +63,6 @@ def dfp_preproc(builder: mrc.Builder):
     dfp_split_users_conf = get_config_with_overrides(config, DFP_SPLIT_USERS, "dfp_split_users")
 
     # Load modules
-    import json
-    print(json.dumps(fsspec_data_loader_conf, indent=4, default=str))
     fsspec_data_loader_module = load_module(fsspec_data_loader_conf, builder=builder)
     file_batcher_module = load_module(file_batcher_conf, builder=builder)
     file_to_df_data_loader_module = load_module(file_to_df_data_loader_conf, builder=builder)
