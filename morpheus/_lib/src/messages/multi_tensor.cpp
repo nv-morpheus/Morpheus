@@ -17,6 +17,8 @@
 
 #include "morpheus/messages/multi_tensor.hpp"
 
+#include "morpheus/utilities/cupy_util.hpp"
+
 #include <cudf/types.hpp>  // for cudf::size_type>
 #include <glog/logging.h>
 
@@ -115,6 +117,42 @@ std::shared_ptr<TensorMemory> MultiTensorMessage::copy_input_ranges(
     auto offset_ranges = apply_offset_to_ranges(offset, ranges);
     auto tensors       = memory->copy_tensor_ranges(offset_ranges, num_selected_rows);
     return std::make_shared<TensorMemory>(num_selected_rows, std::move(tensors));
+}
+
+/****** MultiTensorMessageInterfaceProxy *************************/
+std::shared_ptr<MultiTensorMessage> MultiTensorMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
+                                                                           std::size_t mess_offset,
+                                                                           std::size_t mess_count,
+                                                                           std::shared_ptr<TensorMemory> memory,
+                                                                           std::size_t offset,
+                                                                           std::size_t count)
+{
+    return std::make_shared<MultiTensorMessage>(
+        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
+}
+
+std::shared_ptr<morpheus::TensorMemory> MultiTensorMessageInterfaceProxy::memory(MultiTensorMessage& self)
+{
+    DCHECK(std::dynamic_pointer_cast<morpheus::TensorMemory>(self.memory) != nullptr);
+
+    return std::static_pointer_cast<morpheus::TensorMemory>(self.memory);
+}
+
+std::size_t MultiTensorMessageInterfaceProxy::offset(MultiTensorMessage& self)
+{
+    return self.offset;
+}
+
+std::size_t MultiTensorMessageInterfaceProxy::count(MultiTensorMessage& self)
+{
+    return self.count;
+}
+
+pybind11::object MultiTensorMessageInterfaceProxy::get_tensor(MultiTensorMessage& self, const std::string& name)
+{
+    auto tensor = self.get_tensor(name);
+
+    return CupyUtil::tensor_to_cupy(tensor);
 }
 
 }  // namespace morpheus
