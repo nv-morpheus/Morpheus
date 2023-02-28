@@ -3,21 +3,12 @@
     "module_name": "dfp_deployment",
     "namespace": "morpheus",
     "DFPPreproc": {
-      "module_id": "DFPPreproc",
-      "module_name": "dfp_preproc",
-      "namespace": "morpheus",
       "fsspec": {
-        "module_id": "DataLoader",
-        "module_name": "fsspec_dataloader",
-        "namespace": "morpheus",
         "loaders": [{
             "id": "fsspec"
         }]
       },
       "FileBatcher": {
-        "module_id": "FileBatcher",
-        "module_name": "file_batcher",
-        "namespace": "morpheus",
         "period": "D",
         "sampling_rate_s": 0,
         "start_time": null,
@@ -38,17 +29,11 @@
         }
       },
       "file_to_df": {
-        "module_id": "DataLoader",
-        "module_name": "file_to_df_dataloader",
-        "namespace": "morpheus",
         "loaders": [{
             "id": "file_to_df"
         }]
       },
       "DFPSplitUsers": {
-        "module_id": "DFPSplitUsers",
-        "module_name": "dfp_split_users",
-        "namespace": "morpheus",
         "include_generic": true,
         "include_individual": false,
         "skip_users": [],
@@ -59,13 +44,7 @@
       }
   },
   "DFPTra": {
-    "module_id": "DFPTra",
-    "module_name": "dfp_tra",
-    "namespace": "morpheus",
     "DFPRollingWindow": {
-      "module_id": "DFPRollingWindow",
-      "module_name": "dfp_rolling_window",
-      "namespace": "morpheus",
       "min_history": 300,
       "min_increment": 300,
       "max_history": null,
@@ -74,9 +53,6 @@
       "task_type": "training"
     },
     "DFPDataPrep": {
-      "module_id": "DFPDataPrep",
-      "module_name": "dfp_data_prep_tra",
-      "namespace": "morpheus",
       "timestamp_column_name": "timestamp",
       "userid_column_name": "username",
       "schema": {
@@ -86,9 +62,6 @@
       "task_type": "training"
     },
     "DFPTraining": {
-      "module_id": "DFPTraining",
-      "module_name": "dfp_training",
-      "namespace": "morpheus",
       "model_kwargs": {
         "encoder_layers": [
           512,
@@ -114,9 +87,6 @@
       "validation_size": 0.1
     },
     "MLFlowModelWriter": {
-      "module_id": "MLFlowModelWriter",
-      "module_name": "mlflow_model_writer",
-      "namespace": "morpheus",
       "model_name_formatter": null,
       "experiment_name_formatter": null,
       "timestamp_column_name": "timestamp",
@@ -139,9 +109,6 @@
     }
   },
   "DFPInf": {
-    "module_id": "DFPInf",
-    "module_name": "dfp_inf",
-    "namespace": "morpheus",
     "DFPRollingWindow": {
       "module_id": "DFPRollingWindow",
       "module_name": "dfp_rolling_window",
@@ -154,9 +121,6 @@
       "task_type": "inference"
     },
     "DFPDataPrep": {
-      "module_id": "DFPDataPrep",
-      "module_name": "dfp_data_prep_tra",
-      "namespace": "morpheus",
       "timestamp_column_name": "timestamp",
       "userid_column_name": "username",
       "schema": {
@@ -166,17 +130,11 @@
       "task_type": "inference"
     },
     "DFPInference": {
-      "module_id": "DFPInference",
-      "module_name": "dfp_inference",
-      "namespace": "morpheus",
       "model_name_formatter": null,
       "fallback_username": "username",
       "timestamp_column_name": "timestamp"
   },
   "FilterDetections": {
-      "module_id": "FilterDetections",
-      "module_name": "filter_detections",
-      "namespace": "morpheus",
       "field_name": "mean_abs_z",
       "threshold": 2.0,
       "filter_source": "DATAFRAME",
@@ -185,22 +143,13 @@
       }
   },
   "DFPPostProcessing": {
-      "module_id": "DFPPostProcessing",
-      "module_name": "dfp_post_processing",
-      "namespace": "morpheus",
       "timestamp_column_name": "timestamp"
   },
   "Serialize": {
-      "module_id": "Serialize",
-      "module_name": "serialize",
-      "namespace": "morpheus",
       "exclude": ["batch_count", "origin_hash", "_row_hash", "_batch_id"],
       "use_cpp": null
   },
   "WriteToFile": {
-      "module_id": "WriteToFile",
-      "module_name": "write_to_file",
-      "namespace": "morpheus",
       "filename": null,
       "overwrite": true
   }
