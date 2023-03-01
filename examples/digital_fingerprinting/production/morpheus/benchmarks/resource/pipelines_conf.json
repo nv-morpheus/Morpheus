@@ -1,5 +1,5 @@
 {
-    "tracking_uri": "http://mlflow:5000",
+    "tracking_uri": "http://localhost:5000",
     "test_dfp_modules_azure_training_e2e": {
       "message_path": "./resource/control_message_azure_training.json",
       "num_threads": 12,

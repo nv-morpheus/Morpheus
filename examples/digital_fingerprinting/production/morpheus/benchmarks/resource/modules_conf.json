@@ -1,47 +1,57 @@
 {
-    "module_id": "DFPDeployment",
-    "module_name": "dfp_deployment",
-    "namespace": "morpheus",
-    "DFPPreproc": {
-      "fsspec": {
-        "loaders": [{
-            "id": "fsspec"
-        }]
-      },
-      "FileBatcher": {
-        "period": "D",
-        "sampling_rate_s": 0,
-        "start_time": null,
-        "end_time": null,
-        "iso_date_regex_pattern": "(?P<year>\\d{4})-(?P<month>\\d{1,2})-(?P<day>\\d{1,2})T(?P<hour>\\d{1,2})(:|_)(?P<minute>\\d{1,2})(:|_)(?P<second>\\d{1,2})(?P<microsecond>\\.\\d{1,6})?Z",
-        "timestamp_column_name": "timestamp",
-        "userid_column_name": "username",
-        "parser_kwargs": {
-          "lines": false,
-          "orient": "records"
-        },
-        "cache_dir": "./.cache/dfp",
-        "filter_null": true,
-        "file_type": "JSON",
-        "schema": {
-          "schema_str": null,
-          "encoding": null
+  "module_id": "DFPDeployment",
+  "module_name": "dfp_deployment",
+  "namespace": "morpheus",
+  "DFPPreproc": {
+    "fsspec": {
+      "module_id": "DataLoader",
+      "namespace": "morpheus",
+      "module_name": "fsspec",
+      "loaders": [
+        {
+          "id": "fsspec"
         }
+      ]
+    },
+    "FileBatcher": {
+      "sampling_rate_s": 0,
+      "start_time": null,
+      "end_time": null,
+      "iso_date_regex_pattern": "(?P<year>\\d{4})-(?P<month>\\d{1,2})-(?P<day>\\d{1,2})T(?P<hour>\\d{1,2})(:|_)(?P<minute>\\d{1,2})(:|_)(?P<second>\\d{1,2})(?P<microsecond>\\.\\d{1,6})?Z",
+      "timestamp_column_name": "timestamp",
+      "period": "D",
+      "userid_column_name": "username",
+      "parser_kwargs": {
+        "lines": false,
+        "orient": "records"
       },
-      "file_to_df": {
-        "loaders": [{
-            "id": "file_to_df"
-        }]
-      },
-      "DFPSplitUsers": {
-        "include_generic": true,
-        "include_individual": false,
-        "skip_users": [],
-        "only_users": [],
-        "timestamp_column_name": "timestamp",
-        "userid_column_name": "username",
-        "fallback_username": "generic_user"
+      "cache_dir": "./.cache/dfp",
+      "filter_null": true,
+      "file_type": "JSON",
+      "schema": {
+        "schema_str": null,
+        "encoding": null
       }
+    },
+    "file_to_df": {
+      "module_id": "DataLoader",
+      "namespace": "morpheus",
+      "module_name": "file_to_df",
+      "loaders": [
+        {
+          "id": "file_to_df"
+        }
+      ]
+    },
+    "DFPSplitUsers": {
+      "include_generic": true,
+      "include_individual": false,
+      "skip_users": [],
+      "only_users": [],
+      "timestamp_column_name": "timestamp",
+      "userid_column_name": "username",
+      "fallback_username": "generic_user"
+    }
   },
   "DFPTra": {
     "DFPRollingWindow": {
@@ -133,25 +143,31 @@
       "model_name_formatter": null,
       "fallback_username": "username",
       "timestamp_column_name": "timestamp"
-  },
-  "FilterDetections": {
+    },
+    "FilterDetections": {
       "field_name": "mean_abs_z",
       "threshold": 2.0,
       "filter_source": "DATAFRAME",
       "schema": {
-          "input_message_type": null, "encoding": null
+        "input_message_type": null,
+        "encoding": null
       }
-  },
-  "DFPPostProcessing": {
+    },
+    "DFPPostProcessing": {
       "timestamp_column_name": "timestamp"
-  },
-  "Serialize": {
-      "exclude": ["batch_count", "origin_hash", "_row_hash", "_batch_id"],
+    },
+    "Serialize": {
+      "exclude": [
+        "batch_count",
+        "origin_hash",
+        "_row_hash",
+        "_batch_id"
+      ],
       "use_cpp": null
-  },
-  "WriteToFile": {
+    },
+    "WriteToFile": {
       "filename": null,
       "overwrite": true
+    }
   }
-}
 }
