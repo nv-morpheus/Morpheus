@@ -117,9 +117,6 @@ class ConfigGenerator:
 
     def infer_module_config(self):
         module_config = {
-            "module_id": DFP_INF,
-            "module_name": "dfp_inf",
-            "namespace": MODULE_NAMESPACE,
             DFP_ROLLING_WINDOW: {
                 "min_history": 1,
                 "min_increment": 0,

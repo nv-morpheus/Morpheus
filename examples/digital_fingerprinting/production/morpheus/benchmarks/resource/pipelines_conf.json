@@ -1,15 +1,47 @@
 {
     "tracking_uri": "http://mlflow:5000",
-    "test_dfp_training_azure_modules_e2e": {
-      "glob_path": "../../../../data/dfp/azure-training-data/*.json",
+    "test_dfp_modules_azure_training_e2e": {
+      "message_path": "./resource/control_message_azure_training.json",
       "num_threads": 12,
       "pipeline_batch_size": 256,
       "edge_buffer_size": 128,
       "start_time": "2022-08-01",
       "duration": "60d"
     },
-    "test_dfp_training_duo_modules_e2e": {
-      "glob_path": "../../../../data/dfp/duo-training-data/*.json",
+    "test_dfp_modules_azure_inference_e2e": {
+      "message_path": "./resource/control_message_azure_inference.json",
+      "num_threads": 12,
+      "pipeline_batch_size": 256,
+      "edge_buffer_size": 128,
+      "start_time": "2022-08-01",
+      "duration": "60d"
+    },
+    "test_dfp_modules_azure_e2e": {
+      "message_path": "./resource/control_message_azure.json",
+      "num_threads": 12,
+      "pipeline_batch_size": 256,
+      "edge_buffer_size": 128,
+      "start_time": "2022-08-01",
+      "duration": "60d"
+    },
+    "test_dfp_modules_duo_training_e2e": {
+      "message_path": "./resource/control_message_duo_training.json",
+      "num_threads": 12,
+      "pipeline_batch_size": 256,
+      "edge_buffer_size": 128,
+      "start_time": "2022-08-01",
+      "duration": "60d"
+    },
+    "test_dfp_modules_duo_inference_e2e": {
+      "message_path": "./resource/control_message_duo_inference.json",
+      "num_threads": 12,
+      "pipeline_batch_size": 256,
+      "edge_buffer_size": 128,
+      "start_time": "2022-08-01",
+      "duration": "60d"
+    },
+    "test_dfp_modules_duo_e2e": {
+      "message_path": "./resource/control_message_duo.json",
       "num_threads": 12,
       "pipeline_batch_size": 256,
       "edge_buffer_size": 128,

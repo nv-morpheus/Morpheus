@@ -26,10 +26,12 @@ from os import path
 
 import mlflow
 import pandas as pd
+from dfp.utils.derive_args import pyobj2str
 
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig
+from morpheus.messages.multi_message import MultiMessage
 from morpheus.utils.column_info import BoolColumn
 from morpheus.utils.column_info import ColumnInfo
 from morpheus.utils.column_info import CustomColumn
@@ -197,10 +199,10 @@ class DFPConfig():
     def source(self):
         return self._source
 
-    def get_config(self) -> Config:
+    def get_config(self, use_cpp=True) -> Config:
 
         config = Config()
-        CppConfig.set_should_use_cpp(False)
+        CppConfig.set_should_use_cpp(use_cpp)
         config.ae = ConfigAutoEncoder()
 
         config.num_threads = self.pipeline_conf["num_threads"]
@@ -238,28 +240,38 @@ class DFPConfig():
         return tuple((start_time, end_time))
 
     def update_modules_conf(self, source_schema: DataFrameInputSchema, preprocess_schema: DataFrameInputSchema):
-
-        start_stop_time = self._get_start_stop_time()
-        self.modules_conf["preprocessing"]["FileBatcher"]["start_time"] = start_stop_time[0]
-        self.modules_conf["preprocessing"]["FileBatcher"]["end_time"] = start_stop_time[0]
-        self.modules_conf["preprocessing"]["DFPRollingWindow"]["max_history"] = self.pipeline_conf["duration"]
-
         encoding = "latin1"
 
         # Convert schema as a string
         source_schema_str = str(pickle.dumps(source_schema), encoding=encoding)
         preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
 
-        self.modules_conf["preprocessing"]["FileToDF"]["schema"]["schema_str"] = source_schema_str
-        self.modules_conf["preprocessing"]["FileToDF"]["schema"]["encoding"] = encoding
-        self.modules_conf["preprocessing"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
-        self.modules_conf["preprocessing"]["DFPDataPrep"]["schema"]["encoding"] = encoding
-        self.modules_conf["train_deploy"]["DFPTraining"]["feature_columns"] = self.feature_columns
+        start_stop_time = self._get_start_stop_time()
+        self.modules_conf["DFPPreproc"]["FileBatcher"]["start_time"] = start_stop_time[0]
+        self.modules_conf["DFPPreproc"]["FileBatcher"]["end_time"] = start_stop_time[0]
+        self.modules_conf["DFPPreproc"]["FileBatcher"]["schema"]["schema_str"] = source_schema_str
+        self.modules_conf["DFPPreproc"]["FileBatcher"]["schema"]["encoding"] = encoding
 
-        self.modules_conf["train_deploy"]["MLFlowModelWriter"]["model_name_formatter"] = self._get_model_name_formatter(
-        )
-        self.modules_conf["train_deploy"]["MLFlowModelWriter"][
+        self.modules_conf["DFPTra"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
+        self.modules_conf["DFPTra"]["DFPDataPrep"]["schema"]["encoding"] = encoding
+
+        self.modules_conf["DFPTra"]["DFPRollingWindow"]["max_history"] = self.pipeline_conf["duration"]
+        self.modules_conf["DFPTra"]["DFPTraining"]["feature_columns"] = self.feature_columns
+        self.modules_conf["DFPTra"]["MLFlowModelWriter"]["model_name_formatter"] = self._get_model_name_formatter()
+        self.modules_conf["DFPTra"]["MLFlowModelWriter"][
             "experiment_name_formatter"] = self._get_experiment_name_formatter()
+
+        self.modules_conf["DFPInf"]["DFPRollingWindow"]["max_history"] = "1d"
+        self.modules_conf["DFPInf"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
+        self.modules_conf["DFPInf"]["DFPDataPrep"]["schema"]["encoding"] = encoding
+        self.modules_conf["DFPInf"]["DFPInference"]["model_name_formatter"] = self._get_model_name_formatter()
+        self.modules_conf["DFPInf"]["FilterDetections"]["schema"]["input_message_type"] = pyobj2str(
+            MultiMessage, encoding)
+        self.modules_conf["DFPInf"]["FilterDetections"]["schema"]["encoding"] = encoding
+        self.modules_conf["DFPInf"]["Serialize"]["use_cpp"] = True
+        self.modules_conf["DFPInf"]["WriteToFile"]["filename"] = "dfp_detections_{}.csv".format(self._source)
+
+        self.modules_conf["output_port_count"] = 2
 
     def get_stages_conf(self) -> typing.Dict[str, any]:
 
@@ -287,6 +299,10 @@ class DFPConfig():
             filenames = glob.glob(input_glob)
         elif "file_path" in self.pipeline_conf:
             file_path = self.pipeline_conf.get("file_path")
+            full_file_path = path.join(THIS_DIR, file_path)
+            filenames = [full_file_path]
+        elif "message_path" in self.pipeline_conf:
+            file_path = self.pipeline_conf.get("message_path")
             full_file_path = path.join(THIS_DIR, file_path)
             filenames = [full_file_path]
         else:
