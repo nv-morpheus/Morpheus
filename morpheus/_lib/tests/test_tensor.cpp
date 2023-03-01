@@ -17,11 +17,12 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
-#include "morpheus/objects/dtype.hpp"          // for DType
-#include "morpheus/objects/rmm_tensor.hpp"     // for RMMTensor
-#include "morpheus/objects/tensor.hpp"         // for Tensor::create
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils, TensorUtils::shape_type_t
+#include "morpheus/objects/dtype.hpp"              // for DType
+#include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
+#include "morpheus/objects/rmm_tensor.hpp"         // for RMMTensor
+#include "morpheus/objects/tensor.hpp"             // for Tensor::create
+#include "morpheus/objects/tensor_object.hpp"      // for TensorIndex
+#include "morpheus/utilities/tensor_util.hpp"      // for TensorUtils, TensorUtils::shape_type_t
 
 #include <cuda_runtime.h>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
