@@ -58,14 +58,15 @@ def dfp_training(builder: mrc.Builder):
         if (control_message is None):
             return None
 
-        output_message = None
+        output_messages = []
         while (control_message.has_task("training")):
             task = control_message.pop_task("training")
 
             user_id = control_message.get_metadata("user_id")
             message_meta = control_message.payload()
 
-            final_df = message_meta.df.to_pandas()
+            with message_meta.mutable_dataframe() as dfm:
+                final_df = dfm.to_pandas()
 
             model = AutoEncoder(**model_kwargs)
 
@@ -76,17 +77,19 @@ def dfp_training(builder: mrc.Builder):
             model.fit(train_df, epochs=epochs)
             logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-            dfp_mm = DFPMessageMeta(cudf.DataFrame(final_df), user_id=user_id)
+            dfp_mm = DFPMessageMeta(cudf.from_pandas(final_df), user_id=user_id)
             multi_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(final_df))
             output_message = MultiAEMessage(multi_message.meta,
                                             mess_offset=multi_message.mess_offset,
                                             mess_count=multi_message.mess_count,
                                             model=model)
 
-        return output_message
+            output_messages.append(output_message)
+
+        return output_messages
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
+        obs.pipe(ops.map(on_data), ops.flatten(), ops.filter(lambda x: x is not None)).subscribe(sub)
 
     node = builder.make_node_full(DFP_TRAINING, node_fn)
 

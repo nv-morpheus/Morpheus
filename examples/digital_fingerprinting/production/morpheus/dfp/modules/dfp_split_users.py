@@ -63,70 +63,73 @@ def dfp_split_users(builder: mrc.Builder):
             logger.debug("No message to extract users from")
             return []
 
-        df = control_message.payload().df
-        with log_time(logger.debug) as log_info:
+        mm = control_message.payload()
+        with mm.mutable_dataframe() as dfm:
+            # df = control_message.payload().df
+            with log_time(logger.debug) as log_info:
 
-            if (isinstance(df, cudf.DataFrame)):
-                # Convert to pandas because cudf is slow at this
-                df = df.to_pandas()
-                df[timestamp_column_name] = pd.to_datetime(df[timestamp_column_name], utc=True)
+                if (isinstance(dfm, cudf.DataFrame)):
+                    # Convert to pandas because cudf is slow at this
+                    df = dfm.to_pandas()
+                    df[timestamp_column_name] = pd.to_datetime(df[timestamp_column_name], utc=True)
 
-            split_dataframes: typing.Dict[str, cudf.DataFrame] = {}
+                split_dataframes: typing.Dict[str, cudf.DataFrame] = {}
 
-            # If we are skipping users, do that here
-            if (len(skip_users) > 0):
-                df = df[~df[userid_column_name].isin(skip_users)]
+                # If we are skipping users, do that here
+                if (len(skip_users) > 0):
+                    df = df[~df[userid_column_name].isin(skip_users)]
 
-            if (len(only_users) > 0):
-                df = df[df[userid_column_name].isin(only_users)]
+                if (len(only_users) > 0):
+                    df = df[df[userid_column_name].isin(only_users)]
 
-            # Split up the dataframes
-            if (include_generic):
-                split_dataframes[fallback_username] = df
+                # Split up the dataframes
+                if (include_generic):
+                    split_dataframes[fallback_username] = df
 
-            if (include_individual):
-                split_dataframes.update({username: user_df for username, user_df in df.groupby("username", sort=False)})
+                if (include_individual):
+                    split_dataframes.update(
+                        {username: user_df for username, user_df in df.groupby("username", sort=False)})
 
-            output_messages: typing.List[MessageControl] = []
+                output_messages: typing.List[MessageControl] = []
 
-            for user_id in sorted(split_dataframes.keys()):
-                if (user_id in skip_users):
-                    continue
+                for user_id in sorted(split_dataframes.keys()):
+                    if (user_id in skip_users):
+                        continue
 
-                user_df = split_dataframes[user_id]
+                    user_df = split_dataframes[user_id]
 
-                current_user_count = user_index_map.get(user_id, 0)
-                logger.debug("Current user count: %s", current_user_count)
+                    current_user_count = user_index_map.get(user_id, 0)
+                    logger.debug("Current user count: %s", current_user_count)
 
-                # Reset the index so that users see monotonically increasing indexes
-                user_df.index = range(current_user_count, current_user_count + len(user_df))
-                user_index_map[user_id] = current_user_count + len(user_df)
+                    # Reset the index so that users see monotonically increasing indexes
+                    user_df.index = range(current_user_count, current_user_count + len(user_df))
+                    user_index_map[user_id] = current_user_count + len(user_df)
 
-                user_control_message = control_message.copy()
-                user_control_message.set_metadata("user_id", user_id)
+                    user_control_message = control_message.copy()
+                    user_control_message.set_metadata("user_id", user_id)
 
-                user_cudf = cudf.from_pandas(user_df)
-                user_control_message.payload(MessageMeta(df=user_cudf))
+                    user_cudf = cudf.from_pandas(user_df)
+                    user_control_message.payload(MessageMeta(df=user_cudf))
 
-                # output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
-                output_messages.append(user_control_message)
+                    # output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
+                    output_messages.append(user_control_message)
 
-                rows_per_user = [len(msg.payload().df.to_pandas()) for msg in output_messages]
+                    rows_per_user = [len(msg.payload().df.to_pandas()) for msg in output_messages]
 
-                if (len(output_messages) > 0):
-                    log_info.set_log(
-                        ("Batch split users complete. Input: %s rows from %s to %s. "
-                         "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
-                        len(df),
-                        df[timestamp_column_name].min(),
-                        df[timestamp_column_name].max(),
-                        len(rows_per_user),
-                        np.min(rows_per_user),
-                        np.max(rows_per_user),
-                        np.mean(rows_per_user),
-                    )
+                    if (len(output_messages) > 0):
+                        log_info.set_log(
+                            ("Batch split users complete. Input: %s rows from %s to %s. "
+                             "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
+                            len(df),
+                            df[timestamp_column_name].min(),
+                            df[timestamp_column_name].max(),
+                            len(rows_per_user),
+                            np.min(rows_per_user),
+                            np.max(rows_per_user),
+                            np.mean(rows_per_user),
+                        )
 
-            return output_messages
+                return output_messages
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(extract_users), ops.flatten()).subscribe(sub)

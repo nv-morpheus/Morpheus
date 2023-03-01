@@ -139,9 +139,10 @@ def file_batcher(builder: mrc.Builder):
         return control_messages
 
     def on_data(control_message: MessageControl):
-        df = control_message.payload().df
-        files = df.files.to_arrow().to_pylist()
-        ts_filenames_df = build_fs_filename_df(files)
+        mm = control_message.payload()
+        with mm.mutable_dataframe() as df:
+            files = df.files.to_arrow().to_pylist()
+            ts_filenames_df = build_fs_filename_df(files)
 
         control_messages = []
         if len(ts_filenames_df) > 0:

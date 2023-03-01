@@ -160,11 +160,6 @@ def run_pipeline(log_type: str,
 
     source_stage = pipeline.add_stage(ControlMessageSourceStage(config, filenames=list(kwargs["input_file"])))
 
-    # Here we add a wrapped module that implements the DFP Deployment
-    import json
-    with open("good_config.json", "w") as f:
-        json.dump(module_config, f, indent=4, default=str)
-
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModuleStage(config,
                              module_config,

@@ -109,7 +109,6 @@ class RenameColumn(ColumnInfo):
     input_name: str
 
     def _process_column(self, df: pd.DataFrame) -> pd.Series:
-
         if (self.input_name not in df.columns):
             return pd.Series(None, index=df.index, dtype=self.get_pandas_dtype())
 
@@ -224,10 +223,12 @@ class DataFrameInputSchema:
         self.preserve_columns = input_preserve_columns
 
 
-def _process_columns(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
-
+def _process_columns(df_in, input_schema: DataFrameInputSchema):
     # TODO(MDD): See what causes this to have such a perf impact over using df_in
     output_df = pd.DataFrame()
+    if (isinstance(df_in, cudf.DataFrame)):
+        df_in = df_in.to_pandas()
+        convert_to_cudf = True
 
     # Iterate over the column info
     for ci in input_schema.column_info:
@@ -246,11 +247,13 @@ def _process_columns(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
 
         output_df[match_columns] = df_in[match_columns]
 
+    if (convert_to_cudf):
+        return cudf.from_pandas(output_df)
+
     return output_df
 
 
 def _normalize_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
-
     if (input_schema.json_columns is None or len(input_schema.json_columns) == 0):
         return df_in
 
@@ -294,7 +297,6 @@ def _normalize_dataframe(df_in: pd.DataFrame, input_schema: DataFrameInputSchema
 
 
 def _filter_rows(df_in: pd.DataFrame, input_schema: DataFrameInputSchema):
-
     if (input_schema.row_filter is None):
         return df_in
 

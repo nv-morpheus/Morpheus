@@ -51,6 +51,7 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
     files = task.get("files", None)
     batcher_config = task["batcher_config"]
 
+    # TODO(Devin): Should be configured at loader creation time
     timestamp_column_name = batcher_config.get("timestamp_column_name", None)
     schema_batcher_config = batcher_config.get("schema", None)
     schema_str = schema_batcher_config.get("schema_str", None)

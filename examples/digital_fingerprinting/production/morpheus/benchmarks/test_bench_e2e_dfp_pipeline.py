@@ -61,7 +61,7 @@ set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
 
 
 def dfp_modules_pipeline(config: Config, modules_conf: typing.Dict[str, any], filenames: typing.List[str]):
-    configure_logging(log_level=logging.INFO)
+    configure_logging(log_level=logging.CRITICAL)
 
     pipeline = Pipeline(config)
 
@@ -89,7 +89,7 @@ def dfp_training_pipeline_stages(config: Config,
                                  source_schema: DataFrameInputSchema,
                                  preprocess_schema: DataFrameInputSchema,
                                  filenames: typing.List[str]):
-    configure_logging(log_level=logging.INFO)
+    configure_logging(log_level=logging.CRITICAL)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(MultiFileSource(config, filenames=filenames))
@@ -136,7 +136,7 @@ def dfp_inference_pipeline_stages(config: Config,
                                   preprocess_schema: DataFrameInputSchema,
                                   filenames: typing.List[str],
                                   output_filepath: str):
-    configure_logging(log_level=logging.INFO)
+    configure_logging(log_level=logging.CRITICAL)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(MultiFileSource(config, filenames=filenames))

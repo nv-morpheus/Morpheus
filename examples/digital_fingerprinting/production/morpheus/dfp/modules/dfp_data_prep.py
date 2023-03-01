@@ -63,13 +63,11 @@ def dfp_data_prep(builder: mrc.Builder):
 
         # Process the columns
         payload = message.payload()
-        # df_processed = process_dataframe(message.get_meta_dataframe(), schema)
-        df_processed_pandas = payload.df.to_pandas()
-        df_processed = process_dataframe(df_processed_pandas, schema)
+        with payload.mutable_dataframe() as dfm:
+            df_processed = process_dataframe(dfm, schema)
 
         # Apply the new dataframe, only the rows in the offset
-        # message.set_meta_dataframe(list(df_processed.columns), df_processed)
-        message.payload(MessageMeta(cudf.DataFrame(df_processed)))
+        message.payload(MessageMeta(df_processed))
 
         if logger.isEnabledFor(logging.DEBUG):
             duration = (time.time() - start_time) * 1000.0

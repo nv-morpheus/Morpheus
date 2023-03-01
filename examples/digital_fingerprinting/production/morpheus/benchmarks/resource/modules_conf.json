@@ -4,9 +4,6 @@
   "namespace": "morpheus",
   "DFPPreproc": {
     "fsspec": {
-      "module_id": "DataLoader",
-      "namespace": "morpheus",
-      "module_name": "fsspec",
       "loaders": [
         {
           "id": "fsspec"
@@ -34,9 +31,6 @@
       }
     },
     "file_to_df": {
-      "module_id": "DataLoader",
-      "namespace": "morpheus",
-      "module_name": "file_to_df",
       "loaders": [
         {
           "id": "file_to_df"

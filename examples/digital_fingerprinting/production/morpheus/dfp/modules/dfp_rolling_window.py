@@ -80,7 +80,9 @@ def dfp_rolling_window(builder: mrc.Builder):
         with get_user_cache(user_id) as user_cache:
 
             # incoming_df = message.get_df()
-            incoming_df = message.df.to_pandas()
+            with message.mutable_dataframe() as dfm:
+                incoming_df = dfm.to_pandas()
+
             incoming_df[timestamp_column_name] = pd.to_datetime(incoming_df[timestamp_column_name], utc=True)
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
