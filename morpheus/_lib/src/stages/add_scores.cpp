@@ -17,21 +17,17 @@
 
 #include "morpheus/stages/add_scores.hpp"
 
-#include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 
 #include <glog/logging.h>
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
-#include <mrc/segment/object.hpp>          // for Object
 
 #include <cstddef>  // for size_t
 #include <exception>
+#include <functional>
 #include <map>
 #include <memory>
-#include <ostream>      // for logging
-#include <type_traits>  // for declval
-#include <utility>      // for move
+#include <ostream>  // for logging
+#include <utility>  // for move
 #include <vector>
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>

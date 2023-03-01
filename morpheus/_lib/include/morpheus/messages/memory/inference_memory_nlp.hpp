@@ -52,7 +52,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more
      inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      */
-    InferenceMemoryNLP(std::size_t count, TensorObject input_ids, TensorObject input_mask, TensorObject seq_ids);
+    InferenceMemoryNLP(std::size_t count, TensorObject&& input_ids, TensorObject&& input_mask, TensorObject&& seq_ids);
 
     /**
      * @brief Get the input ids object
@@ -80,21 +80,21 @@ class InferenceMemoryNLP : public InferenceMemory
      *
      * @param input_ids
      */
-    void set_input_ids(TensorObject input_ids);
+    void set_input_ids(TensorObject&& input_ids);
 
     /**
      * @brief Set the input mask object
      *
      * @param input_mask
      */
-    void set_input_mask(TensorObject input_mask);
+    void set_input_mask(TensorObject&& input_mask);
 
     /**
      * @brief Set the seq ids object
      *
      * @param seq_ids
      */
-    void set_seq_ids(TensorObject seq_ids);
+    void set_seq_ids(TensorObject&& seq_ids);
 };
 
 /****** InferenceMemoryNLPInterfaceProxy********************/

@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"  // IWYU pragma: associated
 
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include <pybind11/pybind11.h>  // for key_error & object
+#include <pybind11/cast.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 
+#include <map>
+#include <sstream>
+#include <stdexcept>  // for std::length_error
 #include <string>
 #include <vector>
 
@@ -29,7 +33,9 @@ namespace morpheus {
 /****** TensorMemory****************************************/
 TensorMemory::TensorMemory(size_t count) : count(count) {}
 TensorMemory::TensorMemory(size_t count, CupyUtil::tensor_map_t&& tensors) : count(count), tensors(std::move(tensors))
-{}
+{
+    check_tensors_length(this->tensors);
+}
 
 bool TensorMemory::has_tensor(const std::string& name) const
 {
@@ -48,10 +54,49 @@ CupyUtil::tensor_map_t TensorMemory::copy_tensor_ranges(const std::vector<std::p
     return tensors;
 }
 
-/****** TensorMemoryInterfaceProxy *************************/
-std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count, CupyUtil::py_tensor_map_t tensors)
+void TensorMemory::check_tensor_length(const TensorObject& tensor)
 {
-    return std::make_shared<TensorMemory>(count, std::move(CupyUtil::cupy_to_tensors(tensors)));
+    if (tensor.shape(0) != this->count)
+    {
+        std::stringstream err_msg;
+        err_msg << "The number rows in tensor " << tensor.shape(0) << " does not match TensorMemory.count of "
+                << this->count;
+        throw std::length_error{err_msg.str()};
+    }
+}
+
+void TensorMemory::set_tensor(const std::string& name, TensorObject&& tensor)
+{
+    check_tensor_length(tensor);
+    this->tensors.insert_or_assign(name, std::move(tensor));
+}
+
+void TensorMemory::check_tensors_length(const CupyUtil::tensor_map_t& tensors)
+{
+    for (const auto& p : tensors)
+    {
+        check_tensor_length(p.second);
+    }
+}
+
+void TensorMemory::set_tensors(CupyUtil::tensor_map_t&& tensors)
+{
+    check_tensors_length(tensors);
+    this->tensors = std::move(tensors);
+}
+
+/****** TensorMemoryInterfaceProxy *************************/
+std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count, pybind11::object& tensors)
+{
+    if (tensors.is_none())
+    {
+        return std::make_shared<TensorMemory>(count);
+    }
+    else
+    {
+        return std::make_shared<TensorMemory>(
+            count, std::move(CupyUtil::cupy_to_tensors(tensors.cast<CupyUtil::py_tensor_map_t>())));
+    }
 }
 
 std::size_t TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
@@ -66,30 +111,24 @@ CupyUtil::py_tensor_map_t TensorMemoryInterfaceProxy::get_tensors(TensorMemory& 
 
 void TensorMemoryInterfaceProxy::set_tensors(TensorMemory& self, CupyUtil::py_tensor_map_t tensors)
 {
-    self.tensors = std::move(CupyUtil::cupy_to_tensors(tensors));
-}
-
-const TensorObject& TensorMemoryInterfaceProxy::get_tensor_object(TensorMemory& self, const std::string& name)
-{
-    const auto tensor_itr = self.tensors.find(name);
-    if (tensor_itr == self.tensors.end())
-    {
-        throw pybind11::key_error{};
-    }
-
-    return tensor_itr->second;
+    self.set_tensors(CupyUtil::cupy_to_tensors(tensors));
 }
 
 pybind11::object TensorMemoryInterfaceProxy::get_tensor(TensorMemory& self, const std::string name)
 {
-    return CupyUtil::tensor_to_cupy(TensorMemoryInterfaceProxy::get_tensor_object(self, name));
+    if (!self.has_tensor(name))
+    {
+        throw pybind11::key_error{};
+    }
+
+    return CupyUtil::tensor_to_cupy(self.tensors[name]);
 }
 
 void TensorMemoryInterfaceProxy::set_tensor(TensorMemory& self,
                                             const std::string name,
                                             const pybind11::object& cupy_tensor)
 {
-    self.tensors.insert_or_assign(name, CupyUtil::cupy_to_tensor(cupy_tensor));
+    self.set_tensor(name, CupyUtil::cupy_to_tensor(cupy_tensor));
 }
 
 }  // namespace morpheus

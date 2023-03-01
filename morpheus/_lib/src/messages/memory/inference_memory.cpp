@@ -17,6 +17,9 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 
+#include <pybind11/cast.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
+
 #include <string>
 #include <utility>  // for move
 
@@ -34,10 +37,17 @@ bool InferenceMemory::has_input(const std::string& name) const
 }
 
 /****** InferenceMemoryInterfaceProxy *************************/
-std::shared_ptr<InferenceMemory> InferenceMemoryInterfaceProxy::init(std::size_t count,
-                                                                     CupyUtil::py_tensor_map_t tensors)
+std::shared_ptr<InferenceMemory> InferenceMemoryInterfaceProxy::init(std::size_t count, pybind11::object& tensors)
 {
-    return std::make_shared<InferenceMemory>(count, std::move(CupyUtil::cupy_to_tensors(tensors)));
+    if (tensors.is_none())
+    {
+        return std::make_shared<InferenceMemory>(count);
+    }
+    else
+    {
+        return std::make_shared<InferenceMemory>(
+            count, std::move(CupyUtil::cupy_to_tensors(tensors.cast<CupyUtil::py_tensor_map_t>())));
+    }
 }
 
 }  // namespace morpheus

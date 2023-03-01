@@ -17,24 +17,23 @@
 
 #include "morpheus/stages/triton_inference.hpp"
 
-#include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
-#include "morpheus/messages/memory/response_memory.hpp"   // for ResponseMemory
-#include "morpheus/messages/memory/tensor_memory.hpp"     // for TensorMemory::tensor_map_t
-#include "morpheus/messages/multi_response.hpp"           // for MultiResponseMessage
-#include "morpheus/objects/dev_mem_info.hpp"              // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"                     // for DType
-#include "morpheus/objects/rmm_tensor.hpp"                // for RMMTensor
+#include "morpheus/messages/memory/response_memory.hpp"  // for ResponseMemory
+#include "morpheus/messages/memory/tensor_memory.hpp"    // for TensorMemory::tensor_map_t
+#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"         // for DType
+#include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/objects/triton_in_out.hpp"
-#include "morpheus/utilities/cupy_util.hpp"  // for tensor_map_t
+#include "morpheus/utilities/cupy_util.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/stage_util.hpp"   // for foreach_map
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
-#include <bits/c++config.h>
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
+#include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <http_client.h>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
@@ -47,10 +46,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <memory>
 #include <sstream>
-#include <stdexcept>    // for runtime_error, out_of_range
-#include <type_traits>  // for declval
+#include <stdexcept>  // for runtime_error, out_of_range
 #include <utility>
 // IWYU pragma: no_include <initializer_list>
 
@@ -468,7 +467,7 @@ void InferenceClientStage::connect_with_server()
             bytes *= y;
         }
 
-        std::string mapped_name = input.at("name").get<std::string>();
+        auto mapped_name = input.at("name").get<std::string>();
 
         if (m_inout_mapping.find(mapped_name) != m_inout_mapping.end())
         {
@@ -501,7 +500,7 @@ void InferenceClientStage::connect_with_server()
             bytes *= y;
         }
 
-        std::string mapped_name = output.at("name").get<std::string>();
+        auto mapped_name = output.at("name").get<std::string>();
 
         if (m_inout_mapping.find(mapped_name) != m_inout_mapping.end())
         {

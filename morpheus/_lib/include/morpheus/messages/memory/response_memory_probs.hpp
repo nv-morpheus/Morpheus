@@ -18,8 +18,8 @@
 #pragma once
 
 #include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_map_t
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
@@ -50,7 +50,7 @@ class ResponseMemoryProbs : public ResponseMemory
      * @param count
      * @param probs
      */
-    ResponseMemoryProbs(size_t count, TensorObject probs);
+    ResponseMemoryProbs(size_t count, TensorObject&& probs);
     /**
      * @brief Construct a new Response Memory Probs object
      *
@@ -71,7 +71,7 @@ class ResponseMemoryProbs : public ResponseMemory
      *
      * @param probs
      */
-    void set_probs(TensorObject probs);
+    void set_probs(TensorObject&& probs);
 };
 
 /****** ResponseMemoryProbsInterfaceProxy*******************/
@@ -100,12 +100,12 @@ struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
     static pybind11::object get_probs(ResponseMemoryProbs& self);
 
     /**
-     * @brief Set the response memory probs object (alias for `set_tensor("probs", cupy_value)`)
+     * @brief Set the response memory probs object (alias for `set_tensor("probs", cupy_values)`)
      *
      * @param self
      * @param cupy_values
      */
-    static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_value);
+    static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values);
 };
 #pragma GCC visibility pop
 

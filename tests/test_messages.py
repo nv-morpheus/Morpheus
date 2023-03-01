@@ -23,7 +23,7 @@ import pytest
 import morpheus._lib.messages as _messages
 import morpheus.config
 from morpheus import messages
-from morpheus.messages import tensor_memory
+from morpheus.messages.memory import tensor_memory
 
 
 @mock.patch('morpheus.messages.multi_response_message.deprecated_message_warning')
@@ -82,6 +82,11 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 
     # No C++ impl, should always get the Python class
     check_message(messages.InferenceMemoryAE, None, should_be_cpp, no_cpp_class, (1, cp_array, cp_array), False)
+
+    check_message(messages.MultiTensorMessage,
+                  _messages.MultiTensorMessage,
+                  should_be_cpp,
+                  no_cpp_class, (None, 0, 1, None, 0, 1))
 
     check_message(messages.MultiInferenceMessage,
                   _messages.MultiInferenceMessage,

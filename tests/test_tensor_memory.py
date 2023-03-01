@@ -23,14 +23,14 @@ import pytest
 
 from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.messages.multi_inference_message import InferenceMemory
-from morpheus.messages.multi_inference_message import InferenceMemoryAE
-from morpheus.messages.multi_inference_message import InferenceMemoryFIL
-from morpheus.messages.multi_inference_message import InferenceMemoryNLP
-from morpheus.messages.multi_response_message import ResponseMemory
-from morpheus.messages.multi_response_message import ResponseMemoryAE
-from morpheus.messages.multi_response_message import ResponseMemoryProbs
-from morpheus.messages.tensor_memory import TensorMemory
+from morpheus.messages.memory.inference_memory import InferenceMemory
+from morpheus.messages.memory.inference_memory import InferenceMemoryAE
+from morpheus.messages.memory.inference_memory import InferenceMemoryFIL
+from morpheus.messages.memory.inference_memory import InferenceMemoryNLP
+from morpheus.messages.memory.response_memory import ResponseMemory
+from morpheus.messages.memory.response_memory import ResponseMemoryAE
+from morpheus.messages.memory.response_memory import ResponseMemoryProbs
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from utils import TEST_DIRS
 
 INPUT_FILE = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
@@ -150,3 +150,25 @@ def test_response_memory_ae(config):
 
 def test_response_memory_probs(config):
     check_response_memory_probs_and_ae(ResponseMemoryProbs)
+
+
+@pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
+def test_constructor_length_error(config, tensor_cls):
+    count = 10
+    tensors = {"a": cp.zeros(count), "b": cp.ones(count)}
+    pytest.raises(ValueError, tensor_cls, count - 1, tensors)
+
+
+@pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
+def test_set_tensor_length_error(config, tensor_cls):
+    count = 10
+    m = tensor_cls(count)
+    pytest.raises(ValueError, m.set_tensor, 'a', cp.zeros(count + 1))
+
+
+@pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
+def test_set_tensors_length_error(config, tensor_cls):
+    count = 10
+    tensors = {"a": cp.zeros(count), "b": cp.ones(count)}
+    m = tensor_cls(count + 1)
+    pytest.raises(ValueError, m.set_tensors, tensors)

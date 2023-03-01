@@ -28,22 +28,25 @@
 #include "morpheus/messages/multi_inference_nlp.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
+#include <boost/fiber/future/future.hpp>
 #include <mrc/channel/status.hpp>  // for Status
 #include <mrc/edge/edge_connector.hpp>
-#include <mrc/node/port_registry.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
+#include <mrc/types.hpp>
+#include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
-#include <pymrc/edge_adapter.hpp>
-#include <pymrc/node.hpp>
 #include <pymrc/port_builders.hpp>
 #include <pymrc/utils.hpp>  // for pymrc::import
+#include <rxcpp/rx.hpp>
 
 #include <cstddef>
 #include <filesystem>
@@ -82,6 +85,7 @@ PYBIND11_MODULE(messages, m)
 
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiTensorMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceFILMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiInferenceNLPMessage>>();
@@ -89,6 +93,12 @@ PYBIND11_MODULE(messages, m)
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for derived classes of MultiMessage to MultiMessage
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiTensorMessage>,
+                             std::shared_ptr<morpheus::MultiMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
+
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
@@ -96,10 +106,16 @@ PYBIND11_MODULE(messages, m)
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceFILMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiInferenceMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiInferenceNLPMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
@@ -107,8 +123,14 @@ PYBIND11_MODULE(messages, m)
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
+
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiResponseMessage>>::register_converter();
+
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
+                             std::shared_ptr<morpheus::MultiTensorMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
@@ -158,9 +180,7 @@ PYBIND11_MODULE(messages, m)
         .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
-        .def(py::init<>(&TensorMemoryInterfaceProxy::init),
-             py::arg("count"),
-             py::arg("tensors") = CupyUtil::py_tensor_map_t())
+        .def(py::init<>(&TensorMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &TensorMemory::count)
         .def("get_tensors", &TensorMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &TensorMemoryInterfaceProxy::set_tensors, py::arg("tensors"))
@@ -168,9 +188,7 @@ PYBIND11_MODULE(messages, m)
         .def("set_tensor", &TensorMemoryInterfaceProxy::set_tensor, py::arg("name"), py::arg("tensor"));
 
     py::class_<InferenceMemory, TensorMemory, std::shared_ptr<InferenceMemory>>(m, "InferenceMemory")
-        .def(py::init<>(&InferenceMemoryInterfaceProxy::init),
-             py::arg("count"),
-             py::arg("tensors") = CupyUtil::py_tensor_map_t())
+        .def(py::init<>(&InferenceMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &InferenceMemory::count)
         .def("get_tensors", &InferenceMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &InferenceMemoryInterfaceProxy::set_tensors, py::arg("tensors"))
@@ -263,9 +281,7 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
 
     py::class_<ResponseMemory, TensorMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
-        .def(py::init<>(&ResponseMemoryInterfaceProxy::init),
-             py::arg("count"),
-             py::arg("tensors") = CupyUtil::py_tensor_map_t())
+        .def(py::init<>(&ResponseMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &ResponseMemory::count)
         .def("get_tensors", &ResponseMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &ResponseMemoryInterfaceProxy::set_tensors, py::arg("tensors"))
@@ -291,6 +307,19 @@ PYBIND11_MODULE(messages, m)
         .def("set_output", &ResponseMemoryProbsInterfaceProxy::set_tensor, py::arg("name"), py::arg("tensor"))
         .def_property(
             "probs", &ResponseMemoryProbsInterfaceProxy::get_probs, &ResponseMemoryProbsInterfaceProxy::set_probs);
+
+    py::class_<MultiTensorMessage, MultiMessage, std::shared_ptr<MultiTensorMessage>>(m, "MultiTensorMessage")
+        .def(py::init<>(&MultiTensorMessageInterfaceProxy::init),
+             py::arg("meta"),
+             py::arg("mess_offset"),
+             py::arg("mess_count"),
+             py::arg("memory"),
+             py::arg("offset"),
+             py::arg("count"))
+        .def_property_readonly("memory", &MultiTensorMessageInterfaceProxy::memory)
+        .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
+        .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
+        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor);
 
     py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(m, "MultiResponseMessage")
         .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),

@@ -38,14 +38,25 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
     """
     count: int
 
-    tensors: typing.Dict[str, cp.ndarray] = dataclasses.field(default_factory=dict,
-                                                              repr=False,
-                                                              compare=False,
-                                                              hash=False)
-
-    def __init__(self, count: int, tensors: typing.Dict[str, cp.ndarray] = {}):
+    def __init__(self, count: int, tensors: typing.Dict[str, cp.ndarray] = None):
         self.count = count
+
+        if tensors is None:
+            tensors = {}
+        else:
+            self._check_tensors(tensors)
+
         self._tensors = tensors
+
+    def _check_tensors(self, tensors: typing.Dict[str, cp.ndarray]):
+        for tensor in tensors.values():
+            self._check_tensor(tensor)
+
+    def _check_tensor(self, tensor: cp.ndarray):
+        if (tensor.shape[0] != self.count):
+            class_name = type(self).__name__
+            raise ValueError(
+                f"The number rows in tensor {tensor.shape[0]} does not match {class_name}.count of {self.count}")
 
     def get_tensors(self):
         """
@@ -59,7 +70,7 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         """
         return self._tensors
 
-    def set_tensors(self, tensors):
+    def set_tensors(self, tensors: typing.Dict[str, cp.ndarray]):
         """
         Overwrite the tensors stored by this instance. If the length of the tensors has changed, then the `count`
         property should also be updated.
@@ -69,11 +80,12 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         tensors : typing.Dict[str, cupy.ndarray]
             Collection of tensors uniquely identified by a name.
         """
+        self._check_tensors(tensors)
         self._tensors = tensors
 
-    def get_tensor(self, name):
+    def get_tensor(self, name: str):
         """
-        Get the Tensor stored in the TensorMemory container identified by `name`.
+        Get the Tensor stored in the container identified by `name`.
 
         Parameters
         ----------
@@ -87,19 +99,29 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Raises
         ------
-        KeyError
-            When no matching tensor exists.
+        AttributeError
+            If tensor name does not exist in the container.
         """
-        return self._tensors[name]
+        try:
+            return self._tensors[name]
+        except KeyError:
+            raise AttributeError
 
-    def set_tensor(self, name, tensor):
+    def set_tensor(self, name: str, tensor: cp.ndarray):
         """
-        Update the tensor identified by `name`. If the length of the tensor has changed, then the `count`
-        property should also be updated.
+        Update the tensor identified by `name`.
 
         Parameters
         ----------
-        tensors : typing.Dict[str, cupy.ndarray]
-            Collection of tensors uniquely identified by a name.
+        tensor : cupy.ndarray
+            Tensor as a CuPy array.
+
+        Raises
+        ------
+        ValueError
+            If the number of rows in `tensor` does not match `count`
         """
-        self._tensors[name] = tensor
+        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
+        reshaped_tensor = tensor if tensor.ndim == 2 else cp.reshape(tensor, (tensor.shape[0], -1))
+        self._check_tensor(reshaped_tensor)
+        self._tensors[name] = reshaped_tensor

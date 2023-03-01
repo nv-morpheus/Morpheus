@@ -18,12 +18,12 @@
 #pragma once
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_map_t
 
 #include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>  // for size_t
-#include <map>
+#include <memory>   // for shared_ptr
 #include <string>
 
 namespace morpheus {
@@ -82,7 +82,7 @@ struct ResponseMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
      * @param cupy_tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<ResponseMemory>
      */
-    static std::shared_ptr<ResponseMemory> init(std::size_t count, CupyUtil::py_tensor_map_t tensors);
+    static std::shared_ptr<ResponseMemory> init(std::size_t count, pybind11::object& tensors);
 };
 #pragma GCC visibility pop
 

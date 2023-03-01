@@ -14,137 +14,23 @@
 # limitations under the License.
 
 import dataclasses
-import logging
 import typing
 
-import cupy as cp
-
 import morpheus._lib.messages as _messages
-from morpheus.messages.data_class_prop import DataClassProp
-from morpheus.messages.message_meta import MessageMeta
-from morpheus.messages.multi_message import MultiMessage
-from morpheus.messages.tensor_memory import TensorMemory
+from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from morpheus.utils.logger import deprecated_message_warning
-
-logger = logging.getLogger(__name__)
-
-
-@dataclasses.dataclass(init=False)
-class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
-    """Output memory block holding the results of inference."""
-
-    def get_output(self, name: str):
-        """
-        Getter function used with DataClassProp for getting inference output from message containers derived
-        from ResponseMemory.
-
-        Parameters
-        ----------
-        name : str
-            Key used to do lookup in tensors dict of message container.
-
-        Returns
-        -------
-        cupy.ndarray
-            Tensors corresponding to name.
-
-        Raises
-        ------
-        AttributeError
-            If output name does not exist in message container.
-
-        """
-        try:
-            return self.get_tensor(name)
-        except KeyError:
-            raise AttributeError
-
-    def set_output(self, name: str, value):
-        """
-        Setter function used with DataClassProp for setting output in message containers derived
-        from ResponseMemory.
-
-        Parameters
-        ----------
-        name : str
-            Key used to do lookup in tensors dict of message container.
-        value : cupy.ndarray
-            Value to set for input.
-        """
-
-        # Ensure that we have 2D array here (`ensure_2d` inserts the wrong axis)
-        tensor = value if value.ndim == 2 else cp.reshape(value, (value.shape[0], -1))
-        self.set_tensor(name, tensor)
-
-
-@dataclasses.dataclass(init=False)
-class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProbs):
-    """
-    Subclass of `ResponseMemory` containng an output tensor named 'probs'.
-
-    Parameters
-    ----------
-    probs : cupy.ndarray
-        Probabilities tensor
-    """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
-
-    def __new__(cls, *args, **kwargs):
-        deprecated_message_warning(logger, cls, ResponseMemory)
-        return super(ResponseMemory, cls).__new__(cls, *args, **kwargs)
-
-    def __init__(self, count, probs):
-        super().__init__(count, tensors={'probs': probs})
-
-
-@dataclasses.dataclass(init=False)
-class ResponseMemoryAE(ResponseMemory, cpp_class=None):
-    """
-    Subclass of `ResponseMemory` specific to the AutoEncoder pipeline.
-
-    Parameters
-    ----------
-    probs : cupy.ndarray
-        Probabilities tensor
-
-    user_id : str
-        User id the inference was performed against.
-
-    explain_df : pd.Dataframe
-        Explainability Dataframe, for each feature a column will exist with a name in the form of: `{feature}_z_loss`
-        containing the loss z-score along with `max_abs_z` and `mean_abs_z` columns
-    """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
-    user_id = ""
-    explain_df = None
-
-    def __init__(self, count, probs):
-        super().__init__(count, tensors={'probs': probs})
 
 
 @dataclasses.dataclass
-class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessage):
+class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponseMessage):
     """
     This class contains several inference responses as well as the cooresponding message metadata.
-
-    Parameters
-    ----------
-    memory : `TensorMemory`
-        This is a response container instance for triton inference requests.
-    offset : int
-        Offset of each response message into the `TensorMemory` block.
-    count : int
-        Inference results size of all responses.
-
     """
-    memory: TensorMemory = dataclasses.field(repr=False)
-    offset: int
-    count: int
 
     @property
     def outputs(self):
         """
-        Get outputs stored in the TensorMemory container.
+        Get outputs stored in the ResponseMemory container. Alias for `MultiResponseMessage.tensors`.
 
         Returns
         -------
@@ -152,15 +38,11 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
             Inference outputs.
 
         """
-        tensors = self.memory.get_tensors()
-        return {key: self.get_output(key) for key in tensors.keys()}
-
-    def __getattr__(self, name: str) -> typing.Any:
-        return self.get_output(name)
+        return self.tensors
 
     def get_output(self, name: str):
         """
-        Get output stored in the TensorMemory container.
+        Get output stored in the ResponseMemory container. Alias for `MultiResponseMessage.get_tensor`.
 
         Parameters
         ----------
@@ -173,11 +55,12 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
             Inference output.
 
         """
-        return self.memory.get_output(name)[self.offset:self.offset + self.count, :]
+        return self.get_tensor(name)
 
     def copy_output_ranges(self, ranges, mask=None):
         """
         Perform a copy of the underlying output tensors for the given `ranges` of rows.
+        Alias for `MultiResponseMessage.copy_output_ranges`
 
         Parameters
         ----------
@@ -194,14 +77,9 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
         -------
         typing.Dict[str, cupy.ndarray]
         """
-        if mask is None:
-            mask = self._ranges_to_mask(self.get_meta(), ranges=ranges)
+        return self.copy_tensor_ranges(ranges, mask=mask)
 
-        # The outputs property method returns a copy with the offsets applied
-        outputs = self.outputs
-        return {key: output[mask] for (key, output) in outputs.items()}
-
-    def copy_ranges(self, ranges):
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
         """
         Perform a copy of the current message, dataframe and tensors for the given `ranges` of rows.
 
@@ -214,15 +92,13 @@ class MultiResponseMessage(MultiMessage, cpp_class=_messages.MultiResponseMessag
         -------
         `MultiResponseMessage`
         """
-        mask = self._ranges_to_mask(self.get_meta(), ranges)
-        sliced_rows = self.copy_meta_ranges(ranges, mask=mask)
-        sliced_count = len(sliced_rows)
-        sliced_outputs = self.copy_output_ranges(ranges, mask=mask)
-
-        mem = TensorMemory(count=sliced_count)
-        mem.outputs = sliced_outputs
-
-        return MultiResponseMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)
+        m = super().copy_ranges(ranges)
+        return MultiResponseMessage(meta=m.meta,
+                                    mess_offset=m.mess_offset,
+                                    mess_count=m.mess_count,
+                                    memory=m.memory,
+                                    offset=m.offset,
+                                    count=m.mess_count)
 
     def get_slice(self, start, stop):
         """
@@ -287,21 +163,7 @@ class MultiResponseAEMessage(MultiResponseMessage, cpp_class=None):
 
     user_id: str = None
 
-    @property
-    def probs(self):
-        """
-        Probabilities of prediction.
-
-        Returns
-        -------
-        cupy.ndarray
-            probabilities
-
-        """
-
-        return self.get_output("probs")
-
-    def copy_ranges(self, ranges):
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
         """
         Perform a copy of the current message, dataframe and tensors for the given `ranges` of rows.
 

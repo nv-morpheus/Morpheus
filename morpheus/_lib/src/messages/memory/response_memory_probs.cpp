@@ -20,20 +20,22 @@
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>
+#include <glog/logging.h>
 #include <pybind11/pytypes.h>
 
 #include <cstddef>
 #include <map>  // this->tensors is a map
 #include <memory>
+#include <ostream>
 #include <stdexcept>  // for runtime_error
 #include <utility>
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemoryProbs****************************************/
-ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : ResponseMemory(count)
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject&& probs) : ResponseMemory(count)
 {
-    this->tensors["probs"] = std::move(probs);
+    set_tensor("probs", std::move(probs));
 }
 
 ResponseMemoryProbs::ResponseMemoryProbs(size_t count, CupyUtil::tensor_map_t&& tensors) :
@@ -53,9 +55,9 @@ const TensorObject& ResponseMemoryProbs::get_probs() const
     return found->second;
 }
 
-void ResponseMemoryProbs::set_probs(TensorObject probs)
+void ResponseMemoryProbs::set_probs(TensorObject&& probs)
 {
-    this->tensors["probs"] = std::move(probs);
+    set_tensor("probs", std::move(probs));
 }
 
 /****** ResponseMemoryProbsInterfaceProxy *************************/

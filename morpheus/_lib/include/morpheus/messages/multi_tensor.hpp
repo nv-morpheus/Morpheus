@@ -22,6 +22,8 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
+#include <pybind11/pytypes.h>  // for object
+
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -58,7 +60,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     /**
      * @brief Default copy constructor
      */
-    MultiTensorMessage(const MultiTensorMessage &other) = default;
+    MultiTensorMessage(const MultiTensorMessage& other) = default;
 
     /**
      * Construct a new Multi Tensor Message object.
@@ -88,7 +90,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @param name
      * @return const TensorObject
      */
-    const TensorObject get_tensor(const std::string &name) const;
+    const TensorObject get_tensor(const std::string& name) const;
 
     /**
      * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist
@@ -96,7 +98,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @param name
      * @return TensorObject
      */
-    TensorObject get_tensor(const std::string &name);
+    TensorObject get_tensor(const std::string& name);
 
     /**
      * @brief Update the value of a given tensor. The tensor must already exist, otherwise this will halt on a fatal
@@ -105,19 +107,77 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @param name
      * @param value
      */
-    void set_tensor(const std::string &name, const TensorObject &value);
+    void set_tensor(const std::string& name, const TensorObject& value);
 
   protected:
     void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
 
     void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<std::size_t, std::size_t>> &ranges,
+                          const std::vector<std::pair<std::size_t, std::size_t>>& ranges,
                           size_t num_selected_rows) const override;
 
     std::shared_ptr<morpheus::TensorMemory> copy_input_ranges(
-        const std::vector<std::pair<std::size_t, std::size_t>> &ranges, std::size_t num_selected_rows) const;
+        const std::vector<std::pair<std::size_t, std::size_t>>& ranges, std::size_t num_selected_rows) const;
 
-    TensorObject get_tensor_impl(const std::string &name) const;
+    TensorObject get_tensor_impl(const std::string& name) const;
+};
+
+/****** MultiTensorMessageInterfaceProxy *************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct MultiTensorMessageInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a MultiTensorMessage, and return a shared pointer to the result
+     *
+     * @param meta Holds a data table, in practice a cudf DataFrame, with the ability to return both Python and
+     * C++ representations of the table
+     * @param mess_offset Offset into the metadata batch
+     * @param mess_count Messages count
+     * @param memory Shared pointer of a tensor memory
+     * @param offset Message offset in inference memory instance
+     * @param count Message count in inference memory instance
+     * @return std::shared_ptr<MultiTensorMessage>
+     */
+    static std::shared_ptr<MultiTensorMessage> init(std::shared_ptr<MessageMeta> meta,
+                                                    std::size_t mess_offset,
+                                                    std::size_t mess_count,
+                                                    std::shared_ptr<TensorMemory> memory,
+                                                    std::size_t offset,
+                                                    std::size_t count);
+
+    /**
+     * @brief GReturns a shared pointer of a tensor memory object
+     *
+     * @return std::shared_ptr<TensorMemory>
+     */
+    static std::shared_ptr<TensorMemory> memory(MultiTensorMessage& self);
+
+    /**
+     * @brief Message offset in tensor memory object
+     *
+     * @param self
+     * @return std::size_t
+     */
+    static std::size_t offset(MultiTensorMessage& self);
+
+    /**
+     * @brief Messages count in tensor memory object
+     *
+     * @param self
+     * @return std::size_t
+     */
+    static std::size_t count(MultiTensorMessage& self);
+
+    /**
+     * @brief Returns the tensor tensor for a given name
+     *
+     * @param self
+     * @param name : Tensor name
+     * @return pybind11::object
+     */
+    static pybind11::object get_tensor(MultiTensorMessage& self, const std::string& name);
 };
 
 #pragma GCC visibility pop

@@ -23,6 +23,7 @@
 
 #include <cstddef>  // for size_t
 #include <memory>   // for shared_ptr, unique_ptr & make_unique
+#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

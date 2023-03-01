@@ -18,7 +18,6 @@
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>
@@ -27,17 +26,16 @@
 #include <map>  // this->tensors is a map
 #include <memory>
 #include <stdexcept>  // for runtime_error
-#include <string>
 #include <utility>
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemoryFIL****************************************/
-InferenceMemoryFIL::InferenceMemoryFIL(size_t count, TensorObject input__0, TensorObject seq_ids) :
+InferenceMemoryFIL::InferenceMemoryFIL(size_t count, TensorObject&& input__0, TensorObject&& seq_ids) :
   InferenceMemory(count)
 {
-    this->tensors["input__0"] = std::move(input__0);
-    this->tensors["seq_ids"]  = std::move(seq_ids);
+    set_tensor("input__0", std::move(input__0));
+    set_tensor("seq_ids", std::move(seq_ids));
 }
 
 const TensorObject& InferenceMemoryFIL::get_input__0() const
@@ -51,9 +49,9 @@ const TensorObject& InferenceMemoryFIL::get_input__0() const
     return found->second;
 }
 
-void InferenceMemoryFIL::set_input__0(TensorObject input__0)
+void InferenceMemoryFIL::set_input__0(TensorObject&& input__0)
 {
-    this->tensors["input__0"] = std::move(input__0);
+    set_tensor("input__0", std::move(input__0));
 }
 
 const TensorObject& InferenceMemoryFIL::get_seq_ids() const
@@ -67,9 +65,9 @@ const TensorObject& InferenceMemoryFIL::get_seq_ids() const
     return found->second;
 }
 
-void InferenceMemoryFIL::set_seq_ids(TensorObject seq_ids)
+void InferenceMemoryFIL::set_seq_ids(TensorObject&& seq_ids)
 {
-    this->tensors["seq_ids"] = std::move(seq_ids);
+    set_tensor("seq_ids", std::move(seq_ids));
 }
 /****** InferenceMemoryFILInterfaceProxy *************************/
 std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(cudf::size_type count,

@@ -43,7 +43,7 @@ struct PyDataTable : public IDataTable
      *
      * @param py_table
      */
-    PyDataTable(pybind11::object &&py_table);
+    PyDataTable(pybind11::object&& py_table);
     ~PyDataTable();
 
     /**
@@ -58,7 +58,7 @@ struct PyDataTable : public IDataTable
      *
      * @return TableInfo
      */
-    const pybind11::object &get_py_object() const override;
+    const pybind11::object& get_py_object() const override;
 
   private:
     TableInfoData get_table_data() const override;

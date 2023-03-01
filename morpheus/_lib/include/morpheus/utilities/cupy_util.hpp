@@ -23,6 +23,7 @@
 #include <pybind11/pytypes.h>
 
 #include <map>
+#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/

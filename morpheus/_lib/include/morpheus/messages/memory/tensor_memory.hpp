@@ -23,7 +23,7 @@
 #include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>  // for size_t
-#include <map>
+#include <memory>   // for shared_ptr
 #include <string>
 #include <utility>  // for pair
 #include <vector>
@@ -84,6 +84,42 @@ class TensorMemory
      */
     CupyUtil::tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
                                               size_t num_selected_rows) const;
+
+    /**
+     * @brief Set the tensor object identified by `name`
+     *
+     * @param name
+     * @param tensor
+     * @throws std::length_error If the number of rows in `tensor` does not match `count`.
+     */
+    void set_tensor(const std::string& name, TensorObject&& tensor);
+
+    /**
+     * @brief Set the tensors object
+     *
+     * @param tensors
+     * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
+     */
+    void set_tensors(CupyUtil::tensor_map_t&& tensors);
+
+  protected:
+    /**
+     * @brief Checks if the number of rows in `tensor` matches count
+     *
+     * @param tensor
+     * @throws std::length_error If the number of rows in `tensor` do not match `count`.
+     */
+    void check_tensor_length(const TensorObject& tensor);
+
+    /**
+     * @brief Checks each tesnor in `tensors` verifying that the number of rows matches count
+     *
+     * @param tensor
+     * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
+     *
+     * @param tensors
+     */
+    void check_tensors_length(const CupyUtil::tensor_map_t& tensors);
 };
 
 /****** TensorMemoryInterfaceProxy *************************/
@@ -100,7 +136,7 @@ struct TensorMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<TensorMemory>
      */
-    static std::shared_ptr<TensorMemory> init(std::size_t count, CupyUtil::py_tensor_map_t tensors);
+    static std::shared_ptr<TensorMemory> init(std::size_t count, pybind11::object& tensors);
 
     /**
      * @brief Get the count object
@@ -125,15 +161,6 @@ struct TensorMemoryInterfaceProxy
      * @param tensors
      */
     static void set_tensors(TensorMemory& self, CupyUtil::py_tensor_map_t tensors);
-
-    /**
-     * @brief Get the output tensor
-     *
-     * @param self
-     * @param name
-     * @return const TensorObject&
-     */
-    static const TensorObject& get_tensor_object(TensorMemory& self, const std::string& name);
 
     /**
      * @brief Get the tensor object identified by `name`

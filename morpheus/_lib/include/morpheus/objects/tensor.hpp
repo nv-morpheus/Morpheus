@@ -61,7 +61,7 @@ class Tensor
     /**
      * TODO(Documentation)
      */
-    void *data() const;
+    void* data() const;
 
     /**
      * TODO(Documentation)

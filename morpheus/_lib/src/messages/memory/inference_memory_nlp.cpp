@@ -18,7 +18,6 @@
 #include "morpheus/messages/memory/inference_memory_nlp.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
 #include <cudf/types.hpp>  // for size_type
@@ -33,14 +32,14 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemoryNLP ****************************************/
 InferenceMemoryNLP::InferenceMemoryNLP(std::size_t count,
-                                       TensorObject input_ids,
-                                       TensorObject input_mask,
-                                       TensorObject seq_ids) :
+                                       TensorObject&& input_ids,
+                                       TensorObject&& input_mask,
+                                       TensorObject&& seq_ids) :
   InferenceMemory(count)
 {
-    this->tensors["input_ids"]  = std::move(input_ids);
-    this->tensors["input_mask"] = std::move(input_mask);
-    this->tensors["seq_ids"]    = std::move(seq_ids);
+    set_tensor("input_ids", std::move(input_ids));
+    set_tensor("input_mask", std::move(input_mask));
+    set_tensor("seq_ids", std::move(seq_ids));
 }
 
 const TensorObject& InferenceMemoryNLP::get_input_ids() const
@@ -54,9 +53,9 @@ const TensorObject& InferenceMemoryNLP::get_input_ids() const
     return found->second;
 }
 
-void InferenceMemoryNLP::set_input_ids(TensorObject input_ids)
+void InferenceMemoryNLP::set_input_ids(TensorObject&& input_ids)
 {
-    this->tensors["input_ids"] = std::move(input_ids);
+    set_tensor("input_ids", std::move(input_ids));
 }
 
 const TensorObject& InferenceMemoryNLP::get_input_mask() const
@@ -70,9 +69,9 @@ const TensorObject& InferenceMemoryNLP::get_input_mask() const
     return found->second;
 }
 
-void InferenceMemoryNLP::set_input_mask(TensorObject input_mask)
+void InferenceMemoryNLP::set_input_mask(TensorObject&& input_mask)
 {
-    this->tensors["input_mask"] = std::move(input_mask);
+    set_tensor("input_mask", std::move(input_mask));
 }
 
 const TensorObject& InferenceMemoryNLP::get_seq_ids() const
@@ -86,9 +85,9 @@ const TensorObject& InferenceMemoryNLP::get_seq_ids() const
     return found->second;
 }
 
-void InferenceMemoryNLP::set_seq_ids(TensorObject seq_ids)
+void InferenceMemoryNLP::set_seq_ids(TensorObject&& seq_ids)
 {
-    this->tensors["seq_ids"] = std::move(seq_ids);
+    set_tensor("seq_ids", std::move(seq_ids));
 }
 
 /****** InferenceMemoryNLPInterfaceProxy *************************/
