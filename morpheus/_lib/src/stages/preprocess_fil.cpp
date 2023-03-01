@@ -105,12 +105,12 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                                                std::vector<TensorIndex>{},
                                                0);
 
-                auto seg_ids =
-                    Tensor::create(MatxUtil::create_seg_ids(x->mess_count, m_fea_cols.size(), TypeId::UINT32),
-                                   DType::create<uint32_t>(),
-                                   std::vector<TensorIndex>{static_cast<long long>(x->mess_count), static_cast<int>(3)},
-                                   std::vector<TensorIndex>{},
-                                   0);
+                auto seg_ids = Tensor::create(
+                    MatxUtil::create_seg_ids(x->mess_count, m_fea_cols.size(), TypeId::UINT32, input__0.get_memory()),
+                    DType::create<uint32_t>(),
+                    std::vector<TensorIndex>{static_cast<long long>(x->mess_count), static_cast<int>(3)},
+                    std::vector<TensorIndex>{},
+                    0);
 
                 // Build the results
                 auto memory = std::make_shared<InferenceMemoryFIL>(x->mess_count, input__0, seg_ids);

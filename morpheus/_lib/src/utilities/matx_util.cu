@@ -365,13 +365,13 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo& input, Type
     return output;
 }
 
-std::shared_ptr<rmm::device_buffer> MatxUtil::create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type)
+std::shared_ptr<rmm::device_buffer> MatxUtil::create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type, std::shared_ptr<MemoryDescriptor> md)
 {
     auto output_dtype = DType(output_type);
 
     // Now create the output
     auto output =
-        std::make_shared<rmm::device_buffer>(output_dtype.item_size() * row_count * 3, rmm::cuda_stream_per_thread);
+        std::make_shared<rmm::device_buffer>(output_dtype.item_size() * row_count * 3, md->cuda_stream, md->memory_resource);
 
     cudf::type_dispatcher(cudf::data_type{output_dtype.cudf_type_id()},
                           MatxUtil__MatxCreateSegIds{row_count, fea_len, output->stream()},

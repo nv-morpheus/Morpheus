@@ -53,7 +53,10 @@ struct MatxUtil
      * @param output_type
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type);
+    static std::shared_ptr<rmm::device_buffer> create_seg_ids(size_t row_count,
+                                                              size_t fea_len,
+                                                              TypeId output_type,
+                                                              std::shared_ptr<MemoryDescriptor> md);
 
     /**
      * @brief Calculate logits on device_buffer
