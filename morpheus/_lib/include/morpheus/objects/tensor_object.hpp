@@ -18,12 +18,14 @@
 #pragma once
 
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
 #include <glog/logging.h>  // for CHECK
 #include <mrc/cuda/common.hpp>
 #include <rmm/device_uvector.hpp>
+#include <rmm/mr/device/device_memory_resource.hpp>
 
 #include <algorithm>
 #include <array>
@@ -118,9 +120,6 @@ enum class TensorStorageType
 
 template <typename T>
 using DeviceContainer = rmm::device_uvector<T>;  // NOLINT(readability-identifier-naming)
-
-struct MemoryDescriptor
-{};
 
 struct ITensorStorage
 {
@@ -414,7 +413,7 @@ struct TensorObject final
         return m_tensor;
     }
 
-    [[maybe_unused]] std::shared_ptr<MemoryDescriptor> get_memory() const
+    std::shared_ptr<MemoryDescriptor> get_memory() const
     {
         return m_md;
     }

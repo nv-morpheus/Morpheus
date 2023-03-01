@@ -67,7 +67,9 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 const std::size_t num_columns = shape[1];
 
                 auto thresh_bool_buffer = MatxUtil::threshold(
-                    {probs.data(), probs.dtype(), probs.get_shape(), probs.get_stride()}, m_threshold, false);
+                    {probs.data(), probs.dtype(), probs.get_memory(), probs.get_shape(), probs.get_stride()},
+                    m_threshold,
+                    false);
 
                 std::vector<TensorIndex> tensor_shape(shape.size());
                 std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());

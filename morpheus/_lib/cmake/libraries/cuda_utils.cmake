@@ -53,6 +53,7 @@ add_library(cuda_utils
       ${MORPHEUS_LIB_ROOT}/src/objects/data_table.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/dev_mem_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/dtype.cpp
+      ${MORPHEUS_LIB_ROOT}/src/objects/memory_descriptor.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/rmm_tensor.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/table_info.cpp
       ${MORPHEUS_LIB_ROOT}/src/objects/tensor.cpp

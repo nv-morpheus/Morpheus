@@ -20,6 +20,7 @@
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"         // for DataType
+#include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/utilities/matx_util.hpp"
@@ -71,7 +72,7 @@ DevMemInfo FilterDetectionsStage::get_tensor_filter_source(const std::shared_ptr
 
     // Depending on the input the stride is given in bytes or elements, convert to elements
     auto stride = morpheus::TensorUtils::get_element_stride<std::size_t, std::size_t>(filter_source.get_stride());
-    return {filter_source.data(), filter_source.dtype(), filter_source.get_shape(), stride};
+    return {filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
 }
 
 DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr<morpheus::MultiMessage>& x)
@@ -88,6 +89,7 @@ DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr
     return {
         data,
         std::move(dtype),
+        std::make_shared<MemoryDescriptor>(),
         {num_rows, 1},
         {1, 0},
     };

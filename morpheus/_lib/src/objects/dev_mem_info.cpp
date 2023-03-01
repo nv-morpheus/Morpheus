@@ -17,11 +17,14 @@
 
 #include "morpheus/objects/dev_mem_info.hpp"
 
+#include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
-#include <glog/logging.h>  // for DCHECK
+#include <glog/logging.h>                         // for DCHECK
+#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
 #include <cstdint>  // for uint8_t
+#include <memory>
 #include <ostream>
 #include <utility>  // for move
 
@@ -30,24 +33,17 @@ namespace morpheus {
 // ************ DevMemInfo************************* //
 DevMemInfo::DevMemInfo(void* data,
                        DType dtype,
+                       std::shared_ptr<MemoryDescriptor> md,
                        std::vector<std::size_t> shape,
                        std::vector<std::size_t> stride,
-                       size_t offset_bytes,
-                       rmm::cuda_stream_view stream,
-                       rmm::mr::device_memory_resource* memory_resource) :
+                       size_t offset_bytes) :
   m_data(data),
   m_dtype(std::move(dtype)),
+  m_md(std::move(md)),
   m_shape(std::move(shape)),
   m_stride(std::move(stride)),
-  m_offset_bytes(offset_bytes),
-  m_cuda_stream(std::move(stream)),
-  m_mem_resource(memory_resource)
-{
-    if (m_mem_resource == nullptr)
-    {
-        m_mem_resource = rmm::mr::get_current_device_resource();
-    }
-}
+  m_offset_bytes(offset_bytes)
+{}
 
 DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                        DType dtype,
@@ -59,8 +55,7 @@ DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
   m_shape(std::move(shape)),
   m_stride(std::move(stride)),
   m_offset_bytes(offset_bytes),
-  m_cuda_stream(buffer->stream()),
-  m_mem_resource(buffer->memory_resource())
+  m_md(std::make_shared<MemoryDescriptor>(buffer->stream(), buffer->memory_resource()))
 {
     DCHECK(m_offset_bytes + this->bytes() <= buffer->size())
         << "Inconsistent dimensions, values would extend past the end of the device_buffer";
@@ -113,7 +108,7 @@ std::size_t DevMemInfo::stride(std::size_t idx) const
 
 std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(std::size_t bytes) const
 {
-    return std::make_unique<rmm::device_buffer>(bytes, m_cuda_stream, m_mem_resource);
+    return std::make_unique<rmm::device_buffer>(bytes, m_md->cuda_stream, m_md->memory_resource);
 }
 
 void* DevMemInfo::data() const

@@ -18,8 +18,9 @@
 #pragma once
 
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/memory_descriptor.hpp"
+#include "morpheus/objects/tensor_object.hpp"
 
-#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
 
 #include <cstddef>  // for size_t
@@ -43,8 +44,7 @@ class DevMemInfo
 {
   public:
     /**
-     * @brief Construct a new DevMemInfo object. If `memory_resource` is null the value returned by
-     * `rmm::mr::get_current_device_resource()` will be used.
+     * @brief Construct a new DevMemInfo object.
      *
      * @param data
      * @param dtype
@@ -56,11 +56,10 @@ class DevMemInfo
      */
     DevMemInfo(void* data,
                DType dtype,
+               std::shared_ptr<MemoryDescriptor> md,
                std::vector<std::size_t> shape,
                std::vector<std::size_t> stride,
-               size_t offset_bytes                              = 0,
-               rmm::cuda_stream_view stream                     = rmm::cuda_stream_per_thread,
-               rmm::mr::device_memory_resource* memory_resource = nullptr);
+               size_t offset_bytes = 0);
 
     /**
      * @brief Construct a new DevMemInfo object from an existing `rmm::device_buffer`.
@@ -120,11 +119,8 @@ class DevMemInfo
     // Offset from head of data in bytes
     const size_t m_offset_bytes;
 
-    // Cuda stream on which this was allocated
-    rmm::cuda_stream_view m_cuda_stream;
-
-    // Memory resource used for allocation.
-    rmm::mr::device_memory_resource* m_mem_resource;
+    // Device resources used to allocate this memory
+    std::shared_ptr<MemoryDescriptor> m_md;
 };
 
 /** @} */  // end of group
