@@ -17,8 +17,9 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
-#include "morpheus/objects/dtype.hpp"  // for DType
-#include "morpheus/objects/rmm_tensor.hpp"
+#include "morpheus/objects/dtype.hpp"          // for DType
+#include "morpheus/objects/rmm_tensor.hpp"     // for RMMTensor
+#include "morpheus/objects/tensor.hpp"         // for Tensor::create
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils, TensorUtils::shape_type_t
 
@@ -27,6 +28,7 @@
 #include <mrc/cuda/common.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
+#include <rmm/mr/device/per_device_resource.hpp>
 
 #include <cstddef>  // for size_t
 #include <memory>   // shared_ptr
@@ -117,7 +119,38 @@ TEST_F(TestTensor, AsType)
     }
 }
 
-/*
+TEST_F(TestTensor, Create)
+{
+    const std::size_t count = 100;
+    const auto dtype        = DType::create<float>();
+    auto buffer = std::make_shared<rmm::device_buffer>(count * dtype.item_size(), rmm::cuda_stream_per_thread);
+
+    auto tensor = Tensor::create(buffer, dtype, {20, 5}, {1, 20});
+
+    EXPECT_EQ(tensor.data(), buffer->data());
+    EXPECT_EQ(tensor.dtype(), dtype);
+    EXPECT_EQ(tensor.count(), count);
+    EXPECT_EQ(tensor.rank(), 2);
+    EXPECT_EQ(tensor.dtype_size(), dtype.item_size());
+    EXPECT_EQ(tensor.get_numpy_typestr(), dtype.type_str());
+
+    EXPECT_EQ(tensor.get_shape().size(), 2);
+    EXPECT_EQ(tensor.get_shape()[0], 20);
+    EXPECT_EQ(tensor.shape(0), 20);
+    EXPECT_EQ(tensor.get_shape()[1], 5);
+    EXPECT_EQ(tensor.shape(1), 5);
+
+    EXPECT_EQ(tensor.get_stride().size(), 2);
+    EXPECT_EQ(tensor.get_stride()[0], 1);
+    EXPECT_EQ(tensor.stride(0), 1);
+    EXPECT_EQ(tensor.get_stride()[1], 20);
+    EXPECT_EQ(tensor.stride(1), 20);
+
+    EXPECT_NE(tensor.get_memory(), nullptr);
+    EXPECT_EQ(tensor.get_memory()->cuda_stream, rmm::cuda_stream_per_thread);
+    EXPECT_EQ(tensor.get_memory()->memory_resource, rmm::mr::get_current_device_resource());
+}
+
 TEST_F(TestTensor, UtilsValidateShapeAndStride)
 {
     // validate shape and stride works off element count without knowledge
@@ -125,16 +158,20 @@ TEST_F(TestTensor, UtilsValidateShapeAndStride)
     //
     // stride 1 tensors must have a sorted_index(shape).begin() == 1
 
-    void *ptr         = reinterpret_cast<void *>(0xDEADBEEF);
-    std::size_t bytes = 32 * 1024 * 1024;  // 32 MB
+    const std::size_t bytes = 32 * 1024 * 1024;  // 32 MB
 
-    memory::blob mv(ptr, bytes, memory::memory_kind_type::pinned);
+    auto buffer = std::make_shared<rmm::device_buffer>(bytes, rmm::cuda_stream_per_thread);
 
-    TensorView t0(mv, DataType::create<float>(), {3, 320, 320});
+    RMMTensor t0(buffer, 0, DType::create<float>(), {3, 320, 320});
 
-    EXPECT_TRUE(TensorUtils::has_contiguous_stride(t0.shape(), t0.stride()));
-    EXPECT_TRUE(TensorUtils::validate_shape_and_stride(t0.shape(), t0.stride()));
+    std::vector<TensorIndex> shape;
+    t0.get_shape(shape);
 
-    EXPECT_EQ(t0.stride(), std::vector<TensorIndex>({320 * 320, 320, 1}));
+    std::vector<TensorIndex> stride;
+    t0.get_stride(stride);
+
+    EXPECT_TRUE(TensorUtils::has_contiguous_stride(shape, stride));
+    EXPECT_TRUE(TensorUtils::validate_shape_and_stride(shape, stride));
+
+    EXPECT_EQ(stride, std::vector<TensorIndex>({320 * 320, 320, 1}));
 }
-*/
