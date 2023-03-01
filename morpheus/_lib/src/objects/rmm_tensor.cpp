@@ -46,6 +46,7 @@ RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
                      DType dtype,
                      std::vector<TensorIndex> shape,
                      std::vector<TensorIndex> stride) :
+  m_mem_descriptor(std::make_shared<MemoryDescriptor>(device_buffer->stream(), device_buffer->memory_resource())),
   m_md(std::move(device_buffer)),
   m_offset(offset),
   m_dtype(std::move(dtype)),
@@ -63,7 +64,7 @@ RMMTensor::RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
 
 std::shared_ptr<MemoryDescriptor> RMMTensor::get_memory() const
 {
-    return nullptr;
+    return m_mem_descriptor;
 }
 
 void* RMMTensor::data() const

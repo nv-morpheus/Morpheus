@@ -43,7 +43,9 @@ DevMemInfo::DevMemInfo(void* data,
   m_shape(std::move(shape)),
   m_stride(std::move(stride)),
   m_offset_bytes(offset_bytes)
-{}
+{
+    DCHECK(m_md != nullptr);
+}
 
 DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                        DType dtype,

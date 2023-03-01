@@ -78,7 +78,7 @@ TensorObject Tensor::create(std::shared_ptr<rmm::device_buffer> buffer,
                             std::vector<TensorIndex> strides,
                             size_t offset)
 {
-    auto md = nullptr;
+    auto md = std::make_shared<MemoryDescriptor>(buffer->stream(), buffer->memory_resource());
 
     if (!strides.empty())
     {
