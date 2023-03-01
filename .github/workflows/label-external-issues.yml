@@ -29,7 +29,7 @@ jobs:
   Label-Issue:
     runs-on: ubuntu-latest
     # Only run if the issue author is not part of NV-Morpheus, or an external collaborator
-    if: ${{ github.event.issue.author_association == 'NONE' }}
+    if: ${{ ! contains(fromJSON('["OWNER", "MEMBER"]'), github.event.issue.author_association)}}
     steps: 
       - name: add-triage-label
         run: |
