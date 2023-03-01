@@ -39,44 +39,51 @@
 
 using namespace morpheus;
 
+namespace {
+const std::size_t Rows = 20;
+const std::size_t Cols = 5;
+const auto Dtype       = DType::create<float>();
+
+const auto ByteSize = Rows * Cols * Dtype.item_size();
+
+template <template <typename> class ResourceT>
+auto make_mem_resource()
+{
+    return rmm::mr::make_owning_wrapper<ResourceT>(std::make_shared<rmm::mr::cuda_memory_resource>());
+}
+}  // namespace
+
 TEST_CLASS(DevMemInfo);
 
 TEST_F(TestDevMemInfo, RmmBufferConstructor)
 {
-    const std::size_t rows = 20;
-    const std::size_t cols = 5;
-    auto dtype             = DType::create<float>();
-
-    const auto byte_size = rows * cols * dtype.item_size();
-
     // Explicitly passing the non-default values to make sure we don't have a test that accidentally passes
-    auto mem_resource = rmm::mr::make_owning_wrapper<rmm::mr::fixed_size_memory_resource>(
-        std::make_shared<rmm::mr::cuda_memory_resource>());
-    auto buffer = std::make_shared<rmm::device_buffer>(byte_size, rmm::cuda_stream_legacy, mem_resource.get());
+    auto mem_resource = make_mem_resource<rmm::mr::fixed_size_memory_resource>();
+    auto buffer       = std::make_shared<rmm::device_buffer>(ByteSize, rmm::cuda_stream_legacy, mem_resource.get());
 
     // Set the offset to the second row in the buffer
-    DevMemInfo dm{buffer, dtype, {rows - 1, cols}, {1, rows}, dtype.item_size()};
+    DevMemInfo dm{buffer, Dtype, {Rows - 1, Cols}, {1, Rows}, Dtype.item_size()};
 
-    EXPECT_EQ(dm.bytes(), (rows - 1) * cols * dtype.item_size());
-    EXPECT_EQ(dm.count(), (rows - 1) * cols);
-    EXPECT_EQ(dm.offset_bytes(), dtype.item_size());
+    EXPECT_EQ(dm.bytes(), (Rows - 1) * Cols * Dtype.item_size());
+    EXPECT_EQ(dm.count(), (Rows - 1) * Cols);
+    EXPECT_EQ(dm.offset_bytes(), Dtype.item_size());
 
-    EXPECT_EQ(dm.dtype(), dtype);
-    EXPECT_EQ(dm.type_id(), dtype.type_id());
+    EXPECT_EQ(dm.dtype(), Dtype);
+    EXPECT_EQ(dm.type_id(), Dtype.type_id());
 
     EXPECT_EQ(dm.shape().size(), 2);
-    EXPECT_EQ(dm.shape()[0], rows - 1);
-    EXPECT_EQ(dm.shape(0), rows - 1);
-    EXPECT_EQ(dm.shape()[1], cols);
-    EXPECT_EQ(dm.shape(1), cols);
+    EXPECT_EQ(dm.shape()[0], Rows - 1);
+    EXPECT_EQ(dm.shape(0), Rows - 1);
+    EXPECT_EQ(dm.shape()[1], Cols);
+    EXPECT_EQ(dm.shape(1), Cols);
 
     EXPECT_EQ(dm.stride().size(), 2);
     EXPECT_EQ(dm.stride()[0], 1);
     EXPECT_EQ(dm.stride(0), 1);
-    EXPECT_EQ(dm.stride()[1], rows);
-    EXPECT_EQ(dm.stride(1), rows);
+    EXPECT_EQ(dm.stride()[1], Rows);
+    EXPECT_EQ(dm.stride(1), Rows);
 
-    EXPECT_EQ(dm.data(), static_cast<u_int8_t*>(buffer->data()) + dtype.item_size());
+    EXPECT_EQ(dm.data(), static_cast<u_int8_t*>(buffer->data()) + Dtype.item_size());
 
     EXPECT_EQ(dm.memory()->cuda_stream, rmm::cuda_stream_legacy);
     EXPECT_EQ(dm.memory()->memory_resource, mem_resource.get());
@@ -84,43 +91,51 @@ TEST_F(TestDevMemInfo, RmmBufferConstructor)
 
 TEST_F(TestDevMemInfo, VoidPtrConstructor)
 {
-    const std::size_t rows = 20;
-    const std::size_t cols = 5;
-    auto dtype             = DType::create<float>();
-
-    const auto byte_size = rows * cols * dtype.item_size();
-
     // Explicitly passing the non-default values to make sure we don't have a test that accidentally passes
-    auto mem_resource =
-        rmm::mr::make_owning_wrapper<rmm::mr::arena_memory_resource>(std::make_shared<rmm::mr::cuda_memory_resource>());
-    auto buffer = std::make_shared<rmm::device_buffer>(byte_size, rmm::cuda_stream_legacy, mem_resource.get());
+    auto mem_resource = make_mem_resource<rmm::mr::arena_memory_resource>();
+    auto buffer       = std::make_shared<rmm::device_buffer>(ByteSize, rmm::cuda_stream_legacy, mem_resource.get());
 
     auto md = std::make_shared<MemoryDescriptor>(rmm::cuda_stream_legacy, mem_resource.get());
 
     // Set the offset to the second row in the buffer
-    DevMemInfo dm{buffer->data(), dtype, md, {rows - 1, cols}, {1, rows}, dtype.item_size()};
+    DevMemInfo dm{buffer->data(), Dtype, md, {Rows - 1, Cols}, {1, Rows}, Dtype.item_size()};
 
-    EXPECT_EQ(dm.bytes(), (rows - 1) * cols * dtype.item_size());
-    EXPECT_EQ(dm.count(), (rows - 1) * cols);
-    EXPECT_EQ(dm.offset_bytes(), dtype.item_size());
+    EXPECT_EQ(dm.bytes(), (Rows - 1) * Cols * Dtype.item_size());
+    EXPECT_EQ(dm.count(), (Rows - 1) * Cols);
+    EXPECT_EQ(dm.offset_bytes(), Dtype.item_size());
 
-    EXPECT_EQ(dm.dtype(), dtype);
-    EXPECT_EQ(dm.type_id(), dtype.type_id());
+    EXPECT_EQ(dm.dtype(), Dtype);
+    EXPECT_EQ(dm.type_id(), Dtype.type_id());
 
     EXPECT_EQ(dm.shape().size(), 2);
-    EXPECT_EQ(dm.shape()[0], rows - 1);
-    EXPECT_EQ(dm.shape(0), rows - 1);
-    EXPECT_EQ(dm.shape()[1], cols);
-    EXPECT_EQ(dm.shape(1), cols);
+    EXPECT_EQ(dm.shape()[0], Rows - 1);
+    EXPECT_EQ(dm.shape(0), Rows - 1);
+    EXPECT_EQ(dm.shape()[1], Cols);
+    EXPECT_EQ(dm.shape(1), Cols);
 
     EXPECT_EQ(dm.stride().size(), 2);
     EXPECT_EQ(dm.stride()[0], 1);
     EXPECT_EQ(dm.stride(0), 1);
-    EXPECT_EQ(dm.stride()[1], rows);
-    EXPECT_EQ(dm.stride(1), rows);
+    EXPECT_EQ(dm.stride()[1], Rows);
+    EXPECT_EQ(dm.stride(1), Rows);
 
-    EXPECT_EQ(dm.data(), static_cast<u_int8_t*>(buffer->data()) + dtype.item_size());
+    EXPECT_EQ(dm.data(), static_cast<u_int8_t*>(buffer->data()) + Dtype.item_size());
 
     EXPECT_EQ(dm.memory()->cuda_stream, rmm::cuda_stream_legacy);
     EXPECT_EQ(dm.memory()->memory_resource, mem_resource.get());
+}
+
+TEST_F(TestDevMemInfo, MakeNewBuffer)
+{
+    // Explicitly passing the non-default values to make sure we don't have a test that accidentally passes
+    auto mem_resource = make_mem_resource<rmm::mr::fixed_size_memory_resource>();
+    auto buffer       = std::make_shared<rmm::device_buffer>(ByteSize, rmm::cuda_stream_legacy, mem_resource.get());
+
+    DevMemInfo dm{buffer, Dtype, {Rows, Cols}, {1, Rows}};
+
+    const std::size_t buff_size = 20;
+    auto new_buff               = dm.make_new_buffer(buff_size);
+    EXPECT_EQ(new_buff->size(), buff_size);
+    EXPECT_EQ(new_buff->stream(), rmm::cuda_stream_legacy);
+    EXPECT_EQ(new_buff->memory_resource(), mem_resource.get());
 }
