@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
 
 #include <boost/fiber/future/future.hpp>
 #include <mrc/node/rx_sink_base.hpp>

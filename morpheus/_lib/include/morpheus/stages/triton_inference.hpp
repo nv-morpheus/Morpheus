@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
 #include "morpheus/objects/triton_in_out.hpp"
 
 #include <boost/fiber/future/future.hpp>

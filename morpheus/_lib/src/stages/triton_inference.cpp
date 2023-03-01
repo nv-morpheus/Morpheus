@@ -19,16 +19,15 @@
 
 #include "morpheus/messages/memory/response_memory.hpp"  // for ResponseMemory
 #include "morpheus/messages/memory/tensor_memory.hpp"    // for TensorMemory::tensor_map_t
-#include "morpheus/messages/multi_response_probs.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"         // for DType
+#include "morpheus/objects/dev_mem_info.hpp"             // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                    // for DType
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
 #include "morpheus/objects/triton_in_out.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
 #include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/stage_util.hpp"   // for foreach_map
+#include "morpheus/utilities/stage_util.hpp"  // for foreach_map
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
