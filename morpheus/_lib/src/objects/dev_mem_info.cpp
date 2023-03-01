@@ -17,11 +17,9 @@
 
 #include "morpheus/objects/dev_mem_info.hpp"
 
-#include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
-#include <glog/logging.h>                         // for DCHECK
-#include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
+#include <glog/logging.h>  // for DCHECK
 
 #include <cstdint>  // for uint8_t
 #include <memory>

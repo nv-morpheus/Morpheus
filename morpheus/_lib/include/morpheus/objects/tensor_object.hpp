@@ -25,7 +25,6 @@
 #include <glog/logging.h>  // for CHECK
 #include <mrc/cuda/common.hpp>
 #include <rmm/device_uvector.hpp>
-#include <rmm/mr/device/device_memory_resource.hpp>
 
 #include <algorithm>
 #include <array>

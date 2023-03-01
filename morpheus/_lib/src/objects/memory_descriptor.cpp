@@ -19,6 +19,8 @@
 
 #include <rmm/mr/device/per_device_resource.hpp>  // for get_current_device_resource
 
+#include <utility>  // for move
+
 MemoryDescriptor::MemoryDescriptor(rmm::cuda_stream_view stream, rmm::mr::device_memory_resource* mem_resource) :
   cuda_stream(std::move(stream)),
   memory_resource(mem_resource)

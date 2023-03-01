@@ -29,10 +29,9 @@
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice, cudaMemcpyDeviceToHost
 #include <cudf/column/column_view.hpp>
 #include <cudf/types.hpp>
-#include <glog/logging.h>            // for CHECK, CHECK_NE
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
-#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
-#include <rmm/device_buffer.hpp>     // for device_buffer
+#include <glog/logging.h>         // for CHECK, CHECK_NE
+#include <mrc/cuda/common.hpp>    // for MRC_CHECK_CUDA
+#include <rmm/device_buffer.hpp>  // for device_buffer
 
 #include <cstddef>
 #include <cstdint>  // for uint8_t

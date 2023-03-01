@@ -17,7 +17,6 @@
 
 #include "morpheus/stages/add_classification.hpp"
 
-#include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/objects/dtype.hpp"          // for DType
 #include "morpheus/objects/tensor.hpp"         // for Tensor::create
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
@@ -26,8 +25,10 @@
 
 #include <glog/logging.h>
 
+#include <algorithm>  // for copy
 #include <cstddef>
 #include <exception>
+#include <functional>  // for function
 #include <memory>
 #include <ostream>  // needed for logging
 #include <utility>  // for move

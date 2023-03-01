@@ -18,6 +18,7 @@
 #include "morpheus/objects/tensor.hpp"
 
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
