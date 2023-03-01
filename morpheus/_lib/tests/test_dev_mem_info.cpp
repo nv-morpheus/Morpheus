@@ -21,21 +21,20 @@
 #include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/memory_descriptor.hpp"
 
-#include <cuda_runtime.h>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
-#include <mrc/cuda/common.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
 #include <rmm/mr/device/arena_memory_resource.hpp>       // for arena_memory_resource
+#include <rmm/mr/device/cuda_memory_resource.hpp>        // for cuda_memory_resource
 #include <rmm/mr/device/fixed_size_memory_resource.hpp>  // for fixed_size_memory_resource
 #include <rmm/mr/device/owning_wrapper.hpp>              // for make_owning_wrapper
-#include <rmm/mr/device/per_device_resource.hpp>
 #include <sys/types.h>
 
 #include <cstddef>  // for size_t
 #include <memory>   // shared_ptr
-#include <string>   // for allocator, operator==, basic_string, string
 #include <vector>   // for vector
+// IWYU pragma: no_include "thrust/iterator/iterator_facade.h"
+// IWYU pragma: no_include <unordered_map>
 
 using namespace morpheus;
 
