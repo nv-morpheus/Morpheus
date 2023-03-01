@@ -76,17 +76,69 @@ class DevMemInfo
                size_t offset_bytes = 0);
     DevMemInfo(DevMemInfo&& other) = default;
 
+    /**
+     * @brief Return the number of bytes stored in the underlying buffer
+     *
+     * @return std::size_t
+     */
     std::size_t bytes() const;
+
+    /**
+     * @brief Return the element count stored in the underlying buffer
+     *
+     * @return std::size_t
+     */
     std::size_t count() const;
+
+    /**
+     * @brief Return the number of bytes offset from the head of the buffer
+     *
+     * @return std::size_t
+     */
     std::size_t offset_bytes() const;
+
+    /**
+     * @brief Return the type of the data stored in the buffer
+     *
+     * @return const DType&
+     */
     const DType& dtype() const;
+
+    /**
+     * @brief Return the type id of the data stored in the buffer
+     *
+     * @return TypeId
+     */
     TypeId type_id() const;
 
+    /**
+     * @brief Return a reference to the shape
+     *
+     * @return const std::vector<std::size_t>&
+     */
     const std::vector<std::size_t>& shape() const;
+
+    /**
+     * @brief Return a the dimension at `idx`
+     *
+     * @param idx
+     * @return std::size_t
+     */
     std::size_t shape(std::size_t idx) const;
 
-    // Stride in elements
+    /**
+     * @brief Return a reference to the stride expressed in elements
+     *
+     * @return const std::vector<std::size_t>&
+     */
     const std::vector<std::size_t>& stride() const;
+
+    /**
+     * @brief Return the stride at `idx`
+     *
+     * @param idx
+     * @return std::size_t
+     */
     std::size_t stride(std::size_t idx) const;
 
     /**
@@ -95,6 +147,13 @@ class DevMemInfo
      * @return void*
      */
     void* data() const;
+
+    /**
+     * @brief Return the memory descriptor
+     *
+     * @return std::shared_ptr<MemoryDescriptor>
+     */
+    std::shared_ptr<MemoryDescriptor> memory() const;
 
     /**
      * @brief Constructs a new rmm buffer with the same stream and memory resource as the current buffer

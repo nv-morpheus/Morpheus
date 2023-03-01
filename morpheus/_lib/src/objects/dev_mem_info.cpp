@@ -106,6 +106,11 @@ std::size_t DevMemInfo::stride(std::size_t idx) const
     return m_stride.at(idx);
 }
 
+std::shared_ptr<MemoryDescriptor> DevMemInfo::memory() const
+{
+    return m_md;
+}
+
 std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(std::size_t bytes) const
 {
     return std::make_unique<rmm::device_buffer>(bytes, m_md->cuda_stream, m_md->memory_resource);
