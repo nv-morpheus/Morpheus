@@ -14,12 +14,16 @@
 # limitations under the License.
 
 import dataclasses
+import logging
 
 import cupy as cp
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.utils import logger as morpheus_logger
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(init=False)
@@ -78,6 +82,10 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
         Probabilities tensor
     """
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
+
+    def __new__(cls, *args, **kwargs):
+        morpheus_logger.deprecated_message_warning(logger, cls, ResponseMemory)
+        return super(ResponseMemory, cls).__new__(cls, *args, **kwargs)
 
     def __init__(self, count: int, probs: cp.ndarray):
         super().__init__(count, tensors={'probs': probs})

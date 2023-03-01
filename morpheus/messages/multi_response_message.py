@@ -14,11 +14,14 @@
 # limitations under the License.
 
 import dataclasses
+import logging
 import typing
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
-from morpheus.utils.logger import deprecated_message_warning
+from morpheus.utils import logger as morpheus_logger
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -150,7 +153,7 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
         return self.get_output("probs")
 
     def __new__(cls, *args, **kwargs):
-        deprecated_message_warning(logger, cls, MultiResponseMessage)
+        morpheus_logger.deprecated_message_warning(logger, cls, MultiResponseMessage)
         return super(MultiResponseMessage, cls).__new__(cls, *args, **kwargs)
 
 
