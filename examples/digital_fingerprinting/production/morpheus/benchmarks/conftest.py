@@ -67,17 +67,18 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
                 message_file = open(message_fn)
                 control_message = json.load(message_file)
                 inputs = control_message.get("inputs")
-                input_data = {}
-                # Iterating over inputs array
+                # Iterating over inputs
                 for input in inputs:
                     line_count_per_task = 0
                     byte_count_per_task = 0
                     tasks = input.get("tasks")
-                    # Iterating tasks inputs array
+                    # Iterating over tasks
                     for task in tasks:
                         if task.get("type") == "load":
                             files = task.get("properties").get("files")
+                            # Iterating over files in a task
                             for file_glob in files:
+                                # Iterating over a file glob
                                 for fn in glob.glob(file_glob):
                                     count = get_json_lines_count(fn)
                                     size = path.getsize(fn)
@@ -87,9 +88,11 @@ def pytest_benchmark_update_json(config, benchmarks, output_json):
                                     byte_count_per_task += size
                         else:
                             non_load_task = task.get("type")
-                    bench['stats'][non_load_task] = {}
-                    bench['stats'][non_load_task]["input_lines"] = line_count_per_task
-                    bench['stats'][non_load_task]["input_bytes"] = byte_count_per_task
+                    # Adding non-load task status here.
+                    if non_load_task is not None:
+                        bench['stats'][non_load_task] = {}
+                        bench['stats'][non_load_task]["input_lines"] = line_count_per_task
+                        bench['stats'][non_load_task]["input_bytes"] = byte_count_per_task
 
         else:
             raise KeyError("Configuration requires either 'glob_path' or 'file_path' attribute.")
