@@ -401,6 +401,7 @@ class InferenceStage(MultiMessageStage):
         # assert inf.mess_offset == saved_offset + saved_count
 
         probs = memory.get_output("probs")
+        resp_probs = res.get_output('probs')
 
         seq_offset = inf.seq_ids[0, 0].item()
         seq_count = inf.seq_ids[-1, 0].item() + 1 - seq_offset
@@ -410,7 +411,7 @@ class InferenceStage(MultiMessageStage):
             assert seq_count == res.count
 
             # In message and out message have same count. Just use probs as is
-            probs[seq_offset:seq_offset + seq_count, :] = res.get_output('probs')
+            probs[seq_offset:seq_offset + seq_count, :] = resp_probs
         else:
             assert inf.count == res.count
 
@@ -418,7 +419,7 @@ class InferenceStage(MultiMessageStage):
 
             # Out message has more reponses, so we have to do key based blending of probs
             for i, idx in enumerate(mess_ids):
-                probs[idx, :] = cp.maximum(probs[idx, :], res.get_output('probs')[i, :])
+                probs[idx, :] = cp.maximum(probs[idx, :], resp_probs[i, :])
 
         return MultiResponseMessage(meta=inf.meta,
                                     mess_offset=inf.mess_offset,
