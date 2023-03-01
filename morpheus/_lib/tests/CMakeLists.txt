@@ -20,6 +20,7 @@ find_package(pybind11 REQUIRED)
 # Keep all source files sorted
 add_executable(test_libmorpheus
   # test_cuda.cu
+  test_dev_mem_info.cpp
   test_main.cpp
   test_matx_util.cpp
   test_morpheus.cpp
