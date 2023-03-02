@@ -226,6 +226,9 @@ class DataFrameInputSchema:
 def _process_columns(df_in, input_schema: DataFrameInputSchema):
     # TODO(MDD): See what causes this to have such a perf impact over using df_in
     output_df = pd.DataFrame()
+
+    convert_to_cudf = False
+
     if (isinstance(df_in, cudf.DataFrame)):
         df_in = df_in.to_pandas()
         convert_to_cudf = True

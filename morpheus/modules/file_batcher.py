@@ -19,6 +19,7 @@ from collections import namedtuple
 import fsspec
 import fsspec.utils
 import mrc
+import cudf
 import pandas as pd
 from mrc.core import operators as ops
 
@@ -95,7 +96,8 @@ def file_batcher(builder: mrc.Builder):
             timestamps.append(ts)
             full_names.append(file_name)
 
-        df = pd.DataFrame()
+        # df = pd.DataFrame()
+        df = cudf.DataFrame()
         df["ts"] = timestamps
         df["key"] = full_names
 
@@ -140,21 +142,27 @@ def file_batcher(builder: mrc.Builder):
 
     def on_data(control_message: MessageControl):
         mm = control_message.payload()
-        with mm.mutable_dataframe() as df:
-            files = df.files.to_arrow().to_pylist()
+        with mm.mutable_dataframe() as dfm:
+            files = dfm.files.to_arrow().to_pylist()
             ts_filenames_df = build_fs_filename_df(files)
 
         control_messages = []
         if len(ts_filenames_df) > 0:
             # Now split by the batching settings
-            df_period = ts_filenames_df["ts"].dt.to_period(period)
-            period_gb = ts_filenames_df.groupby(df_period)
-            n_groups = len(period_gb)
+            df_test = cudf.from_pandas(ts_filenames_df)
+            df_test["period"] = df_test["ts"].dt.strftime("%Y-%m-%d")
+            test_period_gb = df_test.groupby("period")
+            # print("DF_TEST_PERIOD: \n", df_test["period"], flush=True)
+            # df_period = ts_filenames_df["ts"].dt.to_period(period)
+            # print("DF_PERIOD: \n", df_period, flush=True)
+            # period_gb = ts_filenames_df.groupby(df_period)
+            # n_groups = len(period_gb)
+            n_groups = len(test_period_gb)
 
             logger.debug("Batching %d files => %d groups", len(ts_filenames_df), n_groups)
 
             control_messages = generate_cms_for_batch_periods(control_message,
-                                                              period_gb, n_groups)
+                                                              test_period_gb, n_groups)
 
         return control_messages
 
