@@ -66,20 +66,22 @@ class ConfigGenerator:
         module_config["module_name"] = "dfp_deployment"
         module_config["namespace"] = MODULE_NAMESPACE
 
-        module_config[DFP_PREPROC] = self.preproc_module_config()
+        module_config[FSSPEC_LOADER] = self.fsspec_dataloader_module_config()
+        preproc_module_config = self.preproc_module_config()
         module_config[DFP_TRA] = self.train_module_config()
         module_config[DFP_INF] = self.infer_module_config()
+        module_config[DFP_TRA][DFP_PREPROC] = preproc_module_config
+        module_config[DFP_INF][DFP_PREPROC] = preproc_module_config
         module_config["output_port_count"] = 2
 
         return module_config
 
+    def fsspec_dataloader_module_config(self):
+        module_config = {"loaders": [{"id": FSSPEC_LOADER}]}
+        return module_config
+
     def preproc_module_config(self):
         module_config = {
-            FSSPEC_LOADER: {
-                "loaders": [{
-                    "id": FSSPEC_LOADER
-                }]
-            },
             FILE_BATCHER: {
                 "period": "D",
                 "sampling_rate_s": self._derive_args.sample_rate_s,
@@ -153,8 +155,7 @@ class ConfigGenerator:
                 "use_cpp": CppConfig.get_should_use_cpp()
             },
             WRITE_TO_FILE: {
-                "filename": "dfp_detections_{}.csv".format(self._derive_args.log_type),
-                "overwrite": True
+                "filename": "dfp_detections_{}.csv".format(self._derive_args.log_type), "overwrite": True
             }
         }
 
@@ -276,8 +277,7 @@ class ConfigGenerator:
                 "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id']
             },
             WRITE_TO_FILE: {
-                "filename": "dfp_detections_{}.csv".format(self._derive_args.log_type),
-                "overwrite": True
+                "filename": "dfp_detections_{}.csv".format(self._derive_args.log_type), "overwrite": True
             }
         }
 

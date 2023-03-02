@@ -15,20 +15,22 @@
 import logging
 
 import dfp.modules.dfp_inf  # noqa: F401
-import dfp.modules.dfp_preproc  # noqa: F401
-import dfp.modules.dfp_tra  # noqa: F401
+import dfp.modules.dfp_tra
 import mrc
 from mrc.core.node import Broadcast
 
+import morpheus._lib.modules  # noqa: F401
+import morpheus.loaders.fsspec_loader
+from morpheus.utils.loader_ids import FSSPEC_LOADER  # noqa: F401
+from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_utils import get_config_with_overrides
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
-from morpheus.utils.module_utils import get_config_with_overrides
 
 from ..utils.module_ids import DFP_DEPLOYMENT
 from ..utils.module_ids import DFP_INF
-from ..utils.module_ids import DFP_PREPROC
 from ..utils.module_ids import DFP_TRA
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
@@ -38,7 +40,9 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 def dfp_deployment(builder: mrc.Builder):
     module_config = get_module_config(DFP_DEPLOYMENT, builder)
 
-    preproc_conf = get_config_with_overrides(module_config, DFP_PREPROC, "dfp_preproc")
+    fsspec_data_loader_conf = get_config_with_overrides(module_config, FSSPEC_LOADER, "fsspec_dataloader")
+    fsspec_data_loader_conf["module_id"] = DATA_LOADER  # Work around some naming issues.
+
     infer_conf = get_config_with_overrides(module_config, DFP_INF, "dfp_inference")
     train_conf = get_config_with_overrides(module_config, DFP_TRA, "dfp_training")
 
@@ -47,7 +51,7 @@ def dfp_deployment(builder: mrc.Builder):
 
     output_port_count = module_config.get("output_port_count")
 
-    preproc_module = load_module(preproc_conf, builder=builder)
+    fsspec_data_loader_module = load_module(fsspec_data_loader_conf, builder=builder)
 
     # Load module from registry.
     infer_module = load_module(infer_conf, builder=builder)
@@ -57,14 +61,14 @@ def dfp_deployment(builder: mrc.Builder):
     boradcast_node = Broadcast(builder, "broadcast")
 
     # Make an edge between modules
-    builder.make_edge(preproc_module.output_port("output"), boradcast_node)
+    builder.make_edge(fsspec_data_loader_module.output_port("output"), boradcast_node)
     builder.make_edge(boradcast_node, infer_module.input_port("input"))
     builder.make_edge(boradcast_node, train_module.input_port("input"))
 
     out_streams = [train_module.output_port("output"), infer_module.output_port("output")]
 
     # Register input port for a module.
-    builder.register_module_input("input", preproc_module.input_port("input"))
+    builder.register_module_input("input", fsspec_data_loader_module.input_port("input"))
 
     # Register output ports for a module.
     for i in range(output_port_count):
