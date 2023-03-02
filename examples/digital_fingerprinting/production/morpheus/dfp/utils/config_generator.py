@@ -18,16 +18,14 @@ from dfp.utils.derive_args import DeriveArgs
 from dfp.utils.derive_args import pyobj2str
 from dfp.utils.module_ids import DFP_DATA_PREP
 from dfp.utils.module_ids import DFP_DEPLOYMENT
-from dfp.utils.module_ids import DFP_INF
 from dfp.utils.module_ids import DFP_INFERENCE
-from dfp.utils.module_ids import DFP_INFERENCE_PIPELINE
+from dfp.utils.module_ids import DFP_INFERENCE_PIPE
 from dfp.utils.module_ids import DFP_POST_PROCESSING
 from dfp.utils.module_ids import DFP_PREPROC
 from dfp.utils.module_ids import DFP_ROLLING_WINDOW
 from dfp.utils.module_ids import DFP_SPLIT_USERS
-from dfp.utils.module_ids import DFP_TRA
 from dfp.utils.module_ids import DFP_TRAINING
-from dfp.utils.module_ids import DFP_TRAINING_PIPELINE
+from dfp.utils.module_ids import DFP_TRAINING_PIPE
 from dfp.utils.regex_utils import iso_date_regex_pattern
 from dfp.utils.schema_utils import Schema
 
@@ -39,7 +37,6 @@ from morpheus.config import CppConfig
 from morpheus.messages.multi_message import MultiMessage
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.loader_ids import FSSPEC_LOADER
-from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import FILTER_DETECTIONS
@@ -67,11 +64,8 @@ class ConfigGenerator:
         module_config["namespace"] = MODULE_NAMESPACE
 
         module_config[FSSPEC_LOADER] = self.fsspec_dataloader_module_config()
-        preproc_module_config = self.preproc_module_config()
-        module_config[DFP_TRA] = self.train_module_config()
-        module_config[DFP_INF] = self.infer_module_config()
-        module_config[DFP_TRA][DFP_PREPROC] = preproc_module_config
-        module_config[DFP_INF][DFP_PREPROC] = preproc_module_config
+        module_config[DFP_TRAINING_PIPE] = self.train_module_config()
+        module_config[DFP_INFERENCE_PIPE] = self.infer_module_config()
         module_config["output_port_count"] = 2
 
         return module_config
@@ -80,59 +74,54 @@ class ConfigGenerator:
         module_config = {"loaders": [{"id": FSSPEC_LOADER}]}
         return module_config
 
-    def preproc_module_config(self):
-        module_config = {
-            FILE_BATCHER: {
-                "period": "D",
-                "sampling_rate_s": self._derive_args.sample_rate_s,
-                "start_time": self._derive_args.time_fields.start_time,
-                "end_time": self._derive_args.time_fields.end_time,
-                "iso_date_regex_pattern": iso_date_regex_pattern,
-                "timestamp_column_name": self._config.ae.timestamp_column_name,
-                "parser_kwargs": {
-                    "lines": False, "orient": "records"
-                },
-                "cache_dir": self._derive_args.cache_dir,
-                "filter_null": True,
-                "file_type": "JSON",
-                "schema": {
-                    "schema_str": self._source_schema_str, "encoding": self._encoding
-                }
-            },
-            FILE_TO_DF_LOADER: {
-                "loaders": [{
-                    "id": FILE_TO_DF_LOADER
-                }]
-            },
-            DFP_SPLIT_USERS: {
-                "include_generic": self._derive_args.include_generic,
-                "include_individual": self._derive_args.include_individual,
-                "skip_users": self._derive_args.skip_users,
-                "only_users": self._derive_args.only_users,
-                "timestamp_column_name": self._config.ae.timestamp_column_name,
-                "userid_column_name": self._config.ae.userid_column_name,
-                "fallback_username": self._config.ae.fallback_username
-            }
-        }
-
-        return module_config
-
     def infer_module_config(self):
         module_config = {
+            DFP_PREPROC: {
+                FILE_BATCHER: {
+                    "period": "D",
+                    "sampling_rate_s": self._derive_args.sample_rate_s,
+                    "start_time": self._derive_args.time_fields.start_time,
+                    "end_time": self._derive_args.time_fields.end_time,
+                    "iso_date_regex_pattern": iso_date_regex_pattern,
+                    "timestamp_column_name": self._config.ae.timestamp_column_name,
+                    "parser_kwargs": {
+                        "lines": False, "orient": "records"
+                    },
+                    "cache_dir": self._derive_args.cache_dir,
+                    "filter_null": True,
+                    "file_type": "JSON",
+                    "schema": {
+                        "schema_str": self._source_schema_str, "encoding": self._encoding
+                    },
+                    "task_type": "inference"
+                },
+                FILE_TO_DF_LOADER: {
+                    "loaders": [{
+                        "id": FILE_TO_DF_LOADER
+                    }], "module_name": "dfp_file_to_df_dataloader_inf"
+                },
+                DFP_SPLIT_USERS: {
+                    "include_generic": self._derive_args.include_generic,
+                    "include_individual": self._derive_args.include_individual,
+                    "skip_users": self._derive_args.skip_users,
+                    "only_users": self._derive_args.only_users,
+                    "timestamp_column_name": self._config.ae.timestamp_column_name,
+                    "userid_column_name": self._config.ae.userid_column_name,
+                    "fallback_username": self._config.ae.fallback_username
+                }
+            },
             DFP_ROLLING_WINDOW: {
                 "min_history": 1,
                 "min_increment": 0,
                 "max_history": "1d",
                 "cache_dir": self._derive_args.cache_dir,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
-                "task_type": "inference"
             },
             DFP_DATA_PREP: {
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
                 },
-                "task_type": "inference"
             },
             DFP_INFERENCE: {
                 "model_name_formatter": self._derive_args.model_name_formatter,
@@ -163,20 +152,52 @@ class ConfigGenerator:
 
     def train_module_config(self):
         module_config = {
+            DFP_PREPROC: {
+                FILE_BATCHER: {
+                    "period": "D",
+                    "sampling_rate_s": self._derive_args.sample_rate_s,
+                    "start_time": self._derive_args.time_fields.start_time,
+                    "end_time": self._derive_args.time_fields.end_time,
+                    "iso_date_regex_pattern": iso_date_regex_pattern,
+                    "timestamp_column_name": self._config.ae.timestamp_column_name,
+                    "parser_kwargs": {
+                        "lines": False, "orient": "records"
+                    },
+                    "cache_dir": self._derive_args.cache_dir,
+                    "filter_null": True,
+                    "file_type": "JSON",
+                    "schema": {
+                        "schema_str": self._source_schema_str, "encoding": self._encoding
+                    },
+                    "task_type": "training"
+                },
+                FILE_TO_DF_LOADER: {
+                    "loaders": [{
+                        "id": FILE_TO_DF_LOADER
+                    }], "module_name": "dfp_file_to_df_dataloader_tra"
+                },
+                DFP_SPLIT_USERS: {
+                    "include_generic": self._derive_args.include_generic,
+                    "include_individual": self._derive_args.include_individual,
+                    "skip_users": self._derive_args.skip_users,
+                    "only_users": self._derive_args.only_users,
+                    "timestamp_column_name": self._config.ae.timestamp_column_name,
+                    "userid_column_name": self._config.ae.userid_column_name,
+                    "fallback_username": self._config.ae.fallback_username
+                }
+            },
             DFP_ROLLING_WINDOW: {
                 "min_history": 300,
                 "min_increment": 300,
                 "max_history": self._derive_args.duration,
                 "cache_dir": self._derive_args.cache_dir,
-                "timestamp_column_name": self._config.ae.timestamp_column_name,
-                "task_type": "training"
+                "timestamp_column_name": self._config.ae.timestamp_column_name
             },
             DFP_DATA_PREP: {
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
                 "schema": {
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
-                },
-                "task_type": "training"
+                }
             },
             DFP_TRAINING: {
                 "model_kwargs": {

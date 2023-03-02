@@ -54,7 +54,7 @@ def file_batcher(builder: mrc.Builder):
     end_time = config.get("end_time", None)
     sampling_rate_s = config.get("sampling_rate_s", None)
     period = config.get("period", None)
-
+    task_type = config.get("task_type", None)
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
     def build_fs_filename_df(files):
@@ -139,11 +139,17 @@ def file_batcher(builder: mrc.Builder):
         return control_messages
 
     def on_data(control_message: MessageControl):
+        control_messages = []
+
+        data_type = control_message.get_metadata("data_type")
+
+        if not control_message.has_task(task_type) and data_type != "streaming":
+            return control_messages
+
         df = control_message.payload().df
         files = df.files.to_arrow().to_pylist()
         ts_filenames_df = build_fs_filename_df(files)
 
-        control_messages = []
         if len(ts_filenames_df) > 0:
             # Now split by the batching settings
             df_period = ts_filenames_df["ts"].dt.to_period(period)
@@ -152,8 +158,7 @@ def file_batcher(builder: mrc.Builder):
 
             logger.debug("Batching %d files => %d groups", len(ts_filenames_df), n_groups)
 
-            control_messages = generate_cms_for_batch_periods(control_message,
-                                                              period_gb, n_groups)
+            control_messages = generate_cms_for_batch_periods(control_message, period_gb, n_groups)
 
         return control_messages
 

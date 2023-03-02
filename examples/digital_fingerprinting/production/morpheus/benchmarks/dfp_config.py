@@ -247,29 +247,32 @@ class DFPConfig():
         preprocess_schema_str = str(pickle.dumps(preprocess_schema), encoding=encoding)
 
         start_stop_time = self._get_start_stop_time()
-        self.modules_conf["DFPPreproc"]["FileBatcher"]["start_time"] = start_stop_time[0]
-        self.modules_conf["DFPPreproc"]["FileBatcher"]["end_time"] = start_stop_time[0]
-        self.modules_conf["DFPPreproc"]["FileBatcher"]["schema"]["schema_str"] = source_schema_str
-        self.modules_conf["DFPPreproc"]["FileBatcher"]["schema"]["encoding"] = encoding
-
-        self.modules_conf["DFPTra"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
-        self.modules_conf["DFPTra"]["DFPDataPrep"]["schema"]["encoding"] = encoding
-
-        self.modules_conf["DFPTra"]["DFPRollingWindow"]["max_history"] = self.pipeline_conf["duration"]
-        self.modules_conf["DFPTra"]["DFPTraining"]["feature_columns"] = self.feature_columns
-        self.modules_conf["DFPTra"]["MLFlowModelWriter"]["model_name_formatter"] = self._get_model_name_formatter()
-        self.modules_conf["DFPTra"]["MLFlowModelWriter"][
+        self.modules_conf["DFPTrainingPipe"]["DFPPreproc"]["FileBatcher"]["start_time"] = start_stop_time[0]
+        self.modules_conf["DFPTrainingPipe"]["DFPPreproc"]["FileBatcher"]["end_time"] = start_stop_time[0]
+        self.modules_conf["DFPTrainingPipe"]["DFPPreproc"]["FileBatcher"]["schema"]["schema_str"] = source_schema_str
+        self.modules_conf["DFPTrainingPipe"]["DFPPreproc"]["FileBatcher"]["schema"]["encoding"] = encoding
+        self.modules_conf["DFPTrainingPipe"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
+        self.modules_conf["DFPTrainingPipe"]["DFPDataPrep"]["schema"]["encoding"] = encoding
+        self.modules_conf["DFPTrainingPipe"]["DFPRollingWindow"]["max_history"] = self.pipeline_conf["duration"]
+        self.modules_conf["DFPTrainingPipe"]["DFPTraining"]["feature_columns"] = self.feature_columns
+        self.modules_conf["DFPTrainingPipe"]["MLFlowModelWriter"][
+            "model_name_formatter"] = self._get_model_name_formatter()
+        self.modules_conf["DFPTrainingPipe"]["MLFlowModelWriter"][
             "experiment_name_formatter"] = self._get_experiment_name_formatter()
 
-        self.modules_conf["DFPInf"]["DFPRollingWindow"]["max_history"] = "1d"
-        self.modules_conf["DFPInf"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
-        self.modules_conf["DFPInf"]["DFPDataPrep"]["schema"]["encoding"] = encoding
-        self.modules_conf["DFPInf"]["DFPInference"]["model_name_formatter"] = self._get_model_name_formatter()
-        self.modules_conf["DFPInf"]["FilterDetections"]["schema"]["input_message_type"] = pyobj2str(
+        self.modules_conf["DFPInferencePipe"]["DFPPreproc"]["FileBatcher"]["start_time"] = start_stop_time[0]
+        self.modules_conf["DFPInferencePipe"]["DFPPreproc"]["FileBatcher"]["end_time"] = start_stop_time[0]
+        self.modules_conf["DFPInferencePipe"]["DFPPreproc"]["FileBatcher"]["schema"]["schema_str"] = source_schema_str
+        self.modules_conf["DFPInferencePipe"]["DFPPreproc"]["FileBatcher"]["schema"]["encoding"] = encoding
+        self.modules_conf["DFPInferencePipe"]["DFPRollingWindow"]["max_history"] = "1d"
+        self.modules_conf["DFPInferencePipe"]["DFPDataPrep"]["schema"]["schema_str"] = preprocess_schema_str
+        self.modules_conf["DFPInferencePipe"]["DFPDataPrep"]["schema"]["encoding"] = encoding
+        self.modules_conf["DFPInferencePipe"]["DFPInference"]["model_name_formatter"] = self._get_model_name_formatter()
+        self.modules_conf["DFPInferencePipe"]["FilterDetections"]["schema"]["input_message_type"] = pyobj2str(
             MultiMessage, encoding)
-        self.modules_conf["DFPInf"]["FilterDetections"]["schema"]["encoding"] = encoding
-        self.modules_conf["DFPInf"]["Serialize"]["use_cpp"] = True
-        self.modules_conf["DFPInf"]["WriteToFile"]["filename"] = "dfp_detections_{}.csv".format(self._source)
+        self.modules_conf["DFPInferencePipe"]["FilterDetections"]["schema"]["encoding"] = encoding
+        self.modules_conf["DFPInferencePipe"]["Serialize"]["use_cpp"] = True
+        self.modules_conf["DFPInferencePipe"]["WriteToFile"]["filename"] = "dfp_detections_{}.csv".format(self._source)
 
         self.modules_conf["output_port_count"] = 2
 

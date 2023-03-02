@@ -48,7 +48,6 @@ def dfp_rolling_window(builder: mrc.Builder):
     """
 
     config = get_module_config(DFP_ROLLING_WINDOW, builder)
-    task_type = config.get("task_type", None)
     timestamp_column_name = config.get("timestamp_column_name", None)
     min_history = config.get("min_history", None)
     max_history = config.get("max_history", None)
@@ -128,9 +127,6 @@ def dfp_rolling_window(builder: mrc.Builder):
 
     def on_data(control_message: MessageControl):
 
-        if not control_message.has_task(task_type):
-            return None
-
         payload = control_message.payload()
         user_id = control_message.get_metadata("user_id")
 
@@ -166,7 +162,6 @@ def dfp_rolling_window(builder: mrc.Builder):
             rw_control_message.payload(result)
             # TODO(Devin): Configure based on module config
             # TODO(Devin): Stop using dfp rolling window for inference, it makes zero sense
-            rw_control_message.add_task(task_type, {})
             rw_control_message.set_metadata("user_id", user_id)
             rw_control_message.set_metadata("data_type", "payload")
 
