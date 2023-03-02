@@ -169,25 +169,31 @@
       "model_name_formatter": null,
       "fallback_username": "username",
       "timestamp_column_name": "timestamp"
-  },
-  "FilterDetections": {
+    },
+    "FilterDetections": {
       "field_name": "mean_abs_z",
       "threshold": 2.0,
       "filter_source": "DATAFRAME",
       "schema": {
-          "input_message_type": null, "encoding": null
+        "input_message_type": null,
+        "encoding": null
       }
-  },
-  "DFPPostProcessing": {
+    },
+    "DFPPostProcessing": {
       "timestamp_column_name": "timestamp"
-  },
-  "Serialize": {
-      "exclude": ["batch_count", "origin_hash", "_row_hash", "_batch_id"],
+    },
+    "Serialize": {
+      "exclude": [
+        "batch_count",
+        "origin_hash",
+        "_row_hash",
+        "_batch_id"
+      ],
       "use_cpp": null
-  },
-  "WriteToFile": {
+    },
+    "WriteToFile": {
       "filename": null,
       "overwrite": true
+    }
   }
-}
 }

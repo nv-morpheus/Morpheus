@@ -20,9 +20,7 @@ import typing
 
 # flake8 warnings are silenced by the addition of noqa.
 import dfp.modules.dfp_deployment  # noqa: F401
-import dfp.modules.dfp_preprocessing
 import pytest
-from dfp.messages.multi_dfp_message import MultiDFPMessage
 from dfp.stages.dfp_file_batcher_stage import DFPFileBatcherStage
 from dfp.stages.dfp_file_to_df import DFPFileToDataFrameStage
 from dfp.stages.dfp_inference_stage import DFPInferenceStage
@@ -47,7 +45,6 @@ from morpheus._lib.common import FilterSource
 from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline  # noqa: F401
-from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.multi_port_module_stage import MultiPortModuleStage
 from morpheus.stages.input.control_message_source_stage import ControlMessageSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -64,12 +61,15 @@ set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
 
 
 def dfp_modules_pipeline(config: Config, modules_conf: typing.Dict[str, any], filenames: typing.List[str]):
-
-    configure_logging(log_level=logging.INFO)
+    configure_logging(log_level=logging.CRITICAL)
 
     pipeline = Pipeline(config)
 
     source_stage = pipeline.add_stage(ControlMessageSourceStage(config, filenames=filenames))
+
+    import json
+    with open("modules_conf.json", "w") as f:
+        f.write(json.dumps(modules_conf, indent=3, default=str))
 
     # Here we add a wrapped module that implements the DFP Deployment
     dfp_deployment_stage = pipeline.add_stage(
@@ -89,8 +89,7 @@ def dfp_training_pipeline_stages(config: Config,
                                  source_schema: DataFrameInputSchema,
                                  preprocess_schema: DataFrameInputSchema,
                                  filenames: typing.List[str]):
-
-    configure_logging(log_level=logging.INFO)
+    configure_logging(log_level=logging.CRITICAL)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(MultiFileSource(config, filenames=filenames))
@@ -137,8 +136,7 @@ def dfp_inference_pipeline_stages(config: Config,
                                   preprocess_schema: DataFrameInputSchema,
                                   filenames: typing.List[str],
                                   output_filepath: str):
-
-    configure_logging(log_level=logging.INFO)
+    configure_logging(log_level=logging.CRITICAL)
 
     pipeline = LinearPipeline(config)
     pipeline.set_source(MultiFileSource(config, filenames=filenames))
@@ -183,7 +181,6 @@ def dfp_inference_pipeline_stages(config: Config,
 
 @pytest.mark.benchmark
 def test_dfp_training_duo_stages_e2e(benchmark: typing.Any):
-
     feature_columns = [
         "accessdevicebrowser",
         "accessdeviceos",
@@ -210,7 +207,6 @@ def test_dfp_training_duo_stages_e2e(benchmark: typing.Any):
 
 @pytest.mark.benchmark
 def test_dfp_training_azure_stages_e2e(benchmark: typing.Any):
-
     feature_columns = [
         "appDisplayName",
         "clientAppUsed",
@@ -239,7 +235,6 @@ def test_dfp_training_azure_stages_e2e(benchmark: typing.Any):
 
 @pytest.mark.benchmark
 def test_dfp_inference_azure_stages_e2e(benchmark: typing.Any, tmp_path):
-
     feature_columns = [
         "appDisplayName",
         "clientAppUsed",
@@ -276,7 +271,6 @@ def test_dfp_inference_azure_stages_e2e(benchmark: typing.Any, tmp_path):
 
 @pytest.mark.benchmark
 def test_dfp_inference_duo_stages_e2e(benchmark: typing.Any, tmp_path):
-
     feature_columns = [
         "appDisplayName",
         "clientAppUsed",
@@ -313,7 +307,6 @@ def test_dfp_inference_duo_stages_e2e(benchmark: typing.Any, tmp_path):
 
 @pytest.mark.benchmark
 def test_dfp_modules_duo_training_e2e(benchmark: typing.Any):
-
     feature_columns = [
         "accessdevicebrowser",
         "accessdeviceos",
@@ -341,7 +334,6 @@ def test_dfp_modules_duo_training_e2e(benchmark: typing.Any):
 
 @pytest.mark.benchmark
 def test_dfp_modules_azure_training_e2e(benchmark: typing.Any):
-
     feature_columns = [
         "appDisplayName",
         "clientAppUsed",
@@ -371,7 +363,6 @@ def test_dfp_modules_azure_training_e2e(benchmark: typing.Any):
 
 @pytest.mark.benchmark
 def test_dfp_modules_duo_inference_e2e(benchmark: typing.Any):
-
     feature_columns = [
         "accessdevicebrowser",
         "accessdeviceos",
@@ -399,7 +390,6 @@ def test_dfp_modules_duo_inference_e2e(benchmark: typing.Any):
 
 @pytest.mark.benchmark
 def test_dfp_modules_azure_inference_e2e(benchmark: typing.Any):
-
     feature_columns = [
         "appDisplayName",
         "clientAppUsed",
@@ -429,7 +419,6 @@ def test_dfp_modules_azure_inference_e2e(benchmark: typing.Any):
 
 @pytest.mark.benchmark
 def test_dfp_modules_duo_e2e(benchmark: typing.Any):
-
     feature_columns = [
         "accessdevicebrowser",
         "accessdeviceos",
@@ -457,7 +446,6 @@ def test_dfp_modules_duo_e2e(benchmark: typing.Any):
 
 @pytest.mark.benchmark
 def test_dfp_modules_azure_e2e(benchmark: typing.Any):
-
     feature_columns = [
         "appDisplayName",
         "clientAppUsed",

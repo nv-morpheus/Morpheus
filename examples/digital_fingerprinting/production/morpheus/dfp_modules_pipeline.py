@@ -124,15 +124,15 @@ def run_pipeline(log_type: str,
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
     derived_args = DeriveArgs(skip_user,
-                             only_user,
-                             start_time,
-                             log_level,
-                             cache_dir,
-                             sample_rate_s,
-                             duration,
-                             log_type,
-                             tracking_uri,
-                             train_users)
+                              only_user,
+                              start_time,
+                              log_level,
+                              cache_dir,
+                              sample_rate_s,
+                              duration,
+                              log_type,
+                              tracking_uri,
+                              train_users)
 
     derived_args.init()
 
@@ -160,7 +160,6 @@ def run_pipeline(log_type: str,
 
     source_stage = pipeline.add_stage(ControlMessageSourceStage(config, filenames=list(kwargs["input_file"])))
 
-    # Here we add a wrapped module that implements the DFP Deployment
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModuleStage(config,
                              module_config,

@@ -66,7 +66,8 @@ def dfp_inference(builder: mrc.Builder):
 
         user_id = control_message.get_metadata("user_id")
         payload = control_message.payload()
-        df_user = payload.df.to_pandas()
+        with payload.mutable_dataframe() as dfm:
+            df_user = dfm.to_pandas()
         df_user[timestamp_column_name] = pd.to_datetime(df_user[timestamp_column_name], utc=True)
 
         try:
@@ -89,8 +90,6 @@ def dfp_inference(builder: mrc.Builder):
 
         for col in include_cols:
             results_df[col] = df_user[col].copy(True)
-
-        results_df = cudf.from_pandas(results_df)
 
         # Create an output message to allow setting meta
         dfp_mm = DFPMessageMeta(results_df, user_id=user_id)
@@ -120,12 +119,15 @@ def dfp_inference(builder: mrc.Builder):
         if (control_message is None):
             return None
 
+        task_results = []
         while (control_message.has_task("inference")):
             task = control_message.pop_task("inference")
-            return process_task(control_message, task)
+            task_results.append(process_task(control_message, task))
+
+        return task_results
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data)).subscribe(sub)
+        obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
 
     node = builder.make_node_full(DFP_INFERENCE, node_fn)
 
