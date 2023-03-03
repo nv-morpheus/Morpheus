@@ -29,12 +29,14 @@ from dfp.utils.config_generator import generate_ae_config
 from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import SchemaBuilder
 
+logger = logging.getLogger(__name__)
+
 THIS_DIR = path.dirname(path.abspath(__file__))
 
 
 def set_mlflow_tracking_uri(tracking_uri):
     mlflow.set_tracking_uri(tracking_uri)
-    logging.getLogger('mlflow').setLevel(logging.WARN)
+    logging.getLogger('mlflow').setLevel(logger.level)
 
 
 def load_json(filepath: str):
@@ -46,19 +48,13 @@ def load_json(filepath: str):
 
 class BenchmarkConfGenerator:
 
-    def __init__(self, pipe_conf: typing.Dict[(str, any)], tracking_uri: str, log_level=logging.ERROR):
+    def __init__(self, pipe_conf: typing.Dict[(str, any)]):
         self._pipe_conf = pipe_conf
-        self._tracking_uri = tracking_uri
-        self._log_level = log_level
         self._config = self._create_config()
 
     @property
     def pipe_config(self):
         return self._config
-
-    @property
-    def log_level(self):
-        return self._log_level
 
     @property
     def source(self):
@@ -141,12 +137,12 @@ class BenchmarkConfGenerator:
         dfp_arg_parser = DFPArgParser(skip_user=[],
                                       only_user=[],
                                       start_time=(datetime.strptime(self._pipe_conf.get('start_time'), '%Y-%m-%d')),
-                                      log_level=(self._log_level),
+                                      log_level=logger.level,
                                       cache_dir='./.cache/dfp',
                                       sample_rate_s=0,
                                       duration=(self._pipe_conf.get('duration')),
                                       source=(self.source),
-                                      tracking_uri=(self._tracking_uri),
+                                      tracking_uri=mlflow.get_tracking_uri(),
                                       train_users='generic')
         dfp_arg_parser.init()
         config_generator = ConfigGenerator(self.pipe_config, dfp_arg_parser, self.get_schema())

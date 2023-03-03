@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import typing
 
 import fsspec
 import fsspec.utils
 import mrc
-import json
+
 from morpheus.config import Config
 from morpheus.messages.message_control import MessageControl
 from morpheus.pipeline.single_output_source import SingleOutputSource

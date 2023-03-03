@@ -52,19 +52,17 @@ from morpheus.utils.column_info import DataFrameInputSchema
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.logger import configure_logging
 
-logger = logging.getLogger("morpheus.{}".format(__name__))
+logger = logging.getLogger(__name__)
 
 PIPELINES_CONF = load_json("resource/pipelines_conf.json")
-
-TRACKING_URI = PIPELINES_CONF.get("tracking_uri")
 
 set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
 
 
-def remove_cache(dir: str):
-    logger.debug(f"Cleaning up cache `{dir}` directory...")
+def purge_cache(dir: str):
+    logger.debug(f"Purging cache `{dir}` directory...")
     shutil.rmtree(dir, ignore_errors=True)
-    logger.debug(f"Cleaning up cache `{dir}` directory... Done")
+    logger.debug(f"Purging cache `{dir}` directory... Done")
 
 
 def dfp_modules_pipeline(pipe_config: Config,
@@ -90,7 +88,7 @@ def dfp_modules_pipeline(pipe_config: Config,
 
     if not reuse_cache:
         cache_dir = modules_conf["DFPInferencePipe"]["DFPPreproc"]["FileBatcher"]["cache_dir"]
-        remove_cache(dir=cache_dir)
+        purge_cache(dir=cache_dir)
 
 
 def dfp_training_pipeline_stages(pipe_config: Config,
@@ -98,10 +96,9 @@ def dfp_training_pipeline_stages(pipe_config: Config,
                                  source_schema: DataFrameInputSchema,
                                  preprocess_schema: DataFrameInputSchema,
                                  filenames: typing.List[str],
-                                 log_level: int,
                                  reuse_cache=False):
 
-    configure_logging(log_level)
+    configure_logging(logger.level)
 
     pipeline = LinearPipeline(pipe_config)
     pipeline.set_source(MultiFileSource(pipe_config, filenames=filenames))
@@ -142,7 +139,7 @@ def dfp_training_pipeline_stages(pipe_config: Config,
     pipeline.run()
 
     if not reuse_cache:
-        remove_cache(dir=stages_conf["cache_dir"])
+        purge_cache(dir=stages_conf["cache_dir"])
 
 
 def dfp_inference_pipeline_stages(pipe_config: Config,
@@ -151,10 +148,9 @@ def dfp_inference_pipeline_stages(pipe_config: Config,
                                   preprocess_schema: DataFrameInputSchema,
                                   filenames: typing.List[str],
                                   output_filepath: str,
-                                  log_level: int,
                                   reuse_cache=False):
 
-    configure_logging(log_level)
+    configure_logging(logger.level)
 
     pipeline = LinearPipeline(pipe_config)
     pipeline.set_source(MultiFileSource(pipe_config, filenames=filenames))
@@ -198,7 +194,7 @@ def dfp_inference_pipeline_stages(pipe_config: Config,
     pipeline.run()
 
     if not reuse_cache:
-        remove_cache(dir=stages_conf["cache_dir"])
+        purge_cache(dir=stages_conf["cache_dir"])
 
 
 @pytest.mark.benchmark
@@ -206,20 +202,14 @@ def test_dfp_stages_duo_training_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_stages_duo_training_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     stages_conf = bcg.get_stages_conf()
     input_filenames = bcg.get_filenames()
     schema: Schema = bcg.get_schema()
 
-    benchmark(dfp_training_pipeline_stages,
-              pipe_config,
-              stages_conf,
-              schema.source,
-              schema.preprocess,
-              input_filenames,
-              bcg.log_level)
+    benchmark(dfp_training_pipeline_stages, pipe_config, stages_conf, schema.source, schema.preprocess, input_filenames)
 
 
 @pytest.mark.benchmark
@@ -227,20 +217,14 @@ def test_dfp_stages_azure_training_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_stages_azure_training_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     stages_conf = bcg.get_stages_conf()
     input_filenames = bcg.get_filenames()
     schema: Schema = bcg.get_schema()
 
-    benchmark(dfp_training_pipeline_stages,
-              pipe_config,
-              stages_conf,
-              schema.source,
-              schema.preprocess,
-              input_filenames,
-              bcg.log_level)
+    benchmark(dfp_training_pipeline_stages, pipe_config, stages_conf, schema.source, schema.preprocess, input_filenames)
 
 
 @pytest.mark.benchmark
@@ -248,7 +232,7 @@ def test_dfp_stages_azure_inference_e2e(benchmark: typing.Any, tmp_path):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_stages_azure_inference_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     stages_conf = bcg.get_stages_conf()
@@ -263,8 +247,7 @@ def test_dfp_stages_azure_inference_e2e(benchmark: typing.Any, tmp_path):
               schema.source,
               schema.preprocess,
               input_filenames,
-              output_filepath,
-              bcg.log_level)
+              output_filepath)
 
 
 @pytest.mark.benchmark
@@ -272,7 +255,7 @@ def test_dfp_stages_duo_inference_e2e(benchmark: typing.Any, tmp_path):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_stages_duo_inference_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     stages_conf = bcg.get_stages_conf()
@@ -287,8 +270,7 @@ def test_dfp_stages_duo_inference_e2e(benchmark: typing.Any, tmp_path):
               schema.source,
               schema.preprocess,
               input_filenames,
-              output_filepath,
-              bcg.log_level)
+              output_filepath)
 
 
 @pytest.mark.benchmark
@@ -296,7 +278,7 @@ def test_dfp_modules_azure_payload_inference_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_azure_payload_inference_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -310,7 +292,7 @@ def test_dfp_modules_azure_payload_lti_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_azure_payload_lti_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -324,7 +306,7 @@ def test_dfp_modules_azure_payload_training_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_azure_payload_training_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -338,7 +320,7 @@ def test_dfp_modules_azure_streaming_inference_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_azure_streaming_inference_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -352,7 +334,7 @@ def test_dfp_modules_azure_streaming_lti_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_azure_streaming_lti_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -366,7 +348,7 @@ def test_dfp_modules_azure_streaming_training_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_azure_streaming_training_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -380,7 +362,7 @@ def test_dfp_modules_duo_payload_inference_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_payload_inference_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -394,7 +376,7 @@ def test_dfp_modules_duo_payload_lti_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_payload_lti_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -408,7 +390,7 @@ def test_dfp_modules_duo_payload_only_load_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_payload_only_load_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -422,7 +404,7 @@ def test_dfp_modules_duo_payload_training_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_payload_training_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -436,7 +418,7 @@ def test_dfp_modules_duo_streaming_inference_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_streaming_inference_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -450,7 +432,7 @@ def test_dfp_modules_duo_streaming_lti_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_streaming_lti_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -464,7 +446,7 @@ def test_dfp_modules_duo_streaming_only_load_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_streaming_only_load_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -478,7 +460,7 @@ def test_dfp_modules_duo_streaming_payload_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_streaming_payload_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
@@ -492,7 +474,7 @@ def test_dfp_modules_duo_streaming_training_e2e(benchmark: typing.Any):
 
     pipe_conf = PIPELINES_CONF.get("test_dfp_modules_duo_streaming_training_e2e")
 
-    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf, tracking_uri=TRACKING_URI)
+    bcg = BenchmarkConfGenerator(pipe_conf=pipe_conf)
 
     pipe_config = bcg.pipe_config
     module_config = bcg.get_module_conf()
