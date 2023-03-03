@@ -159,8 +159,9 @@ def dfp_rolling_window(builder: mrc.Builder):
                     # Dont print anything
                     log_info.disable()
                     return None
-
-            rw_control_message = MessageControl()
+            # TODO (bhargav) Check if we need to pass control_message config to data_prep module.
+            # If no config is passed there won't be any tasks to perform in the DataPrep stage.
+            rw_control_message = MessageControl(control_message.config())
             rw_control_message.payload(result)
             # TODO(Devin): Configure based on module config
             # TODO(Devin): Stop using dfp rolling window for inference, it makes zero sense

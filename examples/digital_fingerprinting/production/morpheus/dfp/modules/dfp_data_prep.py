@@ -45,7 +45,6 @@ def dfp_data_prep(builder: mrc.Builder):
     """
 
     config = get_module_config(DFP_DATA_PREP, builder)
-    task_type = config.get("task_type", None)
     schema_config = config.get("schema", None)
     schema_str = schema_config.get("schema_str", None)
     encoding = schema_config.get("encoding", None)
@@ -56,7 +55,7 @@ def dfp_data_prep(builder: mrc.Builder):
     # def process_features(message: MultiDFPMessage):
     def process_features(message: MessageControl):
 
-        if (message is None or not message.has_task(task_type)):
+        if (message is None):
             return None
 
         start_time = time.time()

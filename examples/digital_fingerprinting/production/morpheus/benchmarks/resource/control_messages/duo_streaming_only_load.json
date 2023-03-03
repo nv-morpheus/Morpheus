@@ -1,0 +1,20 @@
+{
+	"inputs": [
+	  {
+		"tasks": [
+		  {
+			"type": "load",
+			"properties": {
+			  "loader_id": "fsspec",
+			  "files": [
+				"../../../../../examples/data/dfp/duo-training-data/*.json"
+			  ]
+			}
+		  }
+		],
+		"metadata": {
+		  "data_type": "streaming"
+		}
+	  }
+	]
+  }

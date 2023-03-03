@@ -36,18 +36,18 @@ class Schema:
 
 class SchemaBuilder:
 
-    def __init__(self, config: Config, log_type: str):
+    def __init__(self, config: Config, source: str):
         self._config = config
-        self._log_type = log_type
+        self._source = source
 
     def build_schema(self):
 
-        if self._log_type == "duo":
+        if self._source == "duo":
             return self._build_duo_schema()
-        elif self._log_type == "azure":
+        elif self._source == "azure":
             return self._build_azure_schema()
         else:
-            raise Exception("No matching schema found for log type : {}".format(self._log_type))
+            raise Exception("No matching schema found for log type : {}".format(self._source))
 
     def _build_azure_schema(self) -> Schema:
         # Specify the column names to ensure all data is uniform

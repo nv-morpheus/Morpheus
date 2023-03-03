@@ -20,7 +20,7 @@ import click
 import dfp.modules.dfp_deployment  # noqa: F401
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
-from dfp.utils.derive_args import DeriveArgs
+from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import Schema
 from dfp.utils.schema_utils import SchemaBuilder
 
@@ -108,7 +108,7 @@ from morpheus.stages.input.control_message_source_stage import ControlMessageSou
               type=str,
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
-def run_pipeline(log_type: str,
+def run_pipeline(source: str,
                  train_users: str,
                  skip_user: typing.Tuple[str],
                  only_user: typing.Tuple[str],
@@ -123,37 +123,37 @@ def run_pipeline(log_type: str,
     if (skip_user and only_user):
         logging.error("Option --skip_user and --only_user are mutually exclusive. Exiting")
 
-    derived_args = DeriveArgs(skip_user,
-                              only_user,
-                              start_time,
-                              log_level,
-                              cache_dir,
-                              sample_rate_s,
-                              duration,
-                              log_type,
-                              tracking_uri,
-                              train_users)
+    dfp_arg_parser = DFPArgParser(skip_user,
+                                  only_user,
+                                  start_time,
+                                  log_level,
+                                  cache_dir,
+                                  sample_rate_s,
+                                  duration,
+                                  source,
+                                  tracking_uri,
+                                  train_users)
 
-    derived_args.init()
+    dfp_arg_parser.init()
 
     # Default user_id column -- override with ControlMessage
     userid_column_name = "username"
     # Default timestamp column -- override with ControlMessage
     timestamp_column_name = "timestamp"
 
-    config: Config = generate_ae_config(log_type, userid_column_name, timestamp_column_name, use_cpp=use_cpp)
+    config: Config = generate_ae_config(source, userid_column_name, timestamp_column_name, use_cpp=use_cpp)
 
     # Construct the data frame Schema used to normalize incoming data
-    schema_builder = SchemaBuilder(config, log_type)
+    schema_builder = SchemaBuilder(config, source)
     schema: Schema = schema_builder.build_schema()
 
     # Create config helper used to generate config parameters for the DFP module
     # This will populate to the minimum configuration parameters with intelligent default values
-    config_generator = ConfigGenerator(config, derived_args, schema)
+    config_generator = ConfigGenerator(config, dfp_arg_parser, schema)
 
-    module_config = config_generator.get_module_config()
+    module_conf = config_generator.get_module_conf()
 
-    output_port_count = module_config.get("output_port_count")
+    output_port_count = module_conf.get("output_port_count")
 
     # Create a pipeline object
     pipeline = Pipeline(config)
@@ -162,7 +162,7 @@ def run_pipeline(log_type: str,
 
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModuleStage(config,
-                             module_config,
+                             module_conf,
                              input_port_name="input",
                              output_port_name_prefix="output",
                              output_port_count=output_port_count))

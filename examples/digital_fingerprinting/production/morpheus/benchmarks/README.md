@@ -59,20 +59,29 @@ The `-s` option allows outputs of pipeline execution to be displayed so you can 
 The `--benchmark-warmup` and `--benchmark-warmup-iterations` options are used to run the workflow(s) once before starting measurements. This is because, if it does not already exist, the preprocessed data is cached during the initial run.
 
 `<test-workflow>` is the name of the test to run benchmarks on. This can be one of the following:
-- `test_dfp_inference_azure_stages_e2e`
-- `test_dfp_inference_duo_stages_e2e`
-- `test_dfp_training_azure_stages_e2e`
-- `test_dfp_training_duo_stages_e2e`
-- `test_dfp_modules_duo_training_e2e`
-- `test_dfp_modules_azure_training_e2e`
-- `test_dfp_modules_duo_inference_e2e`
-- `test_dfp_modules_azure_inference_e2e`
-- `test_dfp_modules_duo_e2e`
-- `test_dfp_modules_azure_e2e`
+- `test_dfp_modules_azure_payload_inference_e2e`
+- `test_dfp_modules_azure_payload_lti_e2e`
+- `test_dfp_modules_azure_payload_training_e2e`
+- `test_dfp_modules_azure_streaming_inference_e2e`
+- `test_dfp_modules_azure_streaming_lti_e2e`
+- `test_dfp_modules_azure_streaming_training_e2e`
+- `test_dfp_modules_duo_payload_inference_e2e`
+- `test_dfp_modules_duo_payload_lti_e2e`
+- `test_dfp_modules_duo_payload_only_load_e2e`
+- `test_dfp_modules_duo_payload_training_e2e`
+- `test_dfp_modules_duo_streaming_inference_e2e`
+- `test_dfp_modules_duo_streaming_lti_e2e`
+- `test_dfp_modules_duo_streaming_only_load_e2e`
+- `test_dfp_modules_duo_streaming_payload_e2e`
+- `test_dfp_modules_duo_streaming_training_e2e`
+- `test_dfp_stages_azure_training_e2e`
+- `test_dfp_stages_azure_inference_e2e`
+- `test_dfp_stages_duo_training_e2e`
+- `test_dfp_stages_duo_inference_e2e`
 
 For example, to run E2E benchmarks on the DFP training (modules) workflow on the duo logs:
 ```
-pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_modules_duo_training_e2e
+pytest -s --benchmark-enable --benchmark-warmup=on --benchmark-warmup-iterations=1 --benchmark-autosave test_bench_e2e_dfp_pipeline.py::test_dfp_modules_azure_payload_lti_e2e
 ```
 
 To run E2E benchmarks on all workflows:

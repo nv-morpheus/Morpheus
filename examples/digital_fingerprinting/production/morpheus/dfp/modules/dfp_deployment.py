@@ -19,7 +19,7 @@ import dfp.modules.dfp_training_pipe  # noqa: F401
 import mrc
 from mrc.core.node import Broadcast
 
-import morpheus.loaders.fsspec_loader
+import morpheus.loaders.fsspec_loader  # noqa: F401
 from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
