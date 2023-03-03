@@ -7,31 +7,6 @@
           "properties": {
             "loader_id": "fsspec",
             "files": [
-              "../../../../examples/data/dfp/duo-training-data/*.json"
-            ]
-          }
-        },
-        {
-          "type": "training",
-          "properties": {
-          }
-        },
-        {
-          "type": "inference",
-          "properties": {}
-        }
-      ],
-      "metadata": {
-        "data_type": "payload"
-      }
-    },
-    {
-      "tasks": [
-        {
-          "type": "load",
-          "properties": {
-            "loader_id": "fsspec",
-            "files": [
               "../../../../examples/data/dfp/duo-inference-data/*.json"
             ]
           }
@@ -42,7 +17,7 @@
         }
       ],
       "metadata": {
-        "data_type": "streaming"
+        "data_type": "payload"
       }
     }
   ]

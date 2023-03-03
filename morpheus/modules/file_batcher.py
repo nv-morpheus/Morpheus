@@ -20,7 +20,6 @@ import fsspec
 import fsspec.utils
 import mrc
 import cudf
-import pandas as pd
 from mrc.core import operators as ops
 
 from morpheus.messages import MessageControl
@@ -109,7 +108,7 @@ def file_batcher(builder: mrc.Builder):
         control_messages = []
         for group in period_gb.groups:
             period_df = period_gb.get_group(group)
-            filenames = period_df["key"].to_list()
+            filenames = period_df["key"].to_arrow().to_pylist()
 
             load_task = {
                 "loader_id": FILE_TO_DF_LOADER,
@@ -140,6 +139,23 @@ def file_batcher(builder: mrc.Builder):
 
         return control_messages
 
+    def add_ts_period(df):
+        # TODO(Devin): Rough approximation of pandas '.dt.to_period()' method, which is not yet supported by cudf
+        if (period == "s"):
+            df["period"] = df["ts"].dt.strftime("%Y-%m-%d %H:%M:%S").astype("datetime64[s]").astype('int')
+        elif (period == "m"):
+            df["period"] = df["ts"].dt.strftime("%Y-%m-%d %H:%M").astype("datetime64[s]").astype('int')
+        elif (period == "H"):
+            df["period"] = df["ts"].dt.strftime("%Y-%m-%d %H").astype("datetime64[s]").astype('int')
+        elif (period == "D"):
+            df["period"] = df["ts"].dt.strftime("%Y-%m-%d").astype("datetime64[s]").astype('int')
+        elif (period == "M"):
+            df["period"] = df["ts"].dt.strftime("%Y-%m").astype("datetime64[s]").astype('int')
+        elif (period == "Y"):
+            df["period"] = df["ts"].dt.strftime("%Y").astype("datetime64[s]").astype('int')
+        else:
+            raise Exception("Unknown period")
+
     def on_data(control_message: MessageControl):
         mm = control_message.payload()
         with mm.mutable_dataframe() as dfm:
@@ -149,20 +165,15 @@ def file_batcher(builder: mrc.Builder):
         control_messages = []
         if len(ts_filenames_df) > 0:
             # Now split by the batching settings
-            df_test = cudf.from_pandas(ts_filenames_df)
-            df_test["period"] = df_test["ts"].dt.strftime("%Y-%m-%d")
-            test_period_gb = df_test.groupby("period")
-            # print("DF_TEST_PERIOD: \n", df_test["period"], flush=True)
-            # df_period = ts_filenames_df["ts"].dt.to_period(period)
-            # print("DF_PERIOD: \n", df_period, flush=True)
-            # period_gb = ts_filenames_df.groupby(df_period)
-            # n_groups = len(period_gb)
-            n_groups = len(test_period_gb)
+
+            add_ts_period(ts_filenames_df)
+            period_gb = ts_filenames_df.groupby("period")
+            n_groups = len(period_gb.groups)
 
             logger.debug("Batching %d files => %d groups", len(ts_filenames_df), n_groups)
 
             control_messages = generate_cms_for_batch_periods(control_message,
-                                                              test_period_gb, n_groups)
+                                                              period_gb, n_groups)
 
         return control_messages
 
