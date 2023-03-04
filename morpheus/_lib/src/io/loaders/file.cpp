@@ -21,6 +21,7 @@
 #include "morpheus/messages/meta.hpp"
 
 #include <boost/filesystem.hpp>
+#include <glog/logging.h>
 #include <nlohmann/json.hpp>
 #include <pybind11/pybind11.h>
 #include <pymrc/utilities/object_cache.hpp>

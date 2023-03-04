@@ -92,7 +92,7 @@ class DerivedMultiMessage : public BasesT...
      * @param num_selected_rows
      * @return std::shared_ptr<DerivedT>
      */
-    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>>& ranges,
                                           size_t num_selected_rows) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
@@ -125,14 +125,14 @@ class DerivedMultiMessage : public BasesT...
      * @param num_selected_rows
      */
     virtual void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                  const std::vector<std::pair<size_t, size_t>> &ranges,
+                                  const std::vector<std::pair<size_t, size_t>>& ranges,
                                   size_t num_selected_rows) const = 0;
 
   private:
     virtual std::shared_ptr<MultiMessage> clone_impl() const
     {
         // Cast `this` to the derived type
-        auto derived_this = static_cast<const DerivedT *>(this);
+        auto derived_this = static_cast<const DerivedT*>(this);
 
         // Use copy constructor to make a clone
         return std::make_shared<DerivedT>(*derived_this);
@@ -145,7 +145,7 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
 {
   public:
     using BaseT::BaseT;
-    virtual ~DerivedMultiMessage() = default;
+    ~DerivedMultiMessage() override = default;
 
     std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
     {
@@ -156,7 +156,7 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
         return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
     }
 
-    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>>& ranges,
                                           size_t num_selected_rows) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
@@ -167,23 +167,23 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
     }
 
   protected:
-    virtual void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override
     {
         return BaseT::get_slice_impl(new_message, start, stop);
     }
 
-    virtual void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                  const std::vector<std::pair<size_t, size_t>> &ranges,
-                                  size_t num_selected_rows) const
+    void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
+                          const std::vector<std::pair<size_t, size_t>>& ranges,
+                          size_t num_selected_rows) const override
     {
         return BaseT::copy_ranges_impl(new_message, ranges, num_selected_rows);
     }
 
   private:
-    virtual std::shared_ptr<MultiMessage> clone_impl() const
+    std::shared_ptr<MultiMessage> clone_impl() const override
     {
         // Cast `this` to the derived type
-        auto derived_this = static_cast<const DerivedT *>(this);
+        auto derived_this = static_cast<const DerivedT*>(this);
 
         // Use copy constructor to make a clone
         return std::make_shared<DerivedT>(*derived_this);
@@ -206,7 +206,7 @@ class DerivedMultiMessage<DerivedT>
         return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
     }
 
-    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>> &ranges,
+    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>>& ranges,
                                           size_t num_selected_rows) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
@@ -222,14 +222,14 @@ class DerivedMultiMessage<DerivedT>
                                 std::size_t stop) const = 0;
 
     virtual void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                  const std::vector<std::pair<size_t, size_t>> &ranges,
+                                  const std::vector<std::pair<size_t, size_t>>& ranges,
                                   size_t num_selected_rows) const = 0;
 
   private:
     virtual std::shared_ptr<MultiMessage> clone_impl() const
     {
         // Cast `this` to the derived type
-        auto derived_this = static_cast<const DerivedT *>(this);
+        auto derived_this = static_cast<const DerivedT*>(this);
 
         // Use copy constructor to make a clone
         return std::make_shared<DerivedT>(*derived_this);
@@ -247,7 +247,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     /**
      * @brief Default copy constructor
      */
-    MultiMessage(const MultiMessage &other) = default;
+    MultiMessage(const MultiMessage& other) = default;
     /**
      * @brief Construct a new Multi Message object
      *
@@ -276,7 +276,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @throws std::runtime_error
      * @return TableInfo
      */
-    TableInfo get_meta(const std::string &col_name);
+    TableInfo get_meta(const std::string& col_name);
 
     /**
      * @brief Returns columns value from a meta object. When `columns_names` is empty all columns are returned.
@@ -285,7 +285,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @throws std::runtime_error
      * @return TableInfo
      */
-    TableInfo get_meta(const std::vector<std::string> &column_names);
+    TableInfo get_meta(const std::vector<std::string>& column_names);
 
     /**
      * @brief Set the meta object with a given column name
@@ -293,7 +293,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @param col_name
      * @param tensor
      */
-    void set_meta(const std::string &col_name, TensorObject tensor);
+    void set_meta(const std::string& col_name, TensorObject tensor);
 
     /**
      * @brief Set the meta object with a given column names
@@ -301,13 +301,13 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @param column_names
      * @param tensors
      */
-    void set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors);
+    void set_meta(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors);
 
   protected:
     void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
 
     void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<size_t, size_t>> &ranges,
+                          const std::vector<std::pair<size_t, size_t>>& ranges,
                           size_t num_selected_rows) const override;
 
     /**
@@ -316,7 +316,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @param ranges
      * @return std::shared_ptr<MessageMeta>
      */
-    virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const;
+    virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<std::pair<size_t, size_t>>& ranges) const;
 
     /**
      * @brief Applies the message offset to the elements in `ranges` casting the results to `TensorIndex`
@@ -326,7 +326,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @return std::vector<std::pair<TensorIndex, TensorIndex>>
      */
     std::vector<std::pair<TensorIndex, TensorIndex>> apply_offset_to_ranges(
-        std::size_t offset, const std::vector<std::pair<size_t, size_t>> &ranges) const;
+        std::size_t offset, const std::vector<std::pair<size_t, size_t>>& ranges) const;
 };
 
 /****** MultiMessageInterfaceProxy**************************/
@@ -345,47 +345,47 @@ struct MultiMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<MessageMeta> meta(const MultiMessage &self);
+    static std::shared_ptr<MessageMeta> meta(const MultiMessage& self);
 
     /**
      * TODO(Documentation)
      */
-    static std::size_t mess_offset(const MultiMessage &self);
+    static std::size_t mess_offset(const MultiMessage& self);
 
     /**
      * TODO(Documentation)
      */
-    static std::size_t mess_count(const MultiMessage &self);
+    static std::size_t mess_count(const MultiMessage& self);
 
     /**
      * TODO(Documentation)
      */
-    static pybind11::object get_meta(MultiMessage &self);
+    static pybind11::object get_meta(MultiMessage& self);
 
     /**
      * TODO(Documentation)
      */
-    static pybind11::object get_meta(MultiMessage &self, std::string col_name);
+    static pybind11::object get_meta(MultiMessage& self, std::string col_name);
 
     /**
      * TODO(Documentation)
      */
-    static pybind11::object get_meta(MultiMessage &self, std::vector<std::string> columns);
+    static pybind11::object get_meta(MultiMessage& self, std::vector<std::string> columns);
 
-    static pybind11::object get_meta_list(MultiMessage &self, pybind11::object col_name);
-
-    /**
-     * TODO(Documentation)
-     */
-    static void set_meta(MultiMessage &self, pybind11::object columns, pybind11::object value);
+    static pybind11::object get_meta_list(MultiMessage& self, pybind11::object col_name);
 
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<MultiMessage> get_slice(MultiMessage &self, std::size_t start, std::size_t stop);
+    static void set_meta(MultiMessage& self, pybind11::object columns, pybind11::object value);
 
-    static std::shared_ptr<MultiMessage> copy_ranges(MultiMessage &self,
-                                                     const std::vector<std::pair<size_t, size_t>> &ranges,
+    /**
+     * TODO(Documentation)
+     */
+    static std::shared_ptr<MultiMessage> get_slice(MultiMessage& self, std::size_t start, std::size_t stop);
+
+    static std::shared_ptr<MultiMessage> copy_ranges(MultiMessage& self,
+                                                     const std::vector<std::pair<size_t, size_t>>& ranges,
                                                      pybind11::object num_selected_rows);
 };
 

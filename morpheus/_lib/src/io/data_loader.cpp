@@ -19,6 +19,8 @@
 
 #include "morpheus/messages/control.hpp"
 
+#include <glog/logging.h>
+
 #include <ios>
 #include <iostream>
 

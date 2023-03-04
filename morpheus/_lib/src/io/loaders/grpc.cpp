@@ -17,6 +17,7 @@
 
 #include "morpheus/io/loaders/grpc.hpp"
 
+#include <glog/logging.h>
 #include <nlohmann/json.hpp>
 
 #include <memory>

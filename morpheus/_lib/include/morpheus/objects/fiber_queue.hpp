@@ -53,7 +53,7 @@ class FiberQueue
      * @param timeout
      * @return boost::fibers::channel_op_status
      */
-    boost::fibers::channel_op_status put(pybind11::object &&item, bool block = true, float timeout = 0.0);
+    boost::fibers::channel_op_status put(pybind11::object&& item, bool block = true, float timeout = 0.0);
 
     /**
      * @brief Retrieves item from head of the queue.
@@ -63,7 +63,7 @@ class FiberQueue
      * @param timeout
      * @return boost::fibers::channel_op_status
      */
-    boost::fibers::channel_op_status get(pybind11::object &item, bool block = true, float timeout = 0.0);
+    boost::fibers::channel_op_status get(pybind11::object& item, bool block = true, float timeout = 0.0);
 
     /**
      * TODO(Documentation)
@@ -102,17 +102,17 @@ struct FiberQueueInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static void put(morpheus::FiberQueue &self, pybind11::object item, bool block = true, float timeout = 0.0);
+    static void put(morpheus::FiberQueue& self, pybind11::object item, bool block = true, float timeout = 0.0);
 
     /**
      * TODO(Documentation)
      */
-    static pybind11::object get(morpheus::FiberQueue &self, bool block = true, float timeout = 0.0);
+    static pybind11::object get(morpheus::FiberQueue& self, bool block = true, float timeout = 0.0);
 
     /**
      * TODO(Documentation)
      */
-    static void close(morpheus::FiberQueue &self);
+    static void close(morpheus::FiberQueue& self);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
