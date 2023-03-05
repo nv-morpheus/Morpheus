@@ -30,7 +30,7 @@ from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.general.multi_port_module_stage import MultiPortModuleStage
-from morpheus.stages.input.control_message_file_source_stage import ControlMessageFileSourceStage
+from morpheus.stages.input.control_message_kafka_source_stage import ControlMessageKafkaSourceStage
 
 
 @click.command()
@@ -94,20 +94,30 @@ from morpheus.stages.input.control_message_file_source_stage import ControlMessa
               default=0,
               show_envvar=True,
               help="Minimum time step, in milliseconds, between object logs.")
-@click.option(
-    "--input_file",
-    "-f",
-    type=str,
-    multiple=True,
-    help=("List of files to process. Can specify multiple arguments for multiple files. "
-          "Also accepts glob (*) wildcards and schema prefixes such as `s3://`. "
-          "For example, to make a local cache of an s3 bucket, use `filecache::s3://mybucket/*`. "
-          "See fsspec documentation for list of possible options."),
-)
 @click.option('--tracking_uri',
               type=str,
               default="http://mlflow:5000",
               help=("The MLflow tracking URI to connect to the tracking backend."))
+@click.option('--bootstrap_servers',
+              type=str,
+              default="localhost:9092",
+              required=True,
+              help=("Comma-separated list of bootstrap servers."))
+@click.option('--input_topic', type=str, default="test_cm", required=True, help="Kafka topic to read from")
+@click.option('--group_id', type=str, default="morpheus", required=True, help="")
+@click.option('--poll_interval',
+              type=str,
+              default="10millis",
+              required=True,
+              help="Polling interval to check for messages.")
+@click.option("--disable_commit",
+              is_flag=False,
+              help=("Enabling this option will skip committing messages as they are pulled off the server. "
+                    "This is only useful for debugging, allowing the user to process the same messages multiple times"))
+@click.option("--disable_pre_filtering",
+              is_flag=True,
+              help=("Enabling this option will skip pre-filtering of json messages. "
+                    "This is only useful when inputs are known to be valid json."))
 def run_pipeline(source: str,
                  train_users: str,
                  skip_user: typing.Tuple[str],
@@ -158,7 +168,14 @@ def run_pipeline(source: str,
     # Create a pipeline object
     pipeline = Pipeline(config)
 
-    source_stage = pipeline.add_stage(ControlMessageFileSourceStage(config, filenames=list(kwargs["input_file"])))
+    source_stage = pipeline.add_stage(
+        ControlMessageKafkaSourceStage(config,
+                                       bootstrap_servers=kwargs["bootstrap_servers"],
+                                       input_topic=kwargs["input_topic"],
+                                       group_id=kwargs["group_id"],
+                                       poll_interval=kwargs["poll_interval"],
+                                       disable_commit=kwargs["disable_commit"],
+                                       disable_pre_filtering=kwargs["disable_pre_filtering"]))
 
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModuleStage(config,
