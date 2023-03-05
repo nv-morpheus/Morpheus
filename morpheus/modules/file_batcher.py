@@ -19,7 +19,6 @@ from collections import namedtuple
 import fsspec
 import fsspec.utils
 import mrc
-import cudf
 from mrc.core import operators as ops
 
 import cudf
@@ -52,7 +51,6 @@ def file_batcher(builder: mrc.Builder):
     TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_name"])
 
     iso_date_regex_pattern = config.get("iso_date_regex_pattern", None)
-    task_type = config.get("task_type", None)
     start_time = config.get("start_time", None)
     end_time = config.get("end_time", None)
     sampling_rate_s = config.get("sampling_rate_s", None)
@@ -98,8 +96,8 @@ def file_batcher(builder: mrc.Builder):
             timestamps.append(ts)
             full_names.append(file_name)
 
-        df = pd.DataFrame()
-        # df = cudf.DataFrame()
+        # df = pd.DataFrame()
+        df = cudf.DataFrame()
         df["ts"] = timestamps
         df["key"] = full_names
 
@@ -160,7 +158,10 @@ def file_batcher(builder: mrc.Builder):
             raise Exception("Unknown period")
 
     def on_data(control_message: MessageControl):
-        data_type = control_message.get_metadata("data_type")
+        mm = control_message.payload()
+        with mm.mutable_dataframe() as dfm:
+            files = dfm.files.to_arrow().to_pylist()
+            ts_filenames_df = build_fs_filename_df(files)
 
         control_messages = []
         if len(ts_filenames_df) > 0:
@@ -170,10 +171,9 @@ def file_batcher(builder: mrc.Builder):
             period_gb = ts_filenames_df.groupby("period")
             n_groups = len(period_gb.groups)
 
-                logger.debug("Batching %d files => %d groups", len(ts_filenames_df), n_groups)
+            logger.debug("Batching %d files => %d groups", len(ts_filenames_df), n_groups)
 
-            control_messages = generate_cms_for_batch_periods(control_message,
-                                                              period_gb, n_groups)
+            control_messages = generate_cms_for_batch_periods(control_message, period_gb, n_groups)
 
         return control_messages
 
