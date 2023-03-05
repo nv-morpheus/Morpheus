@@ -18,6 +18,7 @@
 #include "morpheus/io/loaders/file_list.hpp"
 
 #include <boost/filesystem.hpp>
+#include <glog/logging.h>
 #include <nlohmann/json.hpp>
 
 #include <memory>

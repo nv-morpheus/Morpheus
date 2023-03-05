@@ -23,6 +23,11 @@
 
 #include <pybind11/pybind11.h>
 
+#include "test_morpheus.hpp"
+
+#include <pybind11/embed.h>
+
+#include <cstdlib>
 #include <filesystem>
 #include <memory>
 #include <random>

@@ -19,6 +19,7 @@
 
 #include "morpheus/io/data_loader.hpp"
 
+#include <glog/logging.h>
 #include <mrc/utils/type_utils.hpp>
 #include <pybind11/pybind11.h>
 

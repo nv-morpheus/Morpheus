@@ -15,6 +15,8 @@
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "tests")
 
+find_package(pybind11 REQUIRED)
+
 # Keep all source files sorted
 add_executable(test_libmorpheus
   # test_cuda.cu

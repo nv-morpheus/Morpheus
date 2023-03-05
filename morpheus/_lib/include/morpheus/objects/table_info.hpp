@@ -22,14 +22,14 @@
 
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table_view.hpp>
-#include <cudf/types.hpp>  // for size_type
-#include <glog/logging.h>
+#include <cudf/types.hpp>      // for size_type
 #include <pybind11/pytypes.h>  // for object
 
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace morpheus {

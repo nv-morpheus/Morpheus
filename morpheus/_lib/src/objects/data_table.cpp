@@ -20,9 +20,12 @@
 #include "morpheus/objects/table_info.hpp"
 
 #include <glog/logging.h>
+#include <pybind11/gil.h>
 
 #include <mutex>
+#include <ostream>
 #include <shared_mutex>
+#include <utility>
 
 namespace morpheus {
 

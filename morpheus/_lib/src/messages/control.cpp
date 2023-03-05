@@ -185,16 +185,22 @@ const nlohmann::json MessageControl::pop_task(const std::string& task_type)
 
 void MessageControl::config(const nlohmann::json& config)
 {
-    auto& tasks = config["tasks"];
-    for (const auto& task : tasks)
+    if (config.contains("tasks"))
     {
-        add_task(task.at("type"), task.at("properties"));
+        auto& tasks = config["tasks"];
+        for (const auto& task : tasks)
+        {
+            add_task(task.at("type"), task.at("properties"));
+        }
     }
 
-    auto& metadata = config["metadata"];
-    for (auto it = metadata.begin(); it != metadata.end(); ++it)
+    if (config.contains("metadata"))
     {
-        set_metadata(it.key(), it.value());
+        auto& metadata = config["metadata"];
+        for (auto it = metadata.begin(); it != metadata.end(); ++it)
+        {
+            set_metadata(it.key(), it.value());
+        }
     }
 }
 

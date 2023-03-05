@@ -122,7 +122,7 @@ class ControlMessageKafkaSourceStage(KafkaSourceStage):
             # Iterate over each row in a dataframe.
             for i in range(num_rows):
                 msg_inputs = df.inputs.iloc[i]
-                # Iterate on inputs list for to generate a control message.
+                # Iterate on inputs list to generate a control message.
                 for msg_input in msg_inputs:
                     yield MessageControl(msg_input)
 
