@@ -131,7 +131,7 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
     return tensor;
 }
 
-CupyUtil::tensor_map_t CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
+TensorMap CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
 {
     tensor_map_t tensors;
     for (const auto& tensor : cupy_tensors)
