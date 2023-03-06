@@ -138,16 +138,6 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         return super().stop()
 
-    def _convert_to_df(self,
-                       buffer: StringIO,
-                       engine: str = "cudf",
-                       lines: bool = True,
-                       orient: str = "records") -> cudf.DataFrame:
-
-        df = cudf.io.read_json(buffer, engine=engine, lines=lines, orient=orient)
-
-        return df
-
     def _process_batch(self, consumer, batch):
         message_meta = None
         if len(batch):
@@ -162,7 +152,7 @@ class KafkaSourceStage(PreallocatorMixin, SingleOutputSource):
             df = None
             try:
                 buffer.seek(0)
-                df = self._convert_to_df(buffer=buffer)
+                df = cudf.io.read_json(buffer, engine='cudf', lines=True, orient='records')
             except Exception as e:
                 logger.error("Error parsing payload into a dataframe : {}".format(e))
             finally:

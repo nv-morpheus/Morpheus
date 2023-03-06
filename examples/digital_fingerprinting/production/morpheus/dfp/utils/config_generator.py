@@ -79,7 +79,7 @@ class ConfigGenerator:
         module_conf = {
             DFP_PREPROC: {
                 FILTER_CONTROL_MESSAGE: {
-                    "data_type": "streaming", "enable_task_check": True
+                    "data_type": "streaming", "enable_task_check": True, "task_type": "inference"
                 },
                 FILE_BATCHER: {
                     "period": "D",
@@ -157,7 +157,7 @@ class ConfigGenerator:
         module_conf = {
             DFP_PREPROC: {
                 FILTER_CONTROL_MESSAGE: {
-                    "data_type": "streaming", "enable_task_check": True
+                    "data_type": "streaming", "enable_task_check": True, "task_type": "training"
                 },
                 FILE_BATCHER: {
                     "period": "D",

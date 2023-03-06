@@ -41,15 +41,16 @@ def filter_control_message(builder: mrc.Builder):
 
     filter = config.get("data_type", None)
     enable_task_check = config.get("enable_task_check", False)
+    task_type = config.get("task_type", None)
 
     def on_data(control_message: MessageControl):
         data_type = control_message.get_metadata("data_type")
 
         if enable_task_check:
-            tasks = control_message.config().get("tasks")
-
-            # Dispose messages if it has no tasks and it's data_type does not matches with filter.
-            if (not tasks and filter and data_type != filter):
+            # Verify if control message has expected task_type.
+            task_exist = control_message.has_task(task_type)
+            # Dispose messages if it has no expected task and it's data_type does not matches with filter.
+            if (not task_exist and filter and data_type != filter):
                 return None
         else:
             # Regardless of whether tasks are present, discard messages

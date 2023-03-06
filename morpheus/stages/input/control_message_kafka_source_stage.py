@@ -12,26 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
-from io import StringIO
+import time
+import typing
 
+import confluent_kafka as ck
 import mrc
-
-import cudf
+import pandas as pd
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_control import MessageControl
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
+from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.kafka_source_stage import AutoOffsetReset
-from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("from-cm-kafka", modes=[PipelineModes.AE])
-class ControlMessageKafkaSourceStage(KafkaSourceStage):
+class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
     """
     Load control messages from a Kafka cluster.
 
@@ -78,17 +81,38 @@ class ControlMessageKafkaSourceStage(KafkaSourceStage):
                  stop_after: int = 0,
                  async_commits: bool = True):
 
-        super().__init__(c,
-                         bootstrap_servers,
-                         input_topic,
-                         group_id,
-                         client_id,
-                         poll_interval,
-                         disable_commit,
-                         disable_pre_filtering,
-                         auto_offset_reset,
-                         stop_after,
-                         async_commits)
+        super().__init__(c)
+
+        if isinstance(auto_offset_reset, AutoOffsetReset):
+            auto_offset_reset = auto_offset_reset.value
+
+        self._consumer_params = {
+            'bootstrap.servers': bootstrap_servers,
+            'group.id': group_id,
+            'session.timeout.ms': "60000",
+            "auto.offset.reset": auto_offset_reset
+        }
+        if client_id is not None:
+            self._consumer_params['client.id'] = client_id
+
+        self._topic = input_topic
+        # Setting max batch size to 1. As this source recieves only task defination (control messages)
+        self._max_batch_size = 1
+        self._max_concurrent = c.num_threads
+        self._disable_commit = disable_commit
+        self._disable_pre_filtering = disable_pre_filtering
+        self._stop_after = stop_after
+        self._async_commits = async_commits
+        self._client = None
+
+        # Flag to indicate whether or not we should stop
+        self._stop_requested = False
+
+        self._poll_interval = pd.Timedelta(poll_interval).total_seconds()
+        self._started = False
+
+        self._records_emitted = 0
+        self._num_messages = 0
 
     @property
     def name(self) -> str:
@@ -97,34 +121,62 @@ class ControlMessageKafkaSourceStage(KafkaSourceStage):
     def supports_cpp_node(self):
         return False
 
-    def _convert_to_df(self, buffer: StringIO) -> cudf.DataFrame:
+    def _process_msg(self, consumer, msg):
 
-        df = super()._convert_to_df(buffer, engine="pandas", lines=True, orient="records")
+        control_messages = []
 
-        return df
+        payload = msg.value()
+        if payload is not None:
+
+            try:
+                decoded_msg = payload.decode("utf-8")
+                control_messages_conf = json.loads(decoded_msg)
+                self._num_messages += 1
+                for control_message_conf in control_messages_conf.get("inputs", []):
+                    self._records_emitted += 1
+                    control_messages.append(MessageControl(control_message_conf))
+            except Exception as e:
+                logger.error("\nError converting payload to MessageControl : {}".format(e))
+
+        if (not self._disable_commit):
+            consumer.commit(message=msg, asynchronous=self._async_commits)
+
+        if self._stop_after > 0 and self._records_emitted >= self._stop_after:
+            self._stop_requested = True
+
+        return control_messages
 
     def _source_generator(self):
+        consumer = None
+        try:
+            consumer = ck.Consumer(self._consumer_params)
+            consumer.subscribe([self._topic])
 
-        source_gen = super()._source_generator()
+            while not self._stop_requested:
 
-        for message_meta in source_gen:
+                msg = consumer.poll(timeout=1.0)
+                if msg is None:
+                    do_sleep = True
 
-            df = message_meta.df
+                else:
+                    msg_error = msg.error()
+                    if msg_error is None:
+                        control_messages = self._process_msg(consumer, msg)
+                        for control_message in control_messages:
+                            yield control_message
 
-            if "inputs" not in df.columns:
-                error_msg = "\nDataframe didn't have the required column `inputs`. Check the control message format."
-                logger.error(error_msg)
+                    elif msg_error == ck.KafkaError._PARTITION_EOF:
+                        do_sleep = True
+                    else:
+                        raise ck.KafkaException(msg_error)
 
-                continue
+                if do_sleep and not self._stop_requested:
+                    time.sleep(self._poll_interval)
 
-            num_rows = len(df)
-
-            # Iterate over each row in a dataframe.
-            for i in range(num_rows):
-                msg_inputs = df.inputs.iloc[i]
-                # Iterate on inputs list to generate a control message.
-                for msg_input in msg_inputs:
-                    yield MessageControl(msg_input)
+        finally:
+            # Close the consumer and call on_completed
+            if (consumer):
+                consumer.close()
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:
 

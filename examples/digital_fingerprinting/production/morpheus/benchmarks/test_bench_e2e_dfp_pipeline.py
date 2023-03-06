@@ -44,7 +44,7 @@ from morpheus.config import Config
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.multi_port_module_stage import MultiPortModuleStage
-from morpheus.stages.input.control_message_source_stage import ControlMessageSourceStage
+from morpheus.stages.input.control_message_file_source_stage import ControlMessageFileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
@@ -72,7 +72,7 @@ def dfp_modules_pipeline(pipe_config: Config,
 
     pipeline = Pipeline(pipe_config)
 
-    source_stage = pipeline.add_stage(ControlMessageSourceStage(pipe_config, filenames=filenames))
+    source_stage = pipeline.add_stage(ControlMessageFileSourceStage(pipe_config, filenames=filenames))
 
     # Here we add a wrapped module that implements the DFP Deployment
     dfp_deployment_stage = pipeline.add_stage(
