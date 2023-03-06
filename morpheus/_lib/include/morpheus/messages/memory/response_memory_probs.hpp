@@ -60,9 +60,10 @@ class ResponseMemoryProbs : public ResponseMemory
     ResponseMemoryProbs(size_t count, CupyUtil::tensor_map_t&& tensors);
 
     /**
-     * @brief Returns the tensor named 'probs', throws a `std::runtime_error` if it does not exist
+     * @brief Returns the tensor named 'probs'. alias for `get_tensor("probs")`
      *
      * @return const TensorObject&
+     * @throws std::runtime_error If no tensor named "probs" exists
      */
     const TensorObject& get_probs() const;
 
@@ -70,6 +71,7 @@ class ResponseMemoryProbs : public ResponseMemory
      * @brief Update the tensor named 'probs'
      *
      * @param probs
+     * @throws std::length_error If the number of rows in `probs` does not match `count`.
      */
     void set_probs(TensorObject&& probs);
 };
@@ -91,7 +93,7 @@ struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
     static std::shared_ptr<ResponseMemoryProbs> init(cudf::size_type count, pybind11::object probs);
 
     /**
-     * @brief Get the response memory probs object (alias for `get_tensor("probs")`)
+     * @brief Get the response memory probs object ()
      *
      * @param self
      * @return pybind11::object

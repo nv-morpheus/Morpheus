@@ -72,17 +72,16 @@ class InferenceMemoryFIL : public InferenceMemory
     /**
      * @brief Sets a tensor named 'input__0'
      *
-     * @param input_ids
-     * @throw std::runtime_error
-     * @throw std::runtime_error
+     * @param input__0
+     * @throws std::length_error If the number of rows in `input__0` does not match `count`.
      */
-    void set_input__0(TensorObject&& input_ids);
+    void set_input__0(TensorObject&& input__0);
 
     /**
      * @brief Sets a tensor named 'seq_ids'
      *
      * @param seq_ids
-     * @throw std::runtime_error
+     * @throws std::length_error If the number of rows in `seq_ids` does not match `count`.
      */
     void set_seq_ids(TensorObject&& seq_ids);
 };

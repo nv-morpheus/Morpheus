@@ -69,6 +69,7 @@ void InferenceMemoryFIL::set_seq_ids(TensorObject&& seq_ids)
 {
     set_tensor("seq_ids", std::move(seq_ids));
 }
+
 /****** InferenceMemoryFILInterfaceProxy *************************/
 std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(cudf::size_type count,
                                                                            pybind11::object input__0,

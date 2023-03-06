@@ -57,7 +57,7 @@ class InferenceMemory : public TensorMemory
     InferenceMemory(size_t count, CupyUtil::tensor_map_t&& tensors);
 
     /**
-     * @brief Checks if a tensor named `name` exists in `tensors`
+     * @brief Checks if a tensor named `name` exists in `tensors`. Alias for `has_tensor`.
      *
      * @param name
      * @return true
