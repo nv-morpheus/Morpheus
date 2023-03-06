@@ -19,18 +19,18 @@
 
 #include "morpheus/messages/memory/response_memory_probs.hpp"  // for ResponseMemoryProbs
 #include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory
-#include "morpheus/messages/multi_response_probs.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"         // for DType
-#include "morpheus/objects/rmm_tensor.hpp"
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/objects/triton_in_out.hpp"
-#include "morpheus/types.hpp"                 // for TensorIndex, TensorMap
-#include "morpheus/utilities/matx_util.hpp"   // for MatxUtil::logits, MatxUtil::reduce_max
-#include "morpheus/utilities/stage_util.hpp"  // for foreach_map
-#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
-#include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
+#include "morpheus/messages/multi_response_probs.hpp"          // for MultiResponseProbsMessage
+#include "morpheus/objects/dev_mem_info.hpp"                   // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                          // for DType
+#include "morpheus/objects/rmm_tensor.hpp"                     // for RMMTensor
+#include "morpheus/objects/tensor.hpp"                         // for Tensor::create
+#include "morpheus/objects/tensor_object.hpp"                  // for TensorObject
+#include "morpheus/objects/triton_in_out.hpp"                  // for TritonInOut
+#include "morpheus/types.hpp"                                  // for TensorIndex, TensorMap
+#include "morpheus/utilities/matx_util.hpp"                    // for MatxUtil::logits, MatxUtil::reduce_max
+#include "morpheus/utilities/stage_util.hpp"                   // for foreach_map
+#include "morpheus/utilities/string_util.hpp"                  // for MORPHEUS_CONCAT_STR
+#include "morpheus/utilities/tensor_util.hpp"                  // for get_elem_count
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <cudf/types.hpp>
