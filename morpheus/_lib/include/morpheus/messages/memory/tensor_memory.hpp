@@ -90,6 +90,15 @@ class TensorMemory
      * @brief Get the tensor object identified by `name`
      *
      * @param name
+     * @return TensorObject&
+     * @throws std::runtime_error If no tensor matching `name` exists
+     */
+    TensorObject& get_tensor(const std::string& name);
+
+    /**
+     * @brief Get the tensor object identified by `name`
+     *
+     * @param name
      * @return const TensorObject&
      * @throws std::runtime_error If no tensor matching `name` exists
      */

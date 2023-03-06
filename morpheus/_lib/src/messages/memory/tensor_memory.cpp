@@ -79,6 +79,17 @@ const TensorObject& TensorMemory::get_tensor(const std::string& name) const
     return found->second;
 }
 
+TensorObject& TensorMemory::get_tensor(const std::string& name)
+{
+    auto found = this->tensors.find(name);
+    if (found == this->tensors.end())
+    {
+        throw std::runtime_error(MORPHEUS_CONCAT_STR("Tensor: '" << name << "' not found in memory"));
+    }
+
+    return found->second;
+}
+
 void TensorMemory::set_tensor(const std::string& name, TensorObject&& tensor)
 {
     check_tensor_length(tensor);

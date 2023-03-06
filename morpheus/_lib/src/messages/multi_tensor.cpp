@@ -41,6 +41,7 @@ MultiTensorMessage::MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> me
   count(count)
 {}
 
+// TODO ensure we aren't returning copies
 const TensorObject MultiTensorMessage::get_tensor(const std::string& name) const
 {
     return get_tensor_impl(name);
@@ -53,16 +54,16 @@ TensorObject MultiTensorMessage::get_tensor(const std::string& name)
 
 TensorObject MultiTensorMessage::get_tensor_impl(const std::string& name) const
 {
-    CHECK(this->memory->has_tensor(name)) << "Cound not find tensor: " << name;
+    auto& tensor = this->memory->get_tensor(name);
 
     // check if we are getting the entire input
     if (this->offset == 0 && this->count == this->memory->count)
     {
-        return this->memory->tensors[name];
+        return tensor;
     }
 
-    return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
-                                             {static_cast<cudf::size_type>(this->offset + this->count), -1});
+    return tensor.slice({static_cast<cudf::size_type>(this->offset), 0},
+                        {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
 void MultiTensorMessage::set_tensor(const std::string& name, const TensorObject& value)

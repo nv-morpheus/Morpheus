@@ -85,10 +85,11 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     std::size_t count{0};
 
     /**
-     * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist
+     * @brief Returns a tensor with the given name.
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
     const TensorObject get_tensor(const std::string& name) const;
 
@@ -97,6 +98,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      *
      * @param name
      * @return TensorObject
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
     TensorObject get_tensor(const std::string& name);
 
@@ -176,6 +178,7 @@ struct MultiTensorMessageInterfaceProxy
      * @param self
      * @param name : Tensor name
      * @return pybind11::object
+     * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_tensor(MultiTensorMessage& self, const std::string& name);
 };
