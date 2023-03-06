@@ -26,9 +26,9 @@
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/triton_in_out.hpp"
-#include "morpheus/types.hpp"                // for TensorIndex, TensorMapType
-#include "morpheus/utilities/matx_util.hpp"  // for MatxUtil::logits, MatxUtil::reduce_max
-#include "morpheus/utilities/stage_util.hpp"  // for foreach_map
+#include "morpheus/types.hpp"                  // for TensorIndex, TensorMap
+#include "morpheus/utilities/matx_util.hpp"    // for MatxUtil::logits, MatxUtil::reduce_max
+#include "morpheus/utilities/stage_util.hpp"   // for foreach_map
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
@@ -79,7 +79,7 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
 void build_output_tensors(std::size_t count,
                           const std::vector<TritonInOut>& model_outputs,
                           buffer_map_t& output_buffers,
-                          TensorMapType& output_tensors)
+                          TensorMap& output_tensors)
 {
     // Create the output memory blocks
     for (auto& model_output : model_outputs)
@@ -162,15 +162,13 @@ std::shared_ptr<const triton::client::InferRequestedOutput> build_output(const T
     return out_shared;
 }
 
-void reduce_outputs(const InferenceClientStage::sink_type_t& x,
-                    buffer_map_t& output_buffers,
-                    TensorMapType& output_tensors)
+void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& output_buffers, TensorMap& output_tensors)
 {
     // When our tensor lengths are longer than our dataframe we will need to use the seq_ids array to
     // lookup how the values should map back into the dataframe.
     auto host_seq_ids = get_seq_ids(x);
 
-    TensorMapType reduced_outputs;
+    TensorMap reduced_outputs;
 
     for (const auto& output : output_tensors)
     {
@@ -211,9 +209,9 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x,
     output_tensors = std::move(reduced_outputs);
 }
 
-void apply_logits(buffer_map_t& output_buffers, TensorMapType& output_tensors)
+void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
 {
-    TensorMapType logit_outputs;
+    TensorMap logit_outputs;
 
     for (const auto& output : output_tensors)
     {
@@ -285,7 +283,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 // input is too large and needs to be broken up in chunks in the pre-process stage. When this is the
                 // case we will reduce the rows in the response outputs such that we have a single response for each
                 // row int he dataframe.
-                TensorMapType output_tensors;
+                TensorMap output_tensors;
                 buffer_map_t output_buffers;
                 build_output_tensors(x->count, m_model_outputs, output_buffers, output_tensors);
 

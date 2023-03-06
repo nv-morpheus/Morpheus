@@ -34,8 +34,8 @@ struct TensorObject;
 using TensorIndex = long long;
 using RankType    = int;
 
-using ShapeType     = std::vector<TensorIndex>;
-using TensorMapType = std::map<std::string, TensorObject>;
+using ShapeType = std::vector<TensorIndex>;
+using TensorMap = std::map<std::string, TensorObject>;
 // NOLINTEND(readability-identifier-naming)
 
 /** @} */  // end of group

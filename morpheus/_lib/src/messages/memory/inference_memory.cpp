@@ -27,7 +27,7 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemory****************************************/
 InferenceMemory::InferenceMemory(size_t count) : TensorMemory(count) {}
-InferenceMemory::InferenceMemory(size_t count, TensorMapType&& tensors) : TensorMemory(count, std::move(tensors)) {}
+InferenceMemory::InferenceMemory(size_t count, TensorMap&& tensors) : TensorMemory(count, std::move(tensors)) {}
 
 bool InferenceMemory::has_input(const std::string& name) const
 {

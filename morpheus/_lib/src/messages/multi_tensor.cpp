@@ -17,7 +17,7 @@
 
 #include "morpheus/messages/multi_tensor.hpp"
 
-#include "morpheus/types.hpp"  // for TensorIndex, TensorMapType
+#include "morpheus/types.hpp"  // for TensorIndex, TensorMap
 
 #include <cudf/types.hpp>  // for cudf::size_type>
 #include <glog/logging.h>
