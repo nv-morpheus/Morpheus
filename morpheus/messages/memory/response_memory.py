@@ -84,15 +84,12 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
 
 
 @dataclasses.dataclass(init=False)
-class ResponseMemoryAE(ResponseMemory, cpp_class=None):
+class ResponseMemoryAE(ResponseMemoryProbs, cpp_class=None):
     """
-    Subclass of `ResponseMemory` specific to the AutoEncoder pipeline.
+    Subclass of `ResponseMemoryProbs` specific to the AutoEncoder pipeline.
 
     Parameters
     ----------
-    probs : cupy.ndarray
-        Probabilities tensor
-
     user_id : str
         User id the inference was performed against.
 
@@ -100,9 +97,5 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
         Explainability Dataframe, for each feature a column will exist with a name in the form of: `{feature}_z_loss`
         containing the loss z-score along with `max_abs_z` and `mean_abs_z` columns
     """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
     user_id = ""
     explain_df = None
-
-    def __init__(self, count: int, probs: cp.ndarray):
-        super().__init__(count, tensors={'probs': probs})
