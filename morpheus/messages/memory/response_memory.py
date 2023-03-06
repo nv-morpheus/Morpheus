@@ -42,7 +42,7 @@ class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
 
         Raises
         ------
-        AttributeError
+        KeyError
             If output name does not exist in message container.
 
         """
@@ -77,7 +77,7 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
     probs : cupy.ndarray
         Probabilities tensor
     """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
+    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
 
     def __init__(self, count: int, probs: cp.ndarray):
         super().__init__(count, tensors={'probs': probs})
@@ -100,7 +100,7 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
         Explainability Dataframe, for each feature a column will exist with a name in the form of: `{feature}_z_loss`
         containing the loss z-score along with `max_abs_z` and `mean_abs_z` columns
     """
-    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory.get_output, ResponseMemory.set_output)
+    probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
     user_id = ""
     explain_df = None
 

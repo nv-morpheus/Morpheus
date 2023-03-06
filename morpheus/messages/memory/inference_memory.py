@@ -45,7 +45,7 @@ class InferenceMemory(TensorMemory, cpp_class=_messages.InferenceMemory):
 
         Raises
         ------
-        AttributeError
+        KeyError
             If input name does not exist in the container.
         """
         return self.get_tensor(name)
@@ -81,9 +81,12 @@ class InferenceMemoryNLP(InferenceMemory, cpp_class=_messages.InferenceMemoryNLP
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
     """
-    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-    input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
+    input_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                               InferenceMemory.set_input)
+    input_mask: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                                InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                             InferenceMemory.set_input)
 
     def __init__(self, count: int, input_ids: cp.ndarray, input_mask: cp.ndarray, seq_ids: cp.ndarray):
         super().__init__(count, tensors={'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
@@ -104,8 +107,10 @@ class InferenceMemoryFIL(InferenceMemory, cpp_class=_messages.InferenceMemoryFIL
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
 
     """
-    input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
+    input__0: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                              InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                             InferenceMemory.set_input)
 
     def __init__(self, count: int, input__0: cp.ndarray, seq_ids: cp.ndarray):
         super().__init__(count, tensors={'input__0': input__0, 'seq_ids': seq_ids})
@@ -125,8 +130,9 @@ class InferenceMemoryAE(InferenceMemory, cpp_class=None):
         inputs than messages (i.e., if some messages get broken into multiple inference requests).
     """
 
-    input: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory.get_input, InferenceMemory.set_input)
+    input: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop, InferenceMemory.set_input)
+    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
+                                                             InferenceMemory.set_input)
 
     def __init__(self, count: int, input: cp.ndarray, seq_ids: cp.ndarray):
         super().__init__(count, tensors={'input': input, 'seq_ids': seq_ids})
