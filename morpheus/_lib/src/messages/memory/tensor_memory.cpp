@@ -17,6 +17,7 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"  // IWYU pragma: associated
 
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/utilities/cupy_util.hpp"
 
 #include <pybind11/cast.h>
@@ -32,7 +33,7 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorMemory****************************************/
 TensorMemory::TensorMemory(size_t count) : count(count) {}
-TensorMemory::TensorMemory(size_t count, CupyUtil::tensor_map_t&& tensors) : count(count), tensors(std::move(tensors))
+TensorMemory::TensorMemory(size_t count, TensorMap&& tensors) : count(count), tensors(std::move(tensors))
 {
     check_tensors_length(this->tensors);
 }
@@ -42,10 +43,10 @@ bool TensorMemory::has_tensor(const std::string& name) const
     return this->tensors.find(name) != this->tensors.end();
 }
 
-CupyUtil::tensor_map_t TensorMemory::copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
-                                                        size_t num_selected_rows) const
+TensorMap TensorMemory::copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
+                                           size_t num_selected_rows) const
 {
-    CupyUtil::tensor_map_t tensors;
+    TensorMap tensors;
     for (const auto& p : this->tensors)
     {
         tensors.insert(std::pair{p.first, p.second.copy_rows(ranges, num_selected_rows)});

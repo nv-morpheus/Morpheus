@@ -17,7 +17,8 @@
 
 #include "morpheus/messages/multi_tensor.hpp"
 
-#include "morpheus/utilities/cupy_util.hpp"
+#include "morpheus/types.hpp"                // for TensorIndex, TensorMap
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
 
 #include <cudf/types.hpp>  // for cudf::size_type>
 #include <glog/logging.h>

@@ -18,7 +18,8 @@
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/utilities/cupy_util.hpp"
+#include "morpheus/types.hpp"                // for TensorMap
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>

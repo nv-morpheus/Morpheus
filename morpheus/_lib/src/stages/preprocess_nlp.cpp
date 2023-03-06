@@ -22,8 +22,8 @@
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
-#include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil::tensor_map_t
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for TensorIndex, TensorMap
 
 #include <cudf/column/column.hpp>                // for column, column::contents
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view

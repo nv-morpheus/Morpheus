@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
-#include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil
+#include "morpheus/types.hpp"                // for TensorMap, TensorIndex
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
 #include <pybind11/pytypes.h>  // for object
 
@@ -60,11 +60,11 @@ class TensorMemory
      * @param count
      * @param tensors
      */
-    TensorMemory(size_t count, CupyUtil::tensor_map_t&& tensors);
+    TensorMemory(size_t count, TensorMap&& tensors);
     virtual ~TensorMemory() = default;
 
     size_t count{0};
-    CupyUtil::tensor_map_t tensors;
+    TensorMap tensors;
 
     /**
      * @brief Verify whether the specified tensor name is present in the tensor memory
@@ -80,10 +80,10 @@ class TensorMemory
      *
      * @param ranges
      * @param num_selected_rows
-     * @return CupyUtil::tensor_map_t
+     * @return TensorMap
      */
-    CupyUtil::tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
-                                              size_t num_selected_rows) const;
+    TensorMap copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
+                                 size_t num_selected_rows) const;
 
     /**
      * @brief Set the tensor object identified by `name`
@@ -100,7 +100,7 @@ class TensorMemory
      * @param tensors
      * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
      */
-    void set_tensors(CupyUtil::tensor_map_t&& tensors);
+    void set_tensors(TensorMap&& tensors);
 
   protected:
     /**
@@ -119,7 +119,7 @@ class TensorMemory
      *
      * @param tensors
      */
-    void check_tensors_length(const CupyUtil::tensor_map_t& tensors);
+    void check_tensors_length(const TensorMap& tensors);
 };
 
 /****** TensorMemoryInterfaceProxy *************************/

@@ -17,8 +17,9 @@
 
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include "morpheus/objects/dtype.hpp"  // for DType
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/dtype.hpp"   // for DType
+#include "morpheus/objects/tensor.hpp"  // for Tensor
+#include "morpheus/types.hpp"           // for TensorIndex
 
 #include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
 #include <pybind11/cast.h>
