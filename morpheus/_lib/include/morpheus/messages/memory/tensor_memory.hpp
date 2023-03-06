@@ -86,6 +86,15 @@ class TensorMemory
                                  size_t num_selected_rows) const;
 
     /**
+     * @brief Get the tensor object identified by `name`
+     *
+     * @param name
+     * @return const TensorObject&
+     * @throws std::runtime_error If no tensor matching `name` exists
+     */
+    const TensorObject& get_tensor(const std::string& name) const;
+
+    /**
      * @brief Set the tensor object identified by `name`
      *
      * @param name
@@ -171,6 +180,16 @@ struct TensorMemoryInterfaceProxy
      * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_tensor(TensorMemory& self, const std::string name);
+
+    /**
+     * @brief Same as `get_tensor` but used when the method is being bound to a python property
+     *
+     * @param self
+     * @param name
+     * @return pybind11::object
+     * @throws pybind11::attribute_error When no matching tensor exists.
+     */
+    static pybind11::object get_tensor_property(TensorMemory& self, const std::string name);
 
     /**
      * @brief Set the tensor object identified by `name`

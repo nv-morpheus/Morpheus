@@ -130,6 +130,7 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_input_ids(InferenceMemoryNLP& self);
 
@@ -146,6 +147,7 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_input_mask(InferenceMemoryNLP& self);
 
@@ -162,6 +164,7 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_seq_ids(InferenceMemoryNLP& self);
 

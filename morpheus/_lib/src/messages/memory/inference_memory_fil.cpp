@@ -41,13 +41,7 @@ InferenceMemoryFIL::InferenceMemoryFIL(size_t count, TensorObject&& input__0, Te
 
 const TensorObject& InferenceMemoryFIL::get_input__0() const
 {
-    auto found = this->tensors.find("input__0");
-    if (found == this->tensors.end())
-    {
-        throw std::runtime_error("Tensor: 'input__0' not found in memory");
-    }
-
-    return found->second;
+    return get_tensor("input__0");
 }
 
 void InferenceMemoryFIL::set_input__0(TensorObject&& input__0)
@@ -57,13 +51,7 @@ void InferenceMemoryFIL::set_input__0(TensorObject&& input__0)
 
 const TensorObject& InferenceMemoryFIL::get_seq_ids() const
 {
-    auto found = this->tensors.find("seq_ids");
-    if (found == this->tensors.end())
-    {
-        throw std::runtime_error("Tensor: 'seq_ids' not found in memory");
-    }
-
-    return found->second;
+    return get_tensor("seq_ids");
 }
 
 void InferenceMemoryFIL::set_seq_ids(TensorObject&& seq_ids)
@@ -83,7 +71,7 @@ std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(cudf:
 
 pybind11::object InferenceMemoryFILInterfaceProxy::get_input__0(InferenceMemoryFIL& self)
 {
-    return CupyUtil::tensor_to_cupy(self.get_input__0());
+    return get_tensor_property(self, "input__0");
 }
 
 void InferenceMemoryFILInterfaceProxy::set_input__0(InferenceMemoryFIL& self, pybind11::object cupy_values)
@@ -93,7 +81,7 @@ void InferenceMemoryFILInterfaceProxy::set_input__0(InferenceMemoryFIL& self, py
 
 pybind11::object InferenceMemoryFILInterfaceProxy::get_seq_ids(InferenceMemoryFIL& self)
 {
-    return CupyUtil::tensor_to_cupy(self.get_seq_ids());
+    return get_tensor_property(self, "seq_ids");
 }
 
 void InferenceMemoryFILInterfaceProxy::set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values)

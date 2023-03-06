@@ -18,13 +18,14 @@
 #include "morpheus/messages/memory/tensor_memory.hpp"  // IWYU pragma: associated
 
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/utilities/cupy_util.hpp"
+#include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil
+#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
 #include <pybind11/cast.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <map>
-#include <sstream>
+#include <sstream>    // needed by MORPHEUS_CONCAT_STR
 #include <stdexcept>  // for std::length_error
 #include <string>
 #include <vector>
@@ -59,11 +60,21 @@ void TensorMemory::check_tensor_length(const TensorObject& tensor)
 {
     if (tensor.shape(0) != this->count)
     {
-        std::stringstream err_msg;
-        err_msg << "The number rows in tensor " << tensor.shape(0) << " does not match TensorMemory.count of "
-                << this->count;
-        throw std::length_error{err_msg.str()};
+        throw std::length_error{MORPHEUS_CONCAT_STR("The number rows in tensor "
+                                                    << tensor.shape(0) << " does not match TensorMemory.count of "
+                                                    << this->count)};
     }
+}
+
+const TensorObject& TensorMemory::get_tensor(const std::string& name) const
+{
+    auto found = this->tensors.find(name);
+    if (found == this->tensors.end())
+    {
+        throw std::runtime_error(MORPHEUS_CONCAT_STR("Tensor: '" << name << "' not found in memory"));
+    }
+
+    return found->second;
 }
 
 void TensorMemory::set_tensor(const std::string& name, TensorObject&& tensor)
@@ -72,7 +83,7 @@ void TensorMemory::set_tensor(const std::string& name, TensorObject&& tensor)
     this->tensors.insert_or_assign(name, std::move(tensor));
 }
 
-void TensorMemory::check_tensors_length(const CupyUtil::tensor_map_t& tensors)
+void TensorMemory::check_tensors_length(const TensorMap& tensors)
 {
     for (const auto& p : tensors)
     {
@@ -80,7 +91,7 @@ void TensorMemory::check_tensors_length(const CupyUtil::tensor_map_t& tensors)
     }
 }
 
-void TensorMemory::set_tensors(CupyUtil::tensor_map_t&& tensors)
+void TensorMemory::set_tensors(TensorMap&& tensors)
 {
     check_tensors_length(tensors);
     this->tensors = std::move(tensors);
@@ -117,12 +128,25 @@ void TensorMemoryInterfaceProxy::set_tensors(TensorMemory& self, CupyUtil::py_te
 
 pybind11::object TensorMemoryInterfaceProxy::get_tensor(TensorMemory& self, const std::string name)
 {
-    if (!self.has_tensor(name))
+    try
     {
-        throw pybind11::key_error{};
+        auto tensor = self.get_tensor(name);
+        return CupyUtil::tensor_to_cupy(tensor);
+    } catch (const std::runtime_error& e)
+    {
+        throw pybind11::key_error{e.what()};
     }
+}
 
-    return CupyUtil::tensor_to_cupy(self.tensors[name]);
+pybind11::object TensorMemoryInterfaceProxy::get_tensor_property(TensorMemory& self, const std::string name)
+{
+    try
+    {
+        return get_tensor(self, std::move(name));
+    } catch (const pybind11::key_error& e)
+    {
+        throw pybind11::attribute_error{e.what()};
+    }
 }
 
 void TensorMemoryInterfaceProxy::set_tensor(TensorMemory& self,

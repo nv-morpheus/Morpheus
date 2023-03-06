@@ -149,6 +149,17 @@ PYBIND11_MODULE(messages, m)
         .def("get_input", &InferenceMemoryInterfaceProxy::get_tensor, py::arg("name"), py::return_value_policy::move)
         .def("set_input", &InferenceMemoryInterfaceProxy::set_tensor, py::arg("name"), py::arg("tensor"));
 
+    py::class_<InferenceMemoryFIL, InferenceMemory, std::shared_ptr<InferenceMemoryFIL>>(m, "InferenceMemoryFIL")
+        .def(py::init<>(&InferenceMemoryFILInterfaceProxy::init),
+             py::arg("count"),
+             py::arg("input__0"),
+             py::arg("seq_ids"))
+        .def_property("input__0",
+                      &InferenceMemoryFILInterfaceProxy::get_input__0,
+                      &InferenceMemoryFILInterfaceProxy::set_input__0)
+        .def_property(
+            "seq_ids", &InferenceMemoryFILInterfaceProxy::get_seq_ids, &InferenceMemoryFILInterfaceProxy::set_seq_ids);
+
     py::class_<InferenceMemoryNLP, InferenceMemory, std::shared_ptr<InferenceMemoryNLP>>(m, "InferenceMemoryNLP")
         .def(py::init<>(&InferenceMemoryNLPInterfaceProxy::init),
              py::arg("count"),
@@ -163,17 +174,6 @@ PYBIND11_MODULE(messages, m)
                       &InferenceMemoryNLPInterfaceProxy::set_input_mask)
         .def_property(
             "seq_ids", &InferenceMemoryNLPInterfaceProxy::get_seq_ids, &InferenceMemoryNLPInterfaceProxy::set_seq_ids);
-
-    py::class_<InferenceMemoryFIL, InferenceMemory, std::shared_ptr<InferenceMemoryFIL>>(m, "InferenceMemoryFIL")
-        .def(py::init<>(&InferenceMemoryFILInterfaceProxy::init),
-             py::arg("count"),
-             py::arg("input__0"),
-             py::arg("seq_ids"))
-        .def_property("input__0",
-                      &InferenceMemoryFILInterfaceProxy::get_input__0,
-                      &InferenceMemoryFILInterfaceProxy::set_input__0)
-        .def_property(
-            "seq_ids", &InferenceMemoryFILInterfaceProxy::get_seq_ids, &InferenceMemoryFILInterfaceProxy::set_seq_ids);
 
     py::class_<ResponseMemory, TensorMemory, std::shared_ptr<ResponseMemory>>(m, "ResponseMemory")
         .def(py::init<>(&ResponseMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
