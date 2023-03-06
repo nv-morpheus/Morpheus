@@ -39,6 +39,7 @@ from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import FILE_TO_DF
+from morpheus.utils.module_ids import FILTER_CONTROL_MESSAGE
 from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
@@ -77,6 +78,9 @@ class ConfigGenerator:
     def infer_module_conf(self):
         module_conf = {
             DFP_PREPROC: {
+                FILTER_CONTROL_MESSAGE: {
+                    "data_type": "streaming", "enable_task_check": True
+                },
                 FILE_BATCHER: {
                     "period": "D",
                     "sampling_rate_s": self._dfp_arg_parser.sample_rate_s,
@@ -92,8 +96,7 @@ class ConfigGenerator:
                     "file_type": "JSON",
                     "schema": {
                         "schema_str": self._source_schema_str, "encoding": self._encoding
-                    },
-                    "task_type": "inference"
+                    }
                 },
                 FILE_TO_DF_LOADER: {
                     "loaders": [{
@@ -153,6 +156,9 @@ class ConfigGenerator:
     def train_module_conf(self):
         module_conf = {
             DFP_PREPROC: {
+                FILTER_CONTROL_MESSAGE: {
+                    "data_type": "streaming", "enable_task_check": True
+                },
                 FILE_BATCHER: {
                     "period": "D",
                     "sampling_rate_s": self._dfp_arg_parser.sample_rate_s,
@@ -168,8 +174,7 @@ class ConfigGenerator:
                     "file_type": "JSON",
                     "schema": {
                         "schema_str": self._source_schema_str, "encoding": self._encoding
-                    },
-                    "task_type": "training"
+                    }
                 },
                 FILE_TO_DF_LOADER: {
                     "loaders": [{
