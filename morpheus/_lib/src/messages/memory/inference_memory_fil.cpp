@@ -18,15 +18,12 @@
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/types.hpp"                // for TensorMap
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
-#include <map>  // this->tensors is a map
 #include <memory>
-#include <stdexcept>  // for runtime_error
 #include <utility>
 
 namespace morpheus {

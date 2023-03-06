@@ -22,13 +22,15 @@
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
 #include <pybind11/cast.h>
-#include <pybind11/stl.h>  // IWYU pragma: keep
+#include <pybind11/pytypes.h>  // for attribute_error, key_error
+#include <pybind11/stl.h>      // IWYU pragma: keep
 
 #include <map>
 #include <sstream>    // needed by MORPHEUS_CONCAT_STR
 #include <stdexcept>  // for std::length_error
 #include <string>
 #include <vector>
+// IWYU pragma: no_include <type_traits>
 
 namespace morpheus {
 /****** Component public implementations *******************/

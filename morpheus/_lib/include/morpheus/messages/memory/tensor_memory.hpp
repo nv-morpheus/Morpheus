@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include "morpheus/types.hpp"                // for TensorMap, TensorIndex
-#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for TensorMap, TensorIndex
+#include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil
 
 #include <pybind11/pytypes.h>  // for object
 

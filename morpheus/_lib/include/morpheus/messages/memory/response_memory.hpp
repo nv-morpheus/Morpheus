@@ -18,8 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/types.hpp"                  // for TensorMap
+#include "morpheus/types.hpp"  // for TensorMap
 
 #include <pybind11/pytypes.h>  // for object
 
