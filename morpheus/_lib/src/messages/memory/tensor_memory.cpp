@@ -27,17 +27,17 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorMemory****************************************/
 TensorMemory::TensorMemory(size_t count) : count(count) {}
-TensorMemory::TensorMemory(size_t count, tensor_map_t&& tensors) : count(count), tensors(std::move(tensors)) {}
+TensorMemory::TensorMemory(size_t count, TensorMapType&& tensors) : count(count), tensors(std::move(tensors)) {}
 
 bool TensorMemory::has_tensor(const std::string& name) const
 {
     return this->tensors.find(name) != this->tensors.end();
 }
 
-tensor_map_t TensorMemory::copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
-                                              size_t num_selected_rows) const
+TensorMapType TensorMemory::copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
+                                               size_t num_selected_rows) const
 {
-    tensor_map_t tensors;
+    TensorMapType tensors;
     for (const auto& p : this->tensors)
     {
         tensors.insert(std::pair{p.first, p.second.copy_rows(ranges, num_selected_rows)});

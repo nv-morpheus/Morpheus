@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,11 +30,13 @@ struct TensorObject;
  * @{
  * @file
  */
-using TensorIndex = long long;  // NOLINT
-using RankType    = int;        // NOLINT
+// NOLINTBEGIN(readability-identifier-naming)
+using TensorIndex = long long;
+using RankType    = int;
 
-using shape_type_t = std::vector<TensorIndex>;
-using tensor_map_t = std::map<std::string, TensorObject>;
+using ShapeType     = std::vector<TensorIndex>;
+using TensorMapType = std::map<std::string, TensorObject>;
+// NOLINTEND(readability-identifier-naming)
 
 /** @} */  // end of group
 }  // namespace morpheus

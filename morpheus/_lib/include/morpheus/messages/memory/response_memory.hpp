@@ -19,7 +19,7 @@
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/types.hpp"                  // for tensor_map_t
+#include "morpheus/types.hpp"                  // for TensorMapType
 
 #include <pybind11/pytypes.h>
 
@@ -54,7 +54,7 @@ class ResponseMemory : public TensorMemory
      * @param count
      * @param tensors
      */
-    ResponseMemory(size_t count, tensor_map_t&& tensors);
+    ResponseMemory(size_t count, TensorMapType&& tensors);
 
     /**
      * @brief Checks if a tensor named `name` exists in `tensors`

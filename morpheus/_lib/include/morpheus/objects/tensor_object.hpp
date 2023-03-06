@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/dtype.hpp"
-#include "morpheus/types.hpp"  // for RankType, shape_type_t, TensorIndex
+#include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex
 #include "morpheus/utilities/string_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
@@ -137,9 +137,9 @@ struct ITensor;
 
 struct ITensorOperations
 {
-    virtual std::shared_ptr<ITensor> slice(const shape_type_t& min_dims, const shape_type_t& max_dims) const = 0;
+    virtual std::shared_ptr<ITensor> slice(const ShapeType& min_dims, const ShapeType& max_dims) const = 0;
 
-    virtual std::shared_ptr<ITensor> reshape(const shape_type_t& dims) const = 0;
+    virtual std::shared_ptr<ITensor> reshape(const ShapeType& dims) const = 0;
 
     virtual std::shared_ptr<ITensor> deep_copy() const = 0;
 
@@ -262,7 +262,7 @@ struct TensorObject final
         return m_tensor->is_compact();
     }
 
-    TensorObject slice(shape_type_t min_dims, shape_type_t max_dims) const
+    TensorObject slice(ShapeType min_dims, ShapeType max_dims) const
     {
         // Replace any -1 values
         std::replace_if(
@@ -275,7 +275,7 @@ struct TensorObject final
         return {m_md, m_tensor->slice(min_dims, max_dims)};
     }
 
-    TensorObject reshape(const shape_type_t& dims) const
+    TensorObject reshape(const ShapeType& dims) const
     {
         return {m_md, m_tensor->reshape(dims)};
     }

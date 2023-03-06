@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/types.hpp"  // for shape_type_t, TensorIndex
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
 #include <algorithm>   // IWYU pragma: keep
 #include <functional>  // for multiplies
@@ -49,7 +49,7 @@ struct TensorUtils
      * @param shape
      * @param os
      */
-    static void write_shape_to_stream(const shape_type_t& shape, std::ostream& os);
+    static void write_shape_to_stream(const ShapeType& shape, std::ostream& os);
 
     /**
      * @brief Convenience method to get a string from write_shape_to_stream
@@ -57,7 +57,7 @@ struct TensorUtils
      * @param shape
      * @return std::string
      */
-    static std::string shape_to_string(const shape_type_t& shape);
+    static std::string shape_to_string(const ShapeType& shape);
 
     /**
      * @brief Set stride to be contiguous with respect to row-major layouts
@@ -65,7 +65,7 @@ struct TensorUtils
      * @param shape
      * @param stride
      */
-    static void set_contiguous_stride(const shape_type_t& shape, shape_type_t& stride);
+    static void set_contiguous_stride(const ShapeType& shape, ShapeType& stride);
 
     /**
      * @brief Determines if the tensor layout is both contiguous and ordered.
@@ -73,7 +73,7 @@ struct TensorUtils
      * @note A tensor whose values are laid out in the storage starting from the rightmost
      * dimension onward (that is, moving along rows for a 2D tensor) is defined as contiguous.
      */
-    static bool has_contiguous_stride(const shape_type_t& shape, const shape_type_t& stride);
+    static bool has_contiguous_stride(const ShapeType& shape, const ShapeType& stride);
 
     /**
      * @brief Validate the shape and stride are compatible
@@ -83,14 +83,14 @@ struct TensorUtils
      * @return true
      * @return false
      */
-    static bool validate_shape_and_stride(const shape_type_t& shape, const shape_type_t& stride);
+    static bool validate_shape_and_stride(const ShapeType& shape, const ShapeType& stride);
 
     /**
      * @brief Returns a stride expressed in terms of elements given a stride expressed either in terms of bytes or
      * elements.
      *
      * @param stride
-     * @return shape_type_t
+     * @return ShapeType
      */
     template <typename IndexT, typename SrcIndexT = IndexT>
     static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride)

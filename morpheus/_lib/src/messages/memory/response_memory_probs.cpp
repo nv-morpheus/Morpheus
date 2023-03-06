@@ -38,7 +38,7 @@ ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : Res
     this->tensors["probs"] = std::move(probs);
 }
 
-ResponseMemoryProbs::ResponseMemoryProbs(size_t count, tensor_map_t&& tensors) :
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorMapType&& tensors) :
   ResponseMemory(count, std::move(tensors))
 {
     CHECK(has_tensor("probs")) << "Tensor: 'probs' not found in memory";

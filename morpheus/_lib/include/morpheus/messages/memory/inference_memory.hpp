@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/types.hpp"  // for tensor_map_t
+#include "morpheus/types.hpp"  // for TensorMapType
 
 #include <cstddef>
 #include <string>
@@ -51,7 +51,7 @@ class InferenceMemory : public TensorMemory
      * @param count
      * @param tensors
      */
-    InferenceMemory(size_t count, tensor_map_t&& tensors);
+    InferenceMemory(size_t count, TensorMapType&& tensors);
 
     /**
      * @brief Checks if a tensor named `name` exists in `tensors`

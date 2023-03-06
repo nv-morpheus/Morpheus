@@ -19,7 +19,7 @@
 
 #include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/types.hpp"  // for tensor_map_t
+#include "morpheus/types.hpp"  // for TensorMapType
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
@@ -57,7 +57,7 @@ class ResponseMemoryProbs : public ResponseMemory
      * @param count
      * @param tensors
      */
-    ResponseMemoryProbs(size_t count, tensor_map_t&& tensors);
+    ResponseMemoryProbs(size_t count, TensorMapType&& tensors);
 
     /**
      * @brief Returns the tensor named 'probs', throws a `std::runtime_error` if it does not exist

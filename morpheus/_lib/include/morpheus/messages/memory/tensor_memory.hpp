@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/types.hpp"  // for tensor_map_t, TensorIndex
+#include "morpheus/types.hpp"  // for TensorMapType, TensorIndex
 
 #include <cstddef>  // for size_t
 #include <string>
@@ -55,11 +55,11 @@ class TensorMemory
      * @param count
      * @param tensors
      */
-    TensorMemory(size_t count, tensor_map_t&& tensors);
+    TensorMemory(size_t count, TensorMapType&& tensors);
     virtual ~TensorMemory() = default;
 
     size_t count{0};
-    tensor_map_t tensors;
+    TensorMapType tensors;
 
     /**
      * @brief Verify whether the specified tensor name is present in the tensor memory
@@ -75,10 +75,10 @@ class TensorMemory
      *
      * @param ranges
      * @param num_selected_rows
-     * @return tensor_map_t
+     * @return TensorMapType
      */
-    tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
-                                    size_t num_selected_rows) const;
+    TensorMapType copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
+                                     size_t num_selected_rows) const;
 };
 
 /** @} */  // end of group

@@ -20,7 +20,7 @@
 #include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for ITensor
-#include "morpheus/types.hpp"                  // for shape_type_t, TensorIndex
+#include "morpheus/types.hpp"                  // for ShapeType, TensorIndex
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils
 
 #include <cuda_runtime.h>
@@ -48,17 +48,17 @@ class TestTensor : public ::testing::Test
 
 TEST_F(TestTensor, UtilsShapeString)
 {
-    shape_type_t shape = {100, 10, 1};
-    auto shape_str     = TensorUtils::shape_to_string(shape);
+    ShapeType shape = {100, 10, 1};
+    auto shape_str  = TensorUtils::shape_to_string(shape);
     EXPECT_TRUE(shape_str == std::string("(100, 10, 1)"));
 }
 
 TEST_F(TestTensor, GetElementStride)
 {
-    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({10, 1}), shape_type_t({10, 1}));
-    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({1, 13}), shape_type_t({1, 13}));
-    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 104}), shape_type_t({1, 13}));
-    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 16, 112}), shape_type_t({1, 2, 14}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({10, 1}), ShapeType({10, 1}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({1, 13}), ShapeType({1, 13}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 104}), ShapeType({1, 13}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 16, 112}), ShapeType({1, 2, 14}));
 
     EXPECT_EQ(TensorUtils::get_element_stride<std::size_t>({10, 1}), std::vector<std::size_t>({10, 1}));
     EXPECT_EQ(TensorUtils::get_element_stride<std::size_t>({1, 13}), std::vector<std::size_t>({1, 13}));
@@ -67,22 +67,22 @@ TEST_F(TestTensor, GetElementStride)
 
     {
         auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({10, 1});
-        EXPECT_EQ(results, shape_type_t({10, 1}));
+        EXPECT_EQ(results, ShapeType({10, 1}));
     }
 
     {
         auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({1, 13});
-        EXPECT_EQ(results, shape_type_t({1, 13}));
+        EXPECT_EQ(results, ShapeType({1, 13}));
     }
 
     {
         auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({8, 104});
-        EXPECT_EQ(results, shape_type_t({1, 13}));
+        EXPECT_EQ(results, ShapeType({1, 13}));
     }
 
     {
         auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({8, 16, 112});
-        EXPECT_EQ(results, shape_type_t({1, 2, 14}));
+        EXPECT_EQ(results, ShapeType({1, 2, 14}));
     }
 }
 
