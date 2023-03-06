@@ -26,9 +26,9 @@
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/triton_in_out.hpp"
-#include "morpheus/types.hpp"                  // for TensorIndex, TensorMap
-#include "morpheus/utilities/matx_util.hpp"    // for MatxUtil::logits, MatxUtil::reduce_max
-#include "morpheus/utilities/stage_util.hpp"   // for foreach_map
+#include "morpheus/types.hpp"                 // for TensorIndex, TensorMap
+#include "morpheus/utilities/matx_util.hpp"   // for MatxUtil::logits, MatxUtil::reduce_max
+#include "morpheus/utilities/stage_util.hpp"  // for foreach_map
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 #include "morpheus/utilities/tensor_util.hpp"  // for get_elem_count
 
