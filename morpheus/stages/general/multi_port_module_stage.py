@@ -50,7 +50,7 @@ class MultiPortModuleStage(Stage):
 
     def __init__(self,
                  c: Config,
-                 module_config: typing.Dict,
+                 module_conf: typing.Dict[str, any],
                  input_port_name: str,
                  output_port_name_prefix: str,
                  output_port_count: int,
@@ -61,18 +61,19 @@ class MultiPortModuleStage(Stage):
 
         self._input_type = input_type
         self._ouput_type = output_type
-        self._module_config = module_config
+        self._module_conf = module_conf
         self._input_port_name = input_port_name
         self._output_port_name_prefix = output_port_name_prefix
 
-        assert output_port_count > 0, "Output port count must be >= 1"
+        if output_port_count < 1:
+            raise ValueError(f"The `output_port_count` must be >= 1, but received {output_port_count}.")
 
         self._create_ports(1, output_port_count)
         self._output_port_count = output_port_count
 
     @property
     def name(self) -> str:
-        return self._module_config.get("module_name", "non_linear_module")
+        return self._module_conf.get("module_name", "multi_port_module")
 
     def supports_cpp_node(self):
         return False
@@ -98,12 +99,14 @@ class MultiPortModuleStage(Stage):
 
     def _build(self, builder: mrc.Builder, in_stream_pairs: typing.List[StreamPair]) -> typing.List[StreamPair]:
 
-        assert len(in_stream_pairs) == 1, "Only 1 input is supported"
+        in_ports_len = len(in_stream_pairs)
+        if in_ports_len != 1:
+            raise ValueError(f"Only 1 input is supported, but recieved {in_ports_len}.")
 
         in_stream_node = in_stream_pairs[0][0]
 
-        # Laod module from registry.
-        module = load_module(self._module_config, builder=builder)
+        # Load module from theregistry.
+        module = load_module(self._module_conf, builder=builder)
         mod_in_stream = module.input_port(self._input_port_name)
 
         builder.make_edge(in_stream_node, mod_in_stream)

@@ -33,7 +33,7 @@ class TimeFields:
     end_time: datetime
 
 
-class DeriveArgs:
+class DFPArgParser:
 
     def __init__(self,
                  skip_user: str,
@@ -43,7 +43,7 @@ class DeriveArgs:
                  cache_dir: str,
                  sample_rate_s: str,
                  duration: str,
-                 log_type: str,
+                 source: str,
                  tracking_uri: str,
                  train_users: str = None):
 
@@ -57,18 +57,14 @@ class DeriveArgs:
         self._initialized = False
         self._tracking_uri = tracking_uri
         self._sample_rate_s = sample_rate_s
-        self._log_type = log_type
+        self._source = source
 
         self._include_generic = None
         self._include_individual = None
         self._time_fields: TimeFields = None
 
-        self._model_name_formatter = "DFP-%s-{user_id}" % (log_type)
-        self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (log_type)
-
-        self._is_training = True
-        self._is_train_and_infer = True
-        self._is_inference = True
+        self._model_name_formatter = "DFP-%s-{user_id}" % (source)
+        self._experiment_name_formatter = "dfp/%s/training/{reg_model_name}" % (source)
 
     def verify_init(func):
 
@@ -99,11 +95,6 @@ class DeriveArgs:
 
     @property
     @verify_init
-    def is_train_and_infer(self):
-        return self._is_train_and_infer
-
-    @property
-    @verify_init
     def include_individual(self):
         return self._include_individual
 
@@ -124,20 +115,12 @@ class DeriveArgs:
         return self._cache_dir
 
     @property
-    def log_type(self):
-        return self._log_type
+    def source(self):
+        return self._source
 
     @property
     def model_name_formatter(self):
         return self._model_name_formatter
-
-    @property
-    def is_training(self):
-        return self._is_training
-
-    @property
-    def is_inference(self):
-        return self._is_inference
 
     @property
     def experiment_name_formatter(self):
@@ -172,11 +155,7 @@ class DeriveArgs:
         logger.info("Tracking URI: %s", mlflow.get_tracking_uri())
 
     def _set_time_fields(self):
-        if self._is_train_and_infer or self._is_training or self._is_inference:
-            self._time_fields = self._create_time_fields(self._duration)
-        else:
-            raise Exception(
-                "Invalid arguments, when --workload_type is 'train' or 'train_and_infer' --train_users must be passed.")
+        self._time_fields = self._create_time_fields(self._duration)
 
     def init(self):
         self._configure_logging()

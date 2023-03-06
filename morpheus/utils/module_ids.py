@@ -15,6 +15,7 @@
 MODULE_NAMESPACE = "morpheus"
 
 FILE_BATCHER = "FileBatcher"
+FILTER_CONTROL_MESSAGE = "FilterControlMessage"
 FILE_TO_DF = "FileToDF"
 MLFLOW_MODEL_WRITER = "MLFlowModelWriter"
 SERIALIZE = "Serialize"

@@ -21,7 +21,7 @@ import dfp.modules.dfp_training_pipeline  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
-from dfp.utils.derive_args import DeriveArgs
+from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import Schema
 from dfp.utils.schema_utils import SchemaBuilder
 
@@ -108,27 +108,27 @@ def run_pipeline(train_users,
                  sample_rate_s,
                  **kwargs):
 
-    derive_args = DeriveArgs(skip_user,
-                             only_user,
-                             start_time,
-                             log_level,
-                             cache_dir,
-                             sample_rate_s,
-                             duration,
-                             log_type="duo",
-                             tracking_uri=kwargs["tracking_uri"],
-                             train_users=train_users)
+    dfp_arg_parser = DeriveArgs(skip_user,
+                                only_user,
+                                start_time,
+                                log_level,
+                                cache_dir,
+                                sample_rate_s,
+                                duration,
+                                log_type="duo",
+                                tracking_uri=kwargs["tracking_uri"],
+                                train_users=train_users)
 
-    derive_args.init()
+    dfp_arg_parser.init()
 
-    config: Config = generate_ae_config(derive_args.log_type,
+    config: Config = generate_ae_config(dfp_arg_parser.log_type,
                                         userid_column_name="username",
                                         timestamp_column_name="timestamp")
 
-    schema_builder = SchemaBuilder(config, derive_args.log_type)
+    schema_builder = SchemaBuilder(config, dfp_arg_parser.log_type)
     schema: Schema = schema_builder.build_schema()
 
-    config_generator = ConfigGenerator(config, derive_args, schema)
+    config_generator = ConfigGenerator(config, dfp_arg_parser, schema)
 
     module_config = config_generator.tra_pipe_module_config()
 

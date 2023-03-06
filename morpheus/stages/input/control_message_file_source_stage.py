@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, NVIDIA CORPORATION.
+# Copyright (c) 2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import typing
 
 import fsspec
 import fsspec.utils
 import mrc
-import json
+
 from morpheus.config import Config
 from morpheus.messages.message_control import MessageControl
 from morpheus.pipeline.single_output_source import SingleOutputSource
@@ -27,7 +28,7 @@ from morpheus.pipeline.stream_pair import StreamPair
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-class ControlMessageSourceStage(SingleOutputSource):
+class ControlMessageFileSourceStage(SingleOutputSource):
     """
     Source stage is used to recieve control messages from different sources.
 

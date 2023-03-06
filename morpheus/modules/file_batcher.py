@@ -19,8 +19,9 @@ from collections import namedtuple
 import fsspec
 import fsspec.utils
 import mrc
-import cudf
 from mrc.core import operators as ops
+
+import cudf
 
 from morpheus.messages import MessageControl
 from morpheus.utils.file_utils import date_extractor
@@ -172,8 +173,7 @@ def file_batcher(builder: mrc.Builder):
 
             logger.debug("Batching %d files => %d groups", len(ts_filenames_df), n_groups)
 
-            control_messages = generate_cms_for_batch_periods(control_message,
-                                                              period_gb, n_groups)
+            control_messages = generate_cms_for_batch_periods(control_message, period_gb, n_groups)
 
         return control_messages
 

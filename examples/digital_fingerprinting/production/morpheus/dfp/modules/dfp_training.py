@@ -14,17 +14,20 @@
 
 import logging
 
-import cudf
 import mrc
 from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
-from ..messages.multi_dfp_message import MultiDFPMessage, DFPMessageMeta
+import cudf
+
+from morpheus.messages.message_control import MessageControl
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
-from morpheus.messages.message_control import MessageControl
+
+from ..messages.multi_dfp_message import DFPMessageMeta
+from ..messages.multi_dfp_message import MultiDFPMessage
 from ..utils.module_ids import DFP_TRAINING
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
@@ -60,7 +63,7 @@ def dfp_training(builder: mrc.Builder):
 
         output_messages = []
         while (control_message.has_task("training")):
-            task = control_message.pop_task("training")
+            control_message.pop_task("training")
 
             user_id = control_message.get_metadata("user_id")
             message_meta = control_message.payload()

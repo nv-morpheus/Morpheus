@@ -14,22 +14,23 @@
 
 import logging
 
-import dfp.modules.dfp_inf  # noqa: F401
-import dfp.modules.dfp_preproc  # noqa: F401
-import dfp.modules.dfp_tra  # noqa: F401
+import dfp.modules.dfp_inference_pipe  # noqa: F401
+import dfp.modules.dfp_training_pipe  # noqa: F401
 import mrc
 from mrc.core.node import Broadcast
 
+import morpheus.loaders.fsspec_loader  # noqa: F401
+from morpheus.utils.loader_ids import FSSPEC_LOADER
+from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_utils import get_config_with_overrides
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
-from morpheus.utils.module_utils import get_config_with_overrides
 
 from ..utils.module_ids import DFP_DEPLOYMENT
-from ..utils.module_ids import DFP_INF
-from ..utils.module_ids import DFP_PREPROC
-from ..utils.module_ids import DFP_TRA
+from ..utils.module_ids import DFP_INFERENCE_PIPE
+from ..utils.module_ids import DFP_TRAINING_PIPE
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -38,33 +39,35 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 def dfp_deployment(builder: mrc.Builder):
     module_config = get_module_config(DFP_DEPLOYMENT, builder)
 
-    preproc_conf = get_config_with_overrides(module_config, DFP_PREPROC, "dfp_preproc")
-    infer_conf = get_config_with_overrides(module_config, DFP_INF, "dfp_inference")
-    train_conf = get_config_with_overrides(module_config, DFP_TRA, "dfp_training")
+    fsspec_dataloader_conf = get_config_with_overrides(module_config, FSSPEC_LOADER, "fsspec_dataloader")
+    fsspec_dataloader_conf["module_id"] = DATA_LOADER  # Work around some naming issues.
+
+    dfp_training_pipe_conf = get_config_with_overrides(module_config, DFP_TRAINING_PIPE, "dfp_training_pipe")
+    dfp_inference_pipe_conf = get_config_with_overrides(module_config, DFP_INFERENCE_PIPE, "dfp_inference_pipe")
 
     if "output_port_count" not in module_config:
-        raise Exception("Missing required attribute 'output_port_count'")
+        raise KeyError("Missing required configuration 'output_port_count'")
 
     output_port_count = module_config.get("output_port_count")
 
-    preproc_module = load_module(preproc_conf, builder=builder)
+    fsspec_dataloader_module = load_module(fsspec_dataloader_conf, builder=builder)
 
     # Load module from registry.
-    infer_module = load_module(infer_conf, builder=builder)
-    train_module = load_module(train_conf, builder=builder)
+    dfp_training_pipe_module = load_module(dfp_training_pipe_conf, builder=builder)
+    dfp_inference_pipe_module = load_module(dfp_inference_pipe_conf, builder=builder)
 
     # Create broadcast node to fork the pipeline.
-    boradcast_node = Broadcast(builder, "broadcast")
+    boradcast = Broadcast(builder, "broadcast")
 
     # Make an edge between modules
-    builder.make_edge(preproc_module.output_port("output"), boradcast_node)
-    builder.make_edge(boradcast_node, infer_module.input_port("input"))
-    builder.make_edge(boradcast_node, train_module.input_port("input"))
+    builder.make_edge(fsspec_dataloader_module.output_port("output"), boradcast)
+    builder.make_edge(boradcast, dfp_training_pipe_module.input_port("input"))
+    builder.make_edge(boradcast, dfp_inference_pipe_module.input_port("input"))
 
-    out_streams = [train_module.output_port("output"), infer_module.output_port("output")]
+    out_streams = [dfp_training_pipe_module.output_port("output"), dfp_inference_pipe_module.output_port("output")]
 
     # Register input port for a module.
-    builder.register_module_input("input", preproc_module.input_port("input"))
+    builder.register_module_input("input", fsspec_dataloader_module.input_port("input"))
 
     # Register output ports for a module.
     for i in range(output_port_count):
