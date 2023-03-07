@@ -68,26 +68,24 @@ void TensorMemory::check_tensor_length(const TensorObject& tensor)
     }
 }
 
-const TensorObject& TensorMemory::get_tensor(const std::string& name) const
+void TensorMemory::verify_tensor_exists(const std::string& name) const
 {
-    auto found = this->tensors.find(name);
-    if (found == this->tensors.end())
+    if (!has_tensor(name))
     {
         throw std::runtime_error(MORPHEUS_CONCAT_STR("Tensor: '" << name << "' not found in memory"));
     }
+}
 
-    return found->second;
+const TensorObject& TensorMemory::get_tensor(const std::string& name) const
+{
+    verify_tensor_exists(name);
+    return tensors.at(name);
 }
 
 TensorObject& TensorMemory::get_tensor(const std::string& name)
 {
-    auto found = this->tensors.find(name);
-    if (found == this->tensors.end())
-    {
-        throw std::runtime_error(MORPHEUS_CONCAT_STR("Tensor: '" << name << "' not found in memory"));
-    }
-
-    return found->second;
+    verify_tensor_exists(name);
+    return tensors[name];
 }
 
 void TensorMemory::set_tensor(const std::string& name, TensorObject&& tensor)

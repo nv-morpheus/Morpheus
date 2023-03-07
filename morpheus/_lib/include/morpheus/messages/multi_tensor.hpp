@@ -94,7 +94,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     const TensorObject get_tensor(const std::string& name) const;
 
     /**
-     * @brief Returns a tensor with the given name. Will halt on a fatal error if the tensor does not exist
+     * @brief Returns a tensor with the given name.
      *
      * @param name
      * @return TensorObject
@@ -103,11 +103,12 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     TensorObject get_tensor(const std::string& name);
 
     /**
-     * @brief Update the value of a given tensor. The tensor must already exist, otherwise this will halt on a fatal
+     * @brief Update the value of a given tensor. The tensor must already exist, otherwise a runtime_error is thrown.
      * error
      *
      * @param name
      * @param value
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
     void set_tensor(const std::string& name, const TensorObject& value);
 
@@ -150,7 +151,7 @@ struct MultiTensorMessageInterfaceProxy
                                                     std::size_t count);
 
     /**
-     * @brief GReturns a shared pointer of a tensor memory object
+     * @brief Returns a shared pointer of a tensor memory object
      *
      * @return std::shared_ptr<TensorMemory>
      */
@@ -181,6 +182,16 @@ struct MultiTensorMessageInterfaceProxy
      * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_tensor(MultiTensorMessage& self, const std::string& name);
+
+    /**
+     * @brief Same as `get_tensor` but used when the method is being bound to a python property
+     *
+     * @param self
+     * @param name
+     * @return pybind11::object
+     * @throws pybind11::attribute_error When no matching tensor exists.
+     */
+    static pybind11::object get_tensor_property(MultiTensorMessage& self, const std::string name);
 };
 
 #pragma GCC visibility pop

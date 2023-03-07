@@ -139,6 +139,14 @@ class TensorMemory
      * @param tensors
      */
     void check_tensors_length(const TensorMap& tensors);
+
+    /**
+     * @brief Verify that a tensor identified by `name` exists, throws a `runtime_error` othwerwise.
+     * 
+     * @param name 
+     * @throws std::runtime_error If no tensor matching `name` exists
+     */
+    void verify_tensor_exists(const std::string& name) const;
 };
 
 /****** TensorMemoryInterfaceProxy *************************/

@@ -70,32 +70,4 @@ std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::init
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
 }
 
-std::shared_ptr<morpheus::InferenceMemory> MultiInferenceMessageInterfaceProxy::memory(MultiInferenceMessage& self)
-{
-    DCHECK(std::dynamic_pointer_cast<morpheus::InferenceMemory>(self.memory) != nullptr);
-    return std::static_pointer_cast<morpheus::InferenceMemory>(self.memory);
-}
-
-std::size_t MultiInferenceMessageInterfaceProxy::offset(MultiInferenceMessage& self)
-{
-    return self.offset;
-}
-
-std::size_t MultiInferenceMessageInterfaceProxy::count(MultiInferenceMessage& self)
-{
-    return self.count;
-}
-
-pybind11::object MultiInferenceMessageInterfaceProxy::get_input(MultiInferenceMessage& self, const std::string& name)
-{
-    const auto& py_tensor = CupyUtil::tensor_to_cupy(self.get_input(name));
-    return py_tensor;
-}
-
-std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::get_slice(MultiInferenceMessage& self,
-                                                                                      std::size_t start,
-                                                                                      std::size_t stop)
-{
-    return self.get_slice(start, stop);
-}
 }  // namespace morpheus

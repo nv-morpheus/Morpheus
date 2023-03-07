@@ -97,7 +97,7 @@ struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
      *
      * @param self
      * @return pybind11::object
-     * @throws pybind11::key_error When no matching tensor exists.
+     * @throws pybind11::key_error When no tensor named "probs" exists.
      */
     static pybind11::object get_probs(ResponseMemoryProbs& self);
 

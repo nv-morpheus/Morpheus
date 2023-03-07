@@ -229,49 +229,6 @@ PYBIND11_MODULE(messages, m)
              py::return_value_policy::move)
         .def("get_meta_list", &MultiMessageInterfaceProxy::get_meta_list, py::return_value_policy::move);
 
-    py::class_<MultiInferenceMessage, MultiMessage, std::shared_ptr<MultiInferenceMessage>>(m, "MultiInferenceMessage")
-        .def(py::init<>(&MultiInferenceMessageInterfaceProxy::init),
-             py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
-             py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
-        .def_property_readonly("memory", &MultiInferenceMessageInterfaceProxy::memory)
-        .def_property_readonly("offset", &MultiInferenceMessageInterfaceProxy::offset)
-        .def_property_readonly("count", &MultiInferenceMessageInterfaceProxy::count)
-        .def("get_input", &MultiInferenceMessageInterfaceProxy::get_input)
-        .def("get_slice", &MultiInferenceMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal);
-
-    py::class_<MultiInferenceNLPMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceNLPMessage>>(
-        m, "MultiInferenceNLPMessage")
-        .def(py::init<>(&MultiInferenceNLPMessageInterfaceProxy::init),
-             py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
-             py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
-        .def_property_readonly("memory", &MultiInferenceNLPMessageInterfaceProxy::memory)
-        .def_property_readonly("offset", &MultiInferenceNLPMessageInterfaceProxy::offset)
-        .def_property_readonly("count", &MultiInferenceNLPMessageInterfaceProxy::count)
-        .def_property_readonly("input_ids", &MultiInferenceNLPMessageInterfaceProxy::input_ids)
-        .def_property_readonly("input_mask", &MultiInferenceNLPMessageInterfaceProxy::input_mask)
-        .def_property_readonly("seq_ids", &MultiInferenceNLPMessageInterfaceProxy::seq_ids);
-
-    py::class_<MultiInferenceFILMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceFILMessage>>(
-        m, "MultiInferenceFILMessage")
-        .def(py::init<>(&MultiInferenceFILMessageInterfaceProxy::init),
-             py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
-             py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
-        .def_property_readonly("memory", &MultiInferenceFILMessageInterfaceProxy::memory)
-        .def_property_readonly("offset", &MultiInferenceFILMessageInterfaceProxy::offset)
-        .def_property_readonly("count", &MultiInferenceFILMessageInterfaceProxy::count);
-
     py::class_<MultiTensorMessage, MultiMessage, std::shared_ptr<MultiTensorMessage>>(m, "MultiTensorMessage")
         .def(py::init<>(&MultiTensorMessageInterfaceProxy::init),
              py::arg("meta"),
@@ -285,6 +242,41 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
         .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor);
 
+    py::class_<MultiInferenceMessage, MultiMessage, std::shared_ptr<MultiInferenceMessage>>(m, "MultiInferenceMessage")
+        .def(py::init<>(&MultiInferenceMessageInterfaceProxy::init),
+             py::arg("meta"),
+             py::arg("mess_offset"),
+             py::arg("mess_count"),
+             py::arg("memory"),
+             py::arg("offset"),
+             py::arg("count"))
+        .def("get_input", &MultiInferenceMessageInterfaceProxy::get_tensor);
+
+    py::class_<MultiInferenceNLPMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceNLPMessage>>(
+        m, "MultiInferenceNLPMessage")
+        .def(py::init<>(&MultiInferenceNLPMessageInterfaceProxy::init),
+             py::arg("meta"),
+             py::arg("mess_offset"),
+             py::arg("mess_count"),
+             py::arg("memory"),
+             py::arg("offset"),
+             py::arg("count"))
+        .def_property_readonly("input_ids", &MultiInferenceNLPMessageInterfaceProxy::input_ids)
+        .def_property_readonly("input_mask", &MultiInferenceNLPMessageInterfaceProxy::input_mask)
+        .def_property_readonly("seq_ids", &MultiInferenceNLPMessageInterfaceProxy::seq_ids);
+
+    py::class_<MultiInferenceFILMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceFILMessage>>(
+        m, "MultiInferenceFILMessage")
+        .def(py::init<>(&MultiInferenceFILMessageInterfaceProxy::init),
+             py::arg("meta"),
+             py::arg("mess_offset"),
+             py::arg("mess_count"),
+             py::arg("memory"),
+             py::arg("offset"),
+             py::arg("count"))
+        .def_property_readonly("input__0", &MultiInferenceFILMessageInterfaceProxy::input__0)
+        .def_property_readonly("seq_ids", &MultiInferenceFILMessageInterfaceProxy::seq_ids);
+
     py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(m, "MultiResponseMessage")
         .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),
              py::arg("meta"),
@@ -293,10 +285,7 @@ PYBIND11_MODULE(messages, m)
              py::arg("memory"),
              py::arg("offset"),
              py::arg("count"))
-        .def_property_readonly("memory", &MultiResponseMessageInterfaceProxy::memory)
-        .def_property_readonly("offset", &MultiResponseMessageInterfaceProxy::offset)
-        .def_property_readonly("count", &MultiResponseMessageInterfaceProxy::count)
-        .def("get_output", &MultiResponseMessageInterfaceProxy::get_output);
+        .def("get_output", &MultiResponseMessageInterfaceProxy::get_tensor);
 
     py::class_<MultiResponseProbsMessage, MultiResponseMessage, std::shared_ptr<MultiResponseProbsMessage>>(
         m, "MultiResponseProbsMessage")
@@ -307,9 +296,6 @@ PYBIND11_MODULE(messages, m)
              py::arg("memory"),
              py::arg("offset"),
              py::arg("count"))
-        .def_property_readonly("memory", &MultiResponseProbsMessageInterfaceProxy::memory)
-        .def_property_readonly("offset", &MultiResponseProbsMessageInterfaceProxy::offset)
-        .def_property_readonly("count", &MultiResponseProbsMessageInterfaceProxy::count)
         .def_property_readonly("probs", &MultiResponseProbsMessageInterfaceProxy::probs);
 
 #ifdef VERSION_INFO

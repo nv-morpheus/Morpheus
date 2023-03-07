@@ -22,6 +22,7 @@
 
 #include <cudf/types.hpp>  // for cudf::size_type>
 #include <glog/logging.h>
+#include <pybind11/pytypes.h>  // for key_error
 
 #include <cstdint>  // for int32_t
 #include <ostream>  // needed for logging
@@ -41,7 +42,6 @@ MultiTensorMessage::MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> me
   count(count)
 {}
 
-// TODO ensure we aren't returning copies
 const TensorObject MultiTensorMessage::get_tensor(const std::string& name) const
 {
     return get_tensor_impl(name);
@@ -152,9 +152,25 @@ std::size_t MultiTensorMessageInterfaceProxy::count(MultiTensorMessage& self)
 
 pybind11::object MultiTensorMessageInterfaceProxy::get_tensor(MultiTensorMessage& self, const std::string& name)
 {
-    auto tensor = self.get_tensor(name);
+    try
+    {
+        auto tensor = self.get_tensor(name);
+        return CupyUtil::tensor_to_cupy(tensor);
+    } catch (const std::runtime_error& e)
+    {
+        throw pybind11::key_error{e.what()};
+    }
+}
 
-    return CupyUtil::tensor_to_cupy(tensor);
+pybind11::object MultiTensorMessageInterfaceProxy::get_tensor_property(MultiTensorMessage& self, const std::string name)
+{
+    try
+    {
+        return get_tensor(self, std::move(name));
+    } catch (const pybind11::key_error& e)
+    {
+        throw pybind11::attribute_error{e.what()};
+    }
 }
 
 }  // namespace morpheus
