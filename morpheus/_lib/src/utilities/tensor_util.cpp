@@ -28,14 +28,14 @@
 #include <vector>       // for vector
 
 namespace morpheus {
-void TensorUtils::write_shape_to_stream(const shape_type_t& shape, std::ostream& os)
+void TensorUtils::write_shape_to_stream(const ShapeType& shape, std::ostream& os)
 {
     os << "(";
     std::copy(shape.begin(), shape.end(), std::experimental::make_ostream_joiner(os, ", "));
     os << ")";
 }
 
-std::string TensorUtils::shape_to_string(const shape_type_t& shape)
+std::string TensorUtils::shape_to_string(const ShapeType& shape)
 {
     std::stringstream ss;
     write_shape_to_stream(shape, ss);
@@ -54,7 +54,7 @@ void TensorUtils::set_contiguous_stride(const std::vector<TensorIndex>& shape, s
     }
 }
 
-bool TensorUtils::has_contiguous_stride(const std::vector<TensorIndex>& shape, const shape_type_t& stride)
+bool TensorUtils::has_contiguous_stride(const std::vector<TensorIndex>& shape, const ShapeType& stride)
 {
     DCHECK_EQ(shape.size(), stride.size());
     auto count = get_elem_count(shape);

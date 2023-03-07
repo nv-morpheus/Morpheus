@@ -20,10 +20,8 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>
-#include <glog/logging.h>
 #include <pybind11/pytypes.h>
 
 #include <memory>
@@ -84,44 +82,18 @@ std::shared_ptr<MultiInferenceNLPMessage> MultiInferenceNLPMessageInterfaceProxy
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
 }
 
-std::shared_ptr<morpheus::InferenceMemory> MultiInferenceNLPMessageInterfaceProxy::memory(
-    MultiInferenceNLPMessage& self)
-{
-    DCHECK(std::dynamic_pointer_cast<morpheus::InferenceMemory>(self.memory) != nullptr);
-    return std::static_pointer_cast<morpheus::InferenceMemory>(self.memory);
-}
-
-std::size_t MultiInferenceNLPMessageInterfaceProxy::offset(MultiInferenceNLPMessage& self)
-{
-    return self.offset;
-}
-
-std::size_t MultiInferenceNLPMessageInterfaceProxy::count(MultiInferenceNLPMessage& self)
-{
-    return self.count;
-}
-
 pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_ids(MultiInferenceNLPMessage& self)
 {
-    // Get and convert
-    auto tensor = self.get_input_ids();
-
-    return CupyUtil::tensor_to_cupy(tensor);
+    return get_tensor_property(self, "input_ids");
 }
 
 pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_mask(MultiInferenceNLPMessage& self)
 {
-    // Get and convert
-    auto tensor = self.get_input_mask();
-
-    return CupyUtil::tensor_to_cupy(tensor);
+    return get_tensor_property(self, "input_mask");
 }
 
 pybind11::object MultiInferenceNLPMessageInterfaceProxy::seq_ids(MultiInferenceNLPMessage& self)
 {
-    // Get and convert
-    auto tensor = self.get_seq_ids();
-
-    return CupyUtil::tensor_to_cupy(tensor);
+    return get_tensor_property(self, "seq_ids");
 }
 }  // namespace morpheus
