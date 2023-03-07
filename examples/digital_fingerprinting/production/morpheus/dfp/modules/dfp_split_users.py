@@ -23,7 +23,8 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus.messages import MessageControl, MessageMeta
+from morpheus.messages import MessageControl
+from morpheus.messages import MessageMeta
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -88,7 +89,8 @@ def dfp_split_users(builder: mrc.Builder):
 
                 if (include_individual):
                     split_dataframes.update(
-                        {username: user_df for username, user_df in df.groupby("username", sort=False)})
+                        {username: user_df
+                         for username, user_df in df.groupby("username", sort=False)})
 
                 output_messages: typing.List[MessageControl] = []
 
@@ -134,7 +136,7 @@ def dfp_split_users(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(extract_users), ops.flatten()).subscribe(sub)
 
-    node = builder.make_node_full(DFP_SPLIT_USERS, node_fn)
+    node = builder.make_node(DFP_SPLIT_USERS, mrc.core.operators.build(node_fn))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

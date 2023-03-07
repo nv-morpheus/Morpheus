@@ -255,7 +255,7 @@ def file_to_df(builder: mrc.Builder):
     if (download_method.startswith("dask")):
         dask_cluster = get_dask_cluster()
 
-    node = builder.make_node_full(FILE_TO_DF, node_fn)
+    node = builder.make_node(FILE_TO_DF, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

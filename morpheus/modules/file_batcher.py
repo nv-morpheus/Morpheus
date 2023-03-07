@@ -180,7 +180,7 @@ def file_batcher(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
 
-    node = builder.make_node_full(FILE_BATCHER, node_fn)
+    node = builder.make_node(FILE_BATCHER, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

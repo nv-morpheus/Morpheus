@@ -111,7 +111,7 @@ def write_to_file(builder: mrc.Builder):
 
         # File should be closed by here
 
-    node = builder.make_node_full(WRITE_TO_FILE, node_fn)
+    node = builder.make_node(WRITE_TO_FILE, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

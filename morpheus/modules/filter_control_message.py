@@ -49,6 +49,7 @@ def filter_control_message(builder: mrc.Builder):
         if enable_task_check:
             # Verify if control message has expected task_type.
             task_exist = control_message.has_task(task_type)
+
             # Dispose messages if it has no expected task and it's data_type does not matches with filter.
             if (not task_exist and filter and data_type != filter):
                 return None
@@ -63,7 +64,7 @@ def filter_control_message(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(FILTER_CONTROL_MESSAGE, node_fn)
+    node = builder.make_node(FILTER_CONTROL_MESSAGE, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

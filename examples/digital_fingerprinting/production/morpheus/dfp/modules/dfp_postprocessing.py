@@ -76,7 +76,7 @@ def dfp_postprocessing(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(DFP_POST_PROCESSING, node_fn)
+    node = builder.make_node(DFP_POST_PROCESSING, mrc.core.operators.build(node_fn))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

@@ -82,7 +82,7 @@ def dfp_data_prep(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(process_features)).subscribe(sub)
 
-    node = builder.make_node_full(DFP_DATA_PREP, node_fn)
+    node = builder.make_node(DFP_DATA_PREP, mrc.core.operators.build(node_fn))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)

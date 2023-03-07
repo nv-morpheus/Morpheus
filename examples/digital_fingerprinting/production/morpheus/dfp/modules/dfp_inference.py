@@ -129,7 +129,7 @@ def dfp_inference(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
 
-    node = builder.make_node_full(DFP_INFERENCE, node_fn)
+    node = builder.make_node(DFP_INFERENCE, mrc.core.operators.build(node_fn))
 
     builder.register_module_input("input", node)
     builder.register_module_output("output", node)
