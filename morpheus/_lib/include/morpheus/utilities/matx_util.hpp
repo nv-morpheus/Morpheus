@@ -103,7 +103,7 @@ struct MatxUtil
      * @return std::shared_ptr<rmm::device_buffer>
      */
     static std::shared_ptr<rmm::device_buffer> reduce_max(const DevMemInfo& input,
-                                                          const std::vector<int32_t>& seq_ids,
+                                                          const ShapeType& seq_ids,
                                                           TensorIndex seq_id_offset,
                                                           const ShapeType& output_shape);
 };

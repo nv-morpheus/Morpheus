@@ -104,7 +104,7 @@ void build_output_tensors(std::size_t count,
     }
 }
 
-std::vector<int32_t> get_seq_ids(const InferenceClientStage::sink_type_t& message)
+ShapeType get_seq_ids(const InferenceClientStage::sink_type_t& message)
 {
     // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
     // The output tensors we store in `reponse_memory` will all be of the same length as the the
@@ -112,7 +112,7 @@ std::vector<int32_t> get_seq_ids(const InferenceClientStage::sink_type_t& messag
     auto seq_ids         = message->get_input("seq_ids");
     const auto item_size = seq_ids.dtype().item_size();
 
-    std::vector<int32_t> host_seq_ids(message->count);
+    ShapeType host_seq_ids(message->count);
     MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids.data(),
                                 item_size,
                                 seq_ids.data(),

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "morpheus/types.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 
 #include <cudf/utilities/traits.hpp>
@@ -268,7 +269,7 @@ struct MatxUtil__MatxReduceMax
     matx::index_t num_output_rows;
     matx::index_t num_cols;
     std::vector<matx::index_t> input_stride;
-    const std::vector<int32_t>& seq_ids;
+    const ShapeType& seq_ids;
     TensorIndex seq_id_offset;
     rmm::cuda_stream_view stream;
 
@@ -428,7 +429,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::threshold(const DevMemInfo& input,
 }
 
 std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input,
-                                                         const std::vector<int32_t>& seq_ids,
+                                                         const ShapeType& seq_ids,
                                                          TensorIndex seq_id_offset,
                                                          const ShapeType& output_shape)
 {
