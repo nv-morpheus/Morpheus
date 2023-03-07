@@ -132,6 +132,7 @@ PYBIND11_MODULE(messages, _module)
 
     py::enum_<ControlMessageType>(_module, "ControlMessageType")
         .value("INFERENCE", ControlMessageType::INFERENCE)
+        .value("NONE", ControlMessageType::INFERENCE)
         .value("TRAINING", ControlMessageType::TRAINING);
 
     // TODO(Devin): Circle back on return value policy choices
@@ -151,6 +152,8 @@ PYBIND11_MODULE(messages, _module)
         .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
         .def("has_task", &MessageControl::has_task, py::arg("task_type"))
         .def("pop_task", &ControlMessageProxy::pop_task, py::arg("task_type"))
+        .def("task_type", pybind11::overload_cast<>(&MessageControl::task_type))
+        .def("task_type", pybind11::overload_cast<ControlMessageType>(&MessageControl::task_type), py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
         .def("has_metadata", &MessageControl::has_metadata, py::arg("key"))
         .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key"))

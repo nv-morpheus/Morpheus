@@ -111,7 +111,7 @@ class MessageControl
      * @brief Get the type of the task
      * @return ControlMessageType
      */
-    ControlMessageType task_type() const;
+    ControlMessageType task_type();
 
     /**
      * @brief Set the task type for the control message

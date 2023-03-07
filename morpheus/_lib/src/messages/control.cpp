@@ -236,7 +236,7 @@ void MessageControl::payload(const std::shared_ptr<MessageMeta>& payload)
     m_payload = payload;
 }
 
-ControlMessageType MessageControl::task_type() const
+ControlMessageType MessageControl::task_type()
 {
     return m_cm_type;
 }
