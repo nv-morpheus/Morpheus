@@ -20,7 +20,10 @@
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/types.hpp"  // for TensorMap
 
-#include <cstddef>
+#include <pybind11/pytypes.h>  // for object
+
+#include <cstddef>  // for size_t
+#include <memory>   // for shared_ptr
 #include <string>
 
 namespace morpheus {
@@ -54,7 +57,7 @@ class InferenceMemory : public TensorMemory
     InferenceMemory(size_t count, TensorMap&& tensors);
 
     /**
-     * @brief Checks if a tensor named `name` exists in `tensors`
+     * @brief Checks if a tensor named `name` exists in `tensors`. Alias for `has_tensor`.
      *
      * @param name
      * @return true
@@ -67,15 +70,17 @@ class InferenceMemory : public TensorMemory
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct InferenceMemoryInterfaceProxy
+struct InferenceMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
 {
     /**
-     * @brief Get the count object
+     * @brief Create and initialize a InferenceMemory object, and return a shared pointer to the result. Each array in
+     * `tensors` should be of length `count`.
      *
-     * @param self
-     * @return std::size_t
+     * @param count : Lenght of each array in `tensors`
+     * @param tensors : Map of string on to cupy arrays
+     * @return std::shared_ptr<InferenceMemory>
      */
-    static std::size_t get_count(InferenceMemory& self);
+    static std::shared_ptr<InferenceMemory> init(std::size_t count, pybind11::object& tensors);
 };
 #pragma GCC visibility pop
 

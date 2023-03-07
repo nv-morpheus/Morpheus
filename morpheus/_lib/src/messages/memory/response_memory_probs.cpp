@@ -24,18 +24,16 @@
 #include <pybind11/pytypes.h>
 
 #include <cstddef>
-#include <map>  // this->tensors is a map
 #include <memory>
 #include <ostream>
-#include <stdexcept>  // for runtime_error
 #include <utility>
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemoryProbs****************************************/
-ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject probs) : ResponseMemory(count)
+ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorObject&& probs) : ResponseMemory(count)
 {
-    this->tensors["probs"] = std::move(probs);
+    set_tensor("probs", std::move(probs));
 }
 
 ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorMap&& tensors) : ResponseMemory(count, std::move(tensors))
@@ -45,18 +43,12 @@ ResponseMemoryProbs::ResponseMemoryProbs(size_t count, TensorMap&& tensors) : Re
 
 const TensorObject& ResponseMemoryProbs::get_probs() const
 {
-    auto found = this->tensors.find("probs");
-    if (found == this->tensors.end())
-    {
-        throw std::runtime_error("Tensor: 'probs' not found in memory");
-    }
-
-    return found->second;
+    return get_tensor("probs");
 }
 
-void ResponseMemoryProbs::set_probs(TensorObject probs)
+void ResponseMemoryProbs::set_probs(TensorObject&& probs)
 {
-    this->tensors["probs"] = std::move(probs);
+    set_tensor("probs", std::move(probs));
 }
 
 /****** ResponseMemoryProbsInterfaceProxy *************************/
@@ -67,14 +59,9 @@ std::shared_ptr<ResponseMemoryProbs> ResponseMemoryProbsInterfaceProxy::init(cud
     return std::make_shared<ResponseMemoryProbs>(count, std::move(CupyUtil::cupy_to_tensor(probs)));
 }
 
-std::size_t ResponseMemoryProbsInterfaceProxy::count(ResponseMemoryProbs& self)
-{
-    return self.count;
-}
-
 pybind11::object ResponseMemoryProbsInterfaceProxy::get_probs(ResponseMemoryProbs& self)
 {
-    return CupyUtil::tensor_to_cupy(self.get_probs());
+    return get_tensor_property(self, "probs");
 }
 
 void ResponseMemoryProbsInterfaceProxy::set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values)
