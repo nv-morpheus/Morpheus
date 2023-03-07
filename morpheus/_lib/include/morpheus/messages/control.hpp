@@ -25,6 +25,14 @@
 namespace morpheus {
 class MessageMeta;
 #pragma GCC visibility push(default)
+enum class ControlMessageType
+{
+    CUSTOM,
+    DATA,
+    INFERENCE,
+    NONE,
+    TRAINING
+};
 
 class MessageControl
 {
@@ -99,13 +107,29 @@ class MessageControl
      */
     std::shared_ptr<MessageMeta> payload();
 
+    /**
+     * @brief Get the type of the task
+     * @return ControlMessageType
+     */
+    ControlMessageType task_type() const;
+
+    /**
+     * @brief Set the task type for the control message
+     * @param task_type
+     * @return
+     */
+    void task_type(ControlMessageType task_type);
+
   private:
     static const std::string s_config_schema;  // NOLINT
 
+    ControlMessageType m_cm_type{ControlMessageType::NONE};
     std::shared_ptr<MessageMeta> m_payload{nullptr};
+    std::map<std::string, ControlMessageType> m_task_type_map{{"inference", ControlMessageType::INFERENCE},
+                                                              {"training", ControlMessageType::TRAINING}};
 
-    std::map<std::string, std::size_t> m_task_count{};
-    nlohmann::json m_task_config{};
+    nlohmann::json m_tasks{};
+    nlohmann::json m_config{};
 };
 
 struct ControlMessageProxy

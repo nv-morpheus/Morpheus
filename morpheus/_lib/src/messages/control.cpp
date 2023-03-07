@@ -112,72 +112,83 @@ const std::string MessageControl::s_config_schema = R"(
 )";
 
 MessageControl::MessageControl() :
-  m_task_config({{"tasks", nlohmann::json::array()}, {"metadata", nlohmann::json::object()}})
+  m_config({{"metadata", nlohmann::json::object()}})
 {}
 
 MessageControl::MessageControl(const nlohmann::json& _config) :
-  m_task_config({{"tasks", nlohmann::json::array()}, {"metadata", nlohmann::json::object()}})
+  m_config({{"metadata", nlohmann::json::object()}})
 {
     config(_config);
 }
 
 MessageControl::MessageControl(const MessageControl& other)
 {
-    m_task_config = other.m_task_config;
-    m_task_count  = other.m_task_count;
+    m_config     = other.m_config;
+    m_tasks      = other.m_tasks;
 }
 
 const nlohmann::json& MessageControl::config() const
 {
-    return m_task_config;
+    return m_config;
 }
 
 void MessageControl::add_task(const std::string& task_type, const nlohmann::json& task)
 {
     // TODO(Devin) Schema check
     VLOG(20) << "Adding task of type " << task_type << " to control message" << task.dump(4);
-    m_task_count[task_type] += 1;
-    m_task_config["tasks"].push_back({{"type", task_type}, {"properties", task}});
+    auto _task_type = m_task_type_map.contains(task_type) ? m_task_type_map[task_type] : ControlMessageType::NONE;
+
+    if (this->task_type() == ControlMessageType::NONE)
+    {
+        this->task_type(_task_type);
+    }
+
+    if (this->task_type() != _task_type)
+    {
+        throw std::runtime_error("Cannot add inference and training tasks to the same control message");
+    }
+
+    m_tasks[task_type].push_back(task);
+    // m_task_count[task_type] += 1;
+    // m_config["tasks"].push_back({{"type", task_type}, {"properties", task}});
 }
 
 bool MessageControl::has_task(const std::string& task_type) const
 {
-    return m_task_count.contains(task_type) and m_task_count.at(task_type) > 0;
+    return m_tasks.contains(task_type) && m_tasks.at(task_type).size() > 0;
 }
 
 void MessageControl::set_metadata(const std::string& key, const nlohmann::json& value)
 {
-    if (m_task_config["metadata"].contains(key))
+    if (m_config["metadata"].contains(key))
     {
         LOG(WARNING) << "Overwriting metadata key " << key << " with value " << value;
     }
 
-    m_task_config["metadata"][key] = value;
+    m_config["metadata"][key] = value;
 }
 
 bool MessageControl::has_metadata(const std::string& key) const
 {
-    return m_task_config["metadata"].contains(key);
+    return m_config["metadata"].contains(key);
 }
 
 const nlohmann::json MessageControl::get_metadata(const std::string& key) const
 {
-    return m_task_config["metadata"].at(key);
+    return m_config["metadata"].at(key);
 }
 
 const nlohmann::json MessageControl::pop_task(const std::string& task_type)
 {
-    auto& tasks = m_task_config["tasks"];
-    for (auto it = tasks.begin(); it != tasks.end(); ++it)
-    {
-        if (it->at("type") == task_type)
-        {
-            auto task = *it;
-            tasks.erase(it);
-            m_task_count[task_type] -= 1;
+    auto& task_set = m_tasks.at(task_type);
+    auto iter_task = task_set.begin();
 
-            return task["properties"];
-        }
+    if (iter_task != task_set.end())
+    {
+        auto task = *iter_task;
+        task_set.erase(iter_task);
+
+        return task;
     }
 
     throw std::runtime_error("No tasks of type " + task_type + " found");
@@ -216,6 +227,16 @@ std::shared_ptr<MessageMeta> MessageControl::payload()
 void MessageControl::payload(const std::shared_ptr<MessageMeta>& payload)
 {
     m_payload = payload;
+}
+
+ControlMessageType MessageControl::task_type() const
+{
+    return m_cm_type;
+}
+
+void MessageControl::task_type(ControlMessageType type)
+{
+    m_cm_type = type;
 }
 
 /*** Proxy Implementations ***/

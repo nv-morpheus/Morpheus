@@ -1,5 +1,5 @@
 {
-	"tracking_uri": "http://localhost:8000",
+	"tracking_uri": "http://localhost:5000",
 	"test_dfp_modules_azure_payload_inference_e2e": {
 		"message_path": "./resource/control_messages/azure_payload_inference.json",
 		"num_threads": 12,

@@ -59,16 +59,10 @@ def test_control_message_get():
     )
 
     assert "test" not in raw_control_message.config()
-    assert "tasks" in raw_control_message.config()
-    tasks = raw_control_message.config()["tasks"]
-    assert len(tasks) == 1
-    tasks[0]["type"] == "load"
+    assert(raw_control_message.has_task("load"))
 
     assert "test" not in control_message.config()
-    assert "tasks" in control_message.config()
-    tasks = control_message.config()["tasks"]
-    assert len(tasks) == 1
-    tasks[0]["type"] == "load"
+    assert(control_message.has_task("load"))
 
 
 @pytest.mark.usefixtures("config_only_cpp")
@@ -100,16 +94,10 @@ def test_control_message_set():
     })
 
     assert "test" not in raw_control_message.config()
-    assert "tasks" in raw_control_message.config()
-    tasks = raw_control_message.config()["tasks"]
-    assert len(tasks) == 1
-    assert tasks[0]["type"] == "load"
+    assert (raw_control_message.has_task("load"))
 
     assert "test" not in control_message.config()
-    assert "tasks" in control_message.config()
-    tasks = control_message.config()["tasks"]
-    assert len(tasks) == 1
-    assert tasks[0]["type"] == "load"
+    assert(control_message.has_task("load"))
 
 
 @pytest.mark.usefixtures("config_only_cpp")

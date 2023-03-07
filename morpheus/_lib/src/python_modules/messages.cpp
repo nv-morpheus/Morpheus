@@ -130,6 +130,10 @@ PYBIND11_MODULE(messages, _module)
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MultiResponseProbsMessage>,
                              std::shared_ptr<morpheus::MultiMessage>>::register_converter();
 
+    py::enum_<ControlMessageType>(_module, "ControlMessageType")
+        .value("INFERENCE", ControlMessageType::INFERENCE)
+        .value("TRAINING", ControlMessageType::TRAINING);
+
     // TODO(Devin): Circle back on return value policy choices
     py::class_<MessageControl, std::shared_ptr<MessageControl>>(_module, "MessageControl")
         .def(py::init<>(), py::return_value_policy::reference_internal)
