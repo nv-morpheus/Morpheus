@@ -28,16 +28,10 @@ on:
         required: true
         type: string
     secrets:
-      GHA_AWS_ACCESS_KEY_ID:
-        required: true
-      GHA_AWS_SECRET_ACCESS_KEY:
-        required: true
       NGC_API_KEY:
         required: true
 
 env:
-  AWS_ACCESS_KEY_ID: "${{ secrets.GHA_AWS_ACCESS_KEY_ID }}"
-  AWS_SECRET_ACCESS_KEY: "${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}"
   CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_PATH: "/usr/local/cuda/"
   CUDA_VER: "11.5"
@@ -61,6 +55,8 @@ jobs:
       image: ${{ inputs.container }}
     strategy:
       fail-fast: true
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout
@@ -69,6 +65,13 @@ jobs:
           lfs: false
           path: 'morpheus'
           fetch-depth: 0
+
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
 
       - name: Check
         shell: bash
@@ -85,6 +88,8 @@ jobs:
       image: ${{ inputs.container }}
     strategy:
       fail-fast: true
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout
@@ -92,6 +97,13 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
 
       - name: Build:linux:x86_64:gcc
         shell: bash
@@ -113,6 +125,8 @@ jobs:
         PARALLEL_LEVEL: '10'
     strategy:
       fail-fast: true
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout
@@ -120,6 +134,13 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
 
       - name: Test:linux:x86_64:gcc
         shell: bash
@@ -137,6 +158,8 @@ jobs:
       image: ${{ inputs.container }}
     strategy:
       fail-fast: true
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout
@@ -144,6 +167,13 @@ jobs:
         with:
           lfs: false
           path: 'morpheus'
+
+      - name: Get AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 43200 # 12h
 
       - name: build_docs
         shell: bash

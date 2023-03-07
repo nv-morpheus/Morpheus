@@ -18,10 +18,8 @@
 #include "morpheus/messages/multi_response_probs.hpp"
 
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>
-#include <glog/logging.h>
 #include <pybind11/pytypes.h>
 
 #include <memory>
@@ -65,29 +63,8 @@ std::shared_ptr<MultiResponseProbsMessage> MultiResponseProbsMessageInterfacePro
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
 }
 
-std::shared_ptr<morpheus::ResponseMemoryProbs> MultiResponseProbsMessageInterfaceProxy::memory(
-    MultiResponseProbsMessage& self)
-{
-    DCHECK(std::dynamic_pointer_cast<morpheus::ResponseMemoryProbs>(self.memory) != nullptr);
-
-    return std::static_pointer_cast<morpheus::ResponseMemoryProbs>(self.memory);
-}
-
-std::size_t MultiResponseProbsMessageInterfaceProxy::offset(MultiResponseProbsMessage& self)
-{
-    return self.offset;
-}
-
-std::size_t MultiResponseProbsMessageInterfaceProxy::count(MultiResponseProbsMessage& self)
-{
-    return self.count;
-}
-
 pybind11::object MultiResponseProbsMessageInterfaceProxy::probs(MultiResponseProbsMessage& self)
 {
-    // Get and convert
-    auto tensor = self.get_probs();
-
-    return CupyUtil::tensor_to_cupy(tensor);
+    return get_tensor_property(self, "probs");
 }
 }  // namespace morpheus
