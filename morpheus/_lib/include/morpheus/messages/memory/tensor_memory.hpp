@@ -123,7 +123,7 @@ class TensorMemory
 
   protected:
     /**
-     * @brief Checks if the number of rows in `tensor` matches count
+     * @brief Checks if the number of rows in `tensor` matches `count`
      *
      * @param tensor
      * @throws std::length_error If the number of rows in `tensor` do not match `count`.
@@ -133,17 +133,15 @@ class TensorMemory
     /**
      * @brief Checks each tesnor in `tensors` verifying that the number of rows matches count
      *
-     * @param tensor
-     * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
-     *
      * @param tensors
+     * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
      */
     void check_tensors_length(const TensorMap& tensors);
 
     /**
      * @brief Verify that a tensor identified by `name` exists, throws a `runtime_error` othwerwise.
-     * 
-     * @param name 
+     *
+     * @param name
      * @throws std::runtime_error If no tensor matching `name` exists
      */
     void verify_tensor_exists(const std::string& name) const;

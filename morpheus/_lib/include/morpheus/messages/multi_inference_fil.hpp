@@ -23,6 +23,7 @@
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
+#include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>  // for size_t
 #include <memory>

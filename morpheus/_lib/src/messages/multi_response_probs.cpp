@@ -18,10 +18,8 @@
 #include "morpheus/messages/multi_response_probs.hpp"
 
 #include "morpheus/messages/meta.hpp"
-#include "morpheus/utilities/cupy_util.hpp"
 
 #include <cudf/types.hpp>
-#include <glog/logging.h>
 #include <pybind11/pytypes.h>
 
 #include <memory>
