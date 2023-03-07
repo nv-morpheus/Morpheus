@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <cudf/types.hpp>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -31,7 +33,7 @@ struct TensorObject;
  * @file
  */
 // NOLINTBEGIN(readability-identifier-naming)
-using TensorIndex = long long;
+using TensorIndex = cudf::size_type;
 using RankType    = int;
 
 using ShapeType = std::vector<TensorIndex>;
