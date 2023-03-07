@@ -146,7 +146,7 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
 
         """
 
-        return self.get_output("probs")
+        return self._get_tensor_prop("probs")
 
 
 @dataclasses.dataclass
