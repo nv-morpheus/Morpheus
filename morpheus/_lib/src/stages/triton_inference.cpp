@@ -84,7 +84,7 @@ void build_output_tensors(std::size_t count,
     // Create the output memory blocks
     for (auto& model_output : model_outputs)
     {
-        std::vector<TensorIndex> total_shape{model_output.shape.begin(), model_output.shape.end()};
+        ShapeType total_shape{model_output.shape.begin(), model_output.shape.end()};
 
         // First dimension will always end up being the number of rows in the dataframe
         total_shape[0]  = static_cast<TensorIndex>(count);
@@ -98,7 +98,7 @@ void build_output_tensors(std::size_t count,
 
         // Triton results are always in row-major as required by the KServe protocol
         // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
-        std::vector<TensorIndex> stride{total_shape[1], 1};
+        ShapeType stride{total_shape[1], 1};
         output_tensors[model_output.mapped_name] =
             Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0);
     }
@@ -176,10 +176,10 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& ou
         auto tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
 
         const auto rank = tensor->rank();
-        std::vector<TensorIndex> shape(rank);
+        ShapeType shape(rank);
         tensor->get_shape(shape);
 
-        std::vector<TensorIndex> stride(rank);
+        ShapeType stride(rank);
         tensor->get_stride(stride);
 
         // DevMemInfo wants the shape & stride in size_t
@@ -219,10 +219,10 @@ void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
         auto input_tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
 
         const auto rank = input_tensor->rank();
-        std::vector<TensorIndex> shape(rank);
+        ShapeType shape(rank);
         input_tensor->get_shape(shape);
 
-        std::vector<TensorIndex> stride(rank);
+        ShapeType stride(rank);
         input_tensor->get_stride(stride);
 
         // DevMemInfo wants the shape & stride in size_t

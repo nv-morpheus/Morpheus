@@ -83,10 +83,10 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 auto thresh_bool_buffer =
                     MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride}, m_threshold, false);
 
-                std::vector<TensorIndex> tensor_shape(shape.size());
+                ShapeType tensor_shape(shape.size());
                 std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());
 
-                std::vector<TensorIndex> tensor_stride(stride.size());
+                ShapeType tensor_stride(stride.size());
                 std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
 
                 auto tensor_obj =
@@ -99,9 +99,9 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 for (const auto& [column_num, column_name] : m_idx2label)
                 {
                     columns[i] = column_name;
-                    tensors[i] = tensor_obj.slice(std::vector<TensorIndex>{0, static_cast<TensorIndex>(column_num)},
-                                                  std::vector<TensorIndex>{static_cast<TensorIndex>(num_rows),
-                                                                           static_cast<TensorIndex>(column_num + 1)});
+                    tensors[i] = tensor_obj.slice(
+                        ShapeType{0, static_cast<TensorIndex>(column_num)},
+                        ShapeType{static_cast<TensorIndex>(num_rows), static_cast<TensorIndex>(column_num + 1)});
 
                     ++i;
                 }

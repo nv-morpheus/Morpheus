@@ -86,7 +86,7 @@ DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr
     // since we only asked for one column, we know its the first
     const auto& col = table_info.get_column(0);
     auto dtype      = morpheus::DType::from_cudf(col.type().id());
-    auto num_rows   = static_cast<std::size_t>(col.size());
+    auto num_rows   = col.size();
 
     auto buffer = std::make_shared<rmm::device_buffer>(num_rows * dtype.item_size(), rmm::cuda_stream_per_thread);
 

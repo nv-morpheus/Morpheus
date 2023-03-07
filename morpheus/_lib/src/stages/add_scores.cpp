@@ -66,9 +66,9 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
                 for (const auto& [column_num, column_name] : m_idx2label)
                 {
                     columns[i] = column_name;
-                    tensors[i] = probs.slice(std::vector<TensorIndex>{0, static_cast<TensorIndex>(column_num)},
-                                             std::vector<TensorIndex>{static_cast<TensorIndex>(num_rows),
-                                                                      static_cast<TensorIndex>(column_num + 1)});
+                    tensors[i] = probs.slice(
+                        ShapeType{0, static_cast<TensorIndex>(column_num)},
+                        ShapeType{static_cast<TensorIndex>(num_rows), static_cast<TensorIndex>(column_num + 1)});
 
                     ++i;
                 }

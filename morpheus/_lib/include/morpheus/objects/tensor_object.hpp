@@ -28,7 +28,7 @@
 
 #include <algorithm>
 #include <array>
-#include <cstddef>  // for size_t, byte
+#include <cstddef>  // for size_t
 #include <cstdint>
 #include <functional>
 #include <memory>   // for shared_ptr
@@ -127,7 +127,7 @@ struct ITensorStorage
     virtual void* data() const = 0;
 
     // virtual const void* data() const                             = 0;
-    virtual std::size_t bytes() const = 0;
+    virtual TensorIndex bytes() const = 0;
 
     virtual std::shared_ptr<MemoryDescriptor> get_memory() const = 0;
     // virtual TensorStorageType storage_type() const               = 0;
@@ -155,27 +155,27 @@ struct ITensor : public ITensorStorage, public ITensorOperations
 
     virtual RankType rank() const = 0;
 
-    virtual std::size_t count() const = 0;
+    virtual TensorIndex count() const = 0;
 
     virtual DType dtype() const = 0;
 
-    virtual std::size_t shape(std::size_t) const = 0;
+    virtual TensorIndex shape(TensorIndex) const = 0;
 
-    virtual std::size_t stride(std::size_t) const = 0;
+    virtual TensorIndex stride(TensorIndex) const = 0;
 
     virtual bool is_compact() const = 0;
 
-    std::vector<std::size_t> get_shape() const
+    ShapeType get_shape() const
     {
-        std::vector<std::size_t> v(this->rank());
+        ShapeType v(this->rank());
         for (int i = 0; i < this->rank(); ++i)
             v[i] = this->shape(i);
         return v;
     }
 
-    std::vector<std::size_t> get_stride() const
+    ShapeType get_stride() const
     {
-        std::vector<std::size_t> v(this->rank());
+        ShapeType v(this->rank());
         for (int i = 0; i < this->rank(); ++i)
             v[i] = this->stride(i);
         return v;
@@ -217,12 +217,12 @@ struct TensorObject final
         return m_tensor->dtype();
     }
 
-    std::size_t count() const
+    TensorIndex count() const
     {
         return m_tensor->count();
     }
 
-    std::size_t bytes() const
+    TensorIndex bytes() const
     {
         return m_tensor->bytes();
     }
@@ -237,12 +237,12 @@ struct TensorObject final
         return m_tensor->dtype().item_size();
     }
 
-    std::vector<std::size_t> get_shape() const
+    ShapeType get_shape() const
     {
         return m_tensor->get_shape();
     }
 
-    std::vector<std::size_t> get_stride() const
+    ShapeType get_stride() const
     {
         return m_tensor->get_stride();
     }
@@ -301,7 +301,7 @@ struct TensorObject final
         return out_data;
     }
 
-    template <typename T, size_t N>
+    template <typename T, RankType N>
     T read_element(const TensorIndex (&idx)[N]) const
     {
         auto stride = this->get_stride();
@@ -319,9 +319,9 @@ struct TensorObject final
             << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
             << "', array type: '" << this->dtype().name() << "'";
 
-        size_t offset = std::transform_reduce(
-                            stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
-                        this->dtype_size();
+        auto offset = std::transform_reduce(
+                          stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
+                      this->dtype_size();
 
         T output;
 
@@ -331,7 +331,7 @@ struct TensorObject final
         return output;
     }
 
-    template <typename T, size_t N>
+    template <typename T, RankType N>
     T read_element(const std::array<TensorIndex, N> idx) const
     {
         auto stride = this->get_stride();
@@ -349,9 +349,9 @@ struct TensorObject final
             << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
             << "', array type: '" << this->dtype().name() << "'";
 
-        size_t offset = std::transform_reduce(
-                            stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
-                        this->dtype_size();
+        auto offset = std::transform_reduce(
+                          stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
+                      this->dtype_size();
 
         T output;
 

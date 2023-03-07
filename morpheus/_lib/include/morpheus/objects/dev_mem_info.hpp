@@ -54,11 +54,11 @@ class DevMemInfo
     const DType& dtype() const;
     TypeId type_id() const;
 
-    const std::vector<TensorIndex>& shape() const;
+    const ShapeType& shape() const;
     TensorIndex shape(TensorIndex idx) const;
 
     // Stride in elements
-    const std::vector<TensorIndex>& stride() const;
+    const ShapeType& stride() const;
     TensorIndex stride(TensorIndex idx) const;
 
     /**

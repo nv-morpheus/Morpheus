@@ -23,7 +23,6 @@
 
 #include <rmm/device_buffer.hpp>
 
-#include <cstddef>  // for size_t
 #include <memory>
 #include <utility>  // for pair
 #include <vector>
@@ -46,7 +45,7 @@ class RMMTensor : public ITensor
 {
   public:
     RMMTensor(std::shared_ptr<rmm::device_buffer> device_buffer,
-              size_t offset,
+              TensorIndex offset,
               DType dtype,
               ShapeType shape,
               ShapeType stride = {});
@@ -102,22 +101,22 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    std::size_t bytes() const final;
+    TensorIndex bytes() const final;
 
     /**
      * TODO(Documentation)
      */
-    std::size_t count() const final;
+    TensorIndex count() const final;
 
     /**
      * TODO(Documentation)
      */
-    std::size_t shape(std::size_t idx) const final;
+    TensorIndex shape(TensorIndex idx) const final;
 
     /**
      * TODO(Documentation)
      */
-    std::size_t stride(std::size_t idx) const final;
+    TensorIndex stride(TensorIndex idx) const final;
 
     /**
      * TODO(Documentation)
@@ -134,7 +133,7 @@ class RMMTensor : public ITensor
      */
     void get_stride(ShapeType& s) const;
 
-    // Tensor reshape(std::vector<TensorIndex> shape)
+    // Tensor reshape(ShapeType shape)
     // {
     //     CHECK(is_compact());
     //     return Tensor(descriptor_shared(), dtype_size(), shape);
@@ -150,11 +149,11 @@ class RMMTensor : public ITensor
     /**
      * TODO(Documentation)
      */
-    size_t offset_bytes() const;
+    TensorIndex offset_bytes() const;
 
     // Memory info
     std::shared_ptr<rmm::device_buffer> m_md;
-    size_t m_offset;
+    TensorIndex m_offset;
 
     // // Type info
     // std::string m_typestr;
