@@ -18,84 +18,75 @@
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
+<<<<<<< HEAD
 #include "morpheus/utilities/cupy_util.hpp"
+    =======
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
+    >>>>>>> branch-23.03
 
 #include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
-#include <map>  // this->tensors is a map
 #include <memory>
-#include <stdexcept>  // for runtime_error
 #include <utility>
 
-namespace morpheus {
-/****** Component public implementations *******************/
-/****** InferenceMemoryFIL****************************************/
-InferenceMemoryFIL::InferenceMemoryFIL(size_t count, TensorObject&& input__0, TensorObject&& seq_ids) :
-  InferenceMemory(count)
+    namespace morpheus
 {
-    set_tensor("input__0", std::move(input__0));
-    set_tensor("seq_ids", std::move(seq_ids));
-}
-
-const TensorObject& InferenceMemoryFIL::get_input__0() const
-{
-    auto found = this->tensors.find("input__0");
-    if (found == this->tensors.end())
+    /****** Component public implementations *******************/
+    /****** InferenceMemoryFIL****************************************/
+    InferenceMemoryFIL::InferenceMemoryFIL(size_t count, TensorObject && input__0, TensorObject && seq_ids) :
+      InferenceMemory(count)
     {
-        throw std::runtime_error("Tensor: 'input__0' not found in memory");
+        set_tensor("input__0", std::move(input__0));
+        set_tensor("seq_ids", std::move(seq_ids));
     }
 
-    return found->second;
-}
-
-void InferenceMemoryFIL::set_input__0(TensorObject&& input__0)
-{
-    set_tensor("input__0", std::move(input__0));
-}
-
-const TensorObject& InferenceMemoryFIL::get_seq_ids() const
-{
-    auto found = this->tensors.find("seq_ids");
-    if (found == this->tensors.end())
+    const TensorObject& InferenceMemoryFIL::get_input__0() const
     {
-        throw std::runtime_error("Tensor: 'seq_ids' not found in memory");
+        return get_tensor("input__0");
     }
 
-    return found->second;
-}
+    void InferenceMemoryFIL::set_input__0(TensorObject && input__0)
+    {
+        set_tensor("input__0", std::move(input__0));
+    }
 
-void InferenceMemoryFIL::set_seq_ids(TensorObject&& seq_ids)
-{
-    set_tensor("seq_ids", std::move(seq_ids));
-}
-/****** InferenceMemoryFILInterfaceProxy *************************/
-std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(cudf::size_type count,
-                                                                           pybind11::object input__0,
-                                                                           pybind11::object seq_ids)
-{
-    // Convert the cupy arrays to tensors
-    return std::make_shared<InferenceMemoryFIL>(
-        count, std::move(CupyUtil::cupy_to_tensor(input__0)), std::move(CupyUtil::cupy_to_tensor(seq_ids)));
-}
+    const TensorObject& InferenceMemoryFIL::get_seq_ids() const
+    {
+        return get_tensor("seq_ids");
+    }
 
-pybind11::object InferenceMemoryFILInterfaceProxy::get_input__0(InferenceMemoryFIL& self)
-{
-    return CupyUtil::tensor_to_cupy(self.get_input__0());
-}
+    void InferenceMemoryFIL::set_seq_ids(TensorObject && seq_ids)
+    {
+        set_tensor("seq_ids", std::move(seq_ids));
+    }
 
-void InferenceMemoryFILInterfaceProxy::set_input__0(InferenceMemoryFIL& self, pybind11::object cupy_values)
-{
-    self.set_input__0(CupyUtil::cupy_to_tensor(cupy_values));
-}
+    /****** InferenceMemoryFILInterfaceProxy *************************/
+    std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(
+        cudf::size_type count, pybind11::object input__0, pybind11::object seq_ids)
+    {
+        // Convert the cupy arrays to tensors
+        return std::make_shared<InferenceMemoryFIL>(
+            count, std::move(CupyUtil::cupy_to_tensor(input__0)), std::move(CupyUtil::cupy_to_tensor(seq_ids)));
+    }
 
-pybind11::object InferenceMemoryFILInterfaceProxy::get_seq_ids(InferenceMemoryFIL& self)
-{
-    return CupyUtil::tensor_to_cupy(self.get_seq_ids());
-}
+    pybind11::object InferenceMemoryFILInterfaceProxy::get_input__0(InferenceMemoryFIL & self)
+    {
+        return get_tensor_property(self, "input__0");
+    }
 
-void InferenceMemoryFILInterfaceProxy::set_seq_ids(InferenceMemoryFIL& self, pybind11::object cupy_values)
-{
-    return self.set_seq_ids(CupyUtil::cupy_to_tensor(cupy_values));
-}
+    void InferenceMemoryFILInterfaceProxy::set_input__0(InferenceMemoryFIL & self, pybind11::object cupy_values)
+    {
+        self.set_input__0(CupyUtil::cupy_to_tensor(cupy_values));
+    }
+
+    pybind11::object InferenceMemoryFILInterfaceProxy::get_seq_ids(InferenceMemoryFIL & self)
+    {
+        return get_tensor_property(self, "seq_ids");
+    }
+
+    void InferenceMemoryFILInterfaceProxy::set_seq_ids(InferenceMemoryFIL & self, pybind11::object cupy_values)
+    {
+        return self.set_seq_ids(CupyUtil::cupy_to_tensor(cupy_values));
+    }
 }  // namespace morpheus

@@ -99,6 +99,27 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Raises
         ------
+        KeyError
+            If tensor name does not exist in the container.
+        """
+        return self._tensors[name]
+
+    def _get_tensor_prop(self, name: str):
+        """
+        This method is intended to be used by propery methods in subclasses
+
+        Parameters
+        ----------
+        name : str
+            Tensor key name.
+
+        Returns
+        -------
+        cupy.ndarray
+            Tensor.
+
+        Raises
+        ------
         AttributeError
             If tensor name does not exist in the container.
         """

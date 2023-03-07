@@ -17,8 +17,9 @@
 
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include "morpheus/objects/dtype.hpp"  // for DType
-#include "morpheus/objects/tensor.hpp"
+#include "morpheus/objects/dtype.hpp"   // for DType
+#include "morpheus/objects/tensor.hpp"  // for Tensor
+#include "morpheus/types.hpp"           // for TensorIndex
 
 #include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
 #include <pybind11/cast.h>
@@ -130,7 +131,7 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
     return tensor;
 }
 
-CupyUtil::tensor_map_t CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
+TensorMap CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
 {
     tensor_map_t tensors;
     for (const auto& tensor : cupy_tensors)

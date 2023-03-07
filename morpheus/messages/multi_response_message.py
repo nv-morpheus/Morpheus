@@ -150,7 +150,7 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
 
         """
 
-        return self.get_output("probs")
+        return self._get_tensor_prop("probs")
 
     def __new__(cls, *args, **kwargs):
         morpheus_logger.deprecated_message_warning(logger, cls, MultiResponseMessage)

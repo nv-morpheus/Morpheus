@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_map_t
+#include "morpheus/types.hpp"  // for TensorMap
 
 #include <pybind11/pytypes.h>  // for object
 
@@ -54,10 +54,10 @@ class ResponseMemory : public TensorMemory
      * @param count
      * @param tensors
      */
-    ResponseMemory(size_t count, CupyUtil::tensor_map_t&& tensors);
+    ResponseMemory(size_t count, TensorMap&& tensors);
 
     /**
-     * @brief Checks if a tensor named `name` exists in `tensors`
+     * @brief Checks if a tensor named `name` exists in `tensors`. Alias for `has_tensor`.
      *
      * @param name
      * @return true

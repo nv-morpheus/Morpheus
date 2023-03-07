@@ -58,6 +58,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Get the input ids object
      *
      * @return const TensorObject&
+     * @throws std::runtime_error If no tensor named "input_ids" exists
      */
     const TensorObject& get_input_ids() const;
 
@@ -65,6 +66,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Get the input mask object
      *
      * @return const TensorObject&
+     * @throws std::runtime_error If no tensor named "input_mask" exists
      */
     const TensorObject& get_input_mask() const;
 
@@ -72,6 +74,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Get the seq ids object
      *
      * @return const TensorObject&
+     * @throws std::runtime_error If no tensor named "seq_ids" exists
      */
     const TensorObject& get_seq_ids() const;
 
@@ -79,6 +82,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Set the input ids object
      *
      * @param input_ids
+     * @throws std::length_error If the number of rows in `input_ids` does not match `count`.
      */
     void set_input_ids(TensorObject&& input_ids);
 
@@ -86,6 +90,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Set the input mask object
      *
      * @param input_mask
+     * @throws std::length_error If the number of rows in `input_mask` does not match `count`.
      */
     void set_input_mask(TensorObject&& input_mask);
 
@@ -93,6 +98,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Set the seq ids object
      *
      * @param seq_ids
+     * @throws std::length_error If the number of rows in `seq_ids` does not match `count`.
      */
     void set_seq_ids(TensorObject&& seq_ids);
 };
@@ -124,6 +130,7 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_input_ids(InferenceMemoryNLP& self);
 
@@ -140,6 +147,7 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_input_mask(InferenceMemoryNLP& self);
 
@@ -156,6 +164,7 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_seq_ids(InferenceMemoryNLP& self);
 

@@ -29,8 +29,7 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemory****************************************/
 ResponseMemory::ResponseMemory(size_t count) : TensorMemory(count) {}
-ResponseMemory::ResponseMemory(size_t count, CupyUtil::tensor_map_t&& tensors) : TensorMemory(count, std::move(tensors))
-{}
+ResponseMemory::ResponseMemory(size_t count, TensorMap&& tensors) : TensorMemory(count, std::move(tensors)) {}
 
 bool ResponseMemory::has_output(const std::string& name) const
 {

@@ -73,18 +73,20 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
                          std::size_t count);
 
     /**
-     * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns the output tensor with the given name.
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
     const TensorObject get_output(const std::string& name) const;
 
     /**
-     * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns the output tensor with the given name.
      *
      * @param name
      * @return TensorObject
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
     TensorObject get_output(const std::string& name);
 
@@ -102,7 +104,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiResponseMessageInterfaceProxy
+struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiResponseMessage, and return a shared pointer to the result
@@ -124,34 +126,12 @@ struct MultiResponseMessageInterfaceProxy
                                                       cudf::size_type count);
 
     /**
-     * @brief Returns a shared pointer of a response memory object
-     *
-     * @return std::shared_ptr<ResponseMemory>
-     */
-    static std::shared_ptr<ResponseMemory> memory(MultiResponseMessage& self);
-
-    /**
-     * @brief Message offset in response memory object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t offset(MultiResponseMessage& self);
-
-    /**
-     * @brief Messages count in response memory object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(MultiResponseMessage& self);
-
-    /**
      * @brief Returns the output tensor for a given name
      *
      * @param self
      * @param name : Tensor name
      * @return pybind11::object
+     * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_output(MultiResponseMessage& self, const std::string& name);
 };

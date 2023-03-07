@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import dataclasses
-import typing
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
@@ -53,9 +52,6 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
     def __setstate__(self, d):
         self.__dict__ = d
 
-    def __getattr__(self, name: str) -> typing.Any:
-        return self.get_tensor(name)
-
     def get_input(self, name: str):
         """
         Get input stored in the InferenceMemory container. Alias for `MultiInferenceMessage.get_tensor`.
@@ -72,7 +68,7 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
 
         Raises
         ------
-        AttributeError
+        KeyError
             When no matching input tensor exists.
         """
         return self.get_tensor(name)
@@ -124,7 +120,7 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
 
         """
 
-        return self.get_input("input_ids")
+        return self._get_tensor_prop("input_ids")
 
     @property
     def input_mask(self):
@@ -138,7 +134,7 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
 
         """
 
-        return self.get_input("input_mask")
+        return self._get_tensor_prop("input_mask")
 
     @property
     def seq_ids(self):
@@ -153,7 +149,7 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
 
         """
 
-        return self.get_input("seq_ids")
+        return self._get_tensor_prop("seq_ids")
 
 
 @dataclasses.dataclass
@@ -175,7 +171,7 @@ class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
 
         """
 
-        return self.get_input("input__0")
+        return self._get_tensor_prop("input__0")
 
     @property
     def seq_ids(self):
@@ -189,4 +185,4 @@ class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
 
         """
 
-        return self.get_input("seq_ids")
+        return self._get_tensor_prop("seq_ids")

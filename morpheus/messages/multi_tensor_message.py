@@ -56,7 +56,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         return {key: self.get_tensor(key) for key in tensors.keys()}
 
     def __getattr__(self, name: str) -> typing.Any:
-        return self.get_tensor(name)
+        return self._get_tensor_prop(name)
 
     def get_tensor(self, name: str):
         """
@@ -74,6 +74,30 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
 
         """
         return self.memory.get_tensor(name)[self.offset:self.offset + self.count, :]
+
+    def _get_tensor_prop(self, name: str):
+        """
+        This method is intended to be used by propery methods in subclasses
+
+        Parameters
+        ----------
+        name : str
+            Tensor key name.
+
+        Returns
+        -------
+        cupy.ndarray
+            Tensor.
+
+        Raises
+        ------
+        AttributeError
+            If tensor name does not exist in the container.
+        """
+        try:
+            return self.get_tensor(name)
+        except KeyError:
+            raise AttributeError(f'No attribute named "{name}" exists')
 
     def copy_tensor_ranges(self, ranges, mask=None):
         """

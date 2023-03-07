@@ -17,13 +17,15 @@
 
 #include "morpheus/messages/multi_tensor.hpp"
 
-#include "morpheus/utilities/cupy_util.hpp"
+#include "morpheus/types.hpp"                // for TensorIndex, TensorMap
+#include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
 
 #include <cudf/types.hpp>  // for cudf::size_type>
 #include <glog/logging.h>
+#include <pybind11/pytypes.h>  // for key_error
 
-#include <cstdint>  // for int32_t
-#include <ostream>  // needed for logging
+#include <cstdint>    // for int32_t
+#include <stdexcept>  // for runtime_error
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -52,16 +54,16 @@ TensorObject MultiTensorMessage::get_tensor(const std::string& name)
 
 TensorObject MultiTensorMessage::get_tensor_impl(const std::string& name) const
 {
-    CHECK(this->memory->has_tensor(name)) << "Cound not find tensor: " << name;
+    auto& tensor = this->memory->get_tensor(name);
 
     // check if we are getting the entire input
     if (this->offset == 0 && this->count == this->memory->count)
     {
-        return this->memory->tensors[name];
+        return tensor;
     }
 
-    return this->memory->tensors[name].slice({static_cast<cudf::size_type>(this->offset), 0},
-                                             {static_cast<cudf::size_type>(this->offset + this->count), -1});
+    return tensor.slice({static_cast<cudf::size_type>(this->offset), 0},
+                        {static_cast<cudf::size_type>(this->offset + this->count), -1});
 }
 
 void MultiTensorMessage::set_tensor(const std::string& name, const TensorObject& value)
@@ -150,9 +152,25 @@ std::size_t MultiTensorMessageInterfaceProxy::count(MultiTensorMessage& self)
 
 pybind11::object MultiTensorMessageInterfaceProxy::get_tensor(MultiTensorMessage& self, const std::string& name)
 {
-    auto tensor = self.get_tensor(name);
+    try
+    {
+        auto tensor = self.get_tensor(name);
+        return CupyUtil::tensor_to_cupy(tensor);
+    } catch (const std::runtime_error& e)
+    {
+        throw pybind11::key_error{e.what()};
+    }
+}
 
-    return CupyUtil::tensor_to_cupy(tensor);
+pybind11::object MultiTensorMessageInterfaceProxy::get_tensor_property(MultiTensorMessage& self, const std::string name)
+{
+    try
+    {
+        return get_tensor(self, std::move(name));
+    } catch (const pybind11::key_error& e)
+    {
+        throw pybind11::attribute_error{e.what()};
+    }
 }
 
 }  // namespace morpheus
