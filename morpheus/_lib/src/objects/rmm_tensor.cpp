@@ -160,22 +160,12 @@ std::shared_ptr<ITensor> RMMTensor::deep_copy() const
     return std::make_shared<RMMTensor>(copied_buffer, m_offset, m_dtype, m_shape, m_stride);
 }
 
-std::shared_ptr<ITensor> RMMTensor::as_type(DType dtype) const
+std::shared_ptr<ITensor> RMMTensor::as_type(DType new_dtype) const
 {
-    DType new_dtype(dtype.type_id());
-
-    auto input_type = m_dtype.type_id();
-    std::vector<std::size_t> input_shape(rank());
-    std::copy(m_shape.cbegin(), m_shape.cend(), input_shape.begin());
-
-    std::vector<std::size_t> input_stride(rank());
-    std::copy(m_stride.cbegin(), m_stride.cend(), input_stride.begin());
-
-    auto output_type = new_dtype.type_id();
-
     // Now do the conversion
-    auto new_data_buffer = MatxUtil::cast(
-        DevMemInfo{m_md, m_dtype, std::move(input_shape), std::move(input_stride), this->offset_bytes()}, output_type);
+    auto new_data_buffer =
+        MatxUtil::cast(DevMemInfo{m_md, m_dtype, m_shape, m_stride, static_cast<TensorIndex>(this->offset_bytes())},
+                       new_dtype.type_id());
 
     // Return the new type
     return std::make_shared<RMMTensor>(new_data_buffer, 0, new_dtype, m_shape, m_stride);

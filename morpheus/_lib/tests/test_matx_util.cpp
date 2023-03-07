@@ -20,6 +20,7 @@
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 #include "morpheus/utilities/matx_util.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
@@ -56,8 +57,8 @@ TEST_F(TestMatxUtil, ReduceMax1d)
 
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
-    DevMemInfo dm{input_buffer, dtype, {input.size(), 1}, {1, 0}};
-    std::vector<std::size_t> output_shape{expected_output.size(), 1};
+    DevMemInfo dm{input_buffer, dtype, {static_cast<TensorIndex>(input.size()), 1}, {1, 0}};
+    ShapeType output_shape{static_cast<TensorIndex>(expected_output.size()), 1};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     std::vector<float> output(expected_output.size());
@@ -96,9 +97,9 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     // clang-format on
 
     // Copy data from table into one big buffer
-    std::size_t num_cols      = 4;
-    std::size_t num_rows      = 12;
-    std::size_t expected_rows = expected_output.size() / num_cols;
+    TensorIndex num_cols      = 4;
+    TensorIndex num_rows      = 12;
+    TensorIndex expected_rows = expected_output.size() / num_cols;
 
     EXPECT_EQ(num_cols * num_rows, input.size());
     EXPECT_EQ(expected_rows, 5);
@@ -111,7 +112,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
     DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {num_cols, 1}};
-    std::vector<std::size_t> output_shape{expected_rows, num_cols};
+    ShapeType output_shape{expected_rows, num_cols};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
@@ -132,8 +133,8 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     auto input_file    = morpheus_root / "tests/tests_data/filter_probs.csv";
 
     auto table_m  = morpheus::load_table_from_file(input_file);
-    auto num_rows = static_cast<std::size_t>(table_m.tbl->num_rows());
-    auto num_cols = static_cast<std::size_t>(table_m.tbl->num_columns());
+    auto num_rows = table_m.tbl->num_rows();
+    auto num_cols = table_m.tbl->num_columns();
 
     EXPECT_EQ(num_rows, 20);
     EXPECT_EQ(num_cols, 4);
@@ -172,7 +173,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     EXPECT_EQ(expected_rows * num_cols, expected_output.size());
 
     DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {1, num_rows}};
-    std::vector<std::size_t> output_shape{expected_rows, num_cols};
+    ShapeType output_shape{expected_rows, num_cols};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
@@ -238,8 +239,8 @@ TEST_F(TestMatxUtil, Threshold)
     };
     // clang-format on
 
-    std::size_t num_cols = 4;
-    std::size_t num_rows = 5;
+    TensorIndex num_cols = 4;
+    TensorIndex num_rows = 5;
     EXPECT_EQ(num_cols * num_rows, input.size());
 
     DType dtype(TypeId::FLOAT32);
@@ -284,8 +285,8 @@ TEST_F(TestMatxUtil, ThresholdByRow)
     std::vector<bool> expected_output{true, true, true, false, true};
     // clang-format on
 
-    std::size_t num_cols = 4;
-    std::size_t num_rows = 5;
+    TensorIndex num_cols = 4;
+    TensorIndex num_rows = 5;
     EXPECT_EQ(num_cols * num_rows, input.size());
 
     DType dtype(TypeId::FLOAT32);

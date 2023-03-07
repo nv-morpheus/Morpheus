@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-#include "morpheus/objects/dev_mem_info.hpp"
-#include "morpheus/objects/dtype.hpp"
-#include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/matx_util.hpp"
 
 #include <cudf/utilities/traits.hpp>
@@ -26,7 +23,6 @@
 #include <mrc/cuda/sync.hpp>
 
 #include <array>
-#include <memory>
 
 namespace morpheus {
 
@@ -40,7 +36,7 @@ using tensorShape_2d = std::array<matx::index_t, 2>;
  */
 struct MatxUtil__MatxCast
 {
-    size_t element_count;
+    TensorIndex element_count;
     rmm::cuda_stream_view stream;
 
     /**
@@ -77,8 +73,8 @@ struct MatxUtil__MatxCast
  */
 struct MatxUtil__MatxCreateSegIds
 {
-    size_t element_count;
-    size_t fea_len;
+    TensorIndex element_count;
+    TensorIndex fea_len;
     rmm::cuda_stream_view stream;
 
     /**
@@ -116,7 +112,7 @@ struct MatxUtil__MatxCreateSegIds
  */
 struct MatxUtil__MatxLogits
 {
-    size_t element_count;
+    TensorIndex element_count;
     rmm::cuda_stream_view stream;
 
     /**
@@ -150,10 +146,10 @@ struct MatxUtil__MatxLogits
  */
 struct MatxUtil__MatxTranspose
 {
-    size_t element_count;
+    TensorIndex element_count;
     rmm::cuda_stream_view stream;
-    size_t rows;
-    size_t cols;
+    TensorIndex rows;
+    TensorIndex cols;
 
     /**
      * TODO(Documentation)
@@ -186,8 +182,8 @@ struct MatxUtil__MatxTranspose
  */
 struct MatxUtil__MatxThreshold
 {
-    size_t rows;
-    size_t cols;
+    TensorIndex rows;
+    TensorIndex cols;
     bool by_row;
     rmm::cuda_stream_view stream;
 
@@ -195,7 +191,7 @@ struct MatxUtil__MatxThreshold
      * TODO(Documentation)
      */
     template <typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()>* = nullptr>
-    void operator()(void* input_data, void* output_data, double threshold, const std::vector<std::size_t>& stride)
+    void operator()(void* input_data, void* output_data, double threshold, const ShapeType& stride)
     {
         throw std::invalid_argument("Unsupported conversion");
     }
@@ -204,7 +200,7 @@ struct MatxUtil__MatxThreshold
      * TODO(Documentation)
      */
     template <typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()>* = nullptr>
-    void operator()(void* input_data, void* output_data, double threshold, const std::vector<std::size_t>& stride)
+    void operator()(void* input_data, void* output_data, double threshold, const ShapeType& stride)
     {
         if (by_row)
         {
@@ -221,7 +217,7 @@ struct MatxUtil__MatxThreshold
      * TODO(Documentation)
      */
     template <typename InputT>
-    void threshold_by_row(void* input_data, void* output_data, double threshold, const std::vector<std::size_t>& stride)
+    void threshold_by_row(void* input_data, void* output_data, double threshold, const ShapeType& stride)
     {
         // Output is always 1 column
         tensorShape_1d output_shape({static_cast<matx::index_t>(rows)});
@@ -248,7 +244,7 @@ struct MatxUtil__MatxThreshold
      * TODO(Documentation)
      */
     template <typename InputT>
-    void threshold(void* input_data, void* output_data, double threshold, const std::vector<std::size_t>& stride)
+    void threshold(void* input_data, void* output_data, double threshold, const ShapeType& stride)
     {
         matx::DefaultDescriptor<2> input_desc{
             {static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
@@ -273,7 +269,7 @@ struct MatxUtil__MatxReduceMax
     matx::index_t num_cols;
     std::vector<matx::index_t> input_stride;
     const std::vector<int32_t>& seq_ids;
-    size_t seq_id_offset;
+    TensorIndex seq_id_offset;
     rmm::cuda_stream_view stream;
 
     template <typename InputT, std::enable_if_t<!cudf::is_floating_point<InputT>()>* = nullptr>
@@ -365,7 +361,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo& input, Type
     return output;
 }
 
-std::shared_ptr<rmm::device_buffer> MatxUtil::create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type)
+std::shared_ptr<rmm::device_buffer> MatxUtil::create_seg_ids(TensorIndex row_count, TensorIndex fea_len, TypeId output_type)
 {
     auto output_dtype = DType(output_type);
 
@@ -410,7 +406,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::threshold(const DevMemInfo& input,
 {
     const auto rows         = input.shape(0);
     const auto cols         = input.shape(1);
-    std::size_t output_size = sizeof(bool) * rows;
+    TensorIndex output_size = sizeof(bool) * rows;
     if (!by_row)
     {
         output_size *= cols;
@@ -433,8 +429,8 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::threshold(const DevMemInfo& input,
 
 std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input,
                                                          const std::vector<int32_t>& seq_ids,
-                                                         size_t seq_id_offset,
-                                                         const std::vector<std::size_t>& output_shape)
+                                                         TensorIndex seq_id_offset,
+                                                         const ShapeType& output_shape)
 {
     const auto& dtype   = input.dtype();
     auto cudf_type      = cudf::data_type{dtype.cudf_type_id()};
@@ -444,8 +440,8 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input
     std::vector<matx::index_t> matx_stride{static_cast<matx::index_t>(input.stride(0)),
                                            static_cast<matx::index_t>(input.stride(1))};
 
-    std::size_t output_element_count = output_shape[0] * output_shape[1];
-    std::size_t output_buff_size     = dtype.item_size() * output_element_count;
+    TensorIndex output_element_count = output_shape[0] * output_shape[1];
+    TensorIndex output_buff_size     = dtype.item_size() * output_element_count;
 
     DCHECK(output_element_count <= input.count()) << "Output buffer size should be less than or equal to the input";
     DCHECK(num_input_cols == output_shape[1]) << "Number of input and output columns must match";
