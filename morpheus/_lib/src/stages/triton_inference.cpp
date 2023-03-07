@@ -172,28 +172,22 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& ou
 
     for (const auto& output : output_tensors)
     {
-        // TODO: probably don't need this cast
-        DCHECK(std::dynamic_pointer_cast<RMMTensor>(output.second.get_tensor()) != nullptr);
-        auto tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
+        auto& tensor = output.second;
 
-        const auto rank = tensor->rank();
-        ShapeType shape(rank);
-        tensor->get_shape(shape);
-
-        ShapeType stride(rank);
-        tensor->get_stride(stride);
+        ShapeType shape  = tensor.get_shape();
+        ShapeType stride = tensor.get_stride();
 
         ShapeType reduced_shape{shape};
         reduced_shape[0] = x->mess_count;
 
         auto& buffer = output_buffers[output.first];
         auto reduced_buffer =
-            MatxUtil::reduce_max(DevMemInfo{buffer, tensor->dtype(), shape, stride}, host_seq_ids, 0, reduced_shape);
+            MatxUtil::reduce_max(DevMemInfo{buffer, tensor.dtype(), shape, stride}, host_seq_ids, 0, reduced_shape);
 
         output_buffers[output.first] = reduced_buffer;
 
         reduced_outputs[output.first] =
-            Tensor::create(std::move(reduced_buffer), tensor->dtype(), reduced_shape, stride, 0);
+            Tensor::create(std::move(reduced_buffer), tensor.dtype(), reduced_shape, stride, 0);
     }
 
     output_tensors = std::move(reduced_outputs);
@@ -205,25 +199,19 @@ void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
 
     for (const auto& output : output_tensors)
     {
-        // TODO: probably don't need this cast
-        DCHECK(std::dynamic_pointer_cast<RMMTensor>(output.second.get_tensor()) != nullptr);
-        auto input_tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
+        auto& input_tensor = output.second;
 
-        const auto rank = input_tensor->rank();
-        ShapeType shape(rank);
-        input_tensor->get_shape(shape);
-
-        ShapeType stride(rank);
-        input_tensor->get_stride(stride);
+        auto shape  = input_tensor.get_shape();
+        auto stride = input_tensor.get_stride();
 
         auto& buffer = output_buffers[output.first];
 
-        auto output_buffer = MatxUtil::logits(DevMemInfo{buffer, input_tensor->dtype(), shape, stride});
+        auto output_buffer = MatxUtil::logits(DevMemInfo{buffer, input_tensor.dtype(), shape, stride});
 
         output_buffers[output.first] = output_buffer;
 
         // For logits the input and output shapes will be the same
-        logit_outputs[output.first] = Tensor::create(std::move(output_buffer), input_tensor->dtype(), shape, stride, 0);
+        logit_outputs[output.first] = Tensor::create(std::move(output_buffer), input_tensor.dtype(), shape, stride, 0);
     }
 
     output_tensors = std::move(logit_outputs);
