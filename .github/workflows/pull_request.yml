@@ -29,11 +29,11 @@ concurrency:
 jobs:
   ci_pipe:
     uses: ./.github/workflows/ci_pipe.yml
+    permissions:
+      id-token: write
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-230125
       test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230125
     secrets:
-      GHA_AWS_ACCESS_KEY_ID: ${{ secrets.GHA_AWS_ACCESS_KEY_ID }}
-      GHA_AWS_SECRET_ACCESS_KEY: ${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}
