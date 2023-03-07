@@ -76,7 +76,7 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
     }
 }
 
-void build_output_tensors(std::size_t count,
+void build_output_tensors(TensorIndex count,
                           const std::vector<TritonInOut>& model_outputs,
                           buffer_map_t& output_buffers,
                           TensorMap& output_tensors)
@@ -87,7 +87,7 @@ void build_output_tensors(std::size_t count,
         ShapeType total_shape{model_output.shape.begin(), model_output.shape.end()};
 
         // First dimension will always end up being the number of rows in the dataframe
-        total_shape[0]  = static_cast<TensorIndex>(count);
+        total_shape[0]  = count;
         auto elem_count = TensorUtils::get_elem_count(total_shape);
 
         // Create the output memory
@@ -172,6 +172,7 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& ou
 
     for (const auto& output : output_tensors)
     {
+        // TODO: probably don't need this cast
         DCHECK(std::dynamic_pointer_cast<RMMTensor>(output.second.get_tensor()) != nullptr);
         auto tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
 
@@ -192,11 +193,7 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& ou
         output_buffers[output.first] = reduced_buffer;
 
         reduced_outputs[output.first] =
-            Tensor::create(std::move(reduced_buffer),
-                           tensor->dtype(),
-                           {static_cast<TensorIndex>(reduced_shape[0]), static_cast<TensorIndex>(reduced_shape[1])},
-                           stride,
-                           0);
+            Tensor::create(std::move(reduced_buffer), tensor->dtype(), reduced_shape, stride, 0);
     }
 
     output_tensors = std::move(reduced_outputs);
@@ -208,6 +205,7 @@ void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
 
     for (const auto& output : output_tensors)
     {
+        // TODO: probably don't need this cast
         DCHECK(std::dynamic_pointer_cast<RMMTensor>(output.second.get_tensor()) != nullptr);
         auto input_tensor = std::static_pointer_cast<RMMTensor>(output.second.get_tensor());
 
@@ -273,11 +271,11 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                 buffer_map_t output_buffers;
                 build_output_tensors(x->count, m_model_outputs, output_buffers, output_tensors);
 
-                for (size_t start = 0; start < x->count; start += m_max_batch_size)
+                for (TensorIndex start = 0; start < x->count; start += m_max_batch_size)
                 {
                     triton::client::InferInput* input1;
 
-                    size_t stop = std::min(start + m_max_batch_size, x->count);
+                    TensorIndex stop = std::min(start + m_max_batch_size, x->count);
 
                     sink_type_t mini_batch_input = x->get_slice(start, stop);
 
@@ -319,8 +317,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         size_t output_ptr_size    = 0;
                         CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
 
-                        auto output_tensor = output_tensors[model_output.mapped_name].slice(
-                            {static_cast<cudf::size_type>(start), 0}, {static_cast<cudf::size_type>(stop), -1});
+                        auto output_tensor = output_tensors[model_output.mapped_name].slice({start, 0}, {stop, -1});
 
                         DCHECK_EQ(stop - start, output_shape[0]);
                         DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
@@ -434,12 +431,12 @@ void InferenceClientStage::connect_with_server()
 
     if (model_config.contains("max_batch_size"))
     {
-        m_max_batch_size = model_config.at("max_batch_size").get<int>();
+        m_max_batch_size = model_config.at("max_batch_size").get<TensorIndex>();
     }
 
     for (auto const& input : model_metadata.at("inputs"))
     {
-        auto shape = input.at("shape").get<std::vector<int>>();
+        auto shape = input.at("shape").get<ShapeType>();
 
         auto dtype = DType::from_triton(input.at("datatype").get<std::string>());
 
@@ -472,7 +469,7 @@ void InferenceClientStage::connect_with_server()
 
     for (auto const& output : model_metadata.at("outputs"))
     {
-        auto shape = output.at("shape").get<std::vector<int>>();
+        auto shape = output.at("shape").get<ShapeType>();
 
         auto dtype = DType::from_triton(output.at("datatype").get<std::string>());
 

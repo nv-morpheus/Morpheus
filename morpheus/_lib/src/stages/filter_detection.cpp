@@ -138,7 +138,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                                           cudaMemcpyDeviceToHost));
 
                 // Only used when m_copy is true
-                std::vector<std::pair<std::size_t, std::size_t>> selected_ranges;
+                std::vector<RangeType> selected_ranges;
                 std::size_t num_selected_rows = 0;
 
                 // We are slicing by rows, using num_rows as our marker for undefined

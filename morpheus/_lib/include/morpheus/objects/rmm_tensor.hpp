@@ -90,7 +90,7 @@ class RMMTensor : public ITensor
      * @param num_rows
      * @return std::shared_ptr<ITensor>
      */
-    std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+    std::shared_ptr<ITensor> copy_rows(const std::vector<RangeType>& selected_rows,
                                        TensorIndex num_rows) const override;
 
     /**

@@ -20,7 +20,6 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <cudf/types.hpp>      // for size_type
 #include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>
@@ -51,7 +50,7 @@ class InferenceMemoryFIL : public InferenceMemory
      * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more
      * inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      */
-    InferenceMemoryFIL(size_t count, TensorObject&& input__0, TensorObject&& seq_ids);
+    InferenceMemoryFIL(TensorIndex count, TensorObject&& input__0, TensorObject&& seq_ids);
 
     /**
      * @brief Returns the 'input__0' tensor, throws a `std::runtime_error` if it does not exist
@@ -102,7 +101,7 @@ struct InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
      * inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      * @return std::shared_ptr<InferenceMemoryFIL>
      */
-    static std::shared_ptr<InferenceMemoryFIL> init(cudf::size_type count,
+    static std::shared_ptr<InferenceMemoryFIL> init(TensorIndex count,
                                                     pybind11::object input__0,
                                                     pybind11::object seq_ids);
 

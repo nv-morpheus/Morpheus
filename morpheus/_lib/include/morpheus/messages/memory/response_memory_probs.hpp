@@ -50,14 +50,14 @@ class ResponseMemoryProbs : public ResponseMemory
      * @param count
      * @param probs
      */
-    ResponseMemoryProbs(size_t count, TensorObject&& probs);
+    ResponseMemoryProbs(TensorIndex count, TensorObject&& probs);
     /**
      * @brief Construct a new Response Memory Probs object
      *
      * @param count
      * @param tensors
      */
-    ResponseMemoryProbs(size_t count, TensorMap&& tensors);
+    ResponseMemoryProbs(TensorIndex count, TensorMap&& tensors);
 
     /**
      * @brief Returns the tensor named 'probs'. alias for `get_tensor("probs")`
@@ -90,7 +90,7 @@ struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
      * @param probs
      * @return std::shared_ptr<ResponseMemoryProbs>
      */
-    static std::shared_ptr<ResponseMemoryProbs> init(cudf::size_type count, pybind11::object probs);
+    static std::shared_ptr<ResponseMemoryProbs> init(TensorIndex count, pybind11::object probs);
 
     /**
      * @brief Get the response memory probs object ()

@@ -21,6 +21,7 @@
 
 #include <map>
 #include <string>
+#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -37,6 +38,7 @@ using TensorIndex = cudf::size_type;
 using RankType    = int;
 
 using ShapeType = std::vector<TensorIndex>;
+using RangeType = std::pair<TensorIndex, TensorIndex>;
 using TensorMap = std::map<std::string, TensorObject>;
 // NOLINTEND(readability-identifier-naming)
 

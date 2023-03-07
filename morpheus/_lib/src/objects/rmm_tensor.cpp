@@ -175,8 +175,7 @@ TensorIndex RMMTensor::offset_bytes() const
     return m_offset * m_dtype.item_size();
 }
 
-std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
-                                              TensorIndex num_rows) const
+std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<RangeType>& selected_rows, TensorIndex num_rows) const
 {
     const auto tensor_type = dtype();
     const auto item_size   = tensor_type.item_size();

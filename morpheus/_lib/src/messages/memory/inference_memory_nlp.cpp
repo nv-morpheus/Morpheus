@@ -20,16 +20,16 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
-#include <cudf/types.hpp>  // for size_type
+#include <cudf/types.hpp>  // for TensorIndexype
 #include <pybind11/pytypes.h>
 
-#include <cstddef>  // for size_t
+#include <cstddef>  // for TensorIndex
 #include <utility>  // for move, pair
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemoryNLP ****************************************/
-InferenceMemoryNLP::InferenceMemoryNLP(std::size_t count,
+InferenceMemoryNLP::InferenceMemoryNLP(TensorIndex count,
                                        TensorObject&& input_ids,
                                        TensorObject&& input_mask,
                                        TensorObject&& seq_ids) :
@@ -71,7 +71,7 @@ void InferenceMemoryNLP::set_seq_ids(TensorObject&& seq_ids)
 }
 
 /****** InferenceMemoryNLPInterfaceProxy *************************/
-std::shared_ptr<InferenceMemoryNLP> InferenceMemoryNLPInterfaceProxy::init(cudf::size_type count,
+std::shared_ptr<InferenceMemoryNLP> InferenceMemoryNLPInterfaceProxy::init(TensorIndex count,
                                                                            pybind11::object input_ids,
                                                                            pybind11::object input_mask,
                                                                            pybind11::object seq_ids)

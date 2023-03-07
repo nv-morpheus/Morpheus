@@ -59,11 +59,11 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      * @param count Message count in inference memory object
      */
     MultiInferenceNLPMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                             std::size_t mess_offset,
-                             std::size_t mess_count,
+                             TensorIndex mess_offset,
+                             TensorIndex mess_count,
                              std::shared_ptr<morpheus::InferenceMemory> memory,
-                             std::size_t offset,
-                             std::size_t count);
+                             TensorIndex offset,
+                             TensorIndex count);
 
     /**
      * @brief Returns the 'input_ids' tensor, throws a `std::runtime_error` if it does not exist.
@@ -133,11 +133,11 @@ struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInte
      * @return std::shared_ptr<MultiInferenceNLPMessage>
      */
     static std::shared_ptr<MultiInferenceNLPMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                          cudf::size_type mess_offset,
-                                                          cudf::size_type mess_count,
+                                                          TensorIndex mess_offset,
+                                                          TensorIndex mess_count,
                                                           std::shared_ptr<InferenceMemory> memory,
-                                                          cudf::size_type offset,
-                                                          cudf::size_type count);
+                                                          TensorIndex offset,
+                                                          TensorIndex count);
 
     /**
      * @brief Get  'input_ids' tensor as a python object

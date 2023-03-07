@@ -20,7 +20,6 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <cudf/types.hpp>  // for size_type
 #include <pybind11/pytypes.h>
 
 #include <cstddef>
@@ -52,7 +51,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more
      inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      */
-    InferenceMemoryNLP(std::size_t count, TensorObject&& input_ids, TensorObject&& input_mask, TensorObject&& seq_ids);
+    InferenceMemoryNLP(TensorIndex count, TensorObject&& input_ids, TensorObject&& input_mask, TensorObject&& seq_ids);
 
     /**
      * @brief Get the input ids object
@@ -120,7 +119,7 @@ struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
      inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      * @return std::shared_ptr<InferenceMemoryNLP>
      */
-    static std::shared_ptr<InferenceMemoryNLP> init(cudf::size_type count,
+    static std::shared_ptr<InferenceMemoryNLP> init(TensorIndex count,
                                                     pybind11::object input_ids,
                                                     pybind11::object input_mask,
                                                     pybind11::object seq_ids);

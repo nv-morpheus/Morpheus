@@ -27,7 +27,6 @@
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
-#include <cstddef>  // for size_t
 #include <memory>
 #include <string>
 #include <utility>  // for pair
@@ -73,7 +72,7 @@ class DerivedMultiMessage : public BasesT...
      * @param stop
      * @return std::shared_ptr<DerivedT>
      */
-    std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
+    std::shared_ptr<DerivedT> get_slice(TensorIndex start, TensorIndex stop) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
 
@@ -93,8 +92,7 @@ class DerivedMultiMessage : public BasesT...
      * @param num_selected_rows
      * @return std::shared_ptr<DerivedT>
      */
-    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>>& ranges,
-                                          size_t num_selected_rows) const
+    std::shared_ptr<DerivedT> copy_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
 
@@ -113,8 +111,8 @@ class DerivedMultiMessage : public BasesT...
      * @param stop
      */
     virtual void get_slice_impl(std::shared_ptr<MultiMessage> new_message,
-                                std::size_t start,
-                                std::size_t stop) const = 0;
+                                TensorIndex start,
+                                TensorIndex stop) const = 0;
 
     /**
      * @brief Similar to `get_slice_impl`, performs a copy of all attributes in `new_message` according to the rows
@@ -126,8 +124,8 @@ class DerivedMultiMessage : public BasesT...
      * @param num_selected_rows
      */
     virtual void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                  const std::vector<std::pair<size_t, size_t>>& ranges,
-                                  size_t num_selected_rows) const = 0;
+                                  const std::vector<RangeType>& ranges,
+                                  TensorIndex num_selected_rows) const = 0;
 
   private:
     virtual std::shared_ptr<MultiMessage> clone_impl() const
@@ -148,7 +146,7 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
     using BaseT::BaseT;
     ~DerivedMultiMessage() override = default;
 
-    std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
+    std::shared_ptr<DerivedT> get_slice(TensorIndex start, TensorIndex stop) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
 
@@ -157,8 +155,7 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
         return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
     }
 
-    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>>& ranges,
-                                          size_t num_selected_rows) const
+    std::shared_ptr<DerivedT> copy_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
 
@@ -168,14 +165,14 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
     }
 
   protected:
-    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, TensorIndex start, TensorIndex stop) const override
     {
         return BaseT::get_slice_impl(new_message, start, stop);
     }
 
     void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<size_t, size_t>>& ranges,
-                          size_t num_selected_rows) const override
+                          const std::vector<RangeType>& ranges,
+                          TensorIndex num_selected_rows) const override
     {
         return BaseT::copy_ranges_impl(new_message, ranges, num_selected_rows);
     }
@@ -198,7 +195,7 @@ class DerivedMultiMessage<DerivedT>
   public:
     virtual ~DerivedMultiMessage() = default;
 
-    std::shared_ptr<DerivedT> get_slice(std::size_t start, std::size_t stop) const
+    std::shared_ptr<DerivedT> get_slice(TensorIndex start, TensorIndex stop) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
 
@@ -207,8 +204,7 @@ class DerivedMultiMessage<DerivedT>
         return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
     }
 
-    std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>>& ranges,
-                                          size_t num_selected_rows) const
+    std::shared_ptr<DerivedT> copy_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const
     {
         std::shared_ptr<MultiMessage> new_message = this->clone_impl();
 
@@ -219,12 +215,12 @@ class DerivedMultiMessage<DerivedT>
 
   protected:
     virtual void get_slice_impl(std::shared_ptr<MultiMessage> new_message,
-                                std::size_t start,
-                                std::size_t stop) const = 0;
+                                TensorIndex start,
+                                TensorIndex stop) const = 0;
 
     virtual void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                  const std::vector<std::pair<size_t, size_t>>& ranges,
-                                  size_t num_selected_rows) const = 0;
+                                  const std::vector<RangeType>& ranges,
+                                  TensorIndex num_selected_rows) const = 0;
 
   private:
     virtual std::shared_ptr<MultiMessage> clone_impl() const
@@ -256,12 +252,11 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @param o : Offset into the metadata batch
      * @param c : Messages count
      */
-    MultiMessage(std::shared_ptr<MessageMeta> m, size_t o, size_t c);
+    MultiMessage(std::shared_ptr<MessageMeta> m, TensorIndex o, TensorIndex c);
 
     std::shared_ptr<MessageMeta> meta;
-    // TODO: Change to TensorIndex as these are based on cudf
-    size_t mess_offset{0};
-    size_t mess_count{0};
+    TensorIndex mess_offset{0};
+    TensorIndex mess_count{0};
 
     /**
      * @brief Get the meta object
@@ -306,11 +301,11 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     void set_meta(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors);
 
   protected:
-    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, TensorIndex start, TensorIndex stop) const override;
 
     void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<size_t, size_t>>& ranges,
-                          size_t num_selected_rows) const override;
+                          const std::vector<RangeType>& ranges,
+                          TensorIndex num_selected_rows) const override;
 
     /**
      * @brief Creates a deep copy of `meta` with the specified ranges.
@@ -318,17 +313,16 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @param ranges
      * @return std::shared_ptr<MessageMeta>
      */
-    virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<std::pair<size_t, size_t>>& ranges) const;
+    virtual std::shared_ptr<MessageMeta> copy_meta_ranges(const std::vector<RangeType>& ranges) const;
 
     /**
      * @brief Applies the message offset to the elements in `ranges` casting the results to `TensorIndex`
      *
      * @param offset
      * @param ranges
-     * @return std::vector<std::pair<TensorIndex, TensorIndex>>
+     * @return std::vector<RangeType>
      */
-    std::vector<std::pair<TensorIndex, TensorIndex>> apply_offset_to_ranges(
-        std::size_t offset, const std::vector<std::pair<size_t, size_t>>& ranges) const;
+    std::vector<RangeType> apply_offset_to_ranges(TensorIndex offset, const std::vector<RangeType>& ranges) const;
 };
 
 /****** MultiMessageInterfaceProxy**************************/
@@ -341,8 +335,8 @@ struct MultiMessageInterfaceProxy
      * TODO(Documentation)
      */
     static std::shared_ptr<MultiMessage> init(std::shared_ptr<MessageMeta> meta,
-                                              cudf::size_type mess_offset,
-                                              cudf::size_type mess_count);
+                                              TensorIndex mess_offset,
+                                              TensorIndex mess_count);
 
     /**
      * TODO(Documentation)
@@ -352,12 +346,12 @@ struct MultiMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static std::size_t mess_offset(const MultiMessage& self);
+    static TensorIndex mess_offset(const MultiMessage& self);
 
     /**
      * TODO(Documentation)
      */
-    static std::size_t mess_count(const MultiMessage& self);
+    static TensorIndex mess_count(const MultiMessage& self);
 
     /**
      * TODO(Documentation)
@@ -384,10 +378,10 @@ struct MultiMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<MultiMessage> get_slice(MultiMessage& self, std::size_t start, std::size_t stop);
+    static std::shared_ptr<MultiMessage> get_slice(MultiMessage& self, TensorIndex start, TensorIndex stop);
 
     static std::shared_ptr<MultiMessage> copy_ranges(MultiMessage& self,
-                                                     const std::vector<std::pair<size_t, size_t>>& ranges,
+                                                     const std::vector<RangeType>& ranges,
                                                      pybind11::object num_selected_rows);
 };
 

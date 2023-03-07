@@ -30,11 +30,11 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiInferenceFILMessage****************************************/
 MultiInferenceFILMessage::MultiInferenceFILMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                                                   size_t mess_offset,
-                                                   size_t mess_count,
+                                                   TensorIndex mess_offset,
+                                                   TensorIndex mess_count,
                                                    std::shared_ptr<morpheus::InferenceMemory> memory,
-                                                   size_t offset,
-                                                   size_t count) :
+                                                   TensorIndex offset,
+                                                   TensorIndex count) :
   MultiInferenceMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
@@ -61,11 +61,11 @@ void MultiInferenceFILMessage::set_seq_ids(const TensorObject& seq_ids)
 /****** MultiInferenceFILMessageInterfaceProxy *************************/
 std::shared_ptr<MultiInferenceFILMessage> MultiInferenceFILMessageInterfaceProxy::init(
     std::shared_ptr<MessageMeta> meta,
-    cudf::size_type mess_offset,
-    cudf::size_type mess_count,
+    TensorIndex mess_offset,
+    TensorIndex mess_count,
     std::shared_ptr<InferenceMemory> memory,
-    cudf::size_type offset,
-    cudf::size_type count)
+    TensorIndex offset,
+    TensorIndex count)
 {
     return std::make_shared<MultiInferenceFILMessage>(
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);

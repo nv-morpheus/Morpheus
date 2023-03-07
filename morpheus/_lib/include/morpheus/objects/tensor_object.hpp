@@ -143,7 +143,7 @@ struct ITensorOperations
 
     virtual std::shared_ptr<ITensor> deep_copy() const = 0;
 
-    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<RangeType>& selected_rows,
                                                TensorIndex num_rows) const = 0;
 
     virtual std::shared_ptr<ITensor> as_type(DType dtype) const = 0;
@@ -440,8 +440,7 @@ struct TensorObject final
      * @param num_rows
      * @return TensorObject
      */
-    TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
-                           TensorIndex num_rows) const
+    TensorObject copy_rows(const std::vector<RangeType>& selected_rows, TensorIndex num_rows) const
     {
         return {m_tensor->copy_rows(selected_rows, num_rows)};
     }

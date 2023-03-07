@@ -35,8 +35,8 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorMemory****************************************/
-TensorMemory::TensorMemory(size_t count) : count(count) {}
-TensorMemory::TensorMemory(size_t count, TensorMap&& tensors) : count(count), tensors(std::move(tensors))
+TensorMemory::TensorMemory(TensorIndex count) : count(count) {}
+TensorMemory::TensorMemory(TensorIndex count, TensorMap&& tensors) : count(count), tensors(std::move(tensors))
 {
     check_tensors_length(this->tensors);
 }
@@ -46,8 +46,7 @@ bool TensorMemory::has_tensor(const std::string& name) const
     return this->tensors.find(name) != this->tensors.end();
 }
 
-TensorMap TensorMemory::copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
-                                           size_t num_selected_rows) const
+TensorMap TensorMemory::copy_tensor_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const
 {
     TensorMap tensors;
     for (const auto& p : this->tensors)
@@ -109,7 +108,7 @@ void TensorMemory::set_tensors(TensorMap&& tensors)
 }
 
 /****** TensorMemoryInterfaceProxy *************************/
-std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count, pybind11::object& tensors)
+std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(TensorIndex count, pybind11::object& tensors)
 {
     if (tensors.is_none())
     {
@@ -122,7 +121,7 @@ std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(std::size_t count
     }
 }
 
-std::size_t TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
+TensorIndex TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
 {
     return self.count;
 }
