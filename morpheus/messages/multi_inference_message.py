@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import dataclasses
-import typing
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
