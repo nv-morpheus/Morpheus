@@ -92,7 +92,8 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     check_message(messages.MultiTensorMessage,
                   _messages.MultiTensorMessage,
                   should_be_cpp,
-                  no_cpp_class, (None, 0, 1, None, 0, 1))
+                  no_cpp_class, (None, 0, 1, None, 0, 1),
+                  False)
 
     check_message(messages.MultiInferenceMessage,
                   _messages.MultiInferenceMessage,

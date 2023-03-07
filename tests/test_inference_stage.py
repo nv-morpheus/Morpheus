@@ -288,7 +288,7 @@ def test_convert_response_errors():
     mm2.count.side_effect = [2, 1]
     mm2.mess_count.side_effect = [2, 1, 1]
 
-    pytest.raises(ValueError, inference_stage.InferenceStage._convert_response, ([mm1, mm2], [out_msg1, out_msg2]))
+    pytest.raises(AssertionError, inference_stage.InferenceStage._convert_response, ([mm1, mm2], [out_msg1, out_msg2]))
 
 
 @pytest.mark.use_python
@@ -310,11 +310,11 @@ def test_convert_one_response(config):
     # Test for the second branch
     inf.count = 2
     inf.seq_ids = cp.array([[0], [1]])
-    res = ResponseMemory(count=2, probs=cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2]]))
+    res = ResponseMemory(count=2, tensors={'probs': cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2]])})
 
-    mem = ResponseMemory(2, probs=cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]]))
+    mem = ResponseMemory(2, tensors={'probs': cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]])})
     mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
-    assert mem.get_output('probs').tolist() == [[5.6, 6.7, 9.2]]
+    assert mem.get_output('probs').tolist() == [[0.1, 0.6, 0.8], [5.6, 6.7, 9.2]]
 
 
 def test_convert_one_response_error():
