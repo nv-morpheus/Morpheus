@@ -19,8 +19,8 @@
 
 #include "morpheus/utilities/string_util.hpp"
 
-#include <pybind11/detail/common.h>
 #include <pybind11/gil.h>
+#include <pybind11/pytypes.h>
 
 #include <utility>
 

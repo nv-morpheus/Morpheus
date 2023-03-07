@@ -25,7 +25,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -52,7 +51,7 @@ class InferenceMemoryFIL : public InferenceMemory
      * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more
      * inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      */
-    InferenceMemoryFIL(size_t count, TensorObject input__0, TensorObject seq_ids);
+    InferenceMemoryFIL(size_t count, TensorObject&& input__0, TensorObject&& seq_ids);
 
     /**
      * @brief Returns the 'input__0' tensor, throws a `std::runtime_error` if it does not exist
@@ -73,19 +72,18 @@ class InferenceMemoryFIL : public InferenceMemory
     /**
      * @brief Sets a tensor named 'input__0'
      *
-     * @param input_ids
-     * @throw std::runtime_error
-     * @throw std::runtime_error
+     * @param input__0
+     * @throws std::length_error If the number of rows in `input__0` does not match `count`.
      */
-    void set_input__0(TensorObject input_ids);
+    void set_input__0(TensorObject&& input__0);
 
     /**
      * @brief Sets a tensor named 'seq_ids'
      *
      * @param seq_ids
-     * @throw std::runtime_error
+     * @throws std::length_error If the number of rows in `seq_ids` does not match `count`.
      */
-    void set_seq_ids(TensorObject seq_ids);
+    void set_seq_ids(TensorObject&& seq_ids);
 };
 
 /****** InferenceMemoryFILInterfaceProxy *************************/
@@ -93,7 +91,7 @@ class InferenceMemoryFIL : public InferenceMemory
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
-struct InferenceMemoryFILInterfaceProxy
+struct InferenceMemoryFILInterfaceProxy : public InferenceMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryFIL object, and return a shared pointer to the result
@@ -107,23 +105,6 @@ struct InferenceMemoryFILInterfaceProxy
     static std::shared_ptr<InferenceMemoryFIL> init(cudf::size_type count,
                                                     pybind11::object input__0,
                                                     pybind11::object seq_ids);
-
-    /**
-     * Get messages count in the inference memory instance
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(InferenceMemoryFIL& self);
-
-    /**
-     * Return the requested tensor for a given name
-     *
-     * @param self
-     * @param name Tensor name
-     * @return TensorObject
-     */
-    static TensorObject get_tensor(InferenceMemoryFIL& self, const std::string& name);
 
     /**
      * @brief Returns the 'input__0' as cupy array
