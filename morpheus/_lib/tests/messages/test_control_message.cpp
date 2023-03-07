@@ -75,6 +75,7 @@ TEST_F(TestControlMessage, TaskTest)
         {"loader_id", "payload"},
         {"strategy", "aggregate"},
     };
+
     config["type"]  = "inference";
     config["tasks"] = {{{"type", "load"}, {"properties", task_properties}}};
 
@@ -93,7 +94,6 @@ TEST_F(TestControlMessage, TaskTest)
 
     ASSERT_THROW(msg_infer.add_task("training", {}), std::runtime_error);
 
-    /*
     config["type"] = "training";
     msg_train.config(config);
     msg_train.add_task("training", {});
@@ -107,7 +107,6 @@ TEST_F(TestControlMessage, TaskTest)
     ASSERT_EQ(msg_train.has_task("custom"), true);
     msg_train.pop_task("custom");
     ASSERT_EQ(msg_train.has_task("custom"), false);
-     */
 }
 
 TEST_F(TestControlMessage, PayloadTest)

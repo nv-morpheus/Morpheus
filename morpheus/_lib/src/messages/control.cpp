@@ -111,20 +111,17 @@ const std::string MessageControl::s_config_schema = R"(
 }
 )";
 
-MessageControl::MessageControl() :
-  m_config({{"metadata", nlohmann::json::object()}})
-{}
+MessageControl::MessageControl() : m_config({{"metadata", nlohmann::json::object()}}) {}
 
-MessageControl::MessageControl(const nlohmann::json& _config) :
-  m_config({{"metadata", nlohmann::json::object()}})
+MessageControl::MessageControl(const nlohmann::json& _config) : m_config({{"metadata", nlohmann::json::object()}})
 {
     config(_config);
 }
 
 MessageControl::MessageControl(const MessageControl& other)
 {
-    m_config     = other.m_config;
-    m_tasks      = other.m_tasks;
+    m_config = other.m_config;
+    m_tasks  = other.m_tasks;
 }
 
 const nlohmann::json& MessageControl::config() const
@@ -143,14 +140,12 @@ void MessageControl::add_task(const std::string& task_type, const nlohmann::json
         this->task_type(_task_type);
     }
 
-    if (this->task_type() != _task_type)
+    if (_task_type != ControlMessageType::NONE and this->task_type() != _task_type)
     {
         throw std::runtime_error("Cannot add inference and training tasks to the same control message");
     }
 
     m_tasks[task_type].push_back(task);
-    // m_task_count[task_type] += 1;
-    // m_config["tasks"].push_back({{"type", task_type}, {"properties", task}});
 }
 
 bool MessageControl::has_task(const std::string& task_type) const
@@ -196,6 +191,18 @@ const nlohmann::json MessageControl::pop_task(const std::string& task_type)
 
 void MessageControl::config(const nlohmann::json& config)
 {
+    if (config.contains("type"))
+    {
+        auto task_type = config.at("type");
+        auto _task_type =
+            m_task_type_map.contains(task_type) ? m_task_type_map.at(task_type) : ControlMessageType::NONE;
+
+        if (this->task_type() == ControlMessageType::NONE)
+        {
+            this->task_type(_task_type);
+        }
+    }
+
     if (config.contains("tasks"))
     {
         auto& tasks = config["tasks"];
