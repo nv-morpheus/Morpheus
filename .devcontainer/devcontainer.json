@@ -41,6 +41,7 @@
         "MORPHEUS_ROOT": "${containerWorkspaceFolder}",
         "DEFAULT_CONDA_ENV": "morpheus",
         "MAMBA_NO_BANNER": "1",
+        "CONDA_ALWAYS_YES": "true",
         "VAULT_HOST": "https://vault.ops.k8s.rapids.ai",
         "DISPLAY": "${localEnv:DISPLAY:-}",
         "XAUTHORITY": "${localEnv:XAUTHORITY:-}",
@@ -74,9 +75,14 @@
             "target": "/var/run/docker.sock"
         },
         {
-            "type":"bind",
-            "source": "${localWorkspaceFolder}/../.conda",
+            "type": "bind",
+            "source": "${localWorkspaceFolder}/.cache/conda",
             "target": "/home/coder/.conda"
+        },
+        {
+            "type": "bind",
+            "source": "${localWorkspaceFolder}/../.conda/pkgs",
+            "target": "/home/coder/.conda/pkgs"
         },
         {
             "type":"bind",
