@@ -259,6 +259,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
     MultiMessage(std::shared_ptr<MessageMeta> m, size_t o, size_t c);
 
     std::shared_ptr<MessageMeta> meta;
+    // TODO: Change to TensorIndex as these are based on cudf
     size_t mess_offset{0};
     size_t mess_count{0};
 

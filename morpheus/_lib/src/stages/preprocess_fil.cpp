@@ -96,7 +96,11 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
 
                 // Need to do a transpose here
                 auto transposed_data = MatxUtil::transpose(
-                    DevMemInfo{packed_data, TypeId::FLOAT32, {x->mess_count, m_fea_cols.size()}, {1, x->mess_count}});
+                    DevMemInfo{packed_data,
+                               TypeId::FLOAT32,
+                               // TODO: remove once mess_count is a TensorIndex
+                               {static_cast<TensorIndex>(x->mess_count), static_cast<TensorIndex>(m_fea_cols.size())},
+                               {1, static_cast<TensorIndex>(x->mess_count)}});
 
                 auto input__0 = Tensor::create(
                     transposed_data,

@@ -75,7 +75,7 @@ DevMemInfo FilterDetectionsStage::get_tensor_filter_source(const std::shared_ptr
         buffer->data(), static_cast<const uint8_t*>(filter_source.data()), buffer->size(), cudaMemcpyDeviceToDevice));
 
     // Depending on the input the stride is given in bytes or elements, convert to elements
-    auto stride = morpheus::TensorUtils::get_element_stride<std::size_t, std::size_t>(filter_source.get_stride());
+    auto stride = morpheus::TensorUtils::get_element_stride(filter_source.get_stride());
     return {buffer, filter_source.dtype(), filter_source.get_shape(), stride};
 }
 

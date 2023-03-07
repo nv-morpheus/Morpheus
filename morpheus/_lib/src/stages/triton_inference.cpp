@@ -182,19 +182,12 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& ou
         ShapeType stride(rank);
         tensor->get_stride(stride);
 
-        // DevMemInfo wants the shape & stride in size_t
-        std::vector<std::size_t> tensor_shape(shape.size());
-        std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());
-
-        std::vector<std::size_t> tensor_stride(stride.size());
-        std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
-
-        std::vector<std::size_t> reduced_shape{tensor_shape};
+        ShapeType reduced_shape{shape};
         reduced_shape[0] = x->mess_count;
 
-        auto& buffer        = output_buffers[output.first];
-        auto reduced_buffer = MatxUtil::reduce_max(
-            DevMemInfo{buffer, tensor->dtype(), tensor_shape, tensor_stride}, host_seq_ids, 0, reduced_shape);
+        auto& buffer = output_buffers[output.first];
+        auto reduced_buffer =
+            MatxUtil::reduce_max(DevMemInfo{buffer, tensor->dtype(), shape, stride}, host_seq_ids, 0, reduced_shape);
 
         output_buffers[output.first] = reduced_buffer;
 
@@ -225,16 +218,9 @@ void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
         ShapeType stride(rank);
         input_tensor->get_stride(stride);
 
-        // DevMemInfo wants the shape & stride in size_t
-        std::vector<std::size_t> input_shape(shape.size());
-        std::copy(shape.cbegin(), shape.cend(), input_shape.begin());
-
-        std::vector<std::size_t> input_stride(stride.size());
-        std::copy(stride.cbegin(), stride.cend(), input_stride.begin());
-
         auto& buffer = output_buffers[output.first];
 
-        auto output_buffer = MatxUtil::logits(DevMemInfo{buffer, input_tensor->dtype(), input_shape, input_stride});
+        auto output_buffer = MatxUtil::logits(DevMemInfo{buffer, input_tensor->dtype(), shape, stride});
 
         output_buffers[output.first] = output_buffer;
 
