@@ -23,6 +23,7 @@
 #include "morpheus/objects/tensor_object.hpp"
 
 #include <cudf/types.hpp>
+#include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>  // for size_t
 #include <memory>
@@ -69,6 +70,7 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor named "input__0" exists
      */
     const TensorObject get_input__0() const;
 
@@ -84,6 +86,7 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor named "seq_ids" exists
      */
     const TensorObject get_seq_ids() const;
 
@@ -99,7 +102,7 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiInferenceFILMessageInterfaceProxy
+struct MultiInferenceFILMessageInterfaceProxy : public MultiInferenceMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceFILMessage, and return a shared pointer to the result
@@ -121,28 +124,22 @@ struct MultiInferenceFILMessageInterfaceProxy
                                                           cudf::size_type count);
 
     /**
-     * @brief Returns a shared pointer of a inference memory object
+     * @brief Get  'input__0' tensor as a python object
      *
      * @param self
-     * @return std::shared_ptr<morpheus::InferenceMemory>
+     * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "input__0" exists.
      */
-    static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceFILMessage& self);
+    static pybind11::object input__0(MultiInferenceFILMessage& self);
 
     /**
-     * @brief Message offset in inference memory object
+     * @brief Get 'seq_ids' tensor as a python object
      *
      * @param self
-     * @return std::size_t
+     * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "seq_ids" exists.
      */
-    static std::size_t offset(MultiInferenceFILMessage& self);
-
-    /**
-     * @brief Message count in inference memory object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(MultiInferenceFILMessage& self);
+    static pybind11::object seq_ids(MultiInferenceFILMessage& self);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

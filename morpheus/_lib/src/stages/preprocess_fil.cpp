@@ -23,7 +23,7 @@
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
+#include "morpheus/types.hpp"  // for TensorIndex
 #include "morpheus/utilities/matx_util.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToDevice
@@ -113,7 +113,8 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                     0);
 
                 // Build the results
-                auto memory = std::make_shared<InferenceMemoryFIL>(x->mess_count, input__0, seg_ids);
+                auto memory =
+                    std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seg_ids));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);
