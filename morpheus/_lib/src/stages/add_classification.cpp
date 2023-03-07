@@ -92,8 +92,8 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 for (const auto& [column_num, column_name] : m_idx2label)
                 {
                     columns[i] = column_name;
-                    tensors[i] = tensor_obj.slice(ShapeType{0, static_cast<TensorIndex>(column_num)},
-                                                  ShapeType{num_rows, static_cast<TensorIndex>(column_num + 1)});
+                    tensors[i] = tensor_obj.slice({0, static_cast<TensorIndex>(column_num)},
+                                                  {num_rows, static_cast<TensorIndex>(column_num + 1)});
 
                     ++i;
                 }

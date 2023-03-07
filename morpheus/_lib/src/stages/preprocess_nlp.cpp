@@ -94,7 +94,7 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 // Build the results
                 auto memory = std::make_shared<InferenceMemory>(token_results.nrows_tensor);
 
-                int32_t length = token_results.tensor_token_ids->size() / token_results.sequence_length;
+                TensorIndex length = token_results.tensor_token_ids->size() / token_results.sequence_length;
                 auto input_ids_released =
                     cudf::cast(token_results.tensor_token_ids->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
@@ -102,8 +102,8 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 memory->tensors["input_ids"] =
                     std::move(Tensor::create(std::move(input_ids_released.data),
                                              DType::create<int32_t>(),
-                                             ShapeType{length, static_cast<int>(token_results.sequence_length)},
-                                             ShapeType{},
+                                             {length, static_cast<TensorIndex>(token_results.sequence_length)},
+                                             {},
                                              0));
 
                 length = token_results.tensor_attention_mask->size() / token_results.sequence_length;
@@ -113,18 +113,15 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 memory->tensors["input_mask"] =
                     std::move(Tensor::create(std::move(input_mask_released.data),
                                              DType::create<int32_t>(),
-                                             ShapeType{length, static_cast<int>(token_results.sequence_length)},
-                                             ShapeType{},
+                                             {length, static_cast<TensorIndex>(token_results.sequence_length)},
+                                             {},
                                              0));
 
                 length = token_results.tensor_metadata->size() / 3;
                 auto seq_ids_released =
                     cudf::cast(token_results.tensor_metadata->view(), cudf::data_type(cudf::type_id::INT32))->release();
-                memory->tensors["seq_ids"] = std::move(Tensor::create(std::move(seq_ids_released.data),
-                                                                      DType::create<int32_t>(),
-                                                                      ShapeType{length, static_cast<int32_t>(3)},
-                                                                      ShapeType{},
-                                                                      0));
+                memory->tensors["seq_ids"] = std::move(
+                    Tensor::create(std::move(seq_ids_released.data), DType::create<int32_t>(), {length, 3}, {}, 0));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);

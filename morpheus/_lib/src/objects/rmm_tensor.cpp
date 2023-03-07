@@ -163,8 +163,7 @@ std::shared_ptr<ITensor> RMMTensor::as_type(DType new_dtype) const
 {
     // Now do the conversion
     auto new_data_buffer =
-        MatxUtil::cast(DevMemInfo{m_md, m_dtype, m_shape, m_stride, static_cast<TensorIndex>(this->offset_bytes())},
-                       new_dtype.type_id());
+        MatxUtil::cast(DevMemInfo{m_md, m_dtype, m_shape, m_stride, this->offset_bytes()}, new_dtype.type_id());
 
     // Return the new type
     return std::make_shared<RMMTensor>(new_data_buffer, 0, new_dtype, m_shape, m_stride);
@@ -179,8 +178,8 @@ std::shared_ptr<ITensor> RMMTensor::copy_rows(const std::vector<RangeType>& sele
 {
     const auto tensor_type = dtype();
     const auto item_size   = tensor_type.item_size();
-    const auto num_columns = static_cast<TensorIndex>(shape(1));
-    const auto stride      = TensorUtils::get_element_stride<TensorIndex>(m_stride);
+    const auto num_columns = shape(1);
+    const auto stride      = TensorUtils::get_element_stride(m_stride);
     const auto row_stride  = stride[0];
 
     auto output_buffer =

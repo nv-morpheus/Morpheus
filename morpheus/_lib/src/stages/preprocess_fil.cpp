@@ -95,25 +95,23 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                 }
 
                 // Need to do a transpose here
-                auto transposed_data = MatxUtil::transpose(
-                    DevMemInfo{packed_data,
-                               TypeId::FLOAT32,
-                               // TODO: remove once mess_count is a TensorIndex
-                               {static_cast<TensorIndex>(x->mess_count), static_cast<TensorIndex>(m_fea_cols.size())},
-                               {1, static_cast<TensorIndex>(x->mess_count)}});
+                auto transposed_data =
+                    MatxUtil::transpose(DevMemInfo{packed_data,
+                                                   TypeId::FLOAT32,
+                                                   {x->mess_count, static_cast<TensorIndex>(m_fea_cols.size())},
+                                                   {1, x->mess_count}});
 
-                auto input__0 = Tensor::create(
-                    transposed_data,
-                    DType::create<float>(),
-                    ShapeType{static_cast<TensorIndex>(x->mess_count), static_cast<TensorIndex>(m_fea_cols.size())},
-                    ShapeType{},
-                    0);
+                auto input__0 = Tensor::create(transposed_data,
+                                               DType::create<float>(),
+                                               {x->mess_count, static_cast<TensorIndex>(m_fea_cols.size())},
+                                               {},
+                                               0);
 
                 auto seg_ids =
                     Tensor::create(MatxUtil::create_seg_ids(x->mess_count, m_fea_cols.size(), TypeId::UINT32),
                                    DType::create<uint32_t>(),
-                                   ShapeType{static_cast<TensorIndex>(x->mess_count), static_cast<TensorIndex>(3)},
-                                   ShapeType{},
+                                   {x->mess_count, 3},
+                                   {},
                                    0);
 
                 // Build the results
