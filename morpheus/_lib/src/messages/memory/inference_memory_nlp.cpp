@@ -20,10 +20,8 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
-#include <cudf/types.hpp>  // for TensorIndexype
 #include <pybind11/pytypes.h>
 
-#include <cstddef>  // for TensorIndex
 #include <utility>  // for move, pair
 
 namespace morpheus {

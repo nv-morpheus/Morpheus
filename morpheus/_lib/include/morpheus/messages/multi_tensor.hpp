@@ -21,13 +21,12 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex, RangeType
 
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>
 #include <memory>
 #include <string>
-#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {

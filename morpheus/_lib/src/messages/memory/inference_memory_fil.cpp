@@ -20,7 +20,6 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
 #include <memory>

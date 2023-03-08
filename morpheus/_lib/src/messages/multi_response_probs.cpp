@@ -19,7 +19,6 @@
 
 #include "morpheus/messages/meta.hpp"
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
 #include <memory>

@@ -21,7 +21,6 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
 #include <memory>

@@ -22,8 +22,8 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_response.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
 #include <memory>

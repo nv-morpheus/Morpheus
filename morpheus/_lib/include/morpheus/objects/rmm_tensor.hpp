@@ -24,7 +24,6 @@
 #include <rmm/device_buffer.hpp>
 
 #include <memory>
-#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {

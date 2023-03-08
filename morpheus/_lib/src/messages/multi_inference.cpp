@@ -21,8 +21,6 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 
-#include <cudf/types.hpp>
-
 #include <memory>
 #include <string>
 #include <utility>

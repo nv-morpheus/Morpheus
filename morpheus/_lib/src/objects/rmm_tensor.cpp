@@ -36,6 +36,7 @@
 #include <memory>
 #include <numeric>  // for transform_reduce
 #include <ostream>  // needed for logging
+#include <utility>  // for move, pair
 #include <vector>
 
 namespace morpheus {

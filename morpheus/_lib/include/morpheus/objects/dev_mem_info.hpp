@@ -23,7 +23,6 @@
 #include <rmm/device_buffer.hpp>
 
 #include <memory>  // for shared_ptr, unique_ptr & make_unique
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/

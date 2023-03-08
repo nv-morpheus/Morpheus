@@ -29,6 +29,7 @@
 #include <sstream>    // needed by MORPHEUS_CONCAT_STR
 #include <stdexcept>  // for std::length_error
 #include <string>
+#include <utility>  // for move, pair
 #include <vector>
 // IWYU pragma: no_include <type_traits>
 

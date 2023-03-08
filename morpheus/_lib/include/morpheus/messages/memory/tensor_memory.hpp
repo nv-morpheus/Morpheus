@@ -25,7 +25,6 @@
 
 #include <memory>  // for shared_ptr
 #include <string>
-#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {

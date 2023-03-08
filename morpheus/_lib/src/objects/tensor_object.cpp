@@ -17,8 +17,6 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <vector>
-
 namespace morpheus {
 
 static void set_contiguous_stride(const ShapeType& shape, ShapeType& stride)

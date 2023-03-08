@@ -20,7 +20,6 @@
 #include "morpheus/types.hpp"                // for TensorIndex, TensorMap
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
 
-#include <cudf/types.hpp>  // for TensorIndex>
 #include <glog/logging.h>
 #include <pybind11/pytypes.h>  // for key_error
 
@@ -91,8 +90,8 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
         auto seq_ids = this->get_tensor("seq_ids");
 
         // Determine the new start and stop before passing onto the base
-        start = seq_ids.read_element<int32_t>({(TensorIndex)start, 0});
-        stop  = seq_ids.read_element<int32_t>({(TensorIndex)stop - 1, 0}) + 1;
+        start = seq_ids.read_element<TensorIndex>({start, 0});
+        stop  = seq_ids.read_element<TensorIndex>({stop - 1, 0}) + 1;
     }
 
     // Pass onto the base
