@@ -43,7 +43,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <exception>
 #include <functional>
 #include <memory>

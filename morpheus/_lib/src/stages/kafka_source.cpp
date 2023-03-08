@@ -36,7 +36,6 @@
 #include <algorithm>  // for find, min, transform
 #include <chrono>
 #include <compare>
-#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>

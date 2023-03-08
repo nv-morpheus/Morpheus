@@ -30,7 +30,6 @@
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
-#include <cstddef>  // for size_t
 #include <cstdint>  // for uuint32_t
 #include <map>
 #include <memory>
