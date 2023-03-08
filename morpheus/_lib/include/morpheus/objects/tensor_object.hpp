@@ -247,12 +247,12 @@ struct TensorObject final
         return m_tensor->get_stride();
     }
 
-    TensorIndex shape(std::uint32_t idx) const
+    TensorIndex shape(TensorIndex idx) const
     {
         return m_tensor->shape(idx);
     }
 
-    TensorIndex stride(std::uint32_t idx) const
+    TensorIndex stride(TensorIndex idx) const
     {
         return m_tensor->stride(idx);
     }
