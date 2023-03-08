@@ -21,6 +21,7 @@
 #include "morpheus/objects/dtype.hpp"  // for TypeId, DType
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
 #include <cudf/column/column_view.hpp>  // for column_view
@@ -178,12 +179,9 @@ std::vector<RangeType> MultiMessage::apply_offset_to_ranges(TensorIndex offset,
                                                             const std::vector<RangeType>& ranges) const
 {
     std::vector<RangeType> offset_ranges(ranges.size());
-    std::transform(ranges.cbegin(),
-                   ranges.cend(),
-                   offset_ranges.begin(),
-                   [offset](const std::pair<TensorIndex, TensorIndex> range) {
-                       return std::pair{offset + range.first, offset + range.second};
-                   });
+    std::transform(ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const RangeType range) {
+        return std::pair{offset + range.first, offset + range.second};
+    });
 
     return offset_ranges;
 }
