@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>  // for size_t
-#include <cstdint>
+#include <cstdint>  // for uint8_t
 #include <functional>
 #include <memory>   // for shared_ptr
 #include <numeric>  // IWYU pragma: keep
