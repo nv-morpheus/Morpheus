@@ -24,7 +24,6 @@
 #include <rxcpp/rx.hpp>
 
 #include <algorithm>  // for min
-#include <cstddef>
 #include <exception>
 #include <functional>
 #include <memory>

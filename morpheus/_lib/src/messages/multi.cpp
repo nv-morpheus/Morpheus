@@ -41,6 +41,7 @@
 #include <cstdint>    // for uint8_t
 #include <sstream>
 #include <stdexcept>  // for runtime_error
+#include <utility>    // for move, pair
 // IWYU pragma: no_include <unordered_map>
 
 namespace morpheus {

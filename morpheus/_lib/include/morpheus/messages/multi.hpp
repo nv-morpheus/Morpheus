@@ -22,14 +22,12 @@
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <glog/logging.h>  // for DCHECK_NOTNULL
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <memory>
 #include <string>
-#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {

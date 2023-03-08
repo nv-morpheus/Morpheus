@@ -22,7 +22,6 @@
 #include "morpheus/messages/multi_response_probs.hpp"          // for MultiResponseProbsMessage
 #include "morpheus/objects/dev_mem_info.hpp"                   // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"                          // for DType
-#include "morpheus/objects/rmm_tensor.hpp"                     // for RMMTensor
 #include "morpheus/objects/tensor.hpp"                         // for Tensor::create
 #include "morpheus/objects/tensor_object.hpp"                  // for TensorObject
 #include "morpheus/objects/triton_in_out.hpp"                  // for TritonInOut
@@ -33,7 +32,6 @@
 #include "morpheus/utilities/tensor_util.hpp"                  // for get_elem_count
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
-#include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <http_client.h>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA

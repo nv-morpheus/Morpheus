@@ -23,8 +23,8 @@
 #include <glog/logging.h>
 #include <pybind11/pytypes.h>  // for key_error
 
-#include <cstdint>    // for int32_t
 #include <stdexcept>  // for runtime_error
+#include <utility>    // for move
 
 namespace morpheus {
 /****** Component public implementations *******************/

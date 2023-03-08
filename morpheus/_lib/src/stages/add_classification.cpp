@@ -31,7 +31,6 @@
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
-#include <algorithm>  // for min_element, transform
 #include <cstddef>
 #include <exception>
 #include <functional>  // for divides, bind, placeholders

@@ -22,6 +22,7 @@
 #include "morpheus/objects/dtype.hpp"         // for DataType
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/types.hpp"                  // for RangeType
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
