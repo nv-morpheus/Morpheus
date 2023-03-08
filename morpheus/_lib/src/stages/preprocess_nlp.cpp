@@ -117,11 +117,13 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                                              {},
                                              0));
 
-                length = token_results.tensor_metadata->size() / 3;
-                auto seq_ids_released =
-                    cudf::cast(token_results.tensor_metadata->view(), cudf::data_type(cudf::type_id::INT32))->release();
-                memory->tensors["seq_ids"] = std::move(
-                    Tensor::create(std::move(seq_ids_released.data), DType::create<TensorIndex>(), {length, 3}, {}, 0));
+                auto tensor_index_dtype = DType::create<TensorIndex>();
+                length                  = token_results.tensor_metadata->size() / 3;
+                auto seq_ids_released   = cudf::cast(token_results.tensor_metadata->view(),
+                                                   cudf::data_type(tensor_index_dtype.cudf_type_id()))
+                                            ->release();
+                memory->tensors["seq_ids"] =
+                    std::move(Tensor::create(std::move(seq_ids_released.data), tensor_index_dtype, {length, 3}, {}, 0));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);

@@ -34,7 +34,7 @@
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
 
-#include <cstdint>  // for int64_t, int32_t, uint8_t
+#include <cstdint>  // for int64_t, uint8_t
 #include <cstdlib>  // for std::getenv
 #include <memory>   // for shared_ptr, make_shared, unique_ptr
 #include <vector>
@@ -47,7 +47,7 @@ TEST_F(TestMatxUtil, ReduceMax1d)
 {
     // Test mimics example from the method's docstring
     std::vector<float> input{5, 2, 8, 9, 8, 2, 1};
-    std::vector<int32_t> seq_ids{0, 0, 0, 1, 2, 3, 3};
+    ShapeType seq_ids{0, 0, 0, 1, 2, 3, 3};
     std::vector<float> expected_output{8, 9, 8, 2};
 
     DType dtype(TypeId::FLOAT32);
@@ -86,7 +86,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
         0.1, 0.9, 0.1, 0.3};
 
     // reducing 12 rows down to 5
-    std::vector<int32_t> seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4};
+    ShapeType seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4};
 
     std::vector<double> expected_output{
         1.0, 0.9, 0.7, 0.9,
@@ -161,7 +161,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     EXPECT_EQ(offset, buff_size);
 
     // reducing 20 rows down to 12
-    std::vector<int32_t> seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 7, 7, 7, 8, 9, 9, 10, 11};
+    ShapeType seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 7, 7, 7, 8, 9, 9, 10, 11};
     // disabling formatting so I can enter the literal values by column
     // clang-format off
     std::vector<double> expected_output{0.1, 1.0, 1.0, 1.0, 0.5, 0.3, 0.9, 0.5, 0.0, 0.6, 0.8, 0.1,
