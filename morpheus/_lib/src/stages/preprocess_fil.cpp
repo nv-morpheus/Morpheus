@@ -107,7 +107,7 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                                                {},
                                                0);
 
-                auto seg_ids = Tensor::create(
+                auto seq_ids = Tensor::create(
                     MatxUtil::create_seq_ids(x->mess_count, m_fea_cols.size(), DType::create<TensorIndex>().type_id()),
                     DType::create<uint32_t>(),
                     {x->mess_count, 3},
@@ -116,7 +116,7 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
 
                 // Build the results
                 auto memory =
-                    std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seg_ids));
+                    std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seq_ids));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);
