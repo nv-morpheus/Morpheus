@@ -73,7 +73,7 @@ class TestCuda : public ::testing::Test
         std::vector s(std::begin(shape), std::end(shape));
 
         auto tensor = std::make_shared<GenericTensor>(
-            md, 0, DataType(TypeId::FLOAT32), ShapeType{s}, ShapeType{});
+            md, 0, DataType(TypeId::FLOAT32), std::vector<TensorIndex>{s}, std::vector<TensorIndex>{});
 
         return TensorObject(md, tensor);
     }
