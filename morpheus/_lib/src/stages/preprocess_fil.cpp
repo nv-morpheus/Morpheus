@@ -107,12 +107,12 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                                                {},
                                                0);
 
-                auto seg_ids =
-                    Tensor::create(MatxUtil::create_seg_ids(x->mess_count, m_fea_cols.size(), TypeId::UINT32),
-                                   DType::create<uint32_t>(),
-                                   {x->mess_count, 3},
-                                   {},
-                                   0);
+                auto seg_ids = Tensor::create(
+                    MatxUtil::create_seg_ids(x->mess_count, m_fea_cols.size(), DType::create<TensorIndex>().type_id()),
+                    DType::create<uint32_t>(),
+                    {x->mess_count, 3},
+                    {},
+                    0);
 
                 // Build the results
                 auto memory =
