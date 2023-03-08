@@ -29,8 +29,6 @@ concurrency:
 jobs:
   ci_pipe:
     uses: ./.github/workflows/ci_pipe.yml
-    permissions:
-      id-token: write
     with:
       run_check: ${{ startsWith(github.ref_name, 'pull-request/') }}
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-230214
