@@ -41,6 +41,20 @@ env:
   WORKSPACE: "${{ github.workspace }}/morpheus"
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"
 
+permissions:
+  actions: none
+  checks: none
+  contents: read
+  deployments: none
+  discussions: none
+  id-token: write
+  issues: none
+  packages: read
+  pages: none
+  pull-requests: read
+  repository-projects: none
+  security-events: none
+  statuses: none
 
 jobs:
   check:
@@ -55,8 +69,6 @@ jobs:
       image: ${{ inputs.container }}
     strategy:
       fail-fast: true
-    permissions:
-      id-token: write
 
     steps:
       - name: Checkout
@@ -88,8 +100,6 @@ jobs:
       image: ${{ inputs.container }}
     strategy:
       fail-fast: true
-    permissions:
-      id-token: write
 
     steps:
       - name: Checkout
@@ -125,8 +135,6 @@ jobs:
         PARALLEL_LEVEL: '10'
     strategy:
       fail-fast: true
-    permissions:
-      id-token: write
 
     steps:
       - name: Checkout
@@ -158,8 +166,6 @@ jobs:
       image: ${{ inputs.container }}
     strategy:
       fail-fast: true
-    permissions:
-      id-token: write
 
     steps:
       - name: Checkout
