@@ -38,6 +38,7 @@
 
 #include <algorithm>  // for transform
 #include <array>      // needed for pybind11::make_tuple
+#include <cstddef>    // for size_t
 #include <cstdint>    // for uint8_t
 #include <sstream>
 #include <stdexcept>  // for runtime_error
@@ -138,7 +139,7 @@ void MultiMessage::set_meta(const std::vector<std::string>& column_names, const 
         throw std::runtime_error(err_msg.str());
     }
 
-    for (TensorIndex i = 0; i < tensors.size(); ++i)
+    for (std::size_t i = 0; i < tensors.size(); ++i)
     {
         const auto& cv            = table_meta.get_column(i);
         const auto table_type_id  = cv.type().id();
