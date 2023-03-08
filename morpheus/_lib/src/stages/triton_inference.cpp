@@ -82,7 +82,7 @@ void build_output_tensors(TensorIndex count,
     // Create the output memory blocks
     for (auto& model_output : model_outputs)
     {
-        ShapeType total_shape{model_output.shape.begin(), model_output.shape.end()};
+        ShapeType total_shape = model_output.shape;
 
         // First dimension will always end up being the number of rows in the dataframe
         total_shape[0]  = count;
