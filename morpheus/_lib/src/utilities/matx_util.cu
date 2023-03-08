@@ -362,7 +362,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::cast(const DevMemInfo& input, Type
     return output;
 }
 
-std::shared_ptr<rmm::device_buffer> MatxUtil::create_seg_ids(TensorIndex row_count, TensorIndex fea_len, TypeId output_type)
+std::shared_ptr<rmm::device_buffer> MatxUtil::create_seq_ids(TensorIndex row_count, TensorIndex fea_len, TypeId output_type)
 {
     auto output_dtype = DType(output_type);
 
