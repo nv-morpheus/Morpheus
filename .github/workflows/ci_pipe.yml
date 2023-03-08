@@ -34,7 +34,7 @@ on:
 env:
   CHANGE_TARGET: "${{ github.base_ref }}"
   CUDA_PATH: "/usr/local/cuda/"
-  CUDA_VER: "11.5"
+  CUDA_VER: "11.8"
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
   MORPHEUS_ROOT: "${{ github.workspace }}/morpheus"

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG FROM_IMAGE=gpuci/miniforge-cuda
-ARG CUDA_VER=11.5
+ARG CUDA_VER=11.8
 ARG LINUX_VER=ubuntu20.04
 ARG PYTHON_VER=3.8
 FROM ${FROM_IMAGE}:${CUDA_VER}-runtime-${LINUX_VER} AS base

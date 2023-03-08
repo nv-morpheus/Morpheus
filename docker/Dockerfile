@@ -18,7 +18,7 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="gpuci/miniforge-cuda"
-ARG CUDA_VER=11.5
+ARG CUDA_VER=11.8
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 
