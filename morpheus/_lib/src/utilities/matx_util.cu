@@ -24,6 +24,7 @@
 #include <mrc/cuda/sync.hpp>
 
 #include <array>
+#include <cstddef> // for size_t
 
 namespace morpheus {
 
@@ -407,7 +408,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::threshold(const DevMemInfo& input,
 {
     const auto rows         = input.shape(0);
     const auto cols         = input.shape(1);
-    TensorIndex output_size = sizeof(bool) * rows;
+    std::size_t output_size = sizeof(bool) * rows;
     if (!by_row)
     {
         output_size *= cols;
@@ -442,7 +443,7 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input
                                            static_cast<matx::index_t>(input.stride(1))};
 
     TensorIndex output_element_count = output_shape[0] * output_shape[1];
-    TensorIndex output_buff_size     = dtype.item_size() * output_element_count;
+    std::size_t output_buff_size     = dtype.item_size() * output_element_count;
 
     DCHECK(output_element_count <= input.count()) << "Output buffer size should be less than or equal to the input";
     DCHECK(num_input_cols == output_shape[1]) << "Number of input and output columns must match";

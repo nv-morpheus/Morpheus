@@ -23,7 +23,6 @@
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
-#include <cstddef>
 #include <memory>
 #include <vector>
 
