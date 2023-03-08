@@ -38,29 +38,68 @@
 
     "containerEnv": {
         "HOST_MORPHEUS_ROOT": "${localWorkspaceFolder}",
-        "MORPHEUS_ROOT": "${containerWorkspaceFolder}"
+        "MORPHEUS_ROOT": "${containerWorkspaceFolder}",
+        "DEFAULT_CONDA_ENV": "morpheus",
+        "MAMBA_NO_BANNER": "1",
+        "CONDA_ALWAYS_YES": "true",
+        "VAULT_HOST": "https://vault.ops.k8s.rapids.ai",
+        "DISPLAY": "${localEnv:DISPLAY:-}",
+        "XAUTHORITY": "${localEnv:XAUTHORITY:-}",
+        "XDG_SESSION_TYPE": "${localEnv:XDG_SESSION_TYPE:-}",
+        "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR:-}",
+        "DBUS_SESSION_BUS_ADDRESS": "${localEnv:DBUS_SESSION_BUS_ADDRESS:-}"
     },
 
-    "postStartCommand": "${containerWorkspaceFolder}/.devcontainer/bin/setup-morpheus-env",
-
-    "initializeCommand": [ "./.devcontainer/init.sh" ],
+    "initializeCommand": [ "${localWorkspaceFolder}/.devcontainer/initialize-command.sh" ],
 
     "remoteUser": "coder",
-
     "mounts": [
-        {"type":"bind", "source": "/var/run/docker.sock", "target": "/var/run/docker.sock"},
-        {"type":"bind", "source": "${localWorkspaceFolder}/.cache/conda", "target": "/home/coder/.conda"},
-        {"type":"bind", "source": "${localEnv:HOME}/.config/gh", "target": "/home/coder/.config/gh"}
+        {
+            "type": "bind",
+            "source": "/tmp/.X11-unix",
+            "target": "/tmp/.X11-unix"
+        },
+        {
+            "type": "bind",
+            "source": "${localEnv:XDG_RUNTIME_DIR}",
+            "target": "${localEnv:XDG_RUNTIME_DIR}"
+        },
+        {
+            "type": "bind",
+            "source": "/run/dbus/system_bus_socket",
+            "target": "/run/dbus/system_bus_socket"
+        },
+        {
+            "type":"bind",
+            "source": "/var/run/docker.sock",
+            "target": "/var/run/docker.sock"
+        },
+        {
+            "type": "bind",
+            "source": "${localWorkspaceFolder}/.cache/conda/envs",
+            "target": "/home/coder/.conda/envs"
+        },
+        {
+            "type": "bind",
+            "source": "${localWorkspaceFolder}/../.conda/pkgs",
+            "target": "/home/coder/.conda/pkgs"
+        },
+        {
+            "type":"bind",
+            "source": "${localWorkspaceFolder}/../.config", // parent folder because sister repos are sibling dirs
+            "target": "/home/coder/.config"
+        },
+        {
+            "type": "bind",
+            "source": "${localWorkspaceFolder}/.devcontainer/opt/morpheus",
+            "target": "/opt/morpheus"
+        },
+
     ],
 
     "features": {
-        "ghcr.io/devcontainers/features/common-utils:1": {
-            "uid": "1000",
-            "gid": "1000",
-            "username": "coder"
-        },
         "ghcr.io/devcontainers/features/docker-from-docker": {},
-        "ghcr.io/devcontainers/features/github-cli": {}
+        "ghcr.io/devcontainers/features/dotnet:1": {}
     },
 
     "customizations": {
@@ -74,11 +113,13 @@
 				"nvidia.nsight-vscode-edition",
 				"twxs.cmake",
 				"xaver.clang-format"
-			]
+			],
+            "settings": {
+                "cmake.cmakePath": "/tmp/.current-conda-env/bin/cmake",
+                "cmake.languageSupport.dotnetPath": "/usr/bin/dotnet",
+                "C_Cpp.intelliSenseEngine": "disabled",
+                "python.terminal.activateEnvironment": false
+            }
         }
     },
-    "settings": {
-        "C_Cpp.intelliSenseEngine": "disabled",
-        "python.terminal.activateEnvironment": false
-    }
 }
