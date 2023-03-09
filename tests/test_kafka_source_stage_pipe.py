@@ -32,8 +32,8 @@ from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
+from stages import DFPLengthChecker
 from utils import TEST_DIRS
-from utils import DFPLengthChecker
 from utils import assert_path_exists
 from utils import write_file_to_kafka
 
