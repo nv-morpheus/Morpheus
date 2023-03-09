@@ -21,7 +21,7 @@
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
 
 #include <cudf/types.hpp>        // for cudf::size_type>
-#include <glog/logging.h>        // needed by MRC_PTR_CAST
+#include <glog/logging.h>        // IWYU pragma: keep
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
 #include <pybind11/pytypes.h>    // for key_error
 
