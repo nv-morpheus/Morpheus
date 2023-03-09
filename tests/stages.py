@@ -151,14 +151,68 @@ class DFPLengthChecker(SinglePortStage):
         return node, input_stream[1]
 
 
+@register_stage("unittest-in-mem-sink")
+class InMemorySinkStage(SinglePortStage):
+
+    def __init__(self, c: Config):
+        super().__init__(c)
+
+        self._messages = []
+
+    @property
+    def name(self) -> str:
+        return "in-mem-sink"
+
+    def accepted_types(self) -> typing.Tuple:
+        """
+        Accepted input types for this stage are returned.
+
+        Returns
+        -------
+        typing.Tuple(`morpheus.messages.MessageMeta`, )
+            Accepted input types.
+
+        """
+        return (MessageMeta, )
+
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    def get_messages(self) -> typing.List[MessageMeta]:
+        """
+        Returns
+        -------
+        list
+            Results collected messages
+        """
+        return self._messages
+
+    def concat_dataframes(self) -> pd.DataFrame:
+        all_meta = [x.df for x in self._messages]
+
+        # Convert to pandas
+        all_meta = [x.to_pandas() if isinstance(x, cudf.DataFrame) else x for x in all_meta]
+
+        return pd.concat(all_meta)
+
+    def _append_message(self, message: MessageMeta) -> MessageMeta:
+        self._messages.append(message)
+        return message
+
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+        node = builder.make_node(self.unique_name, self._append_message)
+        builder.make_edge(input_stream[0], node)
+
+        return node, input_stream[1]
+
+
 @register_stage("unittest-compare-df")
-class CompareDataframeStage(SinglePortStage):
+class CompareDataframeStage(InMemorySinkStage):
 
     def __init__(self, c: Config, compare_df: pd.DataFrame):
         super().__init__(c)
 
         self._compare_df = compare_df
-        self._results = None
 
     @property
     def name(self) -> str:
@@ -170,16 +224,16 @@ class CompareDataframeStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, )
+        typing.Tuple(`morpheus.messages.MessageMeta`, )
             Accepted input types.
 
         """
         return (MessageMeta, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def get_results(self):
+    def get_results(self) -> dict:
         """
         Returns the results dictionary. This is the same dictionary that is written to results_file_name
 
@@ -188,32 +242,9 @@ class CompareDataframeStage(SinglePortStage):
         dict
             Results dictionary
         """
-        return self._results
-
-    def _do_comparison(self, messages: typing.List[MessageMeta]):
-
-        if (len(messages) == 0):
+        if (len(self._messages) == 0):
             return
 
-        # Get all of the meta data and combine into a single frame
-        all_meta = [x.df for x in messages]
+        combined_df = self.concat_dataframes()
 
-        # Convert to pandas
-        all_meta = [x.to_pandas() if isinstance(x, cudf.DataFrame) else x for x in all_meta]
-
-        combined_df = pd.concat(all_meta)
-
-        self._results = compare_df.compare_df(self._compare_df, combined_df)
-
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        def do_compare(delayed_messages):
-
-            self._do_comparison(delayed_messages)
-
-            return delayed_messages
-
-        node = builder.make_node(self.unique_name, ops.to_list(), ops.map(do_compare), ops.flatten())
-        builder.make_edge(input_stream[0], node)
-
-        return node, input_stream[1]
+        return compare_df.compare_df(self._compare_df, combined_df)
