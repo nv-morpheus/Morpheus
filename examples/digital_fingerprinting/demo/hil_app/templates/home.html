@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles.css')}}">
+      <title>DFP Integrated Training Demo</title>
+   </head>
+   <body>
+      <div class="testbox">
+      <form onSubmit="return validate();" action="{{ url_for("submit_messages")}}" method="post">
+      <div class="banner">
+         <h1>DFP Integrated Training Demo</h1>
+      </div>
+      <br/>
+      <fieldset>
+         <legend>Control Message Publisher</legend>
+         <div class="columns">
+            <div class="item">
+               <textarea id="control_message" name="control_message" rows="10" placeholder="Enter your control message configuration" required></textarea>
+            </div>
+      </fieldset>
+      <div class="btn-block">
+        <button id="submit" href="/" >Submit</button>
+      </div>
+      <span role="alert" id="controlMessage" aria-hidden="true"></span>
+      </form>
+      </div>
+      <script>
+
+         function validate() {
+
+            const controlMessageField = document.getElementById("control_message");
+            const controlMessage = document.getElementById("controlMessage");
+            let valid = true;
+
+            controlMessage.innerHTML = "";
+
+            if (!controlMessageField.value) {
+               controlMessage.innerHTML= "Please enter control message";
+               controlMessage.classList.add("visible");
+               controlMessageField.classList.add("invalid");
+               controlMessage.setAttribute('aria-hidden', false);
+               controlMessage.setAttribute('aria-invalid', true);
+               valid = false;
+            }else{
+               try {
+                  json_str = controlMessageField.value
+                  var jsonObj = JSON.parse(json_str);
+                  if (!jsonObj.hasOwnProperty('inputs')){
+                     controlMessage.innerHTML= "Required field `inputs` doesn't exists in the control message configuration";
+                     throw new Error("Required field doesn't exists")
+                  }
+                  controlMessage.style.color="green"
+                  controlMessage.innerHTML= "Successfully submitted control message!";
+                  controlMessage.classList.add("visible");
+                  controlMessage.setAttribute('aria-hidden', false);
+                  controlMessage.setAttribute('aria-invalid', false);
+
+               } catch (e) {
+                  if (controlMessage.innerHTML === "")
+                     controlMessage.innerHTML= "Please enter valid JSON control message";
+                  controlMessageField.classList.add("invalid");
+                  controlMessage.classList.add("visible");
+                  controlMessage.setAttribute('aria-hidden', false);
+                  controlMessage.setAttribute('aria-invalid', true);
+                  valid = false;
+               }
+
+            }
+
+         return valid;
+         }
+      </script>
+   </body>
+</html>

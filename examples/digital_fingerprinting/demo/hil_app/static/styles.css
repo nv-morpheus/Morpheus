@@ -1,0 +1,116 @@
+html, body {
+  min-height: 100%;
+  }
+  body, div, form, input, select, textarea, label {
+  padding: 0;
+  margin: 0;
+  outline: none;
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 14px;
+  color: #666;
+  line-height: 22px;
+  }
+  h1 {
+  position: absolute;
+  margin: 0;
+  font-size: 50px;
+  color: #bdc0b5;
+  z-index: 2;
+  line-height: 83px;
+  }
+  legend {
+  padding: 10px;
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 18px;
+  color: rgb(15, 15, 15);
+  background-color: #a6da2e;
+  }
+  textarea {
+  width: calc(100% - 12px);
+  padding: 5px;
+  }
+  .testbox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: inherit;
+  padding: 20px;
+  }
+  form {
+  width: 100%;
+  padding: 20px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 0 8px #a6da2e;
+  }
+  .banner {
+  position:relative;
+  height: 200px;
+  max-width: 100%;
+  background: url("https://developer-blogs.nvidia.com/wp-content/uploads/2022/10/router-box-featured.jpg");
+  background-size:auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  }
+  .banner::after {
+  content: "";
+  background-color: rgba(0, 0, 0, 0.4);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  }
+  input, select, textarea {
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  }
+  input {
+  width: calc(100% - 10px);
+  padding: 5px;
+  }
+  .item input:hover, .item select:hover, .item textarea:hover {
+  border: 1px solid transparent;
+  box-shadow: 0 0 3px 0 #a6da2e;
+  color: #0a9b3a;
+  width: 1000px;
+  height: 300px;
+  text-align: left;
+  align-items: center;
+  }
+  .item {
+  position: relative;
+  margin: 10px 0;
+  }
+  .item span {
+  color: red;
+  }
+
+  .btn-block {
+  margin-top: 10px;
+  text-align: center;
+  }
+  button {
+  width: 150px;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background:  #3a413c;
+  font-size: 16px;
+  color: #fff;
+  cursor: pointer;
+  }
+  #controlMessage {
+    display: none;
+    font-size: 1.0em;
+    color: red;
+  }
+
+  #controlMessage.visible {
+    display: block;
+  }
+
+  input.invalid {
+    border-color: red;
+  }
