@@ -17,7 +17,6 @@ import typing
 
 import cupy as cp
 import mrc
-import mrc.core.operators as ops
 import pandas as pd
 
 import cudf
@@ -208,9 +207,24 @@ class InMemorySinkStage(SinglePortStage):
 
 @register_stage("unittest-compare-df")
 class CompareDataframeStage(InMemorySinkStage):
+    """
+    Collects incoming messages, comparing the concatinated dataframe of all messages against an expected dataframe
+    `compare_df`.
 
-    def __init__(self, c: Config, compare_df: pd.DataFrame):
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    compare_df : typing.Union[pd.DataFrame, str]
+        Dataframe to compare against the aggregate Dataframe composed from the received messages. When `compare_df` is
+        a string it is assumed to be a file path.
+    """
+
+    def __init__(self, c: Config, compare_df: typing.Union[pd.DataFrame, str]):
         super().__init__(c)
+
+        if isinstance(compare_df, str):
+            compare_df = read_file_to_df(compare_df, file_type=FileTypes.Auto, df_type='pandas')
 
         self._compare_df = compare_df
 
