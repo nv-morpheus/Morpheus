@@ -21,7 +21,10 @@ import typing
 
 import cupy as cp
 import mrc
+import mrc.core.operators as ops
 import pandas as pd
+
+import cudf
 
 import morpheus
 from morpheus._lib.common import FileTypes
@@ -34,7 +37,9 @@ from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
 from morpheus.pipeline.single_port_stage import SinglePortStage
+from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.inference import inference_stage
+from morpheus.utils import compare_df
 from morpheus.utils.atomic_integer import AtomicInteger
 
 
@@ -165,6 +170,74 @@ class DFPLengthChecker(SinglePortStage):
 
     def _build_single(self, builder: mrc.Builder, input_stream):
         node = builder.make_node(self.unique_name, self._length_checker)
+        builder.make_edge(input_stream[0], node)
+
+        return node, input_stream[1]
+
+
+@register_stage("unittest-compare-df")
+class CompareDataframeStage(SinglePortStage):
+
+    def __init__(self, c: Config, compare_df: pd.DataFrame):
+        super().__init__(c)
+
+        self._compare_df = compare_df
+        self._results = None
+
+    @property
+    def name(self) -> str:
+        return "compare"
+
+    def accepted_types(self) -> typing.Tuple:
+        """
+        Accepted input types for this stage are returned.
+
+        Returns
+        -------
+        typing.Tuple(`morpheus.pipeline.messages.MultiMessage`, )
+            Accepted input types.
+
+        """
+        return (MessageMeta, )
+
+    def supports_cpp_node(self):
+        return False
+
+    def get_results(self):
+        """
+        Returns the results dictionary. This is the same dictionary that is written to results_file_name
+
+        Returns
+        -------
+        dict
+            Results dictionary
+        """
+        return self._results
+
+    def _do_comparison(self, messages: typing.List[MessageMeta]):
+
+        if (len(messages) == 0):
+            return
+
+        # Get all of the meta data and combine into a single frame
+        all_meta = [x.df for x in messages]
+
+        # Convert to pandas
+        all_meta = [x.to_pandas() if isinstance(x, cudf.DataFrame) else x for x in all_meta]
+
+        combined_df = pd.concat(all_meta)
+
+        self._results = compare_df.compare_df(self._compare_df, combined_df)
+
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+
+        def do_compare(delayed_messages):
+
+            self._do_comparison(delayed_messages)
+
+            return delayed_messages
+
+        node = builder.make_node(self.unique_name, ops.to_list(), ops.map(do_compare), ops.flatten())
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
