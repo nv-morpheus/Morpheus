@@ -27,7 +27,6 @@ from morpheus.messages import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
@@ -65,6 +64,17 @@ def filter_detections(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - `field_name` (str): Name of the field to filter on. Defaults to `probs`.
+        - `threshold` (float): Threshold value to filter on. Defaults to `0.5`.
+        - `filter_source` (str): Source of the filter field. Defaults to `AUTO`.
+        - `copy` (bool): Whether to copy the rows or slice them. Defaults to `True`.
+        - `schema` (dict): Schema configuration.
+            - `input_message_type` (str): Pickled message type.
+            - `encoding` (str): Encoding used to pickle the message type.
     """
 
     config = builder.get_current_module_config()
@@ -74,27 +84,30 @@ def filter_detections(builder: mrc.Builder):
     filter_source = config.get("filter_source", "AUTO")
     copy = config.get("copy", True)
 
-    schema_config = config.get("schema", None)
-    input_message_type = schema_config.get("input_message_type", None)
-    encoding = schema_config.get("encoding", None)
+    if ("schema" not in config):
+        raise ValueError("Schema configuration not found.")
+
+    schema_config = config["schema"]
+    input_message_type = schema_config["input_message_type"]
+    encoding = schema_config["encoding"]
 
     message_type = pickle.loads(bytes(input_message_type, encoding))
 
-    def find_detections(x: MultiMessage, filter_source) -> typing.Union[cp.ndarray, np.ndarray]:
+    def find_detections(x: MultiMessage, _filter_source) -> typing.Union[cp.ndarray, np.ndarray]:
 
         # Determind the filter source
-        if filter_source == FilterSource.TENSOR:
-            filter_source = x.get_output(field_name)
+        if _filter_source == FilterSource.TENSOR:
+            _filter_source = x.get_output(field_name)
         else:
-            filter_source = x.get_meta(field_name).values
+            _filter_source = x.get_meta(field_name).values
 
-        if (isinstance(filter_source, np.ndarray)):
+        if (isinstance(_filter_source, np.ndarray)):
             array_mod = np
         else:
             array_mod = cp
 
         # Get per row detections
-        detections = (filter_source > threshold)
+        detections = (_filter_source > threshold)
 
         if (len(detections.shape) > 1):
             detections = detections.any(axis=1)
@@ -104,7 +117,7 @@ def filter_detections(builder: mrc.Builder):
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(x: MultiMessage) -> MultiMessage:
+    def filter_copy(x: MultiMessage) -> typing.Union[MultiMessage, None]:
         """
         This function uses a threshold value to filter the messages.
 

@@ -65,6 +65,7 @@ def dfp_training_pipe(builder: mrc.Builder):
     }
 
     stream_aggregation_options = config.get("stream_aggregation_options", {
+        "cache_dir": cache_dir,
         "timestamp_column_name": ts_column_name,
     })
 
@@ -81,7 +82,6 @@ def dfp_training_pipe(builder: mrc.Builder):
     preproc_defaults = {}
     preproc_conf = merge_dictionaries(preproc_options, preproc_defaults)
 
-    # dfp_rolling_window_conf = get_config_with_overrides(config, DFP_ROLLING_WINDOW, "dfp_rolling_window")
     stream_aggregation_defaults = {
         "trigger_on_min_history": 300,
         "trigger_on_min_increment": 300,

@@ -105,7 +105,7 @@ class MultiPortModuleStage(Stage):
 
         in_stream_node = in_stream_pairs[0][0]
 
-        # Load module from theregistry.
+        # Load module from the registry.
         module = load_module(self._module_conf, builder=builder)
         mod_in_stream = module.input_port(self._input_port_name)
 

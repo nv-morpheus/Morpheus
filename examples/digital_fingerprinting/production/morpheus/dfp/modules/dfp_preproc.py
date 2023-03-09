@@ -44,7 +44,7 @@ def dfp_preproc(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
     """
 
     config = builder.get_current_module_config()
@@ -91,8 +91,6 @@ def dfp_preproc(builder: mrc.Builder):
 
     filter_control_message_module = builder.load_module(FILTER_CONTROL_MESSAGE, "morpheus", "filter_control_message",
                                                         pre_filter_conf)
-    import json
-    # print(f"Creating file batcher module with config: {json.dumps(file_batcher_conf, indent=2)}", flush=True)
     file_batcher_module = builder.load_module(FILE_BATCHER, "morpheus", "file_batcher", file_batcher_conf)
     file_to_df_dataloader_module = builder.load_module(DATA_LOADER, "morpheus", "dfp_file_to_df_dataloader",
                                                        file_to_df_conf)

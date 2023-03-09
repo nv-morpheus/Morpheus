@@ -37,11 +37,16 @@ def dfp_postprocessing(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         Pipeline budler instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        timestamp_column_name: str
     """
 
     config = builder.get_current_module_config()
 
-    timestamp_column_name = config.get("timestamp_column_name", None)
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
 
     def process_events(message: MultiAEMessage):
         # Assume that a filter stage preceedes this stage

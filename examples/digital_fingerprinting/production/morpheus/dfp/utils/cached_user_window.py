@@ -101,6 +101,8 @@ class CachedUserWindow:
         return new_df
 
     def save(self):
+        if (not self.cache_location):
+            raise RuntimeError("No cache location set")
 
         # Make sure the directories exist
         os.makedirs(os.path.dirname(self.cache_location), exist_ok=True)
@@ -139,6 +141,8 @@ class CachedUserWindow:
 
     @staticmethod
     def load(cache_location: str) -> "CachedUserWindow":
+        if (cache_location is None):
+            raise RuntimeError("No cache location set")
 
         with open(cache_location, "rb") as f:
             return pickle.load(f)

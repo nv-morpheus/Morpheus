@@ -50,7 +50,13 @@ def dfp_inference_pipe(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - batching_options: Options for batching the data
+        - cache_dir: Directory to cache the rolling window data
     """
 
     config = builder.get_current_module_config()
@@ -69,16 +75,62 @@ def dfp_inference_pipe(builder: mrc.Builder):
         "user_splitting_options": config.get("user_splitting_options", {}),
     }
 
+    stream_aggregation_options = config.get("stream_aggregation_options", {
+        "cache_dir": cache_dir,
+        "timestamp_column_name": ts_column_name,
+    })
+
+    data_prep_options = config.get("preprocessing_options", {
+        "timestamp_column_name": ts_column_name,
+    })
+
+    inference_model_options = config.get("inference_options", {})
+
+    detection_criteria = config.get("detection_criteria", {})
+
+    post_processing_options = {
+        "timestamp_column_name": ts_column_name,
+    }
+
+    serialize_options = config.get("serialize_options", {})
+
+    write_to_file_options = config.get("write_to_file_options", {})
+
     preproc_defaults = {}
     preproc_conf = merge_dictionaries(preproc_options, preproc_defaults)
 
-    dfp_rolling_window_conf = config[DFP_ROLLING_WINDOW]
-    dfp_data_prep_conf = config[DFP_DATA_PREP]
-    dfp_inference_conf = config[DFP_INFERENCE]
-    filter_detections_conf = config[FILTER_DETECTIONS]
-    dfp_post_proc_conf = config[DFP_POST_PROCESSING]
-    serialize_conf = config[SERIALIZE]
-    write_to_file_conf = config[WRITE_TO_FILE]
+    stream_aggregation_defaults = {
+        "trigger_on_min_history": 300,
+        "trigger_on_min_increment": 300,
+    }
+    dfp_rolling_window_conf = merge_dictionaries(stream_aggregation_options, stream_aggregation_defaults)
+
+    data_prep_defaults = {}
+    dfp_data_prep_conf = merge_dictionaries(data_prep_options, data_prep_defaults)
+
+    inference_model_defaults = {}
+    dfp_inference_conf = merge_dictionaries(inference_model_options, inference_model_defaults)
+
+    detection_criteria_defaults = {
+        "field_name": "mean_abs_z",
+        "threshold": 2.0,
+        "filter_source": "DATAFRAME"
+    }
+    filter_detections_conf = merge_dictionaries(detection_criteria, detection_criteria_defaults)
+
+    post_processing_defaults = {}
+    dfp_post_proc_conf = merge_dictionaries(post_processing_options, post_processing_defaults)
+
+    serialize_defaults = {
+        "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id'],
+        "use_cpp": True
+    }
+    serialize_conf = merge_dictionaries(serialize_options, serialize_defaults)
+
+    write_to_file_defaults = {
+        "filename": "dfp_inference_output.csv",
+    }
+    write_to_file_conf = merge_dictionaries(write_to_file_options, write_to_file_defaults)
 
     # Load modules
     preproc_module = builder.load_module(DFP_PREPROC, "morpheus", "dfp_preproc", preproc_conf)

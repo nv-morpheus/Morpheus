@@ -73,9 +73,8 @@ def dfp_rolling_window(builder: mrc.Builder):
 
     @contextmanager
     def get_user_cache(user_id: str):
-
         # Determine cache location
-        cache_location = os.path.join(cache_dir, f"{user_id}.pkl")
+        cache_location = os.path.join(cache_dir, f"{user_id}.pkl") if cache_to_disk else None
 
         user_cache = user_cache_map.get(user_id, None)
 

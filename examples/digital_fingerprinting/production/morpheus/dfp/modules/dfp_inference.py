@@ -45,13 +45,27 @@ def dfp_inference(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         Pipeline budler instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - model_name_formatter: Formatter for model names
+        - fallback_username: Fallback user to use if no model is found for a user
+        - timestamp_column_name: Name of the timestamp column
     """
 
     config = builder.get_current_module_config()
 
-    fallback_user = config.get("fallback_username", None)
+    if ("model_name_formatter" not in config):
+        raise ValueError("Inference module requires model_name_formatter to be configured")
+
+    if ("fallback_username" not in config):
+        raise ValueError("Inference module requires fallback_username to be configured")
+
     model_name_formatter = config.get("model_name_formatter", None)
-    timestamp_column_name = config.get("timestamp_column_name", None)
+    fallback_user = config.get("fallback_username", "generic_user")
+
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
 
     client = MlflowClient()
     model_manager = ModelManager(model_name_formatter=model_name_formatter)
