@@ -36,7 +36,8 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 #include <http_client.h>
-#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
+#include <mrc/cuda/common.hpp>   // for MRC_CHECK_CUDA
+#include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
 #include <nlohmann/json.hpp>
 #include <pymrc/node.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
