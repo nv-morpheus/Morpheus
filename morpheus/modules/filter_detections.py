@@ -26,14 +26,14 @@ from morpheus._lib.common import FilterSource
 from morpheus.messages import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.utils.module_ids import FILTER_DETECTIONS
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(FILTER_DETECTIONS, MODULE_NAMESPACE)
+@register_module(FILTER_DETECTIONS, MORPHEUS_MODULE_NAMESPACE)
 def filter_detections(builder: mrc.Builder):
     """
     Filter message by a classification threshold.
@@ -67,7 +67,7 @@ def filter_detections(builder: mrc.Builder):
         mrc Builder object.
     """
 
-    config = get_module_config(FILTER_DETECTIONS, builder)
+    config = builder.get_current_module_config()
 
     field_name = config.get("field_name", "probs")
     threshold = config.get("threshold", 0.5)

@@ -25,12 +25,10 @@ import morpheus.modules.filter_detections  # noqa: F401
 import morpheus.modules.serialize  # noqa: F401
 import morpheus.modules.write_to_file  # noqa: F401
 from morpheus.utils.module_ids import FILTER_DETECTIONS
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_ids import WRITE_TO_FILE
-from morpheus.utils.module_utils import get_config_with_overrides
-from morpheus.utils.module_utils import get_module_config
-from morpheus.utils.module_utils import load_module
+from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_DATA_PREP
@@ -43,7 +41,7 @@ from ..utils.module_ids import DFP_ROLLING_WINDOW
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_INFERENCE_PIPE, MODULE_NAMESPACE)
+@register_module(DFP_INFERENCE_PIPE, MORPHEUS_MODULE_NAMESPACE)
 def dfp_inference_pipe(builder: mrc.Builder):
     """
     This module function allows for the consolidation of multiple dfp pipeline modules relevent to inference
@@ -55,29 +53,46 @@ def dfp_inference_pipe(builder: mrc.Builder):
         Pipeline budler instance.
     """
 
-    config = get_module_config(DFP_INFERENCE_PIPE, builder)
-    config["module_id"] = DFP_INFERENCE_PIPE
-    config["namespace"] = MODULE_NAMESPACE
-    config["module_name"] = "dfp_inf"
+    config = builder.get_current_module_config()
 
-    preproc_conf = get_config_with_overrides(config, DFP_PREPROC, "dfp_preproc")
-    dfp_rolling_window_conf = get_config_with_overrides(config, DFP_ROLLING_WINDOW, "dfp_rolling_window")
-    dfp_data_prep_conf = get_config_with_overrides(config, DFP_DATA_PREP, "dfp_data_prep")
-    dfp_inference_conf = get_config_with_overrides(config, DFP_INFERENCE, "dfp_inference")
-    filter_detections_conf = get_config_with_overrides(config, FILTER_DETECTIONS, "filter_detections")
-    dfp_post_proc_conf = get_config_with_overrides(config, DFP_POST_PROCESSING, "dfp_postprocessing")
-    serialize_conf = get_config_with_overrides(config, SERIALIZE, "serialize")
-    write_to_file_conf = get_config_with_overrides(config, WRITE_TO_FILE, "write_to_file")
+    cache_dir = config.get("cache_dir")
+    ts_column_name = config.get("timestamp_column_name")
+
+    preproc_options = {
+        "batching_options": config.get("batching_options", {}),
+        "cache_dir": cache_dir,
+        "pre_filter_options": {
+            "enable_task_filtering": True,
+            "filter_task_type": "inference"
+        },
+        "timestamp_column_name": ts_column_name,
+        "user_splitting_options": config.get("user_splitting_options", {}),
+    }
+
+    preproc_defaults = {}
+    preproc_conf = merge_dictionaries(preproc_options, preproc_defaults)
+
+    dfp_rolling_window_conf = config[DFP_ROLLING_WINDOW]
+    dfp_data_prep_conf = config[DFP_DATA_PREP]
+    dfp_inference_conf = config[DFP_INFERENCE]
+    filter_detections_conf = config[FILTER_DETECTIONS]
+    dfp_post_proc_conf = config[DFP_POST_PROCESSING]
+    serialize_conf = config[SERIALIZE]
+    write_to_file_conf = config[WRITE_TO_FILE]
 
     # Load modules
-    preproc_module = load_module(preproc_conf, builder=builder)
-    dfp_rolling_window_module = load_module(dfp_rolling_window_conf, builder=builder)
-    dfp_data_prep_module = load_module(dfp_data_prep_conf, builder=builder)
-    dfp_inference_module = load_module(dfp_inference_conf, builder=builder)
-    filter_detections_module = load_module(filter_detections_conf, builder=builder)
-    dfp_post_proc_module = load_module(dfp_post_proc_conf, builder=builder)
-    serialize_module = load_module(serialize_conf, builder=builder)
-    write_to_file_module = load_module(write_to_file_conf, builder=builder)
+    preproc_module = builder.load_module(DFP_PREPROC, "morpheus", "dfp_preproc", preproc_conf)
+    dfp_rolling_window_module = builder.load_module(DFP_ROLLING_WINDOW, "morpheus", "dfp_rolling_window",
+                                                    dfp_rolling_window_conf)
+    dfp_data_prep_module = builder.load_module(DFP_DATA_PREP, "morpheus", "dfp_data_prep", dfp_data_prep_conf)
+    dfp_inference_module = builder.load_module(DFP_INFERENCE, "morpheus", "dfp_inference", dfp_inference_conf)
+    filter_detections_module = builder.load_module(FILTER_DETECTIONS, "morpheus", "filter_detections",
+                                                   filter_detections_conf)
+    dfp_post_proc_module = builder.load_module(DFP_POST_PROCESSING, "morpheus", "dfp_post_processing",
+                                               dfp_post_proc_conf)
+    serialize_module = builder.load_module(SERIALIZE, "morpheus", "serialize", serialize_conf)
+    write_to_file_module = builder.load_module(WRITE_TO_FILE, "morpheus", "write_to_file",
+                                               write_to_file_conf)
 
     # Make an edge between the modules.
     builder.make_edge(preproc_module.output_port("output"), dfp_rolling_window_module.input_port("input"))

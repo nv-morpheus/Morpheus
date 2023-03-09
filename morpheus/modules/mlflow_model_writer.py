@@ -36,14 +36,13 @@ from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(MLFLOW_MODEL_WRITER, MODULE_NAMESPACE)
+@register_module(MLFLOW_MODEL_WRITER, MORPHEUS_MODULE_NAMESPACE)
 def mlflow_model_writer(builder: mrc.Builder):
     """
     This module uploads trained models to the mlflow server.
@@ -52,14 +51,34 @@ def mlflow_model_writer(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - model_name_formatter: Formatter for the model name
+        - experiment_name_formatter: Formatter for the experiment name
+        - conda_env: Conda environment for the model
+        - timestamp_column_name: Name of the timestamp column
+        - databricks_permissions: Permissions for the model
     """
 
-    config = get_module_config(MLFLOW_MODEL_WRITER, builder)
+    config = builder.get_current_module_config()
 
-    model_name_formatter = config.get("model_name_formatter", None)
-    experiment_name_formatter = config.get("experiment_name_formatter", None)
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
+
+    if ("model_name_formatter" not in config):
+        raise ValueError("Model name formatter is required")
+
+    if ("experiment_name_formatter" not in config):
+        raise ValueError("Experiment name formatter is required")
+
+    if ("conda_env" not in config):
+        raise ValueError("Conda environment is required")
+
+    model_name_formatter = config["model_name_formatter"]
+    experiment_name_formatter = config["experiment_name_formatter"]
     conda_env = config.get("conda_env", None)
-    timestamp_column_name = config.get("timestamp_column_name", None)
+
     databricks_permissions = config.get("databricks_permissions", None)
 
     def user_id_to_model(user_id: str):

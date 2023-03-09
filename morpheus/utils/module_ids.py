@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MODULE_NAMESPACE = "morpheus"
+MORPHEUS_MODULE_NAMESPACE = "morpheus"
 
 FILE_BATCHER = "FileBatcher"
 FILTER_CONTROL_MESSAGE = "FilterControlMessage"

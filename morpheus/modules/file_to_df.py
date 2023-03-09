@@ -35,14 +35,13 @@ from morpheus.cli.utils import str_to_file_type
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import FILE_TO_DF
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(FILE_TO_DF, MODULE_NAMESPACE)
+@register_module(FILE_TO_DF, MORPHEUS_MODULE_NAMESPACE)
 def file_to_df(builder: mrc.Builder):
     """
     This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module.
@@ -54,7 +53,7 @@ def file_to_df(builder: mrc.Builder):
         mrc Builder object.
     """
 
-    config = get_module_config(FILE_TO_DF, builder)
+    config = builder.get_current_module_config()
 
     timestamp_column_name = config.get("timestamp_column_name", None)
     schema_config = config.get("schema", None)
@@ -66,7 +65,7 @@ def file_to_df(builder: mrc.Builder):
     cache_dir = config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
-                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
     cache_dir = os.path.join(cache_dir, "file_cache")
 
     # Load input schema
@@ -229,14 +228,14 @@ def file_to_df(builder: mrc.Builder):
 
         return (output_df, False)
 
-    def convert_to_dataframe(s3_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]):
-        if (not s3_object_batch):
+    def convert_to_dataframe(file_object_batch: typing.Tuple[fsspec.core.OpenFiles, int]):
+        if (not file_object_batch):
             return None
 
         start_time = time.time()
 
         try:
-            output_df, cache_hit = get_or_create_dataframe_from_s3_batch(s3_object_batch)
+            output_df, cache_hit = get_or_create_dataframe_from_s3_batch(file_object_batch)
 
             duration = (time.time() - start_time) * 1000.0
 

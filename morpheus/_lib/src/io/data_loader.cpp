@@ -65,6 +65,7 @@ std::shared_ptr<MessageControl> DataLoader::load(std::shared_ptr<MessageControl>
         }
         else
         {
+            LOG(ERROR) << "Attempt to load using an unknown or unregistered data loader: " << loader_id << std::endl;
             throw std::runtime_error("Attempt to load using an unknown or unregistered data loader: " +
                                      loader_id.get<std::string>());
         }
@@ -82,7 +83,7 @@ void DataLoader::add_loader(const std::string& loader_id, std::shared_ptr<Loader
 
     VLOG(2) << "Registering data loader: " << loader_id << std::endl;
 
-    m_loaders[loader_id] = std::move(loader);
+    m_loaders[loader_id] = loader;
 }
 
 void DataLoader::remove_loader(const std::string& loader_id, bool throw_if_not_found)

@@ -36,7 +36,6 @@ PYBIND11_MODULE(modules, _module)
 
         )pbdoc";
 
-    // TODO(Devin): Move to its own 'modules' module, shouldn't be with stages
     const std::vector<unsigned int> MRCModuleVersion{mrc_VERSION_MAJOR, mrc_VERSION_MINOR, mrc_VERSION_PATCH};
     using namespace mrc::modules;
     mrc::modules::ModelRegistryUtil::create_registered_module<DataLoaderModule>(

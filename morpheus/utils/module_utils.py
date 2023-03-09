@@ -134,6 +134,40 @@ def verify_module_meta_fields(config: typing.Dict):
         raise KeyError("Required attribute 'module_name' is missing in the module configuration.")
 
 
+def merge_dictionaries(primary_dict, secondary_dict):
+    """Recursively merge two dictionaries, using primary_dict as a tie-breaker.
+
+    Lists are treated as a special case, and all unique elements from both dictionaries are included in the final list.
+
+    Args:
+        primary_dict (dict): The primary dictionary.
+        secondary_dict (dict): The secondary dictionary.
+
+    Returns:
+        dict: The merged dictionary.
+    """
+    result_dict = primary_dict.copy()
+
+    for key, value in secondary_dict.items():
+        if key in result_dict:
+            if isinstance(value, list) and isinstance(result_dict[key], list):
+                # Combine the two lists and remove duplicates while preserving order
+                # This isn't perfect, its possible we could still end up with duplicates in some scenarios
+                combined_list = result_dict[key] + value
+                unique_list = []
+                for item in combined_list:
+                    if item not in unique_list:
+                        unique_list.append(item)
+                result_dict[key] = unique_list
+            elif isinstance(value, dict) and isinstance(result_dict[key], dict):
+                # Recursively merge the two dictionaries
+                result_dict[key] = merge_dictionaries(result_dict[key], value)
+        else:
+            result_dict[key] = value
+
+    return result_dict
+
+
 def get_config_with_overrides(config, module_id, module_name=None, module_namespace="morpheus"):
     sub_config = config.get(module_id, None)
 

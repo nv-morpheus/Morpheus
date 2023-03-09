@@ -77,6 +77,9 @@ class CachedUserWindow:
 
         return True
 
+    def get_spanning_df(self, max_history) -> pd.DataFrame:
+        return self.get_train_df(max_history)
+
     def get_train_df(self, max_history) -> pd.DataFrame:
 
         new_df = self.trim_dataframe(self._df,

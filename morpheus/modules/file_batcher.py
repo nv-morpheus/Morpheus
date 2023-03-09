@@ -27,14 +27,17 @@ from morpheus.messages import MessageControl
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
+default_iso_date_regex_pattern = (
+    r"(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})"
+    r"T(?P<hour>\d{1,2})(:|_)(?P<minute>\d{1,2})(:|_)(?P<second>\d{1,2})(?P<microsecond>\.\d{1,6})?Z")
 
-@register_module(FILE_BATCHER, MODULE_NAMESPACE)
+
+@register_module(FILE_BATCHER, MORPHEUS_MODULE_NAMESPACE)
 def file_batcher(builder: mrc.Builder):
     """
     This module loads the input files, removes files that are older than the chosen window of time,
@@ -44,18 +47,35 @@ def file_batcher(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - batch_end_time: datetime
+        - batch_iso_date_regex_pattern: str
+        - batch_parser_kwargs: dict
+        - batch_period: str
+        - batch_sampling_rate_s: int
+        - batch_start_time: datetime
+        - cache_dir: str
+        - file_type: str
+        - filter_nulls: bool
+        - schema: dict
+        - timestamp_column_name: str
     """
 
-    config = get_module_config(FILE_BATCHER, builder)
+    config = builder.get_current_module_config()
+    # config = get_module_config(FILE_BATCHER, builder)
 
     TimestampFileObj = namedtuple("TimestampFileObj", ["timestamp", "file_name"])
 
-    iso_date_regex_pattern = config.get("iso_date_regex_pattern", None)
-    start_time = config.get("start_time", None)
-    end_time = config.get("end_time", None)
-    sampling_rate_s = config.get("sampling_rate_s", None)
-    period = config.get("period", None)
+    period = config.get("batch_period", 'D')
+    sampling_rate_s = config.get("batch_sampling_rate_s", 0)
 
+    start_time = config.get("batch_start_time")
+    end_time = config.get("batch_end_time")
+
+    iso_date_regex_pattern = config.get("batch_iso_date_regex_pattern", default_iso_date_regex_pattern)
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
     def build_fs_filename_df(files):

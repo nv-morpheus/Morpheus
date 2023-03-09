@@ -27,8 +27,7 @@ import cudf
 
 from morpheus.messages import MessageControl
 from morpheus.messages import MessageMeta
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_ROLLING_WINDOW
@@ -36,7 +35,7 @@ from ..utils.module_ids import DFP_ROLLING_WINDOW
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_ROLLING_WINDOW, MODULE_NAMESPACE)
+@register_module(DFP_ROLLING_WINDOW, MORPHEUS_MODULE_NAMESPACE)
 def dfp_rolling_window(builder: mrc.Builder):
     """
     This module function establishes a rolling window to maintain history.
@@ -44,17 +43,31 @@ def dfp_rolling_window(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - aggregation_span: The span of time to aggregate over
+        - cache_dir: Directory to cache the rolling window data
+        - cache_to_disk: Whether to cache the rolling window data to disk
+        - timestamp_column_name: Name of the timestamp column
+        - trigger_on_min_history: Minimum number of rows to trigger the rolling window
+        - trigger_on_min_increment: Minimum number of rows to trigger the rolling window
     """
 
-    config = get_module_config(DFP_ROLLING_WINDOW, builder)
-    timestamp_column_name = config.get("timestamp_column_name", None)
-    min_history = config.get("min_history", None)
-    max_history = config.get("max_history", None)
-    min_increment = config.get("min_increment", None)
-    cache_dir = config.get("cache_dir", None)
+    config = builder.get_current_module_config()
 
-    cache_dir = os.path.join(cache_dir, "rolling-user-data")
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
+
+    min_history = config.get("trigger_on_min_history", 1)
+    min_increment = config.get("trigger_on_min_increment", 0)
+    aggregation_span = config.get("aggregation_span", "360d")
+
+    cache_to_disk = config.get("cache_to_disk", False)
+    cache_dir = config.get("cache_dir", None)
+    if (cache_dir is not None):
+        cache_dir = os.path.join(cache_dir, "rolling-user-data")
 
     user_cache_map: typing.Dict[str, CachedUserWindow] = {}
 
@@ -75,13 +88,14 @@ def dfp_rolling_window(builder: mrc.Builder):
 
         yield user_cache
 
-    def build_window(message: MessageMeta, user_id: str) -> MessageMeta:
+    def try_build_window(message: MessageMeta, user_id: str) -> typing.Union[MessageMeta, None]:
         with get_user_cache(user_id) as user_cache:
 
             # incoming_df = message.get_df()
             with message.mutable_dataframe() as dfm:
                 incoming_df = dfm.to_pandas()
 
+            # TODO(Devin): note cuDF does not support tz aware datetimes (?)
             incoming_df[timestamp_column_name] = pd.to_datetime(incoming_df[timestamp_column_name], utc=True)
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
@@ -90,10 +104,11 @@ def dfp_rolling_window(builder: mrc.Builder):
                                 "Consider deleting the rolling window cache and restarting."))
                 return None
 
-            user_cache.save()
-            logger.debug("Saved rolling window cache for %s == %d items", user_id, user_cache.total_count)
+            if (cache_to_disk and cache_dir is not None):
+                logger.debug("Saved rolling window cache for %s == %d items", user_id, user_cache.total_count)
+                user_cache.save()
 
-            # Exit early if we dont have enough data
+            # Exit early if we don't have enough data
             if (user_cache.count < min_history):
                 logger.debug("Not enough data to train")
                 return None
@@ -103,20 +118,20 @@ def dfp_rolling_window(builder: mrc.Builder):
                 logger.debug("Elapsed time since last train is too short")
                 return None
 
-            # Save the last train statistics
-            train_df = user_cache.get_train_df(max_history=max_history)
+            # Obtain a dataframe spanning the aggregation window
+            df_window = user_cache.get_spanning_df(max_history=aggregation_span)
 
             # Hash the incoming data rows to find a match
             incoming_hash = pd.util.hash_pandas_object(incoming_df.iloc[[0, -1]], index=False)
 
             # Find the index of the first and last row
-            match = train_df[train_df["_row_hash"] == incoming_hash.iloc[0]]
+            match = df_window[df_window["_row_hash"] == incoming_hash.iloc[0]]
 
             if (len(match) == 0):
                 raise RuntimeError("Invalid rolling window")
 
             first_row_idx = match.index[0].item()
-            last_row_idx = train_df[train_df["_row_hash"] == incoming_hash.iloc[-1]].index[-1].item()
+            last_row_idx = df_window[df_window["_row_hash"] == incoming_hash.iloc[-1]].index[-1].item()
 
             found_count = (last_row_idx - first_row_idx) + 1
 
@@ -125,23 +140,25 @@ def dfp_rolling_window(builder: mrc.Builder):
                                     "Rolling history can only be used with non-overlapping batches"))
 
             # TODO(Devin): Optimize
-            return MessageMeta(cudf.from_pandas(train_df))
+            return MessageMeta(cudf.from_pandas(df_window))
 
     def on_data(control_message: MessageControl):
 
         payload = control_message.payload()
         user_id = control_message.get_metadata("user_id")
 
-        data_type = "streaming"
+        # TODO(Devin): Require data type to be set
         if (control_message.has_metadata("data_type")):
             data_type = control_message.get_metadata("data_type")
+        else:
+            data_type = "streaming"
 
-        # If we're an explicit training or inference task, then we dont need to do any rolling window logic
+        # If we're an explicit training or inference task, then we don't need to do any rolling window logic
         if (data_type == "payload"):
             return control_message
         elif (data_type == "streaming"):
             with log_time(logger.debug) as log_info:
-                result = build_window(payload, user_id)  # Return a MessageMeta
+                result = try_build_window(payload, user_id)  # Return a MessageMeta
 
                 if (result is not None):
                     log_info.set_log(
@@ -156,19 +173,22 @@ def dfp_rolling_window(builder: mrc.Builder):
                         result.df[timestamp_column_name].max(),
                     )
                 else:
-                    # Dont print anything
+                    # Result is None indicates that we don't have enough data to build payload for the event
+                    # CM is discarded here
                     log_info.disable()
                     return None
+
             # TODO (bhargav) Check if we need to pass control_message config to data_prep module.
             # If no config is passed there won't be any tasks to perform in the DataPrep stage.
-            rw_control_message = MessageControl(control_message.config())
-            rw_control_message.payload(result)
-            # TODO(Devin): Configure based on module config
-            # TODO(Devin): Stop using dfp rolling window for inference, it makes zero sense
-            rw_control_message.set_metadata("user_id", user_id)
-            rw_control_message.set_metadata("data_type", "payload")
+            # TODO(Devin): requires a bit more thought, should be safe to re-use the control message here, but
+            #  I'm not 100 percent sure
 
-            return rw_control_message
+            control_message.payload(result)
+            # Don't need this? control_message.set_metadata("user_id", user_id)
+            # Update data type to payload and forward
+            control_message.set_metadata("data_type", "payload")
+
+            return control_message
         else:
             raise RuntimeError("Unknown data type")
 

@@ -22,8 +22,7 @@ import cudf
 
 from morpheus.messages.message_control import MessageControl
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 from ..messages.multi_dfp_message import DFPMessageMeta
@@ -33,7 +32,7 @@ from ..utils.module_ids import DFP_TRAINING
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_TRAINING, MODULE_NAMESPACE)
+@register_module(DFP_TRAINING, MORPHEUS_MODULE_NAMESPACE)
 def dfp_training(builder: mrc.Builder):
     """
     Model training is done using this module function.
@@ -42,14 +41,25 @@ def dfp_training(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         Pipeline budler instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - feature_columns: List of feature columns to train on
+        - epochs: Number of epochs to train for
+        - model_kwargs: Keyword arguments to pass to the model (see dfencoder.AutoEncoder)
+        - validation_size: Size of the validation set
     """
 
-    config = get_module_config(DFP_TRAINING, builder)
+    config = builder.get_current_module_config()
 
-    feature_columns = config.get("feature_columns", None)
+    if ("feature_columns" not in config):
+        raise ValueError("Training module requires feature_columns to be configured")
+
+    epochs = config.get("epochs", 1)
+    feature_columns = config["feature_columns"]
+    model_kwargs = config.get("model_kwargs", {})
     validation_size = config.get("validation_size", 0.0)
-    epochs = config.get("epochs", None)
-    model_kwargs = config.get("model_kwargs", None)
 
     if (validation_size > 0.0 and validation_size < 1.0):
         validation_size = validation_size

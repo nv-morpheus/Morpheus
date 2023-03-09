@@ -26,7 +26,7 @@ from morpheus._lib.common import FileTypes
 from morpheus._lib.common import determine_file_type
 from morpheus.io import serializers
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 is_first = True
 
 
-@register_module(WRITE_TO_FILE, MODULE_NAMESPACE)
+@register_module(WRITE_TO_FILE, MORPHEUS_MODULE_NAMESPACE)
 def write_to_file(builder: mrc.Builder):
     """
     Write all messages to a file.
@@ -49,7 +49,7 @@ def write_to_file(builder: mrc.Builder):
         mrc Builder object.
     """
 
-    config = get_module_config(WRITE_TO_FILE, builder)
+    config = builder.get_current_module_config()
 
     output_file = config.get("filename", None)
     overwrite = config.get("overwrite", False)
@@ -95,9 +95,7 @@ def write_to_file(builder: mrc.Builder):
 
         # Open up the file handle
         with open(output_file, "a") as out_file:
-
             def write_to_file(x: MessageMeta):
-
                 lines = convert_to_strings(x.df)
 
                 out_file.writelines(lines)

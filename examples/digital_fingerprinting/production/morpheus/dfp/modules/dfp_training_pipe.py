@@ -23,10 +23,8 @@ import mrc
 import morpheus._lib.modules  # noqa: F401
 import morpheus.modules.mlflow_model_writer  # noqa: F401
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_config_with_overrides
-from morpheus.utils.module_utils import get_module_config
-from morpheus.utils.module_utils import load_module
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
+from morpheus.utils.module_utils import merge_dictionaries
 from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_DATA_PREP
@@ -38,7 +36,7 @@ from ..utils.module_ids import DFP_TRAINING_PIPE
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_TRAINING_PIPE, MODULE_NAMESPACE)
+@register_module(DFP_TRAINING_PIPE, MORPHEUS_MODULE_NAMESPACE)
 def dfp_training_pipe(builder: mrc.Builder):
     """
     This module function allows for the consolidation of multiple dfp pipeline modules relevent to training
@@ -50,23 +48,81 @@ def dfp_training_pipe(builder: mrc.Builder):
         Pipeline budler instance.
     """
 
-    config = get_module_config(DFP_TRAINING_PIPE, builder)
-    config["module_id"] = DFP_TRAINING_PIPE
-    config["namespace"] = MODULE_NAMESPACE
-    config["module_name"] = "dfp_tra"
+    config = builder.get_current_module_config()
 
-    preproc_conf = get_config_with_overrides(config, DFP_PREPROC, "dfp_preproc")
-    dfp_rolling_window_conf = get_config_with_overrides(config, DFP_ROLLING_WINDOW, "dfp_rolling_window")
-    dfp_data_prep_conf = get_config_with_overrides(config, DFP_DATA_PREP, "dfp_data_prep")
-    dfp_training_conf = get_config_with_overrides(config, DFP_TRAINING, "dfp_training")
-    mlflow_model_writer_conf = get_config_with_overrides(config, MLFLOW_MODEL_WRITER, "mlflow_model_writer")
+    cache_dir = config.get("cache_dir")
+    ts_column_name = config.get("timestamp_column_name")
+
+    preproc_options = {
+        "batching_options": config.get("batching_options", {}),
+        "cache_dir": cache_dir,
+        "pre_filter_options": {
+            "enable_task_filtering": True,
+            "filter_task_type": "training"
+        },
+        "timestamp_column_name": ts_column_name,
+        "user_splitting_options": config.get("user_splitting_options", {}),
+    }
+
+    stream_aggregation_options = config.get("stream_aggregation_options", {
+        "timestamp_column_name": ts_column_name,
+    })
+
+    data_prep_options = config.get("preprocessing_options", {
+        "timestamp_column_name": ts_column_name,
+    })
+
+    dfencoder_options = config.get("dfencoder_options", {})
+
+    mlflow_writer_options = config.get("mlflow_writer_options", {
+        "timestamp_column_name": ts_column_name,
+    })
+
+    preproc_defaults = {}
+    preproc_conf = merge_dictionaries(preproc_options, preproc_defaults)
+
+    # dfp_rolling_window_conf = get_config_with_overrides(config, DFP_ROLLING_WINDOW, "dfp_rolling_window")
+    stream_aggregation_defaults = {
+        "trigger_on_min_history": 300,
+        "trigger_on_min_increment": 300,
+    }
+    dfp_rolling_window_conf = merge_dictionaries(stream_aggregation_options, stream_aggregation_defaults)
+
+    data_prep_defaults = {}
+    dfp_data_prep_conf = merge_dictionaries(data_prep_options, data_prep_defaults)
+
+    # TODO(Devin): Not sure, but it seems like this is the right place to be opinionated about these values
+    # mostly because dfencoder itself has default values so we don't need them at the dfp_training level
+    dfp_training_defaults = {
+        "model_kwargs": {
+            "encoder_layers": [512, 500],  # layers of the encoding part
+            "decoder_layers": [512],  # layers of the decoding part
+            "activation": 'relu',  # activation function
+            "swap_p": 0.2,  # noise parameter
+            "lr": 0.001,  # learning rate
+            "lr_decay": 0.99,  # learning decay
+            "batch_size": 512,
+            "verbose": False,
+            "optimizer": 'sgd',  # SGD optimizer is selected(Stochastic gradient descent)
+            "scaler": 'standard',  # feature scaling method
+            "min_cats": 1,  # cut off for minority categories
+            "progress_bar": False,
+            "device": "cuda"
+        },
+    }
+    dfp_training_conf = merge_dictionaries(dfencoder_options, dfp_training_defaults)
+
+    mlflow_model_writer_defaults = {}
+    mlflow_model_writer_conf = merge_dictionaries(mlflow_writer_options, mlflow_model_writer_defaults)
 
     # Load modules
-    preproc_module = load_module(preproc_conf, builder=builder)
-    dfp_rolling_window_module = load_module(dfp_rolling_window_conf, builder=builder)
-    dfp_data_prep_module = load_module(dfp_data_prep_conf, builder=builder)
-    dfp_training_module = load_module(dfp_training_conf, builder=builder)
-    mlflow_model_writer_module = load_module(mlflow_model_writer_conf, builder=builder)
+    preproc_module = builder.load_module(DFP_PREPROC, "morpheus", "dfp_preproc", preproc_conf)
+    dfp_rolling_window_module = builder.load_module(DFP_ROLLING_WINDOW, "morpheus", "dfp_rolling_window",
+                                                    dfp_rolling_window_conf)
+    dfp_data_prep_module = builder.load_module(DFP_DATA_PREP, "morpheus", "dfp_data_prep", dfp_data_prep_conf)
+    dfp_training_module = builder.load_module(DFP_TRAINING, "morpheus", "dfp_training", dfp_training_conf)
+    mlflow_model_writer_module = builder.load_module(MLFLOW_MODEL_WRITER, "morpheus", "mlflow_model_writer",
+                                                     mlflow_model_writer_conf)
 
     # Make an edge between the modules.
     builder.make_edge(preproc_module.output_port("output"), dfp_rolling_window_module.input_port("input"))

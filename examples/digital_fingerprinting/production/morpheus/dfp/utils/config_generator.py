@@ -42,7 +42,7 @@ from morpheus.utils.module_ids import FILE_TO_DF
 from morpheus.utils.module_ids import FILTER_CONTROL_MESSAGE
 from morpheus.utils.module_ids import FILTER_DETECTIONS
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_ids import WRITE_TO_FILE
 
@@ -62,10 +62,10 @@ class ConfigGenerator:
 
         module_conf["module_id"] = DFP_DEPLOYMENT
         module_conf["module_name"] = "dfp_deployment"
-        module_conf["namespace"] = MODULE_NAMESPACE
+        module_conf["namespace"] = MORPHEUS_MODULE_NAMESPACE
 
         module_conf[FSSPEC_LOADER] = self.fsspec_dataloader_module_conf()
-        module_conf[DFP_TRAINING_PIPE] = self.train_module_conf()
+        module_conf[DFP_TRAINING_PIPE] = self.train_module_conf_test()
         module_conf[DFP_INFERENCE_PIPE] = self.infer_module_conf()
         module_conf["output_port_count"] = 2
 
@@ -77,6 +77,38 @@ class ConfigGenerator:
 
     def infer_module_conf(self):
         module_conf = {
+            "timestamp_column_name": self._config.ae.timestamp_column_name,
+            "cache_dir": self._dfp_arg_parser.cache_dir,
+            "batching_options": {
+                "sampling_rate_s": self._dfp_arg_parser.sample_rate_s,
+                "start_time": self._dfp_arg_parser.time_fields.start_time,
+                "end_time": self._dfp_arg_parser.time_fields.end_time,
+                "iso_date_regex_pattern": iso_date_regex_pattern,
+                "parser_kwargs": {
+                    "lines": False, "orient": "records"
+                },
+                "cache_dir": self._dfp_arg_parser.cache_dir,
+                "schema": {
+                    "schema_str": self._source_schema_str, "encoding": self._encoding
+                }
+            },
+            "user_splitting_options": {
+                "fallback_username": self._config.ae.fallback_username,
+                "include_generic": self._dfp_arg_parser.include_generic,
+                "include_individual": self._dfp_arg_parser.include_individual,
+                "only_users": self._dfp_arg_parser.only_users,
+                "skip_users": self._dfp_arg_parser.skip_users,
+                "userid_column_name": self._config.ae.userid_column_name
+            },
+            "stream_aggregation_options": {
+                "aggregation_span": self._dfp_arg_parser.duration,
+                "cache_to_disk": False
+            },
+            "preprocessing_options": {
+                "schema": {
+                    "schema_str": self._preprocess_schema_str, "encoding": self._encoding
+                }
+            },
             DFP_PREPROC: {
                 FILTER_CONTROL_MESSAGE: {
                     "data_type": "streaming", "enable_task_check": True, "task_type": "inference"
@@ -148,6 +180,60 @@ class ConfigGenerator:
             },
             WRITE_TO_FILE: {
                 "filename": "dfp_detections_{}.csv".format(self._dfp_arg_parser.source), "overwrite": True
+            }
+        }
+
+        return module_conf
+
+    def train_module_conf_test(self):
+        module_conf = {
+            "timestamp_column_name": self._config.ae.timestamp_column_name,
+            "cache_dir": self._dfp_arg_parser.cache_dir,
+            "batching_options": {
+                "sampling_rate_s": self._dfp_arg_parser.sample_rate_s,
+                "start_time": self._dfp_arg_parser.time_fields.start_time,
+                "end_time": self._dfp_arg_parser.time_fields.end_time,
+                "iso_date_regex_pattern": iso_date_regex_pattern,
+                "parser_kwargs": {
+                    "lines": False, "orient": "records"
+                },
+                "cache_dir": self._dfp_arg_parser.cache_dir,
+                "schema": {
+                    "schema_str": self._source_schema_str, "encoding": self._encoding
+                }
+            },
+            "user_splitting_options": {
+                "fallback_username": self._config.ae.fallback_username,
+                "include_generic": self._dfp_arg_parser.include_generic,
+                "include_individual": self._dfp_arg_parser.include_individual,
+                "only_users": self._dfp_arg_parser.only_users,
+                "skip_users": self._dfp_arg_parser.skip_users,
+                "userid_column_name": self._config.ae.userid_column_name
+            },
+            "stream_aggregation_options": {
+                "aggregation_span": self._dfp_arg_parser.duration,
+                "cache_to_disk": False
+            },
+            "preprocessing_options": {
+                "schema": {
+                    "schema_str": self._preprocess_schema_str, "encoding": self._encoding
+                }
+            },
+            "dfencoder_options": {
+                "feature_columns": self._config.ae.feature_columns,
+                "epochs": 30,
+                "validation_size": 0.10
+            },
+            "mlflow_writer_options": {
+                "model_name_formatter": self._dfp_arg_parser.model_name_formatter,
+                "experiment_name_formatter": self._dfp_arg_parser.experiment_name_formatter,
+                "timestamp_column_name": self._config.ae.timestamp_column_name,
+                "conda_env": {
+                    'channels': ['defaults', 'conda-forge'],
+                    'dependencies': ['python={}'.format('3.8'), 'pip'],
+                    'pip': ['mlflow', 'dfencoder'],
+                    'name': 'mlflow-env'
+                }
             }
         }
 

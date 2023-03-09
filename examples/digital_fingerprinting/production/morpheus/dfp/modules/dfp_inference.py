@@ -26,8 +26,7 @@ import cudf
 
 from morpheus.messages import MessageControl
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 from ..messages.multi_dfp_message import DFPMessageMeta
@@ -37,7 +36,7 @@ from ..utils.module_ids import DFP_INFERENCE
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_INFERENCE, MODULE_NAMESPACE)
+@register_module(DFP_INFERENCE, MORPHEUS_MODULE_NAMESPACE)
 def dfp_inference(builder: mrc.Builder):
     """
     Inference module function.
@@ -48,7 +47,7 @@ def dfp_inference(builder: mrc.Builder):
         Pipeline budler instance.
     """
 
-    config = get_module_config(DFP_INFERENCE, builder)
+    config = builder.get_current_module_config()
 
     fallback_user = config.get("fallback_username", None)
     model_name_formatter = config.get("model_name_formatter", None)

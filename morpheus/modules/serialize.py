@@ -24,7 +24,7 @@ import pandas as pd
 
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -32,7 +32,7 @@ from morpheus.utils.module_utils import register_module
 logger = logging.getLogger(__name__)
 
 
-@register_module(SERIALIZE, MODULE_NAMESPACE)
+@register_module(SERIALIZE, MORPHEUS_MODULE_NAMESPACE)
 def serialize(builder: mrc.Builder):
     """
     Includes & excludes columns from messages.
@@ -45,7 +45,8 @@ def serialize(builder: mrc.Builder):
         mrc Builder object.
     """
 
-    config = get_module_config(SERIALIZE, builder)
+    config = builder.get_current_module_config()
+
     include_columns = config.get("include", None)
     exclude_columns = config.get("exclude", [r'^ID$', r'^_ts_'])
     fixed_columns = config.get("fixed_columns", True)

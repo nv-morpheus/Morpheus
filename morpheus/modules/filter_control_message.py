@@ -19,14 +19,13 @@ from mrc.core import operators as ops
 
 from morpheus.messages import MessageControl
 from morpheus.utils.module_ids import FILTER_CONTROL_MESSAGE
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
 
 
-@register_module(FILTER_CONTROL_MESSAGE, MODULE_NAMESPACE)
+@register_module(FILTER_CONTROL_MESSAGE, MORPHEUS_MODULE_NAMESPACE)
 def filter_control_message(builder: mrc.Builder):
     """
     When the requirements are met, this module gently discards the control messages.
@@ -35,27 +34,48 @@ def filter_control_message(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - enable_task_filtering: bool
+        - enable_data_type_filtering: bool
+        - filter_task_type: str
+        - filter_data_type: str
     """
 
-    config = get_module_config(FILTER_CONTROL_MESSAGE, builder)
+    config = builder.get_current_module_config()
 
-    filter = config.get("data_type", None)
-    enable_task_check = config.get("enable_task_check", False)
-    task_type = config.get("task_type", None)
+    enable_task_filtering = config.get("enable_task_filtering", False)
+    enable_data_type_filtering = config.get("enable_data_type_filtering", False)
+
+    filter_task_type = None
+    if (enable_task_filtering):
+        if ("filter_task_type" not in config):
+            raise ValueError("Task filtering is enabled but no task type is specified")
+        filter_task_type = config["filter_task_type"]
+
+    filter_data_type = None
+    if (enable_data_type_filtering):
+        if ("filter_data_type" not in config):
+            raise ValueError("Data type filtering is enabled but no data type is specified")
+        filter_data_type = config["filter_data_type"]
 
     def on_data(control_message: MessageControl):
-        data_type = control_message.get_metadata("data_type")
+        cm_data_type = control_message.get_metadata("data_type")
 
-        if enable_task_check:
+        if enable_task_filtering:
             # Verify if control message has expected task_type.
-            task_exist = control_message.has_task(task_type)
+            # TODO(Devin): Convert this to use enum values
+            task_exists = control_message.has_task(filter_task_type)
+
             # Dispose messages if it has no expected task and it's data_type does not matches with filter.
-            if (not task_exist and filter and data_type != filter):
+            if (not task_exists and filter and cm_data_type != filter):
                 return None
-        else:
+        elif (enable_data_type_filtering):
             # Regardless of whether tasks are present, discard messages
             # if the data_type don't match the filter.
-            if filter and data_type != filter:
+            if (filter_data_type and filter_data_type != filter):
                 return None
 
         return control_message

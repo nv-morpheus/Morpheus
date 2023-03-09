@@ -20,8 +20,7 @@ import mrc
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_POST_PROCESSING
@@ -29,7 +28,7 @@ from ..utils.module_ids import DFP_POST_PROCESSING
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_POST_PROCESSING, MODULE_NAMESPACE)
+@register_module(DFP_POST_PROCESSING, MORPHEUS_MODULE_NAMESPACE)
 def dfp_postprocessing(builder: mrc.Builder):
     """
     Postprocessing module function.
@@ -40,7 +39,7 @@ def dfp_postprocessing(builder: mrc.Builder):
         Pipeline budler instance.
     """
 
-    config = get_module_config(DFP_POST_PROCESSING, builder)
+    config = builder.get_current_module_config()
 
     timestamp_column_name = config.get("timestamp_column_name", None)
 

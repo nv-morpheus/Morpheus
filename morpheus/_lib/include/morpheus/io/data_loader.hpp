@@ -20,6 +20,8 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 
+#include <glog/logging.h>
+
 #include <map>
 #include <memory>
 
@@ -29,7 +31,10 @@ namespace morpheus {
 class Loader
 {
   public:
-    ~Loader() = default;
+    ~Loader()
+    {
+        VLOG(1) << "Called Loader::~Loader()";
+    };
 
     Loader() = default;
     Loader(nlohmann::json config);
@@ -48,7 +53,10 @@ class DataLoader
 {
   public:
     DataLoader();
-    ~DataLoader() = default;
+    ~DataLoader()
+    {
+        VLOG(1) << "Called DataLoader::~DataLoader()";
+    }
 
     /**
      * @brief Load data described by a control message

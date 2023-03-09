@@ -157,7 +157,7 @@ void MessageControl::set_metadata(const std::string& key, const nlohmann::json& 
 {
     if (m_config["metadata"].contains(key))
     {
-        LOG(WARNING) << "Overwriting metadata key " << key << " with value " << value;
+        VLOG(20) << "Overwriting metadata key " << key << " with value " << value;
     }
 
     m_config["metadata"][key] = value;

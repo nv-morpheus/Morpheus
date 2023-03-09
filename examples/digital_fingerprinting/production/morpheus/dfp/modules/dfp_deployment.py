@@ -22,9 +22,8 @@ from mrc.core.node import Broadcast
 import morpheus.loaders.fsspec_loader  # noqa: F401
 from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
-from morpheus.utils.module_ids import MODULE_NAMESPACE
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_config_with_overrides
-from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import load_module
 from morpheus.utils.module_utils import register_module
 
@@ -35,26 +34,33 @@ from ..utils.module_ids import DFP_TRAINING_PIPE
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_DEPLOYMENT, MODULE_NAMESPACE)
+@register_module(DFP_DEPLOYMENT, MORPHEUS_MODULE_NAMESPACE)
 def dfp_deployment(builder: mrc.Builder):
-    module_config = get_module_config(DFP_DEPLOYMENT, builder)
+    # module_config = get_module_config(DFP_DEPLOYMENT, builder)
+    module_config = builder.get_current_module_config()
 
-    fsspec_dataloader_conf = get_config_with_overrides(module_config, FSSPEC_LOADER, "fsspec_dataloader")
-    fsspec_dataloader_conf["module_id"] = DATA_LOADER  # Work around some naming issues.
+    # fsspec_dataloader_conf = get_config_with_overrides(module_config, FSSPEC_LOADER, "fsspec_dataloader")
+    fsspec_dataloader_conf = module_config[FSSPEC_LOADER]
 
-    dfp_training_pipe_conf = get_config_with_overrides(module_config, DFP_TRAINING_PIPE, "dfp_training_pipe")
-    dfp_inference_pipe_conf = get_config_with_overrides(module_config, DFP_INFERENCE_PIPE, "dfp_inference_pipe")
+    # dfp_training_pipe_conf = get_config_with_overrides(module_config, DFP_TRAINING_PIPE, "dfp_training_pipe")
+    dfp_training_pipe_conf = module_config[DFP_TRAINING_PIPE]
+    # dfp_inference_pipe_conf = get_config_with_overrides(module_config, DFP_INFERENCE_PIPE, "dfp_inference_pipe")
+    dfp_inference_pipe_conf = module_config[DFP_INFERENCE_PIPE]
 
     if "output_port_count" not in module_config:
         raise KeyError("Missing required configuration 'output_port_count'")
 
     output_port_count = module_config.get("output_port_count")
 
-    fsspec_dataloader_module = load_module(fsspec_dataloader_conf, builder=builder)
-
+    # fsspec_dataloader_module = load_module(fsspec_dataloader_conf, builder=builder)
+    fsspec_dataloader_module = builder.load_module(DATA_LOADER, "morpheus", "fsspec_dataloader",
+                                                   fsspec_dataloader_conf)
     # Load module from registry.
-    dfp_training_pipe_module = load_module(dfp_training_pipe_conf, builder=builder)
-    dfp_inference_pipe_module = load_module(dfp_inference_pipe_conf, builder=builder)
+    dfp_training_pipe_module = builder.load_module(DFP_TRAINING_PIPE, "morpheus", "dfp_training_pipe",
+                                                   dfp_training_pipe_conf)
+    # dfp_inference_pipe_module = load_module(dfp_inference_pipe_conf, builder=builder)
+    dfp_inference_pipe_module = builder.load_module(DFP_INFERENCE_PIPE, "morpheus", "dfp_inference_pipe",
+                                                    dfp_inference_pipe_conf)
 
     # Create broadcast node to fork the pipeline.
     boradcast = Broadcast(builder, "broadcast")

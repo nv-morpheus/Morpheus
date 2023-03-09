@@ -19,13 +19,10 @@ import time
 import mrc
 from mrc.core import operators as ops
 
-import cudf
-
 from morpheus.messages import MessageControl
 from morpheus.messages import MessageMeta
 from morpheus.utils.column_info import process_dataframe
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_DATA_PREP
@@ -33,7 +30,7 @@ from ..utils.module_ids import DFP_DATA_PREP
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_DATA_PREP, MODULE_NAMESPACE)
+@register_module(DFP_DATA_PREP, MORPHEUS_MODULE_NAMESPACE)
 def dfp_data_prep(builder: mrc.Builder):
     """
     This module function prepares data for either inference or model training.
@@ -42,17 +39,27 @@ def dfp_data_prep(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         Pipeline budler instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - schema: Schema of the data
+        - timestamp_column_name: Name of the timestamp column
     """
 
-    config = get_module_config(DFP_DATA_PREP, builder)
-    schema_config = config.get("schema", None)
-    schema_str = schema_config.get("schema_str", None)
-    encoding = schema_config.get("encoding", None)
-    timestamp_column_name = config.get("timestamp_column_name", None)
+    config = builder.get_current_module_config()
+
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
+
+    if ("schema" not in config):
+        raise ValueError("Data prep module requires a defined schema")
+
+    schema_config = config["schema"]
+    schema_str = schema_config["schema_str"]
+    encoding = schema_config["encoding"]
 
     schema = pickle.loads(bytes(schema_str, encoding))
 
-    # def process_features(message: MultiDFPMessage):
     def process_features(message: MessageControl):
 
         if (message is None):

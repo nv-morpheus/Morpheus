@@ -24,8 +24,7 @@ from mrc.core import operators as ops
 import cudf
 
 from morpheus.messages import MessageControl, MessageMeta
-from morpheus.utils.module_ids import MODULE_NAMESPACE
-from morpheus.utils.module_utils import get_module_config
+from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
 from ..utils.module_ids import DFP_SPLIT_USERS
@@ -33,7 +32,7 @@ from ..utils.module_ids import DFP_SPLIT_USERS
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
 
-@register_module(DFP_SPLIT_USERS, MODULE_NAMESPACE)
+@register_module(DFP_SPLIT_USERS, MORPHEUS_MODULE_NAMESPACE)
 def dfp_split_users(builder: mrc.Builder):
     """
     This module function split the data based on user Id's.
@@ -42,17 +41,34 @@ def dfp_split_users(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         Pipeline budler instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - fallback_username: Name of the user Id to use if the user Id is not found
+        - include_generic: Whether to include the generic user Id
+        - include_individual: Whether to include the individual user Id's
+        - only_users: List of user Id's to include
+        - skip_users: List of user Id's to skip
+        - timestamp_column_name: Name of the timestamp column
+        - userid_column_name: Name of the user Id column
     """
 
-    config = get_module_config(DFP_SPLIT_USERS, builder)
+    config = builder.get_current_module_config()
 
     skip_users = config.get("skip_users", [])
     only_users = config.get("only_users", [])
-    timestamp_column_name = config.get("timestamp_column_name", None)
-    userid_column_name = config.get("userid_column_name", None)
-    fallback_username = config.get("fallback_username", None)
+
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
+    userid_column_name = config.get("userid_column_name", "username")
     include_generic = config.get("include_generic", False)
     include_individual = config.get("include_individual", False)
+
+    if (include_generic):
+        # TODO(Devin): Should this be an error?
+        # if not "fallback_username" in config:
+        #    raise ValueError("fallback_username must be specified if include_generic is True")
+        fallback_username = config.get("fallback_username", "generic")
 
     # Map of user ids to total number of messages. Keep indexes monotonic and increasing per user
     user_index_map: typing.Dict[str, int] = {}
