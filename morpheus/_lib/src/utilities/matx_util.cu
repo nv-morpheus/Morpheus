@@ -60,7 +60,7 @@ struct MatxUtil__MatxCast
               std::enable_if_t<cudf::is_numeric<InputT>() && cudf::is_numeric<OutputT>()>* = nullptr>
     void operator()(void* input_data, void* output_data)
     {
-        tensorShape_1d shape({static_cast<matx::index_t>(element_count)});
+        tensorShape_1d shape({element_count});
 
         auto input_tensor  = matx::make_tensor<InputT>(static_cast<InputT*>(input_data), shape);
         auto output_tensor = matx::make_tensor<OutputT>(static_cast<OutputT*>(output_data), shape);
@@ -94,14 +94,13 @@ struct MatxUtil__MatxCreateSegIds
     template <typename OutputT, std::enable_if_t<std::is_integral_v<OutputT>>* = nullptr>
     void operator()(void* output_data)
     {
-        auto matx_count = static_cast<matx::index_t>(element_count);
-        tensorShape_2d shape({matx_count, 3});
+        tensorShape_2d shape({element_count, 3});
 
         auto output_tensor = matx::make_tensor<OutputT>(static_cast<OutputT*>(output_data), shape);
 
         auto col0      = output_tensor.template Slice<1>({0, 0}, {matx::matxEnd, matx::matxDropDim});
         auto col2      = output_tensor.template Slice<1>({0, 2}, {matx::matxEnd, matx::matxDropDim});
-        auto range_col = matx::range<0, tensorShape_1d, OutputT>({matx_count}, 0, 1);
+        auto range_col = matx::range<0, tensorShape_1d, OutputT>({element_count}, 0, 1);
 
         (col0 = range_col).run(stream.value());
         (col2 = fea_len - 1).run(stream.value());
@@ -132,7 +131,7 @@ struct MatxUtil__MatxLogits
     template <typename InputT, std::enable_if_t<cudf::is_floating_point<InputT>()>* = nullptr>
     void operator()(void* input_data, void* output_data)
     {
-        tensorShape_1d shape({static_cast<matx::index_t>(element_count)});
+        tensorShape_1d shape({element_count});
 
         auto input_tensor = matx::make_tensor<InputT>(static_cast<InputT*>(input_data), shape);
 
@@ -168,8 +167,8 @@ struct MatxUtil__MatxTranspose
     template <typename InputT, std::enable_if_t<cudf::is_numeric<InputT>()>* = nullptr>
     void operator()(void* input_data, void* output_data)
     {
-        tensorShape_2d input_shape({static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)});
-        tensorShape_2d output_shape({static_cast<matx::index_t>(cols), static_cast<matx::index_t>(rows)});
+        tensorShape_2d input_shape({rows, cols});
+        tensorShape_2d output_shape({cols, rows});
 
         auto input_tensor  = matx::make_tensor<InputT>(static_cast<InputT*>(input_data), input_shape);
         auto output_tensor = matx::make_tensor<InputT>(static_cast<InputT*>(output_data), output_shape);
@@ -222,10 +221,10 @@ struct MatxUtil__MatxThreshold
     void threshold_by_row(void* input_data, void* output_data, double threshold, const ShapeType& stride)
     {
         // Output is always 1 column
-        tensorShape_1d output_shape({static_cast<matx::index_t>(rows)});
+        tensorShape_1d output_shape({rows});
 
-        matx::DefaultDescriptor<2> desc{{static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
-                                        {static_cast<matx::index_t>(stride[0]), static_cast<matx::index_t>(stride[1])}};
+        matx::DefaultDescriptor<2> desc{{rows, cols},
+                                        {stride[0], stride[1]}};
 
         auto input_tensor =
             matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(static_cast<InputT*>(input_data), std::move(desc));
@@ -249,8 +248,8 @@ struct MatxUtil__MatxThreshold
     void threshold(void* input_data, void* output_data, double threshold, const ShapeType& stride)
     {
         matx::DefaultDescriptor<2> input_desc{
-            {static_cast<matx::index_t>(rows), static_cast<matx::index_t>(cols)},
-            {static_cast<matx::index_t>(stride[0]), static_cast<matx::index_t>(stride[1])}};
+            {rows, cols},
+            {stride[0], stride[1]}};
 
         // Input & Output have the same shape & stride. The make_tensor API requires a move for the descriptor
         // so we need to take a copy of it here.
@@ -299,7 +298,7 @@ struct MatxUtil__MatxReduceMax
         auto output_tensor = matx::make_tensor<InputT, matx::DefaultDescriptor<2>>(output_ptr, std::move(output_desc));
 
         matx::index_t start = 0;
-        auto output_offset  = static_cast<matx::index_t>(seq_ids[seq_id_offset]);
+        auto output_offset  = seq_ids[seq_id_offset];
         for (matx::index_t i = 1; i < num_input_rows; ++i)
         {
             auto idx = seq_ids[i + seq_id_offset];
@@ -310,7 +309,7 @@ struct MatxUtil__MatxReduceMax
                             output_tensor,
                             start,
                             i,
-                            static_cast<matx::index_t>(seq_ids[start + seq_id_offset]) - output_offset);
+                            seq_ids[start + seq_id_offset] - output_offset);
                 start = i;
             }
         }
@@ -323,7 +322,7 @@ struct MatxUtil__MatxReduceMax
                     output_tensor,
                     start,
                     num_input_rows,
-                    static_cast<matx::index_t>(seq_ids[start + seq_id_offset]) - output_offset);
+                    seq_ids[start + seq_id_offset] - output_offset);
     }
 
     template <typename InputT>
@@ -439,9 +438,6 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input
     auto num_input_rows = input.shape(0);
     auto num_input_cols = input.shape(1);
 
-    std::vector<matx::index_t> matx_stride{static_cast<matx::index_t>(input.stride(0)),
-                                           static_cast<matx::index_t>(input.stride(1))};
-
     TensorIndex output_element_count = output_shape[0] * output_shape[1];
     std::size_t output_buff_size     = dtype.item_size() * output_element_count;
 
@@ -450,10 +446,10 @@ std::shared_ptr<rmm::device_buffer> MatxUtil::reduce_max(const DevMemInfo& input
 
     auto output = input.make_new_buffer(output_buff_size);
 
-    MatxUtil__MatxReduceMax matx_reduce_max{static_cast<matx::index_t>(num_input_rows),
-                                            static_cast<matx::index_t>(output_shape[0]),
-                                            static_cast<matx::index_t>(num_input_cols),
-                                            matx_stride,
+    MatxUtil__MatxReduceMax matx_reduce_max{num_input_rows,
+                                            output_shape[0],
+                                            num_input_cols,
+                                            input.stride(),
                                             seq_ids,
                                             seq_id_offset,
                                             output->stream()};
