@@ -23,7 +23,6 @@
 #include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cudf/types.hpp>
-#include <glog/logging.h>        // for DCHECK_NOTNULL
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
