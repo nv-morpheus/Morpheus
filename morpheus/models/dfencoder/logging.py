@@ -1,8 +1,59 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Original Source: https:#github.com/AlliedToasters/dfencoder
+#
+# Original License: BSD-3-Clause license, included below
+
+# Copyright (c) 2019, Michael Klear.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+#        notice, this list of conditions and the following disclaimer.
+#
+#     * Redistributions in binary form must reproduce the above
+#        copyright notice, this list of conditions and the following
+#        disclaimer in the documentation and/or other materials provided
+#        with the distribution.
+#
+#     * Neither the name of the dfencoder Developers nor the names of any
+#        contributors may be used to endorse or promote products derived
+#        from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 from collections import OrderedDict
 import math
 from time import time
 
 import numpy as np
+
 
 class BasicLogger(object):
     """A minimal class for logging training progress."""
@@ -50,6 +101,7 @@ class BasicLogger(object):
                 #reset id_val_fts log
                 self.id_val_fts[ft][0] = []
 
+
 class IpynbLogger(BasicLogger):
     """Plots Logging Data in jupyter notebook"""
 
@@ -67,18 +119,13 @@ class IpynbLogger(BasicLogger):
 
     def plot_progress(self):
         self.clear_output()
-        x = list(range(1, self.n_epochs+1))
+        x = list(range(1, self.n_epochs + 1))
         train_loss = [self.train_fts[ft][1] for ft in self.fts]
         train_loss = np.array(train_loss).mean(axis=0)
         self.plt.plot(x, train_loss, label='train loss', color='orange')
 
         if len(self.val_fts[self.fts[0]]) > 0:
-            self.plt.axhline(
-                y=self.baseline_loss,
-                linestyle='dotted',
-                label='baseline val loss',
-                color='blue'
-            )
+            self.plt.axhline(y=self.baseline_loss, linestyle='dotted', label='baseline val loss', color='blue')
             val_loss = [self.val_fts[ft][1] for ft in self.fts]
             val_loss = np.array(val_loss).mean(axis=0)
             self.plt.plot(x, val_loss, label='val loss', color='blue')
@@ -88,11 +135,12 @@ class IpynbLogger(BasicLogger):
             id_val_loss = np.array(id_val_loss).mean(axis=0)
             self.plt.plot(x, id_val_loss, label='identity val loss', color='pink')
 
-        self.plt.ylim(0, max(6, math.floor(2*self.baseline_loss)))
+        self.plt.ylim(0, max(6, math.floor(2 * self.baseline_loss)))
         self.plt.legend()
         self.plt.xlabel('epochs')
         self.plt.ylabel('loss')
-        self.plt.show();
+        self.plt.show()
+
 
 class TensorboardXLogger(BasicLogger):
 
@@ -106,7 +154,7 @@ class TensorboardXLogger(BasicLogger):
                 n_runs = len(os.listdir(logdir))
             except FileNotFoundError:
                 n_runs = 0
-            logdir = logdir+f'{n_runs:04d}'
+            logdir = logdir + f'{n_runs:04d}'
         else:
             logdir = logdir + str(run)
         self.writer = SummaryWriter(logdir)

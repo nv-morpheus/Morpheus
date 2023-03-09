@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,25 +13,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Original Source: https:#github.com/AlliedToasters/dfencoder
+#
+# Original License: BSD-3-Clause license, included below
+
 # Copyright (c) 2019, Michael Klear.
 # All rights reserved.
-
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-
+#
 #     * Redistributions of source code must retain the above copyright
 #        notice, this list of conditions and the following disclaimer.
-
+#
 #     * Redistributions in binary form must reproduce the above
 #        copyright notice, this list of conditions and the following
 #        disclaimer in the documentation and/or other materials provided
 #        with the distribution.
-
+#
 #     * Neither the name of the dfencoder Developers nor the names of any
 #        contributors may be used to endorse or promote products derived
 #        from this software without specific prior written permission.
-
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -135,41 +139,42 @@ class CompleteLayer(torch.nn.Module):
 
 class AutoEncoder(torch.nn.Module):
 
-    def __init__(self,
-                 encoder_layers=None,
-                 decoder_layers=None,
-                 encoder_dropout=None,
-                 decoder_dropout=None,
-                 encoder_activations=None,
-                 decoder_activations=None,
-                 activation='relu',
-                 min_cats=10,
-                 swap_p=.15,
-                 lr=0.01,
-                 batch_size=256,
-                 eval_batch_size=1024,
-                 optimizer='adam',
-                 amsgrad=False,
-                 momentum=0,
-                 betas=(0.9, 0.999),
-                 dampening=0,
-                 weight_decay=0,
-                 lr_decay=None,
-                 nesterov=False,
-                 verbose=False,
-                 device=None,
-                 logger='basic',
-                 logdir='logdir/',
-                 project_embeddings=True,
-                 run=None,
-                 progress_bar=True,
-                 n_megabatches=1,
-                 scaler='standard',
-                 patience=5,
-                 preset_cats=None,
-                 loss_scaler='standard',  # scaler for the losses (z score)
-                 *args,
-                 **kwargs):
+    def __init__(
+            self,
+            encoder_layers=None,
+            decoder_layers=None,
+            encoder_dropout=None,
+            decoder_dropout=None,
+            encoder_activations=None,
+            decoder_activations=None,
+            activation='relu',
+            min_cats=10,
+            swap_p=.15,
+            lr=0.01,
+            batch_size=256,
+            eval_batch_size=1024,
+            optimizer='adam',
+            amsgrad=False,
+            momentum=0,
+            betas=(0.9, 0.999),
+            dampening=0,
+            weight_decay=0,
+            lr_decay=None,
+            nesterov=False,
+            verbose=False,
+            device=None,
+            logger='basic',
+            logdir='logdir/',
+            project_embeddings=True,
+            run=None,
+            progress_bar=True,
+            n_megabatches=1,
+            scaler='standard',
+            patience=5,
+            preset_cats=None,
+            loss_scaler='standard',  # scaler for the losses (z score)
+            *args,
+            **kwargs):
         super(AutoEncoder, self).__init__(*args, **kwargs)
         self.numeric_fts = OrderedDict()
         self.binary_fts = OrderedDict()
@@ -237,10 +242,10 @@ class AutoEncoder(torch.nn.Module):
 
     def get_scaler(self, name):
         scalers = {
-            'standard': StandardScaler, 
-            'gauss_rank': GaussRankScaler, 
+            'standard': StandardScaler,
+            'gauss_rank': GaussRankScaler,
             'modified': ModifiedScaler,
-            None: NullScaler, 
+            None: NullScaler,
             'none': NullScaler
         }
         return scalers[name]
@@ -637,28 +642,24 @@ class AutoEncoder(torch.nn.Module):
         scaler.fit(a)
         return {'scaler': scaler}
 
-    def fit(
-        self, df, epochs=1, val=None, run_validation=False, use_val_for_loss_stats=False
-    ):
+    def fit(self, df, epochs=1, val=None, run_validation=False, use_val_for_loss_stats=False):
         """Does training.
         Args:
             df: pandas df used for training
             epochs: number of epochs to run training
             val: optional pandas dataframe for validation or loss stats
-            run_validation: boolean indicating whether to collect validation loss for each 
+            run_validation: boolean indicating whether to collect validation loss for each
                 epoch during training
-            use_val_for_loss_stats: boolean indicating whether to use the validation set 
+            use_val_for_loss_stats: boolean indicating whether to use the validation set
                 for loss statistics collection (for z score calculation)
 
         Raises:
-            ValueError: 
+            ValueError:
                 if run_validation or use_val_for_loss_stats is True but val is not provided
         """
         if (run_validation or use_val_for_loss_stats) and val is None:
-            raise ValueError(
-                "Validation set is required if either run_validation or \
-                use_val_for_loss_stats is set to True."
-            )
+            raise ValueError("Validation set is required if either run_validation or \
+                use_val_for_loss_stats is set to True.")
 
         if use_val_for_loss_stats:
             df_for_loss_stats = val.copy()
@@ -691,7 +692,7 @@ class AutoEncoder(torch.nn.Module):
         if len(df) % self.batch_size > 0:
             n_updates += 1
         last_loss = 5000
-        
+
         count_es = 0
         for i in range(epochs):
             self.train()
@@ -743,7 +744,8 @@ class AutoEncoder(torch.nn.Module):
 
                         if count_es >= self.patience:
                             if self.verbose:
-                                print('Early stopping: early stop count({}) >= patience({})'.format(count_es, self.patience))
+                                print('Early stopping: early stop count({}) >= patience({})'.format(
+                                    count_es, self.patience))
                             break
 
                     else:
@@ -1005,8 +1007,8 @@ class AutoEncoder(torch.nn.Module):
 
     def get_anomaly_score_losses(self, df):
         """
-        Run the input dataframe `df` through the autoencoder to get the recovery losses by feature type 
-        (numerical/boolean/categorical). 
+        Run the input dataframe `df` through the autoencoder to get the recovery losses by feature type
+        (numerical/boolean/categorical).
         """
         self.eval()
 
@@ -1029,17 +1031,19 @@ class AutoEncoder(torch.nn.Module):
                 num, bin, cat = self.forward(input_slice)
                 mse_loss_slice: torch.Tensor = self.mse(num, num_target)
                 bce_loss_slice: torch.Tensor = self.bce(bin, bin_target)
-                cce_loss_slice_of_each_feat = [] # each entry in this list is the cce loss of a feature, ordered by the feature list self.categorical_fts
+                cce_loss_slice_of_each_feat = [
+                ]  # each entry in this list is the cce loss of a feature, ordered by the feature list self.categorical_fts
                 for i, ft in enumerate(self.categorical_fts):
                     loss = self.cce(cat[i], codes[i])
                     # Convert to 2 dimensions
                     cce_loss_slice_of_each_feat.append(loss.data.reshape(-1, 1))
-                cce_loss_slice = torch.cat(cce_loss_slice_of_each_feat, dim=1) # merge the tensors into one (n_records * n_features) tensor
+                cce_loss_slice = torch.cat(cce_loss_slice_of_each_feat,
+                                           dim=1)  # merge the tensors into one (n_records * n_features) tensor
 
                 mse_loss_slices.append(mse_loss_slice)
                 bce_loss_slices.append(bce_loss_slice)
                 cce_loss_slices.append(cce_loss_slice)
-        
+
         mse_loss = torch.cat(mse_loss_slices, dim=0)
         bce_loss = torch.cat(bce_loss_slices, dim=0)
         cce_loss = torch.cat(cce_loss_slices, dim=0)
@@ -1074,8 +1078,8 @@ class AutoEncoder(torch.nn.Module):
             x = torch.cat(num + bin + embeddings, dim=1)
             x = self.encode(x)
             output_df = self.decode_to_df(x)
-            
-        # set the index of the prediction df to match the input df    
+
+        # set the index of the prediction df to match the input df
         output_df.index = df.index
 
         mse, bce, cce = self.get_anomaly_score_losses(df)
@@ -1087,7 +1091,7 @@ class AutoEncoder(torch.nn.Module):
             cce_scaled = abs(cce_scaled)
 
         combined_loss = torch.cat([mse_scaled, bce_scaled, cce_scaled], dim=1)
-            
+
         for i, ft in enumerate(self.numeric_fts):
             pdf[ft] = df[ft]
             pdf[ft + '_pred'] = output_df[ft]
@@ -1116,7 +1120,7 @@ class AutoEncoder(torch.nn.Module):
             output_scaled_loss_str = 'modz'
         else:
             # in case other custom scaling is used
-            output_scaled_loss_str = f'{self.loss_scaler_str}_scaled' 
+            output_scaled_loss_str = f'{self.loss_scaler_str}_scaled'
         pdf['z_loss_scaler_type'] = output_scaled_loss_str
 
         return pdf
