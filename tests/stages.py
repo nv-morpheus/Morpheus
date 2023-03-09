@@ -29,6 +29,8 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
+from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.utils import compare_df
@@ -150,8 +152,62 @@ class DFPLengthChecker(SinglePortStage):
         return node, input_stream[1]
 
 
+@register_stage("unittest-in-mem-src")
+class InMemorySource(PreallocatorMixin, SingleOutputSource):
+    """
+    Input source that emits a pre-defined list of dataframes.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    dataframes : typing.List[cudf.DataFrame]
+        List of dataframes to emit wrapped in `MessageMeta` instances in order
+    repeat : int, default = 1, min = 1
+        Repeats the input dataset multiple times. Useful to extend small datasets for debugging.
+    """
+
+    def __init__(self, c: Config, dataframes: typing.List[cudf.DataFrame], repeat: int = 1):
+        super().__init__(c)
+        self._dataframes = dataframes
+        self._repeat_count = repeat
+
+    @property
+    def name(self) -> str:
+        return "from-mem"
+
+    def supports_cpp_node(self) -> bool:
+        return False
+
+    def _generate_frames(self) -> typing.Iterator[MessageMeta]:
+        for i in range(self._repeat_count):
+            for df in self._dataframes:
+                x = MessageMeta(df)
+
+                # If we are looping, copy the object. Do this before we push the object in case it changes
+                if (i + 1 < self._repeat_count):
+                    df = df.copy()
+
+                    # Shift the index to allow for unique indices without reading more data
+                    df.index += len(df)
+
+                yield x
+
+    def _build_source(self, builder: mrc.Builder) -> StreamPair:
+        node = builder.make_source(self.unique_name, self._generate_frames())
+        return node, MessageMeta
+
+
 @register_stage("unittest-in-mem-sink")
 class InMemorySinkStage(SinglePortStage):
+    """
+    Collects incoming messages.
+
+    Parameters
+    ----------
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
+    """
 
     def __init__(self, c: Config):
         super().__init__(c)

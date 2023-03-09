@@ -113,9 +113,14 @@ def get_column_names_from_file(file_name):
     return list(df.columns)
 
 
+def extend_df(df, repeat_count) -> pd.DataFrame:
+    extended_df = pd.concat([df for _ in range(repeat_count)])
+    return extended_df.reset_index(inplace=False, drop=True)
+
+
 def extend_data(input_file, output_file, repeat_count):
     df = read_file_to_df(input_file, FileTypes.Auto, df_type='pandas')
-    data = pd.concat([df for _ in range(repeat_count)])
+    data = extend_df(df, repeat_count)
     with open(output_file, 'w') as fh:
         output_strs = df_to_csv(data, include_header=True, include_index_col=False)
         # Remove any trailing whitespace
