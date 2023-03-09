@@ -16,10 +16,9 @@ import dataclasses
 import logging
 import typing
 
-from dfencoder import AutoEncoder
-
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_message import MultiMessage
+from morpheus.models.dfencoder import AutoEncoder
 
 logger = logging.getLogger(__name__)
 

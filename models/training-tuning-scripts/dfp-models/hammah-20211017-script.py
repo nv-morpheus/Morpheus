@@ -25,7 +25,7 @@ import dill
 import numpy as np
 import pandas as pd
 import torch
-from dfencoder import AutoEncoder
+from morpheus.models.dfencoder import AutoEncoder
 
 
 def main():

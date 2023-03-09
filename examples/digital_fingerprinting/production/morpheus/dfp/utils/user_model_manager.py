@@ -18,10 +18,10 @@ import typing
 import numpy as np
 import pandas as pd
 import torch
-from dfencoder import AutoEncoder
 from tqdm import tqdm
 
 from morpheus.config import Config
+from morpheus.models.dfencoder import AutoEncoder
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 

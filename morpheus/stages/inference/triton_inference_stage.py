@@ -838,7 +838,8 @@ class TritonInferenceAE(_TritonInferenceWorker):
                          inout_mapping=inout_mapping)
 
         import torch
-        from dfencoder import AutoEncoder
+
+        from morpheus.models.dfencoder import AutoEncoder
 
         # Save the autoencoder path
         with open(c.ae.autoencoder_path, 'rb') as in_strm:

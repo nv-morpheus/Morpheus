@@ -15,10 +15,9 @@
 import dataclasses
 import typing
 
-from dfencoder.autoencoder import AutoEncoder
-
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
+from morpheus.models.dfencoder.autoencoder import AutoEncoder
 
 
 @dataclasses.dataclass

@@ -23,7 +23,6 @@ import mrc
 import numpy as np
 import pandas as pd
 import torch
-from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
@@ -31,6 +30,7 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
 
