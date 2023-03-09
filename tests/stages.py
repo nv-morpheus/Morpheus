@@ -181,7 +181,8 @@ class InMemorySource(PreallocatorMixin, SingleOutputSource):
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         for i in range(self._repeat_count):
-            for df in self._dataframes:
+            for k in range(len(self._dataframes)):
+                df = self._dataframes[k]
                 x = MessageMeta(df)
 
                 # If we are looping, copy the object. Do this before we push the object in case it changes
@@ -190,6 +191,7 @@ class InMemorySource(PreallocatorMixin, SingleOutputSource):
 
                     # Shift the index to allow for unique indices without reading more data
                     df.index += len(df)
+                    self._dataframes[k] = df
 
                 yield x
 
