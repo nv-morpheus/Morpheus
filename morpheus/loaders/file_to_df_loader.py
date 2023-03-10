@@ -49,20 +49,28 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
         raise RuntimeError("Only 'aggregate' strategy is supported for file_to_df loader.")
 
     files = task.get("files", None)
-    batcher_config = task["batcher_config"]
+    config = task["batcher_config"]
 
-    # TODO(Devin): Should be configured at loader creation time
-    timestamp_column_name = batcher_config.get("timestamp_column_name", None)
-    schema_batcher_config = batcher_config.get("schema", None)
-    schema_str = schema_batcher_config.get("schema_str", None)
-    encoding = schema_batcher_config.get("encoding", None)
-    file_type = batcher_config.get("file_type", None)
-    filter_null = batcher_config.get("filter_null", None)
-    parser_kwargs = batcher_config.get("parser_kwargs", None)
-    cache_dir = batcher_config.get("cache_dir", None)
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
+
+    if ("schema" not in config) or (config["schema"] is None):
+        raise ValueError("Input schema is required.")
+
+    schema_config = config["schema"]
+    schema_str = schema_config["schema_str"]
+    encoding = schema_config["encoding"]
+
+    file_type = config.get("file_type", "JSON")
+    filter_null = config.get("filter_null", False)
+    parser_kwargs = config.get("parser_kwargs", None)
+    cache_dir = config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
     "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+
+    if (cache_dir is None):
+        cache_dir = "./.cache"
+        logger.warning("Cache directory not set. Defaulting to ./.cache")
 
     cache_dir = os.path.join(cache_dir, "file_cache")
 
@@ -117,7 +125,7 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
         fs: fsspec.AbstractFileSystem = file_list.fs
 
         # Create a list of dictionaries that only contains the information we are interested in hashing. `ukey` just
-        # hashes all of the output of `info()` which is perfect
+        # hashes all the output of `info()` which is perfect
         hash_data = [{"ukey": fs.ukey(file_object.path)} for file_object in file_list]
 
         # Convert to base 64 encoding to remove - values
@@ -202,10 +210,10 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
 
             duration = (time.time() - start_time) * 1000.0
 
-            logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
-                         len(output_df),
-                         "hit" if cache_hit else "miss",
-                         duration)
+            # logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
+            #             len(output_df),
+            #             "hit" if cache_hit else "miss",
+            #             duration)
             return output_df
         except Exception:
             logger.exception("Error while converting S3 buckets to DF.")

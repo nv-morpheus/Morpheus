@@ -65,20 +65,82 @@ def dfp_split_users(builder: mrc.Builder):
     include_individual = config.get("include_individual", False)
 
     if (include_generic):
-        # TODO(Devin): Should this be an error?
         # if not "fallback_username" in config:
         #    raise ValueError("fallback_username must be specified if include_generic is True")
-        fallback_username = config.get("fallback_username", "generic")
+        fallback_username = config.get("fallback_username", "generic_user")
 
     # Map of user ids to total number of messages. Keep indexes monotonic and increasing per user
     user_index_map: typing.Dict[str, int] = {}
 
+    def generate_control_messages(control_message: MessageControl, split_dataframes: typing.Dict[str, cudf.DataFrame]):
+        output_messages: typing.List[MessageControl] = []
+
+        for user_id in sorted(split_dataframes.keys()):
+            if (user_id in skip_users):
+                continue
+
+            user_df = split_dataframes[user_id]
+
+            current_user_count = user_index_map.get(user_id, 0)
+            # logger.debug("Current user count: %s", current_user_count)
+
+            # Reset the index so that users see monotonically increasing indexes
+            user_df.index = range(current_user_count, current_user_count + len(user_df))
+            user_index_map[user_id] = current_user_count + len(user_df)
+
+            user_control_message = control_message.copy()
+            user_control_message.set_metadata("user_id", user_id)
+
+            user_cudf = cudf.from_pandas(user_df)
+            user_control_message.payload(MessageMeta(df=user_cudf))
+
+            # output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
+            output_messages.append(user_control_message)
+
+            # rows_per_user = [len(msg.payload().df.to_pandas()) for msg in output_messages]
+
+            # if (len(output_messages) > 0):
+            #    log_info.set_log(
+            #        ("Batch split users complete. Input: %s rows from %s to %s. "
+            #         "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
+            #        len(df),
+            #        df[timestamp_column_name].min(),
+            #        df[timestamp_column_name].max(),
+            #        len(rows_per_user),
+            #        np.min(rows_per_user),
+            #        np.max(rows_per_user),
+            #        np.mean(rows_per_user),
+            #    )
+
+        return output_messages
+
+    def generate_split_dataframes(df: pd.DataFrame):
+        split_dataframes: typing.Dict[str, cudf.DataFrame] = {}
+
+        # If we are skipping users, do that here
+        if (len(skip_users) > 0):
+            df = df[~df[userid_column_name].isin(skip_users)]
+
+        if (len(only_users) > 0):
+            df = df[df[userid_column_name].isin(only_users)]
+
+        # Split up the dataframes
+        if (include_generic):
+            split_dataframes[fallback_username] = df
+
+        if (include_individual):
+            split_dataframes.update(
+                {username: user_df for username, user_df in df.groupby(userid_column_name, sort=False)})
+
+        return split_dataframes
+
     def extract_users(control_message: MessageControl):
-        logger.debug("Extracting users from message")
+        # logger.debug("Extracting users from message")
         if (control_message is None):
             logger.debug("No message to extract users from")
             return []
 
+        control_messages = None  # for readability
         mm = control_message.payload()
         with mm.mutable_dataframe() as dfm:
             # df = control_message.payload().df
@@ -88,64 +150,14 @@ def dfp_split_users(builder: mrc.Builder):
                     # Convert to pandas because cudf is slow at this
                     df = dfm.to_pandas()
                     df[timestamp_column_name] = pd.to_datetime(df[timestamp_column_name], utc=True)
+                else:
+                    df = dfm
 
-                split_dataframes: typing.Dict[str, cudf.DataFrame] = {}
+                split_dataframes = generate_split_dataframes(df)
 
-                # If we are skipping users, do that here
-                if (len(skip_users) > 0):
-                    df = df[~df[userid_column_name].isin(skip_users)]
+                control_messages = generate_control_messages(control_message, split_dataframes)
 
-                if (len(only_users) > 0):
-                    df = df[df[userid_column_name].isin(only_users)]
-
-                # Split up the dataframes
-                if (include_generic):
-                    split_dataframes[fallback_username] = df
-
-                if (include_individual):
-                    split_dataframes.update(
-                        {username: user_df for username, user_df in df.groupby("username", sort=False)})
-
-                output_messages: typing.List[MessageControl] = []
-
-                for user_id in sorted(split_dataframes.keys()):
-                    if (user_id in skip_users):
-                        continue
-
-                    user_df = split_dataframes[user_id]
-
-                    current_user_count = user_index_map.get(user_id, 0)
-                    logger.debug("Current user count: %s", current_user_count)
-
-                    # Reset the index so that users see monotonically increasing indexes
-                    user_df.index = range(current_user_count, current_user_count + len(user_df))
-                    user_index_map[user_id] = current_user_count + len(user_df)
-
-                    user_control_message = control_message.copy()
-                    user_control_message.set_metadata("user_id", user_id)
-
-                    user_cudf = cudf.from_pandas(user_df)
-                    user_control_message.payload(MessageMeta(df=user_cudf))
-
-                    # output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
-                    output_messages.append(user_control_message)
-
-                    rows_per_user = [len(msg.payload().df.to_pandas()) for msg in output_messages]
-
-                    if (len(output_messages) > 0):
-                        log_info.set_log(
-                            ("Batch split users complete. Input: %s rows from %s to %s. "
-                             "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
-                            len(df),
-                            df[timestamp_column_name].min(),
-                            df[timestamp_column_name].max(),
-                            len(rows_per_user),
-                            np.min(rows_per_user),
-                            np.max(rows_per_user),
-                            np.mean(rows_per_user),
-                        )
-
-                return output_messages
+        return control_messages
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(extract_users), ops.flatten()).subscribe(sub)

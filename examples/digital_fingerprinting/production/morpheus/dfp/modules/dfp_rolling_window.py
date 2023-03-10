@@ -146,7 +146,6 @@ def dfp_rolling_window(builder: mrc.Builder):
         payload = control_message.payload()
         user_id = control_message.get_metadata("user_id")
 
-        # TODO(Devin): Require data type to be set
         if (control_message.has_metadata("data_type")):
             data_type = control_message.get_metadata("data_type")
         else:
@@ -178,13 +177,7 @@ def dfp_rolling_window(builder: mrc.Builder):
                     return None
 
             # TODO (bhargav) Check if we need to pass control_message config to data_prep module.
-            # If no config is passed there won't be any tasks to perform in the DataPrep stage.
-            # TODO(Devin): requires a bit more thought, should be safe to re-use the control message here, but
-            #  I'm not 100 percent sure
-
             control_message.payload(result)
-            # Don't need this? control_message.set_metadata("user_id", user_id)
-            # Update data type to payload and forward
             control_message.set_metadata("data_type", "payload")
 
             return control_message

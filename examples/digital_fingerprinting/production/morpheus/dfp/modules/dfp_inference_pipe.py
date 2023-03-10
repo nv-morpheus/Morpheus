@@ -44,7 +44,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_INFERENCE_PIPE, MORPHEUS_MODULE_NAMESPACE)
 def dfp_inference_pipe(builder: mrc.Builder):
     """
-    This module function allows for the consolidation of multiple dfp pipeline modules relevent to inference
+    This module function allows for the consolidation of multiple dfp pipeline modules relevant to inference
     process into a single module.
 
     Parameters
@@ -57,6 +57,14 @@ def dfp_inference_pipe(builder: mrc.Builder):
     Configurable parameters:
         - batching_options: Options for batching the data
         - cache_dir: Directory to cache the rolling window data
+        - detection_criteria: Criteria for filtering detections
+        - inference_options: Options for inference
+        - output_port_count: Number of output ports
+        - preprocessing_options: Options for preprocessing the data
+        - stream_aggregation_options: Options for aggregating the data by stream
+        - timestamp_column_name: Name of the timestamp column
+        - user_splitting_options: Options for splitting the data by user
+        - write_to_file_options: Options for writing the detections to file
     """
 
     config = builder.get_current_module_config()

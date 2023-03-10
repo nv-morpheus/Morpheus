@@ -171,8 +171,8 @@ def filter_detections(builder: mrc.Builder):
         else:
             filter_source = FilterSource.DATAFRAME
 
-        logger.debug(f"filter_source was set to Auto, infering a filter source of {filter_source} based on an input "
-                     "message type of {message_type}")
+        # logger.debug(f"filter_source was set to Auto, infering a filter source of {filter_source} based on an input "
+        #             "message type of {message_type}")
     elif filter_source == "DATAFRAME":
         filter_source = FilterSource.DATAFRAME
     else:

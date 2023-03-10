@@ -36,9 +36,16 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_DEPLOYMENT, MORPHEUS_MODULE_NAMESPACE)
 def dfp_deployment(builder: mrc.Builder):
     """
-    This module function allows for the consolidation of multiple dfp pipeline modules relevant to inference/training
-    :param builder:
-    :return:
+    Parameters
+    ----------
+    builder : mrc.Builder
+        Pipeline builder instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - training_options: dict
+        - inference_options: dict
     """
     module_config = builder.get_current_module_config()
 

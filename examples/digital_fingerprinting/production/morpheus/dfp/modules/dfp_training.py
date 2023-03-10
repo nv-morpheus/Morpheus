@@ -40,11 +40,12 @@ def dfp_training(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
 
     Notes
     ----------
     Configurable parameters:
+
         - feature_columns: List of feature columns to train on
         - epochs: Number of epochs to train for
         - model_kwargs: Keyword arguments to pass to the model (see dfencoder.AutoEncoder)

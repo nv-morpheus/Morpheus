@@ -46,6 +46,18 @@ def dfp_training_pipe(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         Pipeline budler instance.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - timestamp_column_name : str
+        - cache_dir : str
+        - batching_options : dict
+        - user_splitting_options : dict
+        - stream_aggregation_options : dict
+        - preprocessing_options : dict
+        - dfencoder_options : dict
+        - mlflow_writer_options : dict
     """
 
     config = builder.get_current_module_config()

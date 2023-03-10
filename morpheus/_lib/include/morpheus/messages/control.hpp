@@ -88,6 +88,7 @@ class MessageControl
      */
     bool has_metadata(const std::string& key) const;
 
+    // TODO(Devin): Allow for a default value
     /**
      * @brief Get the metadata value for a given key
      * @param key

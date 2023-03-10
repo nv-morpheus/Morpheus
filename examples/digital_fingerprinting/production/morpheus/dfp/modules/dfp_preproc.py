@@ -38,13 +38,23 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_PREPROC, MORPHEUS_MODULE_NAMESPACE)
 def dfp_preproc(builder: mrc.Builder):
     """
-    This module function allows for the consolidation of multiple dfp pipeline modules relevent to inference/training
+    This module function allows for the consolidation of multiple dfp pipeline modules relevant to inference/training
     process into a single module.
 
     Parameters
     ----------
     builder : mrc.Builder
         Pipeline builder instance.
+
+    Notes
+    ----------
+     Configurable parameters:
+        - cache_dir: str
+        - timestamp_column_name: str
+        - pre_filter_options: dict
+        - batching_options: dict
+        - user_splitting_options: dict
+        - supported_loaders: dict
     """
 
     config = builder.get_current_module_config()
@@ -85,7 +95,7 @@ def dfp_preproc(builder: mrc.Builder):
     file_to_df_conf = merge_dictionaries(supported_loaders, file_to_df_defaults)
 
     dfp_split_users_default = {
-        "fallback_username": config.get("fallback_username", "generic")
+        "fallback_username": config.get("fallback_username", "generic_user")
     }
     dfp_split_users_conf = merge_dictionaries(splitting_opts, dfp_split_users_default)
 

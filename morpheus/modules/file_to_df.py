@@ -51,21 +51,41 @@ def file_to_df(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - cache_dir: Directory to cache the rolling window data
+        - file_type: Type of the input file
+        - filter_null: Whether to filter out null values
+        - parser_kwargs: Keyword arguments to pass to the parser
+        - schema: Schema of the input data
+        - timestamp_column_name: Name of the timestamp column
     """
 
     config = builder.get_current_module_config()
 
-    timestamp_column_name = config.get("timestamp_column_name", None)
-    schema_config = config.get("schema", None)
-    schema_str = schema_config.get("schema_str", None)
-    encoding = schema_config.get("encoding", None)
-    file_type = config.get("file_type", None)
-    filter_null = config.get("filter_null", None)
+    timestamp_column_name = config.get("timestamp_column_name", "timestamp")
+
+    if ("schema" not in config) or (config["schema"] is None):
+        raise ValueError("Input schema is required.")
+
+    schema_config = config["schema"]
+    schema_str = schema_config["schema_str"]
+    encoding = schema_config["encoding"]
+
+    file_type = config.get("file_type", "JSON")
+    filter_null = config.get("filter_null", False)
     parser_kwargs = config.get("parser_kwargs", None)
     cache_dir = config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
     "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+
+    if (cache_dir is None):
+        cache_dir = "./.cache"
+        logger.warning("Cache directory not set. Defaulting to ./.cache")
+
     cache_dir = os.path.join(cache_dir, "file_cache")
 
     # Load input schema

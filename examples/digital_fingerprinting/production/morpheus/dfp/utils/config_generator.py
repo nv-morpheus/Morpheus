@@ -53,6 +53,7 @@ class ConfigGenerator:
 
     def infer_module_conf(self):
         module_conf = {
+            "output_port_count": 2,
             "timestamp_column_name": self._config.ae.timestamp_column_name,
             "cache_dir": self._dfp_arg_parser.cache_dir,
             "batching_options": {
@@ -85,48 +86,19 @@ class ConfigGenerator:
                     "schema_str": self._preprocess_schema_str, "encoding": self._encoding
                 }
             },
-            # DFP_DATA_PREP: {
-            #    "timestamp_column_name": self._config.ae.timestamp_column_name,
-            #    "schema": {
-            #        "schema_str": self._preprocess_schema_str, "encoding": self._encoding
-            #    },
-            # },
             "inference_options": {
                 "model_name_formatter": self._dfp_arg_parser.model_name_formatter,
                 "fallback_username": self._config.ae.fallback_username,
                 "timestamp_column_name": self._config.ae.timestamp_column_name,
             },
-            # DFP_INFERENCE: {
-            #    "model_name_formatter": self._dfp_arg_parser.model_name_formatter,
-            #    "fallback_username": self._config.ae.fallback_username,
-            #    "timestamp_column_name": self._config.ae.timestamp_column_name
-            # },
             "detection_criteria": {
                 "schema": {
                     "input_message_type": self._input_message_type, "encoding": self._encoding
                 }
             },
-            # FILTER_DETECTIONS: {
-            #    "field_name": "mean_abs_z",
-            #    "threshold": 2.0,
-            #    "filter_source": "DATAFRAME",
-            #    "schema": {
-            #        "input_message_type": self._input_message_type, "encoding": self._encoding
-            #    }
-            # },
-            # DFP_POST_PROCESSING: {
-            #    "timestamp_column_name": self._config.ae.timestamp_column_name
-            # },
-            # SERIALIZE: {
-            #    "exclude": ['batch_count', 'origin_hash', '_row_hash', '_batch_id'],
-            #    "use_cpp": CppConfig.get_should_use_cpp()
-            # },
             "write_to_file_options": {
                 "filename": "dfp_detections_{}.csv".format(self._dfp_arg_parser.source), "overwrite": True
             },
-            # WRITE_TO_FILE: {
-            #    "filename": "dfp_detections_{}.csv".format(self._dfp_arg_parser.source), "overwrite": True
-            # }
         }
 
         return module_conf
