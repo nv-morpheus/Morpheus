@@ -22,21 +22,33 @@ from morpheus.models.dfencoder import scalers
 
 
 @pytest.fixture(scope="function")
-def tensor():
+def fit_tensor():
     yield torch.tensor([4.4, 5.3, 6.5], dtype=torch.float32)
 
 
 @pytest.fixture(scope="function")
-def standard_scaler(tensor):
+def tensor():
+    yield torch.tensor([7.4, 8.3, 9.5], dtype=torch.float32)
+
+
+@pytest.fixture(scope="function")
+def standard_scaler(fit_tensor):
     scaler = scalers.StandardScaler()
-    scaler.fit(tensor)
+    scaler.fit(fit_tensor)
     yield scaler
 
 
 @pytest.fixture(scope="function")
-def modified_scaler(tensor):
+def modified_scaler(fit_tensor):
     scaler = scalers.ModifiedScaler()
-    scaler.fit(tensor)
+    scaler.fit(fit_tensor)
+    yield scaler
+
+
+@pytest.fixture(scope="function")
+def gauss_rank_scaler(fit_tensor):
+    scaler = scalers.GaussRankScaler()
+    scaler.fit(fit_tensor)
     yield scaler
 
 
@@ -61,20 +73,20 @@ def test_standard_scaler_fit(standard_scaler):
     assert standard_scaler.std == 1.0
 
 
-def test_standard_scaler_transform(standard_scaler):
-    results = standard_scaler.transform(torch.tensor([7.4, 8.3, 9.5]))
+def test_standard_scaler_transform(standard_scaler, tensor):
+    results = standard_scaler.transform(tensor)
     expected = torch.tensor([1.9, 2.75, 3.89])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
 
-def test_standard_scaler_inverse_transform(standard_scaler):
-    results = standard_scaler.inverse_transform(torch.tensor([7.4, 8.3, 9.5]))
+def test_standard_scaler_inverse_transform(standard_scaler, tensor):
+    results = standard_scaler.inverse_transform(tensor)
     expected = torch.tensor([13.2, 14.14, 15.41])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
 
-def test_standard_scaler_fit_transform(standard_scaler):
-    results = standard_scaler.fit_transform(torch.tensor([7.4, 8.3, 9.5]))
+def test_standard_scaler_fit_transform(standard_scaler, tensor):
+    results = standard_scaler.fit_transform(tensor)
     expected = torch.tensor([-0.95, -0.09, 1.04])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
@@ -89,35 +101,51 @@ def test_modified_scaler_fit(modified_scaler):
     assert modified_scaler.meanad == 1.0
 
 
-def test_modified_scaler_transform(modified_scaler):
-    x = torch.tensor([7.4, 8.3, 9.5])
-    results = modified_scaler.transform(x)
+def test_modified_scaler_transform(modified_scaler, tensor):
+    results = modified_scaler.transform(tensor)
     expected = torch.tensor([1.57, 2.24, 3.14])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
     # Test alternate path where median absolute deviation is 1
     t = torch.tensor([3.0, 4.0, 4.0, 5.0])
     modified_scaler.fit(t)
-    results = modified_scaler.transform(x)
+    results = modified_scaler.transform(tensor)
     expected = torch.tensor([5.43, 6.86, 8.78])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
 
-def test_modified_scaler_inverse_transform(modified_scaler):
-    x = torch.tensor([7.4, 8.3, 9.5])
-    results = modified_scaler.inverse_transform(x)
+def test_modified_scaler_inverse_transform(modified_scaler, tensor):
+    results = modified_scaler.inverse_transform(tensor)
     expected = torch.tensor([15.2, 16.40, 18.01])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
     # Test alternate path where median absolute deviation is 1
     t = torch.tensor([3.0, 4.0, 4.0, 5.0])
     modified_scaler.fit(t)
-    results = modified_scaler.inverse_transform(x)
+    results = modified_scaler.inverse_transform(tensor)
     expected = torch.tensor([8.64, 9.2, 9.95])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
 
-def test_modified_scaler_fit_transform(modified_scaler):
-    results = modified_scaler.fit_transform(torch.tensor([7.4, 8.3, 9.5]))
+def test_modified_scaler_fit_transform(modified_scaler, tensor):
+    results = modified_scaler.fit_transform(tensor)
     expected = torch.tensor([-0.67, 0.0, 0.9])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
+
+
+def test_gauss_rank_scaler_transform(gauss_rank_scaler, tensor):
+    results = gauss_rank_scaler.transform(tensor)
+    expected = np.array([5.2, 5.2, 5.2])
+    assert results.round(2).tolist() == expected.tolist(), f"{results} != {expected}"
+
+
+def test_gauss_rank_scaler_inverse_transform(gauss_rank_scaler, tensor):
+    results = gauss_rank_scaler.inverse_transform(tensor)
+    expected = np.array([6.5, 6.5, 6.5])
+    assert results.round(2).tolist() == expected.tolist(), f"{results} != {expected}"
+
+
+def test_gauss_rank_scaler_fit_transform(gauss_rank_scaler, tensor):
+    results = gauss_rank_scaler.fit_transform(tensor)
+    expected = np.array([-5.2, 0.0, 5.2])
+    assert results.round(2).tolist() == expected.tolist(), f"{results} != {expected}"
