@@ -22,9 +22,20 @@ from morpheus.models.dfencoder import scalers
 
 
 @pytest.fixture(scope="function")
-def standard_scaler():
+def tensor():
+    yield torch.tensor([4.4, 5.3, 6.5], dtype=torch.float32)
+
+
+@pytest.fixture(scope="function")
+def standard_scaler(tensor):
     scaler = scalers.StandardScaler()
-    tensor = torch.tensor([4.4, 5.3, 6.5])
+    scaler.fit(tensor)
+    yield scaler
+
+
+@pytest.fixture(scope="function")
+def modified_scaler(tensor):
+    scaler = scalers.ModifiedScaler()
     scaler.fit(tensor)
     yield scaler
 
@@ -45,7 +56,7 @@ def test_standard_scaler_fit(standard_scaler):
     assert round(standard_scaler.std, 2) == 1.05
 
     # Test corner case where all values are the same
-    standard_scaler.fit(torch.ones(5, dtype=torch.float64))
+    standard_scaler.fit(torch.ones(5, dtype=torch.float32))
     assert standard_scaler.mean == 1
     assert standard_scaler.std == 1.0
 
@@ -62,7 +73,51 @@ def test_standard_scaler_inverse_transform(standard_scaler):
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
 
 
-def test_standard_scaler_inverse_transform(standard_scaler):
+def test_standard_scaler_fit_transform(standard_scaler):
     results = standard_scaler.fit_transform(torch.tensor([7.4, 8.3, 9.5]))
     expected = torch.tensor([-0.95, -0.09, 1.04])
+    assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
+
+
+def test_modified_scaler_fit(modified_scaler):
+    assert round(modified_scaler.median, 2) == 5.3
+    assert round(modified_scaler.mad, 2) == 0.9
+    assert round(modified_scaler.meanad, 2) == 0.7
+
+    # Test corner case where all values are the same
+    modified_scaler.fit(torch.ones(5, dtype=torch.float32))
+    assert modified_scaler.meanad == 1.0
+
+
+def test_modified_scaler_transform(modified_scaler):
+    x = torch.tensor([7.4, 8.3, 9.5])
+    results = modified_scaler.transform(x)
+    expected = torch.tensor([1.57, 2.24, 3.14])
+    assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
+
+    # Test alternate path where median absolute deviation is 1
+    t = torch.tensor([3.0, 4.0, 4.0, 5.0])
+    modified_scaler.fit(t)
+    results = modified_scaler.transform(x)
+    expected = torch.tensor([5.43, 6.86, 8.78])
+    assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
+
+
+def test_modified_scaler_inverse_transform(modified_scaler):
+    x = torch.tensor([7.4, 8.3, 9.5])
+    results = modified_scaler.inverse_transform(x)
+    expected = torch.tensor([15.2, 16.40, 18.01])
+    assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
+
+    # Test alternate path where median absolute deviation is 1
+    t = torch.tensor([3.0, 4.0, 4.0, 5.0])
+    modified_scaler.fit(t)
+    results = modified_scaler.inverse_transform(x)
+    expected = torch.tensor([8.64, 9.2, 9.95])
+    assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
+
+
+def test_modified_scaler_fit_transform(modified_scaler):
+    results = modified_scaler.fit_transform(torch.tensor([7.4, 8.3, 9.5]))
+    expected = torch.tensor([-0.67, 0.0, 0.9])
     assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
