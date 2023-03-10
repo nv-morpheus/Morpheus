@@ -286,6 +286,13 @@ def reload_modules(request: pytest.FixtureRequest):
             importlib.reload(mod)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def manual_seed():
+    from morpheus.utils import seed as seed_utils
+    seed_utils.manual_seed(42)
+    yield
+
+
 @pytest.fixture(scope="function")
 def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     """

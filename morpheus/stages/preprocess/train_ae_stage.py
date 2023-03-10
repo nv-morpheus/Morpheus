@@ -33,6 +33,7 @@ from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.seed import manual_seed
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +88,7 @@ class _UserModelManager(object):
 
         # If the seed is set, enforce that here
         if (self._seed is not None):
-            torch.manual_seed(self._seed)
-            torch.cuda.manual_seed(self._seed)
-            np.random.seed(self._seed)
-            torch.backends.cudnn.deterministic = True
+            manual_seed(self._seed)
 
         model = AutoEncoder(
             encoder_layers=[512, 500],  # layers of the encoding part

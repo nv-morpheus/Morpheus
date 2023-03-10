@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import torch
 from morpheus.models.dfencoder import AutoEncoder
+from morpheus.utils.seed import manual_seed
 
 
 def main():
@@ -84,10 +85,7 @@ def main():
     for i in list(X_train):
         if i not in list(X_val):
             X_train = X_train.drop([i], axis=1)
-    torch.manual_seed(42)
-    torch.cuda.manual_seed(42)
-    np.random.seed(42)
-    torch.backends.cudnn.deterministic = True
+    manual_seed(42)
     model = AutoEncoder(
         encoder_layers=[512, 500],  # layers of the encoding part
         decoder_layers=[512],  # layers of the decoding part
