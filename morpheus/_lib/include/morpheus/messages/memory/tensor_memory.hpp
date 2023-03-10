@@ -17,10 +17,14 @@
 
 #pragma once
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for TensorMap, TensorIndex
+#include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil
+
+#include <pybind11/pytypes.h>  // for object
 
 #include <cstddef>  // for size_t
-#include <map>
+#include <memory>   // for shared_ptr
 #include <string>
 #include <utility>  // for pair
 #include <vector>
@@ -35,6 +39,7 @@ namespace morpheus {
  * @file
  */
 
+#pragma GCC visibility push(default)
 /**
  * @brief Container for holding a collection of named `TensorObject`s in a `std::map` keyed by name.
  * Base class for `InferenceMemory` & `ResponseMemory`
@@ -43,8 +48,6 @@ namespace morpheus {
 class TensorMemory
 {
   public:
-    using tensor_map_t = std::map<std::string, TensorObject>;
-
     /**
      * @brief Construct a new Tensor Memory object
      *
@@ -58,11 +61,11 @@ class TensorMemory
      * @param count
      * @param tensors
      */
-    TensorMemory(size_t count, tensor_map_t &&tensors);
+    TensorMemory(size_t count, TensorMap&& tensors);
     virtual ~TensorMemory() = default;
 
     size_t count{0};
-    tensor_map_t tensors;
+    TensorMap tensors;
 
     /**
      * @brief Verify whether the specified tensor name is present in the tensor memory
@@ -71,18 +74,148 @@ class TensorMemory
      * @return true
      * @return false
      */
-    bool has_tensor(const std::string &name) const;
+    bool has_tensor(const std::string& name) const;
 
     /**
      * @brief Copy tensor ranges
      *
      * @param ranges
      * @param num_selected_rows
-     * @return tensor_map_t
+     * @return TensorMap
      */
-    tensor_map_t copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>> &ranges,
-                                    size_t num_selected_rows) const;
+    TensorMap copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
+                                 size_t num_selected_rows) const;
+
+    /**
+     * @brief Get the tensor object identified by `name`
+     *
+     * @param name
+     * @return TensorObject&
+     * @throws std::runtime_error If no tensor matching `name` exists
+     */
+    TensorObject& get_tensor(const std::string& name);
+
+    /**
+     * @brief Get the tensor object identified by `name`
+     *
+     * @param name
+     * @return const TensorObject&
+     * @throws std::runtime_error If no tensor matching `name` exists
+     */
+    const TensorObject& get_tensor(const std::string& name) const;
+
+    /**
+     * @brief Set the tensor object identified by `name`
+     *
+     * @param name
+     * @param tensor
+     * @throws std::length_error If the number of rows in `tensor` does not match `count`.
+     */
+    void set_tensor(const std::string& name, TensorObject&& tensor);
+
+    /**
+     * @brief Set the tensors object
+     *
+     * @param tensors
+     * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
+     */
+    void set_tensors(TensorMap&& tensors);
+
+  protected:
+    /**
+     * @brief Checks if the number of rows in `tensor` matches `count`
+     *
+     * @param tensor
+     * @throws std::length_error If the number of rows in `tensor` do not match `count`.
+     */
+    void check_tensor_length(const TensorObject& tensor);
+
+    /**
+     * @brief Checks each tesnor in `tensors` verifying that the number of rows matches count
+     *
+     * @param tensors
+     * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
+     */
+    void check_tensors_length(const TensorMap& tensors);
+
+    /**
+     * @brief Verify that a tensor identified by `name` exists, throws a `runtime_error` othwerwise.
+     *
+     * @param name
+     * @throws std::runtime_error If no tensor matching `name` exists
+     */
+    void verify_tensor_exists(const std::string& name) const;
 };
 
+/****** TensorMemoryInterfaceProxy *************************/
+/**
+ * @brief Interface proxy, used to insulate python bindings.
+ */
+struct TensorMemoryInterfaceProxy
+{
+    /**
+     * @brief Create and initialize a TensorMemory object, and return a shared pointer to the result. Each array in
+     * `tensors` should be of length `count`.
+     *
+     * @param count : Lenght of each array in `tensors`
+     * @param tensors : Map of string on to cupy arrays
+     * @return std::shared_ptr<TensorMemory>
+     */
+    static std::shared_ptr<TensorMemory> init(std::size_t count, pybind11::object& tensors);
+
+    /**
+     * @brief Get the count object
+     *
+     * @param self
+     * @return std::size_t
+     */
+    static std::size_t get_count(TensorMemory& self);
+
+    /**
+     * @brief Get the tensors converted to CuPy arrays. Pybind11 will convert the std::map to a Python dict.
+     *
+     * @param self
+     * @return py_tensor_map_t
+     */
+    static CupyUtil::py_tensor_map_t get_tensors(TensorMemory& self);
+
+    /**
+     * @brief Set the tensors object converting a map of CuPy arrays to Tensors
+     *
+     * @param self
+     * @param tensors
+     */
+    static void set_tensors(TensorMemory& self, CupyUtil::py_tensor_map_t tensors);
+
+    /**
+     * @brief Get the tensor object identified by `name`
+     *
+     * @param self
+     * @param name
+     * @return pybind11::object
+     * @throws pybind11::key_error When no matching tensor exists.
+     */
+    static pybind11::object get_tensor(TensorMemory& self, const std::string name);
+
+    /**
+     * @brief Same as `get_tensor` but used when the method is being bound to a python property
+     *
+     * @param self
+     * @param name
+     * @return pybind11::object
+     * @throws pybind11::attribute_error When no matching tensor exists.
+     */
+    static pybind11::object get_tensor_property(TensorMemory& self, const std::string name);
+
+    /**
+     * @brief Set the tensor object identified by `name`
+     *
+     * @param self
+     * @param cupy_tensor
+     */
+    static void set_tensor(TensorMemory& self, const std::string name, const pybind11::object& cupy_tensor);
+};
+
+#pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

@@ -70,6 +70,7 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor named "input_ids" exists
      */
     const TensorObject get_input_ids() const;
 
@@ -85,6 +86,7 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor named "input_mask" exists
      */
     const TensorObject get_input_mask() const;
 
@@ -100,6 +102,7 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor named "seq_ids" exists
      */
     const TensorObject get_seq_ids() const;
 
@@ -115,7 +118,7 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiInferenceNLPMessageInterfaceProxy
+struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceNLPMessage, and return a shared pointer to the result
@@ -137,50 +140,29 @@ struct MultiInferenceNLPMessageInterfaceProxy
                                                           cudf::size_type count);
 
     /**
-     * @brief Get inference memory object shared pointer
-     *
-     * @param self
-     * @return std::shared_ptr<morpheus::InferenceMemory>
-     */
-    static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceNLPMessage& self);
-
-    /**
-     * @brief Get message offset
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t offset(MultiInferenceNLPMessage& self);
-
-    /**
-     * @brief Get messages count
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(MultiInferenceNLPMessage& self);
-
-    /**
-     * @brief Get  'input_ids' tensor as a python object, throws a `std::runtime_error` if it does not exist
+     * @brief Get  'input_ids' tensor as a python object
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "input_ids" exists.
      */
     static pybind11::object input_ids(MultiInferenceNLPMessage& self);
 
     /**
-     * @brief Get 'input_mask' tensor as a python object, throws a `std::runtime_error` if it does not exist
+     * @brief Get 'input_mask' tensor as a python object
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "input_mask" exists.
      */
     static pybind11::object input_mask(MultiInferenceNLPMessage& self);
 
     /**
-     * @brief Get 'seq_ids' tensor as a python object, throws a `std::runtime_error` if it does not exist
+     * @brief Get 'seq_ids' tensor as a python object
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "seq_ids" exists.
      */
     static pybind11::object seq_ids(MultiInferenceNLPMessage& self);
 };

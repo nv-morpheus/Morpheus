@@ -24,12 +24,7 @@
 
 #include <boost/fiber/operations.hpp>  // for sleep_for, yield
 #include <boost/fiber/recursive_mutex.hpp>
-#include <cudf/column/column.hpp>  // for column
 #include <cudf/io/json.hpp>
-#include <cudf/scalar/scalar.hpp>  // for string_scalar
-#include <cudf/strings/replace.hpp>
-#include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
-#include <cudf/table/table.hpp>                  // for table
 #include <glog/logging.h>
 #include <librdkafka/rdkafkacpp.h>
 #include <mrc/runnable/context.hpp>
@@ -40,6 +35,7 @@
 
 #include <algorithm>  // for find, min, transform
 #include <chrono>
+#include <compare>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -70,7 +66,7 @@
 namespace morpheus {
 // Component-private classes.
 // ************ KafkaSourceStage__UnsubscribedException**************//
-class KafkaSourceStage__UnsubscribedException : public std::exception
+class KafkaSourceStageUnsubscribedException : public std::exception
 {};
 
 class KafkaSourceStageStopAfter : public std::exception
@@ -286,7 +282,7 @@ KafkaSourceStage::subscriber_fn_t KafkaSourceStage::build()
                 // If we are unsubscribed, throw an error to break the loops
                 if (!sub.is_subscribed())
                 {
-                    throw KafkaSourceStage__UnsubscribedException();
+                    throw KafkaSourceStageUnsubscribedException();
                 }
                 else if (m_stop_after > 0 && records_emitted >= m_stop_after)
                 {

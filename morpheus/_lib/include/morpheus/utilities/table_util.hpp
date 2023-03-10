@@ -40,7 +40,7 @@ struct CuDFTableUtil
     /**
      * TODO(Documentation)
      */
-    static cudf::io::table_with_metadata load_table(const std::string &filename);
+    static cudf::io::table_with_metadata load_table(const std::string& filename);
 };
 /** @} */  // end of group
 }  // namespace morpheus

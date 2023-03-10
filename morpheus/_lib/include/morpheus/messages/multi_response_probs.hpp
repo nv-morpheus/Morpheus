@@ -51,7 +51,7 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
     /**
      * @brief Default copy constructor
      */
-    MultiResponseProbsMessage(const MultiResponseProbsMessage &other) = default;
+    MultiResponseProbsMessage(const MultiResponseProbsMessage& other) = default;
 
     /**
      * Construct a new Multi Response Probs Message object
@@ -83,14 +83,14 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
      *
      * @param probs
      */
-    void set_probs(const TensorObject &probs);
+    void set_probs(const TensorObject& probs);
 };
 
 /****** MultiResponseProbsMessageInterfaceProxy *************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiResponseProbsMessageInterfaceProxy
+struct MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiResponseProbsMessage object, and return a shared pointer to the result
@@ -112,36 +112,13 @@ struct MultiResponseProbsMessageInterfaceProxy
                                                            cudf::size_type count);
 
     /**
-     * @brief Returns a shared pointer of a response memory probs object
-     *
-     * @param self
-     * @return std::shared_ptr<morpheus::ResponseMemoryProbs>
-     */
-    static std::shared_ptr<morpheus::ResponseMemoryProbs> memory(MultiResponseProbsMessage &self);
-
-    /**
-     * @brief Message offset in response memory probs object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t offset(MultiResponseProbsMessage &self);
-
-    /**
-     * @brief Messages count in response memory probs object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(MultiResponseProbsMessage &self);
-
-    /**
      * @brief Return the `probs` (probabilities) output tensor
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "probs" exists.
      */
-    static pybind11::object probs(MultiResponseProbsMessage &self);
+    static pybind11::object probs(MultiResponseProbsMessage& self);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

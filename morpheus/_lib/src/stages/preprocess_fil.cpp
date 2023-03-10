@@ -18,19 +18,17 @@
 #include "morpheus/stages/preprocess_fil.hpp"
 
 #include "morpheus/messages/memory/inference_memory_fil.hpp"
-#include "morpheus/messages/meta.hpp"  // for MessageMeta
-#include "morpheus/objects/data_table.hpp"
+#include "morpheus/messages/meta.hpp"         // for MessageMeta
 #include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
+#include "morpheus/types.hpp"  // for TensorIndex
 #include "morpheus/utilities/matx_util.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <cudf/column/column.hpp>       // for column, column::contents
 #include <cudf/column/column_view.hpp>  // for column_view
-#include <cudf/table/table_view.hpp>    // for table_view
 #include <cudf/types.hpp>
 #include <cudf/unary.hpp>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
@@ -40,7 +38,6 @@
 #include <pybind11/pybind11.h>  // for str_attr_accessor, arg
 #include <pybind11/pytypes.h>
 #include <pymrc/node.hpp>
-#include <pymrc/types.hpp>
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
@@ -48,8 +45,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <functional>
 #include <memory>
-#include <type_traits>  // for declval
 #include <utility>
 
 namespace morpheus {
@@ -116,7 +113,8 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                                    0);
 
                 // Build the results
-                auto memory = std::make_shared<InferenceMemoryFIL>(x->mess_count, input__0, seg_ids);
+                auto memory =
+                    std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seg_ids));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);

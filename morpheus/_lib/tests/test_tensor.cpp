@@ -17,12 +17,20 @@
 
 #include "./test_morpheus.hpp"  // IWYU pragma: associated
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils, TensorUtils::shape_type_t
+#include "morpheus/objects/dtype.hpp"  // for DType
+#include "morpheus/objects/rmm_tensor.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for ITensor
+#include "morpheus/types.hpp"                  // for ShapeType, TensorIndex
+#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils
 
+#include <cuda_runtime.h>
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
+#include <mrc/cuda/common.hpp>
+#include <rmm/cuda_stream_view.hpp>
+#include <rmm/device_buffer.hpp>
 
 #include <cstddef>  // for size_t
+#include <memory>   // shared_ptr
 #include <string>   // for allocator, operator==, basic_string, string
 #include <vector>   // for vector
 // IWYU pragma: no_include "morpheus/utilities/string_util.hpp"
@@ -40,17 +48,17 @@ class TestTensor : public ::testing::Test
 
 TEST_F(TestTensor, UtilsShapeString)
 {
-    TensorUtils::shape_type_t shape = {100, 10, 1};
-    auto shape_str                = TensorUtils::shape_to_string(shape);
+    ShapeType shape = {100, 10, 1};
+    auto shape_str  = TensorUtils::shape_to_string(shape);
     EXPECT_TRUE(shape_str == std::string("(100, 10, 1)"));
 }
 
 TEST_F(TestTensor, GetElementStride)
 {
-    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({10, 1}), TensorUtils::shape_type_t({10, 1}));
-    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({1, 13}), TensorUtils::shape_type_t({1, 13}));
-    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 104}), TensorUtils::shape_type_t({1, 13}));
-    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 16, 112}), TensorUtils::shape_type_t({1, 2, 14}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({10, 1}), ShapeType({10, 1}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({1, 13}), ShapeType({1, 13}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 104}), ShapeType({1, 13}));
+    EXPECT_EQ(TensorUtils::get_element_stride<TensorIndex>({8, 16, 112}), ShapeType({1, 2, 14}));
 
     EXPECT_EQ(TensorUtils::get_element_stride<std::size_t>({10, 1}), std::vector<std::size_t>({10, 1}));
     EXPECT_EQ(TensorUtils::get_element_stride<std::size_t>({1, 13}), std::vector<std::size_t>({1, 13}));
@@ -59,22 +67,54 @@ TEST_F(TestTensor, GetElementStride)
 
     {
         auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({10, 1});
-        EXPECT_EQ(results, TensorUtils::shape_type_t({10, 1}));
+        EXPECT_EQ(results, ShapeType({10, 1}));
     }
 
     {
         auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({1, 13});
-        EXPECT_EQ(results, TensorUtils::shape_type_t({1, 13}));
+        EXPECT_EQ(results, ShapeType({1, 13}));
     }
 
     {
         auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({8, 104});
-        EXPECT_EQ(results, TensorUtils::shape_type_t({1, 13}));
+        EXPECT_EQ(results, ShapeType({1, 13}));
     }
 
     {
         auto results = TensorUtils::get_element_stride<TensorIndex, std::size_t>({8, 16, 112});
-        EXPECT_EQ(results, TensorUtils::shape_type_t({1, 2, 14}));
+        EXPECT_EQ(results, ShapeType({1, 2, 14}));
+    }
+}
+
+TEST_F(TestTensor, AsType)
+{
+    std::vector<float> float_vec{5.1, 2.2, 8.3, 9.4, 8.5, 2.6, 1.7, 8.1};
+
+    DType float_type(TypeId::FLOAT32);
+
+    auto float_buffer =
+        std::make_shared<rmm::device_buffer>(float_vec.size() * float_type.item_size(), rmm::cuda_stream_per_thread);
+
+    MRC_CHECK_CUDA(cudaMemcpy(float_buffer->data(), float_vec.data(), float_buffer->size(), cudaMemcpyHostToDevice));
+
+    std::vector<TensorIndex> shape{4, 2};
+    std::vector<TensorIndex> stride{1, 4};
+    auto float_tensor = std::make_shared<RMMTensor>(float_buffer, 0, float_type, shape, stride);
+
+    DType double_type(TypeId::FLOAT64);
+    auto double_tensor = float_tensor->as_type(double_type);
+
+    EXPECT_EQ(float_vec.size(), double_tensor->count());
+    EXPECT_EQ(float_vec.size() * double_type.item_size(), double_tensor->bytes());
+
+    std::vector<double> double_vec(float_vec.size());
+    MRC_CHECK_CUDA(
+        cudaMemcpy(double_vec.data(), double_tensor->data(), double_tensor->bytes(), cudaMemcpyDeviceToHost));
+
+    EXPECT_EQ(double_vec.size(), float_vec.size());
+    for (std::size_t i = 0; i < double_vec.size(); ++i)
+    {
+        EXPECT_DOUBLE_EQ(double_vec[i], float_vec[i]);
     }
 }
 

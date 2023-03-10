@@ -21,12 +21,12 @@
 #include "morpheus/messages/multi_response_probs.hpp"
 #include "morpheus/objects/triton_in_out.hpp"
 
+#include <boost/fiber/future/future.hpp>
 #include <http_client.h>
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
+#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
 
@@ -85,7 +85,7 @@ class InferenceClientStage
     /**
      * TODO(Documentation)
      */
-    bool is_default_grpc_port(std::string &server_url);
+    bool is_default_grpc_port(std::string& server_url);
 
     /**
      * TODO(Documentation)

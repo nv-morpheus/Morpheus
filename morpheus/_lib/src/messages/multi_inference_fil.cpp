@@ -43,7 +43,7 @@ const TensorObject MultiInferenceFILMessage::get_input__0() const
     return this->get_input("input__0");
 }
 
-void MultiInferenceFILMessage::set_input__0(const TensorObject &input__0)
+void MultiInferenceFILMessage::set_input__0(const TensorObject& input__0)
 {
     this->set_input("input__0", input__0);
 }
@@ -53,10 +53,11 @@ const TensorObject MultiInferenceFILMessage::get_seq_ids() const
     return this->get_input("seq_ids");
 }
 
-void MultiInferenceFILMessage::set_seq_ids(const TensorObject &seq_ids)
+void MultiInferenceFILMessage::set_seq_ids(const TensorObject& seq_ids)
 {
     this->set_input("seq_ids", seq_ids);
 }
+
 /****** MultiInferenceFILMessageInterfaceProxy *************************/
 std::shared_ptr<MultiInferenceFILMessage> MultiInferenceFILMessageInterfaceProxy::init(
     std::shared_ptr<MessageMeta> meta,
@@ -70,22 +71,16 @@ std::shared_ptr<MultiInferenceFILMessage> MultiInferenceFILMessageInterfaceProxy
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
 }
 
-std::shared_ptr<morpheus::InferenceMemory> MultiInferenceFILMessageInterfaceProxy::memory(
-    MultiInferenceFILMessage &self)
+pybind11::object MultiInferenceFILMessageInterfaceProxy::input__0(MultiInferenceFILMessage& self)
 {
-    DCHECK(std::dynamic_pointer_cast<morpheus::InferenceMemory>(self.memory) != nullptr);
-    return std::static_pointer_cast<morpheus::InferenceMemory>(self.memory);
+    return get_tensor_property(self, "input__0");
 }
 
-std::size_t MultiInferenceFILMessageInterfaceProxy::offset(MultiInferenceFILMessage &self)
+pybind11::object MultiInferenceFILMessageInterfaceProxy::seq_ids(MultiInferenceFILMessage& self)
 {
-    return self.offset;
+    return get_tensor_property(self, "seq_ids");
 }
 
-std::size_t MultiInferenceFILMessageInterfaceProxy::count(MultiInferenceFILMessage &self)
-{
-    return self.count;
-}
 }  // namespace morpheus
 // Created by drobison on 3/17/22.
 //

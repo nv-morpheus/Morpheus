@@ -1,3 +1,4 @@
+#!/bin/bash
 # SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -13,29 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import dataclasses
-import typing
+# create a docker network for morpheus
+docker network inspect morpheus >/dev/null 2>&1 || docker network create morpheus
 
-import cupy as cp
+# create the parent conda folder so it's found when mounting
+mkdir -p ../.conda
 
-import morpheus._lib.messages as _messages
-from morpheus.messages.message_base import MessageData
-
-
-@dataclasses.dataclass
-class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
-    """
-    This is a base container class for data that will be used for inference stages. This class is designed to
-    hold generic tensor data in cupy arrays.
-
-    Parameters
-    ----------
-    count : int
-        Number of inference inputs.
-    inputs : typing.Dict[str, cupy.ndarray]
-        Inference inputs to model.
-
-    """
-    count: int
-
-    tensors: typing.Dict[str, cp.ndarray] = dataclasses.field(default_factory=dict, init=False)
+# create a config directory if it does not exist so it's found when mounting
+mkdir -p ../.config

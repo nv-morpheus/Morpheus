@@ -19,12 +19,13 @@
 
 #include "morpheus/messages/meta.hpp"
 
+#include <boost/fiber/future/future.hpp>
 #include <cudf/io/types.hpp>
 #include <librdkafka/rdkafkacpp.h>
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
+#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
@@ -105,7 +106,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
      * @param config_in : Configuration map contains Kafka consumer properties.
      * @return std::unique_ptr<RdKafka::Conf>
      */
-    std::unique_ptr<RdKafka::Conf> build_kafka_conf(const std::map<std::string, std::string> &config_in);
+    std::unique_ptr<RdKafka::Conf> build_kafka_conf(const std::map<std::string, std::string>& config_in);
 
     /**
      * @brief Creates Kafka consumer instance.
@@ -113,7 +114,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
      * @param rebalancer : Group rebalance callback for use with RdKafka::KafkaConsumer.
      * @return std::unique_ptr<RdKafka::KafkaConsumer>
      */
-    std::unique_ptr<RdKafka::KafkaConsumer> create_consumer(RdKafka::RebalanceCb &rebalancer);
+    std::unique_ptr<RdKafka::KafkaConsumer> create_consumer(RdKafka::RebalanceCb& rebalancer);
 
     /**
      * @brief Load messages from a buffer/file to a cuDF table.
@@ -121,7 +122,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
      * @param buffer : Reference of a messages buffer
      * @return cudf::io::table_with_metadata
      */
-    cudf::io::table_with_metadata load_table(const std::string &buffer);
+    cudf::io::table_with_metadata load_table(const std::string& buffer);
 
     /**
      * @brief This function combines JSON messages from Kafka, parses them, then loads them onto a MessageMeta.
@@ -131,7 +132,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
      * @return std::shared_ptr<morpheus::MessageMeta>
      */
     std::shared_ptr<morpheus::MessageMeta> process_batch(
-        std::vector<std::unique_ptr<RdKafka::Message>> &&message_batch);
+        std::vector<std::unique_ptr<RdKafka::Message>>&& message_batch);
 
     size_t m_max_batch_size{128};
     uint32_t m_batch_timeout_ms{100};
@@ -145,7 +146,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
     bool m_async_commits{true};
     size_t m_stop_after{0};
 
-    void *m_rebalancer;
+    void* m_rebalancer;
 };
 
 /****** KafkaSourceStageInferenceProxy**********************/
