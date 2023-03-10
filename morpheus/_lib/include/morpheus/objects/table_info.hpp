@@ -173,6 +173,10 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
 
     ~MutableTableInfo();
 
+    MutableTableInfo get_slice(cudf::size_type start,
+                               cudf::size_type stop,
+                               std::vector<std::string> column_names = {}) &&;
+
     /**
      * TODO(Documentation)
      */

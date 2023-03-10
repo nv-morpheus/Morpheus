@@ -41,6 +41,45 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
     offset: int
     count: int
 
+    required_tensors: typing.ClassVar[typing.List[str]] = []
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        if memory is None:
+            raise ValueError("Must define `memory` when creating {}".format(self.__class__.__name__))
+
+        # Use the meta count if not supplied
+        if (count == -1):
+            count = memory.count
+
+        # Check for valid offsets and counts
+        if offset < 0 or offset >= memory.count:
+            raise ValueError("Invalid offset value")
+        if count <= 0 or (offset + count > memory.count):
+            raise ValueError("Invalid count value")
+
+        self.memory = memory
+        self.offset = offset
+        self.count = count
+
+        # Call the base class last because the properties need to be initialized first
+        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
+
+        # Finally, check for the required tensors class attribute
+        if (hasattr(self.__class__, "required_tensors")):
+            for tensor_name in self.__class__.required_tensors:
+                if (not memory.has_tensor(tensor_name)):
+                    raise ValueError(
+                        f"`TensorMemory` object must have a '{tensor_name}' tensor to create `{self.__class__.__name__}`"
+                        .format(self.__class__.__name__))
+
     @property
     def tensors(self):
         """
@@ -56,7 +95,12 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         return {key: self.get_tensor(key) for key in tensors.keys()}
 
     def __getattr__(self, name: str) -> typing.Any:
-        return self._get_tensor_prop(name)
+        if ("memory" in self.__dict__ and self.memory.has_tensor(name)):
+            return self._get_tensor_prop(name)
+
+        if hasattr(super(), "__getattr__"):
+            return super().__getattr__(name)
+        raise AttributeError
 
     def get_tensor(self, name: str):
         """

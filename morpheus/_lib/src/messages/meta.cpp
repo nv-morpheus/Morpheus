@@ -187,12 +187,12 @@ SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
 
 TableInfo SlicedMessageMeta::get_info() const
 {
-    return this->m_data->get_info(m_start, m_stop, m_column_names);
+    return this->m_data->get_info().get_slice(m_start, m_stop, m_column_names);
 }
 
 MutableTableInfo SlicedMessageMeta::get_mutable_info() const
 {
-    return this->m_data->get_mutable_info(m_start, m_stop, m_column_names);
+    return this->m_data->get_mutable_info().get_slice(m_start, m_stop, m_column_names);
 }
 
 bool SlicedMessageMeta::has_unique_index() const

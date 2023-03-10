@@ -30,6 +30,21 @@ from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
 from utils import assert_path_exists
 from utils import create_df_with_dup_ids
+from utils import duplicate_df_index_rand
+
+
+def test_detecting_non_unique_indexes(config):
+
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), file_type=FileTypes.Auto)
+
+    # Set 2 ids equal to others
+    df = duplicate_df_index_rand(df, count=2)
+
+    meta = MessageMeta(df)
+
+    # When processing the dataframe, a warning should be generated when there are non-unique IDs
+    with pytest.warns(RuntimeWarning):
+        DeserializeStage.process_dataframe(meta, 5)
 
 
 @pytest.mark.slow

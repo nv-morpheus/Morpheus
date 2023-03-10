@@ -256,7 +256,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @param o : Offset into the metadata batch
      * @param c : Messages count
      */
-    MultiMessage(std::shared_ptr<MessageMeta> m, size_t o, size_t c);
+    MultiMessage(std::shared_ptr<MessageMeta> m, size_t offset = 0, size_t count = -1);
 
     std::shared_ptr<MessageMeta> meta;
     size_t mess_offset{0};

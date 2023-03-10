@@ -31,6 +31,7 @@
 #include <cudf/types.hpp>
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <pybind11/cast.h>
+#include <pybind11/detail/common.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -46,11 +47,30 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiMessage****************************************/
-MultiMessage::MultiMessage(std::shared_ptr<morpheus::MessageMeta> m, size_t o, size_t c) :
+MultiMessage::MultiMessage(std::shared_ptr<morpheus::MessageMeta> m, size_t offset, size_t count) :
   meta(std::move(m)),
-  mess_offset(o),
-  mess_count(c)
-{}
+  mess_offset(offset),
+  mess_count(count)
+{
+    // Default to using the count from the meta if it is unset
+    if (this->mess_count == -1)
+    {
+        this->mess_count = this->meta->count();
+    }
+
+    if (!meta)
+    {
+        throw std::invalid_argument("Must define `meta` when creating MultiMessage");
+    }
+    if (this->mess_offset < 0 || this->mess_offset >= this->meta->count())
+    {
+        throw std::invalid_argument("Invalid message offset value");
+    }
+    if (this->mess_count <= 0 || (this->mess_offset + this->mess_count > this->meta->count()))
+    {
+        throw std::invalid_argument("Invalid message count value");
+    }
+}
 
 TableInfo MultiMessage::get_meta()
 {
@@ -220,13 +240,20 @@ pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self)
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::string col_name)
 {
-    // Need to release the GIL before calling `get_meta()`
-    pybind11::gil_scoped_release no_gil;
+    pybind11::object py_table;
 
-    // Get the column and convert to cudf
-    auto info = self.get_meta(col_name);
+    {
+        // Need to release the GIL before calling `get_meta()`
+        pybind11::gil_scoped_release no_gil;
 
-    return info.copy_to_py_object();
+        // Get the column and convert to cudf
+        auto info = self.get_meta(col_name);
+
+        py_table = info.copy_to_py_object();
+    }
+
+    // Now convert it to a series
+    return py_table.attr("squeeze")();
 }
 
 pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::vector<std::string> columns)

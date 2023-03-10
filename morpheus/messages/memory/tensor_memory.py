@@ -58,6 +58,9 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
             raise ValueError(
                 f"The number rows in tensor {tensor.shape[0]} does not match {class_name}.count of {self.count}")
 
+    def has_tensor(self, name: str):
+        return name in self._tensors
+
     def get_tensors(self):
         """
         Get the tensors contained by this instance. It is important to note that when C++ execution is enabled the

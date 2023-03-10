@@ -17,6 +17,8 @@ import dataclasses
 import typing
 
 import morpheus._lib.messages as _messages
+from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
@@ -25,6 +27,22 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
     """
     This class contains several inference responses as well as the cooresponding message metadata.
     """
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
 
     @property
     def outputs(self):
@@ -134,6 +152,24 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
     array. Helps ensure the proper outputs are set and eases debugging.
     """
 
+    required_tensors: typing.ClassVar[typing.List[str]] = ["probs"]
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
+
     @property
     def probs(self):
         """
@@ -157,6 +193,28 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
     """
 
     user_id: str = None
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1,
+                 user_id: str = None):
+
+        if (user_id is None):
+            raise ValueError("Must define `user_id` when creating {}".format(self.__class__.__name__))
+
+        self.user_id = user_id
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
 
     def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
         """

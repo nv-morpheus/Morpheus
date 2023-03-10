@@ -207,8 +207,8 @@ PYBIND11_MODULE(messages, m)
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(m, "MultiMessage")
         .def(py::init<>(&MultiMessageInterfaceProxy::init),
              py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"))
+             py::arg("mess_offset") = 0,
+             py::arg("mess_count")  = -1)
         .def_property_readonly("meta", &MultiMessageInterfaceProxy::meta)
         .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
         .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)

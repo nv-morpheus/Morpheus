@@ -16,11 +16,13 @@
 import collections
 import json
 import os
+import random
 import time
 import typing
 
 import cupy as cp
 import mrc
+import numpy as np
 import pandas as pd
 
 import morpheus
@@ -287,6 +289,27 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
 
     # Finally, actually assert on the final try
     assert os.path.exists(filename)
+
+
+def duplicate_df_index(df: pd.DataFrame, replace_ids: typing.Dict[int, int]):
+
+    # Return a new dataframe where we replace some index values with others
+    return df.rename(index=replace_ids)
+
+
+def duplicate_df_index_rand(df: pd.DataFrame, count=1):
+
+    assert count * 2 <= len(df), "Count must be less than half the number of rows"
+
+    # Sample 2x the count. One for the old ID and one for the new ID. Dont want duplicates so we use random.sample
+    # (otherwise you could get less duplicates than requested if two IDs just swap)
+    dup_ids = random.sample(df.index.values.tolist(), 2 * count)
+
+    # Create a dictionary of old ID to new ID
+    replace_dict = {x: y for x, y in zip(dup_ids[:count], dup_ids[count:])}
+
+    # Return a new dataframe where we replace some index values with others
+    return duplicate_df_index(df, replace_dict)
 
 
 def create_df_with_dup_ids(tmp_path: str, dup_row=8) -> str:

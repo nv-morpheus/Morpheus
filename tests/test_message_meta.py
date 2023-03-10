@@ -24,29 +24,62 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
 from utils import TEST_DIRS
 from utils import create_df_with_dup_ids
+from utils import duplicate_df_index_rand
 
 
-@pytest.mark.parametrize("dup_row", [0, 1, 8, 18, 19])  # test for dups at the front, middle and the tail
-def test_has_unique_index(config, tmp_path, dup_row):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
-    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+def test_count(config):
+
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
+                         file_type=FileTypes.Auto,
+                         df_type='cudf')
+
+    meta = MessageMeta(df)
+
+    assert meta.count == len(df)
+
+
+def test_count_with_non_unique(config):
+
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
+                         file_type=FileTypes.Auto,
+                         df_type='cudf')
+
+    df = duplicate_df_index_rand(df, count=2)
+
+    meta = MessageMeta(df)
+
+    assert meta.count == len(df)
+
+
+# @pytest.mark.parametrize("dup_row", [0, 1, 8, 18, 19])  # test for dups at the front, middle and the tail
+def test_has_unique_index(config):
+
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
+                         file_type=FileTypes.Auto,
+                         df_type='cudf')
+
     assert df.index.is_unique
+
     meta = MessageMeta(df)
     assert meta.has_unique_index()
 
-    dup_file = create_df_with_dup_ids(tmp_path, dup_row=dup_row)
-
-    dup_df = read_file_to_df(dup_file, file_type=FileTypes.Auto, df_type='cudf')
+    dup_df = duplicate_df_index_rand(df, count=2)
     assert not dup_df.index.is_unique
 
     meta = MessageMeta(dup_df)
     assert not meta.has_unique_index()
 
 
-@pytest.mark.parametrize("dup_row", [0, 1, 8, 18, 19])
-def test_replace_non_unique_index(config, tmp_path, dup_row):
-    dup_file = create_df_with_dup_ids(tmp_path, dup_row=dup_row)
-    meta = MessageMeta(read_file_to_df(dup_file, df_type='cudf'))
+# @pytest.mark.parametrize("dup_row", [0, 1, 8, 18, 19])
+def test_replace_non_unique_index(config):
+
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
+                         file_type=FileTypes.Auto,
+                         df_type='cudf')
+
+    dup_df = duplicate_df_index_rand(df, count=2)
+
+    meta = MessageMeta(dup_df)
     assert not meta.has_unique_index()
 
     meta.replace_non_unique_index()

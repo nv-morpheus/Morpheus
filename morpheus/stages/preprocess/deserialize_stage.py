@@ -15,6 +15,7 @@
 
 import logging
 import typing
+import warnings
 from functools import partial
 
 import mrc
@@ -86,6 +87,8 @@ class DeserializeStage(MultiMessageStage):
 
         """
         if (not x.has_unique_index()):
+            warnings.warn("Incoming MessageMeta does not have unique indexes. Updating index to be unique",
+                          RuntimeWarning)
             x.replace_non_unique_index()
 
         full_message = MultiMessage(meta=x, mess_offset=0, mess_count=x.count)

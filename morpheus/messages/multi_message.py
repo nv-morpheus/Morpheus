@@ -46,6 +46,25 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
     mess_offset: int
     mess_count: int
 
+    def __init__(self, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1):
+
+        if meta is None:
+            raise ValueError("Must define `meta` when creating MultiMessage")
+
+        # Use the meta count if not supplied
+        if (mess_count == -1):
+            mess_count = meta.count
+
+        # Check for valid offsets and counts
+        if mess_offset < 0 or mess_offset >= meta.count:
+            raise ValueError("Invalid message offset value")
+        if mess_count <= 0 or (mess_offset + mess_count > meta.count):
+            raise ValueError("Invalid message count value")
+
+        self.meta = meta
+        self.mess_offset = mess_offset
+        self.mess_count = mess_count
+
     @property
     def id_col(self):
         """
@@ -87,6 +106,19 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         return self.get_meta_list("timestamp")
 
+    def _get_indexers(self, columns: typing.Union[None, str, typing.List[str]] = None):
+        row_indexer = slice(self.mess_offset, self.mess_offset + self.mess_count, 1)
+
+        if (columns is None):
+            columns = self.meta._df.columns.to_list()
+        elif (isinstance(columns, str)):
+            # Convert a single string into a list so all versions return tables, not series
+            columns = [columns]
+
+        column_indexer = self.meta._df.columns.get_indexer_for(columns)
+
+        return row_indexer, column_indexer
+
     def get_meta(self, columns: typing.Union[None, str, typing.List[str]] = None):
         """
         Return column values from `morpheus.pipeline.messages.MessageMeta.df`.
@@ -104,19 +136,16 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        if (self.meta.has_unique_index()):
-            idx = self.meta._df.index[self.mess_offset:self.mess_offset + self.mess_count]
-        else:
-            idx = self._ranges_to_mask(self.meta._df, [(self.mess_offset, self.mess_offset + self.mess_count)])
+        row_indexer, column_indexer = self._get_indexers(columns=columns)
 
-        if (isinstance(idx, cudf.RangeIndex)):
-            idx = slice(idx.start, idx.stop - 1, idx.step)
+        if (-1 in column_indexer):
+            missing_columns = [columns[i] for i, index_value in enumerate(column_indexer) if index_value == -1]
+            raise KeyError("Requested columns {} does not exist in the dataframe".format(missing_columns))
+        elif (isinstance(columns, str) and len(column_indexer) == 1):
+            # Make sure to return a series for a single column
+            column_indexer = column_indexer[0]
 
-        if (columns is None):
-            return self.meta._df.loc[idx, :]
-        else:
-            # If its a str or list, this is the same
-            return self.meta._df.loc[idx, columns]
+        return self.meta._df.iloc[row_indexer, column_indexer]
 
     def get_meta_list(self, col_name: str = None):
         """
@@ -149,18 +178,31 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             `Series` or `Dataframe` is passed, rows will be matched by index.
 
         """
-        with self.meta.mutable_dataframe() as df:
-            if (df.index.is_unique):
-                idx = self.meta._df.index[self.mess_offset:self.mess_offset + self.mess_count]
-            else:
-                idx = self._ranges_to_mask(df, [(self.mess_offset, self.mess_offset + self.mess_count)])
 
-            if (columns is None):
-                # Set all columns
-                df.loc[idx, :] = value
+        # First try to set the values on just our slice if the columns exist
+        row_indexer, column_indexer = self._get_indexers(columns=columns)
+
+        # Get exclusive access to the dataframe
+        with self.meta.mutable_dataframe() as df:
+            # Check to see if we are adding a column. If so, we need to use df.loc instead of df.iloc
+            if (-1 not in column_indexer):
+
+                # If we only have one column, convert it to a series (broadcasts work with more types on a series)
+                if (len(column_indexer) == 1):
+                    column_indexer = column_indexer[0]
+
+                # Now update the slice
+                df.iloc[row_indexer, column_indexer] = value
+
             else:
-                # If its a single column or list of columns, this is the same
-                df.loc[idx, columns] = value
+                # Need to determine the boolean mask to use indexes with df.loc
+                row_mask = self._ranges_to_mask(self.meta._df, [(self.mess_offset, self.mess_offset + self.mess_count)])
+
+                # Columns should never be empty if we get here
+                assert columns is not None
+
+                # Now set the slice
+                df.loc[row_mask, columns] = value
 
     def get_slice(self, start, stop):
         """
@@ -180,7 +222,16 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             A new `MultiInferenceMessage` with sliced offset and count.
 
         """
-        return MultiMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
+
+        offset = self.mess_offset + start
+        count = stop - start
+
+        if (start < 0 or start >= self.mess_count):
+            raise IndexError("Invalid `start` argument")
+        if (stop <= start or count > self.mess_count):
+            raise IndexError("Invalid `stop` argument")
+
+        return MultiMessage(meta=self.meta, mess_offset=offset, mess_count=count)
 
     def _ranges_to_mask(self, df, ranges):
         if isinstance(df, cudf.DataFrame):

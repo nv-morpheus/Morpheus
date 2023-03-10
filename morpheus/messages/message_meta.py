@@ -117,7 +117,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         -------
         bool
         """
-        return self._df.index.is_unique
+        return self._df.index.is_monotonic_increasing
 
     def replace_non_unique_index(self):
         """

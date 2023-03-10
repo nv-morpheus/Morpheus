@@ -14,8 +14,11 @@
 # limitations under the License.
 
 import dataclasses
+import typing
 
 import morpheus._lib.messages as _messages
+from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
@@ -32,6 +35,22 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
     `mess_count` refer to the offset and count in the message metadata batch and `offset` and `count` index
     into the inference batch data.
     """
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
 
     @property
     def inputs(self):
@@ -108,6 +127,24 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
     proper inputs are set and eases debugging.
     """
 
+    required_tensors: typing.ClassVar[typing.List[str]] = ["input_ids", "input_mask", "seq_ids"]
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
+
     @property
     def input_ids(self):
         """
@@ -158,6 +195,24 @@ class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
     A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
     proper inputs are set and eases debugging.
     """
+
+    required_tensors: typing.ClassVar[typing.List[str]] = ["input__0", "seq_ids"]
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
 
     @property
     def input__0(self):

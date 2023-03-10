@@ -23,6 +23,7 @@
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <glog/logging.h>
+#include <pybind11/detail/common.h>
 #include <pybind11/gil.h>       // for gil_scoped_acquire
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/stl.h>       // IWYU pragma: keep
@@ -97,7 +98,7 @@ TableInfoData TableInfoData::get_slice(cudf::size_type start,
 
                            if (found_col == this->column_names.end())
                            {
-                               throw std::runtime_error("Unknown column: " + c);
+                               throw pybind11::key_error("Unknown column: " + c);
                            }
 
                            // Add the found column to the metadata
@@ -253,6 +254,14 @@ MutableTableInfo::~MutableTableInfo()
     {
         LOG(ERROR) << "Checked out python object was not returned before MutableTableInfo went out of scope";
     }
+}
+
+MutableTableInfo MutableTableInfo::get_slice(cudf::size_type start,
+                                             cudf::size_type stop,
+                                             std::vector<std::string> column_names) &&
+{
+    // Create a new Table info, (moving the unique_lock)
+    return {this->get_parent(), std::move(m_lock), this->get_data().get_slice(start, stop, column_names)};
 }
 
 void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
