@@ -77,6 +77,19 @@ class CachedUserWindow:
 
         return True
 
+    def flush(self):
+        self.batch_count = 0
+        self.count = 0
+        self._df = pd.DataFrame()
+        self._trained_rows = pd.Series()
+        self.last_train_batch = 0
+        self.last_train_count = 0
+        self.last_train_epoch = None
+        self.max_epoch = datetime(1970, 1, 1, tzinfo=timezone(timedelta(hours=0)))
+        self.min_epoch = datetime(1970, 1, 1, tzinfo=timezone(timedelta(hours=0)))
+        self.pending_batch_count = 0
+        self.total_count = 0
+
     def get_spanning_df(self, max_history) -> pd.DataFrame:
         return self.get_train_df(max_history)
 

@@ -51,6 +51,9 @@ def dfp_rolling_window(builder: mrc.Builder):
         - aggregation_span: The span of time to aggregate over
         - cache_dir: Directory to cache the rolling window data
         - cache_to_disk: Whether to cache the rolling window data to disk
+        - cache_mode: The cache mode to use 'batch' or 'aggregate'
+            aggregate: Cache the entire rolling window
+            batch: Cache until batch criteria is met and then flush
         - timestamp_column_name: Name of the timestamp column
         - trigger_on_min_history: Minimum number of rows to trigger the rolling window
         - trigger_on_min_increment: Minimum number of rows to trigger the rolling window
@@ -60,14 +63,18 @@ def dfp_rolling_window(builder: mrc.Builder):
 
     timestamp_column_name = config.get("timestamp_column_name", "timestamp")
 
+    cache_mode = config.get("cache_mode", "batch")
     min_history = config.get("trigger_on_min_history", 1)
     min_increment = config.get("trigger_on_min_increment", 0)
-    aggregation_span = config.get("aggregation_span", "360d")
+    aggregation_span = config.get("aggregation_span", "60d")
 
     cache_to_disk = config.get("cache_to_disk", False)
-    cache_dir = config.get("cache_dir", None)
-    if (cache_dir is not None):
-        cache_dir = os.path.join(cache_dir, "rolling-user-data")
+    cache_dir = config.get("cache_dir")
+    if (cache_dir is None):
+        cache_dir = "./.cache"
+        logger.warning("No cache directory specified, using default: %s", cache_dir)
+
+    cache_dir = os.path.join(cache_dir, "rolling-user-data")
 
     user_cache_map: typing.Dict[str, CachedUserWindow] = {}
 
@@ -98,7 +105,7 @@ def dfp_rolling_window(builder: mrc.Builder):
             incoming_df[timestamp_column_name] = pd.to_datetime(incoming_df[timestamp_column_name], utc=True)
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):
-                # Then our incoming dataframe wasnt even covered by the window. Generate warning
+                # Then our incoming dataframe wasn't even covered by the window. Generate warning
                 logger.warning(("Incoming data preceeded existing history. "
                                 "Consider deleting the rolling window cache and restarting."))
                 return None
@@ -112,33 +119,36 @@ def dfp_rolling_window(builder: mrc.Builder):
                 logger.debug("Not enough data to train")
                 return None
 
-            # We have enough data, but has enough time since the last training taken place?
-            if (user_cache.total_count - user_cache.last_train_count < min_increment):
-                logger.debug("Elapsed time since last train is too short")
-                return None
+            if (cache_mode == "batch"):
+                df_window = user_cache.get_spanning_df(max_history=None)
+                user_cache.flush()
+            else:
+                # We have enough data, but has enough time since the last training taken place?
+                if (user_cache.total_count - user_cache.last_train_count < min_increment):
+                    logger.debug("Elapsed time since last train is too short")
+                    return None
 
-            # Obtain a dataframe spanning the aggregation window
-            df_window = user_cache.get_spanning_df(max_history=aggregation_span)
+                # Obtain a dataframe spanning the aggregation window
+                df_window = user_cache.get_spanning_df(max_history=aggregation_span)
 
-            # Hash the incoming data rows to find a match
-            incoming_hash = pd.util.hash_pandas_object(incoming_df.iloc[[0, -1]], index=False)
+                # Hash the incoming data rows to find a match
+                incoming_hash = pd.util.hash_pandas_object(incoming_df.iloc[[0, -1]], index=False)
 
-            # Find the index of the first and last row
-            match = df_window[df_window["_row_hash"] == incoming_hash.iloc[0]]
+                # Find the index of the first and last row
+                match = df_window[df_window["_row_hash"] == incoming_hash.iloc[0]]
 
-            if (len(match) == 0):
-                raise RuntimeError("Invalid rolling window")
+                if (len(match) == 0):
+                    raise RuntimeError("Invalid rolling window")
 
-            first_row_idx = match.index[0].item()
-            last_row_idx = df_window[df_window["_row_hash"] == incoming_hash.iloc[-1]].index[-1].item()
+                first_row_idx = match.index[0].item()
+                last_row_idx = df_window[df_window["_row_hash"] == incoming_hash.iloc[-1]].index[-1].item()
 
-            found_count = (last_row_idx - first_row_idx) + 1
+                found_count = (last_row_idx - first_row_idx) + 1
 
-            if (found_count != len(incoming_df)):
-                raise RuntimeError(("Overlapping rolling history detected. "
-                                    "Rolling history can only be used with non-overlapping batches"))
+                if (found_count != len(incoming_df)):
+                    raise RuntimeError(("Overlapping rolling history detected. "
+                                        "Rolling history can only be used with non-overlapping batches"))
 
-            # TODO(Devin): Optimize
             return MessageMeta(cudf.from_pandas(df_window))
 
     def on_data(control_message: MessageControl):
@@ -159,17 +169,18 @@ def dfp_rolling_window(builder: mrc.Builder):
                 result = try_build_window(payload, user_id)  # Return a MessageMeta
 
                 if (result is not None):
-                    log_info.set_log(
-                        ("Rolling window complete for %s in {duration:0.2f} ms. "
-                         "Input: %s rows from %s to %s. Output: %s rows from %s to %s"),
-                        user_id,
-                        len(payload.df),
-                        payload.df[timestamp_column_name].min(),
-                        payload.df[timestamp_column_name].max(),
-                        result.count,
-                        result.df[timestamp_column_name].min(),
-                        result.df[timestamp_column_name].max(),
-                    )
+                    pass
+                    # log_info.set_log(
+                    #    ("Rolling window complete for %s in {duration:0.2f} ms. "
+                    #     "Input: %s rows from %s to %s. Output: %s rows from %s to %s"),
+                    #    user_id,
+                    #    len(payload.df),
+                    #    payload.df[timestamp_column_name].min(),
+                    #    payload.df[timestamp_column_name].max(),
+                    #    result.count,
+                    #    result.df[timestamp_column_name].min(),
+                    #    result.df[timestamp_column_name].max(),
+                    # )
                 else:
                     # Result is None indicates that we don't have enough data to build payload for the event
                     # CM is discarded here

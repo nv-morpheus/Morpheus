@@ -143,7 +143,6 @@ def dfp_split_users(builder: mrc.Builder):
         control_messages = None  # for readability
         mm = control_message.payload()
         with mm.mutable_dataframe() as dfm:
-            # df = control_message.payload().df
             with log_time(logger.debug) as log_info:
 
                 if (isinstance(dfm, cudf.DataFrame)):

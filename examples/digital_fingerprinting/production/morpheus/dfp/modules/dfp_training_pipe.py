@@ -76,15 +76,16 @@ def dfp_training_pipe(builder: mrc.Builder):
         "user_splitting_options": config.get("user_splitting_options", {}),
     }
 
-    stream_aggregation_options = config.get("stream_aggregation_options", {
+    stream_aggregation_options = config.get("stream_aggregation_options", {})
+    stream_aggregation_options = merge_dictionaries(stream_aggregation_options, {
         "cache_dir": cache_dir,
         "timestamp_column_name": ts_column_name,
     })
 
-    data_prep_options = config.get("preprocessing_options", {
+    data_prep_options = config.get("preprocessing_options", {})
+    data_prep_options = merge_dictionaries(data_prep_options, {
         "timestamp_column_name": ts_column_name,
     })
-
     dfencoder_options = config.get("dfencoder_options", {})
 
     mlflow_writer_options = config.get("mlflow_writer_options", {
@@ -95,6 +96,7 @@ def dfp_training_pipe(builder: mrc.Builder):
     preproc_conf = merge_dictionaries(preproc_options, preproc_defaults)
 
     stream_aggregation_defaults = {
+        "cache_mode": "cache",
         "trigger_on_min_history": 300,
         "trigger_on_min_increment": 300,
     }
