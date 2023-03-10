@@ -149,3 +149,17 @@ def test_gauss_rank_scaler_fit_transform(gauss_rank_scaler, tensor):
     results = gauss_rank_scaler.fit_transform(tensor)
     expected = np.array([-5.2, 0.0, 5.2])
     assert results.round(2).tolist() == expected.tolist(), f"{results} != {expected}"
+
+
+def test_null_scaler(tensor):
+    orig = tensor.to(dtype=torch.float32, copy=True)
+    ns = scalers.NullScaler()
+    ns.fit(tensor)
+
+    # Verify it does nothing
+    assert ns.transform(tensor) is tensor
+    assert ns.inverse_transform(tensor) is tensor
+    assert ns.fit_transform(tensor) is tensor
+
+    # After all that the values should be the same
+    assert torch.equal(tensor, orig), f"{tensor} != {orig}"
