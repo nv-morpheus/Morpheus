@@ -21,6 +21,14 @@ import torch
 from morpheus.models.dfencoder import scalers
 
 
+@pytest.fixture(scope="function")
+def standard_scaler():
+    scaler = scalers.StandardScaler()
+    tensor = torch.tensor([4.4, 5.3, 6.5])
+    scaler.fit(tensor)
+    yield scaler
+
+
 def test_ensure_float_type():
     result = scalers.ensure_float_type(np.ones(10, np.int32))
     assert result.dtype == np.float64
@@ -30,3 +38,31 @@ def test_ensure_float_type():
 
     with pytest.raises(ValueError):
         scalers.ensure_float_type([1, 2, 3])
+
+
+def test_standard_scaler_fit(standard_scaler):
+    assert round(standard_scaler.mean, 2) == 5.4
+    assert round(standard_scaler.std, 2) == 1.05
+
+    # Test corner case where all values are the same
+    standard_scaler.fit(torch.ones(5, dtype=torch.float64))
+    assert standard_scaler.mean == 1
+    assert standard_scaler.std == 1.0
+
+
+def test_standard_scaler_transform(standard_scaler):
+    results = standard_scaler.transform(torch.tensor([7.4, 8.3, 9.5]))
+    expected = torch.tensor([1.9, 2.75, 3.89])
+    assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
+
+
+def test_standard_scaler_inverse_transform(standard_scaler):
+    results = standard_scaler.inverse_transform(torch.tensor([7.4, 8.3, 9.5]))
+    expected = torch.tensor([13.2, 14.14, 15.41])
+    assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
+
+
+def test_standard_scaler_inverse_transform(standard_scaler):
+    results = standard_scaler.fit_transform(torch.tensor([7.4, 8.3, 9.5]))
+    expected = torch.tensor([-0.95, -0.09, 1.04])
+    assert torch.equal(torch.round(results, decimals=2), expected), f"{results} != {expected}"
