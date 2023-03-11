@@ -286,7 +286,7 @@ def reload_modules(request: pytest.FixtureRequest):
             importlib.reload(mod)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function")
 def manual_seed():
     from morpheus.utils import seed as seed_utils
     seed_utils.manual_seed(42)
