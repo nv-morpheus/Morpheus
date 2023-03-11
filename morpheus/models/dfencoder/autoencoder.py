@@ -97,6 +97,8 @@ class CompleteLayer(torch.nn.Module):
         linear = torch.nn.Linear(in_dim, out_dim)
         self.layers.append(linear)
         self.add_module('linear_layer', linear)
+
+        self.activation = activation
         if activation is not None:
             act = self.interpret_activation(activation)
             self.layers.append(act)
