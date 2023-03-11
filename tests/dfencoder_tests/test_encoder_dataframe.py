@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import pandas as pd
+import pytest
 
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 
@@ -25,6 +26,7 @@ def test_constructor():
     assert df.values.tolist() == [[1, 2, 3]]
 
 
+@pytest.mark.usefixtures("manual_seed")
 def test_swap():
     values = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]]
 
