@@ -30,3 +30,65 @@ def test_ohe():
     results = autoencoder.ohe(tensor.to("cuda", copy=True), 4, device="cuda")
     assert results.device.type == "cuda"
     assert torch.equal(results, expected.to("cuda", copy=True)), f"{results} != {expected}"
+
+
+def test_compute_embedding_size():
+    for (input, expected) in [(0, 0), (5, 4), (20, 9), (40000, 600)]:
+        assert autoencoder.compute_embedding_size(input) == expected
+
+
+def test_complete_layer_constructor():
+    cc = autoencoder.CompleteLayer(4, 5)
+    assert len(cc.layers) == 1
+    assert isinstance(cc.layers[0], torch.nn.Linear)
+    assert cc.layers[0].in_features == 4
+    assert cc.layers[0].out_features == 5
+
+    cc = autoencoder.CompleteLayer(4, 5, activation='tanh')
+    assert len(cc.layers) == 2
+    assert cc.layers[1] is torch.tanh
+
+    cc = autoencoder.CompleteLayer(4, 5, dropout=0.2)
+    assert len(cc.layers) == 2
+    assert isinstance(cc.layers[1], torch.nn.Dropout)
+    assert cc.layers[1].p == 0.2
+
+    cc = autoencoder.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
+    assert len(cc.layers) == 3
+    assert isinstance(cc.layers[0], torch.nn.Linear)
+    assert cc.layers[0].in_features == 6
+    assert cc.layers[0].out_features == 11
+    assert cc.layers[1] is torch.sigmoid
+    assert isinstance(cc.layers[2], torch.nn.Dropout)
+    assert cc.layers[2].p == 0.3
+
+    # Test for bad activation, this really does raise the base Exception class.
+    with pytest.raises(Exception):
+        autoencoder.CompleteLayer(4, 5, activation="does_not_exist")
+
+
+def test_complete_layer_interpret_activation():
+    cc = autoencoder.CompleteLayer(4, 5)
+    assert cc.interpret_activation('elu') is torch.nn.functional.elu
+
+    # Test for bad activation, this really does raise the base Exception class.
+    with pytest.raises(Exception):
+        cc.interpret_activation()
+
+    with pytest.raises(Exception):
+        cc.interpret_activation("does_not_exist")
+
+    cc = autoencoder.CompleteLayer(6, 11, activation='sigmoid')
+    cc.interpret_activation() is torch.sigmoid
+
+
+@pytest.mark.usefixtures("manual_seed")
+def test_complete_layer_forward():
+    cc = autoencoder.CompleteLayer(3, 5, activation='tanh', dropout=0.2)
+    t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
+    results = cc.forward(t)
+    expected = torch.tensor([[0.9029, 0.9877, 0.0000, 0.0000, 1.1453], [1.2464, 1.2372, 1.2485, 1.0397, 1.2490],
+                             [1.2500, 1.2494, 1.2500, 1.1771, 1.2500], [1.2500, 0.0000, 1.2500, 1.2257, 1.2500]],
+                            dtype=torch.float32)
+
+    assert torch.equal(torch.round(results, decimals=4), expected), f"{results} != {expected}"
