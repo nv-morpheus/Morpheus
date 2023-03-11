@@ -18,6 +18,7 @@ import pytest
 import torch
 
 from morpheus.models.dfencoder import autoencoder
+from morpheus.models.dfencoder import scalers
 
 
 def test_ohe():
@@ -61,10 +62,7 @@ def test_complete_layer_constructor():
     assert cc.layers[1] is torch.sigmoid
     assert isinstance(cc.layers[2], torch.nn.Dropout)
     assert cc.layers[2].p == 0.3
-
-    # Test for bad activation, this really does raise the base Exception class.
-    with pytest.raises(Exception):
-        autoencoder.CompleteLayer(4, 5, activation="does_not_exist")
+from morpheus.models.dfencoder import scalers_not_exist")
 
 
 def test_complete_layer_interpret_activation():
@@ -92,3 +90,9 @@ def test_complete_layer_forward():
                             dtype=torch.float32)
 
     assert torch.equal(torch.round(results, decimals=4), expected), f"{results} != {expected}"
+
+
+def test_auto_encoder_constructor():
+    ae = autoencoder.AutoEncoder()
+    assert ae.device.type == 'cuda'
+    assert isinstance(ae.loss_scaler, scalers.StandardScaler)
