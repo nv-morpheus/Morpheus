@@ -8,19 +8,23 @@ from hil_app.kafka_helper import publish_message
 
 from . import app
 
-logger = logging.getLogger(__name__)
+logging.basicConfig()
+logger = logging.getLogger("logger")
 
 
 @app.route('/', methods=["GET", "POST"])
 def submit_messages():
+
     if request.method == "POST":
-        control_message = request.form.get("control_message")
-        logger.error(control_message)
-        publish_message(control_message)
+        control_messages_json = request.form.get("control-messages-json")
+        publish_message(control_messages_json)
         data = {
-            "Data": "Successfully published task to kafka topic.",
+            "status": "Successfully published task to kafka topic.",
+            "status_code": 200,
+            "control_messages": json.loads(control_messages_json)
         }
-        return jsonify(data)
+        data = json.dumps(data, indent=4)
+        return data
 
     if request.method == "GET":
         return render_template("home.html")

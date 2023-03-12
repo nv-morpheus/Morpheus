@@ -35,7 +35,11 @@
             var key = metadataItem.find('input[name="metadata-key"]').val();
             var dataType = metadataItem.find('select[name="metadata-data-type"]').val();
             var value = metadataItem.find('input[name="metadata-value"]').val();
-            metadataJson[key] = { "type": dataType, "value": value };
+
+            if (dataType === "text-array")
+                  value = value.split(",");
+
+            metadataJson[key] = value;
          });
 
          var tasksContainer = input.find('.tasks-container');
@@ -54,7 +58,11 @@
             var key = property.find('input[name="property-key"]').val();
             var dataType = property.find('select[name="property-data-type"]').val();
             var value = property.find('input[name="property-value"]').val();
-            propertiesJson[key] = { "type": dataType, "value": value };
+
+            if (dataType === "text-array")
+               value = value.split(",");
+
+            propertiesJson[key] = value;
             });
 
             tasksJson.push({ "type": taskType, "properties": propertiesJson });
@@ -66,7 +74,7 @@
       });
 
       var jsonString = JSON.stringify(jsonOutput, null, 2);
-      $('#json-output').val(jsonString);
+      $('#control-messages-json').val(jsonString);
       }
 
 
@@ -88,7 +96,7 @@
               <!-- Tasks will be dynamically added here -->
             </div>
             <button type="button" class="add-task-btn">Add Task</button>
-            <button type="button" class="remove-input-btn">Remove Input</button>
+            <button type="button" class="remove-input-btn">Remove Control Message</button>
           </div>`;
           $("#inputs-container").append(inputHtml);
         });
@@ -128,7 +136,7 @@
             </select>
             <label>Value:</label>
             <input type="text" name="property-value">
-            <button type="button" class="remove-property-btn">Remove Property</button>
+            <button type="button" class="remove-property-btn">Remove</button>
           </div>`;
           $(this).siblings(".properties-container").append(propertyHtml);
         });
@@ -148,7 +156,7 @@
             </select>
             <label>Value:</label>
             <input type="text" name="metadata-value">
-            <button type="button" class="remove-metadata-btn">Remove Metadata</button>
+            <button type="button" class="remove-metadata-btn">Remove</button>
           </div>`;
           $(this).siblings(".metadata-container").append(metadataHtml);
         });
@@ -184,11 +192,11 @@
       <div id="inputs-container">
         <!-- Inputs will be dynamically added here -->
       </div>
-      <button type="button" id="add-input-btn">Add Input</button>
+      <button type="button" id="add-input-btn">Add Control Message</button>
       <div class="btn-block">
           <button id="submit" href="/" >Submit</button>
       </div>
-      <input type="hidden" id="json-output" name="json-output"></input>
+      <input type="hidden" id="control-messages-json" name="control-messages-json"></input>
     </form>
   </body>
   </html>
