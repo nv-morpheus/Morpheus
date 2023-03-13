@@ -22,7 +22,6 @@
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
