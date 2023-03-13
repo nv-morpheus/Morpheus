@@ -30,7 +30,7 @@ import gitutils  # noqa: E402
 
 FilesToCheck = [
     # Get all of these extensions and templates (*.in)
-    re.compile(r"[.](cmake|cpp|cc|cu|cuh|h|hpp|md|rst|sh|pxd|py|pyx|yml|yaml)(\.in)?$"),
+    re.compile(r"[.](cmake|cpp|cc|cu|cuh|h|hpp|sh|pxd|py|pyx|yml|yaml)(\.in)?$"),
     # And files with a particular file/extension combo
     re.compile(r"CMakeLists[.]txt$"),
     re.compile(r"setup[.]cfg$"),
