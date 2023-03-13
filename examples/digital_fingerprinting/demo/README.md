@@ -32,5 +32,6 @@ bash start.sh
 Access URL
 ```
 http://localhost:3000/training
+http://localhost:3000
 ```
 
