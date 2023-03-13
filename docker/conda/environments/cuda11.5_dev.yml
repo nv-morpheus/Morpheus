@@ -57,6 +57,9 @@ dependencies:
     - gxx_linux-64=11.2
     - include-what-you-use=0.18
     - isort
+    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+    - libcusolver<=11.4.1.48
+    - libcusparse<12
     - librdkafka=1.7.0
     - mlflow>1.29,<2
     - mrc=23.03
