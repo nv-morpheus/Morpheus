@@ -62,7 +62,7 @@ class PreprocessNLPStage
      *
      * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
      * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
-     * @param sequence_length : Sequence Length to use (We add to special tokens for ner classification job).
+     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
      * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
      * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
      * max_length is smaller than generated tokens.
@@ -111,7 +111,7 @@ struct PreprocessNLPStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
      * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
-     * @param sequence_length : Sequence Length to use (We add to special tokens for ner classification job).
+     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
      * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
      * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
      * max_length is smaller than generated tokens.

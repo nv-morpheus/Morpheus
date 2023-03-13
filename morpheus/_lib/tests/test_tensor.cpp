@@ -97,8 +97,8 @@ TEST_F(TestTensor, AsType)
 
     MRC_CHECK_CUDA(cudaMemcpy(float_buffer->data(), float_vec.data(), float_buffer->size(), cudaMemcpyHostToDevice));
 
-    std::vector<TensorIndex> shape{4, 2};
-    std::vector<TensorIndex> stride{1, 4};
+    ShapeType shape{4, 2};
+    ShapeType stride{1, 4};
     auto float_tensor = std::make_shared<RMMTensor>(float_buffer, 0, float_type, shape, stride);
 
     DType double_type(TypeId::FLOAT64);
@@ -136,6 +136,6 @@ TEST_F(TestTensor, UtilsValidateShapeAndStride)
     EXPECT_TRUE(TensorUtils::has_contiguous_stride(t0.shape(), t0.stride()));
     EXPECT_TRUE(TensorUtils::validate_shape_and_stride(t0.shape(), t0.stride()));
 
-    EXPECT_EQ(t0.stride(), std::vector<TensorIndex>({320 * 320, 320, 1}));
+    EXPECT_EQ(t0.stride(), ShapeType({320 * 320, 320, 1}));
 }
 */
