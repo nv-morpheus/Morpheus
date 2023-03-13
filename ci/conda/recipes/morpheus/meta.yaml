@@ -58,8 +58,12 @@ outputs:
         - cuda-python <=11.7.0
         - cudatoolkit {{ cuda_version }}.*
         - cudf {{ rapids_version }}
+        - cuml {{ rapids_version }}
         - cython >=0.29,<0.30
         - libcudf {{ rapids_version }}
+        # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+        - libcusolver<=11.4.1.48
+        - libcusparse<12
         - librdkafka 1.7
         - mrc {{ minor_version }}
         - pip
@@ -69,17 +73,20 @@ outputs:
         - scikit-build >=0.12
         - versioneer-518
       run:
-        # Runtime only requirements. This + setup.y is the definitive runtime requirement list
+        # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         - click >=8
         - configargparse 1.5.*
         - cuda-python <=11.7.0 # Needed to ensure cudatoolkit and not cuda-toolkit is installed
         - cudf
-        - cudf_kafka {{ rapids_version }}.*
+        - cuml {{ rapids_version }}
         - cupy # Version determined from cudf
         - datacompy 0.8.*
         - distributed
         - docker-py 5.0.*
         - grpcio # Version determined from cudf
+        # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+        - libcusolver<=11.4.1.48
+        - libcusparse<12
         - libmrc
         - mlflow >1.29,<2
         - mrc
