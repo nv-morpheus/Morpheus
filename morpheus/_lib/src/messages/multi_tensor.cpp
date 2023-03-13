@@ -20,9 +20,10 @@
 #include "morpheus/types.hpp"                // for TensorIndex, TensorMap
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
 
-#include <cudf/types.hpp>  // for cudf::size_type>
-#include <glog/logging.h>
-#include <pybind11/pytypes.h>  // for key_error
+#include <cudf/types.hpp>        // for cudf::size_type>
+#include <glog/logging.h>        // IWYU pragma: keep
+#include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
+#include <pybind11/pytypes.h>    // for key_error
 
 #include <cstdint>    // for int32_t
 #include <stdexcept>  // for runtime_error
@@ -79,8 +80,7 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
                                         std::size_t start,
                                         std::size_t stop) const
 {
-    DCHECK(std::dynamic_pointer_cast<MultiTensorMessage>(new_message) != nullptr);
-    auto sliced_message = std::static_pointer_cast<MultiTensorMessage>(new_message);
+    auto sliced_message = MRC_PTR_CAST(MultiTensorMessage, new_message);
 
     sliced_message->offset = start;
     sliced_message->count  = stop - start;
@@ -104,8 +104,7 @@ void MultiTensorMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_mess
                                           const std::vector<std::pair<size_t, size_t>>& ranges,
                                           size_t num_selected_rows) const
 {
-    DCHECK(std::dynamic_pointer_cast<MultiTensorMessage>(new_message) != nullptr);
-    auto copied_message = std::static_pointer_cast<MultiTensorMessage>(new_message);
+    auto copied_message = MRC_PTR_CAST(MultiTensorMessage, new_message);
     DerivedMultiMessage::copy_ranges_impl(copied_message, ranges, num_selected_rows);
 
     copied_message->offset = 0;
@@ -135,9 +134,7 @@ std::shared_ptr<MultiTensorMessage> MultiTensorMessageInterfaceProxy::init(std::
 
 std::shared_ptr<morpheus::TensorMemory> MultiTensorMessageInterfaceProxy::memory(MultiTensorMessage& self)
 {
-    DCHECK(std::dynamic_pointer_cast<morpheus::TensorMemory>(self.memory) != nullptr);
-
-    return std::static_pointer_cast<morpheus::TensorMemory>(self.memory);
+    return MRC_PTR_CAST(morpheus::TensorMemory, self.memory);
 }
 
 std::size_t MultiTensorMessageInterfaceProxy::offset(MultiTensorMessage& self)

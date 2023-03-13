@@ -23,7 +23,7 @@
 #include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cudf/types.hpp>
-#include <glog/logging.h>  // for DCHECK_NOTNULL
+#include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>  // IWYU pragma: keep
 
@@ -79,7 +79,7 @@ class DerivedMultiMessage : public BasesT...
 
         this->get_slice_impl(new_message, start, stop);
 
-        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
+        return MRC_PTR_CAST(DerivedT, new_message);
     }
 
     /**
@@ -100,7 +100,7 @@ class DerivedMultiMessage : public BasesT...
 
         this->copy_ranges_impl(new_message, ranges, num_selected_rows);
 
-        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
+        return MRC_PTR_CAST(DerivedT, new_message);
     }
 
   protected:
@@ -154,7 +154,7 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
 
         this->get_slice_impl(new_message, start, stop);
 
-        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
+        return MRC_PTR_CAST(DerivedT, new_message);
     }
 
     std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>>& ranges,
@@ -164,7 +164,7 @@ class DerivedMultiMessage<DerivedT, BaseT> : public BaseT
 
         this->copy_ranges_impl(new_message, ranges, num_selected_rows);
 
-        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
+        return MRC_PTR_CAST(DerivedT, new_message);
     }
 
   protected:
@@ -204,7 +204,7 @@ class DerivedMultiMessage<DerivedT>
 
         this->get_slice_impl(new_message, start, stop);
 
-        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
+        return MRC_PTR_CAST(DerivedT, new_message);
     }
 
     std::shared_ptr<DerivedT> copy_ranges(const std::vector<std::pair<size_t, size_t>>& ranges,
@@ -214,7 +214,7 @@ class DerivedMultiMessage<DerivedT>
 
         this->copy_ranges_impl(new_message, ranges, num_selected_rows);
 
-        return DCHECK_NOTNULL(std::dynamic_pointer_cast<DerivedT>(new_message));
+        return MRC_PTR_CAST(DerivedT, new_message);
     }
 
   protected:
