@@ -19,7 +19,6 @@
 
 #include "morpheus/messages/meta.hpp"
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
 #include <memory>
@@ -29,11 +28,11 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiResponseProbsMessage****************************************/
 MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                                                     size_t mess_offset,
-                                                     size_t mess_count,
+                                                     TensorIndex mess_offset,
+                                                     TensorIndex mess_count,
                                                      std::shared_ptr<morpheus::ResponseMemoryProbs> memory,
-                                                     size_t offset,
-                                                     size_t count) :
+                                                     TensorIndex offset,
+                                                     TensorIndex count) :
   DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
@@ -53,11 +52,11 @@ void MultiResponseProbsMessage::set_probs(const TensorObject& probs)
  */
 std::shared_ptr<MultiResponseProbsMessage> MultiResponseProbsMessageInterfaceProxy::init(
     std::shared_ptr<MessageMeta> meta,
-    cudf::size_type mess_offset,
-    cudf::size_type mess_count,
+    TensorIndex mess_offset,
+    TensorIndex mess_count,
     std::shared_ptr<ResponseMemoryProbs> memory,
-    cudf::size_type offset,
-    cudf::size_type count)
+    TensorIndex offset,
+    TensorIndex count)
 {
     return std::make_shared<MultiResponseProbsMessage>(
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);

@@ -17,8 +17,8 @@
 
 #include "morpheus/stages/add_classification.hpp"
 
-#include "morpheus/objects/dtype.hpp"         // for DType
-#include "morpheus/objects/tensor.hpp"        // for Tensor::create
+#include "morpheus/objects/dtype.hpp"          // for DType
+#include "morpheus/objects/tensor.hpp"         // for Tensor::create
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex
 #include "morpheus/utilities/matx_util.hpp"    // for MatxUtil::threshold
@@ -26,7 +26,6 @@
 
 #include <glog/logging.h>
 
-#include <algorithm>  // for copy
 #include <cstddef>
 #include <exception>
 #include <functional>  // for function
@@ -59,28 +58,21 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 const auto& shape = probs.get_shape();
 
                 // Depending on the input the stride is given in bytes or elements, convert to elements
-                auto stride = TensorUtils::get_element_stride<std::size_t>(probs.get_stride());
+                auto stride = TensorUtils::get_element_stride(probs.get_stride());
 
                 CHECK(shape.size() == 2 && shape[1] == m_num_class_labels)
                     << "Label count does not match output of model. Label count: " << m_num_class_labels
                     << ", Model output: " << shape[1];
 
-                const std::size_t num_rows    = shape[0];
-                const std::size_t num_columns = shape[1];
+                const auto num_rows    = shape[0];
+                const auto num_columns = shape[1];
 
                 auto thresh_bool_buffer = MatxUtil::threshold(
                     {probs.data(), probs.dtype(), probs.get_memory(), probs.get_shape(), probs.get_stride()},
                     m_threshold,
                     false);
 
-                std::vector<TensorIndex> tensor_shape(shape.size());
-                std::copy(shape.cbegin(), shape.cend(), tensor_shape.begin());
-
-                std::vector<TensorIndex> tensor_stride(stride.size());
-                std::copy(stride.cbegin(), stride.cend(), tensor_stride.begin());
-
-                auto tensor_obj =
-                    Tensor::create(thresh_bool_buffer, DType::create<bool>(), tensor_shape, tensor_stride);
+                auto tensor_obj = Tensor::create(thresh_bool_buffer, DType::create<bool>(), shape, stride);
 
                 std::vector<std::string> columns(m_idx2label.size());
                 std::vector<TensorObject> tensors(m_idx2label.size());
@@ -89,9 +81,8 @@ AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator(
                 for (const auto& [column_num, column_name] : m_idx2label)
                 {
                     columns[i] = column_name;
-                    tensors[i] = tensor_obj.slice(std::vector<TensorIndex>{0, static_cast<TensorIndex>(column_num)},
-                                                  std::vector<TensorIndex>{static_cast<TensorIndex>(num_rows),
-                                                                           static_cast<TensorIndex>(column_num + 1)});
+                    tensors[i] = tensor_obj.slice({0, static_cast<TensorIndex>(column_num)},
+                                                  {num_rows, static_cast<TensorIndex>(column_num + 1)});
 
                     ++i;
                 }

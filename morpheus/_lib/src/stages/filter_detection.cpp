@@ -23,6 +23,7 @@
 #include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/types.hpp"                  // for RangeType
 #include "morpheus/utilities/matx_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
@@ -70,7 +71,7 @@ DevMemInfo FilterDetectionsStage::get_tensor_filter_source(const std::shared_ptr
            "arrays";
 
     // Depending on the input the stride is given in bytes or elements, convert to elements
-    auto stride = morpheus::TensorUtils::get_element_stride<std::size_t, std::size_t>(filter_source.get_stride());
+    auto stride = morpheus::TensorUtils::get_element_stride(filter_source.get_stride());
     return {filter_source.data(), filter_source.dtype(), filter_source.get_memory(), filter_source.get_shape(), stride};
 }
 
@@ -81,7 +82,7 @@ DevMemInfo FilterDetectionsStage::get_column_filter_source(const std::shared_ptr
     // since we only asked for one column, we know its the first
     const auto& col = table_info.get_column(0);
     auto dtype      = morpheus::DType::from_cudf(col.type().id());
-    auto num_rows   = static_cast<std::size_t>(col.size());
+    auto num_rows   = col.size();
     auto data =
         const_cast<uint8_t*>(static_cast<const uint8_t*>(col.head<uint8_t>() + col.offset() * dtype.item_size()));
 
@@ -129,7 +130,7 @@ FilterDetectionsStage::subscribe_fn_t FilterDetectionsStage::build_operator()
                                           cudaMemcpyDeviceToHost));
 
                 // Only used when m_copy is true
-                std::vector<std::pair<std::size_t, std::size_t>> selected_ranges;
+                std::vector<RangeType> selected_ranges;
                 std::size_t num_selected_rows = 0;
 
                 // We are slicing by rows, using num_rows as our marker for undefined
