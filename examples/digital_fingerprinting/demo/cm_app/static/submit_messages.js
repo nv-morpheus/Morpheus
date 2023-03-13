@@ -13,7 +13,7 @@ $(document).ready(function() {
  
   inputs.each(function(index) {
      var input = $(this);
-     var dataType = input.find('select[name="data-type"]').val();
+     var dataType = input.find('select[name="type"]').val();
      var metadataContainer = input.find('.metadata-container');
      var metadata = metadataContainer.find('.metadata');
      var metadataJson = {};
@@ -21,11 +21,13 @@ $(document).ready(function() {
      metadata.each(function(index) {
         var metadataItem = $(this);
         var key = metadataItem.find('input[name="metadata-key"]').val();
-        var dataType = metadataItem.find('select[name="metadata-data-type"]').val();
+        var dataType = metadataItem.find('select[name="metadata-type"]').val();
         var value = metadataItem.find('input[name="metadata-value"]').val();
  
         if (dataType === "text-array")
               value = value.split(",");
+        if (dataType === "Number")
+              value = parseInt(value)
  
         metadataJson[key] = value;
      });
@@ -44,11 +46,14 @@ $(document).ready(function() {
         properties.each(function(index) {
         var property = $(this);
         var key = property.find('input[name="property-key"]').val();
-        var dataType = property.find('select[name="property-data-type"]').val();
+        var dataType = property.find('select[name="property-type"]').val();
         var value = property.find('input[name="property-value"]').val();
  
         if (dataType === "text-array")
            value = value.split(",");
+        
+        if (dataType === "Number")
+           value = parseInt(value)
  
         propertiesJson[key] = value;
         });
@@ -71,8 +76,8 @@ $(document).ready(function() {
     $("#add-input-btn").click(function() {
       var inputHtml = `
       <div class="input">
-        <label>Data Type:</label>
-        <select name="data-type">
+        <label>Type:</label>
+        <select name="type">
           <option value="payload">Payload</option>
           <option value="streaming">Streaming</option>
         </select>
@@ -112,18 +117,16 @@ $(document).ready(function() {
     $("#inputs-container").on("click", ".add-property-btn", function() {
       var propertyHtml = `
       <div class="property">
-        <label>Key:</label>
-        <input type="text" name="property-key">
-        <label>Data Type:</label>
-        <select name="property-data-type">
+        <input type="text" name="property-key" placeholder="key">
+        <select name="property-type">
+        <option value="text">DataType</option>
           <option value="text">Text</option>
           <option value="number">Number</option>
           <option value="boolean">Boolean</option>
           <option value="date">Date</option>
           <option value="text-array">Array</option>
         </select>
-        <label>Value:</label>
-        <input type="text" name="property-value">
+        <input type="text" name="property-value" placeholder="value">
         <button type="button" class="remove-property-btn">Remove</button>
       </div>`;
       $(this).siblings(".properties-container").append(propertyHtml);
@@ -132,18 +135,16 @@ $(document).ready(function() {
     $("#inputs-container").on("click", ".add-metadata-btn", function() {
       var metadataHtml = `
       <div class="metadata">
-        <label>Key:</label>
-        <input type="text" name="metadata-key">
-        <label>Data Type:</label>
-        <select name="metadata-data-type">
+        <input type="text" name="metadata-key" placeholder="key">
+        <select name="metadata-type">
+          <option value="text">DataType</option>
           <option value="text">Text</option>
           <option value="number">Number</option>
           <option value="boolean">Boolean</option>
           <option value="date">Date</option>
           <option value="text-array">Array</option>
         </select>
-        <label>Value:</label>
-        <input type="text" name="metadata-value">
+        <input type="text" name="metadata-value" placeholder="key">
         <button type="button" class="remove-metadata-btn">Remove</button>
       </div>`;
       $(this).siblings(".metadata-container").append(metadataHtml);
