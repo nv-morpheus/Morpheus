@@ -26,6 +26,21 @@ concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 
+permissions:
+  actions: none
+  checks: none
+  contents: read
+  deployments: none
+  discussions: none
+  id-token: write
+  issues: none
+  packages: read
+  pages: none
+  pull-requests: read
+  repository-projects: none
+  security-events: none
+  statuses: none
+
 jobs:
   ci_pipe:
     uses: ./.github/workflows/ci_pipe.yml
@@ -34,6 +49,4 @@ jobs:
       container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-driver-230125
       test_container: nvcr.io/ea-nvidia-morpheus/morpheus:morpheus-ci-test-230125
     secrets:
-      GHA_AWS_ACCESS_KEY_ID: ${{ secrets.GHA_AWS_ACCESS_KEY_ID }}
-      GHA_AWS_SECRET_ACCESS_KEY: ${{ secrets.GHA_AWS_SECRET_ACCESS_KEY }}
       NGC_API_KEY: ${{ secrets.NGC_API_KEY }}
