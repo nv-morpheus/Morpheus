@@ -32,9 +32,9 @@ namespace morpheus {
 DevMemInfo::DevMemInfo(void* data,
                        DType dtype,
                        std::shared_ptr<MemoryDescriptor> md,
-                       std::vector<std::size_t> shape,
-                       std::vector<std::size_t> stride,
-                       size_t offset_bytes) :
+                       ShapeType shape,
+                       ShapeType stride,
+                       TensorIndex offset_bytes) :
   m_data(data),
   m_dtype(std::move(dtype)),
   m_md(std::move(md)),

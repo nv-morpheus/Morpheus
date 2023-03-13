@@ -53,7 +53,7 @@ struct MatxUtil
      * @param output_type
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> create_seg_ids(TensorIndex row_count,
+    static std::shared_ptr<rmm::device_buffer> create_seq_ids(TensorIndex row_count,
                                                               TensorIndex fea_len,
                                                               TypeId output_type,
                                                               std::shared_ptr<MemoryDescriptor> md);
