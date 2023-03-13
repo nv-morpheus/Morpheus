@@ -17,6 +17,7 @@
 import pytest
 import torch
 
+from morpheus.config import AEFeatureScalar
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 
@@ -144,3 +145,16 @@ def test_auto_encoder_constructor():
     assert ae.scaler == 'standard'
     assert ae.loss_scaler is scalers.StandardScaler
     assert ae.n_megabatches == 1
+
+
+def test_auto_encoder_get_scaler():
+    ae = autoencoder.AutoEncoder()
+
+    # Test the values in the `AEFeatureScalar` enum
+    test_values = [(AEFeatureScalar.NONE, scalers.NullScaler), (AEFeatureScalar.STANDARD, scalers.StandardScaler),
+                   (AEFeatureScalar.GAUSSRANK, scalers.GaussRankScaler)]
+
+    assert len(test_values) == len(AEFeatureScalar), "Not all values in AEFeatureScalar are tested"
+
+    for (value, expected) in test_values:
+        assert ae.get_scaler(value) is expected
