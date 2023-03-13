@@ -158,3 +158,37 @@ def test_auto_encoder_get_scaler():
 
     for (value, expected) in test_values:
         assert ae.get_scaler(value) is expected
+
+
+def test_auto_encoder_init_numeric(filter_probs_pandas_df):
+    ae = autoencoder.AutoEncoder()
+    ae.init_numeric(filter_probs_pandas_df)
+
+    expected_features = {
+        'v1': {
+            'mean': 0.46, 'std': 0.35
+        },
+        'v2': {
+            'mean': 0.51, 'std': 0.31
+        },
+        'v3': {
+            'mean': 0.46, 'std': 0.3
+        },
+        'v4': {
+            'mean': 0.54, 'std': 0.27
+        }
+    }
+
+    # AE stores the features in an OrderedDict, but we don't want to be dependent on the order that Pandas reads in the
+    # columns of a dataframe.
+    assert sorted(ae.num_names) == sorted(expected_features.keys())
+
+    for (ft, expected_vals) in expected_features.items():
+        ae_ft = ae.numeric_fts[ft]
+        assert round(ae_ft['mean'], 2) == expected_vals['mean'], \
+            f"Mean value of feature:{ft} does not match {round(ae_ft['mean'], 2)}!= {expected_vals['mean']}"
+
+        assert round(ae_ft['std'], 2) == expected_vals['std'], \
+            f"Mean value of feature:{ft} does not match {round(ae_ft['std'], 2)}!= {expected_vals['std']}"
+
+        assert isinstance(ae_ft['scaler'], scalers.StandardScaler)
