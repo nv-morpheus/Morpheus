@@ -257,13 +257,13 @@ TEST_F(TestMatxUtil, Threshold)
     // output and output_by_row are holding 1-byte bool values, so the byte size and element size should be the same
     EXPECT_EQ(output->size(), expected_output.size());
 
-    std::vector<uint8_t> host_byte_outut(expected_output.size());
+    std::vector<uint8_t> host_byte_output(expected_output.size());
 
-    MRC_CHECK_CUDA(cudaMemcpy(host_byte_outut.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(host_byte_output.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
 
-    for (std::size_t i = 0; i < host_byte_outut.size(); ++i)
+    for (std::size_t i = 0; i < host_byte_output.size(); ++i)
     {
-        bool output_val = host_byte_outut[i];
+        bool output_val = host_byte_output[i];
         EXPECT_EQ(output_val, expected_output[i]);
     }
 }
@@ -303,13 +303,13 @@ TEST_F(TestMatxUtil, ThresholdByRow)
     // output and output_by_row are holding 1-byte bool values, so the byte size and element size should be the same
     EXPECT_EQ(output->size(), expected_output.size());
 
-    std::vector<uint8_t> host_byte_outut(expected_output.size());
+    std::vector<uint8_t> host_byte_output(expected_output.size());
 
-    MRC_CHECK_CUDA(cudaMemcpy(host_byte_outut.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(host_byte_output.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
 
-    for (std::size_t i = 0; i < host_byte_outut.size(); ++i)
+    for (std::size_t i = 0; i < host_byte_output.size(); ++i)
     {
-        bool output_val = host_byte_outut[i];
+        bool output_val = host_byte_output[i];
         EXPECT_EQ(output_val, expected_output[i]);
     }
 }
