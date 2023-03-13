@@ -91,7 +91,56 @@ def test_complete_layer_forward():
     assert torch.equal(torch.round(results, decimals=4), expected), f"{results} != {expected}"
 
 
-def test_auto_encoder_constructor():
+def test_auto_encoder_constructor_default_vals():
     ae = autoencoder.AutoEncoder()
+    assert isinstance(ae, torch.nn.Module)
+    assert ae.encoder_layers is None
+    assert ae.decoder_layers is None
+    assert ae.min_cats == 10
+    assert ae.swap_p == 0.15
+    assert ae.batch_size == 256
+    assert ae.eval_batch_size == 1024
+    assert ae.activation == 'relu'
+    assert ae.optimizer == 'adam'
+    assert ae.lr == 0.01
+    assert ae.lr_decay is None
     assert ae.device.type == 'cuda'
-    assert isinstance(ae.loss_scaler, scalers.StandardScaler)
+    assert ae.scaler == 'standard'
+    assert ae.loss_scaler is scalers.StandardScaler
+    assert ae.n_megabatches == 1
+
+
+def test_auto_encoder_constructor():
+    """
+    Test copnstructor invokation using the values used by `train_ae_stage`
+    """
+    ae = autoencoder.AutoEncoder(encoder_layers=[512, 500],
+                                 decoder_layers=[512],
+                                 activation='relu',
+                                 swap_p=0.2,
+                                 lr=0.01,
+                                 lr_decay=.99,
+                                 batch_size=512,
+                                 verbose=False,
+                                 optimizer='sgd',
+                                 scaler='standard',
+                                 min_cats=1,
+                                 progress_bar=False)
+
+    assert isinstance(ae, torch.nn.Module)
+    assert ae.encoder_layers == [512, 500]
+    assert ae.decoder_layers == [512]
+    assert ae.min_cats == 1
+    assert ae.swap_p == 0.2
+    assert ae.batch_size == 512
+    assert ae.eval_batch_size == 1024
+    assert ae.activation == 'relu'
+    assert ae.optimizer == 'sgd'
+    assert ae.lr == 0.01
+    assert ae.lr_decay == 0.99
+    assert not ae.progress_bar
+    assert not ae.verbose
+    assert ae.device.type == 'cuda'
+    assert ae.scaler == 'standard'
+    assert ae.loss_scaler is scalers.StandardScaler
+    assert ae.n_megabatches == 1
