@@ -35,6 +35,7 @@ dependencies:
     - cuda-python<=11.7.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.5
     - cudf 22.10
+    - cuml 22.10
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
