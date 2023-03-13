@@ -19,12 +19,11 @@
 
 #include "morpheus/objects/data_table.hpp"  // for IDataTable
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cudf/io/types.hpp>
-#include <cudf/types.hpp>  // for size_type
 #include <pybind11/pytypes.h>
 
-#include <cstddef>  // for size_t
 #include <memory>
 #include <string>
 #include <vector>
@@ -55,7 +54,7 @@ class MessageMeta
      *
      * @return pybind11::object
      */
-    size_t count() const;
+    TensorIndex count() const;
 
     /**
      * @brief Get the info object
@@ -111,8 +110,8 @@ class SlicedMessageMeta : public MessageMeta
 {
   public:
     SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
-                      cudf::size_type start            = 0,
-                      cudf::size_type stop             = -1,
+                      TensorIndex start                = 0,
+                      TensorIndex stop                 = -1,
                       std::vector<std::string> columns = {});
 
     TableInfo get_info() const override;
@@ -120,8 +119,8 @@ class SlicedMessageMeta : public MessageMeta
     MutableTableInfo get_mutable_info() const override;
 
   private:
-    cudf::size_type m_start{0};
-    cudf::size_type m_stop{-1};
+    TensorIndex m_start{0};
+    TensorIndex m_stop{-1};
     std::vector<std::string> m_column_names;
 };
 
@@ -152,9 +151,9 @@ struct MessageMetaInterfaceProxy
      * @brief Get messages count
      *
      * @param self
-     * @return cudf::size_type
+     * @return TensorIndex
      */
-    static cudf::size_type count(MessageMeta& self);
+    static TensorIndex count(MessageMeta& self);
 
     /**
      * @brief Get a copy of the data frame object as a python object

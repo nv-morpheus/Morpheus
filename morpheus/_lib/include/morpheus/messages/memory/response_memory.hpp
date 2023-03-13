@@ -22,8 +22,7 @@
 
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>  // for size_t
-#include <memory>   // for shared_ptr
+#include <memory>  // for shared_ptr
 #include <string>
 
 namespace morpheus {
@@ -47,14 +46,14 @@ class ResponseMemory : public TensorMemory
      *
      * @param count
      */
-    ResponseMemory(size_t count);
+    ResponseMemory(TensorIndex count);
     /**
      * @brief Construct a new Response Memory object
      *
      * @param count
      * @param tensors
      */
-    ResponseMemory(size_t count, TensorMap&& tensors);
+    ResponseMemory(TensorIndex count, TensorMap&& tensors);
 
     /**
      * @brief Checks if a tensor named `name` exists in `tensors`. Alias for `has_tensor`.
@@ -82,7 +81,7 @@ struct ResponseMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
      * @param cupy_tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<ResponseMemory>
      */
-    static std::shared_ptr<ResponseMemory> init(std::size_t count, pybind11::object& tensors);
+    static std::shared_ptr<ResponseMemory> init(TensorIndex count, pybind11::object& tensors);
 };
 #pragma GCC visibility pop
 
