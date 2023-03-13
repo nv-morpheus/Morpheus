@@ -62,7 +62,6 @@ def test_complete_layer_constructor():
     assert cc.layers[1] is torch.sigmoid
     assert isinstance(cc.layers[2], torch.nn.Dropout)
     assert cc.layers[2].p == 0.3
-from morpheus.models.dfencoder import scalers_not_exist")
 
 
 def test_complete_layer_interpret_activation():
