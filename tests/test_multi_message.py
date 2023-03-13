@@ -18,21 +18,21 @@ import os
 
 import pytest
 
-from morpheus._lib.common import FileTypes
 from morpheus.config import CppConfig
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 from utils import TEST_DIRS
 
 
 @pytest.mark.parametrize('df_type', ['cudf', 'pandas'])
-def test_copy_ranges(config, df_type):
+def test_copy_ranges(config, filter_probs_df, df_type):
     if CppConfig.get_should_use_cpp() and df_type == 'pandas':
-        pytest.skip("Pandas dataframes not supported in C++ mode")
+        return
 
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
-    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type=df_type)
+    if df_type == 'pandas':
+        df = filter_probs_df.to_pandas()
+    else:
+        df = filter_probs_df
 
     meta = MessageMeta(df)
     assert meta.count == len(df)
@@ -59,12 +59,9 @@ def test_copy_ranges(config, df_type):
     assert mm3.meta.df is not mm2.meta.df
 
 
-def test_set_meta(config):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
-    df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
-
-    meta = MessageMeta(df)
-    mm = MultiMessage(meta, 0, len(df))
+def test_set_meta(config, filter_probs_df):
+    meta = MessageMeta(filter_probs_df)
+    mm = MultiMessage(meta, 0, meta.count)
 
     mm2 = mm.copy_ranges([(2, 6), (12, 15)])
     assert len(mm2.get_meta()) == 7

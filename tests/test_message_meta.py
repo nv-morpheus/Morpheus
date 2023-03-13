@@ -15,20 +15,15 @@
 # limitations under the License.
 
 import operator
-import os
 
 import pytest
 
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
 from utils import TEST_DIRS
 
 
-def test_mutable_dataframe(config):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
-
-    meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
+def test_mutable_dataframe(config, filter_probs_df):
+    meta = MessageMeta(filter_probs_df)
 
     with meta.mutable_dataframe() as df:
         df['v2'][3] = 47
@@ -36,10 +31,8 @@ def test_mutable_dataframe(config):
     assert meta.copy_dataframe()['v2'][3] == 47
 
 
-def test_using_ctx_outside_with_block(config):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
-
-    meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
+def test_using_ctx_outside_with_block(config, filter_probs_df):
+    meta = MessageMeta(filter_probs_df)
 
     ctx = meta.mutable_dataframe()
 
@@ -53,10 +46,8 @@ def test_using_ctx_outside_with_block(config):
     pytest.raises(AttributeError, operator.setitem, ctx, 'col', 5)
 
 
-def test_copy_dataframe(config):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv')
-
-    meta = MessageMeta(read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf'))
+def test_copy_dataframe(config, filter_probs_df):
+    meta = MessageMeta(filter_probs_df)
 
     meta.copy_dataframe()['v2'][3] = 47
 

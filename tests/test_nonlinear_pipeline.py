@@ -24,9 +24,7 @@ from mrc.core.node import Broadcast
 
 import cudf
 
-from morpheus._lib.common import FileTypes
 from morpheus.config import Config
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -143,10 +141,10 @@ class CompareDataframeStage(SinglePortStage):
         return node, input_stream[1]
 
 
-def test_forking_pipeline(config):
+def test_forking_pipeline(config, filter_probs_pandas_df):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    full_compare_df = read_file_to_df(input_file, FileTypes.Auto, df_type="pandas")
+    full_compare_df = filter_probs_pandas_df
 
     compare_higher_df = full_compare_df[full_compare_df["v2"] >= 0.5]
     compare_lower_df = full_compare_df[full_compare_df["v2"] < 0.5]
