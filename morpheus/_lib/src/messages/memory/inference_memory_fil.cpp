@@ -20,7 +20,6 @@
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
 #include <memory>
@@ -29,7 +28,7 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemoryFIL****************************************/
-InferenceMemoryFIL::InferenceMemoryFIL(size_t count, TensorObject&& input__0, TensorObject&& seq_ids) :
+InferenceMemoryFIL::InferenceMemoryFIL(TensorIndex count, TensorObject&& input__0, TensorObject&& seq_ids) :
   InferenceMemory(count)
 {
     set_tensor("input__0", std::move(input__0));
@@ -57,7 +56,7 @@ void InferenceMemoryFIL::set_seq_ids(TensorObject&& seq_ids)
 }
 
 /****** InferenceMemoryFILInterfaceProxy *************************/
-std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(cudf::size_type count,
+std::shared_ptr<InferenceMemoryFIL> InferenceMemoryFILInterfaceProxy::init(TensorIndex count,
                                                                            pybind11::object input__0,
                                                                            pybind11::object seq_ids)
 {
