@@ -4,7 +4,7 @@ export set FLASK_APP=webapp
 
 THIS_DIR=$( dirname -- "$( readlink -f -- "$0"; )"; )
 
-APP_PATH="$THIS_DIR/../hil_app"
+APP_PATH="$THIS_DIR/../cm_app"
 
 #$(cd $APP_PATH && python -m flask run)
 

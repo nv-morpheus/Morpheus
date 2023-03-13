@@ -52,6 +52,10 @@ select {
   border-radius: 5px;
 }
 
+#banner {
+  width: 100%;
+  }
+  
 /* Style for the button elements */
 button {
   margin-top: 10px;
@@ -155,7 +159,7 @@ button {
 
 button:hover {
   cursor: pointer;
-  background-color: #8bb521;
+  background-color: #380e0ec1;
 }
 
 /* Style for the input elements */

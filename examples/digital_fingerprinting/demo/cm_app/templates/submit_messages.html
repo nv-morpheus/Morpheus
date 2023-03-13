@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Dynamic Form</title>
+      <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles.css')}}">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+      <script src="{{url_for('static', filename='submit_messages.js')}}"></script>
+   </head>
+   <body>
+      <div class="banner">
+         <h1>DFP Integrated Training Demo</h1>
+      </div>
+      <form action="{{ url_for('submit_messages')}}" method="post">
+         <div id="inputs-container">
+            <!-- Inputs will be dynamically added here -->
+         </div>
+         <button type="button" id="add-input-btn">Add Control Message</button>
+         <div class="btn-block">
+            <button id="submit" href="/" >Submit</button>
+         </div>
+         <input type="hidden" id="control-messages-json" name="control-messages-json"></input>
+      </form>
+   </body>
+</html>

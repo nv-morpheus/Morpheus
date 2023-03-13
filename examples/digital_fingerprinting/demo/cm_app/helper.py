@@ -1,5 +1,9 @@
 from confluent_kafka import Producer
+import json
+import logging
 
+logging.basicConfig()
+logger = logging.getLogger("logger")
 
 def delivery_report(err, msg):
     """ Called once for each message produced to indicate delivery result.
@@ -23,3 +27,15 @@ def publish_message(message):
     # Wait for any outstanding messages to be delivered and delivery report
     # callbacks to be triggered.
     p.flush()
+
+def process_cm(request):
+    control_messages_json = request.form.get("control-messages-json")
+    publish_message(control_messages_json)
+    logging.error(control_messages_json)
+    data = {
+        "status": "Successfully published task to kafka topic.",
+        "status_code": 200,
+        "control_messages": json.loads(control_messages_json)
+    }
+    data = json.dumps(data, indent=4)
+    return data
