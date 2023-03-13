@@ -20,6 +20,7 @@
 #include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/memory_descriptor.hpp"
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
 #include <gtest/gtest.h>  // for AssertionResult, SuiteApiResolver, TestInfo, EXPECT_TRUE, Message, TEST_F, Test, TestFactoryImpl, TestPartResult
 #include <rmm/cuda_stream_view.hpp>
