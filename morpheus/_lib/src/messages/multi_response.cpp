@@ -21,13 +21,7 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
-#include "morpheus/utilities/cupy_util.hpp"
 
-#include <cudf/types.hpp>
-#include <glog/logging.h>
-#include <pybind11/pytypes.h>
-
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -35,11 +29,11 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 MultiResponseMessage::MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
-                                           std::size_t mess_offset,
-                                           std::size_t mess_count,
+                                           TensorIndex mess_offset,
+                                           TensorIndex mess_count,
                                            std::shared_ptr<ResponseMemory> memory,
-                                           std::size_t offset,
-                                           std::size_t count) :
+                                           TensorIndex offset,
+                                           TensorIndex count) :
   DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
@@ -60,37 +54,14 @@ void MultiResponseMessage::set_output(const std::string& name, const TensorObjec
 
 /****** MultiResponseMessageInterfaceProxy *************************/
 std::shared_ptr<MultiResponseMessage> MultiResponseMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
-                                                                               cudf::size_type mess_offset,
-                                                                               cudf::size_type mess_count,
+                                                                               TensorIndex mess_offset,
+                                                                               TensorIndex mess_count,
                                                                                std::shared_ptr<ResponseMemory> memory,
-                                                                               cudf::size_type offset,
-                                                                               cudf::size_type count)
+                                                                               TensorIndex offset,
+                                                                               TensorIndex count)
 {
     return std::make_shared<MultiResponseMessage>(
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
 }
 
-std::shared_ptr<morpheus::ResponseMemory> MultiResponseMessageInterfaceProxy::memory(MultiResponseMessage& self)
-{
-    DCHECK(std::dynamic_pointer_cast<morpheus::ResponseMemory>(self.memory) != nullptr);
-
-    return std::static_pointer_cast<morpheus::ResponseMemory>(self.memory);
-}
-
-std::size_t MultiResponseMessageInterfaceProxy::offset(MultiResponseMessage& self)
-{
-    return self.offset;
-}
-
-std::size_t MultiResponseMessageInterfaceProxy::count(MultiResponseMessage& self)
-{
-    return self.count;
-}
-
-pybind11::object MultiResponseMessageInterfaceProxy::get_output(MultiResponseMessage& self, const std::string& name)
-{
-    auto tensor = self.get_output(name);
-
-    return CupyUtil::tensor_to_cupy(tensor);
-}
 }  // namespace morpheus

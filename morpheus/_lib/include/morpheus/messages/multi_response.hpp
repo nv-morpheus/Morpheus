@@ -22,11 +22,10 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
-#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -66,25 +65,27 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param count Message count in inference memory instance
      */
     MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
-                         std::size_t mess_offset,
-                         std::size_t mess_count,
+                         TensorIndex mess_offset,
+                         TensorIndex mess_count,
                          std::shared_ptr<ResponseMemory> memory,
-                         std::size_t offset,
-                         std::size_t count);
+                         TensorIndex offset,
+                         TensorIndex count);
 
     /**
-     * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns the output tensor with the given name.
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
     const TensorObject get_output(const std::string& name) const;
 
     /**
-     * @brief Returns the output tensor with the given name. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns the output tensor with the given name.
      *
      * @param name
      * @return TensorObject
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
     TensorObject get_output(const std::string& name);
 
@@ -102,7 +103,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiResponseMessageInterfaceProxy
+struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiResponseMessage, and return a shared pointer to the result
@@ -117,34 +118,11 @@ struct MultiResponseMessageInterfaceProxy
      * @return std::shared_ptr<MultiResponseMessage>
      */
     static std::shared_ptr<MultiResponseMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                      cudf::size_type mess_offset,
-                                                      cudf::size_type mess_count,
+                                                      TensorIndex mess_offset,
+                                                      TensorIndex mess_count,
                                                       std::shared_ptr<ResponseMemory> memory,
-                                                      cudf::size_type offset,
-                                                      cudf::size_type count);
-
-    /**
-     * @brief GReturns a shared pointer of a response memory probs object
-     *
-     * @return std::shared_ptr<ResponseMemory>
-     */
-    static std::shared_ptr<ResponseMemory> memory(MultiResponseMessage& self);
-
-    /**
-     * @brief Message offset in response memory probs object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t offset(MultiResponseMessage& self);
-
-    /**
-     * @brief Messages count in response memory probs object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(MultiResponseMessage& self);
+                                                      TensorIndex offset,
+                                                      TensorIndex count);
 
     /**
      * @brief Returns the output tensor for a given name
@@ -152,6 +130,7 @@ struct MultiResponseMessageInterfaceProxy
      * @param self
      * @param name : Tensor name
      * @return pybind11::object
+     * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_output(MultiResponseMessage& self, const std::string& name);
 };

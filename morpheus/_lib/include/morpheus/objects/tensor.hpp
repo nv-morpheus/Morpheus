@@ -19,11 +19,11 @@
 
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
 #include <rmm/device_buffer.hpp>
 
-#include <cstddef>  // for size_t
-#include <cstdint>
+#include <cstdint>  // for uint8_t
 #include <memory>
 #include <string>
 #include <vector>
@@ -50,12 +50,12 @@ class Tensor
   public:
     Tensor(std::shared_ptr<rmm::device_buffer> buffer,
            std::string init_typestr,
-           std::vector<int32_t> init_shape,
-           std::vector<int32_t> init_strides,
-           size_t init_offset = 0);
+           ShapeType init_shape,
+           ShapeType init_strides,
+           TensorIndex init_offset = 0);
 
-    std::vector<int32_t> shape;
-    std::vector<int32_t> strides;
+    ShapeType shape;
+    ShapeType strides;
     std::string typestr;
 
     /**
@@ -66,7 +66,7 @@ class Tensor
     /**
      * TODO(Documentation)
      */
-    size_t bytes_count() const;
+    TensorIndex bytes_count() const;
 
     /**
      * TODO(Documentation)
@@ -83,12 +83,12 @@ class Tensor
      */
     static TensorObject create(std::shared_ptr<rmm::device_buffer> buffer,
                                DType dtype,
-                               std::vector<TensorIndex> shape,
-                               std::vector<TensorIndex> strides,
-                               size_t offset = 0);
+                               ShapeType shape,
+                               ShapeType strides,
+                               TensorIndex offset = 0);
 
   private:
-    size_t m_offset;
+    TensorIndex m_offset;
     std::shared_ptr<rmm::device_buffer> m_device_buffer;
 };
 

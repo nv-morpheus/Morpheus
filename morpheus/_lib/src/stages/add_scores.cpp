@@ -17,7 +17,8 @@
 
 #include "morpheus/stages/add_scores.hpp"
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for TensorIndex
 
 #include <glog/logging.h>
 
@@ -55,8 +56,8 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
                     << "Label count does not match output of model. Label count: " << m_num_class_labels
                     << ", Model output: " << shape[1];
 
-                const std::size_t num_rows    = shape[0];
-                const std::size_t num_columns = shape[1];
+                const auto num_rows    = shape[0];
+                const auto num_columns = shape[1];
 
                 std::vector<std::string> columns(m_idx2label.size());
                 std::vector<TensorObject> tensors(m_idx2label.size());
@@ -65,9 +66,8 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
                 for (const auto& [column_num, column_name] : m_idx2label)
                 {
                     columns[i] = column_name;
-                    tensors[i] = probs.slice(std::vector<TensorIndex>{0, static_cast<TensorIndex>(column_num)},
-                                             std::vector<TensorIndex>{static_cast<TensorIndex>(num_rows),
-                                                                      static_cast<TensorIndex>(column_num + 1)});
+                    tensors[i] = probs.slice({0, static_cast<TensorIndex>(column_num)},
+                                             {num_rows, static_cast<TensorIndex>(column_num + 1)});
 
                     ++i;
                 }
