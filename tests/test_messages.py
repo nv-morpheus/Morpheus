@@ -88,10 +88,6 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
         "probs": cp.zeros((1, 2))
     }
 
-    multi_tensor_message_kwargs = {
-        "meta": messages.MessageMeta(df), "mess_offset": 0, "mess_count": 1, "offset": 0, "count": 1
-    }
-
     check_message(messages.MultiTensorMessage,
                   _messages.MultiTensorMessage,
                   should_be_cpp,

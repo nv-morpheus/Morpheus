@@ -19,6 +19,7 @@ import typing
 import morpheus._lib.messages as _messages
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
@@ -111,7 +112,7 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
                  meta: MessageMeta,
                  mess_offset: int = 0,
                  mess_count: int = -1,
-                 memory: TensorMemory = None,
+                 memory: TensorMemory,
                  offset: int = 0,
                  count: int = -1):
 

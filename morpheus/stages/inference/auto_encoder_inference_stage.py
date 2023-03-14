@@ -171,9 +171,10 @@ class AutoEncoderInferenceStage(InferenceStage):
             for i, idx in enumerate(mess_ids):
                 probs[idx, :] = cp.maximum(probs[idx, :], res.probs[i, :])
 
-        return MultiResponseAEMessage(meta=inf.meta,
-                                      mess_offset=inf.mess_offset,
-                                      mess_count=inf.mess_count,
-                                      memory=memory,
-                                      offset=inf.offset,
-                                      count=inf.count)
+        return MultiResponseAEMessage.from_message(inf,
+                                                   meta=inf.meta,
+                                                   mess_offset=inf.mess_offset,
+                                                   mess_count=inf.mess_count,
+                                                   memory=memory,
+                                                   offset=inf.offset,
+                                                   count=inf.count)

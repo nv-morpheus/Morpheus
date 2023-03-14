@@ -59,9 +59,9 @@ def test_filter_copy(config):
     probs = cp.array([[0.1, 0.5, 0.3], [0.2, 0.3, 0.4]])
     mock_message = _make_message(df, probs)
 
-    # All values are at or below the threshold
+    # All values are at or below the threshold so nothing should be returned
     output_message = fds.filter_copy(mock_message)
-    assert len(output_message.get_meta()) == 0
+    assert output_message is None
 
     # Only one row has a value above the threshold
     probs = cp.array([

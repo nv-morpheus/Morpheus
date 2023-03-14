@@ -25,6 +25,8 @@ import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
 from morpheus.messages.message_meta import MessageMeta
 
+Self = typing.TypeVar("Self", bound="MultiMessage")
+
 
 @dataclasses.dataclass
 class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
@@ -135,18 +137,18 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         return offset, count
 
-    def _duplicate_message_with_kwargs(self, **kwargs):
-        all_fields = dataclasses.fields(self)
 
-        # Now loop over all fields and copy any derived properties
-        for f in all_fields:
-            if (f.name in kwargs or not f.init):
-                continue
+    @typing.overload
+    def get_meta(self) -> cudf.DataFrame:
+        ...
 
-            kwargs[f.name] = getattr(self, f.name)
+    @typing.overload
+    def get_meta(self, columns: str) -> cudf.Series:
+        ...
 
-        # Make sure to return an instance of the class
-        return self.__class__(**kwargs)
+    @typing.overload
+    def get_meta(self, columns: typing.List[str]) -> cudf.DataFrame:
+        ...
 
     def get_meta(self, columns: typing.Union[None, str, typing.List[str]] = None):
         """
@@ -276,7 +278,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         # Calc the offset and count. This checks the bounds for us
         offset, count = self._calc_message_slice_bounds(start=start, stop=stop)
 
-        return self._duplicate_message_with_kwargs(meta=self.meta, mess_offset=offset, mess_count=count)
+        return self.from_message(self, meta=self.meta, mess_offset=offset, mess_count=count)
 
     def _ranges_to_mask(self, df, ranges):
         if isinstance(df, cudf.DataFrame):
@@ -335,6 +337,69 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         """
         sliced_rows = self.copy_meta_ranges(ranges)
 
-        return self._duplicate_message_with_kwargs(meta=MessageMeta(sliced_rows),
-                                                   mess_offset=0,
-                                                   mess_count=len(sliced_rows))
+        return self.from_message(self, meta=MessageMeta(sliced_rows), mess_offset=0, mess_count=len(sliced_rows))
+
+    @classmethod
+    def from_message(cls: typing.Type[Self],
+                     message: "MultiMessage",
+                     *,
+                     meta: MessageMeta = None,
+                     mess_offset: int = -1,
+                     mess_count: int = -1,
+                     **kwargs) -> Self:
+
+        if (message is None):
+            raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
+
+        if (mess_offset == -1):
+            if (meta is not None):
+                mess_offset = 0
+            else:
+                mess_offset = message.mess_offset
+
+        if (mess_count == -1):
+            if (meta is not None):
+                # Subtract offset here so we dont go over the end
+                mess_count = meta.count - mess_offset
+            else:
+                mess_count = message.mess_count
+
+        # Do meta last
+        if meta is None:
+            meta = message.meta
+
+        # Update the kwargs
+        kwargs.update({
+            "meta": meta,
+            "mess_offset": mess_offset,
+            "mess_count": mess_count,
+        })
+
+        import inspect
+
+        signature = inspect.signature(cls.__init__)
+
+        for p_name, param in signature.parameters.items():
+
+            if (p_name == "self"):
+                # Skip self until this this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
+                # After that, switch to using inspect.signature(cls)
+                continue
+
+            # Skip if its already defined
+            if (p_name in kwargs):
+                continue
+
+            if (not hasattr(message, p_name)):
+                # Check for a default
+                if (param.default == inspect.Parameter.empty):
+                    raise AttributeError(
+                        f"Cannot create message of type {cls}, from {message}. Missing property '{p_name}'")
+
+                # Otherwise, we can ignore
+                continue
+
+            kwargs[p_name] = getattr(message, p_name)
+
+        # Create a new instance using the kwargs
+        return cls(**kwargs)

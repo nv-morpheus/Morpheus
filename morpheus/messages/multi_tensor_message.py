@@ -21,6 +21,8 @@ from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
+Self = typing.TypeVar("Self", bound="MultiTensorMessage")
+
 
 @dataclasses.dataclass
 class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
@@ -49,7 +51,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
                  meta: MessageMeta,
                  mess_offset: int = 0,
                  mess_count: int = -1,
-                 memory: TensorMemory = None,
+                 memory: TensorMemory,
                  offset: int = 0,
                  count: int = -1):
 
@@ -230,15 +232,15 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         sliced_count = len(sliced_rows)
         sliced_tensors = self.copy_tensor_ranges(ranges, mask=mask)
 
-        mem = TensorMemory(count=sliced_count)
-        mem.tensors = sliced_tensors
+        mem = TensorMemory(count=sliced_count, tensors=sliced_tensors)
 
-        return self._duplicate_message_with_kwargs(meta=MessageMeta(sliced_rows),
-                                                   mess_offset=0,
-                                                   mess_count=sliced_count,
-                                                   memory=mem,
-                                                   offset=0,
-                                                   count=sliced_count)
+        return self.from_message(self,
+                                 meta=MessageMeta(sliced_rows),
+                                 mess_offset=0,
+                                 mess_count=sliced_count,
+                                 memory=mem,
+                                 offset=0,
+                                 count=sliced_count)
 
     def get_slice(self, start, stop):
         """
@@ -273,4 +275,48 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
             "count": count,
         }
 
-        return self._duplicate_message_with_kwargs(**kwargs)
+        return self.from_message(self, **kwargs)
+
+    @classmethod
+    def from_message(cls: typing.Type[Self],
+                     message: "MultiTensorMessage",
+                     *,
+                     meta: MessageMeta = None,
+                     mess_offset: int = -1,
+                     mess_count: int = -1,
+                     memory: TensorMemory = None,
+                     offset: int = -1,
+                     count: int = -1,
+                     **kwargs) -> Self:
+
+        if (message is None):
+            raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
+
+        if (offset == -1):
+            if (memory is not None):
+                offset = 0
+            else:
+                offset = message.offset
+
+        if (count == -1):
+            if (memory is not None):
+                # Subtract offset here so we dont go over the end
+                count = memory.count - offset
+            else:
+                count = message.count
+
+        # Do meta last
+        if memory is None:
+            memory = message.memory
+
+        # Update the kwargs
+        kwargs.update({
+            "meta": meta,
+            "mess_offset": mess_offset,
+            "mess_count": mess_count,
+            "memory": memory,
+            "offset": offset,
+            "count": count,
+        })
+
+        return super().from_message(message, **kwargs)

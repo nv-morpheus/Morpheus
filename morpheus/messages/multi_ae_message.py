@@ -41,9 +41,9 @@ class MultiAEMessage(MultiMessage):
                  meta: MessageMeta,
                  mess_offset: int = 0,
                  mess_count: int = -1,
-                 model: AutoEncoder = None,
-                 train_scores_mean: float = float("NaN"),
-                 train_scores_std: float = float("NaN")):
+                 model: AutoEncoder,
+                 train_scores_mean: float,
+                 train_scores_std: float):
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
         self.model = model
