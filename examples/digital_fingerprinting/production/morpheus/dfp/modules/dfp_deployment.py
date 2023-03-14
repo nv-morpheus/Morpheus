@@ -44,9 +44,10 @@ def dfp_deployment(builder: mrc.Builder):
     Notes
     ----------
     Configurable parameters:
-        - training_options: dict
-        - inference_options: dict
+        - training_options (dict): Options for the training pipeline module, including settings and configurations specific to the training process.
+        - inference_options (dict): Options for the inference pipeline module, including settings and configurations specific to the inference process.
     """
+
     module_config = builder.get_current_module_config()
 
     num_output_ports = 2
@@ -71,12 +72,12 @@ def dfp_deployment(builder: mrc.Builder):
                                                     dfp_inference_pipe_conf)
 
     # Create broadcast node to fork the pipeline.
-    boradcast = Broadcast(builder, "broadcast")
+    broadcast = Broadcast(builder, "broadcast")
 
     # Make an edge between modules
-    builder.make_edge(fsspec_dataloader_module.output_port("output"), boradcast)
-    builder.make_edge(boradcast, dfp_training_pipe_module.input_port("input"))
-    builder.make_edge(boradcast, dfp_inference_pipe_module.input_port("input"))
+    builder.make_edge(fsspec_dataloader_module.output_port("output"), broadcast)
+    builder.make_edge(broadcast, dfp_training_pipe_module.input_port("input"))
+    builder.make_edge(broadcast, dfp_inference_pipe_module.input_port("input"))
 
     out_streams = [dfp_training_pipe_module.output_port("output"), dfp_inference_pipe_module.output_port("output")]
 

@@ -40,18 +40,18 @@ def dfp_split_users(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
 
     Notes
     ----------
     Configurable parameters:
-        - fallback_username: Name of the user Id to use if the user Id is not found
-        - include_generic: Whether to include the generic user Id
-        - include_individual: Whether to include the individual user Id's
-        - only_users: List of user Id's to include
-        - skip_users: List of user Id's to skip
-        - timestamp_column_name: Name of the timestamp column
-        - userid_column_name: Name of the user Id column
+        - fallback_username: The user ID to use if the user ID is not found (default: 'generic_user')
+        - include_generic: Whether to include a generic user ID in the output (default: False)
+        - include_individual: Whether to include individual user IDs in the output (default: False)
+        - only_users: List of user IDs to include in the output; other user IDs will be excluded (default: [])
+        - skip_users: List of user IDs to exclude from the output (default: [])
+        - timestamp_column_name: Name of the column containing timestamps (default: 'timestamp')
+        - userid_column_name: Name of the column containing user IDs (default: 'username')
     """
 
     config = builder.get_current_module_config()
@@ -82,7 +82,6 @@ def dfp_split_users(builder: mrc.Builder):
             user_df = split_dataframes[user_id]
 
             current_user_count = user_index_map.get(user_id, 0)
-            # logger.debug("Current user count: %s", current_user_count)
 
             # Reset the index so that users see monotonically increasing indexes
             user_df.index = range(current_user_count, current_user_count + len(user_df))
@@ -94,23 +93,7 @@ def dfp_split_users(builder: mrc.Builder):
             user_cudf = cudf.from_pandas(user_df)
             user_control_message.payload(MessageMeta(df=user_cudf))
 
-            # output_messages.append(DFPMessageMeta(df=user_df, user_id=user_id))
             output_messages.append(user_control_message)
-
-            # rows_per_user = [len(msg.payload().df.to_pandas()) for msg in output_messages]
-
-            # if (len(output_messages) > 0):
-            #    log_info.set_log(
-            #        ("Batch split users complete. Input: %s rows from %s to %s. "
-            #         "Output: %s users, rows/user min: %s, max: %s, avg: %.2f. Duration: {duration:.2f} ms"),
-            #        len(df),
-            #        df[timestamp_column_name].min(),
-            #        df[timestamp_column_name].max(),
-            #        len(rows_per_user),
-            #        np.min(rows_per_user),
-            #        np.max(rows_per_user),
-            #        np.mean(rows_per_user),
-            #    )
 
         return output_messages
 
@@ -140,26 +123,30 @@ def dfp_split_users(builder: mrc.Builder):
             logger.debug("No message to extract users from")
             return []
 
-        control_messages = None  # for readability
-        mm = control_message.payload()
-        with mm.mutable_dataframe() as dfm:
-            with log_time(logger.debug) as log_info:
+        try:
+            control_messages = None  # for readability
+            mm = control_message.payload()
+            with mm.mutable_dataframe() as dfm:
+                with log_time(logger.debug) as log_info:
 
-                if (isinstance(dfm, cudf.DataFrame)):
-                    # Convert to pandas because cudf is slow at this
-                    df = dfm.to_pandas()
-                    df[timestamp_column_name] = pd.to_datetime(df[timestamp_column_name], utc=True)
-                else:
-                    df = dfm
+                    if (isinstance(dfm, cudf.DataFrame)):
+                        # Convert to pandas because cudf is slow at this
+                        df = dfm.to_pandas()
+                        df[timestamp_column_name] = pd.to_datetime(df[timestamp_column_name], utc=True)
+                    else:
+                        df = dfm
 
-                split_dataframes = generate_split_dataframes(df)
+                    split_dataframes = generate_split_dataframes(df)
 
-                control_messages = generate_control_messages(control_message, split_dataframes)
+                    control_messages = generate_control_messages(control_message, split_dataframes)
 
-        return control_messages
+            return control_messages
+        except Exception as e:
+            logger.exception("Error extracting users from message, discarding control message")
+            return []
 
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(extract_users), ops.flatten()).subscribe(sub)
+    def node_fn(observable: mrc.Observable, subscriber: mrc.Subscriber):
+        observable.pipe(ops.map(extract_users), ops.flatten()).subscribe(subscriber)
 
     node = builder.make_node(DFP_SPLIT_USERS, mrc.core.operators.build(node_fn))
 

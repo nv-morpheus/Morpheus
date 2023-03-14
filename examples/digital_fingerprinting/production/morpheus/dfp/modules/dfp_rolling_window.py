@@ -46,17 +46,17 @@ def dfp_rolling_window(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - aggregation_span: The span of time to aggregate over
-        - cache_dir: Directory to cache the rolling window data
-        - cache_to_disk: Whether to cache the rolling window data to disk
-        - cache_mode: The cache mode to use 'batch' or 'aggregate'
-            aggregate: Cache the entire rolling window
-            batch: Cache until batch criteria is met and then flush
-        - timestamp_column_name: Name of the timestamp column
-        - trigger_on_min_history: Minimum number of rows to trigger the rolling window
-        - trigger_on_min_increment: Minimum number of rows to trigger the rolling window
+        - aggregation_span: The time span to aggregate over (e.g., '60d' for 60 days)
+        - cache_dir: The directory to cache the rolling window data
+        - cache_to_disk: Whether to cache the rolling window data to disk (default: False)
+        - cache_mode: The cache mode to use, either 'batch' or 'aggregate'
+            'aggregate': Cache the entire rolling window
+            'batch': Cache until batch criteria is met and then flush
+        - timestamp_column_name: The name of the timestamp column (default: 'timestamp')
+        - trigger_on_min_history: The minimum number of rows required to trigger the rolling window (default: 1)
+        - trigger_on_min_increment: The minimum number of rows required to trigger the rolling window (default: 0)
     """
 
     config = builder.get_current_module_config()
@@ -152,48 +152,33 @@ def dfp_rolling_window(builder: mrc.Builder):
             return MessageMeta(cudf.from_pandas(df_window))
 
     def on_data(control_message: MessageControl):
+        try:
+            payload = control_message.payload()
+            user_id = control_message.get_metadata("user_id")
 
-        payload = control_message.payload()
-        user_id = control_message.get_metadata("user_id")
+            if (control_message.has_metadata("data_type")):
+                data_type = control_message.get_metadata("data_type")
+            else:
+                data_type = "streaming"
 
-        if (control_message.has_metadata("data_type")):
-            data_type = control_message.get_metadata("data_type")
-        else:
-            data_type = "streaming"
+            # If we're an explicit training or inference task, then we don't need to do any rolling window logic
+            if (data_type == "payload"):
+                return control_message
+            elif (data_type == "streaming"):
+                with log_time(logger.debug) as log_info:
+                    result = try_build_window(payload, user_id)  # Return a MessageMeta
 
-        # If we're an explicit training or inference task, then we don't need to do any rolling window logic
-        if (data_type == "payload"):
-            return control_message
-        elif (data_type == "streaming"):
-            with log_time(logger.debug) as log_info:
-                result = try_build_window(payload, user_id)  # Return a MessageMeta
+                    if (result is None):
+                        return result
 
-                if (result is not None):
-                    pass
-                    # log_info.set_log(
-                    #    ("Rolling window complete for %s in {duration:0.2f} ms. "
-                    #     "Input: %s rows from %s to %s. Output: %s rows from %s to %s"),
-                    #    user_id,
-                    #    len(payload.df),
-                    #    payload.df[timestamp_column_name].min(),
-                    #    payload.df[timestamp_column_name].max(),
-                    #    result.count,
-                    #    result.df[timestamp_column_name].min(),
-                    #    result.df[timestamp_column_name].max(),
-                    # )
-                else:
-                    # Result is None indicates that we don't have enough data to build payload for the event
-                    # CM is discarded here
-                    log_info.disable()
-                    return None
+                control_message.payload(result)
+                control_message.set_metadata("data_type", "payload")
 
-            # TODO (bhargav) Check if we need to pass control_message config to data_prep module.
-            control_message.payload(result)
-            control_message.set_metadata("data_type", "payload")
+                return control_message
 
-            return control_message
-        else:
-            raise RuntimeError("Unknown data type")
+        except Exception as e:
+            logger.error(f"Error processing control message in rolling window: {e}\nDiscarding control message.")
+            return None
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)

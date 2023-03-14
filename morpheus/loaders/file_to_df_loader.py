@@ -43,6 +43,44 @@ logger = logging.getLogger(__name__)
 dask_cluster = None
 
 
+def get_dask_cluster(download_method: str):
+    global dask_cluster
+
+    if dask_cluster is None:
+        try:
+            import dask
+            from dask.distributed import LocalCluster
+        except ModuleNotFoundError:
+            raise Exception("Install 'dask' and 'distributed' to allow file downloads using dask mode.")
+
+        logger.debug("Dask cluster doesn't exist. Creating dask cluster...")
+
+        # Up the heartbeat interval which can get violated with long download times
+        dask.config.set({"distributed.client.heartbeat": "30s"})
+
+        dask_cluster = LocalCluster(start=True, processes=not download_method == "dask_thread")
+
+        logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
+
+    return dask_cluster
+
+
+def get_dask_client(dask_cluster):
+    from dask.distributed import Client
+    dask_client = Client(get_dask_cluster(dask_cluster))
+    logger.debug("Creating dask client %s ... Done.", dask_client)
+
+    return dask_client
+
+
+def close_dask_cluster():
+    if (dask_cluster is not None):
+        logger.debug("Stopping dask cluster...")
+        dask_cluster.close()
+
+        logger.debug("Stopping dask cluster... Done.")
+
+
 @register_loader(FILE_TO_DF_LOADER)
 def file_to_df_loader(control_message: MessageControl, task: dict):
     if task.get("strategy", "aggregate") != "aggregate":
@@ -231,41 +269,3 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
             control_message.payload(MessageMeta(dfm))
 
     return control_message
-
-
-def get_dask_cluster(download_method: str):
-    global dask_cluster
-
-    if dask_cluster is None:
-        try:
-            import dask
-            from dask.distributed import LocalCluster
-        except ModuleNotFoundError:
-            raise Exception("Install 'dask' and 'distributed' to allow file downloads using dask mode.")
-
-        logger.debug("Dask cluster doesn't exist. Creating dask cluster...")
-
-        # Up the heartbeat interval which can get violated with long download times
-        dask.config.set({"distributed.client.heartbeat": "30s"})
-
-        dask_cluster = LocalCluster(start=True, processes=not download_method == "dask_thread")
-
-        logger.debug("Creating dask cluster... Done. Dashboard: %s", dask_cluster.dashboard_link)
-
-    return dask_cluster
-
-
-def get_dask_client(dask_cluster):
-    from dask.distributed import Client
-    dask_client = Client(get_dask_cluster(dask_cluster))
-    logger.debug("Creating dask client %s ... Done.", dask_client)
-
-    return dask_client
-
-
-def close_dask_cluster():
-    if (dask_cluster is not None):
-        logger.debug("Stopping dask cluster...")
-        dask_cluster.close()
-
-        logger.debug("Stopping dask cluster... Done.")

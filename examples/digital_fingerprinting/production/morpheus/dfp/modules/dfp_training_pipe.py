@@ -45,19 +45,20 @@ def dfp_training_pipe(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
 
     Notes
     ----------
     Configurable parameters:
-        - timestamp_column_name : str
-        - cache_dir : str
-        - batching_options : dict
-        - user_splitting_options : dict
-        - stream_aggregation_options : dict
-        - preprocessing_options : dict
-        - dfencoder_options : dict
-        - mlflow_writer_options : dict
+        - timestamp_column_name (str): Name of the timestamp column used in the data.
+        - cache_dir (str): Directory to cache the rolling window data.
+        - batching_options (dict): Options for batching the data.
+        - user_splitting_options (dict): Options for splitting the data by user.
+        - stream_aggregation_options (dict): Options for aggregating the data by stream.
+        - preprocessing_options (dict): Options for preprocessing the data.
+        - dfencoder_options (dict): Options for configuring the data frame encoder, used for training the model.
+        - mlflow_writer_options (dict): Options for the MLflow model writer, which is responsible for saving the trained
+        model.
     """
 
     config = builder.get_current_module_config()
@@ -105,8 +106,6 @@ def dfp_training_pipe(builder: mrc.Builder):
     data_prep_defaults = {}
     dfp_data_prep_conf = merge_dictionaries(data_prep_options, data_prep_defaults)
 
-    # TODO(Devin): Not sure, but it seems like this is the right place to be opinionated about these values
-    # mostly because dfencoder itself has default values so we don't need them at the dfp_training level
     dfp_training_defaults = {
         "model_kwargs": {
             "encoder_layers": [512, 500],  # layers of the encoding part

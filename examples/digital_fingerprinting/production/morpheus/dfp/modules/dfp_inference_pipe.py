@@ -55,16 +55,16 @@ def dfp_inference_pipe(builder: mrc.Builder):
     Notes
     ----------
     Configurable parameters:
-        - batching_options: Options for batching the data
-        - cache_dir: Directory to cache the rolling window data
-        - detection_criteria: Criteria for filtering detections
-        - inference_options: Options for inference
-        - num_output_ports: Number of output ports
-        - preprocessing_options: Options for preprocessing the data
-        - stream_aggregation_options: Options for aggregating the data by stream
-        - timestamp_column_name: Name of the timestamp column
-        - user_splitting_options: Options for splitting the data by user
-        - write_to_file_options: Options for writing the detections to file
+        - batching_options (dict): Options for batching the data, including start and end times, sampling rate, and other settings.
+        - cache_dir (str): Directory to cache the rolling window data.
+        - detection_criteria (dict): Criteria for filtering detections, such as threshold and field_name.
+        - inference_options (dict): Options for the inference module, including model settings and other configurations.
+        - num_output_ports (int): Number of output ports for the module.
+        - preprocessing_options (dict): Options for preprocessing the data, including schema and timestamp column name.
+        - stream_aggregation_options (dict): Options for aggregating the data by stream, including aggregation span and cache settings.
+        - timestamp_column_name (str): Name of the timestamp column in the input data.
+        - user_splitting_options (dict): Options for splitting the data by user, including filtering and user ID column name.
+        - write_to_file_options (dict): Options for writing the detections to a file, such as filename and overwrite settings.
     """
 
     config = builder.get_current_module_config()
@@ -106,7 +106,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
 
     write_to_file_options = config.get("write_to_file_options", {})
 
-    preproc_defaults = {}
+    preproc_defaults = {}  # placeholder for future defaults
     preproc_conf = merge_dictionaries(preproc_options, preproc_defaults)
 
     stream_aggregation_defaults = {
@@ -116,10 +116,10 @@ def dfp_inference_pipe(builder: mrc.Builder):
     }
     dfp_rolling_window_conf = merge_dictionaries(stream_aggregation_options, stream_aggregation_defaults)
 
-    data_prep_defaults = {}
+    data_prep_defaults = {}  # placeholder for future defaults
     dfp_data_prep_conf = merge_dictionaries(data_prep_options, data_prep_defaults)
 
-    inference_model_defaults = {}
+    inference_model_defaults = {}  # placeholder for future defaults
     dfp_inference_conf = merge_dictionaries(inference_model_options, inference_model_defaults)
 
     detection_criteria_defaults = {
@@ -129,7 +129,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
     }
     filter_detections_conf = merge_dictionaries(detection_criteria, detection_criteria_defaults)
 
-    post_processing_defaults = {}
+    post_processing_defaults = {}  # placeholder for future defaults
     dfp_post_proc_conf = merge_dictionaries(post_processing_options, post_processing_defaults)
 
     serialize_defaults = {

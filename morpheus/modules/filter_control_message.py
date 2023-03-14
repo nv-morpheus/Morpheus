@@ -38,10 +38,10 @@ def filter_control_message(builder: mrc.Builder):
     Notes
     ----------
     Configurable parameters:
-        - enable_task_filtering: bool
-        - enable_data_type_filtering: bool
-        - filter_task_type: str
-        - filter_data_type: str
+        - enable_task_filtering : bool (Enables filtering based on task type)
+        - enable_data_type_filtering : bool (Enables filtering based on data type)
+        - filter_task_type : str (The task type to be used as a filter)
+        - filter_data_type : str (The data type to be used as a filter)
     """
 
     config = builder.get_current_module_config()
@@ -69,12 +69,12 @@ def filter_control_message(builder: mrc.Builder):
             # TODO(Devin): Convert this to use enum values
             task_exists = control_message.has_task(filter_task_type)
 
-            # Dispose messages if it has no expected task and it's data_type does not matches with filter.
+            # Dispose messages if it has no expected task and it's data_type does not matches with filter_task_type.
             if (not task_exists and filter and cm_data_type != filter):
                 return None
         elif (enable_data_type_filtering):
             # Regardless of whether tasks are present, discard messages
-            # if the data_type don't match the filter.
+            # if the data_type don't match the filter_task_type.
             if (filter_data_type and filter_data_type != filter):
                 return None
 
