@@ -1,0 +1,34 @@
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+    }
+    label {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 10px;
+    width: 200px;
+    text-align: right;
+    }
+    input[type=text],
+    input[type=number] {
+    height: 25px;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    width: 200px;
+    }
+    button[type=button] {
+    margin-top: 10px;
+    height: 30px;
+    padding: 0 20px;
+    border-radius: 5px;
+    border: none;
+    background-color: #8bb521;
+    color: #fff;
+    cursor: pointer;
+    }
+    button[type=button]:hover {
+    background-color: #380e0ec1;
+}

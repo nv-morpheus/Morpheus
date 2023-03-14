@@ -1,0 +1,185 @@
+.banner {
+  position:relative;
+  height: 200px;
+  max-width: 100%;
+  background: url("https://developer-blogs.nvidia.com/wp-content/uploads/2022/10/router-box-featured.jpg");
+  background-size:auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  }
+  .banner::after {
+  content: "";
+  background-color: #8bb521(0, 0, 0, 0.4);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  }
+
+  h1 {
+    position: absolute;
+    margin: 0;
+    font-size: 50px;
+    color: white;
+    z-index: 2;
+    line-height: 83px;
+    }
+/*  <link rel="stylesheet" type="text/css" href="test.css">*/
+
+
+/* Style for the form element */
+form {
+  margin: 0 auto;
+  max-width: 1000px;
+}
+
+/* Style for the input element */
+.input {
+  margin-bottom: 20px;
+}
+
+/* Style for the label element */
+label {
+  display: inline-block;
+  margin-bottom: 5px;
+}
+
+/* Style for the select element */
+select {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+#banner {
+  width: 100%;
+  }
+  
+/* Style for the button elements */
+button {
+  margin-top: 10px;
+  margin-right: 10px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background-color: #8bb521;
+  color: #fff;
+  border: none;
+}
+
+button:hover {
+  cursor: pointer;
+  background-color: #8bb521;
+}
+
+/* Style for the input elements */
+input {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+/* Style for the tasks and properties container elements */
+.tasks-container,
+.properties-container {
+  margin-bottom: 15px;
+}
+
+/* Style for the task and property elements */
+.task,
+.property {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #8bb521;
+  border-radius: 5px;
+}.banner {
+  position:relative;
+  height: 200px;
+  max-width: 100%;
+  background: url("https://developer-blogs.nvidia.com/wp-content/uploads/2022/10/router-box-featured.jpg");
+  background-size:auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  }
+  .banner::after {
+  content: "";
+  background-color: #8bb521(0, 0, 0, 0.4);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  }
+
+  h1 {
+    position: absolute;
+    margin: 0;
+    font-size: 50px;
+    color: white;
+    z-index: 2;
+    line-height: 83px;
+    }
+/*  <link rel="stylesheet" type="text/css" href="test.css">*/
+
+
+/* Style for the form element */
+form {
+  margin: 0 auto;
+  max-width: 1000px;
+}
+
+/* Style for the input element */
+.input {
+  margin-bottom: 20px;
+}
+
+/* Style for the label element */
+label {
+  display: inline-block;
+  margin-bottom: 5px;
+}
+
+/* Style for the select element */
+select {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+/* Style for the button elements */
+button {
+  margin-top: 10px;
+  margin-right: 10px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background-color: #8bb521;
+  color: #fff;
+  border: none;
+}
+
+button:hover {
+  cursor: pointer;
+  background-color: #380e0ec1;
+}
+
+/* Style for the input elements */
+input {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+/* Style for the tasks and properties container elements */
+.tasks-container,
+.properties-container {
+  margin-bottom: 15px;
+}
+
+/* Style for the task and property elements */
+.task,
+.property {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #8bb521;
+  border-radius: 5px;
+}

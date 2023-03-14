@@ -135,7 +135,7 @@ def mlflow_model_writer(builder: mrc.Builder):
                 "access_control_list": [{
                     "group_name": group, "permission_level": permission
                 } for group,
-                permission in databricks_permissions.items()]
+                                        permission in databricks_permissions.items()]
             }
 
             requests.patch(url=patch_registered_model_permissions_url,
@@ -257,7 +257,7 @@ def mlflow_model_writer(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(MLFLOW_MODEL_WRITER, node_fn)
+    node = builder.make_node(MLFLOW_MODEL_WRITER, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

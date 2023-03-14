@@ -83,7 +83,7 @@ def filter_control_message(builder: mrc.Builder):
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
 
-    node = builder.make_node_full(FILTER_CONTROL_MESSAGE, node_fn)
+    node = builder.make_node(FILTER_CONTROL_MESSAGE, mrc.core.operators.build(node_fn))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

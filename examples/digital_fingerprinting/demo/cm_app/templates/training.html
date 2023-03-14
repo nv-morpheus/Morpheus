@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>DFP Integrated Training</title>
+      <link rel="stylesheet" type="text/css" href="/static/submit_messages.css">
+      <link rel="stylesheet" type="text/css" href="/static/training.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+      <script src="{{url_for('static', filename='training.js')}}"></script>
+   </head>
+   <body>
+      <div class="banner">
+         <h1>DFP Integrated Training Demo</h1>
+      </div>
+      <form action="/training" method="post">
+         <div id="inputs-container">
+            <div>
+               <label for="files">Files:</label><input type="text" name="files" id="files" placeholder="Ex: filename1,filename2" required>
+            </div>
+            <div>
+               <label for="period">Period:</label><input type="text" name="period" id="period" placeholder="Ex: D" required>
+            </div>
+            <div>
+               <label for="sampling_rate_s">Sampling Rate (s):</label><input type="number" name="sampling_rate_s" id="sampling_rate_s" placeholder="Ex: 0" required>
+            </div>
+            <div>
+               <label for="start_time">Start Time:</label><input type="text" name="start_time" id="start_time" placeholder="Ex: YYYY-MM-DD" required>
+            </div>
+            <div>
+               <label for="end_time">End Time:</label><input type="text" name="end_time" id="end_time" placeholder="Ex: YYYY-MM-DD" required>
+            </div>
+         </div>
+         <div class="btn-block">
+            <button id="submit" href="/training" >Submit</button>
+         </div>
+         <input type="hidden" id="control-messages-json" name="control-messages-json"></input>
+      </form>
+   </body>
+</html>
