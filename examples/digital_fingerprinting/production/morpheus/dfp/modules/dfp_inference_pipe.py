@@ -59,7 +59,7 @@ def dfp_inference_pipe(builder: mrc.Builder):
         - cache_dir: Directory to cache the rolling window data
         - detection_criteria: Criteria for filtering detections
         - inference_options: Options for inference
-        - output_port_count: Number of output ports
+        - num_output_ports: Number of output ports
         - preprocessing_options: Options for preprocessing the data
         - stream_aggregation_options: Options for aggregating the data by stream
         - timestamp_column_name: Name of the timestamp column

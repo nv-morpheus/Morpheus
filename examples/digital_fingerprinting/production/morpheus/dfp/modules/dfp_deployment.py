@@ -49,7 +49,7 @@ def dfp_deployment(builder: mrc.Builder):
     """
     module_config = builder.get_current_module_config()
 
-    output_port_count = 2
+    num_output_ports = 2
 
     supported_loaders = {}
     fsspec_loader_defaults = {
@@ -84,6 +84,6 @@ def dfp_deployment(builder: mrc.Builder):
     builder.register_module_input("input", fsspec_dataloader_module.input_port("input"))
 
     # Register output ports for a module.
-    for i in range(output_port_count):
+    for i in range(num_output_ports):
         # Output ports are registered in increment order.
         builder.register_module_output(f"output-{i}", out_streams[i])

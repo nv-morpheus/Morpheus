@@ -55,7 +55,7 @@ from morpheus.utils.logger import configure_logging
 logger = logging.getLogger(__name__)
 
 PIPELINES_CONF = load_json("resource/pipelines_conf.json")
-PIPELINES_CONF["output_port_count"] = 2
+PIPELINES_CONF["num_output_ports"] = 2
 
 set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
 
@@ -81,7 +81,7 @@ def dfp_modules_pipeline(pipe_config: Config,
                              modules_conf,
                              input_port_name="input",
                              output_port_name_prefix="output",
-                             output_port_count=modules_conf["output_port_count"]))
+                             num_output_ports=modules_conf["num_output_ports"]))
 
     pipeline.add_edge(source_stage, dfp_deployment_stage)
 

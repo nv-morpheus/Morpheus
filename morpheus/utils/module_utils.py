@@ -14,9 +14,13 @@
 
 import functools
 import logging
+import re
 import typing
 
 import mrc
+import cudf
+import pandas as pd
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +170,60 @@ def merge_dictionaries(primary_dict, secondary_dict):
             result_dict[key] = value
 
     return result_dict
+
+
+period_to_strptime = {
+    "s": "%Y-%m-%d %H:%M:%S",
+    "T": "%Y-%m-%d %H:%M",
+    "min": "%Y-%m-%d %H:%M",
+    "H": "%Y-%m-%d %H",
+    "D": "%Y-%m-%d",
+    "W": "%Y-%U",
+    "M": "%Y-%m",
+    "Y": "%Y",
+    "Q": "%Y-%q",
+    "A": "%Y"
+}
+
+
+def to_period_cudf_approximation(df, period):
+    """
+    This function converts a cudf dataframe to a period approximation.
+
+    Parameters
+    ----------
+    df : cudf.DataFrame
+        Input cudf dataframe.
+    period : int
+        Period.
+
+    Returns
+    -------
+    cudf.DataFrame
+        Period approximation of the input cudf dataframe.
+    """
+
+    match = re.match(r"(\d*)(\w)", period)
+    if not match:
+        raise ValueError(f"Invalid period format: {period}")
+
+    count_str, period = match.groups()
+    count = int(count_str) if count_str else 1
+
+    if period not in period_to_strptime:
+        raise ValueError(f"Unknown period: {period}")
+
+    strptime_format = period_to_strptime[period]
+
+    if "cudf" in str(type(df)):
+        df["period"] = df["ts"].dt.strftime(strptime_format).astype("datetime64[s]").astype("int")
+        if count > 1:
+            df["period"] = df["period"] // (count * np.timedelta64(1, period).astype("int"))
+    else:
+        df["period"] = pd.to_datetime(df["ts"].dt.strftime(strptime_format))
+        df["period"] = df["period"].dt.to_period(f"{count}{period}")
+
+    return df
 
 
 def get_config_with_overrides(config, module_id, module_name=None, module_namespace="morpheus"):

@@ -163,7 +163,7 @@ def run_pipeline(source: str,
 
     dfp_deployment_module_config = config_generator.get_module_conf()
 
-    output_port_count = dfp_deployment_module_config.get("output_port_count")
+    num_output_ports = dfp_deployment_module_config.get("num_output_ports")
 
     # Create a pipeline object
     pipeline = Pipeline(config)
@@ -182,7 +182,7 @@ def run_pipeline(source: str,
                              dfp_deployment_module_config,
                              input_port_name="input",
                              output_port_name_prefix="output",
-                             output_port_count=output_port_count))
+                             num_output_ports=num_output_ports))
 
     train_moniter_stage = pipeline.add_stage(
         MonitorStage(config, description="DFP Training Pipeline rate", smoothing=0.001))

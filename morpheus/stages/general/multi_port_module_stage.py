@@ -39,7 +39,7 @@ class MultiPortModuleStage(Stage):
         Name of the input port for the registered module.
     output_port_name_prefix : str
         Prefix name of the output ports for the registered module.
-    output_port_count : str
+    num_output_ports : str
         Number of output ports for the registered module.
     input_type : default `typing.Any`
         The stage acceptable input type.
@@ -53,7 +53,7 @@ class MultiPortModuleStage(Stage):
                  module_conf: typing.Dict[str, any],
                  input_port_name: str,
                  output_port_name_prefix: str,
-                 output_port_count: int,
+                 num_output_ports: int,
                  input_type=typing.Any,
                  output_type=typing.Any):
 
@@ -65,11 +65,11 @@ class MultiPortModuleStage(Stage):
         self._input_port_name = input_port_name
         self._output_port_name_prefix = output_port_name_prefix
 
-        if output_port_count < 1:
-            raise ValueError(f"The `output_port_count` must be >= 1, but received {output_port_count}.")
+        if num_output_ports < 1:
+            raise ValueError(f"The `output_port_count` must be >= 1, but received {num_output_ports}.")
 
-        self._create_ports(1, output_port_count)
-        self._output_port_count = output_port_count
+        self._create_ports(1, num_output_ports)
+        self._output_port_count = num_output_ports
 
     @property
     def name(self) -> str:
@@ -83,7 +83,7 @@ class MultiPortModuleStage(Stage):
         Returns input type for the current stage.
         """
 
-        return (typing.Any, )
+        return (typing.Any,)
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -95,7 +95,7 @@ class MultiPortModuleStage(Stage):
             Accepted input types.
 
         """
-        return (typing.Any, )
+        return (typing.Any,)
 
     def _build(self, builder: mrc.Builder, in_stream_pairs: typing.List[StreamPair]) -> typing.List[StreamPair]:
 

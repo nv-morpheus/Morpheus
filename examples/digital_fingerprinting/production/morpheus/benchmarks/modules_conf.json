@@ -203,5 +203,5 @@
          "overwrite": true
       }
    },
-   "output_port_count": 2
+   "num_output_ports": 2
 }

@@ -53,7 +53,7 @@ class ConfigGenerator:
 
     def infer_module_conf(self):
         module_conf = {
-            "output_port_count": 2,
+            "num_output_ports": 2,
             "timestamp_column_name": self._config.ae.timestamp_column_name,
             "cache_dir": self._dfp_arg_parser.cache_dir,
             "batching_options": {
@@ -64,7 +64,6 @@ class ConfigGenerator:
                 "parser_kwargs": {
                     "lines": False, "orient": "records"
                 },
-                "cache_dir": self._dfp_arg_parser.cache_dir,
                 "schema": {
                     "schema_str": self._source_schema_str, "encoding": self._encoding
                 }

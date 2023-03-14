@@ -31,6 +31,7 @@ from morpheus.utils.module_ids import FILE_BATCHER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 from morpheus.utils.module_utils import merge_dictionaries
+from morpheus.utils.module_utils import to_period_cudf_approximation
 
 logger = logging.getLogger(__name__)
 
@@ -48,23 +49,23 @@ def file_batcher(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        mrc Builder object.
+        An mrc Builder object.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - batching_options: dict
-            - end_time: datetime
-            - iso_date_regex_pattern: str
-            - parser_kwargs: dict
-            - period: str
-            - sampling_rate_s: int
-            - start_time: datetime
-        - cache_dir: str
-        - file_type: str
-        - filter_nulls: bool
-        - schema: dict
-        - timestamp_column_name: str
+    - batching_options (dict):
+        - end_time (datetime|str): End time of the time window.
+        - iso_date_regex_pattern (str): Regex pattern for ISO date matching.
+        - parser_kwargs (dict): Additional arguments for the parser.
+        - period (str): Time period for grouping files.
+        - sampling_rate_s (int): Sampling rate in seconds.
+        - start_time (datetime|str): Start time of the time window.
+    - cache_dir (str): Cache directory.
+    - file_type (str): File type.
+    - filter_nulls (bool): Whether to filter null values.
+    - schema (dict): Data schema.
+    - timestamp_column_name (str): Name of the timestamp column.
     """
 
     config = builder.get_current_module_config()
@@ -81,19 +82,44 @@ def file_batcher(builder: mrc.Builder):
         "end_time": config.get("end_time"),
     }
 
+    def validate_control_message(control_message: MessageControl):
+        if control_message.has_metadata("batching_options") and not isinstance(
+                control_message.get_metadata("batching_options"), dict):
+            raise ValueError("Invalid or missing 'batching_options' metadata in control message")
+
+        data_type = control_message.get_metadata("data_type")
+        if data_type not in {"payload", "streaming"}:
+            raise ValueError(f"Invalid 'data_type' metadata in control message: {data_type}")
+
     def build_fs_filename_df(files, params):
         file_objects: fsspec.core.OpenFiles = fsspec.open_files(files)
 
-        start_time = params["start_time"]
-        if (start_time is not None):
-            start_time = datetime.datetime.strptime(start_time, '%Y-%m-%d').replace(
-                tzinfo=datetime.timezone.utc)
+        try:
+            start_time = params["start_time"]
+            end_time = params["end_time"]
+            sampling_rate_s = params["sampling_rate_s"]
 
-        end_time = params["end_time"]
-        if (end_time is not None):
-            end_time = datetime.datetime.strptime(end_time, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+            if not isinstance(start_time, (str, type(None))) or (
+                    start_time is not None and not re.match(r"\d{4}-\d{2}-\d{2}", start_time)):
+                raise ValueError(f"Invalid 'start_time' value: {start_time}")
 
-        sampling_rate_s = int(params["sampling_rate_s"])
+            if not isinstance(end_time, (str, type(None))) or (
+                    end_time is not None and not re.match(r"\d{4}-\d{2}-\d{2}", end_time)):
+                raise ValueError(f"Invalid 'end_time' value: {end_time}")
+
+            if not isinstance(sampling_rate_s, int) or sampling_rate_s < 0:
+                raise ValueError(f"Invalid 'sampling_rate_s' value: {sampling_rate_s}")
+
+            if (start_time is not None):
+                start_time = datetime.datetime.strptime(start_time, '%Y-%m-%d').replace(
+                    tzinfo=datetime.timezone.utc)
+
+            if (end_time is not None):
+                end_time = datetime.datetime.strptime(end_time, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+
+        except Exception as e:
+            logger.error(f"Error parsing parameters: {e}")
+            raise
 
         ts_and_files = []
         for file_object in file_objects:
@@ -175,24 +201,6 @@ def file_batcher(builder: mrc.Builder):
 
         return control_messages
 
-    def add_ts_period(df, period):
-
-        # TODO(Devin): Rough approximation of pandas '.dt.to_period()' method, which is not yet supported by cudf
-        if (period == "s"):
-            df["period"] = df["ts"].dt.strftime("%Y-%m-%d %H:%M:%S").astype("datetime64[s]").astype('int')
-        elif (period == "m"):
-            df["period"] = df["ts"].dt.strftime("%Y-%m-%d %H:%M").astype("datetime64[s]").astype('int')
-        elif (period == "H"):
-            df["period"] = df["ts"].dt.strftime("%Y-%m-%d %H").astype("datetime64[s]").astype('int')
-        elif (period == "D"):
-            df["period"] = df["ts"].dt.strftime("%Y-%m-%d").astype("datetime64[s]").astype('int')
-        elif (period == "M"):
-            df["period"] = df["ts"].dt.strftime("%Y-%m").astype("datetime64[s]").astype('int')
-        elif (period == "Y"):
-            df["period"] = df["ts"].dt.strftime("%Y").astype("datetime64[s]").astype('int')
-        else:
-            raise Exception("Unknown period")
-
     def build_processing_params(control_message):
         batching_opts = {}
         if (control_message.has_metadata("batching_options")):
@@ -201,23 +209,29 @@ def file_batcher(builder: mrc.Builder):
         return merge_dictionaries(batching_opts, default_batching_opts)
 
     def on_data(control_message: MessageControl):
-        mm = control_message.payload()
-        params = build_processing_params(control_message)
-        with mm.mutable_dataframe() as dfm:
-            files = dfm.files.to_arrow().to_pylist()
-            ts_filenames_df = build_fs_filename_df(files, params)
+        try:
+            validate_control_message(control_message)
 
-        control_messages = []
-        if len(ts_filenames_df) > 0:
-            # Now split by the batching settings
+            mm = control_message.payload()
+            params = build_processing_params(control_message)
+            with mm.mutable_dataframe() as dfm:
+                files = dfm.files.to_arrow().to_pylist()
+                ts_filenames_df = build_fs_filename_df(files, params)
 
-            add_ts_period(ts_filenames_df, params["period"])
-            period_gb = ts_filenames_df.groupby("period")
-            n_groups = len(period_gb.groups)
+            control_messages = []
+            if len(ts_filenames_df) > 0:
+                # Now split by the batching settings
 
-            control_messages = generate_cms_for_batch_periods(control_message, period_gb, n_groups)
+                ts_filenames_df = to_period_cudf_approximation(ts_filenames_df, params["period"])
+                period_gb = ts_filenames_df.groupby("period")
+                n_groups = len(period_gb.groups)
 
-        return control_messages
+                control_messages = generate_cms_for_batch_periods(control_message, period_gb, n_groups)
+
+            return control_messages
+        except Exception as e:
+            logger.error(f"Error building file list, discarding control message: {e}")
+            return []
 
     def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
         obs.pipe(ops.map(on_data), ops.flatten()).subscribe(sub)
