@@ -202,6 +202,7 @@ class AutoEncoder(torch.nn.Module):
         self.numeric_output = None
         self.binary_output = None
 
+        # `num_names` is a list of column names that contain numeric data (int & float fields).
         self.num_names = []
         self.bin_names = []
 
