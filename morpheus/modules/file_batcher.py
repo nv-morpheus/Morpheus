@@ -53,12 +53,13 @@ def file_batcher(builder: mrc.Builder):
     Notes
     ----------
     Configurable parameters:
-        - batch_end_time: datetime
-        - batch_iso_date_regex_pattern: str
-        - batch_parser_kwargs: dict
-        - batch_period: str
-        - batch_sampling_rate_s: int
-        - batch_start_time: datetime
+        - batching_options: dict
+            - end_time: datetime
+            - iso_date_regex_pattern: str
+            - parser_kwargs: dict
+            - period: str
+            - sampling_rate_s: int
+            - start_time: datetime
         - cache_dir: str
         - file_type: str
         - filter_nulls: bool
