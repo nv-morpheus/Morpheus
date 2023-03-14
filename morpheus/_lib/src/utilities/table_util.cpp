@@ -29,7 +29,7 @@
 namespace fs = std::filesystem;
 namespace py = pybind11;
 
-cudf::io::table_with_metadata morpheus::CuDFTableUtil::load_table(const std::string &filename)
+cudf::io::table_with_metadata morpheus::CuDFTableUtil::load_table(const std::string& filename)
 {
     auto file_path = fs::path(filename);
 

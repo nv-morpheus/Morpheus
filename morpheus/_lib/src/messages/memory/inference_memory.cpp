@@ -17,14 +17,21 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 
+// for TensorObject
+#include "morpheus/objects/tensor_object.hpp"  // IWYU pragma: keep
+#include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil::cupy_to_tensors, CupyUtil::py_tensor_map_t
+
+#include <pybind11/cast.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
+
 #include <string>
 #include <utility>  // for move
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemory****************************************/
-InferenceMemory::InferenceMemory(size_t count) : TensorMemory(count) {}
-InferenceMemory::InferenceMemory(size_t count, tensor_map_t&& tensors) : TensorMemory(count, std::move(tensors)) {}
+InferenceMemory::InferenceMemory(TensorIndex count) : TensorMemory(count) {}
+InferenceMemory::InferenceMemory(TensorIndex count, TensorMap&& tensors) : TensorMemory(count, std::move(tensors)) {}
 
 bool InferenceMemory::has_input(const std::string& name) const
 {
@@ -32,8 +39,17 @@ bool InferenceMemory::has_input(const std::string& name) const
 }
 
 /****** InferenceMemoryInterfaceProxy *************************/
-std::size_t InferenceMemoryInterfaceProxy::get_count(InferenceMemory& self)
+std::shared_ptr<InferenceMemory> InferenceMemoryInterfaceProxy::init(TensorIndex count, pybind11::object& tensors)
 {
-    return self.count;
+    if (tensors.is_none())
+    {
+        return std::make_shared<InferenceMemory>(count);
+    }
+    else
+    {
+        return std::make_shared<InferenceMemory>(
+            count, std::move(CupyUtil::cupy_to_tensors(tensors.cast<CupyUtil::py_tensor_map_t>())));
+    }
 }
+
 }  // namespace morpheus

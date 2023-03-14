@@ -26,6 +26,7 @@ from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.general.monitor_stage import MonitorStage
@@ -39,7 +40,7 @@ from morpheus.utils.file_utils import load_labels_file
 from morpheus.utils.logger import configure_logging
 
 
-class NLPVizFileSource(SingleOutputSource):
+class NLPVizFileSource(PreallocatorMixin, SingleOutputSource):
     """
     Source stage is used to load messages from a file and dumping the contents into the pipeline immediately. Useful for
     testing performance and accuracy of a pipeline.

@@ -17,7 +17,8 @@
 
 #pragma once
 
-#include "morpheus/utilities/type_util.hpp"
+#include "morpheus/objects/dtype.hpp"  // for DType
+#include "morpheus/types.hpp"          // fpr ShapeType
 
 #include <string>
 #include <vector>
@@ -41,7 +42,7 @@ struct TritonInOut
     std::string name;
     size_t bytes;
     DType datatype;
-    std::vector<int> shape;
+    ShapeType shape;
     std::string mapped_name;
     size_t offset;
 };

@@ -17,14 +17,11 @@
 
 #pragma once
 
-#include "morpheus/objects/data_table.hpp"  // for IDataTable
 #include "morpheus/objects/table_info.hpp"
 
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>
-
-#include <memory>  // for shared_ptr
 
 namespace morpheus {
 /****** Component public free function implementations******/
@@ -49,16 +46,16 @@ void load_cudf_helpers();
  *
  * @return pybind11::object
  */
-pybind11::object proxy_table_from_table_with_metadata(cudf::io::table_with_metadata &&, int);
-TableInfo proxy_table_info_from_table(pybind11::object table, std::shared_ptr<morpheus::IDataTable const> idata_table);
+pybind11::object proxy_table_from_table_with_metadata(cudf::io::table_with_metadata&&, int);
+TableInfoData proxy_table_info_data_from_table(pybind11::object table);
 
 /**
  * @brief cudf_helper stubs -- currently not used anywhere
  */
 pybind11::object /*PyColumn*/ proxy_column_from_view(cudf::column_view view);
-cudf::column_view proxy_view_from_column(pybind11::object *column /*PyColumn**/);
-pybind11::object /*PyTable*/ proxy_table_from_table_info(morpheus::TableInfo table_info, pybind11::object *object);
-pybind11::object /*PyTable*/ proxy_series_from_table_info(morpheus::TableInfo table_info, pybind11::object *object);
+cudf::column_view proxy_view_from_column(pybind11::object* column /*PyColumn**/);
+pybind11::object /*PyTable*/ proxy_table_from_table_info(morpheus::TableInfo table_info, pybind11::object* object);
+pybind11::object /*PyTable*/ proxy_series_from_table_info(morpheus::TableInfo table_info, pybind11::object* object);
 
 /** @} */  // end of group
 }  // namespace morpheus

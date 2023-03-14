@@ -15,12 +15,15 @@
  * limitations under the License.
  */
 
+#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
 #include "morpheus/stages/file_source.hpp"
 #include "morpheus/stages/filter_detection.hpp"
 #include "morpheus/stages/kafka_source.hpp"
+#include "morpheus/stages/preallocate.hpp"
 #include "morpheus/stages/preprocess_fil.hpp"
 #include "morpheus/stages/preprocess_nlp.hpp"
 #include "morpheus/stages/serialize.hpp"
@@ -135,6 +138,24 @@ PYBIND11_MODULE(stages, m)
              py::arg("stop_after")            = 0,
              py::arg("async_commits")         = true);
 
+    py::class_<mrc::segment::Object<PreallocateStage<MessageMeta>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreallocateStage<MessageMeta>>>>(
+        m, "PreallocateMessageMetaStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy<MessageMeta>::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("needed_columns"));
+
+    py::class_<mrc::segment::Object<PreallocateStage<MultiMessage>>,
+               mrc::segment::ObjectProperties,
+               std::shared_ptr<mrc::segment::Object<PreallocateStage<MultiMessage>>>>(
+        m, "PreallocateMultiMessageStage", py::multiple_inheritance())
+        .def(py::init<>(&PreallocateStageInterfaceProxy<MultiMessage>::init),
+             py::arg("builder"),
+             py::arg("name"),
+             py::arg("needed_columns"));
+
     py::class_<mrc::segment::Object<PreprocessFILStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<PreprocessFILStage>>>(
@@ -179,7 +200,8 @@ PYBIND11_MODULE(stages, m)
              py::arg("filename"),
              py::arg("mode")              = "w",
              py::arg("file_type")         = 0,  // Setting this to FileTypes::AUTO throws a conversion error at runtime
-             py::arg("include_index_col") = true);
+             py::arg("include_index_col") = true,
+             py::arg("flush")             = false);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

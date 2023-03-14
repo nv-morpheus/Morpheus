@@ -18,9 +18,6 @@ name: CI Pipeline
 on:
   workflow_call:
     inputs:
-      aws_region:
-        default: 'us-west-2'
-        type: string
       run_check:
         required: true
         type: boolean

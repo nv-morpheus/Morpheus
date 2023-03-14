@@ -22,11 +22,35 @@
 
 #include <filesystem>
 
-#define TEST_CLASS(name)                      \
-    class Test##name : public ::testing::Test \
-    {}
+#define TEST_CLASS(name)                                                             \
+    class __attribute__((visibility("default"))) Test##name : public ::testing::Test \
+    {                                                                                \
+        void SetUp() override {}                                                     \
+    }
 
 namespace morpheus::test {
+
+/**
+ * @brief Test fixture for tests that require a python interpreter.
+ * Note: we don't finalize the interpreter after each test, because cudf doesn't behave well when the interpreter is
+ * initialized more than once. This means that additional attention is required when adding new tests to this fixture,
+ * because they will share the same interpreter instance and state.
+ * Note: Additionally, creating another interpreter in the same library (lib_testmorpheus.so) will fail; if you must do
+ * so, create a new library.
+ */
+class TestWithPythonInterpreter : public ::testing::Test
+{
+  public:
+    void initialize_interpreter() const;
+
+  protected:
+    void SetUp() override;
+
+    void TearDown() override;
+
+  private:
+    static bool m_initialized;
+};
 
 /**
  * @brief Gets the `MORPHEUS_ROOT` env variable or throws a runtime_error.

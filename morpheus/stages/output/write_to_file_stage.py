@@ -37,8 +37,7 @@ class WriteToFileStage(SinglePortStage):
     """
     Write all messages to a file.
 
-    This class writes messages to a file. This class does not buffer or keep the file open between messages.
-    It should not be used in production code.
+    This class writes messages to a file.
 
     Parameters
     ----------
@@ -53,6 +52,8 @@ class WriteToFileStage(SinglePortStage):
         Supported extensions: 'csv', 'json' and 'jsonlines'
     include_index_col : bool, default = True
         Write out the index as a column, by default True.
+    flush : bool, default = False, is_flag = True
+        When `True` flush the output buffer to disk on each message.
     """
 
     def __init__(self,
@@ -60,7 +61,8 @@ class WriteToFileStage(SinglePortStage):
                  filename: str,
                  overwrite: bool = False,
                  file_type: FileTypes = FileTypes.Auto,
-                 include_index_col: bool = True):
+                 include_index_col: bool = True,
+                 flush: bool = False):
 
         super().__init__(c)
 
@@ -81,6 +83,7 @@ class WriteToFileStage(SinglePortStage):
 
         self._is_first = True
         self._include_index_col = include_index_col
+        self._flush = flush
 
     @property
     def name(self) -> str:
@@ -129,7 +132,8 @@ class WriteToFileStage(SinglePortStage):
                                                self._output_file,
                                                "w",
                                                self._file_type,
-                                               self._include_index_col)
+                                               self._include_index_col,
+                                               self._flush)
         else:
 
             def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
@@ -145,6 +149,9 @@ class WriteToFileStage(SinglePortStage):
                         lines = self._convert_to_strings(x.df)
 
                         out_file.writelines(lines)
+
+                        if self._flush:
+                            out_file.flush()
 
                         return x
 

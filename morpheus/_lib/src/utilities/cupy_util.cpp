@@ -17,8 +17,9 @@
 
 #include "morpheus/utilities/cupy_util.hpp"
 
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/utilities/type_util.hpp"  // for DType
+#include "morpheus/objects/dtype.hpp"   // for DType
+#include "morpheus/objects/tensor.hpp"  // for Tensor
+#include "morpheus/types.hpp"           // for TensorIndex
 
 #include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
 #include <pybind11/cast.h>
@@ -35,6 +36,7 @@
 #include <cstdint>  // for uintptr_t
 #include <memory>   // for make_shared
 #include <string>   // for string
+#include <utility>  // for move
 #include <vector>   // for vector
 
 namespace morpheus {
@@ -99,7 +101,7 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
 
     pybind11::tuple shape_tup = arr_interface["shape"];
 
-    auto shape = shape_tup.cast<std::vector<TensorIndex>>();
+    auto shape = shape_tup.cast<ShapeType>();
 
     auto typestr = arr_interface["typestr"].cast<std::string>();
 
@@ -107,13 +109,13 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
 
     auto data_ptr = data_tup[0].cast<uintptr_t>();
 
-    std::vector<TensorIndex> strides{};
+    ShapeType strides{};
 
     if (arr_interface.contains("strides") && !arr_interface["strides"].is_none())
     {
         pybind11::tuple strides_tup = arr_interface["strides"];
 
-        strides = strides_tup.cast<std::vector<TensorIndex>>();
+        strides = strides_tup.cast<ShapeType>();
     }
 
     //  Get the size finally
@@ -127,5 +129,27 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
                        0);
 
     return tensor;
+}
+
+TensorMap CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
+{
+    tensor_map_t tensors;
+    for (const auto& tensor : cupy_tensors)
+    {
+        tensors[tensor.first] = std::move(cupy_to_tensor(tensor.second));
+    }
+
+    return tensors;
+}
+
+CupyUtil::py_tensor_map_t CupyUtil::tensors_to_cupy(const tensor_map_t& tensors)
+{
+    py_tensor_map_t cupy_tensors;
+    for (const auto& tensor : tensors)
+    {
+        cupy_tensors[tensor.first] = std::move(tensor_to_cupy(tensor.second));
+    }
+
+    return cupy_tensors;
 }
 }  // namespace morpheus
