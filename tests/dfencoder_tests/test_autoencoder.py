@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 import pytest
 import torch
 
@@ -180,7 +181,8 @@ def test_auto_encoder_init_numeric(filter_probs_pandas_df):
     }
 
     # AE stores the features in an OrderedDict, but we don't want to be dependent on the order that Pandas reads in the
-    # columns of a dataframe.
+    # columns of a dataframe. Dispite the unfortunate name, `num_names` is a list of column names that contain number
+    # fields.
     assert sorted(ae.num_names) == sorted(expected_features.keys())
 
     for (ft, expected_vals) in expected_features.items():
