@@ -16,6 +16,7 @@ import logging
 import re
 from collections import namedtuple
 
+import datetime
 import fsspec
 import fsspec.utils
 import mrc
@@ -82,9 +83,9 @@ def file_batcher(builder: mrc.Builder):
     def build_fs_filename_df(files, params):
         file_objects: fsspec.core.OpenFiles = fsspec.open_files(files)
 
-        start_time = params["start_time"]
-        end_time = params["end_time"]
-        sampling_rate_s = params["sampling_rate_s"]
+        start_time = datetime.datetime.strptime(params["start_time"], '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+        end_time = datetime.datetime.strptime(params["end_time"], '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+        sampling_rate_s = int(params["sampling_rate_s"])
 
         ts_and_files = []
         for file_object in file_objects:

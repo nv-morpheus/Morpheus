@@ -151,7 +151,7 @@ def run_pipeline(source: str,
     # This will populate to the minimum configuration parameters with intelligent default values
     config_generator = ConfigGenerator(config, dfp_arg_parser, schema)
 
-    module_conf = config_generator.get_module_conf()
+    dfp_deployment_module_config = config_generator.get_module_conf()
 
     # Create a pipeline object
     pipeline = Pipeline(config)
@@ -160,7 +160,7 @@ def run_pipeline(source: str,
 
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModuleStage(config,
-                             module_conf,
+                             dfp_deployment_module_config,
                              input_port_name="input",
                              output_port_name_prefix="output",
                              output_port_count=2))

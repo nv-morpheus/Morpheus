@@ -127,11 +127,11 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         payload = msg.value()
         if payload is not None:
-
             try:
                 decoded_msg = payload.decode("utf-8")
                 control_messages_conf = json.loads(decoded_msg)
                 self._num_messages += 1
+                # TODO(Devin) - one CM at a time(?), don't need to submit 'inputs'
                 for control_message_conf in control_messages_conf.get("inputs", []):
                     self._records_emitted += 1
                     control_messages.append(MessageControl(control_message_conf))
