@@ -16,6 +16,7 @@
 
 import os
 
+import numpy as np
 import pandas as pd
 import pytest
 import torch
@@ -25,7 +26,25 @@ from morpheus.config import AEFeatureScalar
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
+from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
+
+EXPECTED_CATS = [
+    'apiVersion',
+    'errorCode',
+    'errorMessage',
+    'eventName',
+    'eventSource',
+    'eventTime',
+    'sourceIPAddress',
+    'userAgent',
+    'userIdentityaccessKeyId',
+    'userIdentityaccountId',
+    'userIdentityarn',
+    'userIdentityprincipalId',
+    'userIdentitysessionContextsessionIssueruserName',
+    'userIdentitytype'
+]
 
 
 @pytest.fixture(scope="function")
@@ -45,6 +64,17 @@ def train_ae():
                                   scaler='standard',
                                   min_cats=1,
                                   progress_bar=False)
+
+
+@pytest.fixture(scope="module")
+def _train_df():
+    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
+    yield read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
+
+
+@pytest.fixture(scope="function")
+def train_df(_train_df):
+    yield _train_df.copy(deep=True)
 
 
 def compare_numeric_features(features, expected_features):
@@ -205,17 +235,13 @@ def test_auto_encoder_init_numeric(filter_probs_pandas_df):
     }
 
     # AE stores the features in an OrderedDict, but we don't want to be dependent on the order that Pandas reads in the
-    # columns of a dataframe. Dispite the unfortunate name, `num_names` is a list of column names that contain number
-    # fields.
+    # columns of a dataframe.
     assert sorted(ae.num_names) == sorted(expected_features.keys())
     compare_numeric_features(ae.numeric_fts, expected_features)
 
 
-def test_auto_encoder_fit(train_ae):
-    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
-    df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
-
-    train_ae.fit(df, epochs=1)
+def test_auto_encoder_fit(train_ae, train_df):
+    train_ae.fit(train_df, epochs=1)
 
     expected_numeric_features = {
         'eventID': {
@@ -226,28 +252,66 @@ def test_auto_encoder_fit(train_ae):
         }
     }
 
+    assert sorted(train_ae.num_names) == sorted(expected_numeric_features.keys())
     compare_numeric_features(train_ae.numeric_fts, expected_numeric_features)
 
     expected_bin_features = {'ts_anomaly': {'cats': [True, False], True: True, False: False}}
+    assert train_ae.bin_names == ['ts_anomaly']
     assert train_ae.binary_fts == expected_bin_features
 
-    expected_cats = [
-        'apiVersion',
-        'errorCode',
-        'errorMessage',
-        'eventName',
-        'eventSource',
-        'eventTime',
-        'sourceIPAddress',
-        'userAgent',
-        'userIdentityaccessKeyId',
-        'userIdentityaccountId',
-        'userIdentityarn',
-        'userIdentityprincipalId',
-        'userIdentitysessionContextsessionIssueruserName',
-        'userIdentitytype'
-    ]
+    assert sorted(train_ae.categorical_fts.keys()) == EXPECTED_CATS
+    for cat in EXPECTED_CATS:
+        assert sorted(train_ae.categorical_fts[cat]['cats']) == sorted(train_df[cat].dropna().unique())
 
-    assert sorted(train_ae.categorical_fts.keys()) == expected_cats
-    for cat in expected_cats:
-        assert sorted(train_ae.categorical_fts[cat]['cats']) == sorted(df[cat].dropna().unique())
+    assert len(train_ae.cyclical_fts) == 0
+
+    all_feature_names = sorted(
+        list(expected_numeric_features.keys()) + list(expected_bin_features.keys()) + EXPECTED_CATS)
+
+    assert sorted(train_ae.feature_loss_stats.keys()) == all_feature_names
+    for ft in train_ae.feature_loss_stats.values():
+        assert isinstance(ft['scaler'], scalers.StandardScaler)
+
+    assert isinstance(train_ae.optim, torch.optim.SGD)
+    assert isinstance(train_ae.lr_decay, torch.optim.lr_scheduler.ExponentialLR)
+    assert train_ae.lr_decay.gamma == 0.99
+    train_ae.optim is train_ae.lr_decay.optimizer
+
+
+def test_auto_encoder_get_anomaly_score(train_ae, train_df):
+    train_ae.fit(train_df, epochs=1)
+    anomaly_score = train_ae.get_anomaly_score(train_df)
+    assert len(anomaly_score) == len(train_df)
+    assert round(anomaly_score.mean().item(), 2) == 2.28
+    assert round(anomaly_score.std().item(), 2) == 0.11
+
+
+def test_auto_encoder_prepare_df(train_ae, train_df):
+    train_ae.fit(train_df, epochs=1)
+
+    dfc = train_df.copy(deep=True)
+    prepared_df = train_ae.prepare_df(dfc)
+
+    assert isinstance(prepared_df, EncoderDataFrame)
+
+    numeric_feature_cols = ['eventID', 'ae_anomaly_score']
+    for (i, ft) in enumerate(numeric_feature_cols):
+        scaler = scalers.StandardScaler()
+        scaler.fit(train_df[ft].values)
+        expected_values = scaler.transform(train_df[ft].values.copy())
+
+        assert (prepared_df[ft].values == expected_values).all(), \
+            f"Values for feature {ft} do not match {prepared_df[ft]} != {expected_values}"
+
+    # Bin features should remain the same when the input is already boolean, this DF only has one
+    assert (prepared_df.ts_anomaly == train_df.ts_anomaly).all()
+
+    for cat in EXPECTED_CATS:
+        assert cat in prepared_df
+        isinstance(prepared_df[cat], pd.Categorical)
+        assert not prepared_df[cat].hasnans
+
+        if train_df[cat].hasnans:
+            assert '_other' in prepared_df[cat].values
+        else:
+            assert '_other' not in prepared_df[cat].values
