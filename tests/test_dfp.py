@@ -82,6 +82,7 @@ def test_dfp_roleg(mock_ae, config, tmp_path):
 
     input_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
     train_data_glob = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-*-input.csv")
+    print(train_data_glob)
     out_file = os.path.join(tmp_path, 'results.csv')
     val_file_name = os.path.join(TEST_DIRS.validation_data_dir, 'dfp-cloudtrail-role-g-validation-data-output.csv')
     results_file_name = os.path.join(tmp_path, 'results.json')

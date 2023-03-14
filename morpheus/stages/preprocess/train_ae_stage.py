@@ -106,6 +106,9 @@ class _UserModelManager(object):
             progress_bar=False)
 
         logger.debug("Training AE model for user: '%s'...", self._user_id)
+        print("\n**********\n")
+        print(train_df)
+        print(train_df.columns)
         model.fit(train_df, epochs=self._epochs)
         train_loss_scores = model.get_anomaly_score(train_df)
         scores_mean = train_loss_scores.mean()

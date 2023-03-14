@@ -14,13 +14,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 import pandas as pd
 import pytest
 import torch
 
+from morpheus._lib.common import FileTypes
 from morpheus.config import AEFeatureScalar
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
+from utils import TEST_DIRS
+
+
+@pytest.fixture(scope="function")
+def train_ae():
+    """
+    Construct an AutoEncoder instance with the same values used by `train_ae_stage`
+    """
+    yield autoencoder.AutoEncoder(encoder_layers=[512, 500],
+                                  decoder_layers=[512],
+                                  activation='relu',
+                                  swap_p=0.2,
+                                  lr=0.01,
+                                  lr_decay=.99,
+                                  batch_size=512,
+                                  verbose=False,
+                                  optimizer='sgd',
+                                  scaler='standard',
+                                  min_cats=1,
+                                  progress_bar=False)
+
+
+def compare_numeric_features(features, expected_features):
+    assert sorted(features.keys()) == sorted(expected_features.keys())
+    for (ft, expected_vals) in expected_features.items():
+        ae_vals = features[ft]
+        assert round(ae_vals['mean'], 2) == expected_vals['mean'], \
+            f"Mean value of feature:{ft} does not match {round(ae_vals['mean'], 2)}!= {expected_vals['mean']}"
+
+        assert round(ae_vals['std'], 2) == expected_vals['std'], \
+            f"Mean value of feature:{ft} does not match {round(ae_vals['std'], 2)}!= {expected_vals['std']}"
+
+        assert isinstance(ae_vals['scaler'], expected_vals['scaler_cls'])
 
 
 def test_ohe():
@@ -112,40 +149,27 @@ def test_auto_encoder_constructor_default_vals():
     assert ae.n_megabatches == 1
 
 
-def test_auto_encoder_constructor():
+def test_auto_encoder_constructor(train_ae):
     """
     Test copnstructor invokation using the values used by `train_ae_stage`
     """
-    ae = autoencoder.AutoEncoder(encoder_layers=[512, 500],
-                                 decoder_layers=[512],
-                                 activation='relu',
-                                 swap_p=0.2,
-                                 lr=0.01,
-                                 lr_decay=.99,
-                                 batch_size=512,
-                                 verbose=False,
-                                 optimizer='sgd',
-                                 scaler='standard',
-                                 min_cats=1,
-                                 progress_bar=False)
-
-    assert isinstance(ae, torch.nn.Module)
-    assert ae.encoder_layers == [512, 500]
-    assert ae.decoder_layers == [512]
-    assert ae.min_cats == 1
-    assert ae.swap_p == 0.2
-    assert ae.batch_size == 512
-    assert ae.eval_batch_size == 1024
-    assert ae.activation == 'relu'
-    assert ae.optimizer == 'sgd'
-    assert ae.lr == 0.01
-    assert ae.lr_decay == 0.99
-    assert not ae.progress_bar
-    assert not ae.verbose
-    assert ae.device.type == 'cuda'
-    assert ae.scaler == 'standard'
-    assert ae.loss_scaler is scalers.StandardScaler
-    assert ae.n_megabatches == 1
+    assert isinstance(train_ae, torch.nn.Module)
+    assert train_ae.encoder_layers == [512, 500]
+    assert train_ae.decoder_layers == [512]
+    assert train_ae.min_cats == 1
+    assert train_ae.swap_p == 0.2
+    assert train_ae.batch_size == 512
+    assert train_ae.eval_batch_size == 1024
+    assert train_ae.activation == 'relu'
+    assert train_ae.optimizer == 'sgd'
+    assert train_ae.lr == 0.01
+    assert train_ae.lr_decay == 0.99
+    assert not train_ae.progress_bar
+    assert not train_ae.verbose
+    assert train_ae.device.type == 'cuda'
+    assert train_ae.scaler == 'standard'
+    assert train_ae.loss_scaler is scalers.StandardScaler
+    assert train_ae.n_megabatches == 1
 
 
 def test_auto_encoder_get_scaler():
@@ -167,16 +191,16 @@ def test_auto_encoder_init_numeric(filter_probs_pandas_df):
 
     expected_features = {
         'v1': {
-            'mean': 0.46, 'std': 0.35
+            'mean': 0.46, 'std': 0.35, 'scaler_cls': scalers.StandardScaler
         },
         'v2': {
-            'mean': 0.51, 'std': 0.31
+            'mean': 0.51, 'std': 0.31, 'scaler_cls': scalers.StandardScaler
         },
         'v3': {
-            'mean': 0.46, 'std': 0.3
+            'mean': 0.46, 'std': 0.3, 'scaler_cls': scalers.StandardScaler
         },
         'v4': {
-            'mean': 0.54, 'std': 0.27
+            'mean': 0.54, 'std': 0.27, 'scaler_cls': scalers.StandardScaler
         }
     }
 
@@ -184,13 +208,46 @@ def test_auto_encoder_init_numeric(filter_probs_pandas_df):
     # columns of a dataframe. Dispite the unfortunate name, `num_names` is a list of column names that contain number
     # fields.
     assert sorted(ae.num_names) == sorted(expected_features.keys())
+    compare_numeric_features(ae.numeric_fts, expected_features)
 
-    for (ft, expected_vals) in expected_features.items():
-        ae_ft = ae.numeric_fts[ft]
-        assert round(ae_ft['mean'], 2) == expected_vals['mean'], \
-            f"Mean value of feature:{ft} does not match {round(ae_ft['mean'], 2)}!= {expected_vals['mean']}"
 
-        assert round(ae_ft['std'], 2) == expected_vals['std'], \
-            f"Mean value of feature:{ft} does not match {round(ae_ft['std'], 2)}!= {expected_vals['std']}"
+def test_auto_encoder_fit(train_ae):
+    input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
+    df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
 
-        assert isinstance(ae_ft['scaler'], scalers.StandardScaler)
+    train_ae.fit(df, epochs=1)
+
+    expected_numeric_features = {
+        'eventID': {
+            'mean': 156.5, 'std': 90.79, 'scaler_cls': scalers.StandardScaler
+        },
+        'ae_anomaly_score': {
+            'mean': 1.67, 'std': 0.38, 'scaler_cls': scalers.StandardScaler
+        }
+    }
+
+    compare_numeric_features(train_ae.numeric_fts, expected_numeric_features)
+
+    expected_bin_features = {'ts_anomaly': {'cats': [True, False], True: True, False: False}}
+    assert train_ae.binary_fts == expected_bin_features
+
+    expected_cats = [
+        'apiVersion',
+        'errorCode',
+        'errorMessage',
+        'eventName',
+        'eventSource',
+        'eventTime',
+        'sourceIPAddress',
+        'userAgent',
+        'userIdentityaccessKeyId',
+        'userIdentityaccountId',
+        'userIdentityarn',
+        'userIdentityprincipalId',
+        'userIdentitysessionContextsessionIssueruserName',
+        'userIdentitytype'
+    ]
+
+    assert sorted(train_ae.categorical_fts.keys()) == expected_cats
+    for cat in expected_cats:
+        assert sorted(train_ae.categorical_fts[cat]['cats']) == sorted(df[cat].dropna().unique())
