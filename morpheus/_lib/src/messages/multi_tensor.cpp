@@ -20,23 +20,22 @@
 #include "morpheus/types.hpp"                // for TensorIndex, TensorMap
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
 
-#include <cudf/types.hpp>        // for cudf::size_type>
 #include <glog/logging.h>        // IWYU pragma: keep
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
 #include <pybind11/pytypes.h>    // for key_error
 
-#include <cstdint>    // for int32_t
 #include <stdexcept>  // for runtime_error
+#include <utility>    // for move
 
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** <MultiTensorMessage>****************************************/
 MultiTensorMessage::MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                                       std::size_t mess_offset,
-                                       std::size_t mess_count,
+                                       TensorIndex mess_offset,
+                                       TensorIndex mess_count,
                                        std::shared_ptr<morpheus::TensorMemory> memory,
-                                       std::size_t offset,
-                                       std::size_t count) :
+                                       TensorIndex offset,
+                                       TensorIndex count) :
   DerivedMultiMessage(meta, mess_offset, mess_count),
   memory(std::move(memory)),
   offset(offset),
@@ -63,8 +62,7 @@ TensorObject MultiTensorMessage::get_tensor_impl(const std::string& name) const
         return tensor;
     }
 
-    return tensor.slice({static_cast<cudf::size_type>(this->offset), 0},
-                        {static_cast<cudf::size_type>(this->offset + this->count), -1});
+    return tensor.slice({this->offset, 0}, {this->offset + this->count, -1});
 }
 
 void MultiTensorMessage::set_tensor(const std::string& name, const TensorObject& value)
@@ -77,8 +75,8 @@ void MultiTensorMessage::set_tensor(const std::string& name, const TensorObject&
 }
 
 void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message,
-                                        std::size_t start,
-                                        std::size_t stop) const
+                                        TensorIndex start,
+                                        TensorIndex stop) const
 {
     auto sliced_message = MRC_PTR_CAST(MultiTensorMessage, new_message);
 
@@ -92,8 +90,8 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
         auto seq_ids = this->get_tensor("seq_ids");
 
         // Determine the new start and stop before passing onto the base
-        start = seq_ids.read_element<int32_t>({(TensorIndex)start, 0});
-        stop  = seq_ids.read_element<int32_t>({(TensorIndex)stop - 1, 0}) + 1;
+        start = seq_ids.read_element<TensorIndex>({start, 0});
+        stop  = seq_ids.read_element<TensorIndex>({stop - 1, 0}) + 1;
     }
 
     // Pass onto the base
@@ -101,8 +99,8 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
 }
 
 void MultiTensorMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                          const std::vector<std::pair<size_t, size_t>>& ranges,
-                                          size_t num_selected_rows) const
+                                          const std::vector<RangeType>& ranges,
+                                          TensorIndex num_selected_rows) const
 {
     auto copied_message = MRC_PTR_CAST(MultiTensorMessage, new_message);
     DerivedMultiMessage::copy_ranges_impl(copied_message, ranges, num_selected_rows);
@@ -112,8 +110,8 @@ void MultiTensorMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_mess
     copied_message->memory = copy_input_ranges(ranges, num_selected_rows);
 }
 
-std::shared_ptr<TensorMemory> MultiTensorMessage::copy_input_ranges(
-    const std::vector<std::pair<size_t, size_t>>& ranges, size_t num_selected_rows) const
+std::shared_ptr<TensorMemory> MultiTensorMessage::copy_input_ranges(const std::vector<RangeType>& ranges,
+                                                                    TensorIndex num_selected_rows) const
 {
     auto offset_ranges = apply_offset_to_ranges(offset, ranges);
     auto tensors       = memory->copy_tensor_ranges(offset_ranges, num_selected_rows);
@@ -122,11 +120,11 @@ std::shared_ptr<TensorMemory> MultiTensorMessage::copy_input_ranges(
 
 /****** MultiTensorMessageInterfaceProxy *************************/
 std::shared_ptr<MultiTensorMessage> MultiTensorMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
-                                                                           std::size_t mess_offset,
-                                                                           std::size_t mess_count,
+                                                                           TensorIndex mess_offset,
+                                                                           TensorIndex mess_count,
                                                                            std::shared_ptr<TensorMemory> memory,
-                                                                           std::size_t offset,
-                                                                           std::size_t count)
+                                                                           TensorIndex offset,
+                                                                           TensorIndex count)
 {
     return std::make_shared<MultiTensorMessage>(
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
@@ -137,12 +135,12 @@ std::shared_ptr<morpheus::TensorMemory> MultiTensorMessageInterfaceProxy::memory
     return MRC_PTR_CAST(morpheus::TensorMemory, self.memory);
 }
 
-std::size_t MultiTensorMessageInterfaceProxy::offset(MultiTensorMessage& self)
+TensorIndex MultiTensorMessageInterfaceProxy::offset(MultiTensorMessage& self)
 {
     return self.offset;
 }
 
-std::size_t MultiTensorMessageInterfaceProxy::count(MultiTensorMessage& self)
+TensorIndex MultiTensorMessageInterfaceProxy::count(MultiTensorMessage& self)
 {
     return self.count;
 }

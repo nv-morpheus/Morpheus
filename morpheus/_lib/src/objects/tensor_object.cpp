@@ -17,11 +17,9 @@
 
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <vector>
-
 namespace morpheus {
 
-static void set_contiguous_stride(const std::vector<TensorIndex>& shape, std::vector<TensorIndex>& stride)
+static void set_contiguous_stride(const ShapeType& shape, ShapeType& stride)
 {
     stride.resize(shape.size());
     TensorIndex ttl = 1;

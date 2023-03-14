@@ -28,8 +28,8 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** ResponseMemory****************************************/
-ResponseMemory::ResponseMemory(size_t count) : TensorMemory(count) {}
-ResponseMemory::ResponseMemory(size_t count, TensorMap&& tensors) : TensorMemory(count, std::move(tensors)) {}
+ResponseMemory::ResponseMemory(TensorIndex count) : TensorMemory(count) {}
+ResponseMemory::ResponseMemory(TensorIndex count, TensorMap&& tensors) : TensorMemory(count, std::move(tensors)) {}
 
 bool ResponseMemory::has_output(const std::string& name) const
 {
@@ -37,7 +37,7 @@ bool ResponseMemory::has_output(const std::string& name) const
 }
 
 /****** ResponseMemoryInterfaceProxy *************************/
-std::shared_ptr<ResponseMemory> ResponseMemoryInterfaceProxy::init(std::size_t count, pybind11::object& tensors)
+std::shared_ptr<ResponseMemory> ResponseMemoryInterfaceProxy::init(TensorIndex count, pybind11::object& tensors)
 {
     if (tensors.is_none())
     {
