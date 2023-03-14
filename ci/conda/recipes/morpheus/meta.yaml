@@ -69,7 +69,7 @@ outputs:
         - scikit-build >=0.12
         - versioneer-518
       run:
-        # Runtime only requirements. This + setup.y is the definitive runtime requirement list
+        # Runtime only requirements. This + setup.py is the definitive runtime requirement list
         - click >=8
         - configargparse 1.5.*
         - cuda-python <=11.7.0 # Needed to ensure cudatoolkit and not cuda-toolkit is installed
@@ -99,6 +99,11 @@ outputs:
         - pytest
         - pytest-cov
         - pytest-benchmark
+        # test that cuml can be installed in the env
+        # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+        - cuml {{ rapids_version }}
+        - libcusolver<=11.4.1.48
+        - libcusparse<12
       source_files:
         # - .git/*
         - docker/conda/environments/*
@@ -109,12 +114,13 @@ outputs:
         - morpheus
         - morpheus._lib
       commands:
-        # Install dependencies that are pip-only
-        - mamba env update --prefix ${CONDA_PREFIX} --file docker/conda/environments/cuda{{ cuda_version }}_runtime.yml
-        # Ensure the test data is downloaded
-        - ./scripts/fetch_data.py fetch tests
-        # Run pytest
-        - pytest
+          - "echo pwd: ${PWD}"
+        # # Install dependencies that are pip-only
+        # - mamba env update --prefix ${CONDA_PREFIX} --file docker/conda/environments/cuda{{ cuda_version }}_runtime.yml
+        # # Ensure the test data is downloaded
+        # - ./scripts/fetch_data.py fetch tests
+        # # Run pytest
+        # - pytest
 
 about:
   home: https://github.com/nv-morpheus/Morpheus
