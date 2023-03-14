@@ -45,7 +45,6 @@ def dfp_training(builder: mrc.Builder):
     Notes
     ----------
     Configurable parameters:
-
         - feature_columns: List of feature columns to train on
         - epochs: Number of epochs to train for
         - model_kwargs: Keyword arguments to pass to the model (see dfencoder.AutoEncoder)
@@ -62,9 +61,7 @@ def dfp_training(builder: mrc.Builder):
     model_kwargs = config.get("model_kwargs", {})
     validation_size = config.get("validation_size", 0.0)
 
-    if (validation_size > 0.0 and validation_size < 1.0):
-        validation_size = validation_size
-    else:
+    if (validation_size < 0.0 or validation_size > 1.0):
         raise ValueError("validation_size={0} should be a positive float in the "
                          "(0, 1) range".format(validation_size))
 

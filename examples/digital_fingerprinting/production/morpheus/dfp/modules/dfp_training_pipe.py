@@ -96,7 +96,7 @@ def dfp_training_pipe(builder: mrc.Builder):
     preproc_conf = merge_dictionaries(preproc_options, preproc_defaults)
 
     stream_aggregation_defaults = {
-        "cache_mode": "cache",
+        "cache_mode": "aggregate",
         "trigger_on_min_history": 300,
         "trigger_on_min_increment": 300,
     }

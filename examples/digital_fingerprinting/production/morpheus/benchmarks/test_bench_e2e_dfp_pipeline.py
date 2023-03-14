@@ -55,6 +55,7 @@ from morpheus.utils.logger import configure_logging
 logger = logging.getLogger(__name__)
 
 PIPELINES_CONF = load_json("resource/pipelines_conf.json")
+PIPELINES_CONF["output_port_count"] = 2
 
 set_mlflow_tracking_uri(PIPELINES_CONF.get("tracking_uri"))
 

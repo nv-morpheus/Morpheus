@@ -74,17 +74,24 @@ def file_batcher(builder: mrc.Builder):
     iso_date_regex = re.compile(iso_date_regex_pattern)
 
     default_batching_opts = {
-        "period": config.get("batch_period", 'D'),
-        "sampling_rate_s": config.get("batch_sampling_rate_s", 0),
-        "start_time": config.get("batch_start_time"),
-        "end_time": config.get("batch_end_time"),
+        "period": config.get("period", 'D'),
+        "sampling_rate_s": config.get("sampling_rate_s", 0),
+        "start_time": config.get("start_time"),
+        "end_time": config.get("end_time"),
     }
 
     def build_fs_filename_df(files, params):
         file_objects: fsspec.core.OpenFiles = fsspec.open_files(files)
 
-        start_time = datetime.datetime.strptime(params["start_time"], '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
-        end_time = datetime.datetime.strptime(params["end_time"], '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+        start_time = params["start_time"]
+        if (start_time is not None):
+            start_time = datetime.datetime.strptime(start_time, '%Y-%m-%d').replace(
+                tzinfo=datetime.timezone.utc)
+
+        end_time = params["end_time"]
+        if (end_time is not None):
+            end_time = datetime.datetime.strptime(end_time, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+
         sampling_rate_s = int(params["sampling_rate_s"])
 
         ts_and_files = []
