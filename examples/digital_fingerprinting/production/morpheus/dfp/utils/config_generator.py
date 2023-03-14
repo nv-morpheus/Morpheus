@@ -45,6 +45,7 @@ class ConfigGenerator:
         module_conf["module_id"] = DFP_DEPLOYMENT
         module_conf["module_name"] = "dfp_deployment"
         module_conf["namespace"] = MORPHEUS_MODULE_NAMESPACE
+        module_conf["num_output_ports"] = 2
 
         module_conf["training_options"] = self.train_module_conf()
         module_conf["inference_options"] = self.infer_module_conf()
