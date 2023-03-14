@@ -12,6 +12,17 @@
 # the License.
 # =============================================================================
 
+# Build up the common arguments for add_pybind11_module
+set(_common_args)
+
+# if(MORPHEUS_PYTHON_INPLACE_BUILD)
+#   list(APPEND _common_args "COPY_INPLACE")
+# endif()
+
+if(MORPHEUS_BUILD_PYTHON_STUBS)
+  list(APPEND _common_args "BUILD_STUBS")
+endif()
+
 morpheus_utils_add_pybind11_module(
     common
     MODULE_ROOT

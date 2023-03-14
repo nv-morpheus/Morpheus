@@ -26,6 +26,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>  // for pair
 #include <vector>
@@ -73,12 +74,12 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @param offset Message offset in tensor memory instance
      * @param count Message count in tensor memory instance
      */
-    MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                       std::size_t mess_offset,
-                       std::size_t mess_count,
-                       std::shared_ptr<morpheus::TensorMemory> memory,
-                       std::size_t offset,
-                       std::size_t count);
+    MultiTensorMessage(std::shared_ptr<MessageMeta> meta,
+                       size_t mess_offset                   = 0,
+                       std::optional<size_t> mess_count     = std::nullopt,
+                       std::shared_ptr<TensorMemory> memory = nullptr,
+                       size_t offset                        = 0,
+                       std::optional<size_t> count          = std::nullopt);
 
     std::shared_ptr<morpheus::TensorMemory> memory;
     std::size_t offset{0};
@@ -144,11 +145,11 @@ struct MultiTensorMessageInterfaceProxy
      * @return std::shared_ptr<MultiTensorMessage>
      */
     static std::shared_ptr<MultiTensorMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                    std::size_t mess_offset,
-                                                    std::size_t mess_count,
+                                                    size_t mess_offset,
+                                                    std::optional<size_t> mess_count,
                                                     std::shared_ptr<TensorMemory> memory,
-                                                    std::size_t offset,
-                                                    std::size_t count);
+                                                    size_t offset,
+                                                    std::optional<size_t> count);
 
     /**
      * @brief Returns a shared pointer of a tensor memory object

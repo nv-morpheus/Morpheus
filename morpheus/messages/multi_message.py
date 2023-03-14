@@ -46,7 +46,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
     mess_offset: int
     mess_count: int
 
-    def __init__(self, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1):
 
         if meta is None:
             raise ValueError("Must define `meta` when creating MultiMessage")
@@ -118,6 +118,35 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         column_indexer = self.meta._df.columns.get_indexer_for(columns)
 
         return row_indexer, column_indexer
+
+    def _calc_message_slice_bounds(self, start: int, stop: int):
+
+        # Start must be between [0, mess_count)
+        if (start < 0 or start >= self.mess_count):
+            raise IndexError("Invalid message `start` argument")
+
+        # Stop must be between (start, mess_count]
+        if (stop <= start or stop > self.mess_count):
+            raise IndexError("Invalid message `stop` argument")
+
+        # Calculate the new offset and count
+        offset = self.mess_offset + start
+        count = stop - start
+
+        return offset, count
+
+    def _duplicate_message_with_kwargs(self, **kwargs):
+        all_fields = dataclasses.fields(self)
+
+        # Now loop over all fields and copy any derived properties
+        for f in all_fields:
+            if (f.name in kwargs or not f.init):
+                continue
+
+            kwargs[f.name] = getattr(self, f.name)
+
+        # Make sure to return an instance of the class
+        return self.__class__(**kwargs)
 
     def get_meta(self, columns: typing.Union[None, str, typing.List[str]] = None):
         """
@@ -195,14 +224,35 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
                 df.iloc[row_indexer, column_indexer] = value
 
             else:
-                # Need to determine the boolean mask to use indexes with df.loc
-                row_mask = self._ranges_to_mask(self.meta._df, [(self.mess_offset, self.mess_offset + self.mess_count)])
-
                 # Columns should never be empty if we get here
                 assert columns is not None
 
-                # Now set the slice
-                df.loc[row_mask, columns] = value
+                # cudf is really bad at adding new columns
+                if (isinstance(df, cudf.DataFrame)):
+
+                    saved_index = None
+
+                    # Check to see if we can use slices
+                    if (not df.index.is_unique or not df.index.is_monotonic):
+                        # Save the index and reset
+                        saved_index = df.index
+
+                        df.reset_index(drop=True, inplace=True)
+
+                    # Perform the update via slices
+                    df.loc[df.index[row_indexer], columns] = value
+
+                    # Reset the index if we changed it
+                    if (saved_index is not None):
+                        df.set_index(saved_index, inplace=True)
+
+                else:
+                    # Need to determine the boolean mask to use indexes with df.loc
+                    row_mask = self._ranges_to_mask(self.meta._df,
+                                                    [(self.mess_offset, self.mess_offset + self.mess_count)])
+
+                    # Now set the slice
+                    df.loc[row_mask, columns] = value
 
     def get_slice(self, start, stop):
         """
@@ -223,15 +273,10 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        offset = self.mess_offset + start
-        count = stop - start
+        # Calc the offset and count. This checks the bounds for us
+        offset, count = self._calc_message_slice_bounds(start=start, stop=stop)
 
-        if (start < 0 or start >= self.mess_count):
-            raise IndexError("Invalid `start` argument")
-        if (stop <= start or count > self.mess_count):
-            raise IndexError("Invalid `stop` argument")
-
-        return MultiMessage(meta=self.meta, mess_offset=offset, mess_count=count)
+        return self._duplicate_message_with_kwargs(meta=self.meta, mess_offset=offset, mess_count=count)
 
     def _ranges_to_mask(self, df, ranges):
         if isinstance(df, cudf.DataFrame):
@@ -289,4 +334,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         `MultiMessage`
         """
         sliced_rows = self.copy_meta_ranges(ranges)
-        return MultiMessage(meta=MessageMeta(sliced_rows), mess_offset=0, mess_count=len(sliced_rows))
+
+        return self._duplicate_message_with_kwargs(meta=MessageMeta(sliced_rows),
+                                                   mess_offset=0,
+                                                   mess_count=len(sliced_rows))

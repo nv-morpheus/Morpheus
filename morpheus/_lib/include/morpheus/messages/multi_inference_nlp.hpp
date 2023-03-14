@@ -44,7 +44,7 @@ namespace morpheus {
  * proper inputs are set and eases debugging.
  *
  */
-class MultiInferenceNLPMessage : public MultiInferenceMessage
+class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMessage, MultiInferenceMessage>
 {
   public:
     /**
@@ -58,12 +58,12 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
      */
-    MultiInferenceNLPMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                             std::size_t mess_offset,
-                             std::size_t mess_count,
-                             std::shared_ptr<morpheus::InferenceMemory> memory,
-                             std::size_t offset,
-                             std::size_t count);
+    MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
+                             size_t mess_offset                      = 0,
+                             std::optional<size_t> mess_count        = std::nullopt,
+                             std::shared_ptr<InferenceMemory> memory = nullptr,
+                             size_t offset                           = 0,
+                             std::optional<size_t> count             = std::nullopt);
 
     /**
      * @brief Returns the 'input_ids' tensor, throws a `std::runtime_error` if it does not exist.
@@ -133,11 +133,11 @@ struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInte
      * @return std::shared_ptr<MultiInferenceNLPMessage>
      */
     static std::shared_ptr<MultiInferenceNLPMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                          cudf::size_type mess_offset,
-                                                          cudf::size_type mess_count,
+                                                          size_t mess_offset,
+                                                          std::optional<size_t> mess_count,
                                                           std::shared_ptr<InferenceMemory> memory,
-                                                          cudf::size_type offset,
-                                                          cudf::size_type count);
+                                                          size_t offset,
+                                                          std::optional<size_t> count);
 
     /**
      * @brief Get  'input_ids' tensor as a python object

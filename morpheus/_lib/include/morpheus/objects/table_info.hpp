@@ -34,6 +34,8 @@
 
 namespace morpheus {
 
+struct CudfHelper;
+
 /**
  * @brief Simple structure which provides a general method for holding a cudf:table_view together with index and column
  * names. Also provides slicing mechanics.
@@ -106,7 +108,7 @@ struct __attribute__((visibility("default"))) TableInfoBase
      *
      * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default
      */
-    pybind11::object copy_to_py_object() const;
+    // pybind11::object copy_to_py_object() const;
 
     /**
      * @brief Returns a reference to the view of the specified column
@@ -139,6 +141,9 @@ struct __attribute__((visibility("default"))) TableInfoBase
   private:
     std::shared_ptr<const IDataTable> m_parent;
     TableInfoData m_data;
+
+    // Give access to internal m_parent and m_data for converting to cudf dataframe
+    friend CudfHelper;
 };
 
 struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase

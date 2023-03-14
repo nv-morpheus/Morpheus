@@ -93,30 +93,29 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
      * `TableInfo`.
      */
     MutableTableInfo get_mutable_info() const;
-                                std::vector<std::string> column_names = {}) const;
-                                ///@}
+    ///@}
 
-                                /**
-                                 * @brief Direct access to the underlying python object. Use only when absolutely
-                                 * necessary. `get_mutable_info()` provides better checking when using the python object
-                                 * directly.
-                                 *
-                                 * @return const pybind11::object&
-                                 */
-                                virtual const pybind11::object& get_py_object() const = 0;
+    /**
+     * @brief Direct access to the underlying python object. Use only when absolutely
+     * necessary. `get_mutable_info()` provides better checking when using the python object
+     * directly.
+     *
+     * @return const pybind11::object&
+     */
+    virtual const pybind11::object& get_py_object() const = 0;
 
-                              private:
-                                /**
-                                 * @brief Gets the necessary information to build a `TableInfo` object from this
-                                 * interface. Must be implemented by derived classes.
-                                 *
-                                 * @return TableInfoData
-                                 */
-                                virtual TableInfoData get_table_data() const = 0;
+  private:
+    /**
+     * @brief Gets the necessary information to build a `TableInfo` object from this
+     * interface. Must be implemented by derived classes.
+     *
+     * @return TableInfoData
+     */
+    virtual TableInfoData get_table_data() const = 0;
 
-                                // Used to prevent locking to shared resources. Will need to be a boost fibers
-                                // supported mutex if we support C++ nodes with Fiber runables in the future
-                                mutable std::shared_mutex m_mutex{};
+    // Used to prevent locking to shared resources. Will need to be a boost fibers
+    // supported mutex if we support C++ nodes with Fiber runables in the future
+    mutable std::shared_mutex m_mutex{};
 };
 /** @} */  // end of group
 }  // namespace morpheus

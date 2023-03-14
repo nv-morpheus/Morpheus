@@ -171,6 +171,8 @@ struct TensorMemoryInterfaceProxy
      */
     static std::size_t get_count(TensorMemory& self);
 
+    static bool has_tensor(TensorMemory& self, std::string name);
+
     /**
      * @brief Get the tensors converted to CuPy arrays. Pybind11 will convert the std::map to a Python dict.
      *

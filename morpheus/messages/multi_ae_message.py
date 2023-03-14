@@ -18,6 +18,7 @@ import typing
 
 from dfencoder import AutoEncoder
 
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
@@ -35,30 +36,19 @@ class MultiAEMessage(MultiMessage):
     train_scores_mean: float = 0.0
     train_scores_std: float = 1.0
 
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 model: AutoEncoder = None,
+                 train_scores_mean: float = float("NaN"),
+                 train_scores_std: float = float("NaN")):
+        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
-
-        Returns
-        -------
-        morpheus.pipeline.preprocess.autoencoder.MultiAEMessage
-            A new `MultiAEMessage` with sliced offset and count.
-
-        """
-        return MultiAEMessage(meta=self.meta,
-                              mess_offset=start,
-                              mess_count=stop - start,
-                              model=self.model,
-                              train_scores_mean=self.train_scores_mean,
-                              train_scores_std=self.train_scores_std)
+        self.model = model
+        self.train_scores_mean = train_scores_mean
+        self.train_scores_std = train_scores_std
 
     def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
         """
@@ -77,9 +67,9 @@ class MultiAEMessage(MultiMessage):
         """
 
         sliced_rows = self.copy_meta_ranges(ranges)
-        return MultiAEMessage(meta=UserMessageMeta(sliced_rows, user_id=self.meta.user_id),
-                              mess_offset=0,
-                              mess_count=len(sliced_rows),
-                              model=self.model,
-                              train_scores_mean=self.train_scores_mean,
-                              train_scores_std=self.train_scores_std)
+        return self._duplicate_message_with_kwargs(meta=UserMessageMeta(sliced_rows, user_id=self.meta.user_id),
+                                                   mess_offset=0,
+                                                   mess_count=len(sliced_rows),
+                                                   model=self.model,
+                                                   train_scores_mean=self.train_scores_mean,
+                                                   train_scores_std=self.train_scores_std)

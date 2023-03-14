@@ -19,6 +19,7 @@
 
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <cudf/types.hpp>
 #include <glog/logging.h>
@@ -73,7 +74,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
             if (repeat_idx + 1 < m_repeat)
             {
                 // Use the copy function, copy_to_py_object will acquire it's own gil
-                auto df = meta->get_info().copy_to_py_object();
+                auto df = CudfHelper::table_from_table_info(meta->get_info());
 
                 // GIL must come after get_info
                 pybind11::gil_scoped_acquire gil;

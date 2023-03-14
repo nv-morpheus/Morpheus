@@ -42,6 +42,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
     count: int
 
     required_tensors: typing.ClassVar[typing.List[str]] = []
+    id_tensor: typing.ClassVar[str] = None
 
     def __init__(self,
                  *,
@@ -101,6 +102,48 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         if hasattr(super(), "__getattr__"):
             return super().__getattr__(name)
         raise AttributeError
+
+    def _calc_message_slice_bounds(self, start: int, stop: int):
+
+        mess_start = start
+        mess_stop = stop
+
+        if (self.count != self.mess_count):
+            if (hasattr(self.__class__, "id_tensor") and self.__class__.id_tensor is not None):
+                id_tensor_name = self.__class__.id_tensor
+
+                if (not self.memory.has_tensor(id_tensor_name)):
+                    raise RuntimeError(
+                        f"The tensor memory object is missing the required ID tensor '{id_tensor_name}' this tensor is required to make slices of MultiTensorMessages"
+                    )
+
+                id_tensor = self.get_tensor(id_tensor_name)
+
+                # Now determine the new mess_start and mess_stop
+                mess_start = id_tensor[start, 0].item()
+                mess_stop = id_tensor[stop - 1, 0].item() + 1
+            else:
+                raise RuntimeError("Cannot calculate slice when the tensor count is different than the message count. "
+                                   "Must use a derived class which tracks message IDs")
+
+        # Return the base calculation now
+        return super()._calc_message_slice_bounds(start=mess_start, stop=mess_stop)
+
+    def _calc_memory_slice_bounds(self, start: int, stop: int):
+
+        # Start must be between [0, mess_count)
+        if (start < 0 or start >= self.count):
+            raise IndexError("Invalid memory `start` argument")
+
+        # Stop must be between (start, mess_count]
+        if (stop <= start or stop > self.count):
+            raise IndexError("Invalid memory `stop` argument")
+
+        # Calculate the new offset and count
+        offset = self.offset + start
+        count = stop - start
+
+        return offset, count
 
     def get_tensor(self, name: str):
         """
@@ -190,7 +233,12 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         mem = TensorMemory(count=sliced_count)
         mem.tensors = sliced_tensors
 
-        return MultiTensorMessage(MessageMeta(sliced_rows), 0, sliced_count, mem, 0, sliced_count)
+        return self._duplicate_message_with_kwargs(meta=MessageMeta(sliced_rows),
+                                                   mess_offset=0,
+                                                   mess_count=sliced_count,
+                                                   memory=mem,
+                                                   offset=0,
+                                                   count=sliced_count)
 
     def get_slice(self, start, stop):
         """
@@ -211,10 +259,18 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         -------
         `MultiTensorMessage`
         """
-        mess_count = stop - start
-        return MultiTensorMessage(meta=self.meta,
-                                  mess_offset=self.mess_offset + start,
-                                  mess_count=mess_count,
-                                  memory=self.memory,
-                                  offset=self.offset + start,
-                                  count=mess_count)
+
+        # Calc the offset and count. This checks the bounds for us
+        mess_offset, mess_count = self._calc_message_slice_bounds(start=start, stop=stop)
+        offset, count = self._calc_memory_slice_bounds(start=start, stop=stop)
+
+        kwargs = {
+            "meta": self.meta,
+            "mess_offset": mess_offset,
+            "mess_count": mess_count,
+            "memory": self.memory,
+            "offset": offset,
+            "count": count,
+        }
+
+        return self._duplicate_message_with_kwargs(**kwargs)

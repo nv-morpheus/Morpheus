@@ -92,33 +92,6 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
         """
         return self.get_tensor(name)
 
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
-
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
-
-        Returns
-        -------
-        `MultiInferenceMessage`
-            A new `MultiInferenceMessage` with sliced offset and count.
-
-        """
-        mess_start = self.mess_offset + self.seq_ids[start, 0].item()
-        mess_stop = self.mess_offset + self.seq_ids[stop - 1, 0].item() + 1
-        return MultiInferenceMessage(meta=self.meta,
-                                     mess_offset=mess_start,
-                                     mess_count=mess_stop - mess_start,
-                                     memory=self.memory,
-                                     offset=start,
-                                     count=stop - start)
-
 
 @dataclasses.dataclass
 class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiInferenceNLPMessage):
@@ -128,6 +101,7 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
     """
 
     required_tensors: typing.ClassVar[typing.List[str]] = ["input_ids", "input_mask", "seq_ids"]
+    id_tensor: typing.ClassVar[str] = "seq_ids"
 
     def __init__(self,
                  *,
@@ -197,6 +171,7 @@ class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
     """
 
     required_tensors: typing.ClassVar[typing.List[str]] = ["input__0", "seq_ids"]
+    id_tensor: typing.ClassVar[str] = "seq_ids"
 
     def __init__(self,
                  *,

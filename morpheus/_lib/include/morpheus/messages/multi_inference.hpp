@@ -63,12 +63,12 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
      */
-    MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                          std::size_t mess_offset,
-                          std::size_t mess_count,
-                          std::shared_ptr<morpheus::InferenceMemory> memory,
-                          std::size_t offset,
-                          std::size_t count);
+    MultiInferenceMessage(std::shared_ptr<MessageMeta> meta,
+                          size_t mess_offset                      = 0,
+                          std::optional<size_t> mess_count        = std::nullopt,
+                          std::shared_ptr<InferenceMemory> memory = nullptr,
+                          size_t offset                           = 0,
+                          std::optional<size_t> count             = std::nullopt);
 
     /**
      * @brief Returns the input tensor for the given `name`.
@@ -113,11 +113,11 @@ struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceP
      * @return std::shared_ptr<MultiInferenceMessage>
      */
     static std::shared_ptr<MultiInferenceMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                       cudf::size_type mess_offset,
-                                                       cudf::size_type mess_count,
+                                                       size_t mess_offset,
+                                                       std::optional<size_t> mess_count,
                                                        std::shared_ptr<InferenceMemory> memory,
-                                                       cudf::size_type offset,
-                                                       cudf::size_type count);
+                                                       size_t offset,
+                                                       std::optional<size_t> count);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

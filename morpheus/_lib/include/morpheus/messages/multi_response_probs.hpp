@@ -64,12 +64,12 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
      */
-    MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                              size_t mess_offset,
-                              size_t mess_count,
-                              std::shared_ptr<morpheus::ResponseMemoryProbs> memory,
-                              size_t offset,
-                              size_t count);
+    MultiResponseProbsMessage(std::shared_ptr<MessageMeta> meta,
+                              size_t mess_offset                          = 0,
+                              std::optional<size_t> mess_count            = std::nullopt,
+                              std::shared_ptr<ResponseMemoryProbs> memory = nullptr,
+                              size_t offset                               = 0,
+                              std::optional<size_t> count                 = std::nullopt);
 
     /**
      * @brief Returns the `probs` (probabilities) output tensor
@@ -105,11 +105,11 @@ struct MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInte
      * @return std::shared_ptr<MultiResponseProbsMessage>
      */
     static std::shared_ptr<MultiResponseProbsMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                           cudf::size_type mess_offset,
-                                                           cudf::size_type mess_count,
+                                                           size_t mess_offset,
+                                                           std::optional<size_t> mess_count,
                                                            std::shared_ptr<ResponseMemoryProbs> memory,
-                                                           cudf::size_type offset,
-                                                           cudf::size_type count);
+                                                           size_t offset,
+                                                           std::optional<size_t> count);
 
     /**
      * @brief Return the `probs` (probabilities) output tensor

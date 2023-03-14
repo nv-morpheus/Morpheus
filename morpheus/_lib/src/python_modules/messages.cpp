@@ -39,6 +39,7 @@
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
 #include <mrc/types.hpp>
+#include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -138,6 +139,7 @@ PYBIND11_MODULE(messages, m)
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
         .def(py::init<>(&TensorMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &TensorMemory::count)
+        .def("has_tensor", &TensorMemoryInterfaceProxy::has_tensor)
         .def("get_tensors", &TensorMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &TensorMemoryInterfaceProxy::set_tensors, py::arg("tensors"))
         .def("get_tensor", &TensorMemoryInterfaceProxy::get_tensor, py::arg("name"), py::return_value_policy::move)
@@ -206,9 +208,10 @@ PYBIND11_MODULE(messages, m)
 
     py::class_<MultiMessage, std::shared_ptr<MultiMessage>>(m, "MultiMessage")
         .def(py::init<>(&MultiMessageInterfaceProxy::init),
+             py::kw_only(),
              py::arg("meta"),
              py::arg("mess_offset") = 0,
-             py::arg("mess_count")  = -1)
+             py::arg("mess_count")  = py::none())
         .def_property_readonly("meta", &MultiMessageInterfaceProxy::meta)
         .def_property_readonly("mess_offset", &MultiMessageInterfaceProxy::mess_offset)
         .def_property_readonly("mess_count", &MultiMessageInterfaceProxy::mess_count)
@@ -222,6 +225,9 @@ PYBIND11_MODULE(messages, m)
              static_cast<pybind11::object (*)(MultiMessage&, std::vector<std::string>)>(
                  &MultiMessageInterfaceProxy::get_meta),
              py::return_value_policy::move)
+        .def("get_meta",
+             static_cast<pybind11::object (*)(MultiMessage&, pybind11::none)>(&MultiMessageInterfaceProxy::get_meta),
+             py::return_value_policy::move)
         .def("set_meta", &MultiMessageInterfaceProxy::set_meta, py::return_value_policy::move)
         .def("get_slice", &MultiMessageInterfaceProxy::get_slice, py::return_value_policy::reference_internal)
         .def("copy_ranges",
@@ -233,12 +239,13 @@ PYBIND11_MODULE(messages, m)
 
     py::class_<MultiTensorMessage, MultiMessage, std::shared_ptr<MultiTensorMessage>>(m, "MultiTensorMessage")
         .def(py::init<>(&MultiTensorMessageInterfaceProxy::init),
+             py::kw_only(),
              py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
+             py::arg("mess_offset") = 0,
+             py::arg("mess_count")  = py::none(),
              py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
+             py::arg("offset") = 0,
+             py::arg("count")  = py::none())
         .def_property_readonly("memory", &MultiTensorMessageInterfaceProxy::memory)
         .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
@@ -246,23 +253,25 @@ PYBIND11_MODULE(messages, m)
 
     py::class_<MultiInferenceMessage, MultiMessage, std::shared_ptr<MultiInferenceMessage>>(m, "MultiInferenceMessage")
         .def(py::init<>(&MultiInferenceMessageInterfaceProxy::init),
+             py::kw_only(),
              py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
+             py::arg("mess_offset") = 0,
+             py::arg("mess_count")  = py::none(),
              py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
+             py::arg("offset") = 0,
+             py::arg("count")  = py::none())
         .def("get_input", &MultiInferenceMessageInterfaceProxy::get_tensor);
 
     py::class_<MultiInferenceNLPMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceNLPMessage>>(
         m, "MultiInferenceNLPMessage")
         .def(py::init<>(&MultiInferenceNLPMessageInterfaceProxy::init),
+             py::kw_only(),
              py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
+             py::arg("mess_offset") = 0,
+             py::arg("mess_count")  = py::none(),
              py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
+             py::arg("offset") = 0,
+             py::arg("count")  = py::none())
         .def_property_readonly("input_ids", &MultiInferenceNLPMessageInterfaceProxy::input_ids)
         .def_property_readonly("input_mask", &MultiInferenceNLPMessageInterfaceProxy::input_mask)
         .def_property_readonly("seq_ids", &MultiInferenceNLPMessageInterfaceProxy::seq_ids);
@@ -270,34 +279,37 @@ PYBIND11_MODULE(messages, m)
     py::class_<MultiInferenceFILMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceFILMessage>>(
         m, "MultiInferenceFILMessage")
         .def(py::init<>(&MultiInferenceFILMessageInterfaceProxy::init),
+             py::kw_only(),
              py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
+             py::arg("mess_offset") = 0,
+             py::arg("mess_count")  = py::none(),
              py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
+             py::arg("offset") = 0,
+             py::arg("count")  = py::none())
         .def_property_readonly("input__0", &MultiInferenceFILMessageInterfaceProxy::input__0)
         .def_property_readonly("seq_ids", &MultiInferenceFILMessageInterfaceProxy::seq_ids);
 
     py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(m, "MultiResponseMessage")
         .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),
+             py::kw_only(),
              py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
+             py::arg("mess_offset") = 0,
+             py::arg("mess_count")  = py::none(),
              py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
+             py::arg("offset") = 0,
+             py::arg("count")  = py::none())
         .def("get_output", &MultiResponseMessageInterfaceProxy::get_tensor);
 
     py::class_<MultiResponseProbsMessage, MultiResponseMessage, std::shared_ptr<MultiResponseProbsMessage>>(
         m, "MultiResponseProbsMessage")
         .def(py::init<>(&MultiResponseProbsMessageInterfaceProxy::init),
+             py::kw_only(),
              py::arg("meta"),
-             py::arg("mess_offset"),
-             py::arg("mess_count"),
+             py::arg("mess_offset") = 0,
+             py::arg("mess_count")  = py::none(),
              py::arg("memory"),
-             py::arg("offset"),
-             py::arg("count"))
+             py::arg("offset") = 0,
+             py::arg("count")  = py::none())
         .def_property_readonly("probs", &MultiResponseProbsMessageInterfaceProxy::probs);
 
 #ifdef VERSION_INFO

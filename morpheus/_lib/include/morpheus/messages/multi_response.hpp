@@ -66,11 +66,11 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param count Message count in inference memory instance
      */
     MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
-                         std::size_t mess_offset,
-                         std::size_t mess_count,
-                         std::shared_ptr<ResponseMemory> memory,
-                         std::size_t offset,
-                         std::size_t count);
+                         size_t mess_offset                     = 0,
+                         std::optional<size_t> mess_count       = std::nullopt,
+                         std::shared_ptr<ResponseMemory> memory = nullptr,
+                         size_t offset                          = 0,
+                         std::optional<size_t> count            = std::nullopt);
 
     /**
      * @brief Returns the output tensor with the given name.
@@ -119,11 +119,11 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
      * @return std::shared_ptr<MultiResponseMessage>
      */
     static std::shared_ptr<MultiResponseMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                      cudf::size_type mess_offset,
-                                                      cudf::size_type mess_count,
+                                                      size_t mess_offset,
+                                                      std::optional<size_t> mess_count,
                                                       std::shared_ptr<ResponseMemory> memory,
-                                                      cudf::size_type offset,
-                                                      cudf::size_type count);
+                                                      size_t offset,
+                                                      std::optional<size_t> count);
 
     /**
      * @brief Returns the output tensor for a given name

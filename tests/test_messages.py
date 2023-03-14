@@ -58,7 +58,7 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                   _messages.MultiMessage,
                   should_be_cpp,
                   no_cpp_class,
-                  *(messages.MessageMeta(df), ))
+                  **{"meta": messages.MessageMeta(df)})
 
     check_message(tensor_memory.TensorMemory, _messages.TensorMemory, should_be_cpp, no_cpp_class, *(1, ))
     check_message(messages.InferenceMemory, _messages.InferenceMemory, should_be_cpp, no_cpp_class, *(1, ))
@@ -96,29 +96,31 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                   _messages.MultiTensorMessage,
                   should_be_cpp,
                   no_cpp_class,
-                  memory=tensor_memory.TensorMemory(count=1, tensors=multi_tensor_message_tensors),
-                  **multi_tensor_message_kwargs)
+                  meta=messages.MessageMeta(df),
+                  memory=tensor_memory.TensorMemory(count=1, tensors=multi_tensor_message_tensors))
 
     check_message(messages.MultiInferenceMessage,
                   _messages.MultiInferenceMessage,
                   should_be_cpp,
                   no_cpp_class,
-                  memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors),
-                  **multi_tensor_message_kwargs)
+                  meta=messages.MessageMeta(df),
+                  memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors))
 
-    check_message(messages.MultiInferenceNLPMessage,
-                  _messages.MultiInferenceNLPMessage,
-                  should_be_cpp,
-                  no_cpp_class,
-                  memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors),
-                  **multi_tensor_message_kwargs)
+    check_message(
+        messages.MultiInferenceNLPMessage,
+        _messages.MultiInferenceNLPMessage,
+        should_be_cpp,
+        no_cpp_class,
+        meta=messages.MessageMeta(df),
+        memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors),
+    )
 
     check_message(messages.MultiInferenceFILMessage,
                   _messages.MultiInferenceFILMessage,
                   should_be_cpp,
                   no_cpp_class,
-                  memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors),
-                  **multi_tensor_message_kwargs)
+                  meta=messages.MessageMeta(df),
+                  memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors))
 
     check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, *(1, ))
 
@@ -135,15 +137,15 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                   _messages.MultiResponseMessage,
                   should_be_cpp,
                   no_cpp_class,
-                  memory=response_memory.ResponseMemory(count=1, tensors=multi_tensor_message_tensors),
-                  **multi_tensor_message_kwargs)
+                  meta=messages.MessageMeta(df),
+                  memory=response_memory.ResponseMemory(count=1, tensors=multi_tensor_message_tensors))
 
     check_message(messages.MultiResponseProbsMessage,
                   _messages.MultiResponseProbsMessage,
                   should_be_cpp,
                   no_cpp_class,
-                  memory=response_memory.ResponseMemoryProbs(count=1, probs=multi_tensor_message_tensors["probs"]),
-                  **multi_tensor_message_kwargs)
+                  meta=messages.MessageMeta(df),
+                  memory=response_memory.ResponseMemoryProbs(count=1, probs=multi_tensor_message_tensors["probs"]))
 
     # No C++ impl
     check_message(
@@ -151,8 +153,8 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
         None,
         should_be_cpp,
         no_cpp_class,
+        meta=messages.MessageMeta(df),
         memory=response_memory.ResponseMemoryAE(count=1, probs=multi_tensor_message_tensors["probs"]),
-        **multi_tensor_message_kwargs,
         user_id="",
     )
 

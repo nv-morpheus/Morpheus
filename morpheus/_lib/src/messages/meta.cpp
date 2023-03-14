@@ -128,11 +128,17 @@ cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta& self)
 
 py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 {
-    // Release any GIL
-    py::gil_scoped_release no_gil;
+    TableInfo info;
 
-    // return py_table;
-    return self.get_info().copy_to_py_object();
+    {
+        // Need to release the GIL before calling `get_meta()`
+        pybind11::gil_scoped_release no_gil;
+
+        // Get the column and convert to cudf
+        info = self.get_info();
+    }
+
+    return CudfHelper::table_from_table_info(info);
 }
 
 py::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)

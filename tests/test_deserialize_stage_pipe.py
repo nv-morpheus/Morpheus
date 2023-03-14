@@ -35,7 +35,9 @@ from utils import duplicate_df_index_rand
 
 def test_detecting_non_unique_indexes(config):
 
-    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), file_type=FileTypes.Auto)
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
+                         file_type=FileTypes.Auto,
+                         df_type="cudf")
 
     # Set 2 ids equal to others
     df = duplicate_df_index_rand(df, count=2)

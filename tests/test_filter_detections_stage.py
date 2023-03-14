@@ -33,7 +33,7 @@ from utils import TEST_DIRS
 def _make_message(df, probs):
     df_ = df[0:len(probs)]
     mem = ResponseMemoryProbs(count=len(df_), probs=probs)
-    return MultiResponseProbsMessage(MessageMeta(df_), 0, len(df_), mem, 0, len(df_))
+    return MultiResponseProbsMessage(meta=MessageMeta(df_), memory=mem)
 
 
 def test_constructor(config):

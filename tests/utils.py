@@ -109,7 +109,7 @@ class ConvMsg(SinglePortStage):
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
         memory = ResponseMemoryProbs(count=len(probs), probs=probs)
-        return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
+        return MultiResponseProbsMessage(meta=m.meta, memory=memory)
 
     def _build_single(self, builder: mrc.Builder, input_stream):
         stream = builder.make_node(self.unique_name, self._conv_message)

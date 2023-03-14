@@ -30,13 +30,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiInferenceNLPMessage****************************************/
-MultiInferenceNLPMessage::MultiInferenceNLPMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+MultiInferenceNLPMessage::MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
                                                    size_t mess_offset,
-                                                   size_t mess_count,
-                                                   std::shared_ptr<morpheus::InferenceMemory> memory,
+                                                   std::optional<size_t> mess_count,
+                                                   std::shared_ptr<InferenceMemory> memory,
                                                    size_t offset,
-                                                   size_t count) :
-  MultiInferenceMessage(meta, mess_offset, mess_count, memory, offset, count)
+                                                   std::optional<size_t> count) :
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
 const TensorObject MultiInferenceNLPMessage::get_input_ids() const
@@ -72,11 +72,11 @@ void MultiInferenceNLPMessage::set_seq_ids(const TensorObject& seq_ids)
 /****** MultiInferenceNLPMessageInterfaceProxy *************************/
 std::shared_ptr<MultiInferenceNLPMessage> MultiInferenceNLPMessageInterfaceProxy::init(
     std::shared_ptr<MessageMeta> meta,
-    cudf::size_type mess_offset,
-    cudf::size_type mess_count,
+    size_t mess_offset,
+    std::optional<size_t> mess_count,
     std::shared_ptr<InferenceMemory> memory,
-    cudf::size_type offset,
-    cudf::size_type count)
+    size_t offset,
+    std::optional<size_t> count)
 {
     return std::make_shared<MultiInferenceNLPMessage>(
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
@@ -96,4 +96,5 @@ pybind11::object MultiInferenceNLPMessageInterfaceProxy::seq_ids(MultiInferenceN
 {
     return get_tensor_property(self, "seq_ids");
 }
+
 }  // namespace morpheus

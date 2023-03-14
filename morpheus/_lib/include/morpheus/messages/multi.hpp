@@ -256,7 +256,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @param o : Offset into the metadata batch
      * @param c : Messages count
      */
-    MultiMessage(std::shared_ptr<MessageMeta> m, size_t offset = 0, size_t count = -1);
+    MultiMessage(std::shared_ptr<MessageMeta> m, size_t offset = 0, std::optional<size_t> count = std::nullopt);
 
     std::shared_ptr<MessageMeta> meta;
     size_t mess_offset{0};
@@ -340,8 +340,8 @@ struct MultiMessageInterfaceProxy
      * TODO(Documentation)
      */
     static std::shared_ptr<MultiMessage> init(std::shared_ptr<MessageMeta> meta,
-                                              cudf::size_type mess_offset,
-                                              cudf::size_type mess_count);
+                                              int32_t mess_offset,
+                                              std::optional<int32_t> mess_count);
 
     /**
      * TODO(Documentation)
@@ -373,6 +373,9 @@ struct MultiMessageInterfaceProxy
      */
     static pybind11::object get_meta(MultiMessage& self, std::vector<std::string> columns);
 
+    // This overload is necessary to match the python signature where you can call self.get_meta(None)
+    static pybind11::object get_meta(MultiMessage& self, pybind11::none none_obj);
+
     static pybind11::object get_meta_list(MultiMessage& self, pybind11::object col_name);
 
     /**
@@ -383,7 +386,8 @@ struct MultiMessageInterfaceProxy
     /**
      * TODO(Documentation)
      */
-    static std::shared_ptr<MultiMessage> get_slice(MultiMessage& self, std::size_t start, std::size_t stop);
+    // Use ssize_t here to give better error messages on negative values
+    static std::shared_ptr<MultiMessage> get_slice(MultiMessage& self, ssize_t start, ssize_t stop);
 
     static std::shared_ptr<MultiMessage> copy_ranges(MultiMessage& self,
                                                      const std::vector<std::pair<size_t, size_t>>& ranges,

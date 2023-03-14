@@ -44,7 +44,7 @@ namespace morpheus {
  *
  */
 #pragma GCC visibility push(default)
-class MultiInferenceFILMessage : public MultiInferenceMessage
+class MultiInferenceFILMessage : public DerivedMultiMessage<MultiInferenceFILMessage, MultiInferenceMessage>
 {
   public:
     /**
@@ -58,12 +58,12 @@ class MultiInferenceFILMessage : public MultiInferenceMessage
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
      */
-    MultiInferenceFILMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                             size_t mess_offset,
-                             size_t mess_count,
-                             std::shared_ptr<morpheus::InferenceMemory> memory,
-                             size_t offset,
-                             size_t count);
+    MultiInferenceFILMessage(std::shared_ptr<MessageMeta> meta,
+                             size_t mess_offset                      = 0,
+                             std::optional<size_t> mess_count        = std::nullopt,
+                             std::shared_ptr<InferenceMemory> memory = nullptr,
+                             size_t offset                           = 0,
+                             std::optional<size_t> count             = std::nullopt);
 
     /**
      * @brief Returns the 'input__0' tensor, throws a `std::runtime_error` if it does not exist
@@ -117,11 +117,11 @@ struct MultiInferenceFILMessageInterfaceProxy : public MultiInferenceMessageInte
      * @return std::shared_ptr<MultiInferenceFILMessage>
      */
     static std::shared_ptr<MultiInferenceFILMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                          cudf::size_type mess_offset,
-                                                          cudf::size_type mess_count,
+                                                          size_t mess_offset,
+                                                          std::optional<size_t> mess_count,
                                                           std::shared_ptr<InferenceMemory> memory,
-                                                          cudf::size_type offset,
-                                                          cudf::size_type count);
+                                                          size_t offset,
+                                                          std::optional<size_t> count);
 
     /**
      * @brief Get  'input__0' tensor as a python object
