@@ -22,8 +22,10 @@ source ${WORKSPACE}/ci/scripts/github/common.sh
 update_conda_env
 
 aws s3 cp --no-progress "${ARTIFACT_URL}/wheel.tar.bz" "${WORKSPACE_TMP}/wheel.tar.bz"
+aws s3 cp --no-progress "${ARTIFACT_URL}/cpp_tests.tar.bz" "${WORKSPACE_TMP}/cpp_tests.tar.bz"
 
 tar xf "${WORKSPACE_TMP}/wheel.tar.bz"
+tar xf "${WORKSPACE_TMP}/cpp_tests.tar.bz"
 
 # Install the built Morpheus python package
 pip install ${MORPHEUS_ROOT}/build/dist/*.whl
