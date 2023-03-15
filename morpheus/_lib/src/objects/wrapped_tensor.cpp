@@ -17,7 +17,8 @@
 
 #include "morpheus/objects/wrapped_tensor.hpp"
 
-#include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"                  // for ShapeType
 
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
@@ -28,7 +29,6 @@
 
 namespace morpheus {
 /****** Component public implementations *******************/
-/****** TensorObject****************************************/
 /****** TensorObjectInterfaceProxy *************************/
 pybind11::dict TensorObjectInterfaceProxy::cuda_array_interface(TensorObject& self)
 {
