@@ -22,8 +22,8 @@ update_conda_env
 
 rapids-logger "Check versions"
 python3 --version
-gcc --version
-g++ --version
+x86_64-conda-linux-gnu-cc --version
+x86_64-conda-linux-gnu-c++ --version
 cmake --version
 ninja --version
 sccache --version
