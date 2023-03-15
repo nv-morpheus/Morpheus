@@ -21,8 +21,6 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 
-#include <cudf/types.hpp>
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -31,11 +29,11 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** <MultiInferenceMessage>****************************************/
 MultiInferenceMessage::MultiInferenceMessage(std::shared_ptr<MessageMeta> meta,
-                                             size_t mess_offset,
-                                             std::optional<size_t> mess_count,
+                                             TensorIndex mess_offset,
+                                             TensorIndex mess_count,
                                              std::shared_ptr<InferenceMemory> memory,
-                                             size_t offset,
-                                             std::optional<size_t> count) :
+                                             TensorIndex offset,
+                                             TensorIndex count) :
   DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
@@ -57,11 +55,11 @@ void MultiInferenceMessage::set_input(const std::string& name, const TensorObjec
 /****** <MultiInferenceMessage>InterfaceProxy *************************/
 std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::init(
     std::shared_ptr<MessageMeta> meta,
-    size_t mess_offset,
-    std::optional<size_t> mess_count,
+    TensorIndex mess_offset,
+    TensorIndex mess_count,
     std::shared_ptr<InferenceMemory> memory,
-    size_t offset,
-    std::optional<size_t> count)
+    TensorIndex offset,
+    TensorIndex count)
 {
     return std::make_shared<MultiInferenceMessage>(
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);

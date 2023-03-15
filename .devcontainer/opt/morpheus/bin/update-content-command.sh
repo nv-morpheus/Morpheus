@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+# Ensure our ~/.config directory has the correct permissions. If ~/.config did
+# not exist, and you mount ~/.config/gh from the host, then ~/.config will be
+# created with root permissions which can break things
 
-COMPOSE_FILE="${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml"
-
-docker compose -f $COMPOSE_FILE up -d zookeeper kafka
-export ZOOKEEPER_HOST=$(docker compose -f $COMPOSE_FILE exec zookeper hostname -i)
-export KAFKA_HOST=$(docker compose -f $COMPOSE_FILE exec kafka hostname -i)
+if [[ ! -f ~/.config/.gdbinit ]]; then
+    cp /opt/morpheus/etc/.gdbinit ~/.config/.gdbinit
+fi

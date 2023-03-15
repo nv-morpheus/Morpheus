@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+# create a docker network for morpheus
+docker network inspect morpheus >/dev/null 2>&1 || docker network create morpheus
 
-COMPOSE_FILE="${MORPHEUS_ROOT}/.devcontainer/docker-compose.yml"
+# create the parent conda folder so it's found when mounting
+mkdir -p ../.conda
 
-docker compose -f $COMPOSE_FILE up -d zookeeper kafka
-export ZOOKEEPER_HOST=$(docker compose -f $COMPOSE_FILE exec zookeper hostname -i)
-export KAFKA_HOST=$(docker compose -f $COMPOSE_FILE exec kafka hostname -i)
+# create a config directory if it does not exist so it's found when mounting
+mkdir -p ../.config

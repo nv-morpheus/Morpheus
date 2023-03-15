@@ -17,8 +17,11 @@
 
 #pragma once
 
+#include <cudf/types.hpp>
+
 #include <map>
 #include <string>
+#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -31,10 +34,11 @@ struct TensorObject;
  * @file
  */
 // NOLINTBEGIN(readability-identifier-naming)
-using TensorIndex = long long;
+using TensorIndex = cudf::size_type;
 using RankType    = int;
 
 using ShapeType = std::vector<TensorIndex>;
+using RangeType = std::pair<TensorIndex, TensorIndex>;
 using TensorMap = std::map<std::string, TensorObject>;
 // NOLINTEND(readability-identifier-naming)
 

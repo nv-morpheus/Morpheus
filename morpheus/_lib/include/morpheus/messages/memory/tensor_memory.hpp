@@ -23,10 +23,8 @@
 
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>  // for size_t
-#include <memory>   // for shared_ptr
+#include <memory>  // for shared_ptr
 #include <string>
-#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -53,7 +51,7 @@ class TensorMemory
      *
      * @param count
      */
-    TensorMemory(size_t count);
+    TensorMemory(TensorIndex count);
 
     /**
      * @brief Construct a new Tensor Memory object
@@ -61,10 +59,10 @@ class TensorMemory
      * @param count
      * @param tensors
      */
-    TensorMemory(size_t count, TensorMap&& tensors);
+    TensorMemory(TensorIndex count, TensorMap&& tensors);
     virtual ~TensorMemory() = default;
 
-    size_t count{0};
+    TensorIndex count{0};
     TensorMap tensors;
 
     /**
@@ -83,8 +81,7 @@ class TensorMemory
      * @param num_selected_rows
      * @return TensorMap
      */
-    TensorMap copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
-                                 size_t num_selected_rows) const;
+    TensorMap copy_tensor_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const;
 
     /**
      * @brief Get the tensor object identified by `name`
@@ -161,15 +158,15 @@ struct TensorMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<TensorMemory>
      */
-    static std::shared_ptr<TensorMemory> init(std::size_t count, pybind11::object& tensors);
+    static std::shared_ptr<TensorMemory> init(TensorIndex count, pybind11::object& tensors);
 
     /**
      * @brief Get the count object
      *
      * @param self
-     * @return std::size_t
+     * @return TensorIndex
      */
-    static std::size_t get_count(TensorMemory& self);
+    static TensorIndex get_count(TensorMemory& self);
 
     static bool has_tensor(TensorMemory& self, std::string name);
 

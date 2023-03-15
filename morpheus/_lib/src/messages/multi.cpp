@@ -30,6 +30,7 @@
 #include <cudf/io/types.hpp>
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <glog/logging.h>       // for CHECK
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <pybind11/cast.h>
 #include <pybind11/detail/common.h>
@@ -40,10 +41,10 @@
 
 #include <algorithm>  // for transform
 #include <array>      // needed for pybind11::make_tuple
+#include <cstddef>    // for size_t
 #include <cstdint>    // for uint8_t
 #include <sstream>
 #include <stdexcept>  // for runtime_error
-#include <tuple>
 // IWYU pragma: no_include <unordered_map>
 
 namespace morpheus {
@@ -53,8 +54,8 @@ using namespace py::literals;
 
 /****** Component public implementations *******************/
 /****** MultiMessage****************************************/
-MultiMessage::MultiMessage(std::shared_ptr<morpheus::MessageMeta> m, size_t offset, std::optional<size_t> count) :
-  meta(std::move(m)),
+MultiMessage::MultiMessage(std::shared_ptr<MessageMeta> meta, TensorIndex offset, TensorIndex count) :
+  meta(std::move(meta)),
   mess_offset(offset)
 {
     if (!this->meta)
@@ -63,7 +64,12 @@ MultiMessage::MultiMessage(std::shared_ptr<morpheus::MessageMeta> m, size_t offs
     }
 
     // Default to using the count from the meta if it is unset
-    this->mess_count = count.value_or(this->meta->count());
+    if (mess_count == -1)
+    {
+        mess_count = this->meta->count();
+    }
+
+    this->mess_count = mess_count;
 
     if (this->mess_offset < 0 || this->mess_offset >= this->meta->count())
     {
@@ -100,7 +106,7 @@ TableInfo MultiMessage::get_meta(const std::vector<std::string>& column_names)
     return sliced_info;
 }
 
-void MultiMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const
+void MultiMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message, TensorIndex start, TensorIndex stop) const
 {
     // Start must be between [0, mess_count)
     if (start < 0 || start >= this->mess_count)
@@ -119,24 +125,24 @@ void MultiMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message, std
 }
 
 void MultiMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                    const std::vector<std::pair<size_t, size_t>>& ranges,
-                                    size_t num_selected_rows) const
+                                    const std::vector<RangeType>& ranges,
+                                    TensorIndex num_selected_rows) const
 {
     new_message->mess_offset = 0;
     new_message->mess_count  = num_selected_rows;
     new_message->meta        = copy_meta_ranges(ranges);
 }
 
-std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<std::pair<size_t, size_t>>& ranges) const
+std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<RangeType>& ranges) const
 {
     // copy ranges into a sequntial list of values
     // https://github.com/rapidsai/cudf/issues/11223
-    std::vector<cudf::size_type> cudf_ranges;
+    std::vector<TensorIndex> cudf_ranges;
     for (const auto& p : ranges)
     {
         // Append the message offset to the range here
-        cudf_ranges.push_back(static_cast<cudf::size_type>(p.first + this->mess_offset));
-        cudf_ranges.push_back(static_cast<cudf::size_type>(p.second + this->mess_offset));
+        cudf_ranges.push_back(p.first + this->mess_offset);
+        cudf_ranges.push_back(p.second + this->mess_offset);
     }
 
     auto table_info                       = this->meta->get_info();
@@ -172,7 +178,7 @@ void MultiMessage::set_meta(const std::vector<std::string>& column_names, const 
         throw std::runtime_error(err_msg.str());
     }
 
-    for (size_t i = 0; i < tensors.size(); ++i)
+    for (std::size_t i = 0; i < tensors.size(); ++i)
     {
         const auto& cv            = table_meta.get_column(i);
         const auto table_type_id  = cv.type().id();
@@ -207,22 +213,21 @@ void MultiMessage::set_meta(const std::vector<std::string>& column_names, const 
     }
 }
 
-std::vector<std::pair<TensorIndex, TensorIndex>> MultiMessage::apply_offset_to_ranges(
-    std::size_t offset, const std::vector<std::pair<size_t, size_t>>& ranges) const
+std::vector<RangeType> MultiMessage::apply_offset_to_ranges(TensorIndex offset,
+                                                            const std::vector<RangeType>& ranges) const
 {
-    std::vector<std::pair<TensorIndex, TensorIndex>> offset_ranges(ranges.size());
-    std::transform(
-        ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const std::pair<size_t, size_t> range) {
-            return std::pair{offset + range.first, offset + range.second};
-        });
+    std::vector<RangeType> offset_ranges(ranges.size());
+    std::transform(ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const RangeType range) {
+        return std::pair{offset + range.first, offset + range.second};
+    });
 
     return offset_ranges;
 }
 
 /****** MultiMessageInterfaceProxy *************************/
 std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
-                                                               int32_t mess_offset,
-                                                               std::optional<int32_t> mess_count)
+                                                               TensorIndex mess_offset,
+                                                               TensorIndex mess_count)
 {
     return std::make_shared<MultiMessage>(std::move(meta), mess_offset, mess_count);
 }
@@ -232,12 +237,12 @@ std::shared_ptr<morpheus::MessageMeta> MultiMessageInterfaceProxy::meta(const Mu
     return self.meta;
 }
 
-std::size_t MultiMessageInterfaceProxy::mess_offset(const MultiMessage& self)
+TensorIndex MultiMessageInterfaceProxy::mess_offset(const MultiMessage& self)
 {
     return self.mess_offset;
 }
 
-std::size_t MultiMessageInterfaceProxy::mess_count(const MultiMessage& self)
+TensorIndex MultiMessageInterfaceProxy::mess_count(const MultiMessage& self)
 {
     return self.mess_count;
 }
@@ -396,7 +401,9 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
     mutable_info.return_obj(std::move(df));
 }
 
-std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage& self, ssize_t start, ssize_t stop)
+std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage& self,
+                                                                    TensorIndex start,
+                                                                    TensorIndex stop)
 {
     if (start < 0)
     {
@@ -415,10 +422,11 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage
     return self.get_slice(start, stop);
 }
 
-std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(
-    MultiMessage& self, const std::vector<std::pair<size_t, size_t>>& ranges, pybind11::object num_selected_rows)
+std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(MultiMessage& self,
+                                                                      const std::vector<RangeType>& ranges,
+                                                                      pybind11::object num_selected_rows)
 {
-    std::size_t num_rows = 0;
+    TensorIndex num_rows = 0;
     if (num_selected_rows.is_none())
     {
         for (const auto& range : ranges)
@@ -428,7 +436,7 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(
     }
     else
     {
-        num_rows = num_selected_rows.cast<std::size_t>();
+        num_rows = num_selected_rows.cast<TensorIndex>();
     }
 
     // Need to drop the GIL before calling any methods on the C++ object

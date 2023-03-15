@@ -21,11 +21,10 @@
 #include "morpheus/messages/meta.hpp"                     // for MessageMeta
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>
 #include <memory>
 
 namespace morpheus {
@@ -59,11 +58,11 @@ class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMes
      * @param count Message count in inference memory object
      */
     MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
-                             size_t mess_offset                      = 0,
-                             std::optional<size_t> mess_count        = std::nullopt,
+                             TensorIndex mess_offset = 0,
+                             TensorIndex mess_count = -1,
                              std::shared_ptr<InferenceMemory> memory = nullptr,
-                             size_t offset                           = 0,
-                             std::optional<size_t> count             = std::nullopt);
+                             TensorIndex offset = 0,
+                             TensorIndex count = -1);
 
     /**
      * @brief Returns the 'input_ids' tensor, throws a `std::runtime_error` if it does not exist.
@@ -133,11 +132,11 @@ struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInte
      * @return std::shared_ptr<MultiInferenceNLPMessage>
      */
     static std::shared_ptr<MultiInferenceNLPMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                          size_t mess_offset,
-                                                          std::optional<size_t> mess_count,
+                                                          TensorIndex mess_offset,
+                                                          TensorIndex mess_count,
                                                           std::shared_ptr<InferenceMemory> memory,
-                                                          size_t offset,
-                                                          std::optional<size_t> count);
+                                                          TensorIndex offset,
+                                                          TensorIndex count);
 
     /**
      * @brief Get  'input_ids' tensor as a python object

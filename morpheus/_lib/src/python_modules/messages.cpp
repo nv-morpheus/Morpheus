@@ -31,6 +31,7 @@
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <boost/fiber/future/future.hpp>
@@ -48,7 +49,6 @@
 #include <pymrc/utils.hpp>  // for pymrc::import
 #include <rxcpp/rx.hpp>
 
-#include <cstddef>
 #include <filesystem>
 #include <map>
 #include <memory>

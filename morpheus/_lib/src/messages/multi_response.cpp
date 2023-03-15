@@ -22,9 +22,6 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 
-#include <cudf/types.hpp>
-
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -32,11 +29,11 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 MultiResponseMessage::MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
-                                           size_t mess_offset,
-                                           std::optional<size_t> mess_count,
+                                           TensorIndex mess_offset,
+                                           TensorIndex mess_count,
                                            std::shared_ptr<ResponseMemory> memory,
-                                           size_t offset,
-                                           std::optional<size_t> count) :
+                                           TensorIndex offset,
+                                           TensorIndex count) :
   DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
@@ -57,11 +54,11 @@ void MultiResponseMessage::set_output(const std::string& name, const TensorObjec
 
 /****** MultiResponseMessageInterfaceProxy *************************/
 std::shared_ptr<MultiResponseMessage> MultiResponseMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
-                                                                               size_t mess_offset,
-                                                                               std::optional<size_t> mess_count,
+                                                                               TensorIndex mess_offset,
+                                                                               TensorIndex mess_count,
                                                                                std::shared_ptr<ResponseMemory> memory,
-                                                                               size_t offset,
-                                                                               std::optional<size_t> count)
+                                                                               TensorIndex offset,
+                                                                               TensorIndex count)
 {
     return std::make_shared<MultiResponseMessage>(
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);

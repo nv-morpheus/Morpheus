@@ -21,11 +21,10 @@
 #include "morpheus/messages/meta.hpp"                     // for MessageMeta
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>  // for size_t
 #include <memory>
 
 namespace morpheus {
@@ -59,11 +58,11 @@ class MultiInferenceFILMessage : public DerivedMultiMessage<MultiInferenceFILMes
      * @param count Message count in inference memory object
      */
     MultiInferenceFILMessage(std::shared_ptr<MessageMeta> meta,
-                             size_t mess_offset                      = 0,
-                             std::optional<size_t> mess_count        = std::nullopt,
-                             std::shared_ptr<InferenceMemory> memory = nullptr,
-                             size_t offset                           = 0,
-                             std::optional<size_t> count             = std::nullopt);
+                             TensorIndex mess_offset                           = 0,
+                             TensorIndex mess_count                            = -1,
+                             std::shared_ptr<morpheus::InferenceMemory> memory = nullptr,
+                             TensorIndex offset                                = 0,
+                             TensorIndex count                                 = -1);
 
     /**
      * @brief Returns the 'input__0' tensor, throws a `std::runtime_error` if it does not exist
@@ -117,11 +116,11 @@ struct MultiInferenceFILMessageInterfaceProxy : public MultiInferenceMessageInte
      * @return std::shared_ptr<MultiInferenceFILMessage>
      */
     static std::shared_ptr<MultiInferenceFILMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                          size_t mess_offset,
-                                                          std::optional<size_t> mess_count,
+                                                          TensorIndex mess_offset,
+                                                          TensorIndex mess_count,
                                                           std::shared_ptr<InferenceMemory> memory,
-                                                          size_t offset,
-                                                          std::optional<size_t> count);
+                                                          TensorIndex offset,
+                                                          TensorIndex count);
 
     /**
      * @brief Get  'input__0' tensor as a python object

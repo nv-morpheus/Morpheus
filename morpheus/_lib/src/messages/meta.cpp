@@ -42,7 +42,7 @@ namespace py = pybind11;
 /****** Component public implementations *******************/
 /****** MessageMeta ****************************************/
 
-size_t MessageMeta::count() const
+TensorIndex MessageMeta::count() const
 {
     return m_data->count();
 }
@@ -121,7 +121,7 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&&
     return MessageMeta::create_from_python(std::move(data_frame));
 }
 
-cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta& self)
+TensorIndex MessageMetaInterfaceProxy::count(MessageMeta& self)
 {
     return self.count();
 }
@@ -182,8 +182,8 @@ void MessageMetaInterfaceProxy::replace_non_unique_index(MessageMeta& self)
 }
 
 SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
-                                     cudf::size_type start,
-                                     cudf::size_type stop,
+                                     TensorIndex start,
+                                     TensorIndex stop,
                                      std::vector<std::string> columns) :
   MessageMeta(*other),
   m_start(start),
