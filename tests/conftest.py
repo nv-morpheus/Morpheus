@@ -307,7 +307,6 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
 def _filter_probs_df():
     from morpheus._lib.common import FileTypes
     from morpheus.io.deserializers import read_file_to_df
-
     from utils import TEST_DIRS
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     yield read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
@@ -327,6 +326,7 @@ def filter_probs_pandas_df(_filter_probs_df):
     Returns a pandas dataframe populated from the data in `tests/tests_data/filter_probs.csv`
     """
     yield _filter_probs_df.to_pandas()
+
 
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):
 
