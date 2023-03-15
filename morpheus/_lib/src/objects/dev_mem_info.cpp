@@ -31,9 +31,9 @@ namespace morpheus {
 
 DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                        DType dtype,
-                       std::vector<std::size_t> shape,
-                       std::vector<std::size_t> stride,
-                       size_t offset_bytes) :
+                       ShapeType shape,
+                       ShapeType stride,
+                       TensorIndex offset_bytes) :
   m_buffer(std::move(buffer)),
   m_dtype(std::move(dtype)),
   m_shape(std::move(shape)),
@@ -44,17 +44,17 @@ DevMemInfo::DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
         << "Inconsistent dimensions, values would extend past the end of the device_buffer";
 }
 
-std::size_t DevMemInfo::bytes() const
+TensorIndex DevMemInfo::bytes() const
 {
     return count() * m_dtype.item_size();
 }
 
-std::size_t DevMemInfo::count() const
+TensorIndex DevMemInfo::count() const
 {
     return TensorUtils::get_elem_count(m_shape);
 }
 
-std::size_t DevMemInfo::offset_bytes() const
+TensorIndex DevMemInfo::offset_bytes() const
 {
     return m_offset_bytes;
 }
@@ -69,27 +69,27 @@ TypeId DevMemInfo::type_id() const
     return m_dtype.type_id();
 }
 
-const std::vector<std::size_t>& DevMemInfo::shape() const
+const ShapeType& DevMemInfo::shape() const
 {
     return m_shape;
 }
 
-std::size_t DevMemInfo::shape(std::size_t idx) const
+TensorIndex DevMemInfo::shape(TensorIndex idx) const
 {
     return m_shape.at(idx);
 }
 
-const std::vector<std::size_t>& DevMemInfo::stride() const
+const ShapeType& DevMemInfo::stride() const
 {
     return m_stride;
 }
 
-std::size_t DevMemInfo::stride(std::size_t idx) const
+TensorIndex DevMemInfo::stride(TensorIndex idx) const
 {
     return m_stride.at(idx);
 }
 
-std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(std::size_t bytes) const
+std::unique_ptr<rmm::device_buffer> DevMemInfo::make_new_buffer(TensorIndex bytes) const
 {
     return std::make_unique<rmm::device_buffer>(bytes, m_buffer->stream(), m_buffer->memory_resource());
 }
