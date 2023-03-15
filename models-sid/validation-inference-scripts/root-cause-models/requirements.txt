@@ -1,5 +1,0 @@
-cudf==22.8.1
-numpy==1.22.4
-onnxruntime==1.13.1
-scipy==1.9.1
-torch==1.13.1+cu116

@@ -1,5 +1,0 @@
-cudf==0+untagged.1.g788bddd
-cuml==0+untagged.1.gac37465
-cupy==9.1.0
-scikit_learn==1.0.2
-xgboost==1.4.2
