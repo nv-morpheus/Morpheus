@@ -4,12 +4,12 @@ This module reads data from the batched files into a dataframe after receiving i
 
 ### Configurable Parameters
 
-- **cache_dir** (str): Directory to cache the rolling window data.
-- **file_type** (str): Type of the input file.
-- **filter_null** (bool): Whether to filter out null values.
-- **parser_kwargs** (dict): Keyword arguments to pass to the parser.
-- **schema** (dict): Schema of the input data.
-- **timestamp_column_name** (str): Name of the timestamp column.
+- `cache_dir` (str): Directory to cache the rolling window data.
+- `file_type` (str): Type of the input file.
+- `filter_null` (bool): Whether to filter out null values.
+- `parser_kwargs` (dict): Keyword arguments to pass to the parser.
+- `schema` (dict): Schema of the input data.
+- `timestamp_column_name` (str): Name of the timestamp column.
 
 ### Example JSON Configuration
 

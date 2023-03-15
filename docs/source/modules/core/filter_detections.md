@@ -6,13 +6,13 @@ The Filter Detections module is used to filter rows from a dataframe based on va
 
 ### Configurable Parameters
 
-- **field_name** (str): Name of the field to filter on. Defaults to `probs`.
-- **threshold** (float): Threshold value to filter on. Defaults to `0.5`.
-- **filter_source** (str): Source of the filter field. Defaults to `AUTO`.
-- **copy** (bool): Whether to copy the rows or slice them. Defaults to `True`.
-- **schema** (dict): Schema configuration.
-    - **input_message_type** (str): Pickled message type.
-    - **encoding** (str): Encoding used to pickle the message type.
+- `field_name` (str): Name of the field to filter on. Defaults to `probs`.
+- `threshold` (float): Threshold value to filter on. Defaults to `0.5`.
+- `filter_source` (str): Source of the filter field. Defaults to `AUTO`.
+- `copy` (bool): Whether to copy the rows or slice them. Defaults to `True`.
+- `schema` (dict): Schema configuration.
+    - `input_message_type` (str): Pickled message type.
+    - `encoding` (str): Encoding used to pickle the message type.
 
 ### Example JSON Configuration
 

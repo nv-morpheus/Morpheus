@@ -4,11 +4,11 @@ This module filters columns from a `MultiMessage` object, emitting a `MessageMet
 
 ### Configurable Parameters
 
-- **include** (str): Regex to include columns.
-- **exclude** (List[str]): List of regex patterns to exclude columns.
-- **fixed_columns** (bool): If true, the columns are fixed and not determined at runtime.
-- **columns** (List[str]): List of columns to include.
-- **use_cpp** (bool): If true, use C++ to serialize.
+- `include` (str): Regex to include columns.
+- `exclude` (List[str]): List of regex patterns to exclude columns.
+- `fixed_columns` (bool): If true, the columns are fixed and not determined at runtime.
+- `columns` (List[str]): List of columns to include.
+- `use_cpp` (bool): If true, use C++ to serialize.
 
 ### Example JSON Configuration
 

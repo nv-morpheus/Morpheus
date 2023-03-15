@@ -4,20 +4,20 @@ This module loads the input files, removes files that are older than the chosen 
 
 ### Configurable Parameters
 
-- **batching_options**: A dictionary containing the following options:
-    - **end_time**: End time of the time window (datetime or string format)
-    - **iso_date_regex_pattern**: Regex pattern for ISO date matching
-    - **parser_kwargs**: Additional arguments for the parser (dictionary)
-    - **period**: Time period for grouping files (e.g., '1d' for 1 day)
-    - **sampling_rate_s**: Sampling rate in seconds (integer)
-    - **start_time**: Start time of the time window (datetime or string format)
-- **cache_dir**: Cache directory (string)
-- **file_type**: File type (string)
-- **filter_nulls**: Whether to filter null values (boolean)
+- `batching_options`: A dictionary containing the following options:
+    - `end_time`: End time of the time window (datetime or string format)
+    - `iso_date_regex_pattern`: Regex pattern for ISO date matching
+    - `parser_kwargs`: Additional arguments for the parser (dictionary)
+    - `period`: Time period for grouping files (e.g., '1d' for 1 day)
+    - `sampling_rate_s`: Sampling rate in seconds (integer)
+    - `start_time`: Start time of the time window (datetime or string format)
+- `cache_dir`: Cache directory (string)
+- `file_type`: File type (string)
+- `filter_nulls`: Whether to filter null values (boolean)
     - `True`: Filter null values
     - `False`: Don't filter null values
-- **schema**: Data schema (dictionary)
-- **timestamp_column_name**: Name of the timestamp column (string)
+- `schema`: Data schema (dictionary)
+- `timestamp_column_name`: Name of the timestamp column (string)
 
 ### Example JSON Configuration
 
