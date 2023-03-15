@@ -371,13 +371,13 @@ class InferenceStage(MultiMessageStage):
             # Make sure we have a continuous list
             assert inf.mess_offset == saved_offset + saved_count
 
+            assert inf.count == res.count
+
             # Two scenarios:
             if (inf.mess_count == inf.count):
                 # In message and out message have same count. Just use probs as is
                 memory.probs[inf.offset:inf.offset + inf.count, :] = res.probs
             else:
-                assert inf.count == res.count
-
                 mess_ids = inf.seq_ids[:, 0].get().tolist()
 
                 # Out message has more reponses, so we have to do key based blending of probs

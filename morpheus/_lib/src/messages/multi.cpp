@@ -64,12 +64,12 @@ MultiMessage::MultiMessage(std::shared_ptr<MessageMeta> meta, TensorIndex offset
     }
 
     // Default to using the count from the meta if it is unset
-    if (mess_count == -1)
+    if (count == -1)
     {
-        mess_count = this->meta->count();
+        count = this->meta->count();
     }
 
-    this->mess_count = mess_count;
+    this->mess_count = count;
 
     if (this->mess_offset < 0 || this->mess_offset >= this->meta->count())
     {

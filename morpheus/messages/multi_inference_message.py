@@ -65,12 +65,6 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
         """
         return self.tensors
 
-    def __getstate__(self):
-        return self.__dict__
-
-    def __setstate__(self, d):
-        self.__dict__ = d
-
     def get_input(self, name: str):
         """
         Get input stored in the InferenceMemory container. Alias for `MultiInferenceMessage.get_tensor`.
