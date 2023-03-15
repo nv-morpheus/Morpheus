@@ -161,7 +161,7 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     source activate base &&\
     # Need to get around recent versions of git locking paths until they are deemed safe
     git config --global --add safe.directory "*" &&\
-    MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # sid_visualization is a submodule we need to init
 RUN git submodule update --init --recursive
@@ -178,7 +178,7 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate morpheus &&\
     # Install morpheus
-    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/cuda-11.8.0 -c nvidia/label/dev -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml &&\
     # Clean and activate
@@ -245,7 +245,6 @@ ARG MORPHEUS_USER="root"
 RUN source activate morpheus \
     && MORPHEUS_ROOT=/workspace \
        CONDA_BLD_PATH=/opt/conda/conda-bld \
-       CONDA_ARGS="--no-test" \
        ./ci/conda/recipes/run_conda_build.sh pydebug \
     && ./ci/conda/recipes/python_dbg_install.sh \
        -s $( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
