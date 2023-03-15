@@ -114,13 +114,7 @@ outputs:
         - morpheus
         - morpheus._lib
       commands:
-          - "echo pwd: ${PWD}"
-        # # Install dependencies that are pip-only
-        # - mamba env update --prefix ${CONDA_PREFIX} --file docker/conda/environments/cuda{{ cuda_version }}_runtime.yml
-        # # Ensure the test data is downloaded
-        # - ./scripts/fetch_data.py fetch tests
-        # # Run pytest
-        # - pytest
+          - echo # make sure test requirements get installed
 
 about:
   home: https://github.com/nv-morpheus/Morpheus
