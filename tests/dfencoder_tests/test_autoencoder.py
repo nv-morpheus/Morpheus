@@ -29,7 +29,9 @@ from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
 
-EXPECTED_CATS = [
+BIN_COLS = ['ts_anomaly']
+
+CAT_COLS = [
     'apiVersion',
     'errorCode',
     'errorMessage',
@@ -45,6 +47,8 @@ EXPECTED_CATS = [
     'userIdentitysessionContextsessionIssueruserName',
     'userIdentitytype'
 ]
+
+NUMERIC_COLS = ['eventID', 'ae_anomaly_score']
 
 
 @pytest.fixture(scope="function")
@@ -252,21 +256,20 @@ def test_auto_encoder_fit(train_ae, train_df):
         }
     }
 
-    assert sorted(train_ae.num_names) == sorted(expected_numeric_features.keys())
+    assert sorted(train_ae.num_names) == sorted(NUMERIC_COLS)
     compare_numeric_features(train_ae.numeric_fts, expected_numeric_features)
 
     expected_bin_features = {'ts_anomaly': {'cats': [True, False], True: True, False: False}}
-    assert train_ae.bin_names == ['ts_anomaly']
+    assert train_ae.bin_names == BIN_COLS
     assert train_ae.binary_fts == expected_bin_features
 
-    assert sorted(train_ae.categorical_fts.keys()) == EXPECTED_CATS
-    for cat in EXPECTED_CATS:
+    assert sorted(train_ae.categorical_fts.keys()) == CAT_COLS
+    for cat in CAT_COLS:
         assert sorted(train_ae.categorical_fts[cat]['cats']) == sorted(train_df[cat].dropna().unique())
 
     assert len(train_ae.cyclical_fts) == 0
 
-    all_feature_names = sorted(
-        list(expected_numeric_features.keys()) + list(expected_bin_features.keys()) + EXPECTED_CATS)
+    all_feature_names = sorted(NUMERIC_COLS + BIN_COLS + CAT_COLS)
 
     assert sorted(train_ae.feature_loss_stats.keys()) == all_feature_names
     for ft in train_ae.feature_loss_stats.values():
@@ -294,8 +297,7 @@ def test_auto_encoder_prepare_df(train_ae, train_df):
 
     assert isinstance(prepared_df, EncoderDataFrame)
 
-    numeric_feature_cols = ['eventID', 'ae_anomaly_score']
-    for (i, ft) in enumerate(numeric_feature_cols):
+    for (i, ft) in enumerate(NUMERIC_COLS):
         scaler = scalers.StandardScaler()
         scaler.fit(train_df[ft].values)
         expected_values = scaler.transform(train_df[ft].values.copy())
@@ -306,7 +308,7 @@ def test_auto_encoder_prepare_df(train_ae, train_df):
     # Bin features should remain the same when the input is already boolean, this DF only has one
     assert (prepared_df.ts_anomaly == train_df.ts_anomaly).all()
 
-    for cat in EXPECTED_CATS:
+    for cat in CAT_COLS:
         assert cat in prepared_df
         isinstance(prepared_df[cat], pd.Categorical)
         assert not prepared_df[cat].hasnans
@@ -315,3 +317,34 @@ def test_auto_encoder_prepare_df(train_ae, train_df):
             assert '_other' in prepared_df[cat].values
         else:
             assert '_other' not in prepared_df[cat].values
+
+
+def test_build_input_tensor(train_ae, train_df):
+    train_ae.fit(train_df, epochs=1)
+    prepared_df = train_ae.prepare_df(train_df)
+    tensor = train_ae.build_input_tensor(prepared_df)
+
+    assert isinstance(tensor, torch.Tensor)
+    assert tensor.device.type == 'cuda'
+    assert len(tensor) == len(train_df)
+
+
+@pytest.mark.usefixtures("manual_seed")
+def test_auto_encoder_get_results(train_ae, train_df):
+    train_ae.fit(train_df, epochs=1)
+    results = train_ae.get_results(train_df)
+
+    for ft in sorted(NUMERIC_COLS + BIN_COLS + CAT_COLS):
+        assert ft in results.columns
+        assert f'{ft}_pred' in results.columns
+        assert f'{ft}_loss' in results.columns
+        assert f'{ft}_z_loss' in results.columns
+
+    assert 'max_abs_z' in results.columns
+    assert 'mean_abs_z' in results.columns
+
+    assert round(results.loc[0, 'max_abs_z'], 2) == 2.5
+
+    # Not sure why but numpy.float32(0.33) != 0.33
+    assert round(float(results.loc[0, 'mean_abs_z']), 2) == 0.33
+    assert results.loc[0, 'z_loss_scaler_type'] == 'z'
