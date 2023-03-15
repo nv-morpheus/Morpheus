@@ -177,7 +177,7 @@ def file_batcher(builder: mrc.Builder):
                 "strategy": "aggregate",
                 "files": filenames,
                 "n_groups": n_groups,
-                "batcher_config": {  # TODO(Devin): remove this
+                "batcher_config": {  # TODO(Devin): Remove this when we're able to attach config to the loader
                     "timestamp_column_name": config.get("timestamp_column_name"),
                     "schema": config.get("schema"),
                     "file_type": config.get("file_type"),

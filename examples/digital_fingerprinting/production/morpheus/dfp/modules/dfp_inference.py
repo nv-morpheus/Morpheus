@@ -77,6 +77,7 @@ def dfp_inference(builder: mrc.Builder):
 
         user_id = control_message.get_metadata("user_id")
         payload = control_message.payload()
+
         with payload.mutable_dataframe() as dfm:
             df_user = dfm.to_pandas()
         df_user[timestamp_column_name] = pd.to_datetime(df_user[timestamp_column_name], utc=True)
@@ -89,8 +90,9 @@ def dfp_inference(builder: mrc.Builder):
 
             loaded_model = model_cache.load_model(client)
 
-        except Exception:  # TODO
-            logger.exception("Error trying to get model")
+        # TODO(Devin): Recovery strategy should be more robust/configurable in practice
+        except Exception:
+            logger.exception(f"Error retrieving model for user {user_id}, discarding training message.")
             return None
 
         post_model_time = time.time()

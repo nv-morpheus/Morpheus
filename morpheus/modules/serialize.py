@@ -43,6 +43,15 @@ def serialize(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - include : str (Regex to include columns)
+        - exclude : List[str] (List of regex to exclude columns)
+        - fixed_columns : bool (If true, the columns are fixed and not determined at runtime)
+        - columns : List[str] (List of columns to include)
+        - use_cpp : bool (If true, use C++ to serialize)
     """
 
     config = builder.get_current_module_config()

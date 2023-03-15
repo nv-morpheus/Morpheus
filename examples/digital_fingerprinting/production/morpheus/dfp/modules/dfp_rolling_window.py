@@ -101,7 +101,7 @@ def dfp_rolling_window(builder: mrc.Builder):
             with message.mutable_dataframe() as dfm:
                 incoming_df = dfm.to_pandas()
 
-            # TODO(Devin): note cuDF does not support tz aware datetimes (?)
+            # Note cuDF does not support tz aware datetimes (?)
             incoming_df[timestamp_column_name] = pd.to_datetime(incoming_df[timestamp_column_name], utc=True)
 
             if (not user_cache.append_dataframe(incoming_df=incoming_df)):

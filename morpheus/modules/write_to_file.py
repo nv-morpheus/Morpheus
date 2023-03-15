@@ -47,6 +47,15 @@ def write_to_file(builder: mrc.Builder):
     ----------
     builder : mrc.Builder
         mrc Builder object.
+
+    Notes
+    ----------
+    Configurable parameters:
+        - filename : str (Path to output file)
+        - overwrite : bool (If true, overwrite the file if it exists)
+        - flush : bool (If true, flush the file after each write)
+        - file_type : FileTypes (Type of file to write)
+        - include_index_col : bool (If true, include the index column)
     """
 
     config = builder.get_current_module_config()
