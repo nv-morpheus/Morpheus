@@ -22,7 +22,6 @@ python hammah-20211017-script.py \
 import argparse
 
 import dill
-import numpy as np
 import pandas as pd
 import torch
 from morpheus.models.dfencoder import AutoEncoder

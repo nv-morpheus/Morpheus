@@ -23,9 +23,7 @@ import argparse
 import time
 
 import cudf
-import numpy as np
 import pandas as pd
-import torch
 from binary_sequence_classifier import BinarySequenceClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
