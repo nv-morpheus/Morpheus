@@ -1,5 +1,6 @@
 // #include "morpheus/doca/doca_context.hpp"
 
+#include "morpheus/utilities/error.hpp"
 #include "morpheus/doca/common.h"
 #include <doca_gpu_device.cuh>
 #include <cudf/column/column.hpp>
@@ -611,6 +612,8 @@ void packet_receive_kernel(
     packet_count,
     packet_data_size
   );
+
+  CHECK_CUDA(stream);
 }
 
 void packet_gather_kernel(
@@ -653,6 +656,8 @@ void packet_gather_kernel(
     next_proto_id_out, 
     data_out
   );
+
+  CHECK_CUDA(stream);
 }
 
 }
