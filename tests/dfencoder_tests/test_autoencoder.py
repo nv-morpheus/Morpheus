@@ -151,6 +151,7 @@ def test_complete_layer_interpret_activation():
     cc.interpret_activation() is torch.sigmoid
 
 
+@pytest.mark.reload_modules(torch)
 @pytest.mark.usefixtures("manual_seed")
 def test_complete_layer_forward():
     cc = autoencoder.CompleteLayer(3, 5, activation='tanh', dropout=0.2)
