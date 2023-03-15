@@ -22,4 +22,4 @@ def test_old_dfencoder_not_in_env():
     Verify the old external dfencoder doesn't exist in the current env
     """
     with pytest.raises(ModuleNotFoundError):
-        import dfencoder
+        import dfencoder  # noqa: F401

@@ -14,14 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 import pytest
 
 from morpheus.config import CppConfig
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
-from utils import TEST_DIRS
 
 
 @pytest.mark.parametrize('df_type', ['cudf', 'pandas'])

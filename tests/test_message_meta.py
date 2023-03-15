@@ -19,7 +19,6 @@ import operator
 import pytest
 
 from morpheus.messages.message_meta import MessageMeta
-from utils import TEST_DIRS
 
 
 def test_mutable_dataframe(config, filter_probs_df):

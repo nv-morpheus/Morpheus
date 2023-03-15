@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from unittest import mock
 
 import cupy as cp
@@ -25,7 +24,6 @@ from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
-from utils import TEST_DIRS
 
 
 def _make_message(df, probs):
