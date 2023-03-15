@@ -92,7 +92,7 @@ struct TensorUtils
      * @param stride
      * @return ShapeType
      */
-    template <typename IndexT, typename SrcIndexT = IndexT>
+    template <typename IndexT = TensorIndex, typename SrcIndexT = IndexT>
     static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride)
     {
         std::vector<IndexT> tensor_stride(stride.size());

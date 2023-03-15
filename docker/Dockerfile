@@ -17,21 +17,26 @@
 
 
 # Args used in FROM commands must come first
-ARG FROM_IMAGE="gpuci/miniforge-cuda"
-ARG CUDA_VER=11.5
+ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
+ARG CUDA_MAJOR_VER=11
+ARG CUDA_MINOR_VER=8
+ARG CUDA_REV_VER=0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
+ARG PYTHON_VER=3.8
 
 # ============ Stage: base ============
 # Configure the base conda environment
-FROM ${FROM_IMAGE}:${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
+FROM ${FROM_IMAGE}:cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
 # Required arguments
+ARG PYTHON_VER
 ARG IMAGE_TYPE=base
 ARG RAPIDS_CHANNEL=rapidsai-nightly
 ARG RAPIDS_VER=22.10
-ARG PYTHON_VER=3.8
 ARG CONDA_CHANNEL=rapidsai
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
 
 # Temp option to set conda channel_alias property during build
 ARG CONDA_CHANNEL_ALIAS
@@ -39,19 +44,33 @@ ARG CONDA_CHANNEL_ALIAS
 # The TensorRT Version must be the full version (i.e. 7.2.2.3) and match Triton EXACTLY
 ARG TENSORRT_VERSION=8.2.1.3
 
-# Capture argument used for FROM
-ARG CUDA_VER
-
 # Install dependencies to build
 RUN apt-get update &&\
     apt-get upgrade -y &&\
-    curl -sL https://deb.nodesource.com/setup_16.x | bash - &&\
     apt-get install --no-install-recommends -y \
-        build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs git-lfs \
+        bc \
+        build-essential \
+        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cudart-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        curl \
+        git-lfs \
+        jq \
+        libcublas-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcufft-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcurand-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcusolver-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        openssh-client \
+        pkg-config \
+        tar \
+        unzip \
+        zip \
     && rm -rf /var/lib/apt/lists/*
 
 # Enables "source activate conda"
 SHELL ["/bin/bash", "-c"]
+
+ENV CUDA_PATH=/usr/local/cuda
 
 # All code will be under /workspace
 ENV MORPHEUS_ROOT=/workspace
@@ -62,7 +81,7 @@ RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
     conda config --env --add channels conda-forge &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" &&\
+    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" "tini=0.19" &&\
     source activate base &&\
     git lfs install
     # conda clean -afy
@@ -99,14 +118,14 @@ FROM conda_env as conda_env_dev
 ARG CONDA_CHANNEL_ALIAS
 
 # Copy the development dependencies file
-COPY docker/conda/environments/cuda${CUDA_VER}_dev.yml ./docker/conda/environments/
+COPY docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml ./docker/conda/environments/
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
 
 # Update the morpheus environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Temp add channel_alias to get around conda 404 errors
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"} &&\
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_dev.yml &&\
+    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_dev.yml &&\
     # Remove channel_alias to use the normal channel in the container
     conda config --env --remove-key channel_alias &&\
     # Clean and activate
@@ -117,6 +136,22 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
 FROM base as conda_bld_morpheus
 
 ARG CONDA_CHANNEL_ALIAS
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
+
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt install --no-install-recommends -y \
+        cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-nvml-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the source
 COPY . ./
@@ -137,7 +172,7 @@ FROM conda_env as runtime
 
 # Manually need to install some pip-only dependencies. Once these can get moved to conda, they can be removed.
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
-COPY docker/conda/environments/cuda${CUDA_VER}_runtime.yml ./docker/conda/environments/
+COPY docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml ./docker/conda/environments/
 
 RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target=/opt/conda/conda-bld \
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
@@ -145,7 +180,7 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     # Install morpheus
     CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
-    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_VER}_runtime.yml &&\
+    /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml &&\
     # Clean and activate
     conda clean -afy
 
@@ -168,6 +203,24 @@ CMD [ "morpheus" ]
 FROM conda_env_dev as development
 # Copy the source
 # COPY . ./
+
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
+
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt install --no-install-recommends -y \
+        cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        nodejs \
+        npm && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install camouflage needed for unittests to mock a triton server
 RUN npm install -g camouflage-server@0.9

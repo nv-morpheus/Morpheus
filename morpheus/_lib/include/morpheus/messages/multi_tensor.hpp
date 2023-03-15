@@ -21,13 +21,12 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex, RangeType
 
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>
 #include <memory>
 #include <string>
-#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -74,15 +73,15 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @param count Message count in tensor memory instance
      */
     MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                       std::size_t mess_offset,
-                       std::size_t mess_count,
+                       TensorIndex mess_offset,
+                       TensorIndex mess_count,
                        std::shared_ptr<morpheus::TensorMemory> memory,
-                       std::size_t offset,
-                       std::size_t count);
+                       TensorIndex offset,
+                       TensorIndex count);
 
     std::shared_ptr<morpheus::TensorMemory> memory;
-    std::size_t offset{0};
-    std::size_t count{0};
+    TensorIndex offset{0};
+    TensorIndex count{0};
 
     /**
      * @brief Returns a tensor with the given name.
@@ -113,14 +112,14 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
     void set_tensor(const std::string& name, const TensorObject& value);
 
   protected:
-    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, TensorIndex start, TensorIndex stop) const override;
 
     void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<std::size_t, std::size_t>>& ranges,
-                          size_t num_selected_rows) const override;
+                          const std::vector<RangeType>& ranges,
+                          TensorIndex num_selected_rows) const override;
 
-    std::shared_ptr<morpheus::TensorMemory> copy_input_ranges(
-        const std::vector<std::pair<std::size_t, std::size_t>>& ranges, std::size_t num_selected_rows) const;
+    std::shared_ptr<morpheus::TensorMemory> copy_input_ranges(const std::vector<RangeType>& ranges,
+                                                              TensorIndex num_selected_rows) const;
 
     TensorObject get_tensor_impl(const std::string& name) const;
 };
@@ -144,11 +143,11 @@ struct MultiTensorMessageInterfaceProxy
      * @return std::shared_ptr<MultiTensorMessage>
      */
     static std::shared_ptr<MultiTensorMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                    std::size_t mess_offset,
-                                                    std::size_t mess_count,
+                                                    TensorIndex mess_offset,
+                                                    TensorIndex mess_count,
                                                     std::shared_ptr<TensorMemory> memory,
-                                                    std::size_t offset,
-                                                    std::size_t count);
+                                                    TensorIndex offset,
+                                                    TensorIndex count);
 
     /**
      * @brief Returns a shared pointer of a tensor memory object
@@ -161,17 +160,17 @@ struct MultiTensorMessageInterfaceProxy
      * @brief Message offset in tensor memory object
      *
      * @param self
-     * @return std::size_t
+     * @return TensorIndex
      */
-    static std::size_t offset(MultiTensorMessage& self);
+    static TensorIndex offset(MultiTensorMessage& self);
 
     /**
      * @brief Messages count in tensor memory object
      *
      * @param self
-     * @return std::size_t
+     * @return TensorIndex
      */
-    static std::size_t count(MultiTensorMessage& self);
+    static TensorIndex count(MultiTensorMessage& self);
 
     /**
      * @brief Returns the tensor tensor for a given name

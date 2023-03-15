@@ -22,10 +22,8 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
-
-#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -64,11 +62,11 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param count Message count in inference memory instance
      */
     MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                          std::size_t mess_offset,
-                          std::size_t mess_count,
+                          TensorIndex mess_offset,
+                          TensorIndex mess_count,
                           std::shared_ptr<morpheus::InferenceMemory> memory,
-                          std::size_t offset,
-                          std::size_t count);
+                          TensorIndex offset,
+                          TensorIndex count);
 
     /**
      * @brief Returns the input tensor for the given `name`.
@@ -113,11 +111,11 @@ struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceP
      * @return std::shared_ptr<MultiInferenceMessage>
      */
     static std::shared_ptr<MultiInferenceMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                       cudf::size_type mess_offset,
-                                                       cudf::size_type mess_count,
+                                                       TensorIndex mess_offset,
+                                                       TensorIndex mess_count,
                                                        std::shared_ptr<InferenceMemory> memory,
-                                                       cudf::size_type offset,
-                                                       cudf::size_type count);
+                                                       TensorIndex offset,
+                                                       TensorIndex count);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
