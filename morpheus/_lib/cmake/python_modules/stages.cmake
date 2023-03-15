@@ -12,17 +12,6 @@
 # the License.
 # =============================================================================
 
-# Build up the common arguments for add_pybind11_module
-set(_common_args)
-
-# if(MORPHEUS_PYTHON_INPLACE_BUILD)
-#   list(APPEND _common_args "COPY_INPLACE")
-# endif()
-
-if(MORPHEUS_BUILD_PYTHON_STUBS)
-  list(APPEND _common_args "BUILD_STUBS")
-endif()
-
 morpheus_utils_add_pybind11_module(
     stages
     MODULE_ROOT
@@ -38,7 +27,6 @@ morpheus_utils_add_pybind11_module(
       stages_target
     INSTALL_DEST
       ${MORPHEUS_LIB_INSTALL_DIR}
-    ${_common_args}
 )
 
 if(MORPHEUS_PYTHON_INPLACE_BUILD)
