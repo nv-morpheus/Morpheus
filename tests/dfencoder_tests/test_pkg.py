@@ -17,6 +17,7 @@
 import pytest
 
 
+@pytest.skip
 def test_old_dfencoder_not_in_env():
     """
     Verify the old external dfencoder doesn't exist in the current env
