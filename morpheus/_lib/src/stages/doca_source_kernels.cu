@@ -84,28 +84,50 @@ get_payload_size(rte_ipv4_hdr* packet_l3, rte_tcp_hdr* packet_l4)
   return data_size;
 }
 
+__device__ __forceinline__ uint32_t
+get_packet_size(rte_ipv4_hdr* packet_l3)
+{
+  return static_cast<int32_t>(BYTE_SWAP16(packet_l3->total_length));
+}
+
 __device__ bool
 is_http_packet(uint8_t* payload, uint8_t payload_size)
 {
   return true;
-  // if (payload_size < 3)
-  // {
-  //   return false;
-  // }
+  /*
+  if (payload_size < 3)
+  {
+    return false;
+  }
 
-  // if (payload[0] == 'G' and payload[1] == 'E' and payload[2] == 'T') {
-  //   return true;
-  // }
+  if (payload[0] == 'G' and payload[1] == 'E' and payload[2] == 'T') {
+    return true;
+  }
 
-  // if (payload_size < 4) {
-  //   return false;
-  // }
+  if (payload_size < 4) {
+    return false;
+  }
 
-  // if (payload[0] == 'P' and payload[1] == 'O' and payload[2] == 'S' and payload[3] == 'T') {
-  //   return true;
-  // }
+  if (payload[0] == 'P' and payload[1] == 'O' and payload[2] == 'S' and payload[3] == 'T') {
+    return true;
+  }
 
-  // return false;
+  return false;
+  */
+}
+
+__device__ __forceinline__ bool
+is_udp_packet(rte_ipv4_hdr* packet_l3)
+{
+  return true;
+  /*
+  if (packet_l3->next_proto_id == 6)
+  {
+    return true;
+  }
+
+  return false;
+  */
 }
 
 __global__ void _packet_receive_kernel(
@@ -206,7 +228,9 @@ __global__ void _packet_receive_kernel(
 
     auto data_size = get_payload_size(packet_l3, packet_l4);
 
-    if (is_http_packet(packet_data, data_size)) {
+    
+    if (is_udp_packet(packet_l3)) 
+    {
       atomicAdd(packet_data_size_out, data_size);
       atomicAdd(packet_count_out, 1);
     }
@@ -280,6 +304,10 @@ __global__ void _packet_gather_kernel(
   uint16_t*              src_port_out,
   uint16_t*              dst_port_out,
   int32_t*               data_offsets_out,
+  int32_t*               data_size_out,
+  int32_t*               tcp_flags_out,
+  int32_t*               ether_type_out,
+  int32_t*               next_proto_id_out,
   char*                  data_out
 )
 {
@@ -351,8 +379,8 @@ __global__ void _packet_gather_kernel(
     );
 
     auto data_size = get_payload_size(packet_l3, packet_l4);
-
-    if (is_http_packet(packet_data, data_size))
+    
+    if (is_udp_packet(packet_l3))
     {
       data_capture[i] = 1;
       data_offsets[i] = data_size;
@@ -401,12 +429,12 @@ __global__ void _packet_gather_kernel(
     );
 
     auto data_size = get_payload_size(packet_l3, packet_l4);
-
-    if (not is_http_packet(packet_data, data_size))
+    
+    if (not is_udp_packet(packet_l3))
     {
       continue;
     }
-
+ 
     auto packet_idx_out = data_capture[i];
 
     data_offsets_out[packet_idx_out] = data_offsets[i];
@@ -417,7 +445,12 @@ __global__ void _packet_gather_kernel(
     }
 
     // TCP timestamp option
-    timestamp_out[packet_idx_out] = tcp_parse_timestamp(packet_l4);
+    //timestamp_out[packet_idx_out] = tcp_parse_timestamp(packet_l4);
+
+    auto now = cuda::std::chrono::system_clock::now();
+    auto now_ms = cuda::std::chrono::time_point_cast<cuda::std::chrono::milliseconds>(now);
+    auto epoch = now_ms.time_since_epoch();
+    timestamp_out[packet_idx_out] = epoch.count();
 
     // mac address
     auto src_mac = packet_l2->s_addr.addr_bytes; // 6 bytes
@@ -449,6 +482,23 @@ __global__ void _packet_gather_kernel(
 
     src_port_out[packet_idx_out] = src_port;
     dst_port_out[packet_idx_out] = dst_port;
+
+    // packet size
+    auto packet_size = get_packet_size(packet_l3);
+    data_size_out[packet_idx_out] = packet_size;
+
+    // tcp flags
+    auto tcp_flags = packet_l4->tcp_flags;
+    tcp_flags_out[packet_idx_out] = static_cast<int32_t> (tcp_flags);
+
+    // frame type
+    auto ether_type = packet_l2->ether_type;
+    ether_type_out[packet_idx_out] = static_cast<int32_t> (ether_type);
+
+    // protocol id
+    auto next_proto_id = packet_l3->next_proto_id;
+    next_proto_id_out[packet_idx_out] = static_cast<int32_t> (next_proto_id);
+
   }
 
   __syncthreads();
@@ -576,6 +626,10 @@ void packet_gather_kernel(
   uint16_t*              src_port_out,
   uint16_t*              dst_port_out,
   int32_t*               data_offsets_out,
+  int32_t*               data_size_out,
+  int32_t*               tcp_flags_out,
+  int32_t*               ether_type_out,
+  int32_t*               next_proto_id_out,
   char*                  data_out,
   cudaStream_t           stream
 )
@@ -593,6 +647,10 @@ void packet_gather_kernel(
     src_port_out,
     dst_port_out,
     data_offsets_out,
+    data_size_out,
+    tcp_flags_out,
+    ether_type_out,
+    next_proto_id_out, 
     data_out
   );
 }

@@ -124,15 +124,19 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       auto packet_data_size = packet_data_size_d.value(processing_stream);
 
-      auto timestamp_out_d    = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
-      auto src_mac_out_d      = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto dst_mac_out_d      = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto src_ip_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto dst_ip_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
-      auto src_port_out_d     = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
-      auto dst_port_out_d     = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
-      auto data_offsets_out_d = rmm::device_uvector<int32_t>(packet_count + 1, processing_stream);
-      auto data_out_d         = rmm::device_uvector<char>(packet_data_size, processing_stream);
+      auto timestamp_out_d     = rmm::device_uvector<uint32_t>(packet_count, processing_stream);
+      auto src_mac_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto dst_mac_out_d       = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto src_ip_out_d        = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto dst_ip_out_d        = rmm::device_uvector<int64_t>(packet_count, processing_stream);
+      auto src_port_out_d      = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
+      auto dst_port_out_d      = rmm::device_uvector<uint16_t>(packet_count, processing_stream);
+      auto data_offsets_out_d  = rmm::device_uvector<int32_t>(packet_count + 1, processing_stream);
+      auto data_size_out_d     = rmm::device_uvector<int32_t>(packet_count, processing_stream);
+      auto tcp_flags_out_d     = rmm::device_uvector<int32_t>(packet_count, processing_stream);
+      auto ether_type_out_d    = rmm::device_uvector<int32_t>(packet_count, processing_stream);
+      auto next_proto_id_out_d = rmm::device_uvector<int32_t>(packet_count, processing_stream);
+      auto data_out_d          = rmm::device_uvector<char>(packet_data_size, processing_stream);
 
       data_offsets_out_d.set_element_async(packet_count, packet_data_size, processing_stream);
 
@@ -149,6 +153,10 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         src_port_out_d.data(),
         dst_port_out_d.data(),
         data_offsets_out_d.data(),
+        data_size_out_d.data(),
+        tcp_flags_out_d.data(),
+        ether_type_out_d.data(),
+        next_proto_id_out_d.data(),
         data_out_d.data(),
         processing_stream
       );
@@ -238,6 +246,34 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         dst_port_out_d_size,
         dst_port_out_d.release());
 
+      // packet size column
+      auto data_size_out_d_size = data_size_out_d.size();
+      auto data_size_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int32_t>()},
+        data_size_out_d_size,
+        data_size_out_d.release());        
+
+      // tcp flags column
+      auto tcp_flags_out_d_size = tcp_flags_out_d.size();
+      auto tcp_flags_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int32_t>()},
+        tcp_flags_out_d_size,
+        tcp_flags_out_d.release());            
+
+      // frame type column
+      auto ether_type_out_d_size = ether_type_out_d.size();
+      auto ether_type_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int32_t>()},
+        ether_type_out_d_size,
+        ether_type_out_d.release());   
+
+      // protocol id column
+      auto next_proto_id_out_d_size = next_proto_id_out_d.size();
+      auto next_proto_id_out_d_col  = std::make_unique<cudf::column>(
+        cudf::data_type{cudf::type_to_id<int32_t>()},
+        next_proto_id_out_d_size,
+        next_proto_id_out_d.release());               
+
       // create dataframe
 
       auto my_columns = std::vector<std::unique_ptr<cudf::column>>();
@@ -263,6 +299,18 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
 
       metadata.column_names.push_back("dst_port");
       my_columns.push_back(std::move(dst_port_out_d_col));
+
+      metadata.column_names.push_back("packet_size");
+      my_columns.push_back(std::move(data_size_out_d_col)); 
+
+      metadata.column_names.push_back("tcp_flags");
+      my_columns.push_back(std::move(tcp_flags_out_d_col));
+
+      metadata.column_names.push_back("ether_type");
+      my_columns.push_back(std::move(ether_type_out_d_col)); 
+
+      metadata.column_names.push_back("next_proto_id");
+      my_columns.push_back(std::move(next_proto_id_out_d_col));                   
 
       metadata.column_names.push_back("data");
       my_columns.push_back(std::move(data_col));

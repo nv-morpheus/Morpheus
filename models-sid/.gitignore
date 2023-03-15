@@ -1,0 +1,58 @@
+# Mlflow
+mlruns/
+outputs/
+
+# Ignore changes in the Triton repo to allow local customizations. To make changes to triton-model-repo, you need to force add `git add -f ...`
+triton-model-repo/*
+
+# Mac
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+node_modules
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+env
+env3
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# Editor files
+.*project
+*.swp
+*.swo
+*.idea
+*.vscode
+*.iml
+*~

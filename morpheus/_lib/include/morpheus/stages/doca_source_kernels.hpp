@@ -38,6 +38,10 @@ void packet_gather_kernel(
   uint16_t*              src_port_out,
   uint16_t*              dst_port_out,
   int32_t*               data_offsets_out,
+  int32_t*               data_size_out,
+  int32_t*               tcp_flags_out,
+  int32_t*               ether_type_out,
+  int32_t*               next_proto_id_out,
   char*                  data_out,
   cudaStream_t           stream
 );

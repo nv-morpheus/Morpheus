@@ -35,3 +35,10 @@ optimization { execution_accelerators {
     parameters { key: "max_workspace_size_bytes" value: "1073741824" }
     }]
 }}
+
+instance_group [
+  {
+    count: 2
+    kind: KIND_GPU
+  }
+]

@@ -50,7 +50,8 @@ init_doca_flow(uint8_t port_id, uint8_t rxq_num, struct application_dpdk_config 
 
 	/* Initialize doca flow framework */
 	rxq_flow_cfg.queues = rxq_num;
-	rxq_flow_cfg.mode_args = "vnf";
+	//rxq_flow_cfg.mode_args = "vnf,hws,isolated";
+	rxq_flow_cfg.mode_args = "vnf,isolated";
     result = doca_flow_init(&rxq_flow_cfg);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("failed to init doca flow with: %s", doca_get_error_string(result));
@@ -84,7 +85,7 @@ build_rxq_pipe(
 	struct doca_flow_fwd rxq_fw;
 	struct doca_flow_actions actions;
     struct doca_flow_actions *actions_array[NB_ACTION_ARRAY];
-	struct doca_flow_pipe_cfg rxq_pipe_cfg;
+	//struct doca_flow_pipe_cfg rxq_pipe_cfg;
 	struct doca_flow_pipe *rxq_pipe;
 	uint16_t rss_queues[1];
 	struct doca_flow_pipe_entry *entry;
@@ -95,7 +96,44 @@ build_rxq_pipe(
 	memset(&actions, 0, sizeof(actions));
 	memset(&rxq_fw, 0, sizeof(rxq_fw));
 	memset(&rxq_match, 0, sizeof(rxq_match));
-	memset(&rxq_pipe_cfg, 0, sizeof(rxq_pipe_cfg));
+	//memset(&rxq_pipe_cfg, 0, sizeof(rxq_pipe_cfg));
+
+
+	
+	rss_queues[0] = dpdk_rxq_idx;
+
+	struct doca_flow_fwd fwd = {
+		.type = DOCA_FLOW_FWD_RSS,
+		.rss_flags = DOCA_FLOW_RSS_IP | DOCA_FLOW_RSS_TCP,
+		.rss_queues = rss_queues,
+		.num_of_queues = 1
+	};
+
+	struct doca_flow_fwd miss_fwd = {
+		.type = DOCA_FLOW_FWD_DROP,
+	};
+
+	rxq_match.out_l4_type = IPPROTO_TCP;
+
+	struct doca_flow_pipe_cfg rxq_pipe_cfg = {
+		.attr = {
+			.name = "GPU_RXQ_TCP_PIPE",
+			.type = DOCA_FLOW_PIPE_BASIC,
+			.nb_actions = 0,
+			.is_root = true,
+		},
+		.match = &rxq_match,
+		//.monitor = &monitor,
+		.port = port,
+	};
+
+	res_doca = doca_flow_pipe_create(&rxq_pipe_cfg, &fwd, &miss_fwd, &rxq_pipe);
+	if (res_doca != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("RxQ pipe creation failed with: %s", doca_get_error_string(res_doca));
+		return NULL;
+	}
+
+	/*
 
 	rxq_pipe_cfg.attr.name = "GPU_RXQ_FW_PIPE";
 	rxq_pipe_cfg.attr.type = DOCA_FLOW_PIPE_BASIC;
@@ -121,6 +159,8 @@ build_rxq_pipe(
 		DOCA_LOG_ERR("RxQ pipe creation failed with: %s", doca_get_error_string(res_doca));
 		return NULL;
 	}
+
+	*/
 
 	/* Add HW offload */
 	res_doca = doca_flow_pipe_add_entry(0, rxq_pipe, &rxq_match, &actions, NULL, NULL, 0, NULL, &entry);

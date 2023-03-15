@@ -1,0 +1,12 @@
+cudf==0+untagged.1.gfc341af
+cuml==0+untagged.1.g835a9ae
+dateparser==1.1.0
+matplotlib==3.4.3
+networkx==2.6.3
+numpy==1.22.0
+pandas==1.3.3
+scikit_learn==1.0.2
+stellargraph==1.2.1
+tensorflow==2.8.0
+tensorflow_gpu==2.7.0
+xgboost==1.4.2
