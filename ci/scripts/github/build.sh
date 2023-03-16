@@ -32,7 +32,7 @@ rapids-logger "Configuring cmake for Morpheus"
 git submodule update --init --recursive
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
     -DCCACHE_PROGRAM_PATH=$(which sccache) \
-    -DMORPHEUS_BUILD_PYTHON_WHEEL=ON \
+    -DMORPHEUS_PYTHON_BUILD_WHEEL=ON \
     -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON .
 
 rapids-logger "Building Morpheus"
