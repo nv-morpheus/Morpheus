@@ -122,3 +122,107 @@ class MyPassthroughModuleWrapper(SinglePortStage):
 
 Here, we've defined a new stage that loads the `my_test_module` module that we defined above, and then wraps its
 input and output connections.
+
+### Module Chaining and Nesting
+
+Modules can be arbitrarily nested, and can be chained together to create more complex modules. For example, lets
+define a slightly more interesting module that takes an integer input, `i`, and outputs `(i^2 + 3*i)`.
+For this, we'll define three new modules, `my_square_module` and `my_times_three_module`, that perform the
+appropriate operations, and `my_compound_op_module` which wraps them both. We'll then construct a single new module as a
+composition of these three modules.
+
+```python
+import mrc
+from mrc.core import operators as ops
+
+from morpheus.utils.module_utils import register_module
+
+
+## Create and register our two new component modules 
+# ==========================================
+@register_module("my_square_module", "my_module_namespace")
+def my_test_module_initialization(builder: mrc.Builder):
+    def on_data(data: int):
+        return data ** 2
+
+    def node_fn(observable: mrc.Observable, subscriber: mrc.Subscriber):
+        observable.pipe(ops.map(on_data)).subscribe(subscriber)
+
+    node = builder.make_node("square", mrc.core.operators.build(node_fn))
+
+    builder.register_module_input("input_0", node)
+    builder.register_module_output("output_0", node)
+
+
+@register_module("my_times_three_module", "my_module_namespace")
+def my_test_module_initialization(builder: mrc.Builder):
+    def on_data(data: int):
+        return 3 * data
+
+    def node_fn(observable: mrc.Observable, subscriber: mrc.Subscriber):
+        observable.pipe(ops.map(on_data)).subscribe(subscriber)
+
+    node = builder.make_node("times_two", mrc.core.operators.build(node_fn))
+
+    builder.register_module_input("input_0", node)
+    builder.register_module_output("output_0", node)
+
+
+## Create and register our new compound operator -- illustrates module chaining
+@register_module("my_compound_op_module", "my_module_namespace")
+def my_compound_op(builder: mrc.Builder):
+    square_module = builder.load_module("my_square_module", "my_module_namespace", "square_module")
+    times_three_module = builder.load_module("my_times_three_module", "my_module_namespace", "times_three_module")
+
+    builder.make_edge(square_module.output_port("output_0"), times_three_module.input_port("input_0"))
+
+    builder.register_module_input("input_0", square_module.input_port("input_0"))
+    builder.register_module_output("output_0", times_three_module.output_port("output_0"))
+
+
+## Create and register our new compound module -- illustrates module nesting
+@register_module("my_compound_module", "my_module_namespace")
+def my_compound_module(builder: mrc.Builder):
+    op_module = builder.load_module("my_compound_op_module", "my_module_namespace", "op_module")
+
+    builder.register_module_input("input_0", op_module.input_port("input_0"))
+    builder.register_module_output("output_0", op_module.output_port("output_0"))
+```
+
+`my_compound_module_consumer_stage.py`
+
+```python
+class MyCompoundOpModuleWrapper(SinglePortStage):
+    # ... stage implementation 
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
+        module_config = {}
+
+        my_module = builder.load_module("my_compound_module", "my_module_namespace", "module_instance_name",
+                                        module_config)
+
+        module_in_stream = my_module.input_port("input_0")
+        module_out_stream = my_module.output_port("output_0")
+
+        builder.make_edge(input_stream[0], module_in_stream)
+
+        return module_out_stream, self._output_type
+```
+
+### Wrapping Modules in Practice
+
+While we have created new stages for our example modules here, in general we would not define an entirely new stage
+just to wrap a module. Instead, we would use the `LinearModuleStage` to wrap the module:
+
+```python
+from morpheus.stages.general.linear_modules_stage import LinearModulesStage
+
+config = Config()  # Morpheus config
+module_config = {
+    "module_id": "my_compound_module",
+    "module_namespace": "my_module_namespace",
+    "module_instance_name": "module_instance_name",
+    ... other module config params...
+}
+
+pipeline.add_stage(LinearModulesStage(config, module_config, input_port_name="input_0", output_port_name="output_0"))
+```

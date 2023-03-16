@@ -47,8 +47,6 @@ will walk through the process of creating a custom module in Python and C++.
 
 - [Simple Python Module](./guides/7_simple_python_module.md)
 - [Simple C++ Module](./guides/8_simple_cpp_module.md)
-- [Nested Modules](./guides/9_nested_modules.md)
-- [Module Chaining](./guides/10_module_chaining.md)
 
 ## Example Workflows
 
