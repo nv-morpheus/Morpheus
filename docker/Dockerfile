@@ -19,8 +19,8 @@
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
 ARG CUDA_MAJOR_VER=11
-ARG CUDA_MINOR_VER=5
-ARG CUDA_REV_VER=1
+ARG CUDA_MINOR_VER=8
+ARG CUDA_REV_VER=0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 ARG PYTHON_VER=3.8
@@ -161,7 +161,7 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     source activate base &&\
     # Need to get around recent versions of git locking paths until they are deemed safe
     git config --global --add safe.directory "*" &&\
-    MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # sid_visualization is a submodule we need to init
 RUN git submodule update --init --recursive
