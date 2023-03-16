@@ -16,6 +16,7 @@
 
 # pylint: disable=redefined-outer-name
 
+import dataclasses
 import os
 import typing
 
@@ -53,6 +54,19 @@ def df(df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
     return read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
                            file_type=FileTypes.Auto,
                            df_type=df_type)
+
+
+@pytest.mark.use_python
+def test_missing_explicit_init():
+
+    with pytest.raises(ValueError, match="improperly configured"):
+
+        @dataclasses.dataclass
+        class BadMultiMessage(MultiMessage):
+
+            value: float
+
+        BadMultiMessage(meta=None, value=5)
 
 
 def test_constructor_empty(df: cudf.DataFrame):

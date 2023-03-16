@@ -49,27 +49,3 @@ class MultiAEMessage(MultiMessage):
         self.model = model
         self.train_scores_mean = train_scores_mean
         self.train_scores_std = train_scores_std
-
-    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
-        """
-        Perform a copy of the current message instance for the given `ranges` of rows.
-
-        Parameters
-        ----------
-        ranges : typing.List[typing.Tuple[int, int]]
-            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
-            The final output is exclusive of the `stop_row`, i.e. `[start_row, stop_row)`. For example to copy rows
-            1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
-
-        Returns
-        -------
-        `MultiAEMessage`
-        """
-
-        sliced_rows = self.copy_meta_ranges(ranges)
-        return self._duplicate_message_with_kwargs(meta=UserMessageMeta(sliced_rows, user_id=self.meta.user_id),
-                                                   mess_offset=0,
-                                                   mess_count=len(sliced_rows),
-                                                   model=self.model,
-                                                   train_scores_mean=self.train_scores_mean,
-                                                   train_scores_std=self.train_scores_std)

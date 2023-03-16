@@ -162,41 +162,6 @@ cudf::size_type TableInfoBase::num_rows() const
     return m_data.table_view.num_rows();
 }
 
-// py::object TableInfoBase::copy_to_py_object() const
-// {
-//     const auto offset   = m_data.table_view.column(0).offset();
-//     const auto num_rows = this->num_rows();
-//     const auto stop     = offset + num_rows;
-
-//     {
-//         namespace py = py;
-//         py::gil_scoped_acquire gil;
-
-//         auto df = m_parent->get_py_object();
-
-//         // Compute the DF slice in python
-//         auto index_slice = py::slice(py::int_(offset), py::int_(stop), py::none());
-
-//         auto index = df.attr("index");
-//         py::object idx;
-//         if (index.attr("is_unique").cast<bool>())
-//         {
-//             idx = index[index_slice];
-//         }
-//         else
-//         {
-//             auto cupy_zeros  = py::module_::import("cupy").attr("zeros");
-//             idx              = cupy_zeros(num_rows, "bool");
-//             idx[index_slice] = true;
-//         }
-
-//         auto py_slice  = df.attr("loc")[py::make_tuple(idx, m_data.column_names)];
-//         auto copied_df = py_slice.attr("copy")();
-
-//         return copied_df;
-//     }
-// }
-
 const cudf::column_view& TableInfoBase::get_column(cudf::size_type idx) const
 {
     if (idx < 0 || idx >= this->m_data.table_view.num_columns())

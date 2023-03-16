@@ -27,6 +27,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -34,6 +35,16 @@ from morpheus.pipeline.stream_pair import StreamPair
 @dataclasses.dataclass
 class FraudGraphMultiMessage(MultiMessage):
     graph: "stellargraph.StellarGraph"
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 graph: "stellargraph.StellarGraph"):
+        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
+
+        self.graph = graph
 
 
 @register_stage("fraud-graph-construction", modes=[PipelineModes.OTHER])
@@ -111,10 +122,7 @@ class FraudGraphConstructionStage(SinglePortStage):
         graph_data = cudf.concat([self._training_data, message.get_meta(self._column_names)])
         graph_data = graph_data.set_index(graph_data['index'])
         graph = FraudGraphConstructionStage._build_graph_features(graph_data.to_pandas())
-        return FraudGraphMultiMessage(meta=message.meta,
-                                      graph=graph,
-                                      mess_offset=message.mess_offset,
-                                      mess_count=message.mess_count)
+        return FraudGraphMultiMessage.from_message(message, graph=graph)
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         node = builder.make_node(self.unique_name, self._process_message)

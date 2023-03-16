@@ -65,11 +65,11 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param count Message count in inference memory instance
      */
     MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
-                         TensorIndex mess_offset = 0,
-                         TensorIndex mess_count = -1,
+                         TensorIndex mess_offset                = 0,
+                         TensorIndex mess_count                 = -1,
                          std::shared_ptr<ResponseMemory> memory = nullptr,
-                         TensorIndex offset = 0,
-                         TensorIndex count = -1);
+                         TensorIndex offset                     = 0,
+                         TensorIndex count                      = -1);
 
     /**
      * @brief Returns the output tensor with the given name.

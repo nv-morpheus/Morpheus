@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import dataclasses
+import inspect
 import typing
 
 import cupy as cp
@@ -25,6 +26,7 @@ import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
 from morpheus.messages.message_meta import MessageMeta
 
+# Needed to provide the return type of `@classmethod`
 Self = typing.TypeVar("Self", bound="MultiMessage")
 
 
@@ -66,6 +68,16 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         self.meta = meta
         self.mess_offset = mess_offset
         self.mess_count = mess_count
+
+        self._base_init_run = True
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        if (cls.__init__ is MultiMessage.__init__):
+            raise ValueError(f"Class `{cls}` is improperly configured. "
+                             f"All derived classes of `MultiMessage` must define an `__init__` function which "
+                             f"calls `super().__init__(*args, **kwargs)`.")
 
     @property
     def id_col(self):
@@ -346,6 +358,41 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
                      mess_offset: int = -1,
                      mess_count: int = -1,
                      **kwargs) -> Self:
+        """
+        Creates a new instance of a derived class from `MultiMessage` using an existing message as the template. This is
+        very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
+
+        When creating the new message, all required arguments for the class specified by `cls` will be pulled from
+        `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
+        whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
+        `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
+
+        Parameters
+        ----------
+        cls : typing.Type[Self]
+            The class to create
+        message : MultiMessage
+            An existing message to use as a template. Can be a base or derived from `cls` as long as all arguments can
+            be pulled from `message` or proveded in `kwargs`
+        meta : MessageMeta, optional
+            A new `MessageMeta` to use, by default None
+        mess_offset : int, optional
+            A new `mess_offset` to use, by default -1
+        mess_count : int, optional
+            A new `mess_count` to use, by default -1
+
+        Returns
+        -------
+        Self
+            A new instance of type `cls`
+
+        Raises
+        ------
+        ValueError
+            If the incoming `message` is None
+        AttributeError
+            If some required arguments were not supplied by `kwargs` and could not be pulled from `message`
+        """
 
         if (message is None):
             raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
@@ -373,8 +420,6 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             "mess_offset": mess_offset,
             "mess_count": mess_count,
         })
-
-        import inspect
 
         signature = inspect.signature(cls.__init__)
 

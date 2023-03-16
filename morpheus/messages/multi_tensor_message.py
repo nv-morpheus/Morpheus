@@ -21,6 +21,7 @@ from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
+# Needed to provide the return type of `@classmethod`
 Self = typing.TypeVar("Self", bound="MultiTensorMessage")
 
 
@@ -289,6 +290,47 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
                      offset: int = -1,
                      count: int = -1,
                      **kwargs) -> Self:
+        """
+        Creates a new instance of a derived class from `MultiMessage` using an existing message as the template. This is
+        very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
+
+        When creating the new message, all required arguments for the class specified by `cls` will be pulled from
+        `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
+        whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
+        `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
+
+
+        Parameters
+        ----------
+        cls : typing.Type[Self]
+            The class to create
+        message : MultiMessage
+            An existing message to use as a template. Can be a base or derived from `cls` as long as all arguments can
+            be pulled from `message` or proveded in `kwargs`
+        meta : MessageMeta, optional
+            A new `MessageMeta` to use, by default None
+        mess_offset : int, optional
+            A new `mess_offset` to use, by default -1
+        mess_count : int, optional
+            A new `mess_count` to use, by default -1
+        memory : TensorMemory, optional
+            A new `TensorMemory` to use. If supplied, `offset` and `count` default to `0` and `memory.count`
+            respectively. By default None
+        offset : int, optional
+            A new `offset` to use, by default -1
+        count : int, optional
+            A new `count` to use, by default -1
+
+        Returns
+        -------
+        Self
+            A new instance of type `cls`
+
+        Raises
+        ------
+        ValueError
+            If the incoming `message` is None
+        """
 
         if (message is None):
             raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")

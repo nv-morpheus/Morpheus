@@ -64,11 +64,11 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
      * @param count Message count in inference memory instance
      */
     MultiResponseProbsMessage(std::shared_ptr<MessageMeta> meta,
-                              TensorIndex mess_offset = 0,
-                              TensorIndex mess_count = -1,
+                              TensorIndex mess_offset                     = 0,
+                              TensorIndex mess_count                      = -1,
                               std::shared_ptr<ResponseMemoryProbs> memory = nullptr,
-                              TensorIndex offset = 0,
-                              TensorIndex count = -1);
+                              TensorIndex offset                          = 0,
+                              TensorIndex count                           = -1);
 
     /**
      * @brief Returns the `probs` (probabilities) output tensor

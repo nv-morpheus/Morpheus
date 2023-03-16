@@ -21,7 +21,6 @@ import pandas as pd
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
-from morpheus.utils import xd
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ class MutableTableCtxMgr:
     def __init__(self, meta) -> None:
         self.__dict__['__meta'] = meta
 
-    def __enter__(self) -> xd.DataFrame:
+    def __enter__(self) -> pd.DataFrame:
         meta = self.__dict__['__meta']
         meta._mutex.acquire()
         return meta._df
@@ -92,7 +91,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         warnings.warn(msg, DeprecationWarning)
         return self.copy_dataframe()
 
-    def copy_dataframe(self) -> xd.DataFrame:
+    def copy_dataframe(self) -> pd.DataFrame:
         return self._df.copy(deep=True)
 
     def mutable_dataframe(self):
