@@ -53,6 +53,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/stages/write_to_file.cpp
     ${MORPHEUS_LIB_ROOT}/src/utilities/cudf_util.cpp
     ${MORPHEUS_LIB_ROOT}/src/utilities/cupy_util.cpp
+    ${MORPHEUS_LIB_ROOT}/src/utilities/python_util.cpp
     ${MORPHEUS_LIB_ROOT}/src/utilities/string_util.cpp
     ${MORPHEUS_LIB_ROOT}/src/utilities/table_util.cpp
 )

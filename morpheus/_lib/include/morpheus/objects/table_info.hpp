@@ -104,13 +104,6 @@ struct __attribute__((visibility("default"))) TableInfoBase
     cudf::size_type num_rows() const;
 
     /**
-     * @brief Returns a copy of the underlying cuDF DataFrame as a python object
-     *
-     * Note: The attribute is needed here as pybind11 requires setting symbol visibility to hidden by default
-     */
-    // pybind11::object copy_to_py_object() const;
-
-    /**
      * @brief Returns a reference to the view of the specified column
      *
      * @throws std::out_of_range
@@ -126,7 +119,7 @@ struct __attribute__((visibility("default"))) TableInfoBase
      *
      * @return bool
      */
-    bool has_unique_index() const;
+    bool has_sliceable_index() const;
 
   protected:
     TableInfoBase() = default;
@@ -155,8 +148,8 @@ struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
     /**
      * @brief Get slice of a data table info based on the start and stop offset address
      *
-     * @param start : Start offset address
-     * @param stop : Stop offset address
+     * @param start : Start offset address (inclusive)
+     * @param stop : Stop offset address (exclusive)
      * @param column_names : Columns of interest
      * @return TableInfo
      */
@@ -178,6 +171,14 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
 
     ~MutableTableInfo();
 
+    /**
+     * @brief Get slice of a data table info based on the start and stop offset address
+     *
+     * @param start : Start offset address (inclusive)
+     * @param stop : Stop offset address (exclusive)
+     * @param column_names : Columns of interest
+     * @return TableInfo
+     */
     MutableTableInfo get_slice(cudf::size_type start,
                                cudf::size_type stop,
                                std::vector<std::string> column_names = {}) &&;
@@ -210,10 +211,12 @@ struct __attribute__((visibility("default"))) MutableTableInfo : public TableInf
     void return_obj(pybind11::object&& obj);
 
     /**
-     * @brief Replaces the index in the underlying dataframe.
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old
+     * index will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is
+     * a no-op.
      *
      */
-    void replace_non_unique_index();
+    std::optional<std::string> ensure_sliceable_index();
 
   private:
     // We use a unique_lock here to enforce exclusive access

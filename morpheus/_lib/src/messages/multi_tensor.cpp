@@ -49,7 +49,7 @@ MultiTensorMessage::MultiTensorMessage(std::shared_ptr<MessageMeta> meta,
     // Default to using the count from the meta if it is unset
     if (count == -1)
     {
-        count = this->memory->count;
+        count = this->memory->count - offset;
     }
 
     this->count = count;
@@ -61,6 +61,10 @@ MultiTensorMessage::MultiTensorMessage(std::shared_ptr<MessageMeta> meta,
     if (this->count <= 0 || (this->offset + this->count > this->memory->count))
     {
         throw std::invalid_argument("Invalid count value");
+    }
+    if (this->count < this->mess_count)
+    {
+        throw std::invalid_argument("Invalid count value. Must have a count greater than or equal to mess_count");
     }
 }
 
@@ -114,7 +118,7 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
         throw std::out_of_range("Invalid memory `stop` argument");
     }
 
-    sliced_message->offset = start;
+    sliced_message->offset = this->offset + start;
     sliced_message->count  = stop - start;
 
     if (this->count != this->mess_count)

@@ -31,6 +31,7 @@
 #include <warnings.h>  // for PyErr_WarnEx
 
 #include <memory>
+#include <optional>
 #include <ostream>    // for operator<< needed by glog
 #include <stdexcept>  // for runtime_error
 #include <utility>
@@ -82,7 +83,7 @@ py::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int ind
     py::gil_scoped_acquire gil;
 
     // Now convert to a python TableInfo object
-    auto converted_table = proxy_table_from_table_with_metadata(std::move(table), index_col_count);
+    auto converted_table = CudfHelper::table_from_table_with_metadata(std::move(table), index_col_count);
 
     // VLOG(10) << "Table. Num Col: " << converted_table.attr("_num_columns").str().cast<std::string>()
     //          << ", Num Ind: " << converted_table.attr("_num_columns").cast<std::string>()
@@ -95,24 +96,26 @@ py::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int ind
     return converted_table;
 }
 
-bool MessageMeta::has_unique_index() const
+bool MessageMeta::has_sliceable_index() const
 {
     const auto table = get_info();
-    return table.has_unique_index();
+    return table.has_sliceable_index();
 }
 
-void MessageMeta::replace_non_unique_index()
+std::optional<std::string> MessageMeta::ensure_sliceable_index()
 {
     auto table = this->get_mutable_info();
 
     // Check to ensure we do (or still do) have a non-unique index. Presumably the caller already made a call to
-    // `has_unique_index` but there could have been a race condition between the first call to has_unique_index and
-    // the acquisition of the mutex. Re-check here to ensure some other thread didn't already fix the index
-    if (!table.has_unique_index())
+    // `has_sliceable_index` but there could have been a race condition between the first call to has_sliceable_index
+    // and the acquisition of the mutex. Re-check here to ensure some other thread didn't already fix the index
+    if (!table.has_sliceable_index())
     {
         LOG(WARNING) << "Non unique index found in dataframe, generating new index.";
-        table.replace_non_unique_index();
+        return table.ensure_sliceable_index();
     }
+
+    return std::nullopt;
 }
 
 /********** MessageMetaInterfaceProxy **********/
@@ -167,18 +170,18 @@ std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::stri
     return MessageMeta::create_from_cpp(std::move(df_with_meta));
 }
 
-bool MessageMetaInterfaceProxy::has_unique_index(MessageMeta& self)
+bool MessageMetaInterfaceProxy::has_sliceable_index(MessageMeta& self)
 {
     // Release the GIL
     py::gil_scoped_release no_gil;
-    return self.has_unique_index();
+    return self.has_sliceable_index();
 }
 
-void MessageMetaInterfaceProxy::replace_non_unique_index(MessageMeta& self)
+std::optional<std::string> MessageMetaInterfaceProxy::ensure_sliceable_index(MessageMeta& self)
 {
     // Release the GIL
     py::gil_scoped_release no_gil;
-    return self.replace_non_unique_index();
+    return self.ensure_sliceable_index();
 }
 
 SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
@@ -201,14 +204,9 @@ MutableTableInfo SlicedMessageMeta::get_mutable_info() const
     return this->m_data->get_mutable_info().get_slice(m_start, m_stop, m_column_names);
 }
 
-bool SlicedMessageMeta::has_unique_index() const
+std::optional<std::string> SlicedMessageMeta::ensure_sliceable_index()
 {
-    throw std::runtime_error{"Unable to determine index uniqueness from a slice."};
-}
-
-void SlicedMessageMeta::replace_non_unique_index()
-{
-    throw std::runtime_error{"Unable to determine index uniqueness from a slice."};
+    throw std::runtime_error{"Unable to set a new index on the DataFrame from a partial view of the columns/rows."};
 }
 
 }  // namespace morpheus

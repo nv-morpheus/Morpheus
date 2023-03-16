@@ -31,9 +31,10 @@ from morpheus._lib.common import FileTypes
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.messages.memory import inference_memory
-from morpheus.messages.memory import response_memory
-from morpheus.messages.memory import tensor_memory
+from morpheus.messages.memory.inference_memory import InferenceMemory
+from morpheus.messages.memory.response_memory import ResponseMemory
+from morpheus.messages.memory.response_memory import ResponseMemoryProbs
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
@@ -45,23 +46,10 @@ from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from utils import TEST_DIRS
+from utils import assert_df_equal
 from utils import create_df_with_dup_ids
 from utils import duplicate_df_index
 from utils import duplicate_df_index_rand
-
-
-def compare_df(df_to_check, val_to_check):
-    # Comparisons work better in cudf so convert everything to that
-    if (isinstance(df_to_check, cudf.DataFrame) or isinstance(df_to_check, cudf.Series)):
-        df_to_check = df_to_check.to_pandas()
-
-    if (isinstance(val_to_check, cudf.DataFrame) or isinstance(val_to_check, cudf.Series)):
-        val_to_check = val_to_check.to_pandas()
-
-    bool_df = df_to_check == val_to_check
-
-    return bool(bool_df.all(axis=None))
-
 
 # def pytest_generate_tests(metafunc: pytest.Metafunc):
 #     """
@@ -106,61 +94,45 @@ def compare_df(df_to_check, val_to_check):
 #                                  ],
 #                                  indirect=True)
 
+# def pytest_generate_tests(metafunc: pytest.Metafunc):
 
-def pytest_generate_tests(metafunc: pytest.Metafunc):
+#     # Only care about the df fixture
+#     if ("df" not in metafunc.fixturenames):
+#         return
 
-    # Only care about the df fixture
-    if ("df" not in metafunc.fixturenames):
-        return
-
-    # Since we need a dataframe, lets create the parameters for it (which are not an inner product)
-    metafunc.parametrize("df_type,use_cpp",
-                         [
-                             pytest.param("pandas", False, id="use_pandas-use_python"),
-                             pytest.param("cudf", False, id="use_cudf-use_python"),
-                             pytest.param("cudf", True, id="use_cudf-use_cpp")
-                         ],
-                         indirect=True)
-
+#     # Since we need a dataframe, lets create the parameters for it (which are not an inner product)
+#     metafunc.parametrize("df_type,use_cpp",
+#                          [
+#                              pytest.param("pandas", False, id="use_pandas-use_python"),
+#                              pytest.param("cudf", False, id="use_cudf-use_python"),
+#                              pytest.param("cudf", True, id="use_cudf-use_cpp")
+#                          ],
+#                          indirect=True)
 
 # Autouse this fixture since each test in this file should use C++ and Python
-@pytest.fixture(scope="function", autouse=True)
-def use_cpp(request: pytest.FixtureRequest):
+# @pytest.fixture(scope="function", autouse=True)
+# def use_cpp(request: pytest.FixtureRequest):
 
-    assert hasattr(request, "param") and isinstance(request.param, bool), "Indirect parameter needed to be set to use use_cpp"
+#     assert hasattr(request, "param") and isinstance(request.param, bool), "Indirect parameter needed to be set to use use_cpp"
 
-    do_use_cpp: bool = request.param
+#     do_use_cpp: bool = request.param
 
-    CppConfig.set_should_use_cpp(do_use_cpp)
+#     CppConfig.set_should_use_cpp(do_use_cpp)
 
-    yield do_use_cpp
+#     yield do_use_cpp
+
+# @pytest.fixture(scope="function")
+# def df_type(request: pytest.FixtureRequest):
+
+#     assert request.param in ["pandas", "cudf"], "Indirect parameter needed to be set to use df_type"
+
+#     df_type_str: typing.Literal["cudf", "pandas"] = request.param
+
+#     yield df_type_str
 
 
 @pytest.fixture(scope="function")
-def df_type(request: pytest.FixtureRequest):
-
-    assert request.param in ["pandas", "cudf"], "Indirect parameter needed to be set to use df_type"
-
-    df_type_str: typing.Literal["cudf", "pandas"] = request.param
-
-    yield df_type_str
-
-
-@pytest.fixture(scope="function")
-def df(df_type: typing.Literal['cudf', 'pandas']):
-
-    # if (not hasattr(request, "param")):
-    #     use_pandas = request.node.get_closest_marker("use_pandas") is not None
-    #     use_cudf = request.node.get_closest_marker("use_cudf") is not None
-
-    #     assert use_pandas != use_cudf, "Invalid config"
-
-    #     df_type = "pandas" if use_pandas else "cudf"
-
-    # else:
-    #     assert request.param in ["pandas", "cudf"]
-
-    #     df_type = request.param
+def df(df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
 
     return read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
                            file_type=FileTypes.Auto,
@@ -182,8 +154,20 @@ def test_constructor_values(df: cudf.DataFrame):
 
     meta = MessageMeta(df)
 
-    multi = MultiMessage(meta=meta, mess_offset=4, mess_count=5)
+    # No count
+    multi = MultiMessage(meta=meta, mess_offset=2)
+    assert multi.meta is meta
+    assert multi.mess_offset == 2
+    assert multi.mess_count == meta.count - multi.mess_offset
 
+    # No offset
+    multi = MultiMessage(meta=meta, mess_count=9)
+    assert multi.meta is meta
+    assert multi.mess_offset == 0
+    assert multi.mess_count == 9
+
+    # Both
+    multi = MultiMessage(meta=meta, mess_offset=4, mess_count=5)
     assert multi.meta is meta
     assert multi.mess_offset == 4
     assert multi.mess_count == 5
@@ -219,18 +203,18 @@ def test_get_meta(df: cudf.DataFrame):
     # Manually slice the dataframe according to the multi settings
     df_sliced: cudf.DataFrame = df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
 
-    assert compare_df(multi.get_meta(), df_sliced)
+    assert assert_df_equal(multi.get_meta(), df_sliced)
 
     # Make sure we return a table here, not a series
     col_name = df_sliced.columns[0]
-    assert compare_df(multi.get_meta(col_name), df_sliced[col_name])
+    assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     col_name = [df_sliced.columns[0], df_sliced.columns[2]]
-    assert compare_df(multi.get_meta(col_name), df_sliced[col_name])
+    assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     # Out of order columns
     col_name = [df_sliced.columns[3], df_sliced.columns[0]]
-    assert compare_df(multi.get_meta(col_name), df_sliced[col_name])
+    assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
     # Should fail with missing column
     with pytest.raises(KeyError):
@@ -238,8 +222,8 @@ def test_get_meta(df: cudf.DataFrame):
 
     # Finally, check that we dont overwrite the original dataframe
     multi.get_meta(col_name).iloc[:] = 5
-    # assert not compare_df(df_sliced[col_name], 5.0)
-    assert compare_df(multi.get_meta(col_name), df_sliced[col_name])
+    # assert not assert_df_equal(df_sliced[col_name], 5.0)
+    assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
 
 def test_get_meta_dup_index(df: cudf.DataFrame):
@@ -267,10 +251,10 @@ def test_set_meta(df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas'])
 
     def test_value(columns, value):
         multi.set_meta(columns, value)
-        assert compare_df(multi.get_meta(columns), value)
+        assert assert_df_equal(multi.get_meta(columns), value)
 
         # Now make sure the original dataframe is untouched
-        assert compare_df(df_saved[saved_mask], meta.df[saved_mask])
+        assert assert_df_equal(df_saved[saved_mask], meta.df[saved_mask])
 
     single_column = "v2"
     two_columns = ["v1", "v3"]
@@ -306,7 +290,7 @@ def test_set_meta_new_column(df: cudf.DataFrame, df_type: typing.Literal['cudf',
     # Just one new column
     val_to_set = list(range(multi.mess_count))
     multi.set_meta("new_column", val_to_set)
-    assert compare_df(multi.get_meta("new_column"), val_to_set)
+    assert assert_df_equal(multi.get_meta("new_column"), val_to_set)
 
     if (df_type == "cudf"):
         # cudf isnt capable of setting more than one new column at a time
@@ -315,7 +299,7 @@ def test_set_meta_new_column(df: cudf.DataFrame, df_type: typing.Literal['cudf',
     # Now set one with new and old columns
     val_to_set = np.random.randn(multi.mess_count, 2)
     multi.set_meta(["v2", "new_column2"], val_to_set)
-    assert compare_df(multi.get_meta(["v2", "new_column2"]), val_to_set)
+    assert assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
 
 
 def test_set_meta_new_column_dup_index(df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
@@ -340,7 +324,7 @@ def test_copy_ranges(df: cudf.DataFrame):
     assert mm2.meta.df is not df
     assert mm2.mess_offset == 0
     assert mm2.mess_count == 6 - 2
-    assert compare_df(mm2.get_meta(), df.iloc[2:6])
+    assert assert_df_equal(mm2.get_meta(), df.iloc[2:6])
 
     # slice two different ranges of rows
     mm3 = mm.copy_ranges([(2, 6), (12, 15)])
@@ -353,7 +337,7 @@ def test_copy_ranges(df: cudf.DataFrame):
     assert mm3.meta.df is not mm2.meta.df
     assert mm3.mess_offset == 0
     assert mm3.mess_count == (6 - 2) + (15 - 12)
-    assert compare_df(mm3.get_meta(), df.iloc[2:6].append(df.iloc[12:15]))
+    assert assert_df_equal(mm3.get_meta(), df.iloc[2:6].append(df.iloc[12:15]))
 
 
 def test_copy_ranges_dup_index(df: cudf.DataFrame):
@@ -422,51 +406,51 @@ def test_get_slice_values(df: cudf.DataFrame):
 
     multi_full = MultiMessage(meta=meta)
 
-    # # Single slice
-    # assert compare_df(multi_full.get_slice(3, 8).get_meta(), df.iloc[3:8])
+    # Single slice
+    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta(), df.iloc[3:8])
 
-    # # Single slice with one columns
-    # assert compare_df(multi_full.get_slice(3, 8).get_meta("v1"), df.iloc[3:8]["v1"])
+    # Single slice with one columns
+    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta("v1"), df.iloc[3:8]["v1"])
 
-    # # Single slice with multiple columns
-    # assert compare_df(multi_full.get_slice(3, 8).get_meta(["v4", "v3", "v1"]), df.iloc[3:8][["v4", "v3", "v1"]])
+    # Single slice with multiple columns
+    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta(["v4", "v3", "v1"]), df.iloc[3:8][["v4", "v3", "v1"]])
 
-    # # Chained slice
-    # assert compare_df(multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(), df.iloc[2 + 5:(2 + 5) + (9 - 5)])
+    # Chained slice
+    assert assert_df_equal(multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(), df.iloc[2 + 5:(2 + 5) + (9 - 5)])
 
-    # # Chained slice one column
-    # assert compare_df(
-    #     multi_full.get_slice(2, 18).get_slice(5, 9).get_meta("v1"), df.iloc[2 + 5:(2 + 5) + (9 - 5)]["v1"])
+    # Chained slice one column
+    assert assert_df_equal(
+        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta("v1"), df.iloc[2 + 5:(2 + 5) + (9 - 5)]["v1"])
 
-    # # Chained slice multi column
-    # assert compare_df(
-    #     multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(["v4", "v3", "v1"]),
-    #     df.iloc[2 + 5:(2 + 5) + (9 - 5)][["v4", "v3", "v1"]])
+    # Chained slice multi column
+    assert assert_df_equal(
+        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(["v4", "v3", "v1"]),
+        df.iloc[2 + 5:(2 + 5) + (9 - 5)][["v4", "v3", "v1"]])
 
     # Set values
     multi_full.get_slice(4, 10).set_meta(None, 1.15)
-    assert compare_df(multi_full.get_slice(4, 10).get_meta(), df.iloc[4:10])
+    assert assert_df_equal(multi_full.get_slice(4, 10).get_meta(), df.iloc[4:10])
 
     # Set values one column
     multi_full.get_slice(1, 6).set_meta("v3", 5.3)
-    assert compare_df(multi_full.get_slice(1, 6).get_meta("v3"), df.iloc[1:6]["v3"])
+    assert assert_df_equal(multi_full.get_slice(1, 6).get_meta("v3"), df.iloc[1:6]["v3"])
 
     # Set values multi column
     multi_full.get_slice(5, 8).set_meta(["v4", "v1", "v3"], 7)
-    assert compare_df(multi_full.get_slice(5, 8).get_meta(["v4", "v1", "v3"]), df.iloc[5:8][["v4", "v1", "v3"]])
+    assert assert_df_equal(multi_full.get_slice(5, 8).get_meta(["v4", "v1", "v3"]), df.iloc[5:8][["v4", "v1", "v3"]])
 
     # Chained Set values
     multi_full.get_slice(10, 20).get_slice(1, 4).set_meta(None, 8)
-    assert compare_df(multi_full.get_slice(10, 20).get_slice(1, 4).get_meta(), df.iloc[10 + 1:(10 + 1) + (4 - 1)])
+    assert assert_df_equal(multi_full.get_slice(10, 20).get_slice(1, 4).get_meta(), df.iloc[10 + 1:(10 + 1) + (4 - 1)])
 
     # Chained Set values one column
     multi_full.get_slice(10, 20).get_slice(3, 5).set_meta("v4", 112)
-    assert compare_df(
+    assert assert_df_equal(
         multi_full.get_slice(10, 20).get_slice(3, 5).get_meta("v4"), df.iloc[10 + 3:(10 + 3) + (5 - 3)]["v4"])
 
     # Chained Set values multi column
     multi_full.get_slice(10, 20).get_slice(5, 8).set_meta(["v4", "v1", "v2"], 22)
-    assert compare_df(
+    assert assert_df_equal(
         multi_full.get_slice(10, 20).get_slice(5, 8).get_meta(["v4", "v1", "v2"]),
         df.iloc[10 + 5:(10 + 5) + (8 - 5)][["v4", "v1", "v2"]])
 
@@ -501,31 +485,29 @@ def test_get_slice_derived(df: cudf.DataFrame):
     compare_slice(MultiAEMessage, meta=meta, model=None, train_scores_mean=0.0, train_scores_std=1.0)
 
     # Tensor messages
-    compare_slice(MultiTensorMessage,
-                  meta=meta,
-                  memory=tensor_memory.TensorMemory(count=20, tensors=multi_tensor_message_tensors))
+    compare_slice(MultiTensorMessage, meta=meta, memory=TensorMemory(count=20, tensors=multi_tensor_message_tensors))
 
     # Inference messages
     compare_slice(MultiInferenceMessage,
                   meta=meta,
-                  memory=inference_memory.InferenceMemory(count=20, tensors=multi_tensor_message_tensors))
+                  memory=InferenceMemory(count=20, tensors=multi_tensor_message_tensors))
     compare_slice(MultiInferenceNLPMessage,
                   meta=meta,
-                  memory=inference_memory.InferenceMemory(count=20, tensors=multi_tensor_message_tensors))
+                  memory=InferenceMemory(count=20, tensors=multi_tensor_message_tensors))
     compare_slice(MultiInferenceFILMessage,
                   meta=meta,
-                  memory=inference_memory.InferenceMemory(count=20, tensors=multi_tensor_message_tensors))
+                  memory=InferenceMemory(count=20, tensors=multi_tensor_message_tensors))
     compare_slice(MultiInferenceAEMessage,
                   meta=meta,
-                  memory=inference_memory.InferenceMemory(count=20, tensors=multi_tensor_message_tensors))
+                  memory=InferenceMemory(count=20, tensors=multi_tensor_message_tensors))
 
     # Response messages
     compare_slice(MultiResponseMessage,
                   meta=meta,
-                  memory=response_memory.ResponseMemory(count=20, tensors=multi_tensor_message_tensors))
+                  memory=ResponseMemory(count=20, tensors=multi_tensor_message_tensors))
     compare_slice(MultiResponseProbsMessage,
                   meta=meta,
-                  memory=response_memory.ResponseMemoryProbs(count=20, probs=multi_tensor_message_tensors["probs"]))
+                  memory=ResponseMemoryProbs(count=20, probs=multi_tensor_message_tensors["probs"]))
 
 
 def test_from_message(df: cudf.DataFrame):
@@ -654,3 +636,134 @@ def test_from_message(df: cudf.DataFrame):
     # Test missing other options
     with pytest.raises(AttributeError):
         MultiAEMessage.from_message(multi)
+
+
+def test_tensor_constructor(df: cudf.DataFrame):
+
+    mess_len = len(df)
+
+    multi_tensor_message_tensors = {
+        "input_ids": cp.zeros((mess_len, 2)),
+        "input_mask": cp.zeros((mess_len, 2)),
+        "seq_ids": cp.expand_dims(cp.arange(0, mess_len, dtype=int), axis=1),
+        "input__0": cp.zeros((mess_len, 2)),
+        "probs": cp.zeros((mess_len, 2)),
+    }
+
+    meta = MessageMeta(df)
+
+    memory = ResponseMemory(count=mess_len, tensors=multi_tensor_message_tensors)
+
+    # Default constructor
+    multi_tensor = MultiTensorMessage(meta=meta, memory=memory)
+    assert multi_tensor.meta is meta
+    assert multi_tensor.mess_offset == 0
+    assert multi_tensor.mess_count == meta.count
+    assert multi_tensor.memory is memory
+    assert multi_tensor.offset == 0
+    assert multi_tensor.count == memory.count
+
+    # All constructor values
+    multi_tensor = MultiTensorMessage(meta=meta, mess_offset=3, mess_count=5, memory=memory, offset=5, count=10)
+    assert multi_tensor.meta is meta
+    assert multi_tensor.mess_offset == 3
+    assert multi_tensor.mess_count == 5
+    assert multi_tensor.memory is memory
+    assert multi_tensor.offset == 5
+    assert multi_tensor.count == 10
+
+    # Larger tensor count
+    multi_tensor = MultiTensorMessage(meta=meta,
+                                      memory=TensorMemory(count=17, tensors={"probs": cp.random.rand(17, 2)}))
+    assert multi_tensor.meta is meta
+    assert multi_tensor.mess_offset == 0
+    assert multi_tensor.mess_count == meta.count
+    assert multi_tensor.memory is memory
+    assert multi_tensor.offset == 0
+    assert multi_tensor.count == memory.count
+
+    # Negative offset
+    with pytest.raises(ValueError):
+        MultiTensorMessage(meta=meta, memory=memory, offset=-1)
+
+    # Offset beyond start
+    with pytest.raises(ValueError):
+        MultiTensorMessage(meta=meta, memory=memory, offset=memory.count, count=5)
+
+    # Too large of count
+    with pytest.raises(ValueError):
+        MultiTensorMessage(meta=meta, memory=memory, offset=0, count=memory.count + 1)
+
+    # Count extends beyond end of dataframe
+    with pytest.raises(ValueError):
+        MultiTensorMessage(meta=meta, memory=memory, offset=5, count=(memory.count - 5) + 1)
+
+    # Count smaller than mess_count
+    with pytest.raises(ValueError):
+        MultiTensorMessage(meta=meta, mess_count=10, memory=memory, count=9)
+
+
+def test_tensor_slicing(df: cudf.DataFrame):
+
+    mess_len = len(df)
+
+    repeat_counts = [1] * mess_len
+    repeat_counts[1] = 2
+    repeat_counts[4] = 5
+    repeat_counts[5] = 3
+    repeat_counts[7] = 6
+    tensor_count = sum(repeat_counts)
+
+    probs = cp.random.rand(tensor_count, 2)
+    seq_ids = cp.zeros((tensor_count, 3), dtype=cp.int32)
+
+    for i, r in enumerate(repeat_counts):
+        seq_ids[sum(repeat_counts[:i]):sum(repeat_counts[:i]) + r] = cp.ones((r, 3), int) * i
+
+    # First with no offsets
+    memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})
+    multi = MultiInferenceMessage(meta=MessageMeta(df), memory=memory)
+    multi_slice = multi.get_slice(3, 10)
+    assert multi_slice.mess_offset == seq_ids[3, 0].item()
+    assert multi_slice.mess_count == seq_ids[10, 0].item() - seq_ids[3, 0].item()
+    assert multi_slice.offset == 3
+    assert multi_slice.count == 10 - 3
+    assert cp.all(multi_slice.get_tensor("probs") == probs[3:10, :])
+
+    # Offset on memory
+    multi = MultiInferenceMessage(meta=MessageMeta(df), memory=memory, offset=4)
+    multi_slice = multi.get_slice(6, 13)
+    assert multi_slice.mess_offset == seq_ids[multi.offset + 6, 0].item()
+    assert multi_slice.mess_count == seq_ids[multi.offset + 13 - 1, 0].item() + 1 - seq_ids[multi.offset + 6, 0].item()
+    assert multi_slice.offset == 6 + 4
+    assert multi_slice.count == 13 - 6
+    assert cp.all(multi_slice.get_tensor("probs") == probs[multi.offset + 6:multi.offset + 13, :])
+
+    # Should be equivalent to shifting the input tensors and having no offset
+    equiv_memory = InferenceMemory(count=tensor_count - 4, tensors={"seq_ids": seq_ids[4:], "probs": probs[4:]})
+    equiv_multi = MultiInferenceMessage(meta=MessageMeta(df), memory=equiv_memory)
+    equiv_slice = equiv_multi.get_slice(6, 13)
+    assert multi_slice.mess_offset == equiv_slice.mess_offset
+    assert multi_slice.mess_count == equiv_slice.mess_count
+    assert multi_slice.offset != equiv_slice.offset
+    assert multi_slice.count == equiv_slice.count
+    assert cp.all(multi_slice.get_tensor("probs") == equiv_slice.get_tensor("probs"))
+
+    # Offset on meta
+    multi = MultiInferenceMessage(meta=MessageMeta(df), mess_offset=3, memory=memory)
+    multi_slice = multi.get_slice(2, 9)
+    assert multi_slice.mess_offset == seq_ids[multi.offset + 2, 0].item() + 3
+    assert multi_slice.mess_count == seq_ids[multi.offset + 9 - 1, 0].item() + 1 - seq_ids[multi.offset + 2, 0].item()
+    assert multi_slice.offset == 2
+    assert multi_slice.count == 9 - 2
+    assert cp.all(multi_slice.get_tensor("probs") == probs[multi.offset + 2:multi.offset + 9, :])
+
+    # Should be equivalent to shifting the input dataframe and having no offset
+    equiv_memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})
+    equiv_multi = MultiInferenceMessage(meta=MessageMeta(df.iloc[3:, :]), memory=equiv_memory)
+    equiv_slice = equiv_multi.get_slice(2, 9)
+    assert multi_slice.mess_offset == equiv_slice.mess_offset + 3
+    assert multi_slice.mess_count == equiv_slice.mess_count
+    assert multi_slice.offset == equiv_slice.offset
+    assert multi_slice.count == equiv_slice.count
+    assert assert_df_equal(multi_slice.get_meta(), equiv_slice.get_meta())

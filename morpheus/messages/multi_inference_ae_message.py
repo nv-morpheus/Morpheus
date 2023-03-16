@@ -31,7 +31,6 @@ class MultiInferenceAEMessage(MultiInferenceMessage):
     """
 
     required_tensors: typing.ClassVar[typing.List[str]] = ["seq_ids"]
-    id_tensor: typing.ClassVar[str] = "seq_ids"
 
     model: AutoEncoder
     # train_loss_scores: cp.ndarray

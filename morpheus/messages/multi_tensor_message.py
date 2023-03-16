@@ -44,7 +44,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
     count: int
 
     required_tensors: typing.ClassVar[typing.List[str]] = []
-    id_tensor: typing.ClassVar[str] = None
+    id_tensor: typing.ClassVar[str] = "seq_ids"
 
     def __init__(self,
                  *,
@@ -60,7 +60,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
 
         # Use the meta count if not supplied
         if (count == -1):
-            count = memory.count
+            count = memory.count - offset
 
         # Check for valid offsets and counts
         if offset < 0 or offset >= memory.count:
@@ -74,6 +74,9 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
 
         # Call the base class last because the properties need to be initialized first
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
+
+        if (self.count < self.mess_count):
+            raise ValueError("Invalid count value. Must have a count greater than or equal to mess_count")
 
         # Finally, check for the required tensors class attribute
         if (hasattr(self.__class__, "required_tensors")):

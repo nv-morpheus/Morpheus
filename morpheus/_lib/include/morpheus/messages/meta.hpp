@@ -69,17 +69,21 @@ class MessageMeta
     virtual MutableTableInfo get_mutable_info() const;
 
     /**
-     * @brief Returns true if the underlying dataframe as a unique index.
+     * @brief Returns true if the underlying DataFrame's index is unique and monotonic. Sliceable indices have better
+     * performance since a range of rows can be specified by a start and stop index instead of requiring boolean masks.
      *
      * @return bool
      */
-    virtual bool has_unique_index() const;
+    bool has_sliceable_index() const;
 
     /**
-     * @brief Replaces the index in the underlying dataframe if the existing one is not unique.
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old
+     * index will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is
+     * a no-op.
      *
+     * @return std::string The name of the column with the old index or nullopt if no changes were made.
      */
-    virtual void replace_non_unique_index();
+    virtual std::optional<std::string> ensure_sliceable_index();
 
     /**
      * @brief Create MessageMeta cpp object from a python object
@@ -131,9 +135,7 @@ class SlicedMessageMeta : public MessageMeta
 
     MutableTableInfo get_mutable_info() const override;
 
-    bool has_unique_index() const override;
-
-    void replace_non_unique_index() override;
+    std::optional<std::string> ensure_sliceable_index() override;
 
   private:
     TensorIndex m_start{0};
@@ -183,8 +185,22 @@ struct MessageMetaInterfaceProxy
 
     static MutableTableCtxMgr mutable_dataframe(MessageMeta& self);
 
-    static bool has_unique_index(MessageMeta& self);
-    static void replace_non_unique_index(MessageMeta& self);
+    /**
+     * @brief Returns true if the underlying DataFrame's index is unique and monotonic. Sliceable indices have better
+     * performance since a range of rows can be specified by a start and stop index instead of requiring boolean masks.
+     *
+     * @return bool
+     */
+    static bool has_sliceable_index(MessageMeta& self);
+
+    /**
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old
+     * index will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is
+     * a no-op.
+     *
+     * @return std::string The name of the column with the old index or nullopt if no changes were made.
+     */
+    static std::optional<std::string> ensure_sliceable_index(MessageMeta& self);
 };
 
 #pragma GCC visibility pop

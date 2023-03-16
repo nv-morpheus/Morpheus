@@ -55,7 +55,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         # Use the meta count if not supplied
         if (mess_count == -1):
-            mess_count = meta.count
+            mess_count = meta.count - mess_offset
 
         # Check for valid offsets and counts
         if mess_offset < 0 or mess_offset >= meta.count:
@@ -136,7 +136,6 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         count = stop - start
 
         return offset, count
-
 
     @typing.overload
     def get_meta(self) -> cudf.DataFrame:

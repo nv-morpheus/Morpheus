@@ -168,6 +168,11 @@ struct TensorMemoryInterfaceProxy
      */
     static TensorIndex get_count(TensorMemory& self);
 
+    /**
+     * @brief Returns true if a tensor with the requested name exists in the tensors object
+     *
+     * @param name Tensor name to lookup
+     */
     static bool has_tensor(TensorMemory& self, std::string name);
 
     /**

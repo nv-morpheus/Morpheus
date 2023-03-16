@@ -28,12 +28,13 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
+from utils import assert_df_equal
 from utils import assert_path_exists
 from utils import create_df_with_dup_ids
 from utils import duplicate_df_index_rand
 
 
-def test_detecting_non_unique_indexes(config):
+def test_fixing_non_unique_indexes(use_cpp):
 
     df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
                          file_type=FileTypes.Auto,
@@ -42,11 +43,24 @@ def test_detecting_non_unique_indexes(config):
     # Set 2 ids equal to others
     df = duplicate_df_index_rand(df, count=2)
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(df.copy())
+
+    assert not meta.has_sliceable_index(), "Need to start with a non-sliceable index"
 
     # When processing the dataframe, a warning should be generated when there are non-unique IDs
     with pytest.warns(RuntimeWarning):
-        DeserializeStage.process_dataframe(meta, 5)
+
+        DeserializeStage.process_dataframe(meta, 5, ensure_sliceable_index=False)
+
+        assert not meta.has_sliceable_index()
+        assert "_index_" not in meta.df.columns
+
+    assert assert_df_equal(meta.df, df)
+
+    DeserializeStage.process_dataframe(meta, 5, ensure_sliceable_index=True)
+
+    assert meta.has_sliceable_index()
+    assert "_index_" in meta.df.columns
 
 
 @pytest.mark.slow

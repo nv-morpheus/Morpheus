@@ -25,6 +25,8 @@ import mrc
 import numpy as np
 import pandas as pd
 
+import cudf
+
 import morpheus
 from morpheus._lib.common import FileTypes
 from morpheus.cli.register_stage import register_stage
@@ -37,6 +39,7 @@ from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.inference import inference_stage
+from morpheus.utils import xd
 from morpheus.utils.atomic_integer import AtomicInteger
 
 
@@ -337,3 +340,17 @@ def create_df_with_dup_ids(tmp_path: str, dup_row=8) -> str:
         fh.writelines("\n".join(data))
 
     return dup_file
+
+
+def assert_df_equal(df_to_check: xd.DataFrame, val_to_check: typing.Any):
+
+    # Comparisons work better in cudf so convert everything to that
+    if (isinstance(df_to_check, cudf.DataFrame) or isinstance(df_to_check, cudf.Series)):
+        df_to_check = df_to_check.to_pandas()
+
+    if (isinstance(val_to_check, cudf.DataFrame) or isinstance(val_to_check, cudf.Series)):
+        val_to_check = val_to_check.to_pandas()
+
+    bool_df = df_to_check == val_to_check
+
+    return bool(bool_df.all(axis=None))

@@ -95,7 +95,6 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
     """
 
     required_tensors: typing.ClassVar[typing.List[str]] = ["input_ids", "input_mask", "seq_ids"]
-    id_tensor: typing.ClassVar[str] = "seq_ids"
 
     def __init__(self,
                  *,
@@ -165,7 +164,6 @@ class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
     """
 
     required_tensors: typing.ClassVar[typing.List[str]] = ["input__0", "seq_ids"]
-    id_tensor: typing.ClassVar[str] = "seq_ids"
 
     def __init__(self,
                  *,

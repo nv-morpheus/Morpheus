@@ -17,6 +17,8 @@
 
 #include "morpheus/io/serializers.hpp"
 
+#include "morpheus/utilities/cudf_util.hpp"
+
 #include <cudf/io/csv.hpp>
 #include <cudf/io/data_sink.hpp>
 #include <cudf/io/types.hpp>  // for column_name_info, sink_info, table_metadata
@@ -151,27 +153,28 @@ std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
     }
 
     std::string results;
+
     // no cpp impl for to_json, instead python module converts to pandas and calls to_json
     {
         py::gil_scoped_acquire gil;
         py::object StringIO = py::module_::import("io").attr("StringIO");
         auto buffer         = StringIO();
 
-        auto df = tbl.checkout_obj();
         try
         {
-            auto sliced_columns = df.attr("loc")[pybind11::make_tuple(df.attr("index"), tbl.get_column_names())];
+            auto df = CudfHelper::table_from_table_info(tbl);
 
             py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true);
-            sliced_columns.attr("to_json")(buffer, **kwargs);
+
+            df.attr("to_json")(buffer, **kwargs);
+
             buffer.attr("seek")(0);
+
         } catch (std::exception& ex)
         {
-            LOG(ERROR) << ex.what();
-            tbl.return_obj(std::move(df));
+            LOG(ERROR) << "Error during serialization to JSON. Message: " << ex.what();
             throw ex;
         }
-        tbl.return_obj(std::move(df));
 
         py::object pyresults = buffer.attr("getvalue")();
         results              = pyresults.cast<std::string>();
