@@ -25,7 +25,7 @@ from morpheus.utils.module_utils import load_module
 logger = logging.getLogger(__name__)
 
 
-class MultiPortModuleStage(Stage):
+class MultiPortModulesStage(Stage):
     """
     Loads an existing, registered, MRC SegmentModule and wraps it as a Morpheus Stage.
 

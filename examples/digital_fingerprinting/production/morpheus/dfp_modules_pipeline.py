@@ -29,7 +29,7 @@ from morpheus.cli.utils import parse_log_level
 from morpheus.config import Config
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
-from morpheus.stages.general.multi_port_module_stage import MultiPortModuleStage
+from morpheus.stages.general.multiport_modules_stage import MultiPortModulesStage
 from morpheus.stages.input.control_message_file_source_stage import ControlMessageFileSourceStage
 
 
@@ -159,7 +159,7 @@ def run_pipeline(source: str,
     source_stage = pipeline.add_stage(ControlMessageFileSourceStage(config, filenames=list(kwargs["input_file"])))
 
     dfp_deployment_stage = pipeline.add_stage(
-        MultiPortModuleStage(config,
+        MultiPortModulesStage(config,
                              dfp_deployment_module_config,
                              input_port_name="input",
                              output_port_name_prefix="output",
