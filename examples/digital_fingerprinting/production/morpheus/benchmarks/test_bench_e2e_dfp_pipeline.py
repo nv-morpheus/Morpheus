@@ -88,7 +88,7 @@ def dfp_modules_pipeline(pipe_config: Config,
     pipeline.run()
 
     if not reuse_cache:
-        cache_dir = modules_conf["DFPInferencePipe"]["DFPPreproc"]["FileBatcher"]["cache_dir"]
+        cache_dir = modules_conf["inference_options"]["cache_dir"]
         purge_cache(dir=cache_dir)
 
 

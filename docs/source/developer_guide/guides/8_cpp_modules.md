@@ -112,7 +112,9 @@ int main(int argc, char** argv) {
 }
 ```
 
-### Advanced Topics -- Dynamic Module Creation and Loading
+## Advanced Topics
+
+### Dynamic Module Creation and Loading
 
 ```c++
 #include "mrc/version.hpp"
