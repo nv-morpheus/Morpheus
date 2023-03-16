@@ -216,7 +216,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         dst_mac_out_d.release());
       auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(dst_mac_out_d_col->view(), processing_stream);
 
-      cudaStreamSyncronize(processing_stream);
+      cudaStreamSynchronize(processing_stream);
 
       // src ip address column
       auto src_ip_out_d_size = src_ip_out_d.size();
