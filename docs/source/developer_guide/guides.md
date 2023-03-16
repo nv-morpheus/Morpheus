@@ -45,8 +45,9 @@ However, there are likely going to be situations that require writing a custom m
 reusable work units, or for creating a new compound module from a set of existing primitives. The following guides 
 will walk through the process of creating a custom module in Python and C++.
 
-- [Simple Python Module](./guides/7_simple_python_module.md)
-- [Simple C++ Module](./guides/8_simple_cpp_module.md)
+- [Python Module](./guides/7_python_modules.md)
+- [C++ Module](./guides/8_cpp_modules.md)
+- 
 
 ## Example Workflows
 
