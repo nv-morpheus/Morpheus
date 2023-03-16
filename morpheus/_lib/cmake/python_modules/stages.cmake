@@ -14,21 +14,6 @@
 
 morpheus_utils_add_pybind11_module(
     stages
-    MODULE_ROOT
-      "${MORPHEUS_LIB_ROOT}"
     SOURCE_FILES
       "${MORPHEUS_LIB_ROOT}/src/python_modules/stages.cpp"
-    INCLUDE_DIRS
-      "${MORPHEUS_LIB_ROOT}/include"
-    LINK_TARGETS
-      morpheus
-      mrc::pymrc
-    OUTPUT_TARGET
-      stages_target
-    INSTALL_DEST
-      ${MORPHEUS_LIB_INSTALL_DIR}
 )
-
-if(MORPHEUS_PYTHON_INPLACE_BUILD)
-  morpheus_utils_inplace_build_copy(${stages_target} ${MORPHEUS_LIB_ROOT})
-endif()

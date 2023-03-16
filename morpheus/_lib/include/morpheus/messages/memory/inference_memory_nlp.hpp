@@ -19,11 +19,10 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>  // for size_type
 #include <pybind11/pytypes.h>
 
-#include <cstddef>
 #include <memory>
 
 namespace morpheus {
@@ -52,12 +51,13 @@ class InferenceMemoryNLP : public InferenceMemory
      * @param seq_ids : Ids used to index from an inference input to a message. Necessary since there can be more
      inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      */
-    InferenceMemoryNLP(std::size_t count, TensorObject input_ids, TensorObject input_mask, TensorObject seq_ids);
+    InferenceMemoryNLP(TensorIndex count, TensorObject&& input_ids, TensorObject&& input_mask, TensorObject&& seq_ids);
 
     /**
      * @brief Get the input ids object
      *
      * @return const TensorObject&
+     * @throws std::runtime_error If no tensor named "input_ids" exists
      */
     const TensorObject& get_input_ids() const;
 
@@ -65,6 +65,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Get the input mask object
      *
      * @return const TensorObject&
+     * @throws std::runtime_error If no tensor named "input_mask" exists
      */
     const TensorObject& get_input_mask() const;
 
@@ -72,6 +73,7 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Get the seq ids object
      *
      * @return const TensorObject&
+     * @throws std::runtime_error If no tensor named "seq_ids" exists
      */
     const TensorObject& get_seq_ids() const;
 
@@ -79,22 +81,25 @@ class InferenceMemoryNLP : public InferenceMemory
      * @brief Set the input ids object
      *
      * @param input_ids
+     * @throws std::length_error If the number of rows in `input_ids` does not match `count`.
      */
-    void set_input_ids(TensorObject input_ids);
+    void set_input_ids(TensorObject&& input_ids);
 
     /**
      * @brief Set the input mask object
      *
      * @param input_mask
+     * @throws std::length_error If the number of rows in `input_mask` does not match `count`.
      */
-    void set_input_mask(TensorObject input_mask);
+    void set_input_mask(TensorObject&& input_mask);
 
     /**
      * @brief Set the seq ids object
      *
      * @param seq_ids
+     * @throws std::length_error If the number of rows in `seq_ids` does not match `count`.
      */
-    void set_seq_ids(TensorObject seq_ids);
+    void set_seq_ids(TensorObject&& seq_ids);
 };
 
 /****** InferenceMemoryNLPInterfaceProxy********************/
@@ -102,7 +107,7 @@ class InferenceMemoryNLP : public InferenceMemory
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct InferenceMemoryNLPInterfaceProxy
+struct InferenceMemoryNLPInterfaceProxy : public InferenceMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize an InferenceMemoryNLP object, and return a shared pointer to the result
@@ -114,24 +119,17 @@ struct InferenceMemoryNLPInterfaceProxy
      inference inputs than messages (i.e., if some messages get broken into multiple inference requests)
      * @return std::shared_ptr<InferenceMemoryNLP>
      */
-    static std::shared_ptr<InferenceMemoryNLP> init(cudf::size_type count,
+    static std::shared_ptr<InferenceMemoryNLP> init(TensorIndex count,
                                                     pybind11::object input_ids,
                                                     pybind11::object input_mask,
                                                     pybind11::object seq_ids);
-
-    /**
-     * Get messages count in the inference memory object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(InferenceMemoryNLP& self);
 
     /**
      * @brief : Returns token-ids for each string padded with 0s to max_length as python object
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_input_ids(InferenceMemoryNLP& self);
 
@@ -148,6 +146,7 @@ struct InferenceMemoryNLPInterfaceProxy
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_input_mask(InferenceMemoryNLP& self);
 
@@ -164,6 +163,7 @@ struct InferenceMemoryNLPInterfaceProxy
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error
      */
     static pybind11::object get_seq_ids(InferenceMemoryNLP& self);
 

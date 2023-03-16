@@ -17,12 +17,12 @@
 
 #pragma once
 
-#include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/dtype.hpp"  // for DType, TypeId
+#include "morpheus/types.hpp"          // for ShapeType, TensorIndex
 
 #include <rmm/device_buffer.hpp>
 
-#include <cstddef>  // for size_t
-#include <memory>   // for shared_ptr, unique_ptr & make_unique
+#include <memory>  // for shared_ptr, unique_ptr & make_unique
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -42,23 +42,23 @@ class DevMemInfo
   public:
     DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                DType dtype,
-               std::vector<std::size_t> shape,
-               std::vector<std::size_t> stride,
-               size_t offset_bytes = 0);
+               ShapeType shape,
+               ShapeType stride,
+               TensorIndex offset_bytes = 0);
     DevMemInfo(DevMemInfo&& other) = default;
 
-    std::size_t bytes() const;
-    std::size_t count() const;
-    std::size_t offset_bytes() const;
+    TensorIndex bytes() const;
+    TensorIndex count() const;
+    TensorIndex offset_bytes() const;
     const DType& dtype() const;
     TypeId type_id() const;
 
-    const std::vector<std::size_t>& shape() const;
-    std::size_t shape(std::size_t idx) const;
+    const ShapeType& shape() const;
+    TensorIndex shape(TensorIndex idx) const;
 
     // Stride in elements
-    const std::vector<std::size_t>& stride() const;
-    std::size_t stride(std::size_t idx) const;
+    const ShapeType& stride() const;
+    TensorIndex stride(TensorIndex idx) const;
 
     /**
      * @brief Returns raw pointer to underlying buffer offset by the `offset`
@@ -73,7 +73,7 @@ class DevMemInfo
      * @param bytes
      * @return std::unique_ptr<rmm::device_buffer>
      */
-    std::unique_ptr<rmm::device_buffer> make_new_buffer(std::size_t bytes) const;
+    std::unique_ptr<rmm::device_buffer> make_new_buffer(TensorIndex bytes) const;
 
   private:
     // Buffer of data
@@ -83,11 +83,11 @@ class DevMemInfo
     const DType m_dtype;
 
     // Shape & stride of the data in the buffer
-    const std::vector<std::size_t> m_shape;
-    const std::vector<std::size_t> m_stride;
+    const ShapeType m_shape;
+    const ShapeType m_stride;
 
     // Offset from head of data in bytes
-    const size_t m_offset_bytes;
+    const TensorIndex m_offset_bytes;
 };
 
 /** @} */  // end of group

@@ -26,6 +26,7 @@
 #include <pybind11/pybind11.h>
 
 #include <memory>
+#include <string>
 
 namespace morpheus {
 namespace py = pybind11;

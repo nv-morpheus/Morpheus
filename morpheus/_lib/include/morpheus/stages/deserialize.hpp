@@ -19,16 +19,17 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <boost/fiber/future/future.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
+#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
-#include <cstddef>  // for size_t
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -62,7 +63,7 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
      *
      * @param batch_size : Number of messages to be divided into each batch
      */
-    DeserializeStage(size_t batch_size);
+    DeserializeStage(TensorIndex batch_size);
 
   private:
     /**
@@ -70,7 +71,7 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
      */
     subscribe_fn_t build_operator();
 
-    size_t m_batch_size;
+    TensorIndex m_batch_size;
 };
 
 /****** DeserializationStageInterfaceProxy******************/
@@ -89,7 +90,7 @@ struct DeserializeStageInterfaceProxy
      */
     static std::shared_ptr<mrc::segment::Object<DeserializeStage>> init(mrc::segment::Builder& builder,
                                                                         const std::string& name,
-                                                                        size_t batch_size);
+                                                                        TensorIndex batch_size);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

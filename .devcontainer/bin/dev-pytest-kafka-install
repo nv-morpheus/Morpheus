@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,11 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# create a docker network for morpheus
-docker network inspect morpheus >/dev/null 2>&1 || docker network create morpheus
+set -e
 
-# create the parent conda folder so it's found when mounting
-mkdir -p ./.cache/conda
+# Replicates the install instructions from the CI runner image
+sudo apt update
 
-# create a github cli config directory if it does not exist so it's found when mounting
-mkdir -p ~/.config/gh
+# Install openjdk
+sudo apt install -y openjdk-11-jdk
+
+# Clone the repo into home and run setup.py develop
+
+if [[ ! -d ~/pytest-kafka ]]; then
+    git clone https://gitlab.com/karolinepauls/pytest-kafka.git ~/pytest-kafka
+fi;
+
+cd ~/pytest-kafka
+
+python setup.py develop
