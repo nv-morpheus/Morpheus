@@ -16,20 +16,16 @@
 
 # pylint: disable=redefined-outer-name
 
-import itertools
 import os
 import typing
 
 import cupy as cp
 import numpy as np
-import pandas as pd
 import pytest
 
 import cudf
 
 from morpheus._lib.common import FileTypes
-from morpheus.config import Config
-from morpheus.config import CppConfig
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
@@ -47,88 +43,8 @@ from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 from utils import TEST_DIRS
 from utils import assert_df_equal
-from utils import create_df_with_dup_ids
 from utils import duplicate_df_index
 from utils import duplicate_df_index_rand
-
-# def pytest_generate_tests(metafunc: pytest.Metafunc):
-#     """
-#     This function will add parameterizations for the `config` fixture depending on what types of config the test
-#     supports
-#     """
-
-#     # Only care about the config fixture
-#     if ("df" not in metafunc.fixturenames):
-#         return
-
-#     use_pandas = metafunc.definition.get_closest_marker("use_pandas") is not None
-#     use_cudf = metafunc.definition.get_closest_marker("use_cudf") is not None
-
-#     if (use_pandas and use_cudf):
-#         raise RuntimeError(
-#             "Both markers (use_pandas and use_cudf) were added to function {}. Remove markers to support both.".format(
-#                 metafunc.definition.nodeid))
-#     elif (not use_pandas and not use_cudf):
-#         # See if we are marked with cpp or python
-#         use_cpp = metafunc.definition.get_closest_marker("use_cpp") is not None
-#         use_python = metafunc.definition.get_closest_marker("use_python") is not None
-
-#         if (not use_cpp and not use_python):
-#             # Add the 3 parameters directly
-#             metafunc.parametrize(
-#                 "df",
-#                 [
-#                     pytest.param(
-#                         "pandas", marks=[pytest.mark.use_pandas, pytest.mark.use_python], id="use_pandas-use_python"),
-#                     pytest.param("cudf", marks=[pytest.mark.use_cudf, pytest.mark.use_python],
-#                                  id="use_cudf-use_python"),
-#                     pytest.param("cudf", marks=[pytest.mark.use_cudf, pytest.mark.use_cpp], id="use_cudf-use_cpp")
-#                 ],
-#                 indirect=True)
-#         else:
-#             # Add the markers to the parameters
-#             metafunc.parametrize("df",
-#                                  [
-#                                      pytest.param("pandas", marks=pytest.mark.use_pandas, id="use_pandas"),
-#                                      pytest.param("cudf", marks=pytest.mark.use_cudf, id="use_cudf")
-#                                  ],
-#                                  indirect=True)
-
-# def pytest_generate_tests(metafunc: pytest.Metafunc):
-
-#     # Only care about the df fixture
-#     if ("df" not in metafunc.fixturenames):
-#         return
-
-#     # Since we need a dataframe, lets create the parameters for it (which are not an inner product)
-#     metafunc.parametrize("df_type,use_cpp",
-#                          [
-#                              pytest.param("pandas", False, id="use_pandas-use_python"),
-#                              pytest.param("cudf", False, id="use_cudf-use_python"),
-#                              pytest.param("cudf", True, id="use_cudf-use_cpp")
-#                          ],
-#                          indirect=True)
-
-# Autouse this fixture since each test in this file should use C++ and Python
-# @pytest.fixture(scope="function", autouse=True)
-# def use_cpp(request: pytest.FixtureRequest):
-
-#     assert hasattr(request, "param") and isinstance(request.param, bool), "Indirect parameter needed to be set to use use_cpp"
-
-#     do_use_cpp: bool = request.param
-
-#     CppConfig.set_should_use_cpp(do_use_cpp)
-
-#     yield do_use_cpp
-
-# @pytest.fixture(scope="function")
-# def df_type(request: pytest.FixtureRequest):
-
-#     assert request.param in ["pandas", "cudf"], "Indirect parameter needed to be set to use df_type"
-
-#     df_type_str: typing.Literal["cudf", "pandas"] = request.param
-
-#     yield df_type_str
 
 
 @pytest.fixture(scope="function")
@@ -562,7 +478,7 @@ def test_from_message(df: cudf.DataFrame):
     assert multi2.mess_count == 4
 
     # Repeat for tensor memory
-    memory = response_memory.ResponseMemory(count=20, tensors=multi_tensor_message_tensors)
+    memory = ResponseMemory(count=20, tensors=multi_tensor_message_tensors)
     multi_tensor = MultiTensorMessage(meta=meta, mess_offset=3, mess_count=10, memory=memory, offset=5, count=10)
 
     # Create from a base class
@@ -592,7 +508,7 @@ def test_from_message(df: cudf.DataFrame):
     assert multi3.offset == 7
     assert multi3.count == 9
 
-    memory3 = response_memory.ResponseMemory(count=20, tensors=multi_tensor_message_tensors)
+    memory3 = ResponseMemory(count=20, tensors=multi_tensor_message_tensors)
     multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3)
     assert multi3.memory is memory3
     assert multi3.offset == 0

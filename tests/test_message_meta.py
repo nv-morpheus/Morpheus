@@ -27,7 +27,6 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
 from utils import TEST_DIRS
 from utils import assert_df_equal
-from utils import create_df_with_dup_ids
 from utils import duplicate_df_index_rand
 
 

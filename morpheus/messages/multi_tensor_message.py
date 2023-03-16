@@ -82,9 +82,8 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         if (hasattr(self.__class__, "required_tensors")):
             for tensor_name in self.__class__.required_tensors:
                 if (not memory.has_tensor(tensor_name)):
-                    raise ValueError(
-                        f"`TensorMemory` object must have a '{tensor_name}' tensor to create `{self.__class__.__name__}`"
-                        .format(self.__class__.__name__))
+                    raise ValueError((f"`TensorMemory` object must have a '{tensor_name}' "
+                                      f"tensor to create `{self.__class__.__name__}`").format(self.__class__.__name__))
 
     @property
     def tensors(self):
@@ -118,9 +117,8 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
                 id_tensor_name = self.__class__.id_tensor
 
                 if (not self.memory.has_tensor(id_tensor_name)):
-                    raise RuntimeError(
-                        f"The tensor memory object is missing the required ID tensor '{id_tensor_name}' this tensor is required to make slices of MultiTensorMessages"
-                    )
+                    raise RuntimeError(f"The tensor memory object is missing the required ID tensor '{id_tensor_name}' "
+                                       f"this tensor is required to make slices of MultiTensorMessages")
 
                 id_tensor = self.get_tensor(id_tensor_name)
 

@@ -177,8 +177,6 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     def should_filter_test(item: pytest.Item):
 
         use_cpp = item.get_closest_marker("use_cpp")
-        use_python = item.get_closest_marker("use_python")
-        use_cudf = item.get_closest_marker("use_cudf")
         use_pandas = item.get_closest_marker("use_pandas")
 
         if (use_cpp and use_pandas):

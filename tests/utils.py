@@ -22,7 +22,6 @@ import typing
 
 import cupy as cp
 import mrc
-import numpy as np
 import pandas as pd
 
 import cudf
