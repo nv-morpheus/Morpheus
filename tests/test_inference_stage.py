@@ -316,8 +316,9 @@ def test_convert_one_response(config):
 
 
 def test_convert_one_response_error():
-    mem = ResponseMemoryProbs(1, probs=cp.zeros((1, 3)))
-    inf = _mk_message(mess_count=2)
-    res = _mk_message(count=2)
+    mem = ResponseMemoryProbs(2, probs=cp.zeros((2, 2)))
+    inf = _mk_message(mess_count=2, count=2)
+    res = _mk_message(mess_count=1, count=1)
 
-    pytest.raises(AssertionError, inference_stage.InferenceStage._convert_one_response, mem, inf, res)
+    with pytest.raises(AssertionError):
+        inference_stage.InferenceStage._convert_one_response(mem, inf, res.memory)

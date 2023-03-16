@@ -26,7 +26,6 @@
 #include <pybind11/pytypes.h>  // for object
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 

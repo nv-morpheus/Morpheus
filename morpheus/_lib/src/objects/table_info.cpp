@@ -23,7 +23,6 @@
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
 #include <glog/logging.h>
-#include <pybind11/detail/common.h>
 #include <pybind11/gil.h>       // for gil_scoped_acquire
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
 #include <pybind11/pytypes.h>

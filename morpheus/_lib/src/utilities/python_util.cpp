@@ -17,8 +17,10 @@
 
 #include "morpheus/utilities/python_util.hpp"
 
-#include <Python.h>
 #include <pybind11/gil.h>
+#include <pybind11/pybind11.h>
+#include <pyerrors.h>
+#include <warnings.h>
 
 namespace morpheus::utilities {
 

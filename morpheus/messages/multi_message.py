@@ -29,6 +29,13 @@ from morpheus.messages.message_meta import MessageMeta
 # Needed to provide the return type of `@classmethod`
 Self = typing.TypeVar("Self", bound="MultiMessage")
 
+import cupy.cuda
+import rmm
+
+cupy.cuda.Stream.ptds
+
+rmm.rmm_cupy_allocator
+
 
 @dataclasses.dataclass
 class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):

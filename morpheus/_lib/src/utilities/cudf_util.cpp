@@ -24,15 +24,17 @@
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
+#include <memory>
 #include <ostream>  // Needed for logging
 #include <utility>  // for move
-
 /**
  * **************This needs to come last.********************
  * A note to posterity: We only ever want to have a single place where cudf_helpers_api.h is included in any
  * translation unit.
  */
 #include "cudf_helpers_api.h"
+
+#include "morpheus/objects/data_table.hpp"
 
 namespace morpheus {
 

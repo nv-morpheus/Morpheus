@@ -21,15 +21,18 @@
 #include "morpheus/utilities/python_util.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
+#include <glog/logging.h>
 #include <mrc/segment/builder.hpp>
+#include <pyerrors.h>
 #include <pymrc/node.hpp>
-#include <pymrc/utils.hpp>
 #include <rxcpp/rx.hpp>
 
 #include <algorithm>  // for min
 #include <exception>
 #include <functional>
 #include <memory>
+#include <optional>
+#include <sstream>
 #include <utility>
 
 namespace morpheus {

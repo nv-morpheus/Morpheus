@@ -58,6 +58,14 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
             raise ValueError(
                 f"The number rows in tensor {tensor.shape[0]} does not match {class_name}.count of {self.count}")
 
+    def __getattr__(self, name: str) -> typing.Any:
+        if ("tensors" in self.__dict__ and self.has_tensor(name)):
+            return self.get_tensor(name)
+
+        if hasattr(super(), "__getattr__"):
+            return super().__getattr__(name)
+        raise AttributeError
+
     def has_tensor(self, name: str) -> bool:
         """
         Returns True if a tensor with the requested name exists in the tensors object

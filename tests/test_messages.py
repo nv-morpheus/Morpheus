@@ -46,7 +46,7 @@ def check_message(python_type: type, cpp_type: type, should_be_cpp: bool, no_cpp
 
 def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
 
-    df = cudf.DataFrame(range(5), columns="test")
+    df = cudf.DataFrame(range(1), columns="test")
 
     check_message(messages.MessageMeta, _messages.MessageMeta, should_be_cpp, no_cpp_class, *(df, ))
 

@@ -27,6 +27,7 @@ import pytest
 import cudf
 
 from morpheus._lib.common import FileTypes
+from morpheus._lib.common import Tensor
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
@@ -517,10 +518,10 @@ def test_from_message(df: cudf.DataFrame):
     assert multi3.offset == multi_tensor.offset
     assert multi3.count == 12
 
-    multi3 = MultiTensorMessage.from_message(multi_tensor, offset=7, count=9)
+    multi3 = MultiTensorMessage.from_message(multi_tensor, offset=7, count=11)
     assert multi3.memory is memory
     assert multi3.offset == 7
-    assert multi3.count == 9
+    assert multi3.count == 11
 
     memory3 = ResponseMemory(count=20, tensors=multi_tensor_message_tensors)
     multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3)
@@ -538,10 +539,10 @@ def test_from_message(df: cudf.DataFrame):
     assert multi3.offset == 0
     assert multi3.count == 14
 
-    multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3, offset=9, count=8)
+    multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3, offset=4, count=13)
     assert multi3.memory is memory3
-    assert multi3.offset == 9
-    assert multi3.count == 8
+    assert multi3.offset == 4
+    assert multi3.count == 13
 
     # Test missing memory
     with pytest.raises(AttributeError):
@@ -571,18 +572,19 @@ def test_from_message(df: cudf.DataFrame):
 def test_tensor_constructor(df: cudf.DataFrame):
 
     mess_len = len(df)
+    ten_len = mess_len * 2
 
     multi_tensor_message_tensors = {
-        "input_ids": cp.zeros((mess_len, 2)),
-        "input_mask": cp.zeros((mess_len, 2)),
-        "seq_ids": cp.expand_dims(cp.arange(0, mess_len, dtype=int), axis=1),
-        "input__0": cp.zeros((mess_len, 2)),
-        "probs": cp.zeros((mess_len, 2)),
+        "input_ids": cp.zeros((ten_len, 2)),
+        "input_mask": cp.zeros((ten_len, 2)),
+        "seq_ids": cp.expand_dims(cp.arange(0, ten_len, dtype=int), axis=1),
+        "input__0": cp.zeros((ten_len, 2)),
+        "probs": cp.zeros((ten_len, 2)),
     }
 
     meta = MessageMeta(df)
 
-    memory = ResponseMemory(count=mess_len, tensors=multi_tensor_message_tensors)
+    memory = ResponseMemory(count=ten_len, tensors=multi_tensor_message_tensors)
 
     # Default constructor
     multi_tensor = MultiTensorMessage(meta=meta, memory=memory)
@@ -604,13 +606,12 @@ def test_tensor_constructor(df: cudf.DataFrame):
 
     # Larger tensor count
     multi_tensor = MultiTensorMessage(meta=meta,
-                                      memory=TensorMemory(count=17, tensors={"probs": cp.random.rand(17, 2)}))
+                                      memory=TensorMemory(count=21, tensors={"probs": cp.random.rand(21, 2)}))
     assert multi_tensor.meta is meta
     assert multi_tensor.mess_offset == 0
     assert multi_tensor.mess_count == meta.count
-    assert multi_tensor.memory is memory
     assert multi_tensor.offset == 0
-    assert multi_tensor.count == memory.count
+    assert multi_tensor.count == multi_tensor.memory.count
 
     # Negative offset
     with pytest.raises(ValueError):
@@ -618,13 +619,13 @@ def test_tensor_constructor(df: cudf.DataFrame):
 
     # Offset beyond start
     with pytest.raises(ValueError):
-        MultiTensorMessage(meta=meta, memory=memory, offset=memory.count, count=5)
+        MultiTensorMessage(meta=meta, memory=memory, offset=memory.count, count=25)
 
     # Too large of count
     with pytest.raises(ValueError):
         MultiTensorMessage(meta=meta, memory=memory, offset=0, count=memory.count + 1)
 
-    # Count extends beyond end of dataframe
+    # Count extends beyond end of memory
     with pytest.raises(ValueError):
         MultiTensorMessage(meta=meta, memory=memory, offset=5, count=(memory.count - 5) + 1)
 
@@ -670,6 +671,7 @@ def test_tensor_slicing(df: cudf.DataFrame):
     assert cp.all(multi_slice.get_tensor("probs") == probs[multi.offset + 6:multi.offset + 13, :])
 
     # Should be equivalent to shifting the input tensors and having no offset
+
     equiv_memory = InferenceMemory(count=tensor_count - 4, tensors={"seq_ids": seq_ids[4:], "probs": probs[4:]})
     equiv_multi = MultiInferenceMessage(meta=MessageMeta(df), memory=equiv_memory)
     equiv_slice = equiv_multi.get_slice(6, 13)

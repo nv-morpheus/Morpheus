@@ -15,9 +15,12 @@
  * limitations under the License.
  */
 
+#include <sys/types.h>
+
 #include <string>
 
 struct _object;
+
 using PyObject = _object;  // NOLINT(readability-identifier-naming)
 
 namespace morpheus::utilities {

@@ -322,8 +322,6 @@ class TrainAEStage(MultiMessageStage):
                 model, scores_mean, scores_std = get_model_fn(x)
 
                 full_message = MultiAEMessage(meta=x,
-                                              mess_offset=0,
-                                              mess_count=x.count,
                                               model=model,
                                               train_scores_mean=scores_mean,
                                               train_scores_std=scores_std)

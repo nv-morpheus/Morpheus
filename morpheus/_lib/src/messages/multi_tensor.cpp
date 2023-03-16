@@ -19,7 +19,6 @@
 
 #include "morpheus/types.hpp"                // for TensorIndex, TensorMap
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
-#include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>        // IWYU pragma: keep
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST

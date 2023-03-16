@@ -44,7 +44,11 @@ PYBIND11_MODULE(common, m)
     CudfHelper::load();
 
     py::class_<TensorObject>(m, "Tensor")
-        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
+        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface)
+        // No need to keep_alive here since cupy arrays have an owner object
+        .def("to_cupy", &TensorObjectInterfaceProxy::to_cupy)
+        // Need to set keep_alive here to keep the cupy array alive as long as the Tensor is
+        .def_static("from_cupy", &TensorObjectInterfaceProxy::from_cupy, py::keep_alive<0, 1>());
 
     py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))

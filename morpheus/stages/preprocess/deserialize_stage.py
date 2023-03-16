@@ -108,7 +108,7 @@ class DeserializeStage(MultiMessageStage):
                     "Consider setting `ensure_sliceable_index==True`",
                     RuntimeWarning)
 
-        full_message = MultiMessage(meta=x, mess_offset=0, mess_count=x.count)
+        full_message = MultiMessage(meta=x)
 
         # Now break it up by batches
         output = []

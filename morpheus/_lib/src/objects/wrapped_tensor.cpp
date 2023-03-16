@@ -19,6 +19,7 @@
 
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for ShapeType
+#include "morpheus/utilities/cupy_util.hpp"
 
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
@@ -32,6 +33,7 @@ namespace morpheus {
 /****** TensorObjectInterfaceProxy *************************/
 pybind11::dict TensorObjectInterfaceProxy::cuda_array_interface(TensorObject& self)
 {
+    // See https://numba.readthedocs.io/en/stable/cuda/cuda_array_interface.html
     pybind11::dict array_interface;
 
     pybind11::list shape_list;
@@ -48,24 +50,7 @@ pybind11::dict TensorObjectInterfaceProxy::cuda_array_interface(TensorObject& se
         stride_list.append(idx * self.dtype_size());
     }
 
-    // pybind11::list shape_list = pybind11::cast(self.get_shape());
-
-    pybind11::int_ stream_val = 1;
-
-    // See https://numba.readthedocs.io/en/stable/cuda/cuda_array_interface.html
-    // if (self.get_stream().is_default())
-    // {
-    //     stream_val = 1;
-    // }
-    // else if (self.get_stream().is_per_thread_default())
-    // {
-    //     stream_val = 2;
-    // }
-    // else
-    // {
-    //     // Custom stream. Return value
-    //     stream_val = (int64_t)self.get_stream().value();
-    // }
+    pybind11::int_ stream_val = self.stream();
 
     array_interface["shape"]   = pybind11::cast<pybind11::tuple>(shape_list);
     array_interface["typestr"] = self.get_numpy_typestr();
@@ -84,4 +69,15 @@ pybind11::dict TensorObjectInterfaceProxy::cuda_array_interface(TensorObject& se
 
     return array_interface;
 }
+
+pybind11::object TensorObjectInterfaceProxy::to_cupy(TensorObject& self)
+{
+    return CupyUtil::tensor_to_cupy(self);
+}
+
+TensorObject TensorObjectInterfaceProxy::from_cupy(pybind11::object cupy_array)
+{
+    return CupyUtil::cupy_to_tensor(std::move(cupy_array));
+}
+
 }  // namespace morpheus

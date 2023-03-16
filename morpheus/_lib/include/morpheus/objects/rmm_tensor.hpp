@@ -132,6 +132,8 @@ class RMMTensor : public ITensor
      */
     void get_stride(ShapeType& s) const;
 
+    intptr_t stream() const override;
+
     // Tensor reshape(ShapeType shape)
     // {
     //     CHECK(is_compact());

@@ -19,7 +19,6 @@
 
 #include "morpheus/objects/table_info.hpp"
 
-#include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>
 

@@ -116,6 +116,11 @@ void RMMTensor::get_stride(ShapeType& s) const
     std::copy(m_stride.begin(), m_stride.end(), s.begin());
 }
 
+intptr_t RMMTensor::stream() const
+{
+    return (intptr_t)m_md->stream().value();
+}
+
 bool RMMTensor::is_compact() const
 {
     TensorIndex ttl = 1;
