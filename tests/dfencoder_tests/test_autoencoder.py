@@ -281,6 +281,7 @@ def test_auto_encoder_fit(train_ae, train_df):
     train_ae.optim is train_ae.lr_decay.optimizer
 
 
+@pytest.mark.usefixtures("manual_seed")
 def test_auto_encoder_get_anomaly_score(train_ae, train_df):
     train_ae.fit(train_df, epochs=1)
     anomaly_score = train_ae.get_anomaly_score(train_df)
