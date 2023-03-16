@@ -12,7 +12,7 @@
 # the License.
 # =============================================================================
 
-morpheus_utils_add_pybind11_module(
+morpheus_add_pybind11_module(
     messages
     SOURCE_FILES
       "${MORPHEUS_LIB_ROOT}/src/python_modules/messages.cpp"
