@@ -99,5 +99,12 @@ def read_file_to_df(file_name: str,
             df = filter_null_data(df)
 
         return df
+    elif (mode == FileTypes.PARQUET):
+        df = df_class.read_parquet(file_name, **kwargs)
+
+        if (filter_nulls):
+            df = filter_null_data(df)
+
+        return df
     else:
         assert False, "Unsupported file type mode: {}".format(mode)

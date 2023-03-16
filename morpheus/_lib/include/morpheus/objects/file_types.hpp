@@ -33,7 +33,8 @@ enum class FileTypes : int32_t
 {
     Auto,
     JSON,
-    CSV
+    CSV,
+    PARQUET
 };
 
 FileTypes determine_file_type(const std::string& filename);

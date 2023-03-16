@@ -74,7 +74,8 @@ PYBIND11_MODULE(common, m)
                          "'auto' to determine from the file extension.")
         .value("Auto", FileTypes::Auto)
         .value("JSON", FileTypes::JSON)
-        .value("CSV", FileTypes::CSV);
+        .value("CSV", FileTypes::CSV)
+        .value("PARQUET", FileTypes::PARQUET);
 
     m.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
 
