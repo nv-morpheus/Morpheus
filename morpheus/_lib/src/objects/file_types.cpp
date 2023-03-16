@@ -42,7 +42,7 @@ morpheus::FileTypes morpheus::determine_file_type(const std::string &filename)
     {
         return FileTypes::CSV;
     }
-    if (filename_path.extension() == ".parquet" || filename_path.extension() == "parquet.snappy")
+    if (filename_path.extension() == ".parquet")
     {
         return FileTypes::PARQUET;
     }
