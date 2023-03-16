@@ -116,7 +116,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       );
 
       auto packet_count = packet_count_d.value(processing_stream);
-      
+
       if (packet_count == 0)
       {
         continue;
@@ -206,7 +206,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudf::data_type{cudf::type_to_id<int64_t>()},
         src_mac_out_d_size,
         src_mac_out_d.release());
-      auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
+      auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view(), processing_stream);
 
       // dst_mac address column
       auto dst_mac_out_d_size = dst_mac_out_d.size();
@@ -214,7 +214,9 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudf::data_type{cudf::type_to_id<int64_t>()},
         dst_mac_out_d_size,
         dst_mac_out_d.release());
-      auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(dst_mac_out_d_col->view());
+      auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(dst_mac_out_d_col->view(), processing_stream);
+
+      cudaStreamSyncronize(processing_stream);
 
       // src ip address column
       auto src_ip_out_d_size = src_ip_out_d.size();
@@ -238,7 +240,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudf::data_type{cudf::type_to_id<uint16_t>()},
         src_port_out_d_size,
         src_port_out_d.release());
-    
+
       // dst port column
       auto dst_port_out_d_size = dst_port_out_d.size();
       auto dst_port_out_d_col = std::make_unique<cudf::column>(
@@ -251,28 +253,28 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       auto data_size_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int32_t>()},
         data_size_out_d_size,
-        data_size_out_d.release());        
+        data_size_out_d.release());
 
       // tcp flags column
       auto tcp_flags_out_d_size = tcp_flags_out_d.size();
       auto tcp_flags_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int32_t>()},
         tcp_flags_out_d_size,
-        tcp_flags_out_d.release());            
+        tcp_flags_out_d.release());
 
       // frame type column
       auto ether_type_out_d_size = ether_type_out_d.size();
       auto ether_type_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int32_t>()},
         ether_type_out_d_size,
-        ether_type_out_d.release());   
+        ether_type_out_d.release());
 
       // protocol id column
       auto next_proto_id_out_d_size = next_proto_id_out_d.size();
       auto next_proto_id_out_d_col  = std::make_unique<cudf::column>(
         cudf::data_type{cudf::type_to_id<int32_t>()},
         next_proto_id_out_d_size,
-        next_proto_id_out_d.release());               
+        next_proto_id_out_d.release());
 
       // create dataframe
 
@@ -301,16 +303,16 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       my_columns.push_back(std::move(dst_port_out_d_col));
 
       metadata.column_names.push_back("packet_size");
-      my_columns.push_back(std::move(data_size_out_d_col)); 
+      my_columns.push_back(std::move(data_size_out_d_col));
 
       metadata.column_names.push_back("tcp_flags");
       my_columns.push_back(std::move(tcp_flags_out_d_col));
 
       metadata.column_names.push_back("ether_type");
-      my_columns.push_back(std::move(ether_type_out_d_col)); 
+      my_columns.push_back(std::move(ether_type_out_d_col));
 
       metadata.column_names.push_back("next_proto_id");
-      my_columns.push_back(std::move(next_proto_id_out_d_col));                   
+      my_columns.push_back(std::move(next_proto_id_out_d_col));
 
       metadata.column_names.push_back("data");
       my_columns.push_back(std::move(data_col));
@@ -321,8 +323,6 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       };
 
       auto meta = MessageMeta::create_from_cpp(std::move(my_table_w_metadata), 0);
-
-      cudaStreamSynchronize(processing_stream);
 
       output.on_next(std::move(meta));
     }

@@ -576,6 +576,8 @@ std::unique_ptr<cudf::column> integers_to_mac(
     integers_to_mac_fn{d_column, d_offsets, d_chars}
   );
 
+  CHECK_CUDA(stream);
+
   return cudf::make_strings_column(strings_count,
     std::move(offsets_column),
     std::move(chars_column),
