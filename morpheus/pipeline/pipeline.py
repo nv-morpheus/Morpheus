@@ -18,6 +18,7 @@ import os
 import signal
 import time
 import typing
+from collections import OrderedDict
 from collections import defaultdict
 from functools import partial
 
@@ -28,6 +29,7 @@ from tqdm import tqdm
 import cudf
 
 from morpheus.config import Config
+from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.receiver import Receiver
 from morpheus.pipeline.sender import Sender
 from morpheus.pipeline.source_stage import SourceStage
@@ -36,6 +38,8 @@ from morpheus.pipeline.stream_wrapper import StreamWrapper
 from morpheus.utils.type_utils import pretty_print_type_name
 
 logger = logging.getLogger(__name__)
+
+StageT = typing.TypeVar("StageT", bound=StreamWrapper)
 
 
 class Pipeline():
@@ -96,7 +100,7 @@ class Pipeline():
 
         return x
 
-    def add_stage(self, stage: StreamWrapper, segment_id: str = "main"):
+    def add_stage(self, stage: StageT, segment_id: str = "main") -> StageT:
         """
         Add a stage to a segment in the pipeline.
 
@@ -127,6 +131,8 @@ class Pipeline():
         stage._pipeline = self
 
         segment_graph.add_node(stage)
+
+        return stage
 
     def add_edge(self,
                  start: typing.Union[StreamWrapper, Sender],
@@ -231,7 +237,18 @@ class Pipeline():
         self._mrc_pipeline = mrc.Pipeline()
 
         def inner_build(builder: mrc.Builder, segment_id: str):
+            logger.info(f"====Building Segment: {segment_id}====")
             segment_graph = self._segment_graphs[segment_id]
+
+            # Check if preallocated columns are requested, this needs to happen before the source stages are built
+            needed_columns = OrderedDict()
+            for stage in networkx.topological_sort(segment_graph):
+                needed_columns.update(stage.get_needed_columns())
+
+            if (len(needed_columns) > 0):
+                for stage in segment_graph.nodes():
+                    if (isinstance(stage, PreallocatorMixin)):
+                        stage.set_needed_columns(needed_columns)
 
             # This should be a BFS search from each source nodes; but, since we don't have source stage loops
             # topo_sort provides a reasonable approximation.
@@ -240,7 +257,6 @@ class Pipeline():
                     stage.build(builder)
 
             if (not all([x.is_built for x in segment_graph.nodes()])):
-                # raise NotImplementedError("Circular pipelines are not yet supported!")
                 logger.warning("Cyclic pipeline graph detected! Building with reduced constraints")
 
                 for stage in segment_graph.nodes():
@@ -256,9 +272,10 @@ class Pipeline():
                 for port in stage.input_ports:
                     port.link()
 
+            logger.info("====Building Segment Complete!====")
+
         logger.info("====Building Pipeline====")
         for segment_id in self._segments.keys():
-            logger.info(f"====Building Segment: {segment_id}====")
             segment_ingress_ports = self._segments[segment_id]["ingress_ports"]
             segment_egress_ports = self._segments[segment_id]["egress_ports"]
             segment_inner_build = partial(inner_build, segment_id=segment_id)
@@ -266,7 +283,6 @@ class Pipeline():
             self._mrc_pipeline.make_segment(segment_id, [port_info["port_pair"] for port_info in segment_ingress_ports],
                                             [port_info["port_pair"] for port_info in segment_egress_ports],
                                             segment_inner_build)
-            logger.info("====Building Segment Complete!====")
 
         logger.info("====Building Pipeline Complete!====")
         self._is_build_complete = True

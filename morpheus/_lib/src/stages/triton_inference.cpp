@@ -17,19 +17,19 @@
 
 #include "morpheus/stages/triton_inference.hpp"
 
-#include "morpheus/messages/memory/inference_memory.hpp"       // for InferenceMemory
 #include "morpheus/messages/memory/response_memory_probs.hpp"  // for ResponseMemoryProbs
-#include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory::tensor_map_t
-#include "morpheus/messages/multi_response_probs.hpp"
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorIndex, TensorObject
-#include "morpheus/objects/triton_in_out.hpp"
-#include "morpheus/utilities/matx_util.hpp"
-#include "morpheus/utilities/stage_util.hpp"
-#include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
-#include "morpheus/utilities/type_util.hpp"
-#include "morpheus/utilities/type_util_detail.hpp"  // for DataType
+#include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory
+#include "morpheus/messages/multi_response_probs.hpp"          // for MultiResponseProbsMessage
+#include "morpheus/objects/dev_mem_info.hpp"                   // for DevMemInfo
+#include "morpheus/objects/dtype.hpp"                          // for DType
+#include "morpheus/objects/tensor.hpp"                         // for Tensor::create
+#include "morpheus/objects/tensor_object.hpp"                  // for TensorObject
+#include "morpheus/objects/triton_in_out.hpp"                  // for TritonInOut
+#include "morpheus/types.hpp"                                  // for TensorIndex, TensorMap
+#include "morpheus/utilities/matx_util.hpp"                    // for MatxUtil::logits, MatxUtil::reduce_max
+#include "morpheus/utilities/stage_util.hpp"                   // for foreach_map
+#include "morpheus/utilities/string_util.hpp"                  // for MORPHEUS_CONCAT_STR
+#include "morpheus/utilities/tensor_util.hpp"                  // for get_elem_count
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
 #include <glog/logging.h>
@@ -44,18 +44,20 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <functional>  // for multiplies
+#include <functional>
 #include <memory>
-#include <numeric>  // for accumulate
 #include <sstream>
-#include <stdexcept>    // for runtime_error, out_of_range
-#include <type_traits>  // for declval
+#include <stdexcept>  // for runtime_error, out_of_range
 #include <utility>
 // IWYU pragma: no_include <initializer_list>
 
 #define CHECK_TRITON(method) ::InferenceClientStage__check_triton_errors(method, #method, __FILE__, __LINE__);
 
 namespace {
+
+using namespace morpheus;
+using buffer_map_t = std::map<std::string, std::shared_ptr<rmm::device_buffer>>;
+
 // Component-private free functions.
 void InferenceClientStage__check_triton_errors(triton::client::Error status,
                                                const std::string& methodName,
@@ -72,11 +74,147 @@ void InferenceClientStage__check_triton_errors(triton::client::Error status,
     }
 }
 
-template <typename IndexT>
-inline IndexT get_elem_count(const std::vector<IndexT>& shape)
+void build_output_tensors(TensorIndex count,
+                          const std::vector<TritonInOut>& model_outputs,
+                          buffer_map_t& output_buffers,
+                          TensorMap& output_tensors)
 {
-    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
+    // Create the output memory blocks
+    for (auto& model_output : model_outputs)
+    {
+        ShapeType total_shape = model_output.shape;
+
+        // First dimension will always end up being the number of rows in the dataframe
+        total_shape[0]  = count;
+        auto elem_count = TensorUtils::get_elem_count(total_shape);
+
+        // Create the output memory
+        auto output_buffer = std::make_shared<rmm::device_buffer>(elem_count * model_output.datatype.item_size(),
+                                                                  rmm::cuda_stream_per_thread);
+
+        output_buffers[model_output.mapped_name] = output_buffer;
+
+        // Triton results are always in row-major as required by the KServe protocol
+        // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
+        ShapeType stride{total_shape[1], 1};
+        output_tensors[model_output.mapped_name] =
+            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0);
+    }
 }
+
+ShapeType get_seq_ids(const InferenceClientStage::sink_type_t& message)
+{
+    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
+    // The output tensors we store in `reponse_memory` will all be of the same length as the the
+    // dataframe. seq_ids has three columns, but we are only interested in the first column.
+    auto seq_ids         = message->get_input("seq_ids");
+    const auto item_size = seq_ids.dtype().item_size();
+
+    ShapeType host_seq_ids(message->count);
+    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids.data(),
+                                item_size,
+                                seq_ids.data(),
+                                seq_ids.stride(0) * item_size,
+                                item_size,
+                                host_seq_ids.size(),
+                                cudaMemcpyDeviceToHost));
+
+    return host_seq_ids;
+}
+
+std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>> build_input(
+    const InferenceClientStage::sink_type_t& msg_slice, const TritonInOut& model_input)
+{
+    DCHECK(msg_slice->memory->has_tensor(model_input.mapped_name))
+        << "Model input '" << model_input.mapped_name << "' not found in InferenceMemory";
+
+    auto const& inp_tensor = msg_slice->get_input(model_input.mapped_name);
+
+    // Convert to the right type. Make shallow if necessary
+    auto final_tensor = inp_tensor.as_type(model_input.datatype);
+
+    std::vector<uint8_t> inp_data = final_tensor.get_host_data();
+
+    // Test
+    triton::client::InferInput* inp_ptr;
+
+    triton::client::InferInput::Create(
+        &inp_ptr, model_input.name, {inp_tensor.shape(0), inp_tensor.shape(1)}, model_input.datatype.triton_str());
+
+    std::shared_ptr<triton::client::InferInput> inp_shared;
+    inp_shared.reset(inp_ptr);
+
+    inp_ptr->AppendRaw(inp_data);
+
+    return std::make_pair(inp_shared, std::move(inp_data));
+}
+
+std::shared_ptr<const triton::client::InferRequestedOutput> build_output(const TritonInOut& model_output)
+{
+    triton::client::InferRequestedOutput* out_ptr;
+
+    triton::client::InferRequestedOutput::Create(&out_ptr, model_output.name);
+    std::shared_ptr<const triton::client::InferRequestedOutput> out_shared;
+    out_shared.reset(out_ptr);
+
+    return out_shared;
+}
+
+void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& output_buffers, TensorMap& output_tensors)
+{
+    // When our tensor lengths are longer than our dataframe we will need to use the seq_ids array to
+    // lookup how the values should map back into the dataframe.
+    auto host_seq_ids = get_seq_ids(x);
+
+    TensorMap reduced_outputs;
+
+    for (const auto& output : output_tensors)
+    {
+        auto& tensor = output.second;
+
+        ShapeType shape  = tensor.get_shape();
+        ShapeType stride = tensor.get_stride();
+
+        ShapeType reduced_shape{shape};
+        reduced_shape[0] = x->mess_count;
+
+        auto& buffer = output_buffers[output.first];
+        auto reduced_buffer =
+            MatxUtil::reduce_max(DevMemInfo{buffer, tensor.dtype(), shape, stride}, host_seq_ids, 0, reduced_shape);
+
+        output_buffers[output.first] = reduced_buffer;
+
+        reduced_outputs[output.first] =
+            Tensor::create(std::move(reduced_buffer), tensor.dtype(), reduced_shape, stride, 0);
+    }
+
+    output_tensors = std::move(reduced_outputs);
+}
+
+void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
+{
+    TensorMap logit_outputs;
+
+    for (const auto& output : output_tensors)
+    {
+        auto& input_tensor = output.second;
+
+        auto shape  = input_tensor.get_shape();
+        auto stride = input_tensor.get_stride();
+
+        auto& buffer = output_buffers[output.first];
+
+        auto output_buffer = MatxUtil::logits(DevMemInfo{buffer, input_tensor.dtype(), shape, stride});
+
+        output_buffers[output.first] = output_buffer;
+
+        // For logits the input and output shapes will be the same
+        logit_outputs[output.first] = Tensor::create(std::move(output_buffer), input_tensor.dtype(), shape, stride, 0);
+    }
+
+    output_tensors = std::move(logit_outputs);
+}
+
 }  // namespace
 
 namespace morpheus {
@@ -110,121 +248,33 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output, &client](sink_type_t x) {
-                // When our tensor lengths are longer than our dataframe we will need to use the seq_ids
-                // array to lookup how the values should map back into the dataframe
-                const bool needs_seq_ids = x->mess_count != x->count;
-                std::map<std::string, TensorObject> response_outputs;
+                // Using the `count` which is the number of rows in the inference tensors. We will check later if this
+                // doesn't match the number of rows in the dataframe (`mess_count`). This happens when the size of the
+                // input is too large and needs to be broken up in chunks in the pre-process stage. When this is the
+                // case we will reduce the rows in the response outputs such that we have a single response for each
+                // row int he dataframe.
+                TensorMap output_tensors;
+                buffer_map_t output_buffers;
+                build_output_tensors(x->count, m_model_outputs, output_buffers, output_tensors);
 
-                // Create the output memory blocks
-                for (auto& model_output : m_model_outputs)
-                {
-                    std::vector<TensorIndex> total_shape{model_output.shape.begin(), model_output.shape.end()};
-
-                    // First dimension will always end up being the number of rows in the dataframe
-                    total_shape[0]  = static_cast<TensorIndex>(x->mess_count);
-                    auto elem_count = get_elem_count(total_shape);
-
-                    // Create the output memory
-                    auto output_buffer = std::make_shared<rmm::device_buffer>(
-                        elem_count * model_output.datatype.item_size(), rmm::cuda_stream_per_thread);
-
-                    response_outputs[model_output.mapped_name] = Tensor::create(
-                        std::move(output_buffer), model_output.datatype, total_shape, std::vector<TensorIndex>{}, 0);
-                }
-
-                // This will be the final output of all mini-batches
-                auto response_mem_probs =
-                    std::make_shared<ResponseMemoryProbs>(x->mess_count, std::move(response_outputs));
-                auto response = std::make_shared<MultiResponseProbsMessage>(x->meta,
-                                                                            x->mess_offset,
-                                                                            x->mess_count,
-                                                                            std::move(response_mem_probs),
-                                                                            0,
-                                                                            response_mem_probs->count);
-
-                std::unique_ptr<std::vector<int32_t>> host_seq_ids{nullptr};
-                if (needs_seq_ids)
-                {
-                    // Take a copy of the sequence Ids allowing us to map rows in the response to rows in the dataframe
-                    // The output tensors we store in `reponse_memory` will all be of the same length as the the
-                    // dataframe. seq_ids has three columns, but we are only interested in the first column.
-                    auto seq_ids         = x->get_input("seq_ids");
-                    const auto item_size = seq_ids.dtype().item_size();
-
-                    host_seq_ids = std::make_unique<std::vector<int32_t>>(x->count);
-                    MRC_CHECK_CUDA(cudaMemcpy2D(host_seq_ids->data(),
-                                                item_size,
-                                                seq_ids.data(),
-                                                seq_ids.stride(0) * item_size,
-                                                item_size,
-                                                host_seq_ids->size(),
-                                                cudaMemcpyDeviceToHost));
-                }
-
-                for (size_t i = 0; i < x->count; i += m_max_batch_size)
+                for (TensorIndex start = 0; start < x->count; start += m_max_batch_size)
                 {
                     triton::client::InferInput* input1;
 
-                    size_t start = i;
-                    size_t stop  = std::min(i + m_max_batch_size, x->count);
+                    TensorIndex stop = std::min(start + m_max_batch_size, x->count);
 
                     sink_type_t mini_batch_input = x->get_slice(start, stop);
 
-                    size_t out_start = start;
-                    size_t out_stop  = stop;
-                    if (needs_seq_ids)
-                    {
-                        out_start = (*host_seq_ids)[out_start];
-                        if (out_stop < host_seq_ids->size())
-                        {
-                            out_stop = (*host_seq_ids)[out_stop];
-                        }
-                        else
-                        {
-                            out_stop = x->mess_count;
-                        }
-                    }
-
-                    source_type_t mini_batch_output = response->get_slice(out_start, out_stop);
-
                     // Iterate on the model inputs in case the model takes less than what tensors are available
                     std::vector<std::pair<std::shared_ptr<triton::client::InferInput>, std::vector<uint8_t>>>
-                        saved_inputs = foreach_map(m_model_inputs, [this, &mini_batch_input](auto const& model_input) {
-                            DCHECK(mini_batch_input->memory->has_tensor(model_input.mapped_name))
-                                << "Model input '" << model_input.mapped_name << "' not found in InferenceMemory";
-
-                            auto const& inp_tensor = mini_batch_input->get_input(model_input.mapped_name);
-
-                            // Convert to the right type. Make shallow if necessary
-                            auto final_tensor = inp_tensor.as_type(model_input.datatype);
-
-                            std::vector<uint8_t> inp_data = final_tensor.get_host_data();
-
-                            // Test
-                            triton::client::InferInput* inp_ptr;
-
-                            triton::client::InferInput::Create(&inp_ptr,
-                                                               model_input.name,
-                                                               {inp_tensor.shape(0), inp_tensor.shape(1)},
-                                                               model_input.datatype.triton_str());
-                            std::shared_ptr<triton::client::InferInput> inp_shared;
-                            inp_shared.reset(inp_ptr);
-
-                            inp_ptr->AppendRaw(inp_data);
-
-                            return std::make_pair(inp_shared, std::move(inp_data));
+                        saved_inputs = foreach_map(m_model_inputs, [&mini_batch_input](auto const& model_input) {
+                            return (build_input(mini_batch_input, model_input));
                         });
 
                     std::vector<std::shared_ptr<const triton::client::InferRequestedOutput>> saved_outputs =
-                        foreach_map(m_model_outputs, [this](auto const& model_output) {
+                        foreach_map(m_model_outputs, [](auto const& model_output) {
                             // Generate the outputs to be requested.
-                            triton::client::InferRequestedOutput* out_ptr;
-
-                            triton::client::InferRequestedOutput::Create(&out_ptr, model_output.name);
-                            std::shared_ptr<const triton::client::InferRequestedOutput> out_shared;
-                            out_shared.reset(out_ptr);
-
-                            return out_shared;
+                            return build_output(model_output);
                         });
 
                     std::vector<triton::client::InferInput*> inputs =
@@ -232,8 +282,6 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
 
                     std::vector<const triton::client::InferRequestedOutput*> outputs =
                         foreach_map(saved_outputs, [](auto x) { return x.get(); });
-
-                    // this->segment().resources().fiber_pool().enqueue([client, output](){});
 
                     triton::client::InferResult* results;
 
@@ -255,58 +303,37 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                         size_t output_ptr_size    = 0;
                         CHECK_TRITON(results->RawData(model_output.name, &output_ptr, &output_ptr_size));
 
-                        auto output_buffer =
-                            std::make_shared<rmm::device_buffer>(output_ptr_size, rmm::cuda_stream_per_thread);
+                        auto output_tensor = output_tensors[model_output.mapped_name].slice({start, 0}, {stop, -1});
+
+                        DCHECK_EQ(stop - start, output_shape[0]);
+                        DCHECK_EQ(output_tensor.bytes(), output_ptr_size);
 
                         MRC_CHECK_CUDA(
-                            cudaMemcpy(output_buffer->data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
-
-                        if (needs_seq_ids && output_shape[0] != mini_batch_output->count)
-                        {
-                            // Since we are working with slices of both the input and the output, the seq_ids have
-                            // already been applied to the output's start & stop, so we only need to reduce the
-                            // response tensort when the size doesn't match our output
-                            std::vector<int64_t> mapped_output_shape{output_shape};
-                            mapped_output_shape[0] = mini_batch_output->count;
-
-                            // The shape of the triton output is the input to the reduce_max method
-                            std::vector<std::size_t> input_shape(output_shape.size());
-                            std::copy(output_shape.cbegin(), output_shape.cend(), input_shape.begin());
-
-                            // Triton results are always in row-major as required by the KServe protocol
-                            // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
-                            std::vector<std::size_t> stride{static_cast<std::size_t>(output_shape[1]), 1};
-                            output_buffer = MatxUtil::reduce_max(
-                                DevMemInfo{output_buffer, model_output.datatype, input_shape, stride},
-                                *host_seq_ids,
-                                mini_batch_input->offset,
-                                mapped_output_shape);
-                            output_shape = std::move(mapped_output_shape);
-                        }
-
-                        // If we need to do logits, do that here
-                        if (m_needs_logits)
-                        {
-                            std::vector<std::size_t> input_shape(output_shape.size());
-                            std::copy(output_shape.cbegin(), output_shape.cend(), input_shape.begin());
-
-                            output_buffer =
-                                MatxUtil::logits(DevMemInfo{output_buffer,
-                                                            model_output.datatype,
-                                                            input_shape,
-                                                            {static_cast<std::size_t>(output_shape[1]), 1}});
-                        }
-
-                        mini_batch_output->set_output(
-                            model_output.mapped_name,
-                            Tensor::create(std::move(output_buffer),
-                                           model_output.datatype,
-                                           std::vector<TensorIndex>{static_cast<TensorIndex>(output_shape[0]),
-                                                                    static_cast<TensorIndex>(output_shape[1])},
-                                           std::vector<TensorIndex>{},
-                                           0));
+                            cudaMemcpy(output_tensor.data(), output_ptr, output_ptr_size, cudaMemcpyHostToDevice));
                     }
                 }
+
+                if (x->mess_count != x->count)
+                {
+                    reduce_outputs(x, output_buffers, output_tensors);
+                }
+
+                // If we need to do logits, do that here
+                if (m_needs_logits)
+                {
+                    apply_logits(output_buffers, output_tensors);
+                }
+
+                // Final output of all mini-batches
+                auto response_mem_probs =
+                    std::make_shared<ResponseMemoryProbs>(x->mess_count, std::move(output_tensors));
+                auto response = std::make_shared<MultiResponseProbsMessage>(x->meta,
+                                                                            x->mess_offset,
+                                                                            x->mess_count,
+                                                                            std::move(response_mem_probs),
+                                                                            0,
+                                                                            response_mem_probs->count);
+
                 output.on_next(std::move(response));
             },
             [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
@@ -390,12 +417,12 @@ void InferenceClientStage::connect_with_server()
 
     if (model_config.contains("max_batch_size"))
     {
-        m_max_batch_size = model_config.at("max_batch_size").get<int>();
+        m_max_batch_size = model_config.at("max_batch_size").get<TensorIndex>();
     }
 
     for (auto const& input : model_metadata.at("inputs"))
     {
-        auto shape = input.at("shape").get<std::vector<int>>();
+        auto shape = input.at("shape").get<ShapeType>();
 
         auto dtype = DType::from_triton(input.at("datatype").get<std::string>());
 
@@ -411,7 +438,7 @@ void InferenceClientStage::connect_with_server()
             bytes *= y;
         }
 
-        std::string mapped_name = input.at("name").get<std::string>();
+        auto mapped_name = input.at("name").get<std::string>();
 
         if (m_inout_mapping.find(mapped_name) != m_inout_mapping.end())
         {
@@ -428,7 +455,7 @@ void InferenceClientStage::connect_with_server()
 
     for (auto const& output : model_metadata.at("outputs"))
     {
-        auto shape = output.at("shape").get<std::vector<int>>();
+        auto shape = output.at("shape").get<ShapeType>();
 
         auto dtype = DType::from_triton(output.at("datatype").get<std::string>());
 
@@ -444,7 +471,7 @@ void InferenceClientStage::connect_with_server()
             bytes *= y;
         }
 
-        std::string mapped_name = output.at("name").get<std::string>();
+        auto mapped_name = output.at("name").get<std::string>();
 
         if (m_inout_mapping.find(mapped_name) != m_inout_mapping.end())
         {

@@ -18,13 +18,11 @@
 #pragma once
 
 #include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorMap
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
-#include <cstddef>
 #include <memory>
 
 namespace morpheus {
@@ -50,28 +48,30 @@ class ResponseMemoryProbs : public ResponseMemory
      * @param count
      * @param probs
      */
-    ResponseMemoryProbs(size_t count, TensorObject probs);
+    ResponseMemoryProbs(TensorIndex count, TensorObject&& probs);
     /**
      * @brief Construct a new Response Memory Probs object
      *
      * @param count
      * @param tensors
      */
-    ResponseMemoryProbs(size_t count, tensor_map_t &&tensors);
+    ResponseMemoryProbs(TensorIndex count, TensorMap&& tensors);
 
     /**
-     * @brief Returns the tensor named 'probs', throws a `std::runtime_error` if it does not exist
+     * @brief Returns the tensor named 'probs'. alias for `get_tensor("probs")`
      *
      * @return const TensorObject&
+     * @throws std::runtime_error If no tensor named "probs" exists
      */
-    const TensorObject &get_probs() const;
+    const TensorObject& get_probs() const;
 
     /**
      * @brief Update the tensor named 'probs'
      *
      * @param probs
+     * @throws std::length_error If the number of rows in `probs` does not match `count`.
      */
-    void set_probs(TensorObject probs);
+    void set_probs(TensorObject&& probs);
 };
 
 /****** ResponseMemoryProbsInterfaceProxy*******************/
@@ -79,7 +79,7 @@ class ResponseMemoryProbs : public ResponseMemory
 /**
  * @brief Interface proxy, used to insulate python bindings
  */
-struct ResponseMemoryProbsInterfaceProxy
+struct ResponseMemoryProbsInterfaceProxy : public ResponseMemoryInterfaceProxy
 {
     /**
      * @brief Create and initialize a ResponseMemoryProbs object, and return a shared pointer to the result
@@ -88,31 +88,24 @@ struct ResponseMemoryProbsInterfaceProxy
      * @param probs
      * @return std::shared_ptr<ResponseMemoryProbs>
      */
-    static std::shared_ptr<ResponseMemoryProbs> init(cudf::size_type count, pybind11::object probs);
+    static std::shared_ptr<ResponseMemoryProbs> init(TensorIndex count, pybind11::object probs);
 
     /**
-     * @brief Get messages count in the response memory probs object
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(ResponseMemoryProbs &self);
-
-    /**
-     * @brief Get the response memory probs object
+     * @brief Get the response memory probs object ()
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::key_error When no tensor named "probs" exists.
      */
-    static pybind11::object get_probs(ResponseMemoryProbs &self);
+    static pybind11::object get_probs(ResponseMemoryProbs& self);
 
     /**
-     * @brief Set the response memory probs object
+     * @brief Set the response memory probs object (alias for `set_tensor("probs", cupy_values)`)
      *
      * @param self
      * @param cupy_values
      */
-    static void set_probs(ResponseMemoryProbs &self, pybind11::object cupy_values);
+    static void set_probs(ResponseMemoryProbs& self, pybind11::object cupy_values);
 };
 #pragma GCC visibility pop
 

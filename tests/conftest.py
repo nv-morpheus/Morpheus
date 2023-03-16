@@ -377,6 +377,7 @@ def _camouflage_is_running():
 
     # Actually launch camoflague
     if launch_camouflage:
+        popen = None
         try:
             popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
                                      cwd=root_dir,
@@ -402,20 +403,20 @@ def _camouflage_is_running():
             logger.exception("Error launching camouflage")
             raise
         finally:
+            if popen is not None:
+                logger.info("Killing camouflage with pid {}".format(popen.pid))
 
-            logger.info("Killing camouflage with pid {}".format(popen.pid))
+                elapsed_time = 0.0
+                sleep_time = 0.1
+                stopped = False
 
-            elapsed_time = 0.0
-            sleep_time = 0.1
-            stopped = False
-
-            # It takes a little while to shutdown
-            while not stopped and elapsed_time < shutdown_timeout:
-                popen.kill()
-                stopped = (popen.poll() is not None)
-                if not stopped:
-                    time.sleep(sleep_time)
-                    elapsed_time += sleep_time
+                # It takes a little while to shutdown
+                while not stopped and elapsed_time < shutdown_timeout:
+                    popen.kill()
+                    stopped = (popen.poll() is not None)
+                    if not stopped:
+                        time.sleep(sleep_time)
+                        elapsed_time += sleep_time
 
     else:
 
@@ -479,6 +480,22 @@ def _wrap_set_log_level(log_level: int):
 
     # Save the previous logging level
     old_level = set_log_level(log_level)
+
+    yield
+
+    set_log_level(old_level)
+
+
+@pytest.fixture(scope="function")
+def reset_loglevel():
+    """
+    Fixture restores the log level after running the given test.
+    """
+    import mrc
+
+    from morpheus.utils.logger import set_log_level
+
+    old_level = mrc.logging.get_level()
 
     yield
 

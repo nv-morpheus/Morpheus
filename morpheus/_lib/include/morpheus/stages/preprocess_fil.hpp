@@ -19,20 +19,23 @@
 
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/table_info.hpp"
 
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <boost/fiber/future/future.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
+#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace morpheus {
+
 /****** Component public implementations *******************/
 /****** PreprocessFILStage**********************************/
 
@@ -67,6 +70,8 @@ class PreprocessFILStage
      * TODO(Documentation)
      */
     subscribe_fn_t build_operator();
+
+    TableInfo fix_bad_columns(sink_type_t x);
 
     std::vector<std::string> m_fea_cols;
     std::string m_vocab_file;

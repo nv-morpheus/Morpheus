@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -77,9 +77,10 @@ docker run --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 -v /opt/triton_mode
 
 ## MLflow container
 
-Build MLflow image from Dockerfile:
+Build MLflow image from Dockerfile, from the root of the Morpheus repo:
 
 ```bash
+cd models/mlflow
 docker build -t mlflow-triton-plugin:latest -f docker/Dockerfile .
 ```
 
@@ -88,6 +89,7 @@ Create an MLflow container with a volume mounting the Triton model repository:
 ```bash
 docker run -it -v /opt/triton_models:/triton_models \
 --env TRITON_MODEL_REPO=/triton_models \
+--env MLFLOW_TRACKING_URI=localhost:5000 \
 --gpus '"device=0"' \
 --net=host \
 --rm \

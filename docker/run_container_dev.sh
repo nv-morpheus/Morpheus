@@ -31,9 +31,7 @@ DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
 #DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} -v $PWD:/workspace --net=host --gpus=all --cap-add=sys_nice"
 DOCKER_ARGS="--runtime=nvidia --env WORKSPACE_VOLUME=${PWD} -v $PWD:/workspace --net=host --gpus all --cap-add=sys_nice"
 
-if [[ -z "${SSH_AUTH_SOCK}" ]]; then
-   echo -e "${y}No ssh-agent auth socket found. Dependencies in private git repos may fail during build.${x}"
-else
+if [[ -n "${SSH_AUTH_SOCK}" ]]; then
    echo -e "${b}Setting up ssh-agent auth socket${x}"
    DOCKER_ARGS="${DOCKER_ARGS} -v $(readlink -f $SSH_AUTH_SOCK):/ssh-agent:ro -e SSH_AUTH_SOCK=/ssh-agent"
 fi

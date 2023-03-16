@@ -18,18 +18,10 @@
 #include "morpheus/messages/multi_inference.hpp"
 
 #include "morpheus/messages/memory/inference_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory::tensor_map_t
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
-#include "morpheus/utilities/cupy_util.hpp"
 
-#include <cudf/types.hpp>
-#include <glog/logging.h>
-#include <pybind11/pytypes.h>
-
-#include <cstdint>  // for int32_t
 #include <memory>
-#include <ostream>  // needed for logging
 #include <string>
 #include <utility>
 
@@ -37,25 +29,25 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** <MultiInferenceMessage>****************************************/
 MultiInferenceMessage::MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                                             std::size_t mess_offset,
-                                             std::size_t mess_count,
+                                             TensorIndex mess_offset,
+                                             TensorIndex mess_count,
                                              std::shared_ptr<morpheus::InferenceMemory> memory,
-                                             std::size_t offset,
-                                             std::size_t count) :
+                                             TensorIndex offset,
+                                             TensorIndex count) :
   DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
-const TensorObject MultiInferenceMessage::get_input(const std::string &name) const
+const TensorObject MultiInferenceMessage::get_input(const std::string& name) const
 {
     return get_tensor(name);
 }
 
-TensorObject MultiInferenceMessage::get_input(const std::string &name)
+TensorObject MultiInferenceMessage::get_input(const std::string& name)
 {
     return get_tensor(name);
 }
 
-void MultiInferenceMessage::set_input(const std::string &name, const TensorObject &value)
+void MultiInferenceMessage::set_input(const std::string& name, const TensorObject& value)
 {
     set_tensor(name, value);
 }
@@ -63,42 +55,14 @@ void MultiInferenceMessage::set_input(const std::string &name, const TensorObjec
 /****** <MultiInferenceMessage>InterfaceProxy *************************/
 std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::init(
     std::shared_ptr<MessageMeta> meta,
-    cudf::size_type mess_offset,
-    cudf::size_type mess_count,
+    TensorIndex mess_offset,
+    TensorIndex mess_count,
     std::shared_ptr<InferenceMemory> memory,
-    cudf::size_type offset,
-    cudf::size_type count)
+    TensorIndex offset,
+    TensorIndex count)
 {
     return std::make_shared<MultiInferenceMessage>(
         std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
 }
 
-std::shared_ptr<morpheus::InferenceMemory> MultiInferenceMessageInterfaceProxy::memory(MultiInferenceMessage &self)
-{
-    DCHECK(std::dynamic_pointer_cast<morpheus::InferenceMemory>(self.memory) != nullptr);
-    return std::static_pointer_cast<morpheus::InferenceMemory>(self.memory);
-}
-
-std::size_t MultiInferenceMessageInterfaceProxy::offset(MultiInferenceMessage &self)
-{
-    return self.offset;
-}
-
-std::size_t MultiInferenceMessageInterfaceProxy::count(MultiInferenceMessage &self)
-{
-    return self.count;
-}
-
-pybind11::object MultiInferenceMessageInterfaceProxy::get_input(MultiInferenceMessage &self, const std::string &name)
-{
-    const auto &py_tensor = CupyUtil::tensor_to_cupy(self.get_input(name));
-    return py_tensor;
-}
-
-std::shared_ptr<MultiInferenceMessage> MultiInferenceMessageInterfaceProxy::get_slice(MultiInferenceMessage &self,
-                                                                                      std::size_t start,
-                                                                                      std::size_t stop)
-{
-    return self.get_slice(start, stop);
-}
 }  // namespace morpheus

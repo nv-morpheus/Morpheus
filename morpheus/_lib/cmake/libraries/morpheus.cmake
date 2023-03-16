@@ -49,6 +49,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/fiber_queue.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/file_types.cpp
+    ${MORPHEUS_LIB_ROOT}/src/objects/mutable_table_ctx_mgr.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/wrapped_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/python_data_table.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/rmm_tensor.cpp
@@ -59,6 +60,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/stages/file_source.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/filter_detection.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/kafka_source.cpp
+    ${MORPHEUS_LIB_ROOT}/src/stages/preallocate.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/preprocess_fil.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/preprocess_nlp.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/serialize.cpp
@@ -84,6 +86,7 @@ target_link_libraries(morpheus
 target_include_directories(morpheus
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
 )
 
 if(MORPHEUS_SUPPORT_DOCA)
@@ -131,14 +134,11 @@ set_target_properties(morpheus PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set_target_properties(morpheus PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(morpheus PROPERTIES CUDA_STANDARD 17)
 
-message(STATUS " Install dest: (morpheus) ${MORPHEUS_LIB_INSTALL_DIR}")
 install(
     TARGETS
       morpheus
     EXPORT
       ${PROJECT_NAME}-exports
-    LIBRARY DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}"
     COMPONENT Wheel
 )
 

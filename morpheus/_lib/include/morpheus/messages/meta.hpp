@@ -19,14 +19,14 @@
 
 #include "morpheus/objects/data_table.hpp"  // for IDataTable
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cudf/io/types.hpp>
-#include <cudf/types.hpp>  // for size_type
 #include <pybind11/pytypes.h>
 
-#include <cstddef>  // for size_t
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 #pragma GCC visibility push(default)
@@ -38,6 +38,8 @@ namespace morpheus {
  * @{
  * @file
  */
+
+class MutableTableCtxMgr;
 
 /**
  * @brief Container for class holding a data table, in practice a cudf DataFrame, with the ability to return both
@@ -52,21 +54,19 @@ class MessageMeta
      *
      * @return pybind11::object
      */
-    pybind11::object get_py_table() const;
-
-    /**
-     * @brief Get messages count
-     *
-     * @return size_t
-     */
-    size_t count() const;
+    TensorIndex count() const;
 
     /**
      * @brief Get the info object
      *
      * @return TableInfo
      */
-    TableInfo get_info() const;
+    virtual TableInfo get_info() const;
+
+    /**
+     * TODO(Documentation)
+     */
+    virtual MutableTableInfo get_mutable_info() const;
 
     /**
      * @brief Create MessageMeta cpp object from a python object
@@ -86,7 +86,7 @@ class MessageMeta
     static std::shared_ptr<MessageMeta> create_from_cpp(cudf::io::table_with_metadata&& data_table,
                                                         int index_col_count = 0);
 
-  private:
+  protected:
     MessageMeta(std::shared_ptr<IDataTable> data);
 
     /**
@@ -101,6 +101,30 @@ class MessageMeta
     std::shared_ptr<IDataTable> m_data;
 };
 
+/**
+ * @brief Operates similarly to MessageMeta, except it applies a filter on the columns and rows. Used by Serialization
+ * to filter columns without copying the entire DataFrame
+ *
+ */
+class SlicedMessageMeta : public MessageMeta
+{
+  public:
+    SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
+                      TensorIndex start                = 0,
+                      TensorIndex stop                 = -1,
+                      std::vector<std::string> columns = {});
+
+    TableInfo get_info() const override;
+
+    MutableTableInfo get_mutable_info() const override;
+
+  private:
+    TensorIndex m_start{0};
+    TensorIndex m_stop{-1};
+    std::vector<std::string> m_column_names;
+};
+
+/****** Python Interface **************************/
 /****** MessageMetaInterfaceProxy**************************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
@@ -127,18 +151,22 @@ struct MessageMetaInterfaceProxy
      * @brief Get messages count
      *
      * @param self
-     * @return cudf::size_type
+     * @return TensorIndex
      */
-    static cudf::size_type count(MessageMeta& self);
+    static TensorIndex count(MessageMeta& self);
 
     /**
-     * @brief Get the data frame object
+     * @brief Get a copy of the data frame object as a python object
      *
-     * @param self
-     * @return pybind11::object
+     * @param self The MessageMeta instance
+     * @return pybind11::object A `DataFrame` object
      */
     static pybind11::object get_data_frame(MessageMeta& self);
+    static pybind11::object df_property(MessageMeta& self);
+
+    static MutableTableCtxMgr mutable_dataframe(MessageMeta& self);
 };
+
 #pragma GCC visibility pop
 /** @} */  // end of group
 }  // namespace morpheus

@@ -30,8 +30,14 @@ dependencies:
     - click >=8
     - cmake=3.24
     - configargparse=1.5
+<<<<<<< HEAD:docker/conda/environments/cuda11.7.0_dev.yml
     - cuda-nvml-dev=11.7
     - cudatoolkit=11.7
+=======
+    - cuda-nvml-dev=11.8
+    - cuda-python<=11.7.0 # Remove when Issue #251 is closed
+    - cudatoolkit=11.8
+>>>>>>> 1493694cd106a2e89bf888ada771a15efc66afa4:docker/conda/environments/cuda11.8_dev.yml
     - cudf 22.10
     - cupy=9.5.0
     - cython=0.29.24
@@ -56,14 +62,14 @@ dependencies:
     - isort
     - librdkafka=1.7.0
     - mlflow>1.29,<2
-    - mrc=23.01
+    - mrc=23.03
     - myst-parser==0.17
     - networkx=2.8
     - ninja=1.10
     - nodejs=17.4.0
     - numba>=0.56.2
     - numpydoc=1.4
-    - nvcc_linux-64=11.5
+    - nvcc_linux-64=11.8
     - pandas=1.3
     - pip
     - pkg-config # for mrc cmake
