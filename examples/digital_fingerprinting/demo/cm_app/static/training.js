@@ -4,7 +4,6 @@ $(document).ready(function() {
        submitForm();
     });
     
-    
   // Function to convert inputs-container and child data to JSON
   function submitForm() {
     // get all the input fields in the inputs-container div

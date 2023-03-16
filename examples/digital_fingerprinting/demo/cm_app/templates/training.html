@@ -23,11 +23,11 @@
                <label for="sampling_rate_s">Sampling Rate (s):</label><input type="number" name="sampling_rate_s" id="sampling_rate_s" placeholder="Ex: 0" required>
             </div>
             <div>
-               <label for="start_time">Start Time:</label><input type="text" name="start_time" id="start_time" placeholder="Ex: YYYY-MM-DD" required>
-            </div>
-            <div>
-               <label for="end_time">End Time:</label><input type="text" name="end_time" id="end_time" placeholder="Ex: YYYY-MM-DD" required>
-            </div>
+               <label for="start_time">Start Time:</label><input type="date" name="start_time" id="start_time" required>
+           </div>
+           <div>
+               <label for="end_time">End Time:</label><input type="date" name="end_time" id="end_time" required>
+           </div>           
          </div>
          <div class="btn-block">
             <button id="submit" href="/training" >Submit</button>
