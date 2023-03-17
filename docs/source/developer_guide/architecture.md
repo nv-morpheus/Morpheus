@@ -49,6 +49,12 @@ A stage is the fundamental building block in Morpheus and is responsible for per
 
 While stages are very flexible, they all comprise three main pieces: identification, type inference, and node creation.
 
+## Morpheus Modules
+Modules, introduced in the 23.03 release, introduce a new method for defining units of work which are compact, 
+composable, nestable, and fully reusable. Once a module has been defined and registered, it can be used in new and 
+existing pipelines as either a new ModuleStage or loaded directly within the context of an existing stage using 
+`builder.load_module(...)`. 
+
 ### Identification
 The stage identifier is a unique string used in both logging and creating the stage from the CLI.
 
