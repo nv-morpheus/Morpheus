@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
-ARG CUDA_VER=11.5.1
+ARG CUDA_VER=11.8
 ARG LINUX_VER=ubuntu20.04
 ARG PYTHON_VER=3.8
 FROM ${FROM_IMAGE}:cuda${CUDA_VER}-base-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base

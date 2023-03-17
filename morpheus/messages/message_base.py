@@ -14,6 +14,7 @@
 
 import abc
 import dataclasses
+import functools
 import typing
 
 from morpheus.config import CppConfig
@@ -29,8 +30,8 @@ class MessageImpl(abc.ABCMeta):
 
     _cpp_class: typing.Union[type, typing.Callable] = None
 
-    def __new__(cls, classname, bases, classdict, cpp_class=None):
-        result = super().__new__(cls, classname, bases, classdict)
+    def __new__(cls, name, bases, namespace, /, cpp_class=None, **kwargs):
+        result = super().__new__(cls, name, bases, namespace, **kwargs)
 
         # Set the C++ class type into the object to use for creation later if desired
         result._cpp_class = cpp_class
@@ -38,6 +39,19 @@ class MessageImpl(abc.ABCMeta):
         # Register the C++ class as an instances of this metaclass to support isinstance(cpp_instance, PythonClass)
         if (cpp_class is not None):
             result.register(cpp_class)
+
+            # Wrap __new__ to attempt to provide the right type annotations
+            @functools.wraps(result.__new__)
+            def _internal_new(other_cls, *args, **kwargs):
+
+                # If _cpp_class is set, and use_cpp is enabled, create the C++ instance
+                if (getattr(other_cls, "_cpp_class", None) is not None and CppConfig.get_should_use_cpp()):
+                    return cpp_class(*args, **kwargs)
+
+                # Otherwise, do the default init
+                return object.__new__(other_cls)
+
+            result.__new__ = _internal_new
 
         return result
 
@@ -47,15 +61,6 @@ class MessageBase(metaclass=MessageImpl):
     Base class for all messages. Returns a C++ implementation if `CppConfig.get_should_use_cpp()` is `True` and the
     class has an associated C++ implementation (`cpp_class`), returns the Python implementation for all others.
     """
-
-    def __new__(cls, *args, **kwargs):
-
-        # If _cpp_class is set, and use_cpp is enabled, create the C++ instance
-        if (getattr(cls, "_cpp_class", None) is not None and CppConfig.get_should_use_cpp()):
-            return cls._cpp_class(*args, **kwargs)
-
-        # Otherwise, do the default init
-        return super().__new__(cls)
 
 
 @dataclasses.dataclass

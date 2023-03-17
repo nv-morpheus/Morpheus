@@ -29,13 +29,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiInferenceNLPMessage****************************************/
-MultiInferenceNLPMessage::MultiInferenceNLPMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+MultiInferenceNLPMessage::MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
                                                    TensorIndex mess_offset,
                                                    TensorIndex mess_count,
-                                                   std::shared_ptr<morpheus::InferenceMemory> memory,
+                                                   std::shared_ptr<InferenceMemory> memory,
                                                    TensorIndex offset,
                                                    TensorIndex count) :
-  MultiInferenceMessage(meta, mess_offset, mess_count, memory, offset, count)
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
 const TensorObject MultiInferenceNLPMessage::get_input_ids() const
@@ -95,4 +95,5 @@ pybind11::object MultiInferenceNLPMessageInterfaceProxy::seq_ids(MultiInferenceN
 {
     return get_tensor_property(self, "seq_ids");
 }
+
 }  // namespace morpheus
