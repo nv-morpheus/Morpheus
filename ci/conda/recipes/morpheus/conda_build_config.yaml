@@ -23,7 +23,7 @@ cuda_compiler:
   - nvcc
 
 cuda_compiler_version:
-  - 11.5
+  - 11.8
 
 python:
   - 3.8

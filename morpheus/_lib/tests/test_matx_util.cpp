@@ -20,6 +20,7 @@
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 #include "morpheus/utilities/matx_util.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpyDeviceToHost, cudaMemcpyHostToDevice
@@ -33,7 +34,7 @@
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>
 
-#include <cstdint>  // for int64_t, int32_t, uint8_t
+#include <cstdint>  // for int64_t, uint8_t
 #include <cstdlib>  // for std::getenv
 #include <memory>   // for shared_ptr, make_shared, unique_ptr
 #include <vector>
@@ -46,7 +47,7 @@ TEST_F(TestMatxUtil, ReduceMax1d)
 {
     // Test mimics example from the method's docstring
     std::vector<float> input{5, 2, 8, 9, 8, 2, 1};
-    std::vector<int32_t> seq_ids{0, 0, 0, 1, 2, 3, 3};
+    ShapeType seq_ids{0, 0, 0, 1, 2, 3, 3};
     std::vector<float> expected_output{8, 9, 8, 2};
 
     DType dtype(TypeId::FLOAT32);
@@ -56,8 +57,8 @@ TEST_F(TestMatxUtil, ReduceMax1d)
 
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
-    DevMemInfo dm{input_buffer, dtype, {input.size(), 1}, {1, 0}};
-    std::vector<std::size_t> output_shape{expected_output.size(), 1};
+    DevMemInfo dm{input_buffer, dtype, {static_cast<TensorIndex>(input.size()), 1}, {1, 0}};
+    ShapeType output_shape{static_cast<TensorIndex>(expected_output.size()), 1};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     std::vector<float> output(expected_output.size());
@@ -85,7 +86,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
         0.1, 0.9, 0.1, 0.3};
 
     // reducing 12 rows down to 5
-    std::vector<int32_t> seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4};
+    ShapeType seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4};
 
     std::vector<double> expected_output{
         1.0, 0.9, 0.7, 0.9,
@@ -96,9 +97,9 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     // clang-format on
 
     // Copy data from table into one big buffer
-    std::size_t num_cols      = 4;
-    std::size_t num_rows      = 12;
-    std::size_t expected_rows = expected_output.size() / num_cols;
+    TensorIndex num_cols      = 4;
+    TensorIndex num_rows      = 12;
+    TensorIndex expected_rows = expected_output.size() / num_cols;
 
     EXPECT_EQ(num_cols * num_rows, input.size());
     EXPECT_EQ(expected_rows, 5);
@@ -111,7 +112,7 @@ TEST_F(TestMatxUtil, ReduceMax2dRowMajor)
     MRC_CHECK_CUDA(cudaMemcpy(input_buffer->data(), input.data(), input_buffer->size(), cudaMemcpyHostToDevice));
 
     DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {num_cols, 1}};
-    std::vector<std::size_t> output_shape{expected_rows, num_cols};
+    ShapeType output_shape{expected_rows, num_cols};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
@@ -132,8 +133,8 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     auto input_file    = morpheus_root / "tests/tests_data/filter_probs.csv";
 
     auto table_m  = morpheus::load_table_from_file(input_file);
-    auto num_rows = static_cast<std::size_t>(table_m.tbl->num_rows());
-    auto num_cols = static_cast<std::size_t>(table_m.tbl->num_columns());
+    auto num_rows = table_m.tbl->num_rows();
+    auto num_cols = table_m.tbl->num_columns();
 
     EXPECT_EQ(num_rows, 20);
     EXPECT_EQ(num_cols, 4);
@@ -160,7 +161,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     EXPECT_EQ(offset, buff_size);
 
     // reducing 20 rows down to 12
-    std::vector<int32_t> seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 7, 7, 7, 8, 9, 9, 10, 11};
+    ShapeType seq_ids{0, 0, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 7, 7, 7, 8, 9, 9, 10, 11};
     // disabling formatting so I can enter the literal values by column
     // clang-format off
     std::vector<double> expected_output{0.1, 1.0, 1.0, 1.0, 0.5, 0.3, 0.9, 0.5, 0.0, 0.6, 0.8, 0.1,
@@ -172,7 +173,7 @@ TEST_F(TestMatxUtil, ReduceMax2dColMajor)
     EXPECT_EQ(expected_rows * num_cols, expected_output.size());
 
     DevMemInfo dm{input_buffer, dtype, {num_rows, num_cols}, {1, num_rows}};
-    std::vector<std::size_t> output_shape{expected_rows, num_cols};
+    ShapeType output_shape{expected_rows, num_cols};
     auto output_buffer = MatxUtil::reduce_max(dm, seq_ids, 0, output_shape);
 
     EXPECT_EQ(output_buffer->size(), expected_rows * num_cols * dtype.item_size());
@@ -238,8 +239,8 @@ TEST_F(TestMatxUtil, Threshold)
     };
     // clang-format on
 
-    std::size_t num_cols = 4;
-    std::size_t num_rows = 5;
+    TensorIndex num_cols = 4;
+    TensorIndex num_rows = 5;
     EXPECT_EQ(num_cols * num_rows, input.size());
 
     DType dtype(TypeId::FLOAT32);
@@ -256,13 +257,13 @@ TEST_F(TestMatxUtil, Threshold)
     // output and output_by_row are holding 1-byte bool values, so the byte size and element size should be the same
     EXPECT_EQ(output->size(), expected_output.size());
 
-    std::vector<uint8_t> host_byte_outut(expected_output.size());
+    std::vector<uint8_t> host_byte_output(expected_output.size());
 
-    MRC_CHECK_CUDA(cudaMemcpy(host_byte_outut.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(host_byte_output.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
 
-    for (std::size_t i = 0; i < host_byte_outut.size(); ++i)
+    for (std::size_t i = 0; i < host_byte_output.size(); ++i)
     {
-        bool output_val = host_byte_outut[i];
+        bool output_val = host_byte_output[i];
         EXPECT_EQ(output_val, expected_output[i]);
     }
 }
@@ -284,8 +285,8 @@ TEST_F(TestMatxUtil, ThresholdByRow)
     std::vector<bool> expected_output{true, true, true, false, true};
     // clang-format on
 
-    std::size_t num_cols = 4;
-    std::size_t num_rows = 5;
+    TensorIndex num_cols = 4;
+    TensorIndex num_rows = 5;
     EXPECT_EQ(num_cols * num_rows, input.size());
 
     DType dtype(TypeId::FLOAT32);
@@ -302,13 +303,13 @@ TEST_F(TestMatxUtil, ThresholdByRow)
     // output and output_by_row are holding 1-byte bool values, so the byte size and element size should be the same
     EXPECT_EQ(output->size(), expected_output.size());
 
-    std::vector<uint8_t> host_byte_outut(expected_output.size());
+    std::vector<uint8_t> host_byte_output(expected_output.size());
 
-    MRC_CHECK_CUDA(cudaMemcpy(host_byte_outut.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
+    MRC_CHECK_CUDA(cudaMemcpy(host_byte_output.data(), output->data(), output->size(), cudaMemcpyDeviceToHost));
 
-    for (std::size_t i = 0; i < host_byte_outut.size(); ++i)
+    for (std::size_t i = 0; i < host_byte_output.size(); ++i)
     {
-        bool output_val = host_byte_outut[i];
+        bool output_val = host_byte_output[i];
         EXPECT_EQ(output_val, expected_output[i]);
     }
 }

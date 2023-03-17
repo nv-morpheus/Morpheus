@@ -20,6 +20,7 @@
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
 #include "morpheus/objects/triton_in_out.hpp"
+#include "morpheus/types.hpp"
 
 #include <boost/fiber/future/future.hpp>
 #include <http_client.h>
@@ -109,7 +110,7 @@ class InferenceClientStage
     std::vector<TritonInOut> m_model_inputs;
     std::vector<TritonInOut> m_model_outputs;
     triton::client::InferOptions m_options;
-    int m_max_batch_size{-1};
+    TensorIndex m_max_batch_size{-1};
 };
 
 /****** InferenceClientStageInferenceProxy******************/

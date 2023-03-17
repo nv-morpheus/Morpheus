@@ -30,8 +30,8 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** InferenceMemory****************************************/
-InferenceMemory::InferenceMemory(size_t count) : TensorMemory(count) {}
-InferenceMemory::InferenceMemory(size_t count, TensorMap&& tensors) : TensorMemory(count, std::move(tensors)) {}
+InferenceMemory::InferenceMemory(TensorIndex count) : TensorMemory(count) {}
+InferenceMemory::InferenceMemory(TensorIndex count, TensorMap&& tensors) : TensorMemory(count, std::move(tensors)) {}
 
 bool InferenceMemory::has_input(const std::string& name) const
 {
@@ -39,7 +39,7 @@ bool InferenceMemory::has_input(const std::string& name) const
 }
 
 /****** InferenceMemoryInterfaceProxy *************************/
-std::shared_ptr<InferenceMemory> InferenceMemoryInterfaceProxy::init(std::size_t count, pybind11::object& tensors)
+std::shared_ptr<InferenceMemory> InferenceMemoryInterfaceProxy::init(TensorIndex count, pybind11::object& tensors)
 {
     if (tensors.is_none())
     {

@@ -17,12 +17,13 @@
 
 #include "morpheus/stages/deserialize.hpp"
 
+#include "morpheus/types.hpp"
+
 #include <mrc/segment/builder.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>
 
 #include <algorithm>  // for min
-#include <cstddef>
 #include <exception>
 #include <functional>
 #include <memory>
@@ -31,7 +32,7 @@
 namespace morpheus {
 // Component public implementations
 // ************ DeserializationStage **************************** //
-DeserializeStage::DeserializeStage(size_t batch_size) :
+DeserializeStage::DeserializeStage(TensorIndex batch_size) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
   m_batch_size(batch_size)
 {}
@@ -45,7 +46,7 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
                 auto full_message = std::make_shared<MultiMessage>(x, 0, x->count());
 
                 // Loop over the MessageMeta and create sub-batches
-                for (size_t i = 0; i < x->count(); i += this->m_batch_size)
+                for (TensorIndex i = 0; i < x->count(); i += this->m_batch_size)
                 {
                     auto next = full_message->get_slice(i, std::min(i + this->m_batch_size, x->count()));
 
@@ -59,7 +60,7 @@ DeserializeStage::subscribe_fn_t DeserializeStage::build_operator()
 
 // ************ DeserializationStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<DeserializeStage>> DeserializeStageInterfaceProxy::init(
-    mrc::segment::Builder& builder, const std::string& name, size_t batch_size)
+    mrc::segment::Builder& builder, const std::string& name, TensorIndex batch_size)
 {
     auto stage = builder.construct_object<DeserializeStage>(name, batch_size);
 

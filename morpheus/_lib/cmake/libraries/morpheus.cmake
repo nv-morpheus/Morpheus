@@ -70,18 +70,16 @@ target_link_libraries(morpheus
 target_include_directories(morpheus
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
 )
 
 set_target_properties(morpheus PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
-message(STATUS " Install dest: (morpheus) ${MORPHEUS_LIB_INSTALL_DIR}")
 install(
     TARGETS
       morpheus
     EXPORT
       ${PROJECT_NAME}-exports
-    LIBRARY DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}"
     COMPONENT Wheel
 )
 
