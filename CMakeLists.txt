@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus")
