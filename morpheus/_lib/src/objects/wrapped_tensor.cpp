@@ -26,7 +26,8 @@
 
 #include <array>    // needed for make_tuple
 #include <cstdint>  // for uintptr_t
-#include <vector>   // get_shape & get_stride return vectors
+#include <utility>
+#include <vector>  // get_shape & get_stride return vectors
 
 namespace morpheus {
 /****** Component public implementations *******************/

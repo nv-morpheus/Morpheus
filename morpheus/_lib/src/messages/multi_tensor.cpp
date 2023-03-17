@@ -17,6 +17,7 @@
 
 #include "morpheus/messages/multi_tensor.hpp"
 
+#include "morpheus/objects/dtype.hpp"
 #include "morpheus/types.hpp"                // for TensorIndex, TensorMap
 #include "morpheus/utilities/cupy_util.hpp"  // for CupyUtil::tensor_to_cupy
 #include "morpheus/utilities/string_util.hpp"
@@ -26,11 +27,14 @@
 #include <pybind11/pytypes.h>    // for key_error
 
 #include <cstdint>
+#include <sstream>
 #include <stdexcept>  // for runtime_error
 #include <utility>    // for move
 
 namespace morpheus {
 
+// MatX works best with C-Style arrays so ignore this warning
+// NOLINTNEXTLINE(modernize-avoid-c-arrays)
 TensorIndex read_idx_from_tensor(const TensorObject& tensor, const TensorIndex (&idx)[2])
 {
     switch (tensor.dtype().type_id())

@@ -23,6 +23,7 @@
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <pybind11/attr.h>
 #include <pybind11/pybind11.h>
 
 #include <memory>

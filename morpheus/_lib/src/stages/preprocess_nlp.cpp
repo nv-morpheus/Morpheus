@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"

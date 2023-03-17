@@ -22,6 +22,7 @@
 #include "morpheus/types.hpp"           // for TensorIndex
 #include "morpheus/utilities/tensor_util.hpp"
 
+#include <cuda_runtime.h>
 #include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
 #include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
@@ -36,6 +37,8 @@
 #include <cstddef>  // for size_t
 #include <cstdint>  // for uintptr_t
 #include <memory>   // for make_shared
+#include <optional>
+#include <ostream>
 #include <string>   // for string
 #include <utility>  // for move
 #include <vector>   // for vector
