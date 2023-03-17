@@ -108,13 +108,15 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                                                0);
 
                 auto seq_id_dtype = DType::create<TensorIndex>();
-                auto seq_ids =
-                    Tensor::create(MatxUtil::create_seq_ids(
-                                       x->mess_count, m_fea_cols.size(), seq_id_dtype.type_id(), input__0.get_memory()),
-                                   seq_id_dtype,
-                                   {x->mess_count, 3},
-                                   {},
-                                   0);
+                auto seq_ids      = Tensor::create(MatxUtil::create_seq_ids(x->mess_count,
+                                                                       m_fea_cols.size(),
+                                                                       seq_id_dtype.type_id(),
+                                                                       input__0.get_memory(),
+                                                                       x->mess_offset),
+                                              seq_id_dtype,
+                                              {x->mess_count, 3},
+                                              {},
+                                              0);
 
                 // Build the results
                 auto memory =

@@ -161,6 +161,8 @@ struct ITensor : public ITensorStorage, public ITensorOperations
 
     virtual TensorIndex stride(TensorIndex) const = 0;
 
+    virtual intptr_t stream() const = 0;
+
     virtual bool is_compact() const = 0;
 
     ShapeType get_shape() const
@@ -253,6 +255,11 @@ struct TensorObject final
     TensorIndex stride(TensorIndex idx) const
     {
         return m_tensor->stride(idx);
+    }
+
+    intptr_t stream() const
+    {
+        return m_tensor->stream();
     }
 
     bool is_compact() const

@@ -24,6 +24,7 @@
 
 #include <rmm/device_buffer.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -132,6 +133,8 @@ class RMMTensor : public ITensor
      * TODO(Documentation)
      */
     void get_stride(ShapeType& s) const;
+
+    intptr_t stream() const override;
 
     // Tensor reshape(ShapeType shape)
     // {

@@ -25,6 +25,7 @@
 #include <pybind11/pytypes.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -67,6 +68,23 @@ class MessageMeta
      * TODO(Documentation)
      */
     virtual MutableTableInfo get_mutable_info() const;
+
+    /**
+     * @brief Returns true if the underlying DataFrame's index is unique and monotonic. Sliceable indices have better
+     * performance since a range of rows can be specified by a start and stop index instead of requiring boolean masks.
+     *
+     * @return bool
+     */
+    bool has_sliceable_index() const;
+
+    /**
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old
+     * index will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is
+     * a no-op.
+     *
+     * @return std::string The name of the column with the old index or nullopt if no changes were made.
+     */
+    virtual std::optional<std::string> ensure_sliceable_index();
 
     /**
      * @brief Create MessageMeta cpp object from a python object
@@ -118,6 +136,8 @@ class SlicedMessageMeta : public MessageMeta
 
     MutableTableInfo get_mutable_info() const override;
 
+    std::optional<std::string> ensure_sliceable_index() override;
+
   private:
     TensorIndex m_start{0};
     TensorIndex m_stop{-1};
@@ -165,6 +185,23 @@ struct MessageMetaInterfaceProxy
     static pybind11::object df_property(MessageMeta& self);
 
     static MutableTableCtxMgr mutable_dataframe(MessageMeta& self);
+
+    /**
+     * @brief Returns true if the underlying DataFrame's index is unique and monotonic. Sliceable indices have better
+     * performance since a range of rows can be specified by a start and stop index instead of requiring boolean masks.
+     *
+     * @return bool
+     */
+    static bool has_sliceable_index(MessageMeta& self);
+
+    /**
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old
+     * index will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is
+     * a no-op.
+     *
+     * @return std::string The name of the column with the old index or nullopt if no changes were made.
+     */
+    static std::optional<std::string> ensure_sliceable_index(MessageMeta& self);
 };
 
 #pragma GCC visibility pop

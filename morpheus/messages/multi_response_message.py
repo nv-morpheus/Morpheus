@@ -17,6 +17,8 @@ import dataclasses
 import typing
 
 import morpheus._lib.messages as _messages
+from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
@@ -25,6 +27,22 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
     """
     This class contains several inference responses as well as the cooresponding message metadata.
     """
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
 
     @property
     def outputs(self):
@@ -78,54 +96,6 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
         """
         return self.copy_tensor_ranges(ranges, mask=mask)
 
-    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
-        """
-        Perform a copy of the current message, dataframe and tensors for the given `ranges` of rows.
-
-        Parameters
-        ----------
-        ranges : typing.List[typing.Tuple[int, int]]
-            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
-            The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
-
-        -------
-        `MultiResponseMessage`
-        """
-        m = super().copy_ranges(ranges)
-        return MultiResponseMessage(meta=m.meta,
-                                    mess_offset=m.mess_offset,
-                                    mess_count=m.mess_count,
-                                    memory=m.memory,
-                                    offset=m.offset,
-                                    count=m.mess_count)
-
-    def get_slice(self, start, stop):
-        """
-        Perform a slice of the current message from `start`:`stop` (excluding `stop`)
-
-        For example to slice from rows 1-3 use `m.get_slice(1, 4)`. The returned `MultiResponseMessage` will contain
-        references to the same underlying Dataframe and output tensors, and this calling this method is reletively low
-        cost compared to `MultiResponseMessage.copy_ranges`
-
-        Parameters
-        ----------
-        start : int
-            Starting row of the slice
-
-        stop : int
-            Stop of the slice
-
-        -------
-        `MultiResponseMessage`
-        """
-        mess_count = stop - start
-        return MultiResponseMessage(meta=self.meta,
-                                    mess_offset=self.mess_offset + start,
-                                    mess_count=mess_count,
-                                    memory=self.memory,
-                                    offset=self.offset + start,
-                                    count=mess_count)
-
 
 @dataclasses.dataclass
 class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiResponseProbsMessage):
@@ -133,6 +103,24 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
     A stronger typed version of `MultiResponseMessage` that is used for inference workloads that return a probability
     array. Helps ensure the proper outputs are set and eases debugging.
     """
+
+    required_tensors: typing.ClassVar[typing.List[str]] = ["probs"]
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
 
     @property
     def probs(self):
@@ -158,52 +146,24 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
 
     user_id: str = None
 
-    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
-        """
-        Perform a copy of the current message, dataframe and tensors for the given `ranges` of rows.
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1,
+                 user_id: str = None):
 
-        Parameters
-        ----------
-        ranges : typing.List[typing.Tuple[int, int]]
-            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
-            The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
+        if (user_id is None):
+            raise ValueError("Must define `user_id` when creating {}".format(self.__class__.__name__))
 
-        -------
-        `MultiResponseAEMessage`
-        """
-        m = super().copy_ranges(ranges)
-        return MultiResponseAEMessage(meta=m.meta,
-                                      mess_offset=m.mess_offset,
-                                      mess_count=m.mess_count,
-                                      memory=m.memory,
-                                      offset=m.offset,
-                                      count=m.mess_count,
-                                      user_id=self.user_id)
+        self.user_id = user_id
 
-    def get_slice(self, start, stop):
-        """
-        Perform a slice of the current message from `start`:`stop` (excluding `stop`)
-
-        For example to slice from rows 1-3 use `m.get_slice(1, 4)`. The returned `MultiResponseMessage` will contain
-        references to the same underlying Dataframe and output tensors, and this calling this method is reletively low
-        cost compared to `MultiResponseAEMessage.copy_ranges`
-
-        Parameters
-        ----------
-        start : int
-            Starting row of the slice
-
-        stop : int
-            Stop of the slice
-
-        -------
-        `MultiResponseAEMessage`
-        """
-        slice = super().get_slice(start, stop)
-        return MultiResponseAEMessage(meta=slice.meta,
-                                      mess_offset=slice.mess_offset,
-                                      mess_count=slice.mess_count,
-                                      memory=slice.memory,
-                                      offset=slice.offset,
-                                      count=slice.mess_count,
-                                      user_id=self.user_id)
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)

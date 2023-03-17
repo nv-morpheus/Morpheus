@@ -35,9 +35,6 @@ set_target_properties(
 target_include_directories(cuda_utils_objs
     PUBLIC
       "${MORPHEUS_LIB_ROOT}/include"
-      cudf::cudf
-      matx::matx
-      mrc::pymrc
 )
 
 target_link_libraries(cuda_utils_objs
@@ -86,14 +83,11 @@ set_target_properties(cuda_utils
     PROPERTIES OUTPUT_NAME ${PROJECT_NAME}_utils
 )
 
-message(STATUS " Install dest: (cuda_utils) ${MORPHEUS_LIB_INSTALL_DIR}")
 install(
     TARGETS
       cuda_utils
     EXPORT
       ${PROJECT_NAME}-exports
-    LIBRARY DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}"
     COMPONENT Wheel
 )
 

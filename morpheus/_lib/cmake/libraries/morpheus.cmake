@@ -51,6 +51,7 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/stages/write_to_file.cpp
     ${MORPHEUS_LIB_ROOT}/src/utilities/cudf_util.cpp
     ${MORPHEUS_LIB_ROOT}/src/utilities/cupy_util.cpp
+    ${MORPHEUS_LIB_ROOT}/src/utilities/python_util.cpp
     ${MORPHEUS_LIB_ROOT}/src/utilities/string_util.cpp
     ${MORPHEUS_LIB_ROOT}/src/utilities/table_util.cpp
 )
@@ -68,18 +69,16 @@ target_link_libraries(morpheus
 target_include_directories(morpheus
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
 )
 
 set_target_properties(morpheus PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
-message(STATUS " Install dest: (morpheus) ${MORPHEUS_LIB_INSTALL_DIR}")
 install(
     TARGETS
       morpheus
     EXPORT
       ${PROJECT_NAME}-exports
-    LIBRARY DESTINATION
-      "${MORPHEUS_LIB_INSTALL_DIR}"
     COMPONENT Wheel
 )
 

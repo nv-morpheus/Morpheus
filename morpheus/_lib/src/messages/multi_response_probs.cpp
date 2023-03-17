@@ -17,6 +17,7 @@
 
 #include "morpheus/messages/multi_response_probs.hpp"
 
+#include "morpheus/messages/memory/response_memory_probs.hpp"
 #include "morpheus/messages/meta.hpp"
 
 #include <pybind11/pytypes.h>
@@ -27,10 +28,10 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiResponseProbsMessage****************************************/
-MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+MultiResponseProbsMessage::MultiResponseProbsMessage(std::shared_ptr<MessageMeta> meta,
                                                      TensorIndex mess_offset,
                                                      TensorIndex mess_count,
-                                                     std::shared_ptr<morpheus::ResponseMemoryProbs> memory,
+                                                     std::shared_ptr<ResponseMemoryProbs> memory,
                                                      TensorIndex offset,
                                                      TensorIndex count) :
   DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)

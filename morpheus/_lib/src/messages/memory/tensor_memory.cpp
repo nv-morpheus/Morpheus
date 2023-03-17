@@ -127,6 +127,11 @@ TensorIndex TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
     return self.count;
 }
 
+bool TensorMemoryInterfaceProxy::has_tensor(TensorMemory& self, std::string name)
+{
+    return self.has_tensor(name);
+}
+
 CupyUtil::py_tensor_map_t TensorMemoryInterfaceProxy::get_tensors(TensorMemory& self)
 {
     return CupyUtil::tensors_to_cupy(self.tensors);
