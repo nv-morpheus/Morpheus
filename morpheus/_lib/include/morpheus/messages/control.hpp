@@ -27,8 +27,6 @@ class MessageMeta;
 #pragma GCC visibility push(default)
 enum class ControlMessageType
 {
-    CUSTOM,
-    DATA,
     INFERENCE,
     NONE,
     TRAINING

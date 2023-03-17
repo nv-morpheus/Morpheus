@@ -45,9 +45,11 @@ However, there are likely going to be situations that require writing a custom m
 reusable work units, or for creating a new compound module from a set of existing primitives. The following guides 
 will walk through the process of creating a custom module in Python and C++.
 
-- [Python Module](./guides/7_python_modules.md)
-- [C++ Module](./guides/8_cpp_modules.md)
-- 
+- [Python Modules](./guides/7_python_modules.md)
+- [C++ Modules](./guides/8_cpp_modules.md)
+
+## Morpheus Control messages
+- [Control Messages Overview](./guides/9_control_messages.md)
 
 ## Example Workflows
 
