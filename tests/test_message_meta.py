@@ -105,9 +105,9 @@ def test_mutable_dataframe(df: cudf.DataFrame):
     meta = MessageMeta(df)
 
     with meta.mutable_dataframe() as df:
-        df['v2'][3] = 47
+        df['v2'].iloc[3] = 47
 
-    assert meta.copy_dataframe()['v2'][3] == 47
+    assert meta.copy_dataframe()['v2'].iloc[3] == 47
 
 
 def test_using_ctx_outside_with_block(df: cudf.DataFrame):
