@@ -74,6 +74,9 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
+        # Until we migrate to python 3.10, its impossible to do keyword only dataclasses.
+        # Simple article here: https://medium.com/@aniscampos/python-dataclass-inheritance-finally-686eaf60fbb5
+        # Once we migrate, we can use `__post_init__` like normal
         if (cls.__init__ is MultiMessage.__init__):
             raise ValueError(f"Class `{cls}` is improperly configured. "
                              f"All derived classes of `MultiMessage` must define an `__init__` function which "

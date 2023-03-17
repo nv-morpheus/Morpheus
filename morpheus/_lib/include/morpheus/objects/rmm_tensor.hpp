@@ -22,8 +22,8 @@
 #include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex
 
 #include <rmm/device_buffer.hpp>
-#include <stdint.h>
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
