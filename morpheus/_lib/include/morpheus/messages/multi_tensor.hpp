@@ -72,12 +72,12 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @param offset Message offset in tensor memory instance
      * @param count Message count in tensor memory instance
      */
-    MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                       TensorIndex mess_offset,
-                       TensorIndex mess_count,
-                       std::shared_ptr<morpheus::TensorMemory> memory,
-                       TensorIndex offset,
-                       TensorIndex count);
+    MultiTensorMessage(std::shared_ptr<MessageMeta> meta,
+                       TensorIndex mess_offset              = 0,
+                       TensorIndex mess_count               = -1,
+                       std::shared_ptr<TensorMemory> memory = nullptr,
+                       TensorIndex offset                   = 0,
+                       TensorIndex count                    = -1);
 
     std::shared_ptr<morpheus::TensorMemory> memory;
     TensorIndex offset{0};

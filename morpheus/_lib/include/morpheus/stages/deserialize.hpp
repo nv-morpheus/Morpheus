@@ -61,9 +61,10 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
     /**
      * @brief Construct a new Deserialize Stage object
      *
-     * @param batch_size : Number of messages to be divided into each batch
+     * @param batch_size Number of messages to be divided into each batch
+     * @param ensure_sliceable_index Whether or not to call `ensure_sliceable_index()` on all incoming `MessageMeta`
      */
-    DeserializeStage(TensorIndex batch_size);
+    DeserializeStage(TensorIndex batch_size, bool ensure_sliceable_index = true);
 
   private:
     /**
@@ -72,6 +73,7 @@ class DeserializeStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
     subscribe_fn_t build_operator();
 
     TensorIndex m_batch_size;
+    bool m_ensure_sliceable_index{true};
 };
 
 /****** DeserializationStageInterfaceProxy******************/
@@ -90,7 +92,8 @@ struct DeserializeStageInterfaceProxy
      */
     static std::shared_ptr<mrc::segment::Object<DeserializeStage>> init(mrc::segment::Builder& builder,
                                                                         const std::string& name,
-                                                                        TensorIndex batch_size);
+                                                                        TensorIndex batch_size,
+                                                                        bool ensure_sliceable_index);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

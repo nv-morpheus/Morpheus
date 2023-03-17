@@ -17,23 +17,27 @@
 
 #include "morpheus/io/serializers.hpp"
 
+#include "morpheus/utilities/cudf_util.hpp"
+
 #include <cudf/io/csv.hpp>
 #include <cudf/io/data_sink.hpp>
 #include <cudf/io/types.hpp>  // for column_name_info, sink_info, table_metadata
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <glog/logging.h>
 #include <pybind11/cast.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 #include <rmm/mr/device/per_device_resource.hpp>
 
-#include <array>    // for array
-#include <cstddef>  // for size_t
+#include <array>      // for array
+#include <cstddef>    // for size_t
+#include <exception>  // for exception
 #include <numeric>
 #include <ostream>
 #include <sstream>  // IWYU pragma: keep
-#include <utility>
 #include <vector>
 // IWYU pragma: no_include <unordered_map>
 
@@ -142,20 +146,34 @@ void df_to_csv(const TableInfo& tbl, std::ostream& out_stream, bool include_head
 
 std::string df_to_json(MutableTableInfo& tbl, bool include_index_col)
 {
+    if (!include_index_col)
+    {
+        LOG(WARNING) << "Ignoring include_index_col=false as this isn't supported by cuDF";
+    }
+
     std::string results;
+
     // no cpp impl for to_json, instead python module converts to pandas and calls to_json
     {
         py::gil_scoped_acquire gil;
         py::object StringIO = py::module_::import("io").attr("StringIO");
+        auto buffer         = StringIO();
 
-        auto df = tbl.checkout_obj();
+        try
+        {
+            auto df = CudfHelper::table_from_table_info(tbl);
 
-        auto buffer     = StringIO();
-        py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true, "index"_a = include_index_col);
-        df.attr("to_json")(buffer, **kwargs);
-        buffer.attr("seek")(0);
+            py::dict kwargs = py::dict("orient"_a = "records", "lines"_a = true);
 
-        tbl.return_obj(std::move(df));
+            df.attr("to_json")(buffer, **kwargs);
+
+            buffer.attr("seek")(0);
+
+        } catch (std::exception& ex)
+        {
+            LOG(ERROR) << "Error during serialization to JSON. Message: " << ex.what();
+            throw ex;
+        }
 
         py::object pyresults = buffer.attr("getvalue")();
         results              = pyresults.cast<std::string>();

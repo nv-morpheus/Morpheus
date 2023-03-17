@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/meta.hpp"                     // for MessageMeta
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
@@ -43,7 +44,7 @@ namespace morpheus {
  * proper inputs are set and eases debugging.
  *
  */
-class MultiInferenceNLPMessage : public MultiInferenceMessage
+class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMessage, MultiInferenceMessage>
 {
   public:
     /**
@@ -57,12 +58,12 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
      */
-    MultiInferenceNLPMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                             TensorIndex mess_offset,
-                             TensorIndex mess_count,
-                             std::shared_ptr<morpheus::InferenceMemory> memory,
-                             TensorIndex offset,
-                             TensorIndex count);
+    MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
+                             TensorIndex mess_offset                 = 0,
+                             TensorIndex mess_count                  = -1,
+                             std::shared_ptr<InferenceMemory> memory = nullptr,
+                             TensorIndex offset                      = 0,
+                             TensorIndex count                       = -1);
 
     /**
      * @brief Returns the 'input_ids' tensor, throws a `std::runtime_error` if it does not exist.
