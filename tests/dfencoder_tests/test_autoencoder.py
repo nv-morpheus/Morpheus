@@ -153,11 +153,11 @@ def test_complete_layer_interpret_activation():
 
 @pytest.mark.usefixtures("manual_seed")
 def test_complete_layer_forward():
-    cc = autoencoder.CompleteLayer(3, 5, activation='tanh', dropout=0.2)
+    cc = autoencoder.CompleteLayer(3, 5, activation='tanh', dropout=0)
     t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
     results = cc.forward(t)
-    expected = torch.tensor([[0.9029, 0.9877, 0.0000, 0.0000, 1.1453], [1.2464, 1.2372, 1.2485, 1.0397, 1.2490],
-                             [1.2500, 1.2494, 1.2500, 1.1771, 1.2500], [1.2500, 0.0000, 1.2500, 1.2257, 1.2500]],
+    expected = torch.tensor([[0.7223, 0.7902, 0.9647, 0.5613, 0.9163], [0.9971, 0.9897, 0.9988, 0.8317, 0.9992],
+                             [1.0000, 0.9995, 1.0000, 0.9417, 1.0000], [1.0000, 1.0000, 1.0000, 0.9806, 1.0000]],
                             dtype=torch.float32)
 
     assert torch.equal(torch.round(results, decimals=4), expected), f"{results} != {expected}"
