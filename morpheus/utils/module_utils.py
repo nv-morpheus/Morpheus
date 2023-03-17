@@ -80,13 +80,17 @@ def register_module(module_id, namespace):
 
     def inner_func(func):
         # Register a module if not exists in the registry.
+        @functools.wraps(func)
+        def wrapped_func(config, builder):  # Preserve original function name
+            return func(config, builder)
+
         if not registry.contains(module_id, namespace):
             registry.register_module(module_id, namespace, mrc_version, func)
             logger.debug("Module '{}' was successfully registered with '{}' namespace.".format(module_id, namespace))
         else:
             logger.debug("Module: '{}' already exists in the given namespace '{}'".format(module_id, namespace))
 
-        return func
+        return wrapped_func
 
     return inner_func
 

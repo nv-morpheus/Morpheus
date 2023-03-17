@@ -15,14 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Morpheus Module Documentation
-
-This is the top-level documentation for all available Morpheus modules.
-
-## Table of Contents
-
-- [Core Modules](#core-modules)
-- [Digital Fingerprinting Modules](#digital-fingerprinting-modules)
+# Modules
 
 ## Core Modules
 

@@ -44,8 +44,8 @@ logger = logging.getLogger(__name__)
 @register_module(FILE_TO_DF, MORPHEUS_MODULE_NAMESPACE)
 def file_to_df(builder: mrc.Builder):
     """
-    This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module.
-    In addition to loading data from the disk, it has ability to load the file content from S3 buckets.
+    This module reads data from batched files into a DataFrame after receiving input from the "FileBatcher" module.
+    It can load file content from both local disk and S3 buckets.
 
     Parameters
     ----------
@@ -53,14 +53,14 @@ def file_to_df(builder: mrc.Builder):
         mrc Builder object.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - cache_dir: Directory to cache the rolling window data
-        - file_type: Type of the input file
-        - filter_null: Whether to filter out null values
-        - parser_kwargs: Keyword arguments to pass to the parser
-        - schema: Schema of the input data
-        - timestamp_column_name: Name of the timestamp column
+        - cache_dir (str): Directory to cache the rolling window data.
+        - file_type (str): Type of the input file.
+        - filter_null (bool): Whether to filter out null values.
+        - parser_kwargs (dict): Keyword arguments to pass to the parser.
+        - schema (dict): Schema of the input data.
+        - timestamp_column_name (str): Name of the timestamp column.
     """
 
     config = builder.get_current_module_config()

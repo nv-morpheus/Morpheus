@@ -39,8 +39,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_TRAINING_PIPE, MORPHEUS_MODULE_NAMESPACE)
 def dfp_training_pipe(builder: mrc.Builder):
     """
-    This module function allows for the consolidation of multiple dfp pipeline modules relevent to training
-    process into a single module.
+    This module function consolidates multiple dfp pipeline modules relevant to the training process into a single module.
 
     Parameters
     ----------
@@ -48,17 +47,16 @@ def dfp_training_pipe(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - timestamp_column_name (str): Name of the timestamp column used in the data.
-        - cache_dir (str): Directory to cache the rolling window data.
-        - batching_options (dict): Options for batching the data.
-        - user_splitting_options (dict): Options for splitting the data by user.
-        - stream_aggregation_options (dict): Options for aggregating the data by stream.
-        - preprocessing_options (dict): Options for preprocessing the data.
-        - dfencoder_options (dict): Options for configuring the data frame encoder, used for training the model.
-        - mlflow_writer_options (dict): Options for the MLflow model writer, which is responsible for saving the trained
-        model.
+        - timestamp_column_name (str): Name of the timestamp column used in the data
+        - cache_dir (str): Directory to cache the rolling window data
+        - batching_options (dict): Options for batching the data
+        - user_splitting_options (dict): Options for splitting the data by user
+        - stream_aggregation_options (dict): Options for aggregating the data by stream
+        - preprocessing_options (dict): Options for preprocessing the data
+        - dfencoder_options (dict): Options for configuring the data frame encoder, used for training the model
+        - mlflow_writer_options (dict): Options for the MLflow model writer, responsible for saving the trained model
     """
 
     config = builder.get_current_module_config()

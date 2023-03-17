@@ -33,12 +33,12 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_DATA_PREP, MORPHEUS_MODULE_NAMESPACE)
 def dfp_data_prep(builder: mrc.Builder):
     """
-    This module function prepares data for either inference or model training.
+    Prepare data for either inference or model training.
 
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
 
     Notes
     ----------

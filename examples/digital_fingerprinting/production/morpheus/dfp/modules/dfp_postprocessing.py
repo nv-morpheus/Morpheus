@@ -36,12 +36,12 @@ def dfp_postprocessing(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
 
     Notes
     ----------
     Configurable parameters:
-        timestamp_column_name: str
+        - timestamp_column_name (str): Name of the timestamp column in the input data.
     """
 
     config = builder.get_current_module_config()

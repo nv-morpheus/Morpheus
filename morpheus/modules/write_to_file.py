@@ -41,15 +41,13 @@ def write_to_file(builder: mrc.Builder):
     """
     Write all messages to a file.
 
-    This module writes messages to a file.
-
     Parameters
     ----------
     builder : mrc.Builder
         mrc Builder object.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
         - filename : str (Path to output file)
         - overwrite : bool (If true, overwrite the file if it exists)

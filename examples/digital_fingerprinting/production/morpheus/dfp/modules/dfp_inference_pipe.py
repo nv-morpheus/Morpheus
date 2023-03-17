@@ -44,8 +44,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_INFERENCE_PIPE, MORPHEUS_MODULE_NAMESPACE)
 def dfp_inference_pipe(builder: mrc.Builder):
     """
-    This module function allows for the consolidation of multiple dfp pipeline modules relevant to inference
-    process into a single module.
+    This module function consolidates multiple dfp pipeline modules relevant to the inference process into a single module.
 
     Parameters
     ----------
@@ -55,16 +54,16 @@ def dfp_inference_pipe(builder: mrc.Builder):
     Notes
     ----------
     Configurable parameters:
-        - batching_options (dict): Options for batching the data, including start and end times, sampling rate, and other settings.
-        - cache_dir (str): Directory to cache the rolling window data.
+        - batching_options (dict): Options for batching data, including start and end times, sampling rate, and other settings.
+        - cache_dir (str): Directory for caching rolling window data.
         - detection_criteria (dict): Criteria for filtering detections, such as threshold and field_name.
         - inference_options (dict): Options for the inference module, including model settings and other configurations.
         - num_output_ports (int): Number of output ports for the module.
-        - preprocessing_options (dict): Options for preprocessing the data, including schema and timestamp column name.
-        - stream_aggregation_options (dict): Options for aggregating the data by stream, including aggregation span and cache settings.
+        - preprocessing_options (dict): Options for preprocessing data, including schema and timestamp column name.
+        - stream_aggregation_options (dict): Options for aggregating data by stream, including aggregation span and cache settings.
         - timestamp_column_name (str): Name of the timestamp column in the input data.
-        - user_splitting_options (dict): Options for splitting the data by user, including filtering and user ID column name.
-        - write_to_file_options (dict): Options for writing the detections to a file, such as filename and overwrite settings.
+        - user_splitting_options (dict): Options for splitting data by user, including filtering and user ID column name.
+        - write_to_file_options (dict): Options for writing detections to a file, such as filename and overwrite settings.
     """
 
     config = builder.get_current_module_config()

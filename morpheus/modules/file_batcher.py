@@ -46,26 +46,27 @@ def file_batcher(builder: mrc.Builder):
     This module loads the input files, removes files that are older than the chosen window of time,
     and then groups the remaining files by period that fall inside the window.
 
+
     Parameters
     ----------
-    builder : mrc.Builder
+    builder: mrc.Builder
         An mrc Builder object.
 
     Notes
     -----
     Configurable parameters:
-    - batching_options (dict):
-        - end_time (datetime|str): End time of the time window.
-        - iso_date_regex_pattern (str): Regex pattern for ISO date matching.
-        - parser_kwargs (dict): Additional arguments for the parser.
-        - period (str): Time period for grouping files.
-        - sampling_rate_s (int): Sampling rate in seconds.
-        - start_time (datetime|str): Start time of the time window.
-    - cache_dir (str): Cache directory.
-    - file_type (str): File type.
-    - filter_nulls (bool): Whether to filter null values.
-    - schema (dict): Data schema.
-    - timestamp_column_name (str): Name of the timestamp column.
+        - batching_options (dict):
+            - end_time (datetime|str): End time of the time window.
+            - iso_date_regex_pattern (str): Regex pattern for ISO date matching.
+            - parser_kwargs (dict): Additional arguments for the parser.
+            - period (str): Time period for grouping files.
+            - sampling_rate_s (int): Sampling rate in seconds.
+            - start_time (datetime|str): Start time of the time window.
+        - cache_dir (str): Cache directory.
+        - file_type (str): File type.
+        - filter_nulls (bool): Whether to filter null values.
+        - schema (dict): Data schema.
+        - timestamp_column_name (str): Name of the timestamp column.
     """
 
     config = builder.get_current_module_config()

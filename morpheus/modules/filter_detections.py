@@ -63,18 +63,18 @@ def filter_detections(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        mrc Builder object.
+        An mrc Builder object.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - `field_name` (str): Name of the field to filter on. Defaults to `probs`.
-        - `threshold` (float): Threshold value to filter on. Defaults to `0.5`.
-        - `filter_source` (str): Source of the filter field. Defaults to `AUTO`.
-        - `copy` (bool): Whether to copy the rows or slice them. Defaults to `True`.
-        - `schema` (dict): Schema configuration.
-            - `input_message_type` (str): Pickled message type.
-            - `encoding` (str): Encoding used to pickle the message type.
+        - field_name (str): Name of the field to filter on. Defaults to 'probs'.
+        - threshold (float): Threshold value to filter on. Defaults to 0.5.
+        - filter_source (str): Source of the filter field. Defaults to 'AUTO'.
+        - copy (bool): Whether to copy the rows or slice them. Defaults to True.
+        - schema (dict): Schema configuration.
+            - input_message_type (str): Pickled message type.
+            - encoding (str): Encoding used to pickle the message type.
     """
 
     config = builder.get_current_module_config()

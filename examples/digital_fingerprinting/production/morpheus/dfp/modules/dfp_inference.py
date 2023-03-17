@@ -42,7 +42,7 @@ def dfp_inference(builder: mrc.Builder):
     Parameters
     ----------
     builder : mrc.Builder
-        Pipeline budler instance.
+        Pipeline builder instance.
 
     Notes
     ----------

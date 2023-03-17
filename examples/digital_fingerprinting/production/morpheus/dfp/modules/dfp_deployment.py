@@ -42,10 +42,55 @@ def dfp_deployment(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - training_options (dict): Options for the training pipeline module, including settings and configurations specific to the training process.
-        - inference_options (dict): Options for the inference pipeline module, including settings and configurations specific to the inference process.
+        - training_options (dict): Options for the training pipeline module, including:
+            - timestamp_column_name (str): Name of the timestamp column used in the data
+            - cache_dir (str): Directory to cache the rolling window data
+            - batching_options (dict): Options for batching the data, including:
+                - end_time (datetime|str): End time of the time window
+                - iso_date_regex_pattern (str): Regex pattern for ISO date matching
+                - parser_kwargs (dict): Additional arguments for the parser
+                - period (str): Time period for grouping files
+                - sampling_rate_s (int): Sampling rate in seconds
+                - start_time (datetime|str): Start time of the time window
+            - user_splitting_options (dict): Options for splitting the data by user, including:
+                - fallback_username (str): User ID to use if user ID not found (default: 'generic_user')
+                - include_generic (bool): Include generic user ID in output (default: False)
+                - include_individual (bool): Include individual user IDs in output (default: False)
+                - only_users (list): List of user IDs to include in output, others will be excluded (default: [])
+                - skip_users (list): List of user IDs to exclude from output (default: [])
+                - timestamp_column_name (str): Name of column containing timestamps (default: 'timestamp')
+                - userid_column_name (str): Name of column containing user IDs (default: 'username')
+            - stream_aggregation_options (dict): Options for aggregating the data by stream
+            - preprocessing_options (dict): Options for preprocessing the data
+            - dfencoder_options (dict): Options for configuring the data frame encoder, used for training the model
+            - mlflow_writer_options (dict): Options for the MLflow model writer, responsible for saving the trained model, including:
+                - model_name_formatter (str): Format string for the model name, e.g. "model_{timestamp}"
+                - experiment_name_formatter (str): Format string for the experiment name, e.g. "experiment_{timestamp}"
+                - timestamp_column_name (str): Name of the timestamp column used in the data
+                - conda_env (dict): Conda environment settings, including:
+                    - channels (list): List of channels to use for the environment
+                    - dependencies (list): List of dependencies for the environment
+                    - pip (list): List of pip packages to install in the environment
+                    - name (str): Name of the conda environment
+        - inference_options (dict): Options for the inference pipeline module, including:
+            - model_name_formatter (str): Format string for the model name, e.g. "model_{timestamp}"
+            - fallback_username (str): User ID to use if user ID not found (default: 'generic_user')
+            - timestamp_column_name (str): Name of the timestamp column in the input data
+            - batching_options (dict): Options for batching the data, including:
+                [omitted for brevity]
+            - cache_dir (str): Directory to cache the rolling window data
+            - detection_criteria (dict): Criteria for filtering detections, such as threshold and field_name
+            - inference_options (dict): Options for the inference module, including model settings and other configurations
+            - num_output_ports (int): Number of output ports for the module
+            - preprocessing_options (dict): Options for preprocessing the data, including schema and timestamp column name
+            - stream_aggregation_options (dict): Options for aggregating the data by stream, including:
+                - aggregation_span (int): The time span for the aggregation window, in seconds
+                - cache_to_disk (bool): Whether to cache the aggregated data to disk
+            - user_splitting_options (dict): Options for splitting the data by user, including:
+                [omitted for brevity]
+            - write_to_file_options (dict): Options for writing the detections to a file, such as filename and overwrite settings
     """
 
     module_config = builder.get_current_module_config()

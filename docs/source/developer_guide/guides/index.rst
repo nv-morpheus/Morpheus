@@ -28,3 +28,6 @@ Developer Guides
    ./4_source_cpp_stage.md
    ./5_digital_fingerprinting.md
    ./6_digital_fingerprinting_reference.md
+   ./7_python_modules.md
+   ./8_cpp_modules.md
+   ./9_cpp_modules_reference.md

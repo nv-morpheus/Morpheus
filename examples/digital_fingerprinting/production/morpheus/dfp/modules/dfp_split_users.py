@@ -35,7 +35,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_SPLIT_USERS, MORPHEUS_MODULE_NAMESPACE)
 def dfp_split_users(builder: mrc.Builder):
     """
-    This module function split the data based on user Id's.
+    This module function splits data based on user IDs.
 
     Parameters
     ----------
@@ -43,15 +43,15 @@ def dfp_split_users(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - fallback_username: The user ID to use if the user ID is not found (default: 'generic_user')
-        - include_generic: Whether to include a generic user ID in the output (default: False)
-        - include_individual: Whether to include individual user IDs in the output (default: False)
-        - only_users: List of user IDs to include in the output; other user IDs will be excluded (default: [])
-        - skip_users: List of user IDs to exclude from the output (default: [])
-        - timestamp_column_name: Name of the column containing timestamps (default: 'timestamp')
-        - userid_column_name: Name of the column containing user IDs (default: 'username')
+        - fallback_username (str): User ID to use if user ID not found (default: 'generic_user')
+        - include_generic (bool): Include generic user ID in output (default: False)
+        - include_individual (bool): Include individual user IDs in output (default: False)
+        - only_users (list): List of user IDs to include in output, others will be excluded (default: [])
+        - skip_users (list): List of user IDs to exclude from output (default: [])
+        - timestamp_column_name (str): Name of column containing timestamps (default: 'timestamp')
+        - userid_column_name (str): Name of column containing user IDs (default: 'username')
     """
 
     config = builder.get_current_module_config()

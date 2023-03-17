@@ -28,20 +28,20 @@ logger = logging.getLogger(__name__)
 @register_module(FILTER_CONTROL_MESSAGE, MORPHEUS_MODULE_NAMESPACE)
 def filter_control_message(builder: mrc.Builder):
     """
-    When the requirements are met, this module gently discards the control messages.
+    This module discards control messages based on specified filtering criteria.
 
     Parameters
     ----------
     builder : mrc.Builder
-        mrc Builder object.
+        An mrc Builder object.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - enable_task_filtering : bool (Enables filtering based on task type)
-        - enable_data_type_filtering : bool (Enables filtering based on data type)
-        - filter_task_type : str (The task type to be used as a filter)
-        - filter_data_type : str (The data type to be used as a filter)
+        - enable_task_filtering (bool): Enables filtering based on task type.
+        - enable_data_type_filtering (bool): Enables filtering based on data type.
+        - filter_task_type (str): The task type to be used as a filter.
+        - filter_data_type (str): The data type to be used as a filter.
     """
 
     config = builder.get_current_module_config()

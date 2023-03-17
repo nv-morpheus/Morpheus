@@ -38,7 +38,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_ROLLING_WINDOW, MORPHEUS_MODULE_NAMESPACE)
 def dfp_rolling_window(builder: mrc.Builder):
     """
-    This module function establishes a rolling window to maintain history.
+    This module function creates a rolling window to maintain history.
 
     Parameters
     ----------
@@ -48,15 +48,15 @@ def dfp_rolling_window(builder: mrc.Builder):
     Notes
     -----
     Configurable parameters:
-        - aggregation_span: The time span to aggregate over (e.g., '60d' for 60 days)
-        - cache_dir: The directory to cache the rolling window data
-        - cache_to_disk: Whether to cache the rolling window data to disk (default: False)
-        - cache_mode: The cache mode to use, either 'batch' or 'aggregate'
-            'aggregate': Cache the entire rolling window
-            'batch': Cache until batch criteria is met and then flush
-        - timestamp_column_name: The name of the timestamp column (default: 'timestamp')
-        - trigger_on_min_history: The minimum number of rows required to trigger the rolling window (default: 1)
-        - trigger_on_min_increment: The minimum number of rows required to trigger the rolling window (default: 0)
+        - aggregation_span (str): Time span to aggregate over (e.g., '60d' for 60 days)
+        - cache_dir (str): Directory to cache rolling window data
+        - cache_to_disk (bool): Cache rolling window data to disk (default: False)
+        - cache_mode (str): Cache mode, either 'batch' or 'aggregate'
+            'aggregate': Cache entire rolling window
+            'batch': Cache until batch criteria met, then flush
+        - timestamp_column_name (str): Name of timestamp column (default: 'timestamp')
+        - trigger_on_min_history (int): Minimum number of rows required to trigger rolling window (default: 1)
+        - trigger_on_min_increment (int): Minimum number of rows required to trigger rolling window (default: 0)
     """
 
     config = builder.get_current_module_config()

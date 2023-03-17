@@ -35,7 +35,7 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_TRAINING, MORPHEUS_MODULE_NAMESPACE)
 def dfp_training(builder: mrc.Builder):
     """
-    Model training is done using this module function.
+    This module function is used for model training.
 
     Parameters
     ----------
@@ -43,12 +43,12 @@ def dfp_training(builder: mrc.Builder):
         Pipeline builder instance.
 
     Notes
-    ----------
+    -----
     Configurable parameters:
-        - feature_columns: List of feature columns to train on
-        - epochs: Number of epochs to train for
-        - model_kwargs: Keyword arguments to pass to the model (see dfencoder.AutoEncoder)
-        - validation_size: Size of the validation set
+        - feature_columns (list): List of feature columns to train on
+        - epochs (int): Number of epochs to train for
+        - model_kwargs (dict): Keyword arguments to pass to the model (see dfencoder.AutoEncoder)
+        - validation_size (float): Size of the validation set
     """
 
     config = builder.get_current_module_config()
