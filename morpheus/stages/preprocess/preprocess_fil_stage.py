@@ -110,7 +110,7 @@ class PreprocessFILStage(PreprocessBaseStage):
         count = data.shape[0]
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count

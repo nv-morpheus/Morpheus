@@ -230,8 +230,6 @@ class InferenceStage(MultiMessageStage):
 
                 output_message = worker.build_output_message(x)
 
-                memory = output_message.memory
-
                 fut_list = []
 
                 for batch in batches:
@@ -241,7 +239,7 @@ class InferenceStage(MultiMessageStage):
 
                     def set_output_fut(resp: ResponseMemoryProbs, b, batch_future: mrc.Future):
                         nonlocal outstanding_requests
-                        m = self._convert_one_response(memory, b, resp)
+                        m = self._convert_one_response(output_message, b, resp)
 
                         outstanding_requests -= 1
 
@@ -386,23 +384,24 @@ class InferenceStage(MultiMessageStage):
         return MultiResponseProbsMessage.from_message(in_message[0], mess_count=saved_count, memory=memory)
 
     @staticmethod
-    def _convert_one_response(memory: ResponseMemory, inf: MultiInferenceMessage, res: ResponseMemoryProbs):
+    def _convert_one_response(output: MultiResponseProbsMessage, inf: MultiInferenceMessage, res: ResponseMemoryProbs):
         # Make sure we have a continuous list
         # assert inf.mess_offset == saved_offset + saved_count
+        memory = output.memory
 
         probs = memory.get_output("probs")
 
         seq_ids = inf.get_tensor("seq_ids")
 
-        seq_offset = seq_ids[0, 0].item()
-        seq_count = seq_ids[-1, 0].item() + 1 - seq_offset
+        seq_offset = seq_ids[0, 0].item() - output.mess_offset
+        seq_count = (seq_ids[-1, 0].item() + 1 - seq_offset) - output.mess_offset
 
         # Two scenarios:
         if (inf.mess_count == inf.count):
             assert seq_count == res.count
 
             # In message and out message have same count. Just use probs as is
-            probs[seq_offset:seq_offset + seq_count, :] = res.get_tensor("probs")
+            probs[seq_offset:seq_offset + seq_count, :] = res.probs
         else:
             assert inf.count == res.count
 

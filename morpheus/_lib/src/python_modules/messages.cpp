@@ -290,7 +290,8 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("input__0", &MultiInferenceFILMessageInterfaceProxy::input__0)
         .def_property_readonly("seq_ids", &MultiInferenceFILMessageInterfaceProxy::seq_ids);
 
-    py::class_<MultiResponseMessage, MultiMessage, std::shared_ptr<MultiResponseMessage>>(m, "MultiResponseMessage")
+    py::class_<MultiResponseMessage, MultiTensorMessage, std::shared_ptr<MultiResponseMessage>>(m,
+                                                                                                "MultiResponseMessage")
         .def(py::init<>(&MultiResponseMessageInterfaceProxy::init),
              py::kw_only(),
              py::arg("meta"),

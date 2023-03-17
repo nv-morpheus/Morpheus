@@ -29,7 +29,6 @@ import pytest
 import cudf
 
 from morpheus._lib.common import FileTypes
-from morpheus._lib.common import Tensor
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
@@ -471,14 +470,6 @@ def test_from_message(df: cudf.DataFrame):
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=10)
 
-    multi_tensor_message_tensors = {
-        "input_ids": cp.zeros((20, 2)),
-        "input_mask": cp.zeros((20, 2)),
-        "seq_ids": cp.expand_dims(cp.arange(0, 20, dtype=int), axis=1),
-        "input__0": cp.zeros((20, 2)),
-        "probs": cp.zeros((20, 2)),
-    }
-
     # Once for the base multi-message class
     multi2 = MultiMessage.from_message(multi)
     assert multi2.meta is multi.meta
@@ -598,14 +589,6 @@ def test_tensor_constructor(df: cudf.DataFrame):
     mess_len = len(df)
     ten_len = mess_len * 2
 
-    multi_tensor_message_tensors = {
-        "input_ids": cp.zeros((ten_len, 2)),
-        "input_mask": cp.zeros((ten_len, 2)),
-        "seq_ids": cp.expand_dims(cp.arange(0, ten_len, dtype=int), axis=1),
-        "input__0": cp.zeros((ten_len, 2)),
-        "probs": cp.zeros((ten_len, 2)),
-    }
-
     meta = MessageMeta(df)
 
     memory = TensorMemory(count=ten_len)
@@ -658,15 +641,6 @@ def test_tensor_constructor(df: cudf.DataFrame):
 
 
 def test_tensor_slicing(df: cudf.DataFrame):
-
-    # def offset_memory(memory: TensorMemory, offset: int):
-    memory = InferenceMemory(count=12, tensors={"seq_ids": cp.expand_dims(cp.repeat(cp.arange(6), repeats=2), axis=1)})
-    multi = MultiInferenceMessage(meta=MessageMeta(df.iloc[:6]), memory=memory)
-    multi_slice = multi.get_slice(3, 8)
-
-    multi_slice2 = multi.get_slice(4, 7)
-
-    multi_slice3 = multi.get_slice(3, 8).get_slice(1, 4)
 
     mess_len = len(df)
 

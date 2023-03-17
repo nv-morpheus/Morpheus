@@ -109,6 +109,7 @@ class PreprocessAEStage(PreprocessBaseStage):
         memory = InferenceMemoryAE(count=count, input=input, seq_ids=seg_ids)
 
         infer_message = MultiInferenceAEMessage.from_message(x,
+                                                             mess_count=mess_count,
                                                              memory=memory,
                                                              model=autoencoder,
                                                              train_scores_mean=scores_mean,

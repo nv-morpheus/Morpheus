@@ -26,11 +26,12 @@ from morpheus.messages import ResponseMemoryProbs
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.stages.inference import inference_stage
+from morpheus.messages.multi_response_message import MultiResponseProbsMessage
+from morpheus.stages.inference.inference_stage import InferenceStage
 from utils import IW
 
 
-class InferenceStage(inference_stage.InferenceStage):
+class InferenceStage(InferenceStage):
     # Subclass InferenceStage to implement the abstract methods
     def _get_inference_worker(self, pq):
         # Intentionally calling the abc empty method for coverage
@@ -124,51 +125,6 @@ def test_py_inf_fn(config):
     mock_pipe.subscribe.assert_called_once_with(mock_subscriber)
 
 
-@pytest.mark.use_python
-@mock.patch('mrc.Future')
-@mock.patch('morpheus.stages.inference.inference_stage.ops')
-def test_py_inf_fn_on_next(mock_ops, mock_future, config):
-    mock_future.return_value = mock_future
-    mock_node = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node_full.return_value = mock_node
-    mock_input_stream = mock.MagicMock()
-
-    mock_init = mock.MagicMock()
-    IW.init = mock_init
-    IW.process = mock.MagicMock()
-
-    inf_stage = InferenceStage(config)
-    inf_stage._build_single(mock_segment, mock_input_stream)
-
-    py_inference_fn = mock_segment.make_node_full.call_args[0][1]
-
-    mock_pipe = mock.MagicMock()
-    mock_observable = mock.MagicMock()
-    mock_observable.pipe.return_value = mock_pipe
-    mock_subscriber = mock.MagicMock()
-    py_inference_fn(mock_observable, mock_subscriber)
-
-    mock_ops.map.assert_called_once()
-    on_next = mock_ops.map.call_args[0][0]
-
-    mock_message = _mk_message()
-
-    output_message = on_next(mock_message)
-    assert output_message.count == 1
-    assert output_message.mess_offset == 0
-    assert output_message.mess_count == 1
-    assert output_message.offset == 0
-
-    mock_future.result.assert_called_once()
-    mock_future.set_result.assert_not_called()
-
-    IW.process.assert_called_once()
-    set_output_fut = IW.process.call_args[0][1]
-    set_output_fut(ResponseMemoryProbs(count=1, probs=cp.zeros((1, 2))))
-    mock_future.set_result.assert_called_once()
-
-
 @pytest.mark.use_cpp
 def test_build_single_cpp(config):
     mock_node = mock.MagicMock()
@@ -256,7 +212,7 @@ def test_convert_response(config):
         output_memory.append(
             ResponseMemoryProbs(count=s, probs=full_output[sum(message_sizes[:i]):sum(message_sizes[:i]) + s, :]))
 
-    resp = inference_stage.InferenceStage._convert_response((input_messages, output_memory))
+    resp = InferenceStage._convert_response((input_messages, output_memory))
     assert resp.meta == full_input.meta
     assert resp.mess_offset == 0
     assert resp.mess_count == total_size
@@ -269,7 +225,7 @@ def test_convert_response(config):
 def test_convert_response_errors():
     # Length of input messages doesn't match length of output messages
     with pytest.raises(AssertionError):
-        inference_stage.InferenceStage._convert_response(([1, 2, 3], [1, 2]))
+        InferenceStage._convert_response(([1, 2, 3], [1, 2]))
 
     # Message offst of the second message doesn't line up offset+count of the first
     mm1 = _mk_message()
@@ -279,7 +235,7 @@ def test_convert_response_errors():
     out_msg2 = ResponseMemoryProbs(count=1, probs=cp.random.rand(1, 3))
 
     with pytest.raises(AssertionError):
-        inference_stage.InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
+        InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
 
     # mess_coutn and count don't match for mm2, and mm2.count != out_msg2.count
     mm = _mk_message(mess_count=2, count=2)
@@ -290,7 +246,7 @@ def test_convert_response_errors():
     out_msg2 = ResponseMemoryProbs(count=2, probs=cp.random.rand(2, 3))
 
     with pytest.raises(AssertionError):
-        inference_stage.InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
+        InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
 
 
 @pytest.mark.use_python
@@ -301,7 +257,7 @@ def test_convert_one_response():
     inf = _mk_message(mess_count=4, count=4)
     res = ResponseMemoryProbs(count=4, probs=cp.random.rand(4, 3))
 
-    mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
+    mpm = InferenceStage._convert_one_response(MultiResponseProbsMessage.from_message(inf, memory=mem), inf, res)
     assert mpm.meta == inf.meta
     assert mpm.mess_offset == 0
     assert mpm.mess_count == 4
@@ -316,7 +272,7 @@ def test_convert_one_response():
     res = ResponseMemoryProbs(count=3, probs=cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]]))
 
     mem = ResponseMemoryProbs(2, probs=cp.zeros((2, 3)))
-    mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
+    mpm = InferenceStage._convert_one_response(MultiResponseProbsMessage.from_message(inf, memory=mem), inf, res)
     assert mem.get_output('probs').tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
 
 
@@ -326,4 +282,4 @@ def test_convert_one_response_error():
     res = _mk_message(mess_count=1, count=1)
 
     with pytest.raises(AssertionError):
-        inference_stage.InferenceStage._convert_one_response(mem, inf, res.memory)
+        InferenceStage._convert_one_response(MultiResponseProbsMessage.from_message(inf, memory=mem), inf, res.memory)

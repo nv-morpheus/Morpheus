@@ -24,6 +24,7 @@
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex, TensorMap
+#include "morpheus/utilities/matx_util.hpp"
 
 #include <cudf/column/column.hpp>                // for column, column::contents
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
@@ -122,8 +123,18 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                 auto seq_ids_released   = cudf::cast(token_results.tensor_metadata->view(),
                                                    cudf::data_type(tensor_index_dtype.cudf_type_id()))
                                             ->release();
+
+                std::shared_ptr<rmm::device_buffer> seq_ids_data = std::move(seq_ids_released.data);
+
+                if (x->mess_offset > 0)
+                {
+                    // Add an offset to the seq_ids so the message IDs line up
+                    MatxUtil::offset_seq_ids(
+                        DevMemInfo{seq_ids_data, tensor_index_dtype.type_id(), {length, 3}, {1, 3}}, x->mess_offset);
+                }
+
                 memory->tensors["seq_ids"] =
-                    std::move(Tensor::create(std::move(seq_ids_released.data), tensor_index_dtype, {length, 3}, {}, 0));
+                    std::move(Tensor::create(seq_ids_data, tensor_index_dtype, {length, 3}, {}, 0));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);
