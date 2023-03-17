@@ -31,38 +31,26 @@ def test_control_message_init():
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_get():
-    raw_control_message = _messages.MessageControl(
-        {
-            "test": "test_rcm",
-            "tasks": [
-                {
-                    "type": "load",
-                    "properties": {
-                        "loader_id": "payload"
-                    }
-                }
-            ]
-        }
-    )
-    control_message = messages.MessageControl(
-        {
-            "test": "test_cm",
-            "tasks": [
-                {
-                    "type": "load",
-                    "properties": {
-                        "loader_id": "payload"
-                    }
-                }
-            ]
-        }
-    )
+    raw_control_message = _messages.MessageControl({
+        "test": "test_rcm", "tasks": [{
+            "type": "load", "properties": {
+                "loader_id": "payload"
+            }
+        }]
+    })
+    control_message = messages.MessageControl({
+        "test": "test_cm", "tasks": [{
+            "type": "load", "properties": {
+                "loader_id": "payload"
+            }
+        }]
+    })
 
     assert "test" not in raw_control_message.config()
-    assert(raw_control_message.has_task("load"))
+    assert (raw_control_message.has_task("load"))
 
     assert "test" not in control_message.config()
-    assert(control_message.has_task("load"))
+    assert (control_message.has_task("load"))
 
 
 @pytest.mark.usefixtures("config_only_cpp")
@@ -71,33 +59,19 @@ def test_control_message_set():
     control_message = messages.MessageControl()
 
     raw_control_message.config({
-        "test": "test_rcm",
-        "tasks": [
-            {
-                "type": "load",
-                "properties": {
-                    "loader_id": "payload"
-                }
+        "test": "test_rcm", "tasks": [{
+            "type": "load", "properties": {
+                "loader_id": "payload"
             }
-        ]
+        }]
     })
-    control_message.config({
-        "test": "test_cm",
-        "tasks": [
-            {
-                "type": "load",
-                "properties": {
-                    "loader_id": "payload"
-                }
-            }
-        ]
-    })
+    control_message.config({"test": "test_cm", "tasks": [{"type": "load", "properties": {"loader_id": "payload"}}]})
 
     assert "test" not in raw_control_message.config()
     assert (raw_control_message.has_task("load"))
 
     assert "test" not in control_message.config()
-    assert(control_message.has_task("load"))
+    assert (control_message.has_task("load"))
 
 
 @pytest.mark.usefixtures("config_only_cpp")

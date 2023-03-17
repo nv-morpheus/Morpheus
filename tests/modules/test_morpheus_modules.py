@@ -68,18 +68,12 @@ def test_get_module():
 
 
 def test_get_module_with_bad_config_no_loaders():
+
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             for i in range(packet_count):
-                config = {
-                    "tasks": [{
-                        "type": "load",
-                        "properties": {
-                            "loader_id": "payload",
-                            "strategy": "aggregate"
-                        }
-                    }]
-                }
+                config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
                 msg = messages.MessageControl(config)
                 yield msg
 
@@ -112,32 +106,24 @@ def test_get_module_with_bad_config_no_loaders():
 
 
 def test_get_module_with_bad_loader_type():
+
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             for i in range(packet_count):
-                config = {
-                    "tasks": [{
-                        "type": "load",
-                        "properties": {
-                            "loader_id": "payload",
-                            "strategy": "aggregate"
-                        }
-                    }]
-                }
+                config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
                 msg = messages.MessageControl(config)
                 yield msg
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": [
-            {
-                "id": "not_a_loader(tm)",
-                "properties": {
-                    "file_types": "something",
-                    "prop2": "something else"
+        config = {
+            "loaders": [{
+                "id": "not_a_loader(tm)", "properties": {
+                    "file_types": "something", "prop2": "something else"
                 }
-            }
-        ]}
+            }]
+        }
         # This will unpack the config and forward it's payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
@@ -155,15 +141,15 @@ def test_get_module_with_bad_loader_type():
 
 
 def test_get_module_with_bad_control_message():
+
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             for i in range(packet_count):
                 config = {
                     "tasks": [{
-                        "type": "load",
-                        "properties": {
-                            "loader_id": "not_a_loader(tm)",
-                            "strategy": "aggregate"
+                        "type": "load", "properties": {
+                            "loader_id": "not_a_loader(tm)", "strategy": "aggregate"
                         }
                     }]
                 }
@@ -172,15 +158,7 @@ def test_get_module_with_bad_control_message():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": [
-            {
-                "id": "payload",
-                "properties": {
-                    "file_types": "something",
-                    "prop2": "something else"
-                }
-            }
-        ]}
+        config = {"loaders": [{"id": "payload", "properties": {"file_types": "something", "prop2": "something else"}}]}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
@@ -226,15 +204,7 @@ def test_payload_loader_module():
 
         def gen_data():
             global packet_count
-            config = {
-                "tasks": [{
-                    "type": "load",
-                    "properties": {
-                        "loader_id": "payload",
-                        "strategy": "aggregate"
-                    }
-                }]
-            }
+            config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
 
             payload = messages.MessageMeta(df)
             for i in range(packet_count):
@@ -250,15 +220,7 @@ def test_payload_loader_module():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": [
-            {
-                "id": "payload",
-                "properties": {
-                    "file_types": "something",
-                    "prop2": "something else"
-                }
-            }
-        ]}
+        config = {"loaders": [{"id": "payload", "properties": {"file_types": "something", "prop2": "something else"}}]}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 
@@ -285,12 +247,14 @@ def test_file_loader_module():
     global packets_received
     packets_received = 0
 
-    df = cudf.DataFrame({
-        'col1': [1, 2, 3, 4, 5],
-        'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
-        'col3': ['a', 'b', 'c', 'd', 'e'],
-        'col4': [True, False, True, False, True]
-    }, columns=['col1', 'col2', 'col3', 'col4'])
+    df = cudf.DataFrame(
+        {
+            'col1': [1, 2, 3, 4, 5],
+            'col2': [1.1, 2.2, 3.3, 4.4, 5.5],
+            'col3': ['a', 'b', 'c', 'd', 'e'],
+            'col4': [True, False, True, False, True]
+        },
+        columns=['col1', 'col2', 'col3', 'col4'])
 
     files = []
     file_types = ["csv", "parquet", "orc"]
@@ -308,6 +272,7 @@ def test_file_loader_module():
         files.append((filename, ftype))
 
     def init_wrapper(builder: mrc.Builder):
+
         def gen_data():
             global packet_count
 
@@ -317,14 +282,9 @@ def test_file_loader_module():
                     "tasks": [{
                         "type": "load",
                         "properties": {
-                            "loader_id": "file",
-                            "strategy": "aggregate",
-                            "files": [
-                                {
-                                    "path": f[0],
-                                    "type": f[1]
-                                }
-                            ]
+                            "loader_id": "file", "strategy": "aggregate", "files": [{
+                                "path": f[0], "type": f[1]
+                            }]
                         }
                     }]
                 }
@@ -336,13 +296,9 @@ def test_file_loader_module():
                     "tasks": [{
                         "type": "load",
                         "properties": {
-                            "loader_id": "file",
-                            "strategy": "aggregate",
-                            "files": [
-                                {
-                                    "path": f[0],
-                                }
-                            ]
+                            "loader_id": "file", "strategy": "aggregate", "files": [{
+                                "path": f[0],
+                            }]
                         }
                     }]
                 }
@@ -361,15 +317,7 @@ def test_file_loader_module():
 
         source = builder.make_source("source", gen_data)
 
-        config = {"loaders": [
-            {
-                "id": "file",
-                "properties": {
-                    "file_types": "something",
-                    "prop2": "something else"
-                }
-            }
-        ]}
+        config = {"loaders": [{"id": "file", "properties": {"file_types": "something", "prop2": "something else"}}]}
         # This will unpack the config and forward its payload (MessageMeta) to the sink
         data_loader = builder.load_module("DataLoader", "morpheus", "ModuleDataLoaderTest", config)
 

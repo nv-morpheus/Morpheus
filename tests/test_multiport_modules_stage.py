@@ -24,22 +24,23 @@ from morpheus.stages.general.multiport_modules_stage import MultiPortModulesStag
 from morpheus.utils.module_utils import mrc_version
 
 module_config = {
-    "module_id": "TestSimpleModule", "module_name": "test_simple_module", "namespace": "test_morpheus_modules"
+    "module_id": "TestMultiPortModule", "module_name": "test_multiport_module", "namespace": "test_morpheus_modules"
 }
 
 
 @pytest.mark.use_python
 def test_constructor(config):
 
-    mod_stage = MultiPortModulesStage(config, module_config, input_port_name="input",
-                             output_port_name_prefix="output",
-                             num_output_ports=num_output_ports)
+    mod_stage = MultiPortModulesStage(config,
+                                      module_config,
+                                      input_port_name="input",
+                                      output_port_name_prefix="output",
+                                      num_output_ports=2)
 
-    assert mod_stage.name == "test_simple_module"
+    assert mod_stage.name == "test_multiport_module"
 
     # Just ensure that we get a valid non-empty tuple
     accepted_types = mod_stage.accepted_types()
-    print(accepted_types)
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
     assert accepted_types[0] == typing.Any
@@ -58,7 +59,11 @@ def test_build_single_before_module_registration(config):
     mock_segment.load_module.return_value = mock_module
     mock_segment.make_node_full.return_value = mock_node
 
-    mod_stage = LinearModulesStage(config, module_config, input_port_name="test_in", output_port_name="test_out")
+    mod_stage = MultiPortModulesStage(config,
+                                      module_config,
+                                      input_port_name="input",
+                                      output_port_name_prefix="output",
+                                      num_output_ports=2)
 
     with pytest.raises(Exception):
         mod_stage._build_single(mock_segment, mock_input_stream)
@@ -70,7 +75,7 @@ def register_test_module():
     def module_init_fn(builder: mrc.Builder):
         pass
 
-    registry.register_module("TestSimpleModule", "test_morpheus_modules", mrc_version, module_init_fn)
+    registry.register_module("TestMultiPortModule", "test_morpheus_modules", mrc_version, module_init_fn)
 
 
 @pytest.mark.use_python
@@ -86,9 +91,16 @@ def test_build_single_after_module_registration(config):
     mock_segment.load_module.return_value = mock_module
     mock_segment.make_node_full.return_value = mock_node
 
-    mod_stage = LinearModulesStage(config, module_config, input_port_name="test_in", output_port_name="test_out")
+    num_output_ports = 2
 
-    mod_stage._build_single(mock_segment, mock_input_stream)
+    mod_stage = MultiPortModulesStage(config,
+                                      module_config,
+                                      input_port_name="input",
+                                      output_port_name_prefix="output",
+                                      num_output_ports=num_output_ports)
 
+    out_stream_pairs = mod_stage._build_single(mock_segment, mock_input_stream)
+
+    assert len(out_stream_pairs) == num_output_ports
     mock_segment.load_module.assert_called_once()
     mock_segment.make_edge.assert_called_once()
