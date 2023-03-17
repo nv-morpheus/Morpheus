@@ -47,12 +47,16 @@ def _mk_message(mess_offset=0, mess_count=1, offset=0, count=1):
     m = MultiInferenceMessage(meta=MessageMeta(df),
                               mess_offset=mess_offset,
                               mess_count=mess_count,
-                              memory=InferenceMemory(
-                                  count=total_tensor_count,
-                                  tensors={
-                                      "probs": cp.random.rand(total_tensor_count, 2),
-                                      "seq_ids": cp.tile(cp.expand_dims(cp.arange(total_tensor_count), axis=1), (1, 3))
-                                  }),
+                              memory=InferenceMemory(count=total_tensor_count,
+                                                     tensors={
+                                                         "probs":
+                                                             cp.random.rand(total_tensor_count, 2),
+                                                         "seq_ids":
+                                                             cp.tile(
+                                                                 cp.expand_dims(cp.arange(
+                                                                     mess_offset, mess_offset + total_tensor_count),
+                                                                                axis=1), (1, 3))
+                                                     }),
                               offset=offset,
                               count=count)
 
@@ -290,29 +294,30 @@ def test_convert_response_errors():
 
 
 @pytest.mark.use_python
-def test_convert_one_response(config):
+def test_convert_one_response():
     # Test first branch where `inf.mess_count == inf.count`
-    mem = ResponseMemoryProbs(1, probs=cp.zeros((1, 3)))
+    mem = ResponseMemoryProbs(4, probs=cp.zeros((4, 3)))
 
-    inf = _mk_message()
-    res = ResponseMemoryProbs(count=1, probs=cp.array([[1, 2, 3]]))
+    inf = _mk_message(mess_count=4, count=4)
+    res = ResponseMemoryProbs(count=4, probs=cp.random.rand(4, 3))
 
     mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
     assert mpm.meta == inf.meta
     assert mpm.mess_offset == 0
-    assert mpm.mess_count == 1
+    assert mpm.mess_count == 4
     assert mpm.offset == 0
-    assert mpm.count == 1
-    assert mem.get_output('probs').tolist() == [[1.0, 2.0, 3.0]]
+    assert mpm.count == 4
+    assert cp.all(mem.get_output('probs') == res.get_output("probs"))
 
     # Test for the second branch
-    inf.count = 2
-    inf.seq_ids = cp.array([[0], [1]])
-    res = ResponseMemoryProbs(count=2, probs=cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2]]))
+    inf = _mk_message(mess_count=3, count=3)
+    inf.memory.set_tensor("seq_ids", cp.array([[0], [1], [1]]))
+    inf.mess_count = 2  # Get around the consistency check
+    res = ResponseMemoryProbs(count=3, probs=cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]]))
 
-    mem = ResponseMemoryProbs(2, probs=cp.array([[0.1, 0.5, 0.8], [4.5, 6.7, 8.9]]))
+    mem = ResponseMemoryProbs(2, probs=cp.zeros((2, 3)))
     mpm = inference_stage.InferenceStage._convert_one_response(mem, inf, res)
-    assert mem.get_output('probs').tolist() == [[0.1, 0.6, 0.8], [5.6, 6.7, 9.2]]
+    assert mem.get_output('probs').tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
 
 
 def test_convert_one_response_error():

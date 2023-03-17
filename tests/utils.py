@@ -38,7 +38,6 @@ from morpheus.messages import MultiResponseProbsMessage
 from morpheus.messages import ResponseMemoryProbs
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.inference import inference_stage
-from morpheus.utils import xd
 from morpheus.utils.atomic_integer import AtomicInteger
 
 
@@ -341,7 +340,7 @@ def create_df_with_dup_ids(tmp_path: str, dup_row=8) -> str:
     return dup_file
 
 
-def assert_df_equal(df_to_check: xd.DataFrame, val_to_check: typing.Any):
+def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val_to_check: typing.Any):
 
     # Comparisons work better in cudf so convert everything to that
     if (isinstance(df_to_check, cudf.DataFrame) or isinstance(df_to_check, cudf.Series)):

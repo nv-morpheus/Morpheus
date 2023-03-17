@@ -368,15 +368,18 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
     if (column_indexer.contains(-1))
     {
         // cudf is really bad at adding new columns. Need to use loc with a unique and monotonic index
-        py::object saved_index = py::none();
+        py::object saved_index = df.attr("index");
 
         // Check to see if we can use slices
-        if (!df.attr("index").attr("is_unique").cast<bool>() || !df.attr("index").attr("is_monotonic").cast<bool>())
+        if (!(saved_index.attr("is_unique").cast<bool>() && (saved_index.attr("is_monotonic_increasing").cast<bool>() ||
+                                                             saved_index.attr("is_monotonic_decreasing").cast<bool>())))
         {
-            // Save the index and reset
-            saved_index = df.attr("index");
-
             df.attr("reset_index")("drop"_a = true, "inplace"_a = true);
+        }
+        else
+        {
+            // Erase the saved index so we dont reset it
+            saved_index = py::none();
         }
 
         // Perform the update via slices
@@ -396,8 +399,15 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
             column_indexer = column_indexer.cast<py::list>()[0];
         }
 
-        // Use iloc
-        df.attr("iloc")[pybind11::make_tuple(row_indexer, column_indexer)] = value;
+        try
+        {
+            // Use iloc
+            df.attr("iloc")[pybind11::make_tuple(row_indexer, column_indexer)] = value;
+        } catch (py::error_already_set)
+        {
+            // Try this as a fallback. Works better for strings. See issue #286
+            df[columns].attr("iloc")[row_indexer] = value;
+        }
     }
 
     mutable_info.return_obj(std::move(df));

@@ -83,7 +83,7 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
     multi_tensor_message_tensors = {
         "input_ids": cp.zeros((1, 2)),
         "input_mask": cp.zeros((1, 2)),
-        "seq_ids": cp.zeros((1, 3)),
+        "seq_ids": cp.zeros((1, 3), dtype=cp.int32),
         "input__0": cp.zeros((1, 2)),
         "probs": cp.zeros((1, 2))
     }

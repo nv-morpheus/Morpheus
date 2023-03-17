@@ -38,14 +38,16 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         Offset of each message into the `TensorMemory` block.
     count : int
         Number of rows in the `TensorMemory` block.
-
     """
+
     memory: TensorMemory = dataclasses.field(repr=False)
     offset: int
     count: int
 
     required_tensors: typing.ClassVar[typing.List[str]] = []
-    id_tensor: typing.ClassVar[str] = "seq_ids"
+    """The tensor names that are required for instantiation"""
+    id_tensor_name: typing.ClassVar[str] = "seq_ids"
+    """Name of the tensor correlates tensor rows to message IDs"""
 
     def __init__(self,
                  *,
@@ -79,6 +81,9 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         if (self.count < self.mess_count):
             raise ValueError("Invalid count value. Must have a count greater than or equal to mess_count")
 
+        # Check the ID tensor for consistency
+        self._check_id_tensor()
+
         # Finally, check for the required tensors class attribute
         if (hasattr(self.__class__, "required_tensors")):
             for tensor_name in self.__class__.required_tensors:
@@ -108,27 +113,41 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
             return super().__getattr__(name)
         raise AttributeError
 
+    def _check_id_tensor(self):
+
+        if (self.memory.has_tensor(self.id_tensor_name)):
+            # Check the bounds against the elements in the array
+            id_tensor = self.memory.get_tensor(self.id_tensor_name)
+
+            first_element = id_tensor[self.offset, 0].item()
+            last_element = id_tensor[self.offset + self.count - 1, 0].item()
+
+            if (first_element != self.mess_offset):
+                raise RuntimeError(f"Inconsistent ID column. First element in '{self.id_tensor_name}' tensor, "
+                                   f"[{first_element}], must match mess_offset, [{self.mess_offset}]")
+
+            if (last_element != self.mess_offset + self.mess_count - 1):
+                raise RuntimeError(f"Inconsistent ID column. Last element in '{self.id_tensor_name}' tensor, "
+                                   f"[{last_element}], must not extend beyond last message, "
+                                   f"[{self.mess_offset + self.mess_count - 1}]")
+
     def _calc_message_slice_bounds(self, start: int, stop: int):
 
         mess_start = start
         mess_stop = stop
 
         if (self.count != self.mess_count):
-            if (hasattr(self.__class__, "id_tensor") and self.__class__.id_tensor is not None):
-                id_tensor_name = self.__class__.id_tensor
 
-                if (not self.memory.has_tensor(id_tensor_name)):
-                    raise RuntimeError(f"The tensor memory object is missing the required ID tensor '{id_tensor_name}' "
-                                       f"this tensor is required to make slices of MultiTensorMessages")
+            if (not self.memory.has_tensor(self.id_tensor_name)):
+                raise RuntimeError(
+                    f"The tensor memory object is missing the required ID tensor '{self.id_tensor_name}' "
+                    f"this tensor is required to make slices of MultiTensorMessages")
 
-                id_tensor = self.get_tensor(id_tensor_name)
+            id_tensor = self.get_tensor(self.id_tensor_name)
 
-                # Now determine the new mess_start and mess_stop
-                mess_start = id_tensor[start, 0].item()
-                mess_stop = id_tensor[stop - 1, 0].item() + 1
-            else:
-                raise RuntimeError("Cannot calculate slice when the tensor count is different than the message count. "
-                                   "Must use a derived class which tracks message IDs")
+            # Now determine the new mess_start and mess_stop
+            mess_start = id_tensor[start, 0].item() - self.mess_offset
+            mess_stop = id_tensor[stop - 1, 0].item() + 1 - self.mess_offset
 
         # Return the base calculation now
         return super()._calc_message_slice_bounds(start=mess_start, stop=mess_stop)

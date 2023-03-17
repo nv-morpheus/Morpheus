@@ -18,10 +18,12 @@
 
 import dataclasses
 import os
+import string
 import typing
 
 import cupy as cp
 import numpy as np
+import pandas
 import pytest
 
 import cudf
@@ -218,10 +220,20 @@ def test_set_meta_new_column(df: cudf.DataFrame, df_type: typing.Literal['cudf',
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
-    # Just one new column
+    # Set a list
     val_to_set = list(range(multi.mess_count))
-    multi.set_meta("new_column", val_to_set)
-    assert assert_df_equal(multi.get_meta("new_column"), val_to_set)
+    multi.set_meta("list_column", val_to_set)
+    assert assert_df_equal(multi.get_meta("list_column"), val_to_set)
+
+    # Set a string
+    val_to_set = "string to set"
+    multi.set_meta("string_column", val_to_set)
+    assert assert_df_equal(multi.get_meta("string_column"), val_to_set)
+
+    # Set a date
+    val_to_set = pandas.date_range("2018-01-01", periods=multi.mess_count, freq="H")
+    multi.set_meta("date_column", val_to_set)
+    assert assert_df_equal(multi.get_meta("date_column"), val_to_set)
 
     if (df_type == "cudf"):
         # cudf isnt capable of setting more than one new column at a time
@@ -239,6 +251,18 @@ def test_set_meta_new_column_dup_index(df: cudf.DataFrame, df_type: typing.Liter
     df = duplicate_df_index(df, replace_ids={3: 4, 5: 4})
 
     test_set_meta_new_column(df, df_type)
+
+
+def test_set_meta_issue_286(df: cudf.DataFrame):
+
+    meta = MessageMeta(df)
+    mm1 = MultiMessage(meta=meta, mess_offset=0, mess_count=5)
+    mm2 = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
+
+    values = list(string.ascii_letters)
+
+    mm1.set_meta('letters', values[0:5])
+    mm2.set_meta('letters', values[5:10])
 
 
 def test_copy_ranges(df: cudf.DataFrame):
@@ -493,7 +517,7 @@ def test_from_message(df: cudf.DataFrame):
     assert multi2.mess_count == 4
 
     # Repeat for tensor memory
-    memory = ResponseMemory(count=20, tensors=multi_tensor_message_tensors)
+    memory = TensorMemory(count=20)
     multi_tensor = MultiTensorMessage(meta=meta, mess_offset=3, mess_count=10, memory=memory, offset=5, count=10)
 
     # Create from a base class
@@ -523,7 +547,7 @@ def test_from_message(df: cudf.DataFrame):
     assert multi3.offset == 7
     assert multi3.count == 11
 
-    memory3 = ResponseMemory(count=20, tensors=multi_tensor_message_tensors)
+    memory3 = TensorMemory(count=20)
     multi3 = MultiTensorMessage.from_message(multi_tensor, memory=memory3)
     assert multi3.memory is memory3
     assert multi3.offset == 0
@@ -584,7 +608,7 @@ def test_tensor_constructor(df: cudf.DataFrame):
 
     meta = MessageMeta(df)
 
-    memory = ResponseMemory(count=ten_len, tensors=multi_tensor_message_tensors)
+    memory = TensorMemory(count=ten_len)
 
     # Default constructor
     multi_tensor = MultiTensorMessage(meta=meta, memory=memory)
@@ -605,8 +629,7 @@ def test_tensor_constructor(df: cudf.DataFrame):
     assert multi_tensor.count == 10
 
     # Larger tensor count
-    multi_tensor = MultiTensorMessage(meta=meta,
-                                      memory=TensorMemory(count=21, tensors={"probs": cp.random.rand(21, 2)}))
+    multi_tensor = MultiTensorMessage(meta=meta, memory=TensorMemory(count=21))
     assert multi_tensor.meta is meta
     assert multi_tensor.mess_offset == 0
     assert multi_tensor.mess_count == meta.count
@@ -636,6 +659,15 @@ def test_tensor_constructor(df: cudf.DataFrame):
 
 def test_tensor_slicing(df: cudf.DataFrame):
 
+    # def offset_memory(memory: TensorMemory, offset: int):
+    memory = InferenceMemory(count=12, tensors={"seq_ids": cp.expand_dims(cp.repeat(cp.arange(6), repeats=2), axis=1)})
+    multi = MultiInferenceMessage(meta=MessageMeta(df.iloc[:6]), memory=memory)
+    multi_slice = multi.get_slice(3, 8)
+
+    multi_slice2 = multi.get_slice(4, 7)
+
+    multi_slice3 = multi.get_slice(3, 8).get_slice(1, 4)
+
     mess_len = len(df)
 
     repeat_counts = [1] * mess_len
@@ -662,7 +694,7 @@ def test_tensor_slicing(df: cudf.DataFrame):
     assert cp.all(multi_slice.get_tensor("probs") == probs[3:10, :])
 
     # Offset on memory
-    multi = MultiInferenceMessage(meta=MessageMeta(df), memory=memory, offset=4)
+    multi = MultiInferenceMessage(meta=MessageMeta(df), mess_offset=seq_ids[4, 0].item(), memory=memory, offset=4)
     multi_slice = multi.get_slice(6, 13)
     assert multi_slice.mess_offset == seq_ids[multi.offset + 6, 0].item()
     assert multi_slice.mess_count == seq_ids[multi.offset + 13 - 1, 0].item() + 1 - seq_ids[multi.offset + 6, 0].item()
@@ -671,9 +703,8 @@ def test_tensor_slicing(df: cudf.DataFrame):
     assert cp.all(multi_slice.get_tensor("probs") == probs[multi.offset + 6:multi.offset + 13, :])
 
     # Should be equivalent to shifting the input tensors and having no offset
-
     equiv_memory = InferenceMemory(count=tensor_count - 4, tensors={"seq_ids": seq_ids[4:], "probs": probs[4:]})
-    equiv_multi = MultiInferenceMessage(meta=MessageMeta(df), memory=equiv_memory)
+    equiv_multi = MultiInferenceMessage(meta=MessageMeta(df), mess_offset=seq_ids[4, 0].item(), memory=equiv_memory)
     equiv_slice = equiv_multi.get_slice(6, 13)
     assert multi_slice.mess_offset == equiv_slice.mess_offset
     assert multi_slice.mess_count == equiv_slice.mess_count
@@ -682,6 +713,7 @@ def test_tensor_slicing(df: cudf.DataFrame):
     assert cp.all(multi_slice.get_tensor("probs") == equiv_slice.get_tensor("probs"))
 
     # Offset on meta
+    memory = InferenceMemory(count=tensor_count - 3, tensors={"seq_ids": seq_ids[:-3] + 3, "probs": probs[:-3]})
     multi = MultiInferenceMessage(meta=MessageMeta(df), mess_offset=3, memory=memory)
     multi_slice = multi.get_slice(2, 9)
     assert multi_slice.mess_offset == seq_ids[multi.offset + 2, 0].item() + 3
@@ -691,7 +723,7 @@ def test_tensor_slicing(df: cudf.DataFrame):
     assert cp.all(multi_slice.get_tensor("probs") == probs[multi.offset + 2:multi.offset + 9, :])
 
     # Should be equivalent to shifting the input dataframe and having no offset
-    equiv_memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})
+    equiv_memory = InferenceMemory(count=tensor_count - 3, tensors={"seq_ids": seq_ids[:-3], "probs": probs[:-3]})
     equiv_multi = MultiInferenceMessage(meta=MessageMeta(df.iloc[3:, :]), memory=equiv_memory)
     equiv_slice = equiv_multi.get_slice(2, 9)
     assert multi_slice.mess_offset == equiv_slice.mess_offset + 3
@@ -699,3 +731,15 @@ def test_tensor_slicing(df: cudf.DataFrame):
     assert multi_slice.offset == equiv_slice.offset
     assert multi_slice.count == equiv_slice.count
     assert assert_df_equal(multi_slice.get_meta(), equiv_slice.get_meta())
+
+    # Finally, compare a double slice to a single
+    memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})
+    multi = MultiInferenceMessage(meta=MessageMeta(df), memory=memory)
+    double_slice = multi.get_slice(4, 17).get_slice(3, 10)
+    single_slice = multi.get_slice(4 + 3, 4 + 10)
+    assert double_slice.mess_offset == single_slice.mess_offset
+    assert double_slice.mess_count == single_slice.mess_count
+    assert double_slice.offset == single_slice.offset
+    assert double_slice.count == single_slice.count
+    assert cp.all(double_slice.get_tensor("probs") == single_slice.get_tensor("probs"))
+    assert assert_df_equal(double_slice.get_meta(), single_slice.get_meta())

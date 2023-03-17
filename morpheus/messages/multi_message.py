@@ -240,8 +240,12 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
                 if (len(column_indexer) == 1):
                     column_indexer = column_indexer[0]
 
-                # Now update the slice
-                df.iloc[row_indexer, column_indexer] = value
+                try:
+                    # Now update the slice
+                    df.iloc[row_indexer, column_indexer] = value
+                except ValueError:
+                    # Try this as a fallback. Works better for strings. See issue #286
+                    df[columns].iloc[row_indexer] = value
 
             else:
                 # Columns should never be empty if we get here
@@ -253,7 +257,8 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
                     saved_index = None
 
                     # Check to see if we can use slices
-                    if (not df.index.is_unique or not df.index.is_monotonic):
+                    if (not (df.index.is_unique and
+                             (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing))):
                         # Save the index and reset
                         saved_index = df.index
 
