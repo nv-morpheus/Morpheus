@@ -153,6 +153,8 @@ def test_complete_layer_interpret_activation():
 
 @pytest.mark.usefixtures("manual_seed")
 def test_complete_layer_forward():
+    # Setting dropout probability to 0. The results of dropout our deterministic, but are only
+    # consistent when run on the same GPU.
     cc = autoencoder.CompleteLayer(3, 5, activation='tanh', dropout=0)
     t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
     results = cc.forward(t)
