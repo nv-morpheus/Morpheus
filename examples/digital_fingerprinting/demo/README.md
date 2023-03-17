@@ -44,5 +44,10 @@ http://localhost:3000
 ```
 Generates control messages for training purposes exclusively with some user-specified parameters.
 ```
-http://localhost:3000/training #
+http://localhost:3000/training
+```
+
+Submit training messages after reviewing inference results
+```
+http://localhost:3000/review/results
 ```

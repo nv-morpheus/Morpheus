@@ -11,7 +11,7 @@
       <div class="banner">
          <h1>DFP Integrated Training Demo</h1>
       </div>
-      <form action="/training" method="post">
+      <form action="/training" method="post" onsubmit="return checkDateTime()">
          <div id="inputs-container">
             <div>
                <label for="files">Files:</label><input type="text" name="files" id="files" placeholder="Ex: filename1,filename2" required>
@@ -27,7 +27,7 @@
            </div>
            <div>
                <label for="end_time">End Time:</label><input type="date" name="end_time" id="end_time" required>
-           </div>           
+           </div>
          </div>
          <div class="btn-block">
             <button id="submit" href="/training" >Submit</button>

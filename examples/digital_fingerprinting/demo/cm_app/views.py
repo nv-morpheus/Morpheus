@@ -1,11 +1,11 @@
 import logging
 
+from cm_app.helper import KafkaWriter
+from cm_app.helper import generate_success_message
+from cm_app.helper import process_cm
 from confluent_kafka import Producer
 from flask import render_template
 from flask import request
-from cm_app.helper import KafkaWriter
-from cm_app.helper import process_cm
-from cm_app.helper import generate_success_message
 
 from . import app
 
@@ -29,7 +29,7 @@ def submit_messages():
         control_messages_json = process_cm(request)
         global kafka_writer
         kafka_writer.write_data(control_messages_json)
-        sucess_message = generate_success_message(control_message_json)
+        sucess_message = generate_success_message(control_messages_json)
         return sucess_message
 
     if request.method == "GET":
@@ -48,3 +48,10 @@ def training():
 
     if request.method == "GET":
         return render_template("training.html")
+
+
+@app.route('/review/results', methods=["GET"])
+def reviewresults():
+
+    if request.method == "GET":
+        return render_template("review/results.html")

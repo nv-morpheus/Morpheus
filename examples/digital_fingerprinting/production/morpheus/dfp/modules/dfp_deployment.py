@@ -64,11 +64,14 @@ def dfp_deployment(builder: mrc.Builder):
     dfp_training_pipe_conf = module_config["training_options"]
     dfp_inference_pipe_conf = module_config["inference_options"]
 
-    fsspec_dataloader_module = builder.load_module(DATA_LOADER, "morpheus", "fsspec_dataloader",
-                                                   fsspec_dataloader_conf)
-    dfp_training_pipe_module = builder.load_module(DFP_TRAINING_PIPE, "morpheus", "dfp_training_pipe",
+    fsspec_dataloader_module = builder.load_module(DATA_LOADER, "morpheus", "fsspec_dataloader", fsspec_dataloader_conf)
+    dfp_training_pipe_module = builder.load_module(DFP_TRAINING_PIPE,
+                                                   "morpheus",
+                                                   "dfp_training_pipe",
                                                    dfp_training_pipe_conf)
-    dfp_inference_pipe_module = builder.load_module(DFP_INFERENCE_PIPE, "morpheus", "dfp_inference_pipe",
+    dfp_inference_pipe_module = builder.load_module(DFP_INFERENCE_PIPE,
+                                                    "morpheus",
+                                                    "dfp_inference_pipe",
                                                     dfp_inference_pipe_conf)
 
     # Create broadcast node to fork the pipeline.

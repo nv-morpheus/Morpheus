@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Review DFP Inference Results</title>
+        <link rel="stylesheet" type="text/css" href="/static/submit_messages.css">
+        <link rel="stylesheet" type="text/css" href="/static/review/results.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="{{url_for('static', filename='/review/results.js')}}"></script>
+     </head>
+   <body>
+      <div class="banner">
+         <div class="banner-image"></div>
+         <h1>Review DFP Inference Results</h1>
+       </div>
+      <form>
+         <input type="file" id="csv-file" accept=".csv">
+      </form>
+      <div>
+         <label for="columns">Choose columns to display:</label>
+      </div>
+         <select id="columns" multiple onchange="toggleColumn()">
+         </select>
+      </div>
+      </br>
+      </br>
+      <button onclick="handleFileSelect()">View File or Reset</button>
+      <button onclick="saveMarked()">Save Selected Rows</button>
+      <button id="submit-button" onclick="submitTrainingMessage()" disabled>Submit Training Message</button>
+      <div id="csv-content"></div>
+   </body>
+</html>

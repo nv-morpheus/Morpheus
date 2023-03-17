@@ -78,8 +78,7 @@ class ConfigGenerator:
                 "userid_column_name": self._config.ae.userid_column_name
             },
             "stream_aggregation_options": {
-                "aggregation_span": self._dfp_arg_parser.duration,
-                "cache_to_disk": False
+                "aggregation_span": self._dfp_arg_parser.duration, "cache_to_disk": False
             },
             "preprocessing_options": {
                 "schema": {
@@ -129,8 +128,7 @@ class ConfigGenerator:
                 "userid_column_name": self._config.ae.userid_column_name
             },
             "stream_aggregation_options": {
-                "aggregation_span": self._dfp_arg_parser.duration,
-                "cache_to_disk": False
+                "aggregation_span": self._dfp_arg_parser.duration, "cache_to_disk": False
             },
             "preprocessing_options": {
                 "schema": {
@@ -138,9 +136,7 @@ class ConfigGenerator:
                 }
             },
             "dfencoder_options": {
-                "feature_columns": self._config.ae.feature_columns,
-                "epochs": 30,
-                "validation_size": 0.10
+                "feature_columns": self._config.ae.feature_columns, "epochs": 30, "validation_size": 0.10
             },
             "mlflow_writer_options": {
                 "model_name_formatter": self._dfp_arg_parser.model_name_formatter,

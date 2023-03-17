@@ -78,10 +78,10 @@ def dfp_modules_pipeline(pipe_config: Config,
     # Here we add a wrapped module that implements the DFP Deployment
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModulesStage(pipe_config,
-                             modules_conf,
-                             input_port_name="input",
-                             output_port_name_prefix="output",
-                             num_output_ports=modules_conf["num_output_ports"]))
+                              modules_conf,
+                              input_port_name="input",
+                              output_port_name_prefix="output",
+                              num_output_ports=modules_conf["num_output_ports"]))
 
     pipeline.add_edge(source_stage, dfp_deployment_stage)
 

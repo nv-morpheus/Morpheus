@@ -179,10 +179,10 @@ def run_pipeline(source: str,
 
     dfp_deployment_stage = pipeline.add_stage(
         MultiPortModulesStage(config,
-                             dfp_deployment_module_config,
-                             input_port_name="input",
-                             output_port_name_prefix="output",
-                             num_output_ports=num_output_ports))
+                              dfp_deployment_module_config,
+                              input_port_name="input",
+                              output_port_name_prefix="output",
+                              num_output_ports=num_output_ports))
 
     train_moniter_stage = pipeline.add_stage(
         MonitorStage(config, description="DFP Training Pipeline rate", smoothing=0.001))
