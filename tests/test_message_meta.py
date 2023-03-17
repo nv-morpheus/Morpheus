@@ -136,5 +136,6 @@ def test_copy_dataframe(df: cudf.DataFrame):
     assert copied_df is not df, "But should be different instances"
 
     # Try setting a single value on the copy
-    meta.copy_dataframe()['v2'][3] = 47
+    cdf = meta.copy_dataframe()
+    cdf['v2'].iloc[3] = 47
     assert assert_df_equal(meta.copy_dataframe(), df), "Should be identical"
