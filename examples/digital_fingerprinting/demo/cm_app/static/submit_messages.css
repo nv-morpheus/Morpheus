@@ -1,31 +1,12 @@
-.banner {
-  position:relative;
-  height: 200px;
-  max-width: 100%;
-  background: url("https://developer-blogs.nvidia.com/wp-content/uploads/2022/10/router-box-featured.jpg");
-  background-size:auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  }
-  .banner::after {
-  content: "";
-  background-color: #8bb521(0, 0, 0, 0.4);
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  }
-
-  h1 {
-    position: absolute;
-    margin: 0;
-    font-size: 50px;
-    color: white;
-    z-index: 2;
-    line-height: 83px;
-    }
-/*  <link rel="stylesheet" type="text/css" href="test.css">*/
+h1 {
+  position: relative;
+  margin: 0;
+  padding: 0 20px;
+  line-height: 150px;
+  font-size: 36px;
+  font-weight: bold;
+  color: rgb(255, 255, 255);
+}
 
 
 /* Style for the form element */
@@ -55,7 +36,7 @@ select {
 #banner {
   width: 100%;
   }
-  
+
 /* Style for the button elements */
 button {
   margin-top: 10px;
@@ -63,7 +44,7 @@ button {
   padding: 5px 10px;
   border-radius: 5px;
   background-color: #8bb521;
-  color: #fff;
+  color: black;
   border: none;
 }
 
@@ -85,6 +66,23 @@ input {
   margin-bottom: 15px;
 }
 
+.hidden {
+  display: none;
+  }
+  .marked {
+  background-color: yellow;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 20px;
+    width: calc(100% - 40px);
+    }
+    th, td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+    }
 /* Style for the task and property elements */
 .task,
 .property {
@@ -110,16 +108,6 @@ input {
   width: 100%;
   height: 100%;
   }
-
-  h1 {
-    position: absolute;
-    margin: 0;
-    font-size: 50px;
-    color: white;
-    z-index: 2;
-    line-height: 83px;
-    }
-/*  <link rel="stylesheet" type="text/css" href="test.css">*/
 
 
 /* Style for the form element */
@@ -153,7 +141,7 @@ button {
   padding: 5px 10px;
   border-radius: 5px;
   background-color: #8bb521;
-  color: #fff;
+  color: black;
   border: none;
 }
 

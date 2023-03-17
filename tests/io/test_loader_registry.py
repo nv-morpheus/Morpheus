@@ -38,6 +38,7 @@ def test_loader_registry_contains():
 
 
 def test_loader_registry_register_loader():
+
     def test_loader(control_message: messages.MessageControl, task: dict):
         task_properties = task['properties']
         if ('files' not in task_properties):
@@ -73,6 +74,7 @@ def test_loader_registry_register_loader():
 
 
 def test_loader_registry_unregister_loader():
+
     def test_loader(control_message: messages.MessageControl, task: dict):
         task_properties = task['properties']
         if ('files' not in task_properties):

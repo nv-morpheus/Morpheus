@@ -1,41 +1,50 @@
-from confluent_kafka import Producer
 import json
 import logging
 
-logging.basicConfig()
-logger = logging.getLogger("logger")
-
-def delivery_report(err, msg):
-    """ Called once for each message produced to indicate delivery result.
-        Triggered by poll() or flush(). """
-    if err is not None:
-        print('Message delivery failed: {}'.format(err))
-    else:
-        print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
+logger = logging.getLogger(__name__)
 
 
-def publish_message(message):
-    p = Producer({'bootstrap.servers': 'localhost:9092'})
+class KafkaWriter:
 
-    p.poll(0)
+    def __init__(self, kafka_topic, batch_size, producer):
+        self._kafka_topic = kafka_topic
+        self._batch_size = batch_size
+        self._producer = producer
 
-    # Asynchronously produce a message. The delivery report callback will
-    # be triggered from the call to poll() above, or flush() below, when the
-    # message has been successfully delivered or failed permanently.
-    p.produce('test_cm', message.encode('utf-8'))
+    @property
+    def producer(self):
+        return self._producer
 
-    # Wait for any outstanding messages to be delivered and delivery report
-    # callbacks to be triggered.
-    p.flush()
+    def write_data(self, message):
+        self.producer.produce(self._kafka_topic, message.encode('utf-8'))
+        if len(self.producer) >= self._batch_size:
+            logger.info(
+                "Batch reached, calling poll... producer unsent: %s",
+                len(self.producer),
+            )
+            self.producer.flush()
+
+    def close(self):
+        logger.info("Closing kafka writer...")
+        if self.producer is not None:
+            self.producer.flush()
+        logger.info("Closing kafka writer...Done")
+
 
 def process_cm(request):
     control_messages_json = request.form.get("control-messages-json")
-    publish_message(control_messages_json)
-    logging.error(control_messages_json)
-    data = {
-        "status": "Successfully published task to kafka topic.",
+
+    logging.info("Received control message: {}".format(control_messages_json))
+
+    return control_messages_json
+
+
+def generate_success_message(control_messages_json):
+    sucess_message = {
+        "status": "Successfully published control message to kafka topic.",
         "status_code": 200,
         "control_messages": json.loads(control_messages_json)
     }
-    data = json.dumps(data, indent=4)
-    return data
+
+    sucess_message = json.dumps(sucess_message, indent=4)
+    return sucess_message

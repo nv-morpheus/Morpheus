@@ -70,8 +70,7 @@ def dfp_training_pipe(builder: mrc.Builder):
         "batching_options": config.get("batching_options", {}),
         "cache_dir": cache_dir,
         "pre_filter_options": {
-            "enable_task_filtering": True,
-            "filter_task_type": "training"
+            "enable_task_filtering": True, "filter_task_type": "training"
         },
         "timestamp_column_name": ts_column_name,
         "user_splitting_options": config.get("user_splitting_options", {}),
@@ -130,11 +129,15 @@ def dfp_training_pipe(builder: mrc.Builder):
 
     # Load modules
     preproc_module = builder.load_module(DFP_PREPROC, "morpheus", "dfp_preproc", preproc_conf)
-    dfp_rolling_window_module = builder.load_module(DFP_ROLLING_WINDOW, "morpheus", "dfp_rolling_window",
+    dfp_rolling_window_module = builder.load_module(DFP_ROLLING_WINDOW,
+                                                    "morpheus",
+                                                    "dfp_rolling_window",
                                                     dfp_rolling_window_conf)
     dfp_data_prep_module = builder.load_module(DFP_DATA_PREP, "morpheus", "dfp_data_prep", dfp_data_prep_conf)
     dfp_training_module = builder.load_module(DFP_TRAINING, "morpheus", "dfp_training", dfp_training_conf)
-    mlflow_model_writer_module = builder.load_module(MLFLOW_MODEL_WRITER, "morpheus", "mlflow_model_writer",
+    mlflow_model_writer_module = builder.load_module(MLFLOW_MODEL_WRITER,
+                                                     "morpheus",
+                                                     "mlflow_model_writer",
                                                      mlflow_model_writer_conf)
 
     # Make an edge between the modules.

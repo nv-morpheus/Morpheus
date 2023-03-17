@@ -94,18 +94,19 @@ def dfp_preproc(builder: mrc.Builder):
     }
     file_to_df_conf = merge_dictionaries(supported_loaders, file_to_df_defaults)
 
-    dfp_split_users_default = {
-        "fallback_username": config.get("fallback_username", "generic_user")
-    }
+    dfp_split_users_default = {"fallback_username": config.get("fallback_username", "generic_user")}
     dfp_split_users_conf = merge_dictionaries(splitting_opts, dfp_split_users_default)
 
-    filter_control_message_module = builder.load_module(FILTER_CONTROL_MESSAGE, "morpheus", "filter_control_message",
+    filter_control_message_module = builder.load_module(FILTER_CONTROL_MESSAGE,
+                                                        "morpheus",
+                                                        "filter_control_message",
                                                         pre_filter_conf)
     file_batcher_module = builder.load_module(FILE_BATCHER, "morpheus", "file_batcher", file_batcher_conf)
-    file_to_df_dataloader_module = builder.load_module(DATA_LOADER, "morpheus", "dfp_file_to_df_dataloader",
+    file_to_df_dataloader_module = builder.load_module(DATA_LOADER,
+                                                       "morpheus",
+                                                       "dfp_file_to_df_dataloader",
                                                        file_to_df_conf)
-    dfp_split_users_module = builder.load_module(DFP_SPLIT_USERS, "morpheus", "dfp_split_users",
-                                                 dfp_split_users_conf)
+    dfp_split_users_module = builder.load_module(DFP_SPLIT_USERS, "morpheus", "dfp_split_users", dfp_split_users_conf)
 
     # Make an edge between the modules.
     builder.make_edge(filter_control_message_module.output_port("output"), file_batcher_module.input_port("input"))

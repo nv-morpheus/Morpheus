@@ -37,7 +37,6 @@ def test_constructor(config):
 
     # Just ensure that we get a valid non-empty tuple
     accepted_types = mod_stage.accepted_types()
-    print(accepted_types)
     assert isinstance(accepted_types, tuple)
     assert len(accepted_types) > 0
     assert accepted_types[0] == typing.Any

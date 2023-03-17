@@ -113,7 +113,8 @@ def dfp_split_users(builder: mrc.Builder):
 
         if (include_individual):
             split_dataframes.update(
-                {username: user_df for username, user_df in df.groupby(userid_column_name, sort=False)})
+                {username: user_df
+                 for username, user_df in df.groupby(userid_column_name, sort=False)})
 
         return split_dataframes
 
