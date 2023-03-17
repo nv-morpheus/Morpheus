@@ -28,10 +28,10 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** <MultiInferenceMessage>****************************************/
-MultiInferenceMessage::MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+MultiInferenceMessage::MultiInferenceMessage(std::shared_ptr<MessageMeta> meta,
                                              TensorIndex mess_offset,
                                              TensorIndex mess_count,
-                                             std::shared_ptr<morpheus::InferenceMemory> memory,
+                                             std::shared_ptr<InferenceMemory> memory,
                                              TensorIndex offset,
                                              TensorIndex count) :
   DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)

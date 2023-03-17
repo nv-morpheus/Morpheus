@@ -30,7 +30,6 @@
 #include <rmm/device_buffer.hpp>
 
 #include <algorithm>  // for copy, transform
-#include <cstdint>
 #include <functional>  // for multiplies, plus, minus
 #include <iterator>    // for back_insert_iterator, back_inserter
 #include <memory>
@@ -114,6 +113,11 @@ void RMMTensor::get_stride(ShapeType& s) const
 {
     s.resize(rank());
     std::copy(m_stride.begin(), m_stride.end(), s.begin());
+}
+
+intptr_t RMMTensor::stream() const
+{
+    return (intptr_t)m_md->stream().value();
 }
 
 bool RMMTensor::is_compact() const

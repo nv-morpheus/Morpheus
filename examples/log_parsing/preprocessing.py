@@ -160,12 +160,7 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
                                     input_mask=tokenized.input_mask,
                                     seq_ids=tokenized.segment_ids)
 
-        infer_message = MultiInferenceNLPMessage(meta=x.meta,
-                                                 mess_offset=x.mess_offset,
-                                                 mess_count=x.mess_count,
-                                                 memory=memory,
-                                                 offset=0,
-                                                 count=memory.count)
+        infer_message = MultiInferenceNLPMessage.from_message(x, memory=memory)
 
         return infer_message
 

@@ -250,7 +250,7 @@ class MultiMessage : public DerivedMultiMessage<MultiMessage>
      * @param o : Offset into the metadata batch
      * @param c : Messages count
      */
-    MultiMessage(std::shared_ptr<MessageMeta> m, TensorIndex o, TensorIndex c);
+    MultiMessage(std::shared_ptr<MessageMeta> m, TensorIndex offset = 0, TensorIndex count = -1);
 
     std::shared_ptr<MessageMeta> meta;
     TensorIndex mess_offset{0};
@@ -365,6 +365,9 @@ struct MultiMessageInterfaceProxy
      * TODO(Documentation)
      */
     static pybind11::object get_meta(MultiMessage& self, std::vector<std::string> columns);
+
+    // This overload is necessary to match the python signature where you can call self.get_meta(None)
+    static pybind11::object get_meta(MultiMessage& self, pybind11::none none_obj);
 
     static pybind11::object get_meta_list(MultiMessage& self, pybind11::object col_name);
 
