@@ -59,7 +59,7 @@ class TestFileInOut : public morpheus::test::TestWithPythonInterpreter
 
             // Initially I ran into an issue bootstrapping cudf, I was able to work-around the issue, details in:
             // https://github.com/rapidsai/cudf/issues/12862
-            load_cudf_helpers();
+            CudfHelper::load();
         }
     }
 };

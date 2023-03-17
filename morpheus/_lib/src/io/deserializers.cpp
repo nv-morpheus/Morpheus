@@ -17,7 +17,7 @@
 
 #include "morpheus/io/deserializers.hpp"
 
-#include "morpheus/utilities/cudf_util.hpp"  // for proxy_table_from_table_with_metadata
+#include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 #include "morpheus/utilities/stage_util.hpp"
 
 #include <cudf/column/column.hpp>
@@ -127,7 +127,7 @@ pybind11::object read_file_to_df(const std::string& filename, FileTypes file_typ
     int index_col_count = prepare_df_index(table);
 
     pybind11::gil_scoped_acquire gil;
-    return proxy_table_from_table_with_metadata(std::move(table), index_col_count);
+    return CudfHelper::table_from_table_with_metadata(std::move(table), index_col_count);
 }
 
 int get_index_col_count(const cudf::io::table_with_metadata& data_table)
