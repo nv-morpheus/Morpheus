@@ -185,14 +185,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         # Create the inference memory. Keep in mind count here could be > than input count
         memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seg_ids)
 
-        infer_message = MultiInferenceFILMessage(
-            meta=x.meta,
-            mess_offset=x.mess_offset,
-            mess_count=x.mess_count,
-            memory=memory,
-            offset=0,
-            count=memory.count,
-        )
+        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
 
         return infer_message
 

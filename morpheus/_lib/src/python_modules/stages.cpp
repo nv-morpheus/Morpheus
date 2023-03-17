@@ -54,7 +54,7 @@ PYBIND11_MODULE(stages, m)
         )pbdoc";
 
     // Load the cudf helpers
-    load_cudf_helpers();
+    CudfHelper::load();
 
     mrc::pymrc::from_import(m, "morpheus._lib.common", "FilterSource");
 
@@ -87,7 +87,8 @@ PYBIND11_MODULE(stages, m)
         .def(py::init<>(&DeserializeStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("batch_size"));
+             py::arg("batch_size"),
+             py::arg("ensure_sliceable_index") = true);
 
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,
