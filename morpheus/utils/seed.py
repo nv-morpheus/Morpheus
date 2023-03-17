@@ -13,15 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import random
+
 import numpy as np
 import torch
 
 
 def manual_seed(seed: int):
     """
-    Manually see the random number generators for PyTorch and NumPy
+    Manually see the random number generators for the stdlib, PyTorch and NumPy
     """
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
+    random.seed(seed)
+
     np.random.seed(seed)
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # the "all" refers to all GPUs
+
+    torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
