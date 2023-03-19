@@ -86,7 +86,7 @@ class BasicLogger(object):
     def end_epoch(self):
         self.n_epochs += 1
         for i, ft in enumerate(self.fts):
-            mean = np.array(self.train_fts[ft][0]).mean()
+            mean = np.array(self.train_fts[ft][0]).mean() if self.train_fts[ft][0] else np.nan
             self.train_fts[ft][1].append(mean)
             #reset train_fts log
             self.train_fts[ft][0] = []
