@@ -327,6 +327,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       output.on_next(std::move(meta));
     }
 
+    cudaStreamDestroy(processing_stream);
+
     output.on_completed();
   };
 }
