@@ -373,22 +373,6 @@ def _filter_probs_df():
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(_filter_probs_df: cudf.DataFrame):
-    """
-    Returns a cuDF dataframe populated from the data in `tests/tests_data/filter_probs.csv`
-    """
-    yield _filter_probs_df.copy(deep=True)
-
-
-@pytest.fixture(scope="function")
-def filter_probs_pandas_df(_filter_probs_df: cudf.DataFrame):
-    """
-    Returns a pandas dataframe populated from the data in `tests/tests_data/filter_probs.csv`
-    """
-    yield _filter_probs_df.to_pandas()
-
-
-@pytest.fixture(scope="function")
 def df(_filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
     if df_type == 'cudf':
         yield _filter_probs_df.copy(deep=True)

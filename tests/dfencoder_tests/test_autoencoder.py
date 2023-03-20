@@ -50,6 +50,14 @@ CAT_COLS = [
 NUMERIC_COLS = ['eventID', 'ae_anomaly_score']
 
 
+@pytest.fixture
+def df_type():
+    """
+    These tests only work with pandas
+    """
+    yield 'pandas'
+
+
 @pytest.fixture(scope="function")
 def train_ae():
     """
@@ -220,9 +228,9 @@ def test_auto_encoder_get_scaler():
         assert ae.get_scaler(value) is expected
 
 
-def test_auto_encoder_init_numeric(filter_probs_pandas_df):
+def test_auto_encoder_init_numeric(df):
     ae = autoencoder.AutoEncoder()
-    ae.init_numeric(filter_probs_pandas_df)
+    ae.init_numeric(df)
 
     expected_features = {
         'v1': {

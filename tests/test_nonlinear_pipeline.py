@@ -20,6 +20,7 @@ import typing
 import mrc
 import mrc.core.operators as ops
 import pandas as pd
+import pytest
 from mrc.core.node import Broadcast
 
 import cudf
@@ -33,6 +34,14 @@ from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.utils import compare_df
 from utils import TEST_DIRS
+
+
+@pytest.fixture
+def df_type():
+    """
+    We only need the df for our expected valus, and we don't want to double the number of our tests.
+    """
+    yield 'pandas'
 
 
 class SplitStage(Stage):
@@ -141,13 +150,11 @@ class CompareDataframeStage(SinglePortStage):
         return node, input_stream[1]
 
 
-def test_forking_pipeline(config, filter_probs_pandas_df):
+def test_forking_pipeline(config, df):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    full_compare_df = filter_probs_pandas_df
-
-    compare_higher_df = full_compare_df[full_compare_df["v2"] >= 0.5]
-    compare_lower_df = full_compare_df[full_compare_df["v2"] < 0.5]
+    compare_higher_df = df[df["v2"] >= 0.5]
+    compare_lower_df = df[df["v2"] < 0.5]
 
     pipe = Pipeline(config)
 

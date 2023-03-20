@@ -113,12 +113,14 @@ def test_filter_copy(config, df):
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
 @pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
-def test_filter_column(config, df, filter_probs_pandas_df, do_copy, threshold, field_name):
+def test_filter_column(config, df, do_copy, threshold, field_name):
     fds = FilterDetectionsStage(config,
                                 threshold=threshold,
                                 copy=do_copy,
                                 filter_source=FilterSource.DATAFRAME,
                                 field_name=field_name)
+    expected_df = df.to_pandas()
+    expected_df = expected_df[expected_df[field_name] > threshold]
 
     probs = cp.zeros([len(df), 3], 'float')
     mock_message = _make_message(df, probs)
@@ -126,7 +128,6 @@ def test_filter_column(config, df, filter_probs_pandas_df, do_copy, threshold, f
     # All values are at or below the threshold
     output_message = fds.filter_copy(mock_message)
 
-    expected_df = filter_probs_pandas_df[filter_probs_pandas_df[field_name] > threshold]
     output_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
 
 

@@ -132,17 +132,17 @@ def check_response_memory_probs_and_ae(cls):
 
 
 @pytest.mark.use_python
-def test_response_memory_ae(config, filter_probs_pandas_df):
+def test_response_memory_ae(config, df):
     m = check_response_memory_probs_and_ae(ResponseMemoryAE)
 
     assert m.user_id == ""
     assert m.explain_df is None
 
     m.user_id = "testy"
-    m.explain_df = filter_probs_pandas_df
+    m.explain_df = df
 
     assert m.user_id == "testy"
-    assert (m.explain_df.values == filter_probs_pandas_df.values).all()
+    assert (m.explain_df.values == df.values).all()
 
 
 def test_response_memory_probs(config):
