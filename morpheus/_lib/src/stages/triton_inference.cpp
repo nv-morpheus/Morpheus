@@ -283,7 +283,7 @@ InferenceClientStage::subscribe_fn_t InferenceClientStage::build_operator()
                     std::vector<const triton::client::InferRequestedOutput*> outputs =
                         foreach_map(saved_outputs, [](auto x) { return x.get(); });
 
-                    auto results = std::unique_ptr<triton::client::InferResult>([&](){
+                    auto results = std::unique_ptr<triton::client::InferResult>([&]() {
                         triton::client::InferResult* results;
                         CHECK_TRITON(client->Infer(&results, m_options, inputs, outputs));
                         return results;
