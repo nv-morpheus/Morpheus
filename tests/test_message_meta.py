@@ -15,17 +15,13 @@
 # limitations under the License.
 
 import operator
-import os
 import typing
 
 import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
-from utils import TEST_DIRS
 from utils import assert_df_equal
 from utils import duplicate_df_index_rand
 
