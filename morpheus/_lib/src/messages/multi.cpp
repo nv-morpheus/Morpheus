@@ -365,54 +365,51 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object c
 
     auto [row_indexer, column_indexer] = get_indexers(self, df, columns);
 
-    if (py::isinstance(value, CupyUtil::asdf()))
+    // Check to see if this is adding a column. If so, we need to use .loc instead of .iloc
+    if (column_indexer.contains(-1))
+    {
+        // cudf is really bad at adding new columns. Need to use loc with a unique and monotonic index
+        py::object saved_index = df.attr("index");
 
-        // Check to see if this is adding a column. If so, we need to use .loc instead of .iloc
-        if (column_indexer.contains(-1))
+        // Check to see if we can use slices
+        if (!(saved_index.attr("is_unique").cast<bool>() && (saved_index.attr("is_monotonic_increasing").cast<bool>() ||
+                                                             saved_index.attr("is_monotonic_decreasing").cast<bool>())))
         {
-            // cudf is really bad at adding new columns. Need to use loc with a unique and monotonic index
-            py::object saved_index = df.attr("index");
-
-            // Check to see if we can use slices
-            if (!(saved_index.attr("is_unique").cast<bool>() &&
-                  (saved_index.attr("is_monotonic_increasing").cast<bool>() ||
-                   saved_index.attr("is_monotonic_decreasing").cast<bool>())))
-            {
-                df.attr("reset_index")("drop"_a = true, "inplace"_a = true);
-            }
-            else
-            {
-                // Erase the saved index so we dont reset it
-                saved_index = py::none();
-            }
-
-            // Perform the update via slices
-            df.attr("loc")[pybind11::make_tuple(df.attr("index")[row_indexer], columns)] = value;
-
-            // Reset the index if we changed it
-            if (!saved_index.is_none())
-            {
-                df.attr("set_index")(saved_index, "inplace"_a = true);
-            }
+            df.attr("reset_index")("drop"_a = true, "inplace"_a = true);
         }
         else
         {
-            // If we only have one column, convert it to a series (broadcasts work with more types on a series)
-            if (pybind11::len(column_indexer) == 1)
-            {
-                column_indexer = column_indexer.cast<py::list>()[0];
-            }
-
-            try
-            {
-                // Use iloc
-                df.attr("iloc")[pybind11::make_tuple(row_indexer, column_indexer)] = value;
-            } catch (py::error_already_set)
-            {
-                // Try this as a fallback. Works better for strings. See issue #286
-                df[columns].attr("iloc")[row_indexer] = value;
-            }
+            // Erase the saved index so we dont reset it
+            saved_index = py::none();
         }
+
+        // Perform the update via slices
+        df.attr("loc")[pybind11::make_tuple(df.attr("index")[row_indexer], columns)] = value;
+
+        // Reset the index if we changed it
+        if (!saved_index.is_none())
+        {
+            df.attr("set_index")(saved_index, "inplace"_a = true);
+        }
+    }
+    else
+    {
+        // If we only have one column, convert it to a series (broadcasts work with more types on a series)
+        if (pybind11::len(column_indexer) == 1)
+        {
+            column_indexer = column_indexer.cast<py::list>()[0];
+        }
+
+        try
+        {
+            // Use iloc
+            df.attr("iloc")[pybind11::make_tuple(row_indexer, column_indexer)] = value;
+        } catch (py::error_already_set)
+        {
+            // Try this as a fallback. Works better for strings. See issue #286
+            df[columns].attr("iloc")[row_indexer] = value;
+        }
+    }
 
     mutable_info.return_obj(std::move(df));
 }
