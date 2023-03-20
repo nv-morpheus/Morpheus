@@ -64,6 +64,8 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
+     * @param probs_tensor_name Name of the tensor that holds output probabilities
      */
     MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
                          TensorIndex mess_offset              = 0,
@@ -103,6 +105,11 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      */
     void set_output(const std::string& name, const TensorObject& value);
 
+    /**
+     * @brief Get the tensor that holds output probabilities. Equivalent to `get_tensor(probs_tensor_name)`
+     *
+     * @return const TensorObject
+     */
     const TensorObject get_probs_tensor() const;
 };
 
@@ -122,6 +129,8 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
+     * @param probs_tensor_name Name of the tensor that holds output probabilities
      * @return std::shared_ptr<MultiResponseMessage>
      */
     static std::shared_ptr<MultiResponseMessage> init(std::shared_ptr<MessageMeta> meta,
@@ -133,8 +142,20 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
                                                       std::string id_tensor_name,
                                                       std::string probs_tensor_name);
 
+    /**
+     * @brief Gets the `probs_tensor_name` property
+     *
+     * @param self
+     * @return std::string Name of `probs_tensor_name`
+     */
     static std::string probs_tensor_name_getter(MultiResponseMessage& self);
 
+    /**
+     * @brief Sets the `probs_tensor_name` property
+     *
+     * @param self
+     * @param probs_tensor_name New name of `probs_tensor_name` property
+     */
     static void probs_tensor_name_setter(MultiResponseMessage& self, std::string probs_tensor_name);
 
     /**
@@ -147,6 +168,12 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
      */
     static pybind11::object get_output(MultiResponseMessage& self, const std::string& name);
 
+    /**
+     * @brief Get the tensor that holds output probabilities. Equivalent to `get_tensor(probs_tensor_name)`
+     *
+     * @param self
+     * @return pybind11::object A cupy.ndarray object
+     */
     static pybind11::object get_probs_tensor(MultiResponseMessage& self);
 };
 #pragma GCC visibility pop

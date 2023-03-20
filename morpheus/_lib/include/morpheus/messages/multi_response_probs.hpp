@@ -62,6 +62,8 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
      * @param memory Holds the inference response probabilites as a tensor
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
+     * @param probs_tensor_name Name of the tensor that holds output probabilities
      */
     MultiResponseProbsMessage(std::shared_ptr<MessageMeta> meta,
                               TensorIndex mess_offset              = 0,
@@ -103,6 +105,8 @@ struct MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInte
      * @param memory Holds the inference response probabilites as a tensor
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
+     * @param probs_tensor_name Name of the tensor that holds output probabilities
      * @return std::shared_ptr<MultiResponseProbsMessage>
      */
     static std::shared_ptr<MultiResponseProbsMessage> init(std::shared_ptr<MessageMeta> meta,

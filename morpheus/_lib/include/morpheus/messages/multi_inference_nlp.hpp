@@ -57,6 +57,7 @@ class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMes
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      */
     MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
                              TensorIndex mess_offset              = 0,
@@ -131,6 +132,7 @@ struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInte
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      * @return std::shared_ptr<MultiInferenceNLPMessage>
      */
     static std::shared_ptr<MultiInferenceNLPMessage> init(std::shared_ptr<MessageMeta> meta,

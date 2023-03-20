@@ -21,7 +21,6 @@ import mrc
 import mrc.core.operators as ops
 
 from morpheus._lib.common import TypeId
-from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -118,9 +117,8 @@ class AddScoresStageBase(SinglePortStage):
         probs = x.get_probs_tensor()
 
         if (probs.shape[1] <= max(idx2label.keys())):
-            raise RuntimeError(
-                "Model output did not contain enough columns to fufill the requested labels. Label indexes: {}, Model output columns: {}"
-                .format(idx2label, probs.shape[1]))
+            raise RuntimeError(("Model output did not contain enough columns to fufill the requested labels. "
+                                "Label indexes: {}, Model output columns: {}").format(idx2label, probs.shape[1]))
 
         if (threshold is not None):
             probs = (probs > threshold).astype(bool)

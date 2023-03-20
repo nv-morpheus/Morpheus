@@ -19,6 +19,7 @@
 
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/utilities/cupy_util.hpp"    // for CupyUtil
+#include "morpheus/utilities/stage_util.hpp"
 #include "morpheus/utilities/string_util.hpp"  // for MORPHEUS_CONCAT_STR
 
 #include <pybind11/cast.h>
@@ -125,6 +126,14 @@ std::shared_ptr<TensorMemory> TensorMemoryInterfaceProxy::init(TensorIndex count
 TensorIndex TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
 {
     return self.count;
+}
+
+std::vector<std::string> TensorMemoryInterfaceProxy::tensor_names_getter(TensorMemory& self)
+{
+    return foreach_map(self.tensors, [](const auto& item) -> std::string {
+        // Just return the keys
+        return item.first;
+    });
 }
 
 bool TensorMemoryInterfaceProxy::has_tensor(TensorMemory& self, std::string name)

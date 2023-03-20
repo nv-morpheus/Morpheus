@@ -65,6 +65,14 @@ struct StringUtil
         return MORPHEUS_CONCAT_STR("[" << join(begin, end, ", ") << "]");
     }
 
+    /**
+     * @brief Generates a string representation of a std::map in the form "{key1: 'value1', key2: 'value2'}"
+     *
+     * @tparam IterT Deduced iterator type
+     * @param begin Start iterator. Use `myMap.begin()`
+     * @param end End iterator. Use `myMap.end()`
+     * @return std::string
+     */
     template <typename IterT>
     static std::string map_to_str(IterT begin, IterT end)
     {

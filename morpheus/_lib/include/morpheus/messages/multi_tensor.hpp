@@ -71,6 +71,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in tensor memory instance
      * @param count Message count in tensor memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      */
     MultiTensorMessage(std::shared_ptr<MessageMeta> meta,
                        TensorIndex mess_offset              = 0,
@@ -113,6 +114,11 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      */
     void set_tensor(const std::string& name, const TensorObject& value);
 
+    /**
+     * @brief Get the tensor that holds message ID information. Equivalent to `get_tensor(id_tensor_name)`
+     *
+     * @return const TensorObject
+     */
     const TensorObject get_id_tensor() const;
 
   protected:
@@ -144,6 +150,7 @@ struct MultiTensorMessageInterfaceProxy
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      * @return std::shared_ptr<MultiTensorMessage>
      */
     static std::shared_ptr<MultiTensorMessage> init(std::shared_ptr<MessageMeta> meta,
@@ -177,8 +184,20 @@ struct MultiTensorMessageInterfaceProxy
      */
     static TensorIndex count(MultiTensorMessage& self);
 
+    /**
+     * @brief Gets the `id_tensor_name` property
+     *
+     * @param self
+     * @return std::string Name of `id_tensor_name`
+     */
     static std::string id_tensor_name_getter(MultiTensorMessage& self);
 
+    /**
+     * @brief Sets the `id_tensor_name` property
+     *
+     * @param self
+     * @param id_tensor_name New name of `id_tensor_name` property
+     */
     static void id_tensor_name_setter(MultiTensorMessage& self, std::string id_tensor_name);
 
     /**
@@ -191,6 +210,12 @@ struct MultiTensorMessageInterfaceProxy
      */
     static pybind11::object get_tensor(MultiTensorMessage& self, const std::string& name);
 
+    /**
+     * @brief Get the tensor that holds message ID information. Equivalent to `get_tensor(id_tensor_name)`
+     *
+     * @param self
+     * @return pybind11::object A cupy.ndarray object
+     */
     static pybind11::object get_id_tensor(MultiTensorMessage& self);
 
     /**

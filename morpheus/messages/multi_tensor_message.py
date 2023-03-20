@@ -47,7 +47,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
     required_tensors: typing.ClassVar[typing.List[str]] = []
     """The tensor names that are required for instantiation"""
     id_tensor_name: typing.ClassVar[str] = "seq_ids"
-    """Name of the tensor correlates tensor rows to message IDs"""
+    """Name of the tensor that correlates tensor rows to message IDs"""
 
     def __init__(self,
                  *,
@@ -188,6 +188,19 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         return self.memory.get_tensor(name)[self.offset:self.offset + self.count, :]
 
     def get_id_tensor(self):
+        """
+        Get the tensor that holds message ID information. Equivalent to `get_tensor(id_tensor_name)`
+
+        Returns
+        -------
+        cupy.ndarray
+            Array containing the ID information
+
+        Raises
+        ------
+        KeyError
+            If `self.id_tensor_name` is not found in the tensors
+        """
 
         try:
             return self.get_tensor(self.id_tensor_name)

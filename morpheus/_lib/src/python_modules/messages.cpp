@@ -139,6 +139,7 @@ PYBIND11_MODULE(messages, m)
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(m, "TensorMemory")
         .def(py::init<>(&TensorMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &TensorMemory::count)
+        .def_property_readonly("tensor_names", &TensorMemoryInterfaceProxy::tensor_names_getter)
         .def("has_tensor", &TensorMemoryInterfaceProxy::has_tensor)
         .def("get_tensors", &TensorMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &TensorMemoryInterfaceProxy::set_tensors, py::arg("tensors"))
@@ -250,11 +251,7 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("memory", &MultiTensorMessageInterfaceProxy::memory)
         .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
-        .def_property("id_tensor_name",
-                      &MultiTensorMessageInterfaceProxy::id_tensor_name_getter,
-                      &MultiTensorMessageInterfaceProxy::id_tensor_name_setter)
-        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor)
-        .def("get_id_tensor", &MultiTensorMessageInterfaceProxy::get_id_tensor);
+        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor);
 
     py::class_<MultiInferenceMessage, MultiTensorMessage, std::shared_ptr<MultiInferenceMessage>>(
         m, "MultiInferenceMessage")

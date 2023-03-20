@@ -14,21 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-from unittest import mock
-
 import cupy as cp
 import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
-from utils import TEST_DIRS
 from utils import assert_df_equal
 
 

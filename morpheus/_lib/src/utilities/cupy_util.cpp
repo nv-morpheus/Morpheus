@@ -63,6 +63,11 @@ pybind11::module_ CupyUtil::get_cp()
     return m;
 }
 
+bool CupyUtil::is_cupy_array(pybind11::object test_obj)
+{
+    return py::isinstance(test_obj, CupyUtil::get_cp().attr("ndarray"));
+}
+
 pybind11::object CupyUtil::tensor_to_cupy(const TensorObject& tensor)
 {
     // These steps follow the cupy._convert_object_with_cuda_array_interface function shown here:
@@ -175,4 +180,5 @@ CupyUtil::py_tensor_map_t CupyUtil::tensors_to_cupy(const tensor_map_t& tensors)
 
     return cupy_tensors;
 }
+
 }  // namespace morpheus

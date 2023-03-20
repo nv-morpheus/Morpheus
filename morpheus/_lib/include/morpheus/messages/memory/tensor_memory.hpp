@@ -169,6 +169,14 @@ struct TensorMemoryInterfaceProxy
     static TensorIndex get_count(TensorMemory& self);
 
     /**
+     * @brief Returns a list of the current tensor names
+     *
+     * @param self
+     * @return std::vector<std::string>
+     */
+    static std::vector<std::string> tensor_names_getter(TensorMemory& self);
+
+    /**
      * @brief Returns true if a tensor with the requested name exists in the tensors object
      *
      * @param name Tensor name to lookup

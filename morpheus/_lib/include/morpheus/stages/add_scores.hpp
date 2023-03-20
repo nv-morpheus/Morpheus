@@ -72,6 +72,7 @@ class AddScoresStage
 
     std::map<std::size_t, std::string> m_idx2label;
 
+    // The minimum number of columns needed to extract the label data
     std::size_t m_min_col_count;
 };
 
