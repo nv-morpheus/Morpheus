@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
@@ -65,11 +66,15 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param count Message count in inference memory instance
      */
     MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
-                         TensorIndex mess_offset                = 0,
-                         TensorIndex mess_count                 = -1,
-                         std::shared_ptr<ResponseMemory> memory = nullptr,
-                         TensorIndex offset                     = 0,
-                         TensorIndex count                      = -1);
+                         TensorIndex mess_offset              = 0,
+                         TensorIndex mess_count               = -1,
+                         std::shared_ptr<TensorMemory> memory = nullptr,
+                         TensorIndex offset                   = 0,
+                         TensorIndex count                    = -1,
+                         std::string id_tensor_name           = "seq_ids",
+                         std::string probs_tensor_name        = "probs");
+
+    std::string probs_tensor_name;
 
     /**
      * @brief Returns the output tensor with the given name.
@@ -97,6 +102,8 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param value
      */
     void set_output(const std::string& name, const TensorObject& value);
+
+    const TensorObject get_probs_tensor() const;
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/
@@ -120,9 +127,15 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
     static std::shared_ptr<MultiResponseMessage> init(std::shared_ptr<MessageMeta> meta,
                                                       TensorIndex mess_offset,
                                                       TensorIndex mess_count,
-                                                      std::shared_ptr<ResponseMemory> memory,
+                                                      std::shared_ptr<TensorMemory> memory,
                                                       TensorIndex offset,
-                                                      TensorIndex count);
+                                                      TensorIndex count,
+                                                      std::string id_tensor_name,
+                                                      std::string probs_tensor_name);
+
+    static std::string probs_tensor_name_getter(MultiResponseMessage& self);
+
+    static void probs_tensor_name_setter(MultiResponseMessage& self, std::string probs_tensor_name);
 
     /**
      * @brief Returns the output tensor for a given name
@@ -133,6 +146,8 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
      * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_output(MultiResponseMessage& self, const std::string& name);
+
+    static pybind11::object get_probs_tensor(MultiResponseMessage& self);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

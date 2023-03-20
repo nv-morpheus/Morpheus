@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/memory/inference_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
@@ -62,11 +63,12 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param count Message count in inference memory instance
      */
     MultiInferenceMessage(std::shared_ptr<MessageMeta> meta,
-                          TensorIndex mess_offset                 = 0,
-                          TensorIndex mess_count                  = -1,
-                          std::shared_ptr<InferenceMemory> memory = nullptr,
-                          TensorIndex offset                      = 0,
-                          TensorIndex count                       = -1);
+                          TensorIndex mess_offset              = 0,
+                          TensorIndex mess_count               = -1,
+                          std::shared_ptr<TensorMemory> memory = nullptr,
+                          TensorIndex offset                   = 0,
+                          TensorIndex count                    = -1,
+                          std::string id_tensor_name           = "seq_ids");
 
     /**
      * @brief Returns the input tensor for the given `name`.
@@ -113,9 +115,10 @@ struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceP
     static std::shared_ptr<MultiInferenceMessage> init(std::shared_ptr<MessageMeta> meta,
                                                        TensorIndex mess_offset,
                                                        TensorIndex mess_count,
-                                                       std::shared_ptr<InferenceMemory> memory,
+                                                       std::shared_ptr<TensorMemory> memory,
                                                        TensorIndex offset,
-                                                       TensorIndex count);
+                                                       TensorIndex count,
+                                                       std::string id_tensor_name);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

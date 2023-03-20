@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 class ResponseMemory(TensorMemory, cpp_class=_messages.ResponseMemory):
     """Output memory block holding the results of inference."""
 
+    def __new__(cls, *args, **kwargs):
+        morpheus_logger.deprecated_message_warning(logger, cls, TensorMemory)
+        return super().__new__(cls, *args, **kwargs)
+
     def get_output(self, name: str):
         """
         Get the Tensor stored in the container identified by `name`. Alias for `ResponseMemory.get_tensor`.
@@ -83,12 +87,8 @@ class ResponseMemoryProbs(ResponseMemory, cpp_class=_messages.ResponseMemoryProb
     """
     probs: dataclasses.InitVar[cp.ndarray] = DataClassProp(ResponseMemory._get_tensor_prop, ResponseMemory.set_output)
 
-    def __new__(cls, *args, **kwargs):
-        morpheus_logger.deprecated_message_warning(logger, cls, ResponseMemory)
-        return super(ResponseMemory, cls).__new__(cls, *args, **kwargs)
-
-    def __init__(self, count: int, probs: cp.ndarray):
-        super().__init__(count, tensors={'probs': probs})
+    def __init__(self, *, count: int, probs: cp.ndarray):
+        super().__init__(count=count, tensors={'probs': probs})
 
 
 @dataclasses.dataclass(init=False)
@@ -112,5 +112,5 @@ class ResponseMemoryAE(ResponseMemory, cpp_class=None):
     user_id = ""
     explain_df = None
 
-    def __init__(self, count: int, probs: cp.ndarray):
-        super().__init__(count, tensors={'probs': probs})
+    def __init__(self, *, count: int, probs: cp.ndarray):
+        super().__init__(count=count, tensors={'probs': probs})

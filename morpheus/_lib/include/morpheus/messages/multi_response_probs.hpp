@@ -64,11 +64,13 @@ class MultiResponseProbsMessage : public DerivedMultiMessage<MultiResponseProbsM
      * @param count Message count in inference memory instance
      */
     MultiResponseProbsMessage(std::shared_ptr<MessageMeta> meta,
-                              TensorIndex mess_offset                     = 0,
-                              TensorIndex mess_count                      = -1,
-                              std::shared_ptr<ResponseMemoryProbs> memory = nullptr,
-                              TensorIndex offset                          = 0,
-                              TensorIndex count                           = -1);
+                              TensorIndex mess_offset              = 0,
+                              TensorIndex mess_count               = -1,
+                              std::shared_ptr<TensorMemory> memory = nullptr,
+                              TensorIndex offset                   = 0,
+                              TensorIndex count                    = -1,
+                              std::string id_tensor_name           = "seq_ids",
+                              std::string probs_tensor_name        = "probs");
 
     /**
      * @brief Returns the `probs` (probabilities) output tensor
@@ -106,9 +108,11 @@ struct MultiResponseProbsMessageInterfaceProxy : public MultiResponseMessageInte
     static std::shared_ptr<MultiResponseProbsMessage> init(std::shared_ptr<MessageMeta> meta,
                                                            TensorIndex mess_offset,
                                                            TensorIndex mess_count,
-                                                           std::shared_ptr<ResponseMemoryProbs> memory,
+                                                           std::shared_ptr<TensorMemory> memory,
                                                            TensorIndex offset,
-                                                           TensorIndex count);
+                                                           TensorIndex count,
+                                                           std::string id_tensor_name,
+                                                           std::string probs_tensor_name);
 
     /**
      * @brief Return the `probs` (probabilities) output tensor

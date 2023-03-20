@@ -348,6 +348,8 @@ def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val
 
     if (isinstance(val_to_check, cudf.DataFrame) or isinstance(val_to_check, cudf.Series)):
         val_to_check = val_to_check.to_pandas()
+    elif (isinstance(val_to_check, cp.ndarray)):
+        val_to_check = val_to_check.get()
 
     bool_df = df_to_check == val_to_check
 

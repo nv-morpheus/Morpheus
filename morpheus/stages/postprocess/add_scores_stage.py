@@ -17,19 +17,16 @@ import typing
 
 import mrc
 
-import morpheus._lib.stages as _stages
 from morpheus._lib.common import TypeId
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
-from morpheus.messages import MultiResponseMessage
-from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.stages.postprocess.add_scores_stage_base import AddScoresStageBase
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("add-scores", rename_options={"labels": "--label"})
-class AddScoresStage(SinglePortStage):
+class AddScoresStage(AddScoresStageBase):
     """
     Add probability scores to each message.
 
@@ -38,97 +35,35 @@ class AddScoresStage(SinglePortStage):
 
     Parameters
     ----------
-    c : morpheus.config.Config
+    c : `morpheus.config.Config`
         Pipeline configuration instance.
-    labels : list, default = None, multiple = True, show_default = "[Config.class_labels]"
-        Converts probability indexes into classification scores. Each item in the list will determine its index from the
+    labels : typing.List[str], default = None, multiple = True, show_default = "[Config.class_labels]"
+        Converts probability indexes into classification labels. Each item in the list will determine its index from the
         Config.class_labels property and must be one of the available class labels. Leave as None to add all labels in
         the Config.class_labels property.
     prefix : str, default = ""
         Prefix to add to each label. Allows adding labels different from the `Config.class_labels` property.
     probs_type : `morpheus._lib.common.TypeId`, default = "float32"
         Datatype of the scores columns.
-    output_name : str, default = "probs"
-        Name of the output tensor containing the probabilities
     """
 
     def __init__(self,
                  c: Config,
+                 *,
                  labels: typing.List[str] = None,
                  prefix: str = "",
-                 probs_type: TypeId = TypeId.FLOAT32,
-                 output_name: str = "probs"):
-        super().__init__(c)
-
-        self._feature_length = c.feature_length
-        self._prefix = prefix
-        self._output_name = output_name
-        self._class_labels = c.class_labels
-        self._labels = labels if labels is not None and len(labels) > 0 else c.class_labels
-
-        # Build the Index to Label map.
-        self._idx2label = {}
-
-        for label in self._labels:
-            # All labels must be in class_labels in order to get their position
-            if (label not in self._class_labels):
-                logger.warning("The label '%s' is not in Config.class_labels and will be ignored", label)
-                continue
-
-            prefixed_label = self._prefix + label
-            self._idx2label[self._class_labels.index(label)] = prefixed_label
-            self._needed_columns[prefixed_label] = probs_type
-
-        assert len(self._idx2label) > 0, "No labels were added to the stage"
+                 probs_type: TypeId = TypeId.FLOAT32):
+        # Initialize the base with threshold=None
+        super().__init__(c, labels=labels, prefix=prefix, probs_type=probs_type, threshold=None)
 
     @property
     def name(self) -> str:
         return "add-scores"
 
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Accepted input types for this stage are returned.
-
-        Returns
-        -------
-        typing.Tuple[`morpheus.pipeline.messages.MultiResponseMessage`, ]
-            Accepted input types.
-
-        """
-        return (MultiResponseMessage, )
-
     def supports_cpp_node(self):
         # Enable support by default
         return True
 
-    def _add_labels(self, x: MultiResponseMessage):
-        probs = x.get_output(self._output_name)
-
-        if (probs.shape[1] != len(self._class_labels)):
-            raise RuntimeError("Label count does not match output of model. Label count: {}, Model output: {}".format(
-                len(self._class_labels), probs.shape[1]))
-
-        probs_np = probs.get()
-
-        for i, label in self._idx2label.items():
-            x.set_meta(label, probs_np[:, i].tolist())
-
-        # Return passthrough
-        return x
-
-    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-
-        # Convert the messages to rows of strings
-        if self._build_cpp_node():
-            stream = _stages.AddScoresStage(builder,
-                                            self.unique_name,
-                                            len(self._class_labels),
-                                            self._idx2label,
-                                            output_name=self._output_name)
-        else:
-            stream = builder.make_node(self.unique_name, self._add_labels)
-
-        builder.make_edge(input_stream[0], stream)
-
-        # Return input unchanged
-        return stream, input_stream[1]
+    def _get_cpp_node(self, builder: mrc.Builder):
+        import morpheus._lib.stages as _stages
+        return _stages.AddScoresStage(builder, self.unique_name, self._idx2label)

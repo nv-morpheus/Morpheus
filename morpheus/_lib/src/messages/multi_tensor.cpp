@@ -24,7 +24,8 @@
 
 #include <glog/logging.h>        // IWYU pragma: keep
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
-#include <pybind11/pytypes.h>    // for key_error
+#include <pybind11/detail/common.h>
+#include <pybind11/pytypes.h>  // for key_error
 
 #include <cstdint>
 #include <sstream>
@@ -68,10 +69,12 @@ MultiTensorMessage::MultiTensorMessage(std::shared_ptr<MessageMeta> meta,
                                        TensorIndex mess_count,
                                        std::shared_ptr<TensorMemory> memory,
                                        TensorIndex offset,
-                                       TensorIndex count) :
+                                       TensorIndex count,
+                                       std::string id_tensor_name) :
   DerivedMultiMessage(meta, mess_offset, mess_count),
   memory(std::move(memory)),
-  offset(offset)
+  offset(offset),
+  id_tensor_name(std::move(id_tensor_name))
 {
     if (!this->memory)
     {
@@ -100,24 +103,26 @@ MultiTensorMessage::MultiTensorMessage(std::shared_ptr<MessageMeta> meta,
     }
 
     // Finally, perform a consistency check on the seq_ids
-    if (this->memory->has_tensor("seq_ids"))
+    if (this->memory->has_tensor(this->id_tensor_name))
     {
-        auto id_tensor = this->memory->get_tensor("seq_ids");
+        auto id_tensor = this->memory->get_tensor(this->id_tensor_name);
 
         TensorIndex first_element = read_idx_from_tensor(id_tensor, {this->offset, 0});
         TensorIndex last_element  = read_idx_from_tensor(id_tensor, {this->offset + this->count - 1, 0});
 
         if (first_element != this->mess_offset)
         {
-            throw std::runtime_error(MORPHEUS_CONCAT_STR("Inconsistent ID column. First element in 'seq_ids' tensor, ["
-                                                         << first_element << "], must match mess_offset, ["
-                                                         << this->mess_offset << "]"));
+            throw std::runtime_error(MORPHEUS_CONCAT_STR("Inconsistent ID column. First element in '"
+                                                         << this->id_tensor_name << "' tensor, [" << first_element
+                                                         << "], must match mess_offset, [" << this->mess_offset
+                                                         << "]"));
         }
 
         if (last_element != this->mess_offset + this->mess_count - 1)
         {
-            throw std::runtime_error(MORPHEUS_CONCAT_STR("Inconsistent ID column. Last element in 'seq_ids' tensor, ["
-                                                         << last_element << "], must not extend beyond last message, ["
+            throw std::runtime_error(MORPHEUS_CONCAT_STR("Inconsistent ID column. Last element in '"
+                                                         << this->id_tensor_name << "' tensor, [" << last_element
+                                                         << "], must not extend beyond last message, ["
                                                          << (this->mess_offset + this->mess_count - 1) << "]"));
         }
     }
@@ -155,6 +160,20 @@ void MultiTensorMessage::set_tensor(const std::string& name, const TensorObject&
     slice = value;
 }
 
+const TensorObject MultiTensorMessage::get_id_tensor() const
+{
+    try
+    {
+        return this->get_tensor(this->id_tensor_name);
+    } catch (std::runtime_error)
+    {
+        // Throw a better error here if we are missing the ID tensor
+        throw pybind11::key_error{MORPHEUS_CONCAT_STR("Cannot get ID tensor. Tensor with name '"
+                                                      << this->id_tensor_name
+                                                      << "' does not exist in the memory object")};
+    }
+}
+
 void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message,
                                         TensorIndex start,
                                         TensorIndex stop) const
@@ -173,21 +192,23 @@ void MultiTensorMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_messag
         throw std::out_of_range("Invalid memory `stop` argument");
     }
 
-    sliced_message->offset = this->offset + start;
-    sliced_message->count  = stop - start;
+    sliced_message->memory         = this->memory;
+    sliced_message->offset         = this->offset + start;
+    sliced_message->count          = stop - start;
+    sliced_message->id_tensor_name = this->id_tensor_name;
 
     if (this->count != this->mess_count)
     {
         // If we have more tensor rows than message rows, we need to use the seq_ids to figure out the slicing. This
         // will be slow and should be avoided at all costs
-        if (!this->memory->has_tensor("seq_ids"))
+        if (!this->memory->has_tensor(this->id_tensor_name))
         {
             throw std::runtime_error(
                 "The tensor memory object is missing the required ID tensor 'seq_ids' this tensor is required to make "
                 "slices of MultiTensorMessages");
         }
 
-        auto id_tensor = this->get_tensor("seq_ids");
+        auto id_tensor = this->get_id_tensor();
 
         // Determine the new start and stop before passing onto the base
         start = read_idx_from_tensor(id_tensor, {start, 0}) - this->mess_offset;
@@ -224,10 +245,11 @@ std::shared_ptr<MultiTensorMessage> MultiTensorMessageInterfaceProxy::init(std::
                                                                            TensorIndex mess_count,
                                                                            std::shared_ptr<TensorMemory> memory,
                                                                            TensorIndex offset,
-                                                                           TensorIndex count)
+                                                                           TensorIndex count,
+                                                                           std::string id_tensor_name)
 {
     return std::make_shared<MultiTensorMessage>(
-        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
+        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count, std::move(id_tensor_name));
 }
 
 std::shared_ptr<morpheus::TensorMemory> MultiTensorMessageInterfaceProxy::memory(MultiTensorMessage& self)
@@ -245,6 +267,16 @@ TensorIndex MultiTensorMessageInterfaceProxy::count(MultiTensorMessage& self)
     return self.count;
 }
 
+std::string MultiTensorMessageInterfaceProxy::id_tensor_name_getter(MultiTensorMessage& self)
+{
+    return self.id_tensor_name;
+}
+
+void MultiTensorMessageInterfaceProxy::id_tensor_name_setter(MultiTensorMessage& self, std::string id_tensor_name)
+{
+    self.id_tensor_name = id_tensor_name;
+}
+
 pybind11::object MultiTensorMessageInterfaceProxy::get_tensor(MultiTensorMessage& self, const std::string& name)
 {
     try
@@ -255,6 +287,11 @@ pybind11::object MultiTensorMessageInterfaceProxy::get_tensor(MultiTensorMessage
     {
         throw pybind11::key_error{e.what()};
     }
+}
+
+pybind11::object MultiTensorMessageInterfaceProxy::get_id_tensor(MultiTensorMessage& self)
+{
+    return CupyUtil::tensor_to_cupy(self.get_id_tensor());
 }
 
 pybind11::object MultiTensorMessageInterfaceProxy::get_tensor_property(MultiTensorMessage& self, const std::string name)

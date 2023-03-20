@@ -130,7 +130,7 @@ class MLFlowDriftStage(SinglePortStage):
     def _calc_drift(self, x: MultiResponseMessage):
 
         # All probs in a batch will be calculated
-        shifted = cp.abs(x.get_output('probs') - 0.5) + 0.5
+        shifted = cp.abs(x.get_probs_tensor() - 0.5) + 0.5
 
         # Make sure the labels list is long enough
         for x in range(len(self._labels), shifted.shape[1]):

@@ -61,14 +61,9 @@ class AddClassificationsStage
      * @brief Construct a new Add Classifications Stage object
      *
      * @param threshold : Threshold to consider true/false for each class
-     * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
-     * @param output_name : Name of the output tensor containing probabilities
      */
-    AddClassificationsStage(float threshold,
-                            std::size_t num_class_labels,
-                            std::map<std::size_t, std::string> idx2label,
-                            std::string output_name = "probs");
+    AddClassificationsStage(std::map<std::size_t, std::string> idx2label, float threshold);
 
   private:
     /**
@@ -76,10 +71,10 @@ class AddClassificationsStage
      */
     subscribe_fn_t build_operator();
 
-    float m_threshold;
-    std::size_t m_num_class_labels;
     std::map<std::size_t, std::string> m_idx2label;
-    std::string m_output_name;
+    float m_threshold;
+
+    std::size_t m_min_col_count;
 };
 
 /****** AddClassificationStageInterfaceProxy******************/
@@ -94,19 +89,15 @@ struct AddClassificationStageInterfaceProxy
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
-     * @param threshold : Threshold to consider true/false for each class
-     * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
-     * @param output_name : Name of the output tensor containing probabilities
+     * @param threshold : Threshold to consider true/false for each class
      * @return std::shared_ptr<mrc::segment::Object<AddClassificationsStage>>
      */
     static std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> init(
         mrc::segment::Builder& builder,
         const std::string& name,
-        float threshold,
-        std::size_t num_class_labels,
         std::map<std::size_t, std::string> idx2label,
-        std::string output_name);
+        float threshold);
 };
 
 #pragma GCC visibility pop

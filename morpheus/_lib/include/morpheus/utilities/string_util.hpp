@@ -65,6 +65,29 @@ struct StringUtil
         return MORPHEUS_CONCAT_STR("[" << join(begin, end, ", ") << "]");
     }
 
+    template <typename IterT>
+    static std::string map_to_str(IterT begin, IterT end)
+    {
+        std::ostringstream ss;
+
+        ss << "{";
+
+        if (begin != end)
+        {
+            ss << begin->first << ": '" << begin->second << "'";
+            ++begin;
+        }
+        while (begin != end)
+        {
+            ss << ", " << begin->first << ": '" << begin->second << "'";
+            ++begin;
+        }
+
+        ss << "}";
+
+        return ss.str();
+    }
+
     /**
      * TODO(Documentation)
      */

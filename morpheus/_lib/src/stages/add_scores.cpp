@@ -36,28 +36,25 @@
 namespace morpheus {
 // Component public implementations
 // ************ AddScoresStage **************************** //
-AddScoresStage::AddScoresStage(std::size_t num_class_labels,
-                               std::map<std::size_t, std::string> idx2label,
-                               std::string output_name) :
+AddScoresStage::AddScoresStage(std::map<std::size_t, std::string> idx2label) :
   PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_num_class_labels(num_class_labels),
   m_idx2label(std::move(idx2label)),
-  m_output_name(std::move(output_name))
-{
-    CHECK(m_idx2label.size() <= m_num_class_labels) << "idx2label should represent a subset of the class_labels";
-}
+  m_min_col_count(m_idx2label.rbegin()->first)
+{}
 
 AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
 {
     return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
         return input.subscribe(rxcpp::make_observer<sink_type_t>(
             [this, &output](sink_type_t x) {
-                const auto& probs = x->get_output(m_output_name);
+                const auto& probs = x->get_probs_tensor();
                 const auto& shape = probs.get_shape();
 
-                CHECK(shape.size() == 2 && shape[1] == m_num_class_labels)
-                    << "Label count does not match output of model. Label count: " << m_num_class_labels
-                    << ", Model output: " << shape[1];
+                CHECK(shape.size() == 2 && shape[1] > m_min_col_count)
+                    << "Model output did not contain enough columns to fufill the requested labels. Label "
+                       "indexes: "
+                    << StringUtil::map_to_str(m_idx2label.begin(), m_idx2label.end())
+                    << ", Model output columns: " << shape[1];
 
                 const auto num_rows    = shape[0];
                 const auto num_columns = shape[1];
@@ -86,13 +83,8 @@ AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
 
 // ************ AddScoresStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
-    mrc::segment::Builder& builder,
-    const std::string& name,
-    std::size_t num_class_labels,
-    std::map<std::size_t, std::string> idx2label,
-    std::string output_name)
+    mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
 {
-    return builder.construct_object<AddScoresStage>(
-        name, num_class_labels, std::move(idx2label), std::move(output_name));
+    return builder.construct_object<AddScoresStage>(name, std::move(idx2label));
 }
 }  // namespace morpheus

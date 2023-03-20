@@ -32,6 +32,9 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
     This class contains several inference responses as well as the cooresponding message metadata.
     """
 
+    probs_tensor_name: typing.ClassVar[str] = "probs"
+    """Name of the tensor that holds output probabilities"""
+
     def __init__(self,
                  *,
                  meta: MessageMeta,
@@ -39,7 +42,16 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
                  mess_count: int = -1,
                  memory: TensorMemory = None,
                  offset: int = 0,
-                 count: int = -1):
+                 count: int = -1,
+                 probs_tensor_name: str = None):
+
+        if (probs_tensor_name is not None):
+            self.probs_tensor_name = probs_tensor_name
+
+        # Add the tensor name to the required list
+        if (self.probs_tensor_name not in self.required_tensors):
+            # Make sure to set a new variable here instead of append otherwise you change all classes
+            self.required_tensors = self.required_tensors + [self.probs_tensor_name]
 
         super().__init__(meta=meta,
                          mess_offset=mess_offset,
@@ -51,7 +63,7 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
     @property
     def outputs(self):
         """
-        Get outputs stored in the ResponseMemory container. Alias for `MultiResponseMessage.tensors`.
+        Get outputs stored in the TensorMemory container. Alias for `MultiResponseMessage.tensors`.
 
         Returns
         -------
@@ -63,7 +75,7 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
 
     def get_output(self, name: str):
         """
-        Get output stored in the ResponseMemory container. Alias for `MultiResponseMessage.get_tensor`.
+        Get output stored in the TensorMemory container. Alias for `MultiResponseMessage.get_tensor`.
 
         Parameters
         ----------
@@ -78,27 +90,31 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
         """
         return self.get_tensor(name)
 
-    def copy_output_ranges(self, ranges, mask=None):
-        """
-        Perform a copy of the underlying output tensors for the given `ranges` of rows.
-        Alias for `MultiResponseMessage.copy_output_ranges`
+    def get_probs_tensor(self):
 
-        Parameters
-        ----------
-        ranges : typing.List[typing.Tuple[int, int]]
-            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
-            The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
+        return self.get_tensor(self.probs_tensor_name)
 
-        mask : typing.Union[None, cupy.ndarray, numpy.ndarray]
-            Optionally specify rows as a cupy array (when using cudf Dataframes) or a numpy array (when using pandas
-            Dataframes) of booleans. When not-None `ranges` will be ignored. This is useful as an optimization as this
-            avoids needing to generate the mask on it's own.
+    # def copy_output_ranges(self, ranges, mask=None):
+    #     """
+    #     Perform a copy of the underlying output tensors for the given `ranges` of rows.
+    #     Alias for `MultiResponseMessage.copy_output_ranges`
 
-        Returns
-        -------
-        typing.Dict[str, cupy.ndarray]
-        """
-        return self.copy_tensor_ranges(ranges, mask=mask)
+    #     Parameters
+    #     ----------
+    #     ranges : typing.List[typing.Tuple[int, int]]
+    #         Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
+    #         The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
+
+    #     mask : typing.Union[None, cupy.ndarray, numpy.ndarray]
+    #         Optionally specify rows as a cupy array (when using cudf Dataframes) or a numpy array (when using pandas
+    #         Dataframes) of booleans. When not-None `ranges` will be ignored. This is useful as an optimization as this
+    #         avoids needing to generate the mask on it's own.
+
+    #     Returns
+    #     -------
+    #     typing.Dict[str, cupy.ndarray]
+    #     """
+    #     return self.copy_tensor_ranges(ranges, mask=mask)
 
 
 @dataclasses.dataclass

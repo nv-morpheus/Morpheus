@@ -56,7 +56,8 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
                  mess_count: int = -1,
                  memory: TensorMemory,
                  offset: int = 0,
-                 count: int = -1):
+                 count: int = -1,
+                 id_tensor_name: str = "seq_ids"):
 
         if memory is None:
             raise ValueError("Must define `memory` when creating {}".format(self.__class__.__name__))
@@ -74,6 +75,7 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
         self.memory = memory
         self.offset = offset
         self.count = count
+        self.id_tensor_name = id_tensor_name
 
         # Call the base class last because the properties need to be initialized first
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
@@ -184,6 +186,14 @@ class MultiTensorMessage(MultiMessage, cpp_class=_messages.MultiTensorMessage):
 
         """
         return self.memory.get_tensor(name)[self.offset:self.offset + self.count, :]
+
+    def get_id_tensor(self):
+
+        try:
+            return self.get_tensor(self.id_tensor_name)
+        except KeyError as exc:
+            raise KeyError(f"Cannopt get ID tensor. Tensor with name '{self.id_tensor_name}' "
+                           "does not exist in the memory object") from exc
 
     def _get_tensor_prop(self, name: str):
         """

@@ -19,7 +19,6 @@
 
 #include "morpheus/messages/memory/response_memory_probs.hpp"  // for ResponseMemoryProbs
 #include "morpheus/messages/memory/tensor_memory.hpp"          // for TensorMemory
-#include "morpheus/messages/multi_response_probs.hpp"          // for MultiResponseProbsMessage
 #include "morpheus/objects/dev_mem_info.hpp"                   // for DevMemInfo
 #include "morpheus/objects/dtype.hpp"                          // for DType
 #include "morpheus/objects/tensor.hpp"                         // for Tensor::create

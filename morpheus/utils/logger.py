@@ -227,4 +227,7 @@ def deprecated_message_warning(logger, cls, new_cls):
     """
     Log a warning about a deprecated message
     """
-    logger.warning(("The '%s' message has been deprecated in favor of '%s'. "), cls.__name__, new_cls.__name__)
+    logger.warning(
+        ("The '%s' message has been deprecated and will be removed in a future version. Please use '%s' instead."),
+        cls.__name__,
+        new_cls.__name__)

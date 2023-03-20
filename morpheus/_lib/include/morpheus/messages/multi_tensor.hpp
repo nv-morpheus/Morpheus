@@ -77,11 +77,13 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
                        TensorIndex mess_count               = -1,
                        std::shared_ptr<TensorMemory> memory = nullptr,
                        TensorIndex offset                   = 0,
-                       TensorIndex count                    = -1);
+                       TensorIndex count                    = -1,
+                       std::string id_tensor_name           = "seq_ids");
 
     std::shared_ptr<morpheus::TensorMemory> memory;
     TensorIndex offset{0};
     TensorIndex count{0};
+    std::string id_tensor_name;
 
     /**
      * @brief Returns a tensor with the given name.
@@ -110,6 +112,8 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @throws std::runtime_error If no tensor matching `name` exists
      */
     void set_tensor(const std::string& name, const TensorObject& value);
+
+    const TensorObject get_id_tensor() const;
 
   protected:
     void get_slice_impl(std::shared_ptr<MultiMessage> new_message, TensorIndex start, TensorIndex stop) const override;
@@ -147,7 +151,8 @@ struct MultiTensorMessageInterfaceProxy
                                                     TensorIndex mess_count,
                                                     std::shared_ptr<TensorMemory> memory,
                                                     TensorIndex offset,
-                                                    TensorIndex count);
+                                                    TensorIndex count,
+                                                    std::string id_tensor_name);
 
     /**
      * @brief Returns a shared pointer of a tensor memory object
@@ -172,6 +177,10 @@ struct MultiTensorMessageInterfaceProxy
      */
     static TensorIndex count(MultiTensorMessage& self);
 
+    static std::string id_tensor_name_getter(MultiTensorMessage& self);
+
+    static void id_tensor_name_setter(MultiTensorMessage& self, std::string id_tensor_name);
+
     /**
      * @brief Returns the tensor tensor for a given name
      *
@@ -181,6 +190,8 @@ struct MultiTensorMessageInterfaceProxy
      * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_tensor(MultiTensorMessage& self, const std::string& name);
+
+    static pybind11::object get_id_tensor(MultiTensorMessage& self);
 
     /**
      * @brief Same as `get_tensor` but used when the method is being bound to a python property

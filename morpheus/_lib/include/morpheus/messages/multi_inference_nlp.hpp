@@ -59,11 +59,12 @@ class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMes
      * @param count Message count in inference memory object
      */
     MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
-                             TensorIndex mess_offset                 = 0,
-                             TensorIndex mess_count                  = -1,
-                             std::shared_ptr<InferenceMemory> memory = nullptr,
-                             TensorIndex offset                      = 0,
-                             TensorIndex count                       = -1);
+                             TensorIndex mess_offset              = 0,
+                             TensorIndex mess_count               = -1,
+                             std::shared_ptr<TensorMemory> memory = nullptr,
+                             TensorIndex offset                   = 0,
+                             TensorIndex count                    = -1,
+                             std::string id_tensor_name           = "seq_ids");
 
     /**
      * @brief Returns the 'input_ids' tensor, throws a `std::runtime_error` if it does not exist.
@@ -135,9 +136,10 @@ struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInte
     static std::shared_ptr<MultiInferenceNLPMessage> init(std::shared_ptr<MessageMeta> meta,
                                                           TensorIndex mess_offset,
                                                           TensorIndex mess_count,
-                                                          std::shared_ptr<InferenceMemory> memory,
+                                                          std::shared_ptr<TensorMemory> memory,
                                                           TensorIndex offset,
-                                                          TensorIndex count);
+                                                          TensorIndex count,
+                                                          std::string id_tensor_name);
 
     /**
      * @brief Get  'input_ids' tensor as a python object

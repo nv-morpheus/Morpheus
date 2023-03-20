@@ -131,7 +131,7 @@ class GenerateVizFramesStage(SinglePortStage):
 
         df["data"] = df["data"].apply(indent_data)
 
-        probs = x.get_output('probs')
+        probs = x.get_probs_tensor()
         pass_thresh = (probs >= 0.5).any(axis=1)
         max_arg = probs.argmax(axis=1)
 
