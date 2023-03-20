@@ -17,8 +17,6 @@
 
 #include "morpheus/utilities/string_util.hpp"
 
-#include <map>
-
 namespace morpheus {
 bool StringUtil::str_contains(const std::string& str, const std::string& search_str)
 {

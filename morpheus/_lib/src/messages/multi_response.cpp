@@ -17,12 +17,15 @@
 
 #include "morpheus/messages/multi_response.hpp"
 
-#include "morpheus/messages/memory/response_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/cupy_util.hpp"
+#include "morpheus/utilities/string_util.hpp"
 
 #include <memory>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 

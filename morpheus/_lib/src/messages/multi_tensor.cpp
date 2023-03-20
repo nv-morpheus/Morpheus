@@ -24,8 +24,7 @@
 
 #include <glog/logging.h>        // IWYU pragma: keep
 #include <mrc/utils/macros.hpp>  // for MRC_PTR_CAST
-#include <pybind11/detail/common.h>
-#include <pybind11/pytypes.h>  // for key_error
+#include <pybind11/pytypes.h>    // for key_error
 
 #include <cstdint>
 #include <sstream>

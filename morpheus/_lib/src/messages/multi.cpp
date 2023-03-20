@@ -22,7 +22,6 @@
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/cupy_util.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
 #include <cudf/column/column_view.hpp>  // for column_view

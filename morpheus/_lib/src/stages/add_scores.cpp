@@ -19,12 +19,14 @@
 
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex
+#include "morpheus/utilities/string_util.hpp"
 
 #include <glog/logging.h>
 
 #include <cstddef>  // for size_t
 #include <exception>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <ostream>  // for logging

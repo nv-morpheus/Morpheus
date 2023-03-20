@@ -35,8 +35,8 @@
 #include <cstddef>
 #include <exception>
 #include <functional>  // for divides, bind, placeholders
+#include <iterator>
 #include <memory>
-#include <numeric>
 #include <ostream>  // needed for logging
 #include <utility>  // for move
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments

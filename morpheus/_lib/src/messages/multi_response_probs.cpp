@@ -17,7 +17,6 @@
 
 #include "morpheus/messages/multi_response_probs.hpp"
 
-#include "morpheus/messages/memory/response_memory_probs.hpp"
 #include "morpheus/messages/meta.hpp"
 
 #include <pybind11/pytypes.h>

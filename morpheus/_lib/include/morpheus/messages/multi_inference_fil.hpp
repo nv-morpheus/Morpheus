@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/messages/multi.hpp"
@@ -28,6 +27,7 @@
 #include <pybind11/pytypes.h>  // for object
 
 #include <memory>
+#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/response_memory_probs.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_response.hpp"
@@ -27,6 +27,7 @@
 #include <pybind11/pytypes.h>
 
 #include <memory>
+#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/
