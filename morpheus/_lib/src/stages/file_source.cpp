@@ -48,7 +48,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
         auto data_table     = load_table_from_file(m_filename);
-        int index_col_count = get_index_col_count(data_table);
+        int index_col_count = prepare_df_index(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
         // When index_col_count is 0 this will cause a new range index to be created
