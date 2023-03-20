@@ -118,25 +118,31 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     supports
     """
 
-    # Only care about the config fixture
-    if ("config" not in metafunc.fixturenames):
-        return
-
     use_cpp = metafunc.definition.get_closest_marker("use_cpp") is not None
     use_python = metafunc.definition.get_closest_marker("use_python") is not None
 
-    if (use_cpp and use_python):
-        raise RuntimeError(
-            "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".format(
-                metafunc.definition.nodeid))
-    elif (not use_cpp and not use_python):
-        # Add the markers to the parameters
-        metafunc.parametrize("config",
-                             [
-                                 pytest.param(True, marks=pytest.mark.use_cpp, id="use_cpp"),
-                                 pytest.param(False, marks=pytest.mark.use_python, id="use_python")
-                             ],
-                             indirect=True)
+    use_cpp_param = pytest.param(True, marks=pytest.mark.use_cpp(added_by="generate_tests"), id="use_cpp")
+    use_python_param = pytest.param(False, marks=pytest.mark.use_python(added_by="generate_tests"), id="use_python")
+
+    _set_use_cpp_params = []
+
+    if ("use_cpp" in metafunc.fixturenames):
+        # Need to add some params since the fixture was requested
+
+        # Add cpp unless use_cpp == True and use_python == False
+        if not (use_python and not use_cpp):
+            _set_use_cpp_params.append(use_cpp_param)
+
+        # Add python unless use_cpp == False and use_python == True
+        if not (not use_python and use_cpp):
+            _set_use_cpp_params.append(use_python_param)
+
+    elif (use_cpp and use_python):
+        # Need to parameterize since we have multiple
+        _set_use_cpp_params.extend([use_cpp_param, use_python_param])
+
+    if (len(_set_use_cpp_params) > 0):
+        metafunc.parametrize("_set_use_cpp", _set_use_cpp_params, indirect=True)
 
 
 def pytest_runtest_setup(item):
@@ -153,7 +159,7 @@ def pytest_runtest_setup(item):
             pytest.skip("Skipping benchmark tests by default. Use --run_benchmark to enable")
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: typing.List[pytest.Item]):
     """
     To support old unittest style tests, try to determine the mark from the name
     """
@@ -163,10 +169,23 @@ def pytest_collection_modifyitems(config, items):
             "--run_kafka requested but pytest_kafka not available due to: {}".format(pytest_kafka_setup_error))
 
     for item in items:
-        if "no_cpp" in item.nodeid:
-            item.add_marker(pytest.mark.use_python)
-        elif "cpp" in item.nodeid:
-            item.add_marker(pytest.mark.use_cpp)
+        if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
+            item.add_marker(pytest.mark.use_python(added_in="collection_modifyitems"))
+        elif "cpp" in item.nodeid and item.get_closest_marker("use_cpp") is None:
+            item.add_marker(pytest.mark.use_cpp(added_in="collection_modifyitems"))
+
+    def should_filter_test(item: pytest.Item):
+
+        use_cpp = item.get_closest_marker("use_cpp")
+        use_pandas = item.get_closest_marker("use_pandas")
+
+        if (use_cpp and use_pandas):
+            return False
+
+        return True
+
+    # Now delete tests with incompatible markers
+    items[:] = [x for x in items if should_filter_test(x)]
 
 
 def clear_handlers(logger):
@@ -179,6 +198,43 @@ def clear_handlers(logger):
 def pytest_runtest_teardown(item, nextitem):
     clear_handlers(logging.getLogger("morpheus"))
     clear_handlers(logging.getLogger())
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function", autouse=True)
+def _set_use_cpp(request: pytest.FixtureRequest):
+
+    do_use_cpp: bool = True
+
+    # Check for the param if this was indirectly set
+    if (hasattr(request, "param") and isinstance(request.param, bool)):
+        do_use_cpp = request.param
+    else:
+        # If not, check for the marker and use that
+        use_cpp = request.node.get_closest_marker("use_cpp") is not None
+        use_python = request.node.get_closest_marker("use_python") is not None
+
+        if (use_cpp and use_python):
+            raise RuntimeError(
+                "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".
+                format(request.node.nodeid))
+        else:
+            # This will default to True or follow use_cpp
+            do_use_cpp = not use_python
+
+    from morpheus.config import CppConfig
+
+    CppConfig.set_should_use_cpp(do_use_cpp)
+
+    yield do_use_cpp
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function")
+def use_cpp(_set_use_cpp: bool):
+
+    # Just return the set value
+    yield _set_use_cpp
 
 
 @pytest.fixture(scope="function")
@@ -211,8 +267,22 @@ def config_no_cpp():
     yield Config()
 
 
+@pytest.fixture(scope="function",
+                params=[
+                    pytest.param("pandas", marks=pytest.mark.use_pandas, id="use_pandas"),
+                    pytest.param("cudf", marks=pytest.mark.use_cudf, id="use_cudf")
+                ])
+def df_type(request: pytest.FixtureRequest):
+
+    assert request.param in ["pandas", "cudf"], "Indirect parameter needed to be set to use df_type"
+
+    df_type_str: typing.Literal["cudf", "pandas"] = request.param
+
+    yield df_type_str
+
+
 @pytest.fixture(scope="function")
-def config(request: pytest.FixtureRequest):
+def config(use_cpp: bool):
     """
     For new pytest style tests, get the config by using this fixture. It will setup the config based on the marks set on
     the object. If no marks are added to the test, it will be parameterized for both C++ and python. For example,
@@ -225,18 +295,6 @@ def config(request: pytest.FixtureRequest):
     """
 
     from morpheus.config import Config
-    from morpheus.config import CppConfig
-
-    if (not hasattr(request, "param")):
-        use_cpp = request.node.get_closest_marker("use_cpp") is not None
-        use_python = request.node.get_closest_marker("use_python") is not None
-
-        assert use_cpp != use_python, "Invalid config"
-
-        CppConfig.set_should_use_cpp(True if use_cpp else False)
-
-    else:
-        CppConfig.set_should_use_cpp(True if request.param else False)
 
     yield Config()
 
@@ -377,6 +435,7 @@ def _camouflage_is_running():
 
     # Actually launch camoflague
     if launch_camouflage:
+        popen = None
         try:
             popen = subprocess.Popen(["camouflage", "--config", "config.yml"],
                                      cwd=root_dir,
@@ -402,20 +461,20 @@ def _camouflage_is_running():
             logger.exception("Error launching camouflage")
             raise
         finally:
+            if popen is not None:
+                logger.info("Killing camouflage with pid {}".format(popen.pid))
 
-            logger.info("Killing camouflage with pid {}".format(popen.pid))
+                elapsed_time = 0.0
+                sleep_time = 0.1
+                stopped = False
 
-            elapsed_time = 0.0
-            sleep_time = 0.1
-            stopped = False
-
-            # It takes a little while to shutdown
-            while not stopped and elapsed_time < shutdown_timeout:
-                popen.kill()
-                stopped = (popen.poll() is not None)
-                if not stopped:
-                    time.sleep(sleep_time)
-                    elapsed_time += sleep_time
+                # It takes a little while to shutdown
+                while not stopped and elapsed_time < shutdown_timeout:
+                    popen.kill()
+                    stopped = (popen.poll() is not None)
+                    if not stopped:
+                        time.sleep(sleep_time)
+                        elapsed_time += sleep_time
 
     else:
 
@@ -539,3 +598,6 @@ def loglevel_fatal():
     Sets the logging level to `logging.FATAL` for this function only.
     """
     _wrap_set_log_level(logging.FATAL)
+
+
+# ==== DataFrame Fixtures ====

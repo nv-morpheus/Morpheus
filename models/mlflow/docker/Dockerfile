@@ -13,27 +13,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG FROM_IMAGE=gpuci/miniforge-cuda
-ARG CUDA_VER=11.5
+ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
+ARG CUDA_VER=11.8
 ARG LINUX_VER=ubuntu20.04
 ARG PYTHON_VER=3.8
-FROM ${FROM_IMAGE}:${CUDA_VER}-runtime-${LINUX_VER} AS base
+FROM ${FROM_IMAGE}:cuda${CUDA_VER}-base-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
 
 WORKDIR /mlflow
 
 COPY . ./
 
-# need to do an upgrade in case gpuci is stale for whatever reason
-RUN apt-get update && apt upgrade -y && apt-get install -y procps vim
+# Enables "source activate conda"
+SHELL ["/bin/bash", "-c"]
+
+# need to do an upgrade in case the base is stale for whatever reason
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    apt update && \
+    apt upgrade -y && \
+    apt install --no-install-recommends -y \
+    git \
+    procps && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 # but pin python version to avoid some newer CVE
-RUN source /etc/profile.d/conda.sh && conda deactivate && conda install python=${PYTHON_VER}
+RUN source /etc/profile.d/conda.sh && conda deactivate && conda install "tini=0.19" python=${PYTHON_VER}
 RUN /opt/conda/bin/conda env create -f docker/conda/mlflow-env.yml
 RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]
 
 ARG TRITON_DIR=/mlflow/triton-inference-server
-ARG TRITON_VER=r22.10
+ARG TRITON_VER=r23.01
 
 RUN mkdir ${TRITON_DIR} && \
     cd ${TRITON_DIR} && \
@@ -46,7 +56,7 @@ RUN ln -sf ${TRITON_DIR}/server/deploy/mlflow-triton-plugin/scripts/publish_mode
     mkdir /mlflow/artifacts
 
 # remedy for CVE-2015-20107
-RUN find / -name '*mailcap*.*py*' | xargs rm
+RUN find / -name '*mailcap*.*py*' -delete
 
 # remedy for CVE-2022-42919
 RUN find / -path '*multiprocessing/util.py' -exec sed -i 's/=\s*_platform_supports_abstract_sockets()/= False/g' {} +

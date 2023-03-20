@@ -21,6 +21,7 @@
 #include <cudf/io/types.hpp>
 
 #include <string>
+#include <vector>
 
 namespace morpheus {
 #pragma GCC visibility push(default)

@@ -35,7 +35,6 @@
 #include <pybind11/attr.h>      // for multiple_inheritance
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
 #include <pybind11/pytypes.h>   // for dict, sequence
-#include <pybind11/stl.h>       // for dict->map conversions
 #include <pymrc/utils.hpp>      // for pymrc::import
 
 #include <memory>
@@ -55,7 +54,7 @@ PYBIND11_MODULE(stages, m)
         )pbdoc";
 
     // Load the cudf helpers
-    load_cudf_helpers();
+    CudfHelper::load();
 
     mrc::pymrc::from_import(m, "morpheus._lib.common", "FilterSource");
 
@@ -86,7 +85,8 @@ PYBIND11_MODULE(stages, m)
         .def(py::init<>(&DeserializeStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("batch_size"));
+             py::arg("batch_size"),
+             py::arg("ensure_sliceable_index") = true);
 
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,

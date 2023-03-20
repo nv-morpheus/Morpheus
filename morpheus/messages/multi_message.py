@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import dataclasses
+import inspect
 import typing
 
 import cupy as cp
@@ -24,6 +25,9 @@ import cudf
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageData
 from morpheus.messages.message_meta import MessageMeta
+
+# Needed to provide the return type of `@classmethod`
+Self = typing.TypeVar("Self", bound="MultiMessage")
 
 
 @dataclasses.dataclass
@@ -45,6 +49,38 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
     meta: MessageMeta = dataclasses.field(repr=False)
     mess_offset: int
     mess_count: int
+
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1):
+
+        if meta is None:
+            raise ValueError("Must define `meta` when creating MultiMessage")
+
+        # Use the meta count if not supplied
+        if (mess_count == -1):
+            mess_count = meta.count - mess_offset
+
+        # Check for valid offsets and counts
+        if mess_offset < 0 or mess_offset >= meta.count:
+            raise ValueError("Invalid message offset value")
+        if mess_count <= 0 or (mess_offset + mess_count > meta.count):
+            raise ValueError("Invalid message count value")
+
+        self.meta = meta
+        self.mess_offset = mess_offset
+        self.mess_count = mess_count
+
+        self._base_init_run = True
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        # Until we migrate to python 3.10, its impossible to do keyword only dataclasses.
+        # Simple article here: https://medium.com/@aniscampos/python-dataclass-inheritance-finally-686eaf60fbb5
+        # Once we migrate, we can use `__post_init__` like normal
+        if (cls.__init__ is MultiMessage.__init__):
+            raise ValueError(f"Class `{cls}` is improperly configured. "
+                             f"All derived classes of `MultiMessage` must define an `__init__` function which "
+                             f"calls `super().__init__(*args, **kwargs)`.")
 
     @property
     def id_col(self):
@@ -87,6 +123,47 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         return self.get_meta_list("timestamp")
 
+    def _get_indexers(self, columns: typing.Union[None, str, typing.List[str]] = None):
+        row_indexer = slice(self.mess_offset, self.mess_offset + self.mess_count, 1)
+
+        if (columns is None):
+            columns = self.meta._df.columns.to_list()
+        elif (isinstance(columns, str)):
+            # Convert a single string into a list so all versions return tables, not series
+            columns = [columns]
+
+        column_indexer = self.meta._df.columns.get_indexer_for(columns)
+
+        return row_indexer, column_indexer
+
+    def _calc_message_slice_bounds(self, start: int, stop: int):
+
+        # Start must be between [0, mess_count)
+        if (start < 0 or start >= self.mess_count):
+            raise IndexError("Invalid message `start` argument")
+
+        # Stop must be between (start, mess_count]
+        if (stop <= start or stop > self.mess_count):
+            raise IndexError("Invalid message `stop` argument")
+
+        # Calculate the new offset and count
+        offset = self.mess_offset + start
+        count = stop - start
+
+        return offset, count
+
+    @typing.overload
+    def get_meta(self) -> cudf.DataFrame:
+        ...
+
+    @typing.overload
+    def get_meta(self, columns: str) -> cudf.Series:
+        ...
+
+    @typing.overload
+    def get_meta(self, columns: typing.List[str]) -> cudf.DataFrame:
+        ...
+
     def get_meta(self, columns: typing.Union[None, str, typing.List[str]] = None):
         """
         Return column values from `morpheus.pipeline.messages.MessageMeta.df`.
@@ -104,16 +181,16 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         """
 
-        idx = self.meta._df.index[self.mess_offset:self.mess_offset + self.mess_count]
+        row_indexer, column_indexer = self._get_indexers(columns=columns)
 
-        if (isinstance(idx, cudf.RangeIndex)):
-            idx = slice(idx.start, idx.stop - 1, idx.step)
+        if (-1 in column_indexer):
+            missing_columns = [columns[i] for i, index_value in enumerate(column_indexer) if index_value == -1]
+            raise KeyError("Requested columns {} does not exist in the dataframe".format(missing_columns))
+        elif (isinstance(columns, str) and len(column_indexer) == 1):
+            # Make sure to return a series for a single column
+            column_indexer = column_indexer[0]
 
-        if (columns is None):
-            return self.meta._df.loc[idx, :]
-        else:
-            # If its a str or list, this is the same
-            return self.meta._df.loc[idx, columns]
+        return self.meta._df.iloc[row_indexer, column_indexer]
 
     def get_meta_list(self, col_name: str = None):
         """
@@ -146,13 +223,57 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             `Series` or `Dataframe` is passed, rows will be matched by index.
 
         """
+
+        # First try to set the values on just our slice if the columns exist
+        row_indexer, column_indexer = self._get_indexers(columns=columns)
+
+        # Get exclusive access to the dataframe
         with self.meta.mutable_dataframe() as df:
-            if (columns is None):
-                # Set all columns
-                df.loc[df.index[self.mess_offset:self.mess_offset + self.mess_count], :] = value
+            # Check to see if we are adding a column. If so, we need to use df.loc instead of df.iloc
+            if (-1 not in column_indexer):
+
+                # If we only have one column, convert it to a series (broadcasts work with more types on a series)
+                if (len(column_indexer) == 1):
+                    column_indexer = column_indexer[0]
+
+                try:
+                    # Now update the slice
+                    df.iloc[row_indexer, column_indexer] = value
+                except ValueError:
+                    # Try this as a fallback. Works better for strings. See issue #286
+                    df[columns].iloc[row_indexer] = value
+
             else:
-                # If its a single column or list of columns, this is the same
-                df.loc[df.index[self.mess_offset:self.mess_offset + self.mess_count], columns] = value
+                # Columns should never be empty if we get here
+                assert columns is not None
+
+                # cudf is really bad at adding new columns
+                if (isinstance(df, cudf.DataFrame)):
+
+                    saved_index = None
+
+                    # Check to see if we can use slices
+                    if (not (df.index.is_unique and
+                             (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing))):
+                        # Save the index and reset
+                        saved_index = df.index
+
+                        df.reset_index(drop=True, inplace=True)
+
+                    # Perform the update via slices
+                    df.loc[df.index[row_indexer], columns] = value
+
+                    # Reset the index if we changed it
+                    if (saved_index is not None):
+                        df.set_index(saved_index, inplace=True)
+
+                else:
+                    # Need to determine the boolean mask to use indexes with df.loc
+                    row_mask = self._ranges_to_mask(self.meta._df,
+                                                    [(self.mess_offset, self.mess_offset + self.mess_count)])
+
+                    # Now set the slice
+                    df.loc[row_mask, columns] = value
 
     def get_slice(self, start, stop):
         """
@@ -172,7 +293,11 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             A new `MultiInferenceMessage` with sliced offset and count.
 
         """
-        return MultiMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)
+
+        # Calc the offset and count. This checks the bounds for us
+        offset, count = self._calc_message_slice_bounds(start=start, stop=stop)
+
+        return self.from_message(self, meta=self.meta, mess_offset=offset, mess_count=count)
 
     def _ranges_to_mask(self, df, ranges):
         if isinstance(df, cudf.DataFrame):
@@ -215,7 +340,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         return df.loc[mask, :]
 
-    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]], num_selected_rows: int = None):
+    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]]):
         """
         Perform a copy of the current message instance for the given `ranges` of rows.
 
@@ -225,16 +350,108 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
             Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
             The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
 
-        num_selected_rows : typing.Union[None, int]
-            Optional specify the number of rows selected by `ranges`, otherwise this is computed by the result.
-
         Returns
         -------
         `MultiMessage`
         """
         sliced_rows = self.copy_meta_ranges(ranges)
 
-        if num_selected_rows is None:
-            num_selected_rows = len(sliced_rows)
+        return self.from_message(self, meta=MessageMeta(sliced_rows), mess_offset=0, mess_count=len(sliced_rows))
 
-        return MultiMessage(meta=MessageMeta(sliced_rows), mess_offset=0, mess_count=num_selected_rows)
+    @classmethod
+    def from_message(cls: typing.Type[Self],
+                     message: "MultiMessage",
+                     *,
+                     meta: MessageMeta = None,
+                     mess_offset: int = -1,
+                     mess_count: int = -1,
+                     **kwargs) -> Self:
+        """
+        Creates a new instance of a derived class from `MultiMessage` using an existing message as the template. This is
+        very useful when a new message needs to be created with a single change to an existing `MessageMeta`.
+
+        When creating the new message, all required arguments for the class specified by `cls` will be pulled from
+        `message` unless otherwise specified in the `args` or `kwargs`. Special handling is performed depending on
+        whether or not a new `meta` object is supplied. If one is supplied, the offset and count defaults will be 0 and
+        `meta.count` respectively. Otherwise offset and count will be pulled from the input `message`.
+
+        Parameters
+        ----------
+        cls : typing.Type[Self]
+            The class to create
+        message : MultiMessage
+            An existing message to use as a template. Can be a base or derived from `cls` as long as all arguments can
+            be pulled from `message` or proveded in `kwargs`
+        meta : MessageMeta, optional
+            A new `MessageMeta` to use, by default None
+        mess_offset : int, optional
+            A new `mess_offset` to use, by default -1
+        mess_count : int, optional
+            A new `mess_count` to use, by default -1
+
+        Returns
+        -------
+        Self
+            A new instance of type `cls`
+
+        Raises
+        ------
+        ValueError
+            If the incoming `message` is None
+        AttributeError
+            If some required arguments were not supplied by `kwargs` and could not be pulled from `message`
+        """
+
+        if (message is None):
+            raise ValueError("Must define `message` when creating a MultiMessage with `from_message`")
+
+        if (mess_offset == -1):
+            if (meta is not None):
+                mess_offset = 0
+            else:
+                mess_offset = message.mess_offset
+
+        if (mess_count == -1):
+            if (meta is not None):
+                # Subtract offset here so we dont go over the end
+                mess_count = meta.count - mess_offset
+            else:
+                mess_count = message.mess_count
+
+        # Do meta last
+        if meta is None:
+            meta = message.meta
+
+        # Update the kwargs
+        kwargs.update({
+            "meta": meta,
+            "mess_offset": mess_offset,
+            "mess_count": mess_count,
+        })
+
+        signature = inspect.signature(cls.__init__)
+
+        for p_name, param in signature.parameters.items():
+
+            if (p_name == "self"):
+                # Skip self until this this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
+                # After that, switch to using inspect.signature(cls)
+                continue
+
+            # Skip if its already defined
+            if (p_name in kwargs):
+                continue
+
+            if (not hasattr(message, p_name)):
+                # Check for a default
+                if (param.default == inspect.Parameter.empty):
+                    raise AttributeError(
+                        f"Cannot create message of type {cls}, from {message}. Missing property '{p_name}'")
+
+                # Otherwise, we can ignore
+                continue
+
+            kwargs[p_name] = getattr(message, p_name)
+
+        # Create a new instance using the kwargs
+        return cls(**kwargs)

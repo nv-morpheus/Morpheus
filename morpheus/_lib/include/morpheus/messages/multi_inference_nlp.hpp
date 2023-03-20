@@ -19,13 +19,13 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/meta.hpp"                     // for MessageMeta
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>
 #include <memory>
 
 namespace morpheus {
@@ -44,7 +44,7 @@ namespace morpheus {
  * proper inputs are set and eases debugging.
  *
  */
-class MultiInferenceNLPMessage : public MultiInferenceMessage
+class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMessage, MultiInferenceMessage>
 {
   public:
     /**
@@ -58,18 +58,19 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
      */
-    MultiInferenceNLPMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                             std::size_t mess_offset,
-                             std::size_t mess_count,
-                             std::shared_ptr<morpheus::InferenceMemory> memory,
-                             std::size_t offset,
-                             std::size_t count);
+    MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
+                             TensorIndex mess_offset                 = 0,
+                             TensorIndex mess_count                  = -1,
+                             std::shared_ptr<InferenceMemory> memory = nullptr,
+                             TensorIndex offset                      = 0,
+                             TensorIndex count                       = -1);
 
     /**
      * @brief Returns the 'input_ids' tensor, throws a `std::runtime_error` if it does not exist.
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor named "input_ids" exists
      */
     const TensorObject get_input_ids() const;
 
@@ -85,6 +86,7 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor named "input_mask" exists
      */
     const TensorObject get_input_mask() const;
 
@@ -100,6 +102,7 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor named "seq_ids" exists
      */
     const TensorObject get_seq_ids() const;
 
@@ -115,7 +118,7 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiInferenceNLPMessageInterfaceProxy
+struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceNLPMessage, and return a shared pointer to the result
@@ -130,57 +133,36 @@ struct MultiInferenceNLPMessageInterfaceProxy
      * @return std::shared_ptr<MultiInferenceNLPMessage>
      */
     static std::shared_ptr<MultiInferenceNLPMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                          cudf::size_type mess_offset,
-                                                          cudf::size_type mess_count,
+                                                          TensorIndex mess_offset,
+                                                          TensorIndex mess_count,
                                                           std::shared_ptr<InferenceMemory> memory,
-                                                          cudf::size_type offset,
-                                                          cudf::size_type count);
+                                                          TensorIndex offset,
+                                                          TensorIndex count);
 
     /**
-     * @brief Get inference memory object shared pointer
-     *
-     * @param self
-     * @return std::shared_ptr<morpheus::InferenceMemory>
-     */
-    static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceNLPMessage& self);
-
-    /**
-     * @brief Get message offset
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t offset(MultiInferenceNLPMessage& self);
-
-    /**
-     * @brief Get messages count
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(MultiInferenceNLPMessage& self);
-
-    /**
-     * @brief Get  'input_ids' tensor as a python object, throws a `std::runtime_error` if it does not exist
+     * @brief Get  'input_ids' tensor as a python object
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "input_ids" exists.
      */
     static pybind11::object input_ids(MultiInferenceNLPMessage& self);
 
     /**
-     * @brief Get 'input_mask' tensor as a python object, throws a `std::runtime_error` if it does not exist
+     * @brief Get 'input_mask' tensor as a python object
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "input_mask" exists.
      */
     static pybind11::object input_mask(MultiInferenceNLPMessage& self);
 
     /**
-     * @brief Get 'seq_ids' tensor as a python object, throws a `std::runtime_error` if it does not exist
+     * @brief Get 'seq_ids' tensor as a python object
      *
      * @param self
      * @return pybind11::object
+     * @throws pybind11::attribute_error When no tensor named "seq_ids" exists.
      */
     static pybind11::object seq_ids(MultiInferenceNLPMessage& self);
 };

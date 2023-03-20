@@ -25,19 +25,25 @@
 #include <glog/logging.h>
 #include <pybind11/gil.h>       // for gil_scoped_acquire
 #include <pybind11/pybind11.h>  // IWYU pragma: keep
-#include <pybind11/stl.h>       // IWYU pragma: keep
+#include <pybind11/pytypes.h>
+#include <pybind11/stl.h>  // IWYU pragma: keep
 
 #include <algorithm>  // for find, transform
 #include <array>      // needed for pybind11::make_tuple
 #include <cstddef>    // for size_t
 #include <iterator>   // for back_insert_iterator, back_inserter
 #include <memory>
+#include <optional>
+#include <ostream>
 #include <shared_mutex>
 #include <stdexcept>
 #include <utility>
 // IWYU pragma: no_include <pybind11/cast.h>
 
 namespace morpheus {
+
+namespace py = pybind11;
+using namespace py::literals;
 
 TableInfoData::TableInfoData(cudf::table_view view,
                              std::vector<std::string> indices,
@@ -96,7 +102,7 @@ TableInfoData TableInfoData::get_slice(cudf::size_type start,
 
                            if (found_col == this->column_names.end())
                            {
-                               throw std::runtime_error("Unknown column: " + c);
+                               throw py::key_error("Unknown column: " + c);
                            }
 
                            // Add the found column to the metadata
@@ -155,28 +161,6 @@ cudf::size_type TableInfoBase::num_rows() const
     return m_data.table_view.num_rows();
 }
 
-pybind11::object TableInfoBase::copy_to_py_object() const
-{
-    const auto offset = m_data.table_view.column(0).offset();
-    const auto stop   = offset + this->num_rows();
-
-    {
-        namespace py = pybind11;
-        py::gil_scoped_acquire gil;
-
-        auto df = m_parent->get_py_object();
-
-        // Compute the DF slice in python
-        auto index_slice = py::slice(py::int_(offset), py::int_(stop), py::none());
-
-        auto py_slice = df.attr("loc")[py::make_tuple(df.attr("index")[index_slice], m_data.column_names)];
-
-        auto copied_df = py_slice.attr("copy")();
-
-        return copied_df;
-    }
-}
-
 const cudf::column_view& TableInfoBase::get_column(cudf::size_type idx) const
 {
     if (idx < 0 || idx >= this->m_data.table_view.num_columns())
@@ -200,6 +184,20 @@ TableInfoData& TableInfoBase::get_data()
 const TableInfoData& TableInfoBase::get_data() const
 {
     return m_data;
+}
+
+bool TableInfoBase::has_sliceable_index() const
+{
+    py::gil_scoped_acquire gil;
+    auto df    = m_parent->get_py_object();
+    auto index = df.attr("index");
+
+    auto is_unique               = index.attr("is_unique").cast<bool>();
+    auto is_monotonic_increasing = index.attr("is_monotonic_increasing").cast<bool>();
+    auto is_monotonic_decreasing = index.attr("is_monotonic_decreasing").cast<bool>();
+
+    // Must be either increasing or decreasing with unique values to slice
+    return is_unique && (is_monotonic_increasing || is_monotonic_decreasing);
 }
 
 TableInfo::TableInfo(std::shared_ptr<const IDataTable> parent,
@@ -228,8 +226,16 @@ MutableTableInfo::~MutableTableInfo()
 {
     if (m_checked_out_ref_count >= 0)
     {
-        LOG(FATAL) << "Checked out python object was not returned before MutableTableInfo went out of scope";
+        LOG(ERROR) << "Checked out python object was not returned before MutableTableInfo went out of scope";
     }
+}
+
+MutableTableInfo MutableTableInfo::get_slice(cudf::size_type start,
+                                             cudf::size_type stop,
+                                             std::vector<std::string> column_names) &&
+{
+    // Create a new Table info, (moving the unique_lock)
+    return {this->get_parent(), std::move(m_lock), this->get_data().get_slice(start, stop, column_names)};
 }
 
 void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, morpheus::DType>>& columns)
@@ -237,11 +243,10 @@ void MutableTableInfo::insert_columns(const std::vector<std::tuple<std::string, 
     const auto num_existing_cols = this->get_data().column_names.size();
     const auto num_rows          = this->get_data().table_view.num_rows();
 
-    // TODO figure out how to do this without the gil
+    // TODO(mdemoret): figure out how to do this without the gil
     {
-        namespace py = pybind11;
-        pybind11::gil_scoped_acquire gil;
-        pybind11::object cudf_scalar = pybind11::module_::import("cudf").attr("Scalar");
+        py::gil_scoped_acquire gil;
+        py::object cudf_scalar = py::module_::import("cudf").attr("Scalar");
 
         auto table = this->get_parent()->get_py_object();
 
@@ -273,19 +278,62 @@ void MutableTableInfo::insert_missing_columns(const std::vector<std::tuple<std::
     }
 }
 
-pybind11::object MutableTableInfo::checkout_obj()
+py::object MutableTableInfo::checkout_obj()
 {
     // Get a copy increasing the ref count
-    pybind11::object checked_out_obj = this->get_parent()->get_py_object();
+    py::object checked_out_obj = this->get_parent()->get_py_object();
 
     m_checked_out_ref_count = checked_out_obj.ref_count();
 
     return checked_out_obj;
 }
 
-void MutableTableInfo::return_obj(pybind11::object&& obj)
+void MutableTableInfo::return_obj(py::object&& obj)
 {
     m_checked_out_ref_count = -1;
+}
+
+std::optional<std::string> MutableTableInfo::ensure_sliceable_index()
+{
+    std::optional<std::string> old_index_col_name{"_index_"};
+    auto py_df = this->checkout_obj();
+    {
+        py::gil_scoped_acquire gil;
+        auto df_index = py_df.attr("index");
+
+        // Check to see if we actually need the change
+        if (df_index.attr("is_unique").cast<bool>() && df_index.attr("is_monotonic").cast<bool>())
+        {
+            // Set the outputname to nullopt
+            old_index_col_name = std::nullopt;
+        }
+        else
+        {
+            auto index_name = df_index.attr("name");
+
+            if (!index_name.is_none())
+            {
+                old_index_col_name = *old_index_col_name + index_name.cast<std::string>();
+            }
+
+            df_index.attr("name") = py::str(*old_index_col_name);
+
+            py_df.attr("reset_index")("inplace"_a = true);
+        }
+    }
+
+    this->return_obj(std::move(py_df));
+
+    // If we made a change, update the index and column list
+    if (old_index_col_name.has_value())
+    {
+        auto& tbl_data = this->get_data();
+        tbl_data.column_names.insert(tbl_data.column_names.begin(), *old_index_col_name);
+        tbl_data.index_names.clear();
+        tbl_data.index_names.emplace_back("");
+    }
+
+    return old_index_col_name;
 }
 
 }  // namespace morpheus

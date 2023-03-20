@@ -23,9 +23,11 @@
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <pybind11/attr.h>
 #include <pybind11/pybind11.h>
 
 #include <memory>
+#include <string>
 
 namespace morpheus {
 namespace py = pybind11;
@@ -40,10 +42,14 @@ PYBIND11_MODULE(common, m)
         )pbdoc";
 
     // Load the cudf helpers
-    load_cudf_helpers();
+    CudfHelper::load();
 
     py::class_<TensorObject>(m, "Tensor")
-        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
+        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface)
+        // No need to keep_alive here since cupy arrays have an owner object
+        .def("to_cupy", &TensorObjectInterfaceProxy::to_cupy)
+        // Need to set keep_alive here to keep the cupy array alive as long as the Tensor is
+        .def_static("from_cupy", &TensorObjectInterfaceProxy::from_cupy, py::keep_alive<0, 1>());
 
     py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))

@@ -33,7 +33,7 @@ namespace morpheus {
 /****** FiberQueue****************************************/
 FiberQueue::FiberQueue(size_t max_size) : m_queue(max_size) {}
 
-boost::fibers::channel_op_status FiberQueue::put(pybind11::object &&item, bool block, float timeout)
+boost::fibers::channel_op_status FiberQueue::put(pybind11::object&& item, bool block, float timeout)
 {
     if (!block)
     {
@@ -51,7 +51,7 @@ boost::fibers::channel_op_status FiberQueue::put(pybind11::object &&item, bool b
     }
 }
 
-boost::fibers::channel_op_status FiberQueue::get(pybind11::object &item, bool block, float timeout)
+boost::fibers::channel_op_status FiberQueue::get(pybind11::object& item, bool block, float timeout)
 {
     if (!block)
     {
@@ -96,7 +96,7 @@ std::shared_ptr<morpheus::FiberQueue> FiberQueueInterfaceProxy::init(std::size_t
     return std::make_shared<morpheus::FiberQueue>(max_size);
 }
 
-void FiberQueueInterfaceProxy::put(morpheus::FiberQueue &self, pybind11::object item, bool block, float timeout)
+void FiberQueueInterfaceProxy::put(morpheus::FiberQueue& self, pybind11::object item, bool block, float timeout)
 {
     boost::fibers::channel_op_status status;
 
@@ -139,7 +139,7 @@ void FiberQueueInterfaceProxy::put(morpheus::FiberQueue &self, pybind11::object 
     }
 }
 
-pybind11::object FiberQueueInterfaceProxy::get(morpheus::FiberQueue &self, bool block, float timeout)
+pybind11::object FiberQueueInterfaceProxy::get(morpheus::FiberQueue& self, bool block, float timeout)
 {
     boost::fibers::channel_op_status status;
 
@@ -186,7 +186,7 @@ pybind11::object FiberQueueInterfaceProxy::get(morpheus::FiberQueue &self, bool 
     }
 }
 
-void FiberQueueInterfaceProxy::close(morpheus::FiberQueue &self)
+void FiberQueueInterfaceProxy::close(morpheus::FiberQueue& self)
 {
     self.close();
 }

@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Triage outside issues
+
+on:
+  issues:
+    types:
+      - opened
+      
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+  # Label ID from an external graphQL query, represents '? - Needs Triage'
+  LABEL_ID: LA_kwDOFrb0NM7yzEQv
+
+permissions:
+  issues: write
+
+jobs:
+  Label-Issue:
+    runs-on: ubuntu-latest
+    # Only run if the issue author is not part of NV-Morpheus
+    if: ${{ ! contains(fromJSON('["OWNER", "MEMBER"]'), github.event.issue.author_association)}}
+    steps: 
+      - name: add-triage-label
+        run: |
+          gh api graphql -f query='
+            mutation {
+              addLabelsToLabelable(input: {labelableId : "${{ github.event.issue.node_id }}" , 
+                                           labelIds: [ "${{ env.LABEL_ID }}" ]
+                                           }
+                                   ){
+                                     clientMutationId
+                                     }
+                       }'
