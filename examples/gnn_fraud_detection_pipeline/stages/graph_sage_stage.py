@@ -24,6 +24,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiMessage
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -34,6 +35,18 @@ from .graph_construction_stage import FraudGraphMultiMessage
 class GraphSAGEMultiMessage(MultiMessage):
     node_identifiers: typing.List[int]
     inductive_embedding_column_names: typing.List[str]
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 node_identifiers: typing.List[int],
+                 inductive_embedding_column_names: typing.List[str]):
+        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
+
+        self.node_identifiers = node_identifiers
+        self.inductive_embedding_column_names = inductive_embedding_column_names
 
 
 @register_stage("gnn-fraud-sage", modes=[PipelineModes.OTHER])

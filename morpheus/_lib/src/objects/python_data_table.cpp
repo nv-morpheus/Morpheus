@@ -58,7 +58,7 @@ TableInfoData PyDataTable::get_table_data() const
 {
     pybind11::gil_scoped_acquire gil;
 
-    auto info = proxy_table_info_data_from_table(m_py_table);
+    auto info = CudfHelper::table_info_data_from_table(m_py_table);
 
     return info;
 }

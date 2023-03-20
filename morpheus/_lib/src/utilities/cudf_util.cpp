@@ -21,11 +21,12 @@
 
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
 #include <glog/logging.h>
+#include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
 
+#include <memory>
 #include <ostream>  // Needed for logging
 #include <utility>  // for move
-
 /**
  * **************This needs to come last.********************
  * A note to posterity: We only ever want to have a single place where cudf_helpers_api.h is included in any
@@ -33,7 +34,11 @@
  */
 #include "cudf_helpers_api.h"
 
-void morpheus::load_cudf_helpers()
+#include "morpheus/objects/data_table.hpp"
+
+namespace morpheus {
+
+void CudfHelper::load()
 {
     if (import_morpheus___lib__cudf_helpers() != 0)
     {
@@ -44,14 +49,39 @@ void morpheus::load_cudf_helpers()
     }
 }
 
-pybind11::object morpheus::proxy_table_from_table_with_metadata(cudf::io::table_with_metadata&& table,
-                                                                int index_col_count)
+pybind11::object proxy_table_from_table_with_metadata(cudf::io::table_with_metadata&& table, int index_col_count)
 {
     return pybind11::reinterpret_steal<pybind11::object>(
         (PyObject*)make_table_from_table_with_metadata(std::move(table), index_col_count));
 }
 
-morpheus::TableInfoData morpheus::proxy_table_info_data_from_table(pybind11::object table)
+morpheus::TableInfoData proxy_table_info_data_from_table(pybind11::object table)
 {
     return make_table_info_data_from_table(table.ptr());
 }
+
+pybind11::object CudfHelper::table_from_table_with_metadata(cudf::io::table_with_metadata&& table, int index_col_count)
+{
+    return proxy_table_from_table_with_metadata(std::move(table), index_col_count);
+}
+
+pybind11::object CudfHelper::table_from_table_info(const TableInfoBase& table_info)
+{
+    // Get the table info data from the table_into
+    auto table_info_data = table_info.get_data();
+
+    auto py_object_parent = table_info.get_parent()->get_py_object();
+
+    // Need to guarantee that we have the gil here
+    pybind11::gil_scoped_acquire gil;
+
+    return pybind11::reinterpret_steal<pybind11::object>(
+        (PyObject*)make_table_from_table_info_data(std::move(table_info_data), py_object_parent.ptr()));
+}
+
+TableInfoData CudfHelper::table_info_data_from_table(pybind11::object table)
+{
+    return proxy_table_info_data_from_table(std::move(table));
+}
+
+}  // namespace morpheus

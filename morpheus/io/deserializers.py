@@ -36,7 +36,7 @@ def cudf_json_onread_cleanup(x: typing.Union[cudf.DataFrame, pd.DataFrame]):
 
 
 def read_file_to_df(file_name: str,
-                    file_type: FileTypes,
+                    file_type: FileTypes = FileTypes.Auto,
                     parser_kwargs: dict = {},
                     filter_nulls: bool = True,
                     df_type: typing.Literal["cudf", "pandas"] = "pandas") -> typing.Union[cudf.DataFrame, pd.DataFrame]:
