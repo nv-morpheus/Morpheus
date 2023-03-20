@@ -36,25 +36,29 @@ def index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip
 
 
 @pytest.fixture(scope="function")
-def df(df_type: typing.Literal['cudf', 'pandas'],
+def df(_filter_probs_df: cudf.DataFrame,
+       df_type: typing.Literal['cudf', 'pandas'],
        index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown'],
        use_cpp: bool):
 
-    loaded_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
-                                file_type=FileTypes.Auto,
-                                df_type=df_type)
+    if df_type == 'cudf':
+        loaded_df = _filter_probs_df.copy(deep=True)
+    elif df_type == 'pandas':
+        loaded_df = _filter_probs_df.to_pandas()
+    else:
+        assert False, "Unknown df_type type"
 
     if (index_type == "normal"):
-        return loaded_df
+        yield loaded_df
     elif (index_type == "skip"):
         # Skip some rows
-        return loaded_df.iloc[::3, :].copy()
+        yield loaded_df.iloc[::3, :].copy()
     elif (index_type == "dup"):
         # Duplicate
-        return duplicate_df_index_rand(loaded_df, count=2)
+        yield duplicate_df_index_rand(loaded_df, count=2)
     elif (index_type == "down"):
         # Reverse
-        return loaded_df.iloc[::-1, :].copy()
+        yield loaded_df.iloc[::-1, :].copy()
     elif (index_type == "updown"):
         # Go up then down
         down = loaded_df.iloc[::-1, :].copy()
@@ -66,9 +70,9 @@ def df(df_type: typing.Literal['cudf', 'pandas'],
 
         assert out_df.index.is_unique
 
-        return out_df
-
-    assert False, "Unknown index type"
+        yield out_df
+    else:
+        assert False, "Unknown index type"
 
 
 @pytest.fixture(scope="function")

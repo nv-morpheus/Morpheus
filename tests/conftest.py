@@ -28,6 +28,8 @@ from functools import partial
 import pytest
 import requests
 
+import cudf
+
 # actual topic names not important, but we will need two of them.
 KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
                                                                            'morpheus_output_topic')
@@ -371,7 +373,7 @@ def _filter_probs_df():
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(_filter_probs_df):
+def filter_probs_df(_filter_probs_df: cudf.DataFrame):
     """
     Returns a cuDF dataframe populated from the data in `tests/tests_data/filter_probs.csv`
     """
@@ -379,11 +381,21 @@ def filter_probs_df(_filter_probs_df):
 
 
 @pytest.fixture(scope="function")
-def filter_probs_pandas_df(_filter_probs_df):
+def filter_probs_pandas_df(_filter_probs_df: cudf.DataFrame):
     """
     Returns a pandas dataframe populated from the data in `tests/tests_data/filter_probs.csv`
     """
     yield _filter_probs_df.to_pandas()
+
+
+@pytest.fixture(scope="function")
+def df(_filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+    if df_type == 'cudf':
+        yield _filter_probs_df.copy(deep=True)
+    elif df_type == 'pandas':
+        yield _filter_probs_df.to_pandas()
+    else:
+        assert False, "Unknown df_type type"
 
 
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):

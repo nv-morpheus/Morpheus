@@ -50,14 +50,6 @@ from utils import duplicate_df_index
 from utils import duplicate_df_index_rand
 
 
-@pytest.fixture(scope="function")
-def df(df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
-
-    return read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
-                           file_type=FileTypes.Auto,
-                           df_type=df_type)
-
-
 @pytest.mark.use_python
 def test_missing_explicit_init():
 
