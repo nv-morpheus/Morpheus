@@ -20,7 +20,9 @@
 #include "morpheus/objects/dtype.hpp"   // for DType
 #include "morpheus/objects/tensor.hpp"  // for Tensor
 #include "morpheus/types.hpp"           // for TensorIndex
+#include "morpheus/utilities/tensor_util.hpp"
 
+#include <cuda_runtime.h>
 #include <glog/logging.h>  // for COMPACT_GOOGLE_LOG_FATAL, DCHECK, LogMessageFatal
 #include <pybind11/cast.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
@@ -35,11 +37,16 @@
 #include <cstddef>  // for size_t
 #include <cstdint>  // for uintptr_t
 #include <memory>   // for make_shared
+#include <optional>
+#include <ostream>
 #include <string>   // for string
 #include <utility>  // for move
 #include <vector>   // for vector
 
 namespace morpheus {
+
+namespace py = pybind11;
+
 pybind11::object CupyUtil::cp_module = pybind11::none();
 
 pybind11::module_ CupyUtil::get_cp()
@@ -89,7 +96,6 @@ pybind11::object CupyUtil::tensor_to_cupy(const TensorObject& tensor)
     pybind11::object memptr = cuda.attr("MemoryPointer")(mem, 0);
 
     // TODO(MDD): Sync on stream
-
     return ndarray(
         pybind11::cast<pybind11::tuple>(shape_list), dtype, memptr, pybind11::cast<pybind11::tuple>(stride_list));
 }
@@ -118,8 +124,25 @@ TensorObject CupyUtil::cupy_to_tensor(pybind11::object cupy_array)
         strides = strides_tup.cast<ShapeType>();
     }
 
-    //  Get the size finally
-    auto size = cupy_array.attr("data").attr("mem").attr("size").cast<size_t>();
+    auto dtype = DType::from_numpy(typestr);
+
+    //  Get the size from the shape and dtype
+    auto size = static_cast<size_t>(TensorUtils::get_elem_count(shape)) * dtype.item_size();
+
+    // Finally, handle the stream
+    auto stream_value = arr_interface["stream"].cast<std::optional<intptr_t>>();
+
+    // Always create with stream per thread. Only need to check the stream for synchronization purposes
+    // See https://numba.readthedocs.io/en/latest/cuda/cuda_array_interface.html#synchronization
+    if (stream_value.has_value())
+    {
+        DCHECK_NE(*stream_value, 0) << "Invalid for stream to be 0";
+
+        auto stream_view = rmm::cuda_stream_view(reinterpret_cast<cudaStream_t>(*stream_value));
+
+        // Make sure to sync on this
+        stream_view.synchronize();
+    }
 
     auto tensor =
         Tensor::create(std::make_shared<rmm::device_buffer>((void const*)data_ptr, size, rmm::cuda_stream_per_thread),

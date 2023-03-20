@@ -77,6 +77,27 @@ cdef public api:
 
         return cudf.DataFrame._from_data(data, index)
 
+    object make_table_from_table_info_data(TableInfoData table_info, object owner):
+
+        index_names = None
+
+        if (table_info.index_names.size() > 0):
+            index_names = []
+
+            for c_name in table_info.index_names:
+                name = c_name.decode()
+                index_names.append(name if name != "" else None)
+
+        column_names = []
+
+        for c_name in table_info.column_names:
+                name = c_name.decode()
+                column_names.append(name if name != "" else None)
+
+        data, index = data_from_table_view(table_info.table_view, owner=owner, column_names=column_names, index_names=index_names)
+
+        return cudf.DataFrame._from_data(data, index)
+
 
     TableInfoData make_table_info_data_from_table(object table):
 
