@@ -102,9 +102,18 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
         -------
         cupy.ndarray
             The probabilities tensor
+
+        Raises
+        ------
+        KeyError
+            If `self.probs_tensor_name` is not found in the tensors
         """
 
-        return self.get_tensor(self.probs_tensor_name)
+        try:
+            return self.get_tensor(self.probs_tensor_name)
+        except KeyError as exc:
+            raise KeyError(f"Cannopt get ID tensor. Tensor with name '{self.probs_tensor_name}' "
+                           "does not exist in the memory object") from exc
 
 
 @dataclasses.dataclass

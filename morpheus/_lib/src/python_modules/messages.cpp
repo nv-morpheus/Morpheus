@@ -251,7 +251,8 @@ PYBIND11_MODULE(messages, m)
         .def_property_readonly("memory", &MultiTensorMessageInterfaceProxy::memory)
         .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
-        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor);
+        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor)
+        .def("get_id_tensor", &MultiResponseMessageInterfaceProxy::get_id_tensor);
 
     py::class_<MultiInferenceMessage, MultiTensorMessage, std::shared_ptr<MultiInferenceMessage>>(
         m, "MultiInferenceMessage")
