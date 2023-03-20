@@ -17,7 +17,6 @@
 # pylint: disable=redefined-outer-name
 
 import dataclasses
-import os
 import string
 import typing
 
@@ -28,8 +27,6 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -44,7 +41,6 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
-from utils import TEST_DIRS
 from utils import assert_df_equal
 from utils import duplicate_df_index
 from utils import duplicate_df_index_rand
