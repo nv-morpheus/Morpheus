@@ -53,9 +53,12 @@ class DFPMessageMeta(MessageMeta, cpp_class=None):
 @dataclasses.dataclass
 class MultiDFPMessage(MultiMessage):
 
-    def __post_init__(self):
+    def __init__(self, *, meta: MessageMeta, mess_offset: int = 0, mess_count: int = -1):
 
-        assert isinstance(self.meta, DFPMessageMeta), "`meta` must be an instance of DFPMessageMeta"
+        if (not isinstance(meta, DFPMessageMeta)):
+            raise ValueError(f"`meta` must be an instance of `DFPMessageMeta` when creating {self.__class__.__name__}")
+
+        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
     @property
     def user_id(self):
@@ -76,23 +79,3 @@ class MultiDFPMessage(MultiMessage):
             df[columns] = value
 
         typing.cast(DFPMessageMeta, self.meta).set_df(df)
-
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
-
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
-
-        Returns
-        -------
-        morpheus.pipeline.preprocess.autoencoder.MultiAEMessage
-            A new `MultiAEMessage` with sliced offset and count.
-
-        """
-        return MultiDFPMessage(meta=self.meta, mess_offset=start, mess_count=stop - start)

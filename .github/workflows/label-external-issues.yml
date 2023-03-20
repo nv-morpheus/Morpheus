@@ -25,10 +25,13 @@ env:
   # Label ID from an external graphQL query, represents '? - Needs Triage'
   LABEL_ID: LA_kwDOFrb0NM7yzEQv
 
+permissions:
+  issues: write
+
 jobs:
   Label-Issue:
     runs-on: ubuntu-latest
-    # Only run if the issue author is not part of NV-Morpheus, or an external collaborator
+    # Only run if the issue author is not part of NV-Morpheus
     if: ${{ ! contains(fromJSON('["OWNER", "MEMBER"]'), github.event.issue.author_association)}}
     steps: 
       - name: add-triage-label

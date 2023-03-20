@@ -12,20 +12,14 @@
 # the License.
 # =============================================================================
 
-morpheus_utils_add_cython_library(
+morpheus_add_cython_library(
     cudf_helpers
-    MODULE_ROOT
-      "${MORPHEUS_LIB_ROOT}"
     PYX_FILE
       "${MORPHEUS_LIB_ROOT}/cudf_helpers.pyx"
-    INCLUDE_DIRS
-      "${MORPHEUS_LIB_ROOT}/include"
     LINK_TARGETS
       cuda_utils
     OUTPUT_TARGET
       cudf_helpers_target
-    INSTALL_DEST
-      ${MORPHEUS_LIB_INSTALL_DIR}
 )
 
 # This target generates headers used by other parts of the code base.
@@ -42,7 +36,3 @@ set_target_properties(
       CXX_INCLUDE_WHAT_YOU_USE ""
       EXPORT_COMPILE_COMMANDS OFF
 )
-
-if (MORPHEUS_PYTHON_INPLACE_BUILD)
-  morpheus_utils_inplace_build_copy(${cudf_helpers_target} ${MORPHEUS_LIB_ROOT})
-endif()

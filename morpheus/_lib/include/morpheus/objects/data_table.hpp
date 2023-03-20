@@ -22,8 +22,6 @@
 
 #include <memory>
 #include <shared_mutex>
-#include <string>
-#include <vector>
 
 namespace morpheus {
 
@@ -50,7 +48,8 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
      * @brief Construct a new IDataTable object
      *
      */
-    IDataTable() = default;
+    IDataTable()          = default;
+    virtual ~IDataTable() = default;
 
     /**
      * @brief cuDF dataframe rows count.
@@ -64,20 +63,13 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
      * @brief Gets a read-only instance of `TableInfo` which can be used to query and update the table from both C++ and
      * Python. This will block calls to `get_mutable_info` until all `TableInfo` object have been destroyed.
      *
-     * @param start To pre-emptively filter on rows. Range is [start, stop). Must be >= 0
-     * @param stop To pre-emptively filter on rows. Range is [start, stop). Must be <= num_rows
-     * @param column_names To pre-emptively filter on columns
      * @return TableInfo
      *
      * @note Read-only refers to changes made to the structure of a DataFrame. i.e. Adding/Removing columns, changing
      * column, types, adding/removing rows, etc. It's possible to update an existing range of data in a column with
      * `TableInfo`.
      */
-    TableInfo get_info(std::vector<std::string> column_names) const;
-
-    TableInfo get_info(cudf::size_type start                 = 0,
-                       cudf::size_type stop                  = -1,
-                       std::vector<std::string> column_names = {}) const;
+    TableInfo get_info() const;
     ///@}
 
     ///@{
@@ -87,20 +79,13 @@ struct IDataTable : public std::enable_shared_from_this<IDataTable>
      * `TableInfo` and `MutableTableInfo` objects have been destroyed. This class also provides direct access to the
      * underlying python object.
      *
-     * @param start To pre-emptively filter on rows. Range is [start, stop). Must be >= 0
-     * @param stop To pre-emptively filter on rows. Range is [start, stop). Must be <= num_rows
-     * @param column_names To pre-emptively filter on columns
      * @return MutableTableInfo
      *
      * @note Read-only refers to changes made to the structure of a DataFrame. i.e. Adding/Removing columns, changing
      * column, types, adding/removing rows, etc. It's possible to update an existing range of data in a column with
      * `TableInfo`.
      */
-    MutableTableInfo get_mutable_info(std::vector<std::string> column_names) const;
-
-    MutableTableInfo get_mutable_info(cudf::size_type start                 = 0,
-                                      cudf::size_type stop                  = -1,
-                                      std::vector<std::string> column_names = {}) const;
+    MutableTableInfo get_mutable_info() const;
     ///@}
 
     /**

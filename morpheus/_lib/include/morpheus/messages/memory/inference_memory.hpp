@@ -22,8 +22,7 @@
 
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>  // for size_t
-#include <memory>   // for shared_ptr
+#include <memory>  // for shared_ptr
 #include <string>
 
 namespace morpheus {
@@ -47,14 +46,14 @@ class InferenceMemory : public TensorMemory
      *
      * @param count
      */
-    InferenceMemory(size_t count);
+    InferenceMemory(TensorIndex count);
     /**
      * @brief Construct a new Inference Memory object
      *
      * @param count
      * @param tensors
      */
-    InferenceMemory(size_t count, TensorMap&& tensors);
+    InferenceMemory(TensorIndex count, TensorMap&& tensors);
 
     /**
      * @brief Checks if a tensor named `name` exists in `tensors`. Alias for `has_tensor`.
@@ -80,7 +79,7 @@ struct InferenceMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<InferenceMemory>
      */
-    static std::shared_ptr<InferenceMemory> init(std::size_t count, pybind11::object& tensors);
+    static std::shared_ptr<InferenceMemory> init(TensorIndex count, pybind11::object& tensors);
 };
 #pragma GCC visibility pop
 

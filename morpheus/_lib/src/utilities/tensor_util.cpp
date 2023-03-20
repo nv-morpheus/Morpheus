@@ -42,7 +42,7 @@ std::string TensorUtils::shape_to_string(const ShapeType& shape)
     return ss.str();
 }
 
-void TensorUtils::set_contiguous_stride(const std::vector<TensorIndex>& shape, std::vector<TensorIndex>& stride)
+void TensorUtils::set_contiguous_stride(const ShapeType& shape, ShapeType& stride)
 {
     stride.resize(shape.size());
     TensorIndex ttl = 1;
@@ -54,15 +54,15 @@ void TensorUtils::set_contiguous_stride(const std::vector<TensorIndex>& shape, s
     }
 }
 
-bool TensorUtils::has_contiguous_stride(const std::vector<TensorIndex>& shape, const ShapeType& stride)
+bool TensorUtils::has_contiguous_stride(const ShapeType& shape, const ShapeType& stride)
 {
     DCHECK_EQ(shape.size(), stride.size());
     auto count = get_elem_count(shape);
     return (shape[0] * stride[0] == count);
 }
 
-bool TensorUtils::validate_shape_and_stride(const std::vector<TensorIndex>& shape,
-                                            const std::vector<TensorIndex>& stride)
+bool TensorUtils::validate_shape_and_stride(const ShapeType& shape,
+                                            const ShapeType& stride)
 {
     if (shape.size() != stride.size())
     {

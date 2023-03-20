@@ -19,6 +19,7 @@
 
 #include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <cudf/types.hpp>
 #include <glog/logging.h>
@@ -47,7 +48,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
 {
     return [this](rxcpp::subscriber<source_type_t> output) {
         auto data_table     = load_table_from_file(m_filename);
-        int index_col_count = get_index_col_count(data_table);
+        int index_col_count = prepare_df_index(data_table);
 
         // Next, create the message metadata. This gets reused for repeats
         // When index_col_count is 0 this will cause a new range index to be created
@@ -73,7 +74,7 @@ FileSourceStage::subscriber_fn_t FileSourceStage::build()
             if (repeat_idx + 1 < m_repeat)
             {
                 // Use the copy function, copy_to_py_object will acquire it's own gil
-                auto df = meta->get_info().copy_to_py_object();
+                auto df = CudfHelper::table_from_table_info(meta->get_info());
 
                 // GIL must come after get_info
                 pybind11::gil_scoped_acquire gil;

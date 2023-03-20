@@ -43,7 +43,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <exception>
 #include <functional>
 #include <memory>
@@ -95,26 +94,29 @@ PreprocessFILStage::subscribe_fn_t PreprocessFILStage::build_operator()
                 }
 
                 // Need to do a transpose here
-                auto transposed_data = MatxUtil::transpose(
-                    DevMemInfo{packed_data, TypeId::FLOAT32, {x->mess_count, m_fea_cols.size()}, {1, x->mess_count}});
+                auto transposed_data =
+                    MatxUtil::transpose(DevMemInfo{packed_data,
+                                                   TypeId::FLOAT32,
+                                                   {x->mess_count, static_cast<TensorIndex>(m_fea_cols.size())},
+                                                   {1, x->mess_count}});
 
                 auto input__0 = Tensor::create(transposed_data,
                                                DType::create<float>(),
-                                               std::vector<TensorIndex>{static_cast<long long>(x->mess_count),
-                                                                        static_cast<int>(m_fea_cols.size())},
-                                               std::vector<TensorIndex>{},
+                                               {x->mess_count, static_cast<TensorIndex>(m_fea_cols.size())},
+                                               {},
                                                0);
 
-                auto seg_ids =
-                    Tensor::create(MatxUtil::create_seg_ids(x->mess_count, m_fea_cols.size(), TypeId::UINT32),
-                                   DType::create<uint32_t>(),
-                                   std::vector<TensorIndex>{static_cast<long long>(x->mess_count), static_cast<int>(3)},
-                                   std::vector<TensorIndex>{},
-                                   0);
+                auto seq_id_dtype = DType::create<TensorIndex>();
+                auto seq_ids      = Tensor::create(
+                    MatxUtil::create_seq_ids(x->mess_count, m_fea_cols.size(), seq_id_dtype.type_id(), x->mess_offset),
+                    seq_id_dtype,
+                    {x->mess_count, 3},
+                    {},
+                    0);
 
                 // Build the results
                 auto memory =
-                    std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seg_ids));
+                    std::make_shared<InferenceMemoryFIL>(x->mess_count, std::move(input__0), std::move(seq_ids));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);
