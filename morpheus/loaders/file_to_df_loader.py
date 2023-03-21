@@ -84,11 +84,11 @@ def close_dask_cluster():
 def file_to_df_loader(control_message: MessageControl, task: dict):
     """
     This function is used to load files containing data into a dataframe. Dataframe is created by
-    processing files either using a single thread, multiprocess, dask, or dask_thread. This the function determines
+    processing files either using a single thread, multiprocess, dask, or dask_thread. This function determines
     the download method to use, and if it starts with "dask," it creates a dask client and uses it to process the files.
     Otherwise, it uses a single thread or multiprocess to process the files. This function then caches the resulting
-    dataframe using a hash of the file paths. The dataframe is then attached as a payload to a MessageControl objec and
-    passing on to further stages.
+    dataframe using a hash of the file paths. The dataframe is wrapped in a MessageMeta and then attached as a payload
+    to a MessageControl objec and passing on to further stages.
 
     Parameters
     ----------
