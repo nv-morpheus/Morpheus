@@ -48,7 +48,7 @@ class LinearPipeline(_pipeline.Pipeline):
         self._current_segment_id = f"linear_segment_{self._next_segment_index}"
         self._next_segment_index += 1
 
-    def set_source(self, source: _pipeline.SourceStage):
+    def set_source(self, source: _pipeline.SourceStage) -> _pipeline.SourceStage:
         """
         Set a pipeline's source stage to consume messages before it begins executing stages. This must be
         called once before calling `run` or `run_async`.
@@ -77,6 +77,7 @@ class LinearPipeline(_pipeline.Pipeline):
 
         # Store this as the first one in the linear stages. Must be index 0
         self._linear_stages.append(source)
+        return source
 
     def add_stage(self, stage: _pipeline.SinglePortStage) -> _pipeline.SinglePortStage:
         """
