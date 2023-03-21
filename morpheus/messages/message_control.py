@@ -18,7 +18,11 @@ from morpheus.messages.message_base import MessageBase
 
 class MessageControl(MessageBase, cpp_class=_messages.MessageControl):
     """
-    TODO: Add documentation
+    MessageControl is an object that serves as a specification of the tasks to be executed in a pipeline workflow.
+    The MessageControl is passed between stages of the pipeline, with each stage executing the tasks specified in
+    the MessageControl configuration.
+
+    MessageControl is capable of carrying payload of the MessageMeta type.
     """
 
     def __init__(self, *arg, **kwargs):

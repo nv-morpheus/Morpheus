@@ -112,6 +112,13 @@ Deploying Morpheus
    modules/morpheus_modules
 
 .. toctree::
+   :caption: Morpheus Loaders
+   :maxdepth: 20
+   :hidden:
+
+   loaders/morpheus_loaders
+
+.. toctree::
    :maxdepth: 20
    :caption: Extra Information
    :hidden:
