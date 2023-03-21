@@ -44,18 +44,16 @@ def test_add_classifications_stage_pipe(config):
     input_df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
     expected_df = (input_df > threshold)
 
-    comp_stage = CompareDataframeStage(config, expected_df)
-
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, input_file))
     pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    pipe.add_stage(comp_stage)
+    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
-    results_df = comp_stage.concat_dataframes()
+    results_df = comp_stage.concat_dataframes(clear=False)
     idx = results_df.columns.intersection(config.class_labels)
     assert idx.to_list() == config.class_labels
 
@@ -73,8 +71,6 @@ def test_add_classifications_stage_multi_segment_pipe(config):
     input_df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
     expected_df = (input_df > threshold)
 
-    comp_stage = CompareDataframeStage(config, expected_df)
-
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_segment_boundary(MessageMeta)
@@ -86,7 +82,7 @@ def test_add_classifications_stage_multi_segment_pipe(config):
     pipe.add_segment_boundary(MultiResponseProbsMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(comp_stage)
+    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
     results_df = comp_stage.concat_dataframes()

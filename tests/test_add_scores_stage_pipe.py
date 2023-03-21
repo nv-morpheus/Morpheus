@@ -50,7 +50,6 @@ def test_add_scores_stage_pipe(config, order, pipeline_batch_size, repeat):
         input_df = extend_df(input_df, repeat)
 
     expected_df = input_df.rename(columns=dict(zip(input_df.columns, config.class_labels)))
-    comp_stage = CompareDataframeStage(config, expected_df)
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySource(config, [cudf.DataFrame(input_df)]))
@@ -58,7 +57,7 @@ def test_add_scores_stage_pipe(config, order, pipeline_batch_size, repeat):
     pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    pipe.add_stage(comp_stage)
+    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
     comp_stage.get_results()["diff_rows"] == 0
@@ -74,7 +73,6 @@ def test_add_scores_stage_multi_segment_pipe(config, repeat):
     input_df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
 
     expected_df = input_df.rename(columns=dict(zip(input_df.columns, config.class_labels)))
-    comp_stage = CompareDataframeStage(config, expected_df)
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySource(config, [cudf.DataFrame(input_df)], repeat=repeat))
@@ -87,7 +85,7 @@ def test_add_scores_stage_multi_segment_pipe(config, repeat):
     pipe.add_segment_boundary(MultiResponseProbsMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(comp_stage)
+    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
     comp_stage.get_results()["diff_rows"] == 0
