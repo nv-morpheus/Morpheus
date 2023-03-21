@@ -160,4 +160,5 @@ def compare_df(df_a: pd.DataFrame,
         "matching_cols": list(same_columns),
         "extra_cols": list(extra_columns),
         "missing_cols": list(missing_columns),
+        "diff_cols": len(extra_columns) + len(missing_columns)
     }
