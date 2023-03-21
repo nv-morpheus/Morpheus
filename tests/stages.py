@@ -235,6 +235,12 @@ class InMemorySinkStage(SinglePortStage):
     def supports_cpp_node(self) -> bool:
         return False
 
+    def clear(self):
+        """
+        Clear the messages that have been buffered so far
+        """
+        self._messages.clear()
+
     def get_messages(self) -> typing.List[MessageMeta]:
         """
         Returns
@@ -244,13 +250,18 @@ class InMemorySinkStage(SinglePortStage):
         """
         return self._messages
 
-    def concat_dataframes(self) -> pd.DataFrame:
+    def concat_dataframes(self, clear=False) -> pd.DataFrame:
         all_meta = [x.df for x in self._messages]
 
         # Convert to pandas
         all_meta = [x.to_pandas() if isinstance(x, cudf.DataFrame) else x for x in all_meta]
 
-        return pd.concat(all_meta)
+        df = pd.concat(all_meta)
+
+        if clear:
+            self.clear()
+
+        return df
 
     def _append_message(self, message: MessageMeta) -> MessageMeta:
         self._messages.append(message)
@@ -305,7 +316,7 @@ class CompareDataframeStage(InMemorySinkStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def get_results(self) -> dict:
+    def get_results(self, clear=False) -> dict:
         """
         Returns the results dictionary. This is the same dictionary that is written to results_file_name
 
@@ -315,8 +326,8 @@ class CompareDataframeStage(InMemorySinkStage):
             Results dictionary
         """
         if (len(self._messages) == 0):
-            return
+            return {}
 
-        combined_df = self.concat_dataframes()
+        combined_df = self.concat_dataframes(clear=clear)
 
         return compare_df.compare_df(self._compare_df, combined_df)
