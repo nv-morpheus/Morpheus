@@ -44,6 +44,9 @@ def test_add_classifications_stage_pipe(config):
     input_df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
     expected_df = (input_df > threshold)
 
+    # Replace input columns with the class labels
+    expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
+
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
     pipe.add_stage(DeserializeStage(config))
@@ -53,11 +56,9 @@ def test_add_classifications_stage_pipe(config):
     comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
-    results_df = comp_stage.concat_dataframes(clear=False)
-    idx = results_df.columns.intersection(config.class_labels)
-    assert idx.to_list() == config.class_labels
-
-    comp_stage.get_results()["diff_rows"] == 0
+    results = comp_stage.get_results()
+    assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
+    assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
 
 
 @pytest.mark.slow
@@ -70,6 +71,9 @@ def test_add_classifications_stage_multi_segment_pipe(config):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     input_df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
     expected_df = (input_df > threshold)
+
+    # Replace input columns with the class labels
+    expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
@@ -85,8 +89,6 @@ def test_add_classifications_stage_multi_segment_pipe(config):
     comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
-    results_df = comp_stage.concat_dataframes()
-    idx = results_df.columns.intersection(config.class_labels)
-    assert idx.to_list() == config.class_labels
-
-    comp_stage.get_results()["diff_rows"] == 0
+    results = comp_stage.get_results()
+    assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
+    assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
