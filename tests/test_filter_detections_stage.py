@@ -23,8 +23,8 @@ import pytest
 from morpheus._lib.common import FileTypes
 from morpheus._lib.common import FilterSource
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.messages import MultiResponseProbsMessage
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from utils import TEST_DIRS
@@ -32,8 +32,8 @@ from utils import TEST_DIRS
 
 def _make_message(df, probs):
     df_ = df[0:len(probs)]
-    mem = ResponseMemoryProbs(count=len(df_), probs=probs)
-    return MultiResponseProbsMessage(meta=MessageMeta(df_), memory=mem)
+    mem = ResponseMemory(count=len(df_), tensors={'probs': probs})
+    return MultiResponseMessage(meta=MessageMeta(df_), memory=mem)
 
 
 def test_constructor(config):

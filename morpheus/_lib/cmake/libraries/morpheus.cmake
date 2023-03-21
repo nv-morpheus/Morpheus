@@ -18,28 +18,29 @@ add_library(morpheus
     # Keep these sorted!
     ${MORPHEUS_LIB_ROOT}/src/io/deserializers.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/serializers.cpp
-    ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory_fil.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory_nlp.cpp
-    ${MORPHEUS_LIB_ROOT}/src/messages/memory/response_memory.cpp
+    ${MORPHEUS_LIB_ROOT}/src/messages/memory/inference_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/response_memory_probs.cpp
+    ${MORPHEUS_LIB_ROOT}/src/messages/memory/response_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/memory/tensor_memory.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/meta.cpp
-    ${MORPHEUS_LIB_ROOT}/src/messages/multi.cpp
-    ${MORPHEUS_LIB_ROOT}/src/messages/multi_inference.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_inference_fil.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_inference_nlp.cpp
-    ${MORPHEUS_LIB_ROOT}/src/messages/multi_response.cpp
+    ${MORPHEUS_LIB_ROOT}/src/messages/multi_inference.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_response_probs.cpp
+    ${MORPHEUS_LIB_ROOT}/src/messages/multi_response.cpp
     ${MORPHEUS_LIB_ROOT}/src/messages/multi_tensor.cpp
+    ${MORPHEUS_LIB_ROOT}/src/messages/multi.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/fiber_queue.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/file_types.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/mutable_table_ctx_mgr.cpp
-    ${MORPHEUS_LIB_ROOT}/src/objects/wrapped_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/python_data_table.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/rmm_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/objects/tensor.cpp
+    ${MORPHEUS_LIB_ROOT}/src/objects/wrapped_tensor.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_classification.cpp
+    ${MORPHEUS_LIB_ROOT}/src/stages/add_scores_stage_base.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/add_scores.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/deserialize.cpp
     ${MORPHEUS_LIB_ROOT}/src/stages/file_source.cpp
