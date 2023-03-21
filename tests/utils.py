@@ -20,6 +20,7 @@ import random
 import time
 import typing
 
+import cupy as cp
 import pandas as pd
 
 import cudf

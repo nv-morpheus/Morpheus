@@ -26,12 +26,12 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages import CompareDataframeStage
 from stages import ConvMsg
-from stages import InMemorySource
 from utils import TEST_DIRS
 from utils import extend_df
 
@@ -52,7 +52,7 @@ def test_add_scores_stage_pipe(config, order, pipeline_batch_size, repeat):
     expected_df = input_df.rename(columns=dict(zip(input_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySource(config, [cudf.DataFrame(input_df)]))
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(AddScoresStage(config))
@@ -75,7 +75,7 @@ def test_add_scores_stage_multi_segment_pipe(config, repeat):
     expected_df = input_df.rename(columns=dict(zip(input_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySource(config, [cudf.DataFrame(input_df)], repeat=repeat))
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)], repeat=repeat))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
