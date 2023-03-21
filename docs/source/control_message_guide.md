@@ -24,7 +24,7 @@ The control message is a JSON object used in the Morpheus pipeline workflow. It 
 The control message has one main component: `inputs`. The inputs component is an array of input objects, each of which represents a separate input to the pipeline. Each input object has the following structure:
 
 ### Inputs
-```json
+```
 {
   "tasks": [
     // Array of task objects
@@ -39,7 +39,7 @@ The control message has one main component: `inputs`. The inputs component is an
 
 The tasks component of each input object is an array of task objects, each of which represents a separate task to be executed on the input data. Each task object has the following structure:
 
-```json
+```
 {
   "type": "string",
   "properties": {
@@ -63,7 +63,7 @@ The properties field of the task object is an object containing task-specific pr
 ##### Task Properties
 ###### load
 The properties object for a `load` task has the following structure:
-```json
+```
 {
   "loader_id": "string",
   "files": [
