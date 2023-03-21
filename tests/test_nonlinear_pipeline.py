@@ -29,7 +29,7 @@ from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.file_source_stage import FileSourceStage
-from stages import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
 from utils import TEST_DIRS
 
 
