@@ -24,16 +24,15 @@ from functools import partial
 
 import fsspec
 import fsspec.utils
-from morpheus.messages.message_meta import MessageMeta
-
 import pandas as pd
 
 import cudf
 
-from morpheus.messages import MessageControl
 from morpheus._lib.common import FileTypes
 from morpheus.cli.utils import str_to_file_type
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.messages import MessageControl
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.loader_utils import register_loader
@@ -83,6 +82,32 @@ def close_dask_cluster():
 
 @register_loader(FILE_TO_DF_LOADER)
 def file_to_df_loader(control_message: MessageControl, task: dict):
+    """
+    This function is used to load files containing data into a dataframe. Dataframe is created by
+    processing files either using a single thread, multiprocess, dask, or dask_thread. This the function determines
+    the download method to use, and if it starts with "dask," it creates a dask client and uses it to process the files.
+    Otherwise, it uses a single thread or multiprocess to process the files. This function then caches the resulting
+    dataframe using a hash of the file paths. The dataframe is then attached as a payload to a MessageControl objec and
+    passing on to further stages.
+
+    Parameters
+    ----------
+    message : MessageControl
+        The MessageControl object containing the pipeline control message.
+    task : typing.Dict[any, any]
+        A dictionary representing the current task in the pipeline control message.
+
+    Return
+    ------
+    message : MessageControl
+        Updated message control object with payload as a dataframe.
+
+    Raises
+    ------
+    RuntimeError :
+        If no files matched the input strings specified in the task, or if there was an error loading the data.
+
+    """
     if task.get("strategy", "aggregate") != "aggregate":
         raise RuntimeError("Only 'aggregate' strategy is supported for file_to_df loader.")
 
@@ -104,7 +129,7 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
     cache_dir = config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
-    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
 
     if (cache_dir is None):
         cache_dir = "./.cache"
