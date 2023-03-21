@@ -38,20 +38,49 @@ namespace morpheus {
 /****** Component public implementations *******************/
 /****** TensorMemory****************************************/
 TensorMemory::TensorMemory(TensorIndex count) : count(count) {}
-TensorMemory::TensorMemory(TensorIndex count, TensorMap&& tensors) : count(count), tensors(std::move(tensors))
+TensorMemory::TensorMemory(TensorIndex count, TensorMap&& tensors) : count(count), m_tensors(std::move(tensors))
 {
-    check_tensors_length(this->tensors);
+    check_tensors_length(this->m_tensors);
 }
 
 bool TensorMemory::has_tensor(const std::string& name) const
 {
-    return this->tensors.find(name) != this->tensors.end();
+    return this->m_tensors.find(name) != this->m_tensors.end();
+}
+
+const TensorObject& TensorMemory::get_tensor(const std::string& name) const
+{
+    verify_tensor_exists(name);
+    return m_tensors.at(name);
+}
+
+TensorObject& TensorMemory::get_tensor(const std::string& name)
+{
+    verify_tensor_exists(name);
+    return m_tensors[name];
+}
+
+void TensorMemory::set_tensor(const std::string& name, TensorObject&& tensor)
+{
+    check_tensor_length(tensor);
+    this->m_tensors[name].swap(std::move(tensor));
+}
+
+const TensorMap& TensorMemory::get_tensors() const
+{
+    return m_tensors;
+}
+
+void TensorMemory::set_tensors(TensorMap&& tensors)
+{
+    check_tensors_length(tensors);
+    this->m_tensors = std::move(tensors);
 }
 
 TensorMap TensorMemory::copy_tensor_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const
 {
     TensorMap tensors;
-    for (const auto& p : this->tensors)
+    for (const auto& p : this->m_tensors)
     {
         tensors.insert(std::pair{p.first, p.second.copy_rows(ranges, num_selected_rows)});
     }
@@ -69,32 +98,6 @@ void TensorMemory::check_tensor_length(const TensorObject& tensor)
     }
 }
 
-void TensorMemory::verify_tensor_exists(const std::string& name) const
-{
-    if (!has_tensor(name))
-    {
-        throw std::runtime_error(MORPHEUS_CONCAT_STR("Tensor: '" << name << "' not found in memory"));
-    }
-}
-
-const TensorObject& TensorMemory::get_tensor(const std::string& name) const
-{
-    verify_tensor_exists(name);
-    return tensors.at(name);
-}
-
-TensorObject& TensorMemory::get_tensor(const std::string& name)
-{
-    verify_tensor_exists(name);
-    return tensors[name];
-}
-
-void TensorMemory::set_tensor(const std::string& name, TensorObject&& tensor)
-{
-    check_tensor_length(tensor);
-    this->tensors.insert_or_assign(name, std::move(tensor));
-}
-
 void TensorMemory::check_tensors_length(const TensorMap& tensors)
 {
     for (const auto& p : tensors)
@@ -103,10 +106,12 @@ void TensorMemory::check_tensors_length(const TensorMap& tensors)
     }
 }
 
-void TensorMemory::set_tensors(TensorMap&& tensors)
+void TensorMemory::verify_tensor_exists(const std::string& name) const
 {
-    check_tensors_length(tensors);
-    this->tensors = std::move(tensors);
+    if (!has_tensor(name))
+    {
+        throw std::runtime_error(MORPHEUS_CONCAT_STR("Tensor: '" << name << "' not found in memory"));
+    }
 }
 
 /****** TensorMemoryInterfaceProxy *************************/
@@ -130,7 +135,7 @@ TensorIndex TensorMemoryInterfaceProxy::get_count(TensorMemory& self)
 
 std::vector<std::string> TensorMemoryInterfaceProxy::tensor_names_getter(TensorMemory& self)
 {
-    return foreach_map(self.tensors, [](const auto& item) -> std::string {
+    return foreach_map(self.get_tensors(), [](const auto& item) -> std::string {
         // Just return the keys
         return item.first;
     });
@@ -143,7 +148,7 @@ bool TensorMemoryInterfaceProxy::has_tensor(TensorMemory& self, std::string name
 
 CupyUtil::py_tensor_map_t TensorMemoryInterfaceProxy::get_tensors(TensorMemory& self)
 {
-    return CupyUtil::tensors_to_cupy(self.tensors);
+    return CupyUtil::tensors_to_cupy(self.get_tensors());
 }
 
 void TensorMemoryInterfaceProxy::set_tensors(TensorMemory& self, CupyUtil::py_tensor_map_t tensors)

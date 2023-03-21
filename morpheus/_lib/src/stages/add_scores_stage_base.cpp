@@ -56,7 +56,7 @@ AddScoresStageBase::AddScoresStageBase(std::map<std::size_t, std::string> idx2la
 
 AddScoresStageBase::source_type_t AddScoresStageBase::on_data(sink_type_t x)
 {
-    const auto& probs = x->get_probs_tensor();
+    auto probs        = x->get_probs_tensor();
     const auto& shape = probs.get_shape();
 
     // Depending on the input the stride is given in bytes or elements, convert to elements
@@ -83,22 +83,22 @@ AddScoresStageBase::source_type_t AddScoresStageBase::on_data(sink_type_t x)
         auto thresh_bool_buffer =
             MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride}, *m_threshold, false);
 
-        output_tensor = Tensor::create(thresh_bool_buffer, DType::create<bool>(), shape, stride);
+        output_tensor.swap(Tensor::create(thresh_bool_buffer, DType::create<bool>(), shape, stride));
     }
     else
     {
-        output_tensor = std::move(probs);
+        output_tensor.swap(std::move(probs));
     }
 
-    std::vector<std::string> columns(m_idx2label.size());
-    std::vector<TensorObject> tensors(m_idx2label.size());
+    std::vector<std::string> columns;
+    std::vector<TensorObject> tensors;
 
     std::size_t i = 0;
     for (const auto& [column_num, column_name] : m_idx2label)
     {
-        columns[i] = column_name;
-        tensors[i] = output_tensor.slice({0, static_cast<TensorIndex>(column_num)},
-                                         {num_rows, static_cast<TensorIndex>(column_num + 1)});
+        columns.push_back(column_name);
+        tensors.emplace_back(output_tensor.slice({0, static_cast<TensorIndex>(column_num)},
+                                                 {num_rows, static_cast<TensorIndex>(column_num + 1)}));
 
         ++i;
     }

@@ -159,7 +159,7 @@ void MultiTensorMessage::set_tensor(const std::string& name, const TensorObject&
     slice = value;
 }
 
-const TensorObject MultiTensorMessage::get_id_tensor() const
+TensorObject MultiTensorMessage::get_id_tensor() const
 {
     try
     {

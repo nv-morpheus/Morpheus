@@ -164,7 +164,7 @@ TensorMap CupyUtil::cupy_to_tensors(const py_tensor_map_t& cupy_tensors)
     tensor_map_t tensors;
     for (const auto& tensor : cupy_tensors)
     {
-        tensors[tensor.first] = std::move(cupy_to_tensor(tensor.second));
+        tensors[tensor.first].swap(std::move(cupy_to_tensor(tensor.second)));
     }
 
     return tensors;

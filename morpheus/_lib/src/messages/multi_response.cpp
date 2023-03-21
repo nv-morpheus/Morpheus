@@ -58,7 +58,7 @@ void MultiResponseMessage::set_output(const std::string& name, const TensorObjec
     set_tensor(name, value);
 }
 
-const TensorObject MultiResponseMessage::get_probs_tensor() const
+TensorObject MultiResponseMessage::get_probs_tensor() const
 {
     try
     {

@@ -63,7 +63,6 @@ class TensorMemory
     virtual ~TensorMemory() = default;
 
     TensorIndex count{0};
-    TensorMap tensors;
 
     /**
      * @brief Verify whether the specified tensor name is present in the tensor memory
@@ -73,15 +72,6 @@ class TensorMemory
      * @return false
      */
     bool has_tensor(const std::string& name) const;
-
-    /**
-     * @brief Copy tensor ranges
-     *
-     * @param ranges
-     * @param num_selected_rows
-     * @return TensorMap
-     */
-    TensorMap copy_tensor_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const;
 
     /**
      * @brief Get the tensor object identified by `name`
@@ -111,12 +101,28 @@ class TensorMemory
     void set_tensor(const std::string& name, TensorObject&& tensor);
 
     /**
+     * @brief Get a reference to the internal tensors map
+     *
+     * @return const TensorMap&
+     */
+    const TensorMap& get_tensors() const;
+
+    /**
      * @brief Set the tensors object
      *
      * @param tensors
      * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
      */
     void set_tensors(TensorMap&& tensors);
+
+    /**
+     * @brief Copy tensor ranges
+     *
+     * @param ranges
+     * @param num_selected_rows
+     * @return TensorMap
+     */
+    TensorMap copy_tensor_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const;
 
   protected:
     /**
@@ -142,6 +148,9 @@ class TensorMemory
      * @throws std::runtime_error If no tensor matching `name` exists
      */
     void verify_tensor_exists(const std::string& name) const;
+
+  private:
+    TensorMap m_tensors;
 };
 
 /****** TensorMemoryInterfaceProxy *************************/

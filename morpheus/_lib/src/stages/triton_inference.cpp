@@ -96,8 +96,8 @@ void build_output_tensors(TensorIndex count,
         // Triton results are always in row-major as required by the KServe protocol
         // https://github.com/kserve/kserve/blob/master/docs/predict-api/v2/required_api.md#tensor-data
         ShapeType stride{total_shape[1], 1};
-        output_tensors[model_output.mapped_name] =
-            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0);
+        output_tensors[model_output.mapped_name].swap(
+            Tensor::create(std::move(output_buffer), model_output.datatype, total_shape, stride, 0));
     }
 }
 
@@ -183,8 +183,8 @@ void reduce_outputs(const InferenceClientStage::sink_type_t& x, buffer_map_t& ou
 
         output_buffers[output.first] = reduced_buffer;
 
-        reduced_outputs[output.first] =
-            Tensor::create(std::move(reduced_buffer), tensor.dtype(), reduced_shape, stride, 0);
+        reduced_outputs[output.first].swap(
+            Tensor::create(std::move(reduced_buffer), tensor.dtype(), reduced_shape, stride, 0));
     }
 
     output_tensors = std::move(reduced_outputs);
@@ -208,7 +208,8 @@ void apply_logits(buffer_map_t& output_buffers, TensorMap& output_tensors)
         output_buffers[output.first] = output_buffer;
 
         // For logits the input and output shapes will be the same
-        logit_outputs[output.first] = Tensor::create(std::move(output_buffer), input_tensor.dtype(), shape, stride, 0);
+        logit_outputs[output.first].swap(
+            Tensor::create(std::move(output_buffer), input_tensor.dtype(), shape, stride, 0));
     }
 
     output_tensors = std::move(logit_outputs);

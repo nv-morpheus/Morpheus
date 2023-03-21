@@ -109,7 +109,7 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      *
      * @return const TensorObject
      */
-    const TensorObject get_probs_tensor() const;
+    TensorObject get_probs_tensor() const;
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/

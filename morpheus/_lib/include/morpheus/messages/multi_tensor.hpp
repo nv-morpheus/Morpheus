@@ -119,7 +119,7 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      *
      * @return const TensorObject
      */
-    const TensorObject get_id_tensor() const;
+    TensorObject get_id_tensor() const;
 
   protected:
     void get_slice_impl(std::shared_ptr<MultiMessage> new_message, TensorIndex start, TensorIndex stop) const override;
