@@ -28,7 +28,7 @@ from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from stages import ConvMsg
+from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
 from utils import assert_path_exists
 from utils import extend_data

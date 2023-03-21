@@ -17,25 +17,16 @@ import typing
 
 import cupy as cp
 import mrc
-import pandas as pd
-
-import cudf
 
 from morpheus._lib.common import FileTypes
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
-from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
-from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
-from morpheus.utils import compare_df
-from morpheus.utils.atomic_integer import AtomicInteger
 
 
 @register_stage("unittest-conv-msg")
@@ -66,16 +57,16 @@ class ConvMsg(SinglePortStage):
         self._empty_probs = empty_probs
 
     @property
-    def name(self):
+    def name(self) -> str:
         return "test"
 
-    def accepted_types(self):
+    def accepted_types(self) -> typing.Tuple:
         return (MultiMessage, )
 
-    def supports_cpp_node(self):
+    def supports_cpp_node(self) -> bool:
         return False
 
-    def _conv_message(self, m):
+    def _conv_message(self, m: MultiMessage) -> MultiResponseMessage:
         if self._expected_data_file is not None:
             df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
         else:
@@ -92,63 +83,8 @@ class ConvMsg(SinglePortStage):
         memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
         return MultiResponseMessage.from_message(m, memory=memory)
 
-    def _build_single(self, builder: mrc.Builder, input_stream):
+    def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
         stream = builder.make_node(self.unique_name, self._conv_message)
         builder.make_edge(input_stream[0], stream)
 
         return stream, MultiResponseMessage
-
-
-@register_stage("unittest-dfp-length-check")
-class DFPLengthChecker(SinglePortStage):
-    """
-    Verifies that the incoming MessageMeta classes are of a specific length
-
-    Parameters
-    ----------
-    c : `morpheus.config.Config`
-        Pipeline configuration instance.
-
-    expected_length : int
-        Expected length of incoming messages
-
-    num_exact: int
-        Number of messages to check. For a datasource with 2000 records if we expect the first message to be of lenth
-        1024, the next message will contain only 976. The first `num_exact` messages will be checked with `==` and `<=`
-        after that.
-    """
-
-    def __init__(self, c: Config, expected_length: int, num_exact: int = 1):
-        super().__init__(c)
-
-        self._expected_length = expected_length
-        self._num_exact = num_exact
-        self._num_received = AtomicInteger(0)
-
-    @property
-    def name(self) -> str:
-        return "dfp-length-check"
-
-    def accepted_types(self) -> typing.Tuple:
-        return (MessageMeta)
-
-    def supports_cpp_node(self):
-        return False
-
-    def _length_checker(self, x: MessageMeta):
-        msg_num = self._num_received.get_and_inc()
-        if msg_num < self._num_exact:
-            assert x.count == self._expected_length, \
-                f"Unexpected number of rows in message number {msg_num}: {x.count} != {self._num_exact}"
-        else:
-            assert x.count <= self._expected_length, \
-                f"Unexpected number of rows in message number {msg_num}: {x.count} > {self._num_exact}"
-
-        return x
-
-    def _build_single(self, builder: mrc.Builder, input_stream):
-        node = builder.make_node(self.unique_name, self._length_checker)
-        builder.make_edge(input_stream[0], node)
-
-        return node, input_stream[1]
-
