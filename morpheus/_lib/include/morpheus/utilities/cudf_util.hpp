@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include "morpheus_export.h"
 
 #include "morpheus/objects/table_info.hpp"
 
@@ -39,7 +40,7 @@ namespace morpheus {
 struct CudfHelper
 {
   public:
-    __attribute__((visibility("default"))) static void load();
+    MORPHEUS_EXPORT static void load();
 
     /**
      * @brief Converts a C++ table to a Python DataTable object

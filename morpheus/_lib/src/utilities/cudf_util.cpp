@@ -17,30 +17,40 @@
 
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/table_info.hpp"
 
 #include <cudf/table/table.hpp>  // IWYU pragma: keep
 #include <glog/logging.h>
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 
 #include <memory>
 #include <ostream>  // Needed for logging
 #include <utility>  // for move
+
 /**
  * **************This needs to come last.********************
  * A note to posterity: We only ever want to have a single place where cudf_helpers_api.h is included in any
  * translation unit.
  */
 #include "cudf_helpers_api.h"
-
-#include "morpheus/objects/data_table.hpp"
+// #include "cudf_helpers.h"
 
 namespace morpheus {
 
 void CudfHelper::load()
 {
-    if (import_morpheus___lib__cudf_helpers() != 0)
+    static auto cudf_helper_module = pybind11::reinterpret_steal<pybind11::object>(PyInit_cudf_helpers());
+    // if (import_morpheus___lib__cudf_helpers() != 0)
+    // {
+    //     pybind11::error_already_set ex;
+
+    //     LOG(ERROR) << "Could not load cudf_helpers library: " << ex.what();
+    //     throw ex;
+    // }
+    if (!cudf_helper_module)
     {
         pybind11::error_already_set ex;
 

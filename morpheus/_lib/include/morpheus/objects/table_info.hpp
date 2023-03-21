@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus_export.h"
+
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/dtype.hpp"
 
@@ -60,7 +62,7 @@ struct TableInfoData
 
 /****** Component public implementations *******************/
 /****** TableInfo******************************************/
-struct __attribute__((visibility("default"))) TableInfoBase
+struct MORPHEUS_EXPORT TableInfoBase
 {
     /**
      * @brief Get reference of a cudf table view
@@ -140,7 +142,7 @@ struct __attribute__((visibility("default"))) TableInfoBase
     friend CudfHelper;
 };
 
-struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
+struct MORPHEUS_EXPORT TableInfo : public TableInfoBase
 {
   public:
     TableInfo() = default;
@@ -161,7 +163,7 @@ struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
     std::shared_lock<std::shared_mutex> m_lock;
 };
 
-struct __attribute__((visibility("default"))) MutableTableInfo : public TableInfoBase
+struct MORPHEUS_EXPORT MutableTableInfo : public TableInfoBase
 {
   public:
     MutableTableInfo(std::shared_ptr<const IDataTable> parent,
