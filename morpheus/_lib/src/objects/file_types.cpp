@@ -24,13 +24,8 @@
 #include <stdexcept>
 
 namespace morpheus {
-FileTypes FileTypesInterfaceProxy::determine_file_type(const std::string& filename)
-{
-    return morpheus::determine_file_type(filename);
-}
-}  // namespace morpheus
 
-morpheus::FileTypes morpheus::determine_file_type(const std::string& filename)
+FileTypes determine_file_type(const std::string& filename)
 {
     auto filename_path = std::filesystem::path(filename);
 
@@ -53,3 +48,5 @@ morpheus::FileTypes morpheus::determine_file_type(const std::string& filename)
                                                      << "' with 'auto' type. 'auto' only works with: csv, json"));
     }
 }
+
+}  // namespace morpheus
