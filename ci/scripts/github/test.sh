@@ -30,12 +30,12 @@ tar xf "${WORKSPACE_TMP}/morhpeus_libs.tar.bz"
 tar xf "${WORKSPACE_TMP}/cpp_tests.tar.bz"
 
 # Install the built Morpheus python package
+cd ${MORPHEUS_ROOT}
 pip install ${MORPHEUS_ROOT}/build/dist/*.whl
 
 CPP_TESTS=($(find ${MORPHEUS_ROOT}/build -name "*.x"))
 
 rapids-logger "Pulling LFS assets"
-cd ${MORPHEUS_ROOT}
 
 git lfs install
 ${MORPHEUS_ROOT}/scripts/fetch_data.py fetch tests validation
@@ -46,6 +46,12 @@ git lfs ls-files
 
 REPORTS_DIR="${WORKSPACE_TMP}/reports"
 mkdir -p ${WORKSPACE_TMP}/reports
+
+rapids-logger "Running C++ tests"
+# Running the tests from the tests dir. Normally this isn't nescesary, however since
+# we are testing the installed version of morpheus in site-packages and not the one
+# in the repo dir, the pytest coverage module reports incorrect coverage stats.
+pushd ${MORPHEUS_ROOT}/tests
 
 TEST_RESULTS=0
 for cpp_test in "${CPP_TESTS[@]}"; do
@@ -61,11 +67,6 @@ for cpp_test in "${CPP_TESTS[@]}"; do
 done
 
 rapids-logger "Running Python tests"
-# Running the tests from the tests dir. Normally this isn't nescesary, however since
-# we are testing the installed version of morpheus in site-packages and not the one
-# in the repo dir, the pytest coverage module reports incorrect coverage stats.
-cd ${MORPHEUS_ROOT}/tests
-
 set +e
 
 python -I -m pytest --run_slow --run_kafka \
@@ -78,6 +79,7 @@ PYTEST_RESULTS=$?
 TEST_RESULTS=$(($TEST_RESULTS+$PYTEST_RESULTS))
 
 set -e
+popd
 
 rapids-logger "Archiving test reports"
 cd $(dirname ${REPORTS_DIR})
