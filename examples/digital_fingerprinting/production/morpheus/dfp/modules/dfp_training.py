@@ -70,7 +70,7 @@ def dfp_training(builder: mrc.Builder):
         model.fit(final_df, epochs=epochs)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-        output_message = MultiAEMessage(message.meta,
+        output_message = MultiAEMessage(meta=message.meta,
                                         mess_offset=message.mess_offset,
                                         mess_count=message.mess_count,
                                         model=model)
