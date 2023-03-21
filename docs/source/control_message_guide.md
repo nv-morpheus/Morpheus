@@ -67,15 +67,15 @@ The tasks component of each input object is an array of task objects, each of wh
     }
     ```
 
-    - `loader_id` (string): The ID of the loader to be used for loading the input data. Currently, only the `fsspec` and `file_to_df` loader is supported. The user has the option to register custom loaders in the dataloader registry and utilize them in the pipeline.
-    - `files` (array of strings): An array of file paths or glob patterns specifying the input data to be loaded.
+    - `loader_id` : The ID of the loader to be used for loading the input data. Currently, only the `fsspec` and `file_to_df` loader is supported. The user has the option to register custom loaders in the dataloader registry and utilize them in the pipeline.
+    - `files` : An array of file paths or glob patterns specifying the input data to be loaded.
 
   - Incorporate key and value updates to properties objects as required for `training` and `inference` tasks. There is no specified format.
 
 ### Metadata
 The metadata component of each input object is an object containing metadata information. Properties defined in this metadata component can be accessed anywhere across the stages that consume `MessageControl` objects.
 
-- *data_type* (string): which is a string indicating the type of data being processed. The supported data types are:
+- `data_type` : which is a string indicating the type of data being processed. The supported data types are:
     - `payload` : Arbitrary input data
     - `Streaming` : Streaming data
 
