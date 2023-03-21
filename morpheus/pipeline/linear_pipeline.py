@@ -78,7 +78,7 @@ class LinearPipeline(_pipeline.Pipeline):
         # Store this as the first one in the linear stages. Must be index 0
         self._linear_stages.append(source)
 
-    def add_stage(self, stage: _pipeline.SinglePortStage):
+    def add_stage(self, stage: _pipeline.SinglePortStage) -> _pipeline.SinglePortStage:
         """
         Add a stage to the pipeline. All `Stage` classes added with this method will be executed sequentially
         inthe order they were added.
@@ -101,6 +101,8 @@ class LinearPipeline(_pipeline.Pipeline):
         super().add_edge(self._linear_stages[-1], stage, self._current_segment_id)
 
         self._linear_stages.append(stage)
+
+        return stage
 
     def add_segment_boundary(self, data_type=None, as_shared_pointer=False):
         """
