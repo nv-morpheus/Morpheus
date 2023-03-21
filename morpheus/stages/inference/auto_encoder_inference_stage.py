@@ -22,11 +22,11 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiResponseAEMessage
-from morpheus.messages import ResponseMemory
 from morpheus.messages import ResponseMemoryAE
+from morpheus.messages import TensorMemory
 from morpheus.messages.multi_inference_ae_message import MultiInferenceAEMessage
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.messages.multi_response_message import MultiResponseProbsMessage
+from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -83,7 +83,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
         # reconstruction loss and zscore
         return (x.count, 2)
 
-    def process(self, batch: MultiInferenceAEMessage, cb: typing.Callable[[ResponseMemory], None]):
+    def process(self, batch: MultiInferenceAEMessage, cb: typing.Callable[[TensorMemory], None]):
         """
         This function processes inference batch by using batch's model to calculate anomaly scores
         and adding results to response.
@@ -92,7 +92,7 @@ class _AutoEncoderInferenceWorker(InferenceWorker):
         ----------
         batch : `morpheus.pipeline.messages.MultiInferenceMessage`
             Batch of inference messages.
-        cb : typing.Callable[[`morpheus.pipeline.messages.ResponseMemory`], None]
+        cb : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Inference callback.
 
         """
@@ -149,7 +149,7 @@ class AutoEncoderInferenceStage(InferenceStage):
         return _AutoEncoderInferenceWorker(inf_queue, self._config)
 
     @staticmethod
-    def _convert_one_response(output: MultiResponseProbsMessage, inf: MultiInferenceMessage, res: ResponseMemoryAE):
+    def _convert_one_response(output: MultiResponseMessage, inf: MultiInferenceMessage, res: ResponseMemoryAE):
 
         # Set the explainability and then call the base
         res.explain_df.index = range(inf.mess_offset, inf.mess_offset + inf.mess_count)

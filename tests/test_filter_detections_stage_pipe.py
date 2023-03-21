@@ -21,7 +21,7 @@ import pytest
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -84,9 +84,9 @@ def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
     pipe.add_stage(ConvMsg(config))
-    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
-    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))

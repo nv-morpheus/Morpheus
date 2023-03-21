@@ -27,8 +27,8 @@ from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ResponseMemory
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.single_port_stage import SinglePortStage
@@ -88,14 +88,14 @@ class ConvMsg(SinglePortStage):
         else:
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
-        memory = ResponseMemoryProbs(count=len(probs), probs=probs)
-        return MultiResponseProbsMessage.from_message(m, memory=memory)
+        memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
+        return MultiResponseMessage.from_message(m, memory=memory)
 
     def _build_single(self, builder: mrc.Builder, input_stream):
         stream = builder.make_node(self.unique_name, self._conv_message)
         builder.make_edge(input_stream[0], stream)
 
-        return stream, MultiResponseProbsMessage
+        return stream, MultiResponseMessage
 
 
 @register_stage("unittest-dfp-length-check")
