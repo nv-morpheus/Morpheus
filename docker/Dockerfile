@@ -50,9 +50,10 @@ RUN apt-get update &&\
     apt-get install --no-install-recommends -y \
         bc \
         build-essential \
-        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cudart-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         curl \
         git-lfs \
         jq \
@@ -142,6 +143,7 @@ ARG CUDA_MINOR_VER
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvml-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
@@ -178,7 +180,7 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate morpheus &&\
     # Install morpheus
-    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/cuda-11.8.0 -c nvidia/label/dev -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml &&\
     # Clean and activate

@@ -349,16 +349,37 @@ struct TensorObject final
         return output;
     }
 
-    // move assignment
-    TensorObject& operator=(TensorObject&& other) noexcept
+    /**
+     * @brief Explicitly swap the pointers to the underlying data with another tensor. Use inplace of the move operator
+     * since it's hard to determine when you want to perform a move vs copy the data.
+     *
+     * @return TensorObject&
+     */
+    TensorObject& swap(TensorObject&& other) noexcept
     {
         // Guard self assignment
         if (this == &other)
             return *this;
 
-        m_md     = std::exchange(other.m_md, nullptr);  // leave other in valid state
-        m_tensor = std::exchange(other.m_tensor, nullptr);
+        using std::swap;
+
+        swap(m_md, other.m_md);
+        swap(m_tensor, other.m_tensor);
+
         return *this;
+    }
+
+    /**
+     * @brief Swap this tensor with another. Only the pointers to the enderlying data are exchanged. No values are
+     * moved.
+     *
+     */
+    friend void swap(TensorObject& lhs, TensorObject& rhs) noexcept
+    {
+        using std::swap;
+
+        swap(lhs.m_md, rhs.m_md);
+        swap(lhs.m_tensor, rhs.m_tensor);
     }
 
     // copy assignment
@@ -367,6 +388,8 @@ struct TensorObject final
         // Guard self assignment
         if (this == &other)
             return *this;
+
+        CHECK(m_md && m_tensor) << "Cannot set an empty tensor. Use `std::swap(tensor1, tensor2)` instead.";
 
         // Check for valid assignment
         if (this->get_shape() != other.get_shape())

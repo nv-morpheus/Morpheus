@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
-#include "morpheus/messages/meta.hpp"                     // for MessageMeta
+#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/messages/meta.hpp"  // for MessageMeta
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/tensor_object.hpp"
@@ -27,6 +27,7 @@
 #include <pybind11/pytypes.h>  // for object
 
 #include <memory>
+#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -57,13 +58,15 @@ class MultiInferenceFILMessage : public DerivedMultiMessage<MultiInferenceFILMes
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      */
     MultiInferenceFILMessage(std::shared_ptr<MessageMeta> meta,
-                             TensorIndex mess_offset                           = 0,
-                             TensorIndex mess_count                            = -1,
-                             std::shared_ptr<morpheus::InferenceMemory> memory = nullptr,
-                             TensorIndex offset                                = 0,
-                             TensorIndex count                                 = -1);
+                             TensorIndex mess_offset              = 0,
+                             TensorIndex mess_count               = -1,
+                             std::shared_ptr<TensorMemory> memory = nullptr,
+                             TensorIndex offset                   = 0,
+                             TensorIndex count                    = -1,
+                             std::string id_tensor_name           = "seq_ids");
 
     /**
      * @brief Returns the 'input__0' tensor, throws a `std::runtime_error` if it does not exist
@@ -114,14 +117,16 @@ struct MultiInferenceFILMessageInterfaceProxy : public MultiInferenceMessageInte
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      * @return std::shared_ptr<MultiInferenceFILMessage>
      */
     static std::shared_ptr<MultiInferenceFILMessage> init(std::shared_ptr<MessageMeta> meta,
                                                           TensorIndex mess_offset,
                                                           TensorIndex mess_count,
-                                                          std::shared_ptr<InferenceMemory> memory,
+                                                          std::shared_ptr<TensorMemory> memory,
                                                           TensorIndex offset,
-                                                          TensorIndex count);
+                                                          TensorIndex count,
+                                                          std::string id_tensor_name);
 
     /**
      * @brief Get  'input__0' tensor as a python object

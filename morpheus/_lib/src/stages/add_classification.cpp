@@ -17,95 +17,29 @@
 
 #include "morpheus/stages/add_classification.hpp"
 
-#include "morpheus/objects/dtype.hpp"          // for DType
-#include "morpheus/objects/tensor.hpp"         // for Tensor::create
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/types.hpp"                  // for TensorIndex
-#include "morpheus/utilities/matx_util.hpp"    // for MatxUtil::threshold
-#include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
-
-#include <glog/logging.h>
-
 #include <cstddef>
-#include <exception>
-#include <functional>  // for function
 #include <memory>
-#include <ostream>  // needed for logging
+#include <optional>
 #include <utility>  // for move
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace morpheus {
+
 // Component public implementations
 // ************ AddClassificationStage **************************** //
-AddClassificationsStage::AddClassificationsStage(float threshold,
-                                                 std::size_t num_class_labels,
-                                                 std::map<std::size_t, std::string> idx2label) :
-  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_threshold(threshold),
-  m_num_class_labels(num_class_labels),
-  m_idx2label(std::move(idx2label))
-{
-    CHECK(m_idx2label.size() <= m_num_class_labels) << "idx2label should represent a subset of the class_labels";
-}
-
-AddClassificationsStage::subscribe_fn_t AddClassificationsStage::build_operator()
-{
-    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output](sink_type_t x) {
-                const auto& probs = x->get_probs();
-                const auto& shape = probs.get_shape();
-
-                // Depending on the input the stride is given in bytes or elements, convert to elements
-                auto stride = TensorUtils::get_element_stride(probs.get_stride());
-
-                CHECK(shape.size() == 2 && shape[1] == m_num_class_labels)
-                    << "Label count does not match output of model. Label count: " << m_num_class_labels
-                    << ", Model output: " << shape[1];
-
-                const auto num_rows    = shape[0];
-                const auto num_columns = shape[1];
-
-                auto thresh_bool_buffer = MatxUtil::threshold(
-                    {probs.data(), probs.dtype(), probs.get_memory(), probs.get_shape(), probs.get_stride()},
-                    m_threshold,
-                    false);
-
-                auto tensor_obj = Tensor::create(thresh_bool_buffer, DType::create<bool>(), shape, stride);
-
-                std::vector<std::string> columns(m_idx2label.size());
-                std::vector<TensorObject> tensors(m_idx2label.size());
-
-                std::size_t i = 0;
-                for (const auto& [column_num, column_name] : m_idx2label)
-                {
-                    columns[i] = column_name;
-                    tensors[i] = tensor_obj.slice({0, static_cast<TensorIndex>(column_num)},
-                                                  {num_rows, static_cast<TensorIndex>(column_num + 1)});
-
-                    ++i;
-                }
-
-                x->set_meta(columns, tensors);
-
-                output.on_next(x);
-            },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
-    };
-}
+AddClassificationsStage::AddClassificationsStage(std::map<std::size_t, std::string> idx2label, float threshold) :
+  AddScoresStageBase(std::move(idx2label), threshold)
+{}
 
 // ************ AddClassificationStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> AddClassificationStageInterfaceProxy::init(
     mrc::segment::Builder& builder,
     const std::string& name,
-    float threshold,
-    std::size_t num_class_labels,
-    std::map<std::size_t, std::string> idx2label)
+    std::map<std::size_t, std::string> idx2label,
+    float threshold)
 {
-    auto stage = builder.construct_object<AddClassificationsStage>(name, threshold, num_class_labels, idx2label);
-
-    return stage;
+    return builder.construct_object<AddClassificationsStage>(name, idx2label, threshold);
 }
+
 }  // namespace morpheus
