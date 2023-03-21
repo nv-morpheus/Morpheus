@@ -67,7 +67,7 @@ All of the following instructions assume several variables have been set:
  - `MORPHEUS_ROOT`: The Morpheus repository has been checked out at a location specified by this variable. Any non-absolute paths are relative to `MORPHEUS_ROOT`.
  - `PYTHON_VER`: The desired Python version. Minimum required is `3.8`
  - `RAPIDS_VER`: The desired RAPIDS version for all RAPIDS libraries including cuDF and RMM. This is also used for Triton. If in doubt use `22.10`
- - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.5`
+ - `CUDA_VER`: The desired CUDA version to use. If in doubt use `11.8`
 
 
 ### Clone the repository and pull large file data from Git LFS
@@ -75,7 +75,7 @@ All of the following instructions assume several variables have been set:
 ```bash
 export PYTHON_VER=3.8
 export RAPIDS_VER=22.10
-export CUDA_VER=11.5
+export CUDA_VER=11.8
 export MORPHEUS_ROOT=$(pwd)/morpheus
 git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
 cd $MORPHEUS_ROOT
@@ -173,7 +173,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
 
 - Pascal architecture GPU or better
 - NVIDIA driver `450.80.02` or higher
-- [CUDA 11.5](https://developer.nvidia.com/cuda-11-5-2-download-archive)
+- [CUDA 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive)
 - `conda` and `mamba`
   - See the [Getting Started Guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) if `conda` is not already installed
   - Install `mamba`:
@@ -189,7 +189,7 @@ Note: These instructions assume the user is using `mamba` instead of `conda` sin
    ```bash
    export PYTHON_VER=3.8
    export RAPIDS_VER=22.10
-   export CUDA_VER=11.5
+   export CUDA_VER=11.8
    export MORPHEUS_ROOT=$(pwd)/morpheus
    git clone https://github.com/nv-morpheus/Morpheus.git $MORPHEUS_ROOT
    cd $MORPHEUS_ROOT

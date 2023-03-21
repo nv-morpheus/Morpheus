@@ -21,13 +21,16 @@
 #include "morpheus/objects/dtype.hpp"  // for TypeId, DType
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/utilities/cudf_util.hpp"
 
 #include <cuda_runtime.h>               // for cudaMemcpy, cudaMemcpy2D, cudaMemcpyDeviceToDevice
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/io/types.hpp>
+#include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>
+#include <glog/logging.h>       // for CHECK
 #include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
 #include <pybind11/cast.h>
 #include <pybind11/gil.h>
@@ -37,19 +40,48 @@
 
 #include <algorithm>  // for transform
 #include <array>      // needed for pybind11::make_tuple
+#include <cstddef>    // for size_t
 #include <cstdint>    // for uint8_t
 #include <sstream>
 #include <stdexcept>  // for runtime_error
+#include <tuple>
+#include <type_traits>
+#include <utility>
 // IWYU pragma: no_include <unordered_map>
 
 namespace morpheus {
+
+namespace py = pybind11;
+using namespace py::literals;
+
 /****** Component public implementations *******************/
 /****** MultiMessage****************************************/
-MultiMessage::MultiMessage(std::shared_ptr<morpheus::MessageMeta> m, size_t o, size_t c) :
-  meta(std::move(m)),
-  mess_offset(o),
-  mess_count(c)
-{}
+MultiMessage::MultiMessage(std::shared_ptr<MessageMeta> meta, TensorIndex offset, TensorIndex count) :
+  meta(std::move(meta)),
+  mess_offset(offset)
+{
+    if (!this->meta)
+    {
+        throw std::invalid_argument("Must define `meta` when creating MultiMessage");
+    }
+
+    // Default to using the count from the meta if it is unset
+    if (count == -1)
+    {
+        count = this->meta->count() - offset;
+    }
+
+    this->mess_count = count;
+
+    if (this->mess_offset < 0 || this->mess_offset >= this->meta->count())
+    {
+        throw std::invalid_argument("Invalid message offset value");
+    }
+    if (this->mess_count <= 0 || (this->mess_offset + this->mess_count > this->meta->count()))
+    {
+        throw std::invalid_argument("Invalid message count value");
+    }
+}
 
 TableInfo MultiMessage::get_meta()
 {
@@ -58,14 +90,14 @@ TableInfo MultiMessage::get_meta()
     return table_info;
 }
 
-TableInfo MultiMessage::get_meta(const std::string &col_name)
+TableInfo MultiMessage::get_meta(const std::string& col_name)
 {
     auto table_view = this->get_meta(std::vector<std::string>{col_name});
 
     return table_view;
 }
 
-TableInfo MultiMessage::get_meta(const std::vector<std::string> &column_names)
+TableInfo MultiMessage::get_meta(const std::vector<std::string>& column_names)
 {
     TableInfo info = this->meta->get_info();
 
@@ -76,31 +108,43 @@ TableInfo MultiMessage::get_meta(const std::vector<std::string> &column_names)
     return sliced_info;
 }
 
-void MultiMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const
+void MultiMessage::get_slice_impl(std::shared_ptr<MultiMessage> new_message, TensorIndex start, TensorIndex stop) const
 {
+    // Start must be between [0, mess_count)
+    if (start < 0 || start >= this->mess_count)
+    {
+        throw std::out_of_range("Invalid `start` argument");
+    }
+
+    // Stop must be between (start, mess_count]
+    if (stop <= start or stop > this->mess_count)
+    {
+        throw std::out_of_range("Invalid `stop` argument");
+    }
+
     new_message->mess_offset = this->mess_offset + start;
     new_message->mess_count  = this->mess_offset + stop - new_message->mess_offset;
 }
 
 void MultiMessage::copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                                    const std::vector<std::pair<size_t, size_t>> &ranges,
-                                    size_t num_selected_rows) const
+                                    const std::vector<RangeType>& ranges,
+                                    TensorIndex num_selected_rows) const
 {
     new_message->mess_offset = 0;
     new_message->mess_count  = num_selected_rows;
     new_message->meta        = copy_meta_ranges(ranges);
 }
 
-std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<std::pair<size_t, size_t>> &ranges) const
+std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<RangeType>& ranges) const
 {
     // copy ranges into a sequntial list of values
     // https://github.com/rapidsai/cudf/issues/11223
-    std::vector<cudf::size_type> cudf_ranges;
-    for (const auto &p : ranges)
+    std::vector<TensorIndex> cudf_ranges;
+    for (const auto& p : ranges)
     {
         // Append the message offset to the range here
-        cudf_ranges.push_back(static_cast<cudf::size_type>(p.first + this->mess_offset));
-        cudf_ranges.push_back(static_cast<cudf::size_type>(p.second + this->mess_offset));
+        cudf_ranges.push_back(p.first + this->mess_offset);
+        cudf_ranges.push_back(p.second + this->mess_offset);
     }
 
     auto table_info                       = this->meta->get_info();
@@ -116,12 +160,12 @@ std::shared_ptr<MessageMeta> MultiMessage::copy_meta_ranges(const std::vector<st
     return MessageMeta::create_from_cpp(std::move(table), 1);
 }
 
-void MultiMessage::set_meta(const std::string &col_name, TensorObject tensor)
+void MultiMessage::set_meta(const std::string& col_name, TensorObject tensor)
 {
     set_meta(std::vector<std::string>{col_name}, std::vector<TensorObject>{tensor});
 }
 
-void MultiMessage::set_meta(const std::vector<std::string> &column_names, const std::vector<TensorObject> &tensors)
+void MultiMessage::set_meta(const std::vector<std::string>& column_names, const std::vector<TensorObject>& tensors)
 {
     TableInfo table_meta;
     try
@@ -136,7 +180,7 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
         throw std::runtime_error(err_msg.str());
     }
 
-    for (size_t i = 0; i < tensors.size(); ++i)
+    for (std::size_t i = 0; i < tensors.size(); ++i)
     {
         const auto& cv            = table_meta.get_column(i);
         const auto table_type_id  = cv.type().id();
@@ -151,7 +195,7 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
         const auto item_size = tensors[i].dtype().item_size();
 
         // Dont use cv.data<>() here since that does not account for the size of each element
-        auto data_start = const_cast<uint8_t *>(cv.head<uint8_t>()) + cv.offset() * item_size;
+        auto data_start = const_cast<uint8_t*>(cv.head<uint8_t>()) + cv.offset() * item_size;
 
         if (row_stride == 1)
         {
@@ -171,42 +215,41 @@ void MultiMessage::set_meta(const std::vector<std::string> &column_names, const 
     }
 }
 
-std::vector<std::pair<TensorIndex, TensorIndex>> MultiMessage::apply_offset_to_ranges(
-    std::size_t offset, const std::vector<std::pair<size_t, size_t>> &ranges) const
+std::vector<RangeType> MultiMessage::apply_offset_to_ranges(TensorIndex offset,
+                                                            const std::vector<RangeType>& ranges) const
 {
-    std::vector<std::pair<TensorIndex, TensorIndex>> offset_ranges(ranges.size());
-    std::transform(
-        ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const std::pair<size_t, size_t> range) {
-            return std::pair{offset + range.first, offset + range.second};
-        });
+    std::vector<RangeType> offset_ranges(ranges.size());
+    std::transform(ranges.cbegin(), ranges.cend(), offset_ranges.begin(), [offset](const RangeType range) {
+        return std::pair{offset + range.first, offset + range.second};
+    });
 
     return offset_ranges;
 }
 
 /****** MultiMessageInterfaceProxy *************************/
 std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
-                                                               cudf::size_type mess_offset,
-                                                               cudf::size_type mess_count)
+                                                               TensorIndex mess_offset,
+                                                               TensorIndex mess_count)
 {
     return std::make_shared<MultiMessage>(std::move(meta), mess_offset, mess_count);
 }
 
-std::shared_ptr<morpheus::MessageMeta> MultiMessageInterfaceProxy::meta(const MultiMessage &self)
+std::shared_ptr<morpheus::MessageMeta> MultiMessageInterfaceProxy::meta(const MultiMessage& self)
 {
     return self.meta;
 }
 
-std::size_t MultiMessageInterfaceProxy::mess_offset(const MultiMessage &self)
+TensorIndex MultiMessageInterfaceProxy::mess_offset(const MultiMessage& self)
 {
     return self.mess_offset;
 }
 
-std::size_t MultiMessageInterfaceProxy::mess_count(const MultiMessage &self)
+TensorIndex MultiMessageInterfaceProxy::mess_count(const MultiMessage& self)
 {
     return self.mess_count;
 }
 
-pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage &self)
+pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self)
 {
     // Need to release the GIL before calling `get_meta()`
     pybind11::gil_scoped_release no_gil;
@@ -214,21 +257,29 @@ pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage &self)
     // Get the column and convert to cudf
     auto info = self.get_meta();
 
-    return info.copy_to_py_object();
+    // Convert to a python datatable. Automatically gets the GIL
+    return CudfHelper::table_from_table_info(info);
 }
 
-pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage &self, std::string col_name)
+pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::string col_name)
 {
-    // Need to release the GIL before calling `get_meta()`
-    pybind11::gil_scoped_release no_gil;
+    TableInfo info;
 
-    // Get the column and convert to cudf
-    auto info = self.get_meta(col_name);
+    {
+        // Need to release the GIL before calling `get_meta()`
+        pybind11::gil_scoped_release no_gil;
 
-    return info.copy_to_py_object();
+        // Get the column and convert to cudf
+        info = self.get_meta();
+    }
+
+    auto py_table = CudfHelper::table_from_table_info(info);
+
+    // Now convert it to a series by selecting only the column
+    return py_table[col_name.c_str()];
 }
 
-pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage &self, std::vector<std::string> columns)
+pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, std::vector<std::string> columns)
 {
     // Need to release the GIL before calling `get_meta()`
     pybind11::gil_scoped_release no_gil;
@@ -236,10 +287,17 @@ pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage &self, std::v
     // Get the column and convert to cudf
     auto info = self.get_meta(columns);
 
-    return info.copy_to_py_object();
+    // Convert to a python datatable. Automatically gets the GIL
+    return CudfHelper::table_from_table_info(info);
 }
 
-pybind11::object MultiMessageInterfaceProxy::get_meta_list(MultiMessage &self, pybind11::object col_name)
+pybind11::object MultiMessageInterfaceProxy::get_meta(MultiMessage& self, pybind11::none none_obj)
+{
+    // Just offload to the overload without columns. This overload is needed to match the python interface
+    return MultiMessageInterfaceProxy::get_meta(self);
+}
+
+pybind11::object MultiMessageInterfaceProxy::get_meta_list(MultiMessage& self, pybind11::object col_name)
 {
     std::vector<std::string> column_names;
     if (!col_name.is_none())
@@ -255,7 +313,7 @@ pybind11::object MultiMessageInterfaceProxy::get_meta_list(MultiMessage &self, p
     // Need the GIL for the remainder
     pybind11::gil_scoped_acquire gil;
 
-    auto meta = info.copy_to_py_object();
+    auto meta = CudfHelper::table_from_table_info(info);
 
     if (!col_name.is_none())
     {  // needed to slice off the id column
@@ -268,7 +326,31 @@ pybind11::object MultiMessageInterfaceProxy::get_meta_list(MultiMessage &self, p
     return py_list;
 }
 
-void MultiMessageInterfaceProxy::set_meta(MultiMessage &self, pybind11::object columns, pybind11::object value)
+std::tuple<py::object, py::object> get_indexers(MultiMessage& self, py::object df, py::object columns)
+{
+    auto row_indexer = pybind11::slice(
+        pybind11::int_(self.mess_offset), pybind11::int_(self.mess_offset + self.mess_count), pybind11::none());
+
+    if (columns.is_none())
+    {
+        columns = df.attr("columns").attr("to_list")();
+    }
+    else if (pybind11::isinstance<pybind11::str>(columns))
+    {
+        // Convert a single string into a list so all versions return tables, not series
+        pybind11::list col_list;
+
+        col_list.append(columns);
+
+        columns = std::move(col_list);
+    }
+
+    auto column_indexer = df.attr("columns").attr("get_indexer_for")(columns);
+
+    return std::make_tuple(row_indexer, column_indexer);
+}
+
+void MultiMessageInterfaceProxy::set_meta(MultiMessage& self, pybind11::object columns, pybind11::object value)
 {
     // Need to release the GIL before calling `get_meta()`
     pybind11::gil_scoped_release no_gil;
@@ -280,21 +362,71 @@ void MultiMessageInterfaceProxy::set_meta(MultiMessage &self, pybind11::object c
 
     auto df = mutable_info.checkout_obj();
 
-    auto index_slice = pybind11::slice(
-        pybind11::int_(self.mess_offset), pybind11::int_(self.mess_offset + self.mess_count), pybind11::none());
+    auto [row_indexer, column_indexer] = get_indexers(self, df, columns);
 
-    // Mimic this python code
-    // self.meta.df.loc[self.meta.df.index[self.mess_offset:self.mess_offset + self.mess_count], columns] =
-    // value
-    df.attr("loc")[pybind11::make_tuple(df.attr("index")[index_slice], columns)] = value;
+    // Check to see if this is adding a column. If so, we need to use .loc instead of .iloc
+    if (column_indexer.contains(-1))
+    {
+        // cudf is really bad at adding new columns. Need to use loc with a unique and monotonic index
+        py::object saved_index = df.attr("index");
+
+        // Check to see if we can use slices
+        if (!(saved_index.attr("is_unique").cast<bool>() && (saved_index.attr("is_monotonic_increasing").cast<bool>() ||
+                                                             saved_index.attr("is_monotonic_decreasing").cast<bool>())))
+        {
+            df.attr("reset_index")("drop"_a = true, "inplace"_a = true);
+        }
+        else
+        {
+            // Erase the saved index so we dont reset it
+            saved_index = py::none();
+        }
+
+        // Perform the update via slices
+        df.attr("loc")[pybind11::make_tuple(df.attr("index")[row_indexer], columns)] = value;
+
+        // Reset the index if we changed it
+        if (!saved_index.is_none())
+        {
+            df.attr("set_index")(saved_index, "inplace"_a = true);
+        }
+    }
+    else
+    {
+        // If we only have one column, convert it to a series (broadcasts work with more types on a series)
+        if (pybind11::len(column_indexer) == 1)
+        {
+            column_indexer = column_indexer.cast<py::list>()[0];
+        }
+
+        try
+        {
+            // Use iloc
+            df.attr("iloc")[pybind11::make_tuple(row_indexer, column_indexer)] = value;
+        } catch (py::error_already_set)
+        {
+            // Try this as a fallback. Works better for strings. See issue #286
+            df[columns].attr("iloc")[row_indexer] = value;
+        }
+    }
 
     mutable_info.return_obj(std::move(df));
 }
 
-std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage &self,
-                                                                    std::size_t start,
-                                                                    std::size_t stop)
+std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage& self,
+                                                                    TensorIndex start,
+                                                                    TensorIndex stop)
 {
+    if (start < 0)
+    {
+        throw std::out_of_range("Invalid message `start` argument");
+    }
+
+    if (stop < 0)
+    {
+        throw std::out_of_range("Invalid message `stop` argument");
+    }
+
     // Need to drop the GIL before calling any methods on the C++ object
     pybind11::gil_scoped_release no_gil;
 
@@ -302,20 +434,21 @@ std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::get_slice(MultiMessage
     return self.get_slice(start, stop);
 }
 
-std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(
-    MultiMessage &self, const std::vector<std::pair<size_t, size_t>> &ranges, pybind11::object num_selected_rows)
+std::shared_ptr<MultiMessage> MultiMessageInterfaceProxy::copy_ranges(MultiMessage& self,
+                                                                      const std::vector<RangeType>& ranges,
+                                                                      pybind11::object num_selected_rows)
 {
-    std::size_t num_rows = 0;
+    TensorIndex num_rows = 0;
     if (num_selected_rows.is_none())
     {
-        for (const auto &range : ranges)
+        for (const auto& range : ranges)
         {
             num_rows += range.second - range.first;
         }
     }
     else
     {
-        num_rows = num_selected_rows.cast<std::size_t>();
+        num_rows = num_selected_rows.cast<TensorIndex>();
     }
 
     // Need to drop the GIL before calling any methods on the C++ object

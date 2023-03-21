@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex
 #include "morpheus/utilities/string_util.hpp"
 
 #include <cuda_runtime.h>  // for cudaMemcpyDeviceToHost & cudaMemcpy
@@ -27,8 +28,8 @@
 
 #include <algorithm>
 #include <array>
-#include <cstddef>  // for size_t, byte
-#include <cstdint>
+#include <cstddef>  // for size_t
+#include <cstdint>  // for uint8_t
 #include <functional>
 #include <memory>   // for shared_ptr
 #include <numeric>  // IWYU pragma: keep
@@ -49,9 +50,6 @@ namespace morpheus {
  * @{
  * @file
  */
-
-using TensorIndex = long long;  // NOLINT
-using RankType    = int;        // NOLINT
 
 namespace detail {
 
@@ -129,7 +127,7 @@ struct ITensorStorage
     virtual void* data() const = 0;
 
     // virtual const void* data() const                             = 0;
-    virtual std::size_t bytes() const = 0;
+    virtual TensorIndex bytes() const = 0;
 
     virtual std::shared_ptr<MemoryDescriptor> get_memory() const = 0;
     // virtual TensorStorageType storage_type() const               = 0;
@@ -139,14 +137,13 @@ struct ITensor;
 
 struct ITensorOperations
 {
-    virtual std::shared_ptr<ITensor> slice(const std::vector<TensorIndex>& min_dims,
-                                           const std::vector<TensorIndex>& max_dims) const = 0;
+    virtual std::shared_ptr<ITensor> slice(const ShapeType& min_dims, const ShapeType& max_dims) const = 0;
 
-    virtual std::shared_ptr<ITensor> reshape(const std::vector<TensorIndex>& dims) const = 0;
+    virtual std::shared_ptr<ITensor> reshape(const ShapeType& dims) const = 0;
 
     virtual std::shared_ptr<ITensor> deep_copy() const = 0;
 
-    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
+    virtual std::shared_ptr<ITensor> copy_rows(const std::vector<RangeType>& selected_rows,
                                                TensorIndex num_rows) const = 0;
 
     virtual std::shared_ptr<ITensor> as_type(DType dtype) const = 0;
@@ -158,27 +155,29 @@ struct ITensor : public ITensorStorage, public ITensorOperations
 
     virtual RankType rank() const = 0;
 
-    virtual std::size_t count() const = 0;
+    virtual TensorIndex count() const = 0;
 
     virtual DType dtype() const = 0;
 
-    virtual std::size_t shape(std::size_t) const = 0;
+    virtual TensorIndex shape(TensorIndex) const = 0;
 
-    virtual std::size_t stride(std::size_t) const = 0;
+    virtual TensorIndex stride(TensorIndex) const = 0;
+
+    virtual intptr_t stream() const = 0;
 
     virtual bool is_compact() const = 0;
 
-    std::vector<std::size_t> get_shape() const
+    ShapeType get_shape() const
     {
-        std::vector<std::size_t> v(this->rank());
+        ShapeType v(this->rank());
         for (int i = 0; i < this->rank(); ++i)
             v[i] = this->shape(i);
         return v;
     }
 
-    std::vector<std::size_t> get_stride() const
+    ShapeType get_stride() const
     {
-        std::vector<std::size_t> v(this->rank());
+        ShapeType v(this->rank());
         for (int i = 0; i < this->rank(); ++i)
             v[i] = this->stride(i);
         return v;
@@ -220,12 +219,12 @@ struct TensorObject final
         return m_tensor->dtype();
     }
 
-    std::size_t count() const
+    TensorIndex count() const
     {
         return m_tensor->count();
     }
 
-    std::size_t bytes() const
+    TensorIndex bytes() const
     {
         return m_tensor->bytes();
     }
@@ -240,24 +239,29 @@ struct TensorObject final
         return m_tensor->dtype().item_size();
     }
 
-    std::vector<std::size_t> get_shape() const
+    ShapeType get_shape() const
     {
         return m_tensor->get_shape();
     }
 
-    std::vector<std::size_t> get_stride() const
+    ShapeType get_stride() const
     {
         return m_tensor->get_stride();
     }
 
-    TensorIndex shape(std::uint32_t idx) const
+    TensorIndex shape(TensorIndex idx) const
     {
         return m_tensor->shape(idx);
     }
 
-    TensorIndex stride(std::uint32_t idx) const
+    TensorIndex stride(TensorIndex idx) const
     {
         return m_tensor->stride(idx);
+    }
+
+    intptr_t stream() const
+    {
+        return m_tensor->stream();
     }
 
     bool is_compact() const
@@ -265,7 +269,7 @@ struct TensorObject final
         return m_tensor->is_compact();
     }
 
-    TensorObject slice(std::vector<TensorIndex> min_dims, std::vector<TensorIndex> max_dims) const
+    TensorObject slice(ShapeType min_dims, ShapeType max_dims) const
     {
         // Replace any -1 values
         std::replace_if(
@@ -278,7 +282,7 @@ struct TensorObject final
         return {m_md, m_tensor->slice(min_dims, max_dims)};
     }
 
-    TensorObject reshape(const std::vector<TensorIndex>& dims) const
+    TensorObject reshape(const ShapeType& dims) const
     {
         return {m_md, m_tensor->reshape(dims)};
     }
@@ -304,7 +308,7 @@ struct TensorObject final
         return out_data;
     }
 
-    template <typename T, size_t N>
+    template <typename T, RankType N>
     T read_element(const TensorIndex (&idx)[N]) const
     {
         auto stride = this->get_stride();
@@ -322,9 +326,9 @@ struct TensorObject final
             << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
             << "', array type: '" << this->dtype().name() << "'";
 
-        size_t offset = std::transform_reduce(
-                            stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
-                        this->dtype_size();
+        auto offset = std::transform_reduce(
+                          stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
+                      this->dtype_size();
 
         T output;
 
@@ -334,7 +338,7 @@ struct TensorObject final
         return output;
     }
 
-    template <typename T, size_t N>
+    template <typename T, RankType N>
     T read_element(const std::array<TensorIndex, N> idx) const
     {
         auto stride = this->get_stride();
@@ -352,9 +356,9 @@ struct TensorObject final
             << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
             << "', array type: '" << this->dtype().name() << "'";
 
-        size_t offset = std::transform_reduce(
-                            stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
-                        this->dtype_size();
+        auto offset = std::transform_reduce(
+                          stride.begin(), stride.end(), std::begin(idx), 0, std::plus<>(), std::multiplies<>()) *
+                      this->dtype_size();
 
         T output;
 
@@ -443,8 +447,7 @@ struct TensorObject final
      * @param num_rows
      * @return TensorObject
      */
-    TensorObject copy_rows(const std::vector<std::pair<TensorIndex, TensorIndex>>& selected_rows,
-                           TensorIndex num_rows) const
+    TensorObject copy_rows(const std::vector<RangeType>& selected_rows, TensorIndex num_rows) const
     {
         return {m_tensor->copy_rows(selected_rows, num_rows)};
     }

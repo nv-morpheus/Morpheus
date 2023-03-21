@@ -17,19 +17,22 @@
 
 #include "morpheus/messages/meta.hpp"
 
+#include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/objects/python_data_table.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/table_util.hpp"
 
 #include <cudf/io/types.hpp>
+#include <glog/logging.h>
 #include <pybind11/gil.h>
-#include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <pyerrors.h>  // for PyExc_DeprecationWarning
+#include <warnings.h>  // for PyErr_WarnEx
 
 #include <memory>
-#include <sstream>    // for ostringstream
+#include <optional>
+#include <ostream>    // for operator<< needed by glog
 #include <stdexcept>  // for runtime_error
 #include <utility>
 
@@ -40,7 +43,7 @@ namespace py = pybind11;
 /****** Component public implementations *******************/
 /****** MessageMeta ****************************************/
 
-size_t MessageMeta::count() const
+TensorIndex MessageMeta::count() const
 {
     return m_data->count();
 }
@@ -80,7 +83,7 @@ py::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int ind
     py::gil_scoped_acquire gil;
 
     // Now convert to a python TableInfo object
-    auto converted_table = proxy_table_from_table_with_metadata(std::move(table), index_col_count);
+    auto converted_table = CudfHelper::table_from_table_with_metadata(std::move(table), index_col_count);
 
     // VLOG(10) << "Table. Num Col: " << converted_table.attr("_num_columns").str().cast<std::string>()
     //          << ", Num Ind: " << converted_table.attr("_num_columns").cast<std::string>()
@@ -93,24 +96,52 @@ py::object MessageMeta::cpp_to_py(cudf::io::table_with_metadata&& table, int ind
     return converted_table;
 }
 
+bool MessageMeta::has_sliceable_index() const
+{
+    const auto table = get_info();
+    return table.has_sliceable_index();
+}
+
+std::optional<std::string> MessageMeta::ensure_sliceable_index()
+{
+    auto table = this->get_mutable_info();
+
+    // Check to ensure we do (or still do) have a non-unique index. Presumably the caller already made a call to
+    // `has_sliceable_index` but there could have been a race condition between the first call to has_sliceable_index
+    // and the acquisition of the mutex. Re-check here to ensure some other thread didn't already fix the index
+    if (!table.has_sliceable_index())
+    {
+        LOG(WARNING) << "Non unique index found in dataframe, generating new index.";
+        return table.ensure_sliceable_index();
+    }
+
+    return std::nullopt;
+}
+
 /********** MessageMetaInterfaceProxy **********/
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_python(py::object&& data_frame)
 {
     return MessageMeta::create_from_python(std::move(data_frame));
 }
 
-cudf::size_type MessageMetaInterfaceProxy::count(MessageMeta& self)
+TensorIndex MessageMetaInterfaceProxy::count(MessageMeta& self)
 {
     return self.count();
 }
 
 py::object MessageMetaInterfaceProxy::get_data_frame(MessageMeta& self)
 {
-    // Release any GIL
-    py::gil_scoped_release no_gil;
+    TableInfo info;
 
-    // return py_table;
-    return self.get_info().copy_to_py_object();
+    {
+        // Need to release the GIL before calling `get_meta()`
+        pybind11::gil_scoped_release no_gil;
+
+        // Get the column and convert to cudf
+        info = self.get_info();
+    }
+
+    return CudfHelper::table_from_table_info(info);
 }
 
 py::object MessageMetaInterfaceProxy::df_property(MessageMeta& self)
@@ -134,14 +165,29 @@ MutableTableCtxMgr MessageMetaInterfaceProxy::mutable_dataframe(MessageMeta& sel
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::string& filename)
 {
     // Load the file
-    auto df_with_meta = CuDFTableUtil::load_table(filename);
+    auto df_with_meta   = load_table_from_file(filename);
+    int index_col_count = prepare_df_index(df_with_meta);
 
-    return MessageMeta::create_from_cpp(std::move(df_with_meta));
+    return MessageMeta::create_from_cpp(std::move(df_with_meta), index_col_count);
+}
+
+bool MessageMetaInterfaceProxy::has_sliceable_index(MessageMeta& self)
+{
+    // Release the GIL
+    py::gil_scoped_release no_gil;
+    return self.has_sliceable_index();
+}
+
+std::optional<std::string> MessageMetaInterfaceProxy::ensure_sliceable_index(MessageMeta& self)
+{
+    // Release the GIL
+    py::gil_scoped_release no_gil;
+    return self.ensure_sliceable_index();
 }
 
 SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
-                                     cudf::size_type start,
-                                     cudf::size_type stop,
+                                     TensorIndex start,
+                                     TensorIndex stop,
                                      std::vector<std::string> columns) :
   MessageMeta(*other),
   m_start(start),
@@ -151,12 +197,17 @@ SlicedMessageMeta::SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
 
 TableInfo SlicedMessageMeta::get_info() const
 {
-    return this->m_data->get_info(m_start, m_stop, m_column_names);
+    return this->m_data->get_info().get_slice(m_start, m_stop, m_column_names);
 }
 
 MutableTableInfo SlicedMessageMeta::get_mutable_info() const
 {
-    return this->m_data->get_mutable_info(m_start, m_stop, m_column_names);
+    return this->m_data->get_mutable_info().get_slice(m_start, m_stop, m_column_names);
+}
+
+std::optional<std::string> SlicedMessageMeta::ensure_sliceable_index()
+{
+    throw std::runtime_error{"Unable to set a new index on the DataFrame from a partial view of the columns/rows."};
 }
 
 }  // namespace morpheus

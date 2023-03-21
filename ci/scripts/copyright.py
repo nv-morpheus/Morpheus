@@ -22,6 +22,7 @@ import logging
 import os
 import re
 import sys
+import typing
 
 # Now import gitutils. Ignore flake8 error here since there is no other way to
 # set up imports
@@ -39,11 +40,13 @@ FilesToCheck = [
 ]
 
 # Nothing in a build folder or .cache
-ExemptFiles = [
-    r"_version\.py",
-    r"^[^ \/\n]*\.cache[^ \/\n]*\/.*$",
-    r"^[^ \/\n]*build[^ \/\n]*\/.*$",
-    r"[^ \/\n]*docs/source/(_lib|_modules|_templates)/.*$"
+ExemptFiles: typing.List[re.Pattern] = [
+    r"(_version|versioneer)\.py",  # Skip versioning files
+    r"^[^ \/\n]*\.cache[^ \/\n]*\/.*$",  # Ignore .cache folder
+    r"^[^ \/\n]*build[^ \/\n]*\/.*$",  # Ignore any build*/ folder
+    r"^external\/.*$",  # Ignore external
+    r"[^ \/\n]*docs/source/(_lib|_modules|_templates)/.*$",
+    r"PULL_REQUEST_TEMPLATE.md"  # Ignore the PR template
 ]
 
 # this will break starting at year 10000, which is probably OK :)
@@ -198,7 +201,9 @@ def checkCopyright(f,
     if update_current_year or update_start_year or insert_license:
         errs_update = [x for x in errs if x[-1] is not None]
         if len(errs_update) > 0:
-            print("File: {}. Changing line(s) {}".format(f, ', '.join(str(x[1]) for x in errs if x[-1] is not None)))
+            logging.info("File: {}. Changing line(s) {}".format(f,
+                                                                ', '.join(str(x[1]) for x in errs
+                                                                          if x[-1] is not None)))
             for _, lineNum, __, replacement in errs_update:
                 lines[lineNum - 1] = replacement
             with io.open(f, "w", encoding="utf-8") as out_file:
@@ -211,16 +216,6 @@ def checkCopyright(f,
         errs = [x for x in errs if x[-1] is None]
 
     return errs
-
-
-def getAllFilesUnderDir(root, pathFilter=None):
-    retList = []
-    for (dirpath, dirnames, filenames) in os.walk(root):
-        for fn in filenames:
-            filePath = os.path.join(dirpath, fn)
-            if pathFilter(filePath):
-                retList.append(filePath)
-    return retList
 
 
 def checkCopyright_main():
@@ -320,27 +315,24 @@ def checkCopyright_main():
         ExemptFiles = ExemptFiles + [pathName for pathName in args.exclude]
         ExemptFiles = [re.compile(file) for file in ExemptFiles]
     except re.error as reException:
-        print("Regular expression error:")
-        print(reException)
+        logging.exception("Regular expression error: %s", reException, exc_info=True)
         return 1
 
     if args.git_modified_only:
-        files = gitutils.modifiedFiles(pathFilter=checkThisFile)
+        files = gitutils.modifiedFiles()
     elif args.git_diff_commits:
-        files = gitutils.changedFilesBetweenCommits(*args.git_diff_commits, pathFilter=checkThisFile)
+        files = gitutils.changedFilesBetweenCommits(*args.git_diff_commits)
     elif args.git_diff_staged:
-        files = gitutils.stagedFiles(args.git_diff_staged, pathFilter=checkThisFile)
+        files = gitutils.stagedFiles(args.git_diff_staged)
     else:
-        files = []
-        for d in [os.path.abspath(d) for d in dirs]:
-            if not (os.path.isdir(d)):
-                raise ValueError(f"{d} is not a directory.")
-            files += getAllFilesUnderDir(d, pathFilter=checkThisFile)
+        files = gitutils.list_files_under_source_control(ref="HEAD", *dirs)
 
-    print("Checking files ({}): ".format(len(files)))
+    logging.debug("File count before filter(): %s", len(files))
 
-    for f in files:
-        print("   {}".format(f))
+    # Now filter the files down based on the exclude/include
+    files = gitutils.filter_files(files, path_filter=checkThisFile)
+
+    logging.info("Checking files (%s):\n   %s", len(files), "\n   ".join(files))
 
     errors = []
     for f in files:
@@ -352,20 +344,20 @@ def checkCopyright_main():
                                  git_add=args.git_add)
 
     if len(errors) > 0:
-        print("Copyright headers incomplete in some of the files!")
+        logging.info("Copyright headers incomplete in some of the files!")
         for e in errors:
-            print("  %s:%d Issue: %s" % (e[0], e[1], e[2]))
-        print("")
+            logging.error("  %s:%d Issue: %s", e[0], e[1], e[2])
+        logging.info("")
         n_fixable = sum(1 for e in errors if e[-1] is not None)
         path_parts = os.path.abspath(__file__).split(os.sep)
         file_from_repo = os.sep.join(path_parts[path_parts.index("ci"):])
         if n_fixable > 0:
-            print(("You can run `python {} --git-modified-only "
-                   "--update-current-year --insert` to fix {} of these "
-                   "errors.\n").format(file_from_repo, n_fixable))
+            logging.info(("You can run `python {} --git-modified-only "
+                          "--update-current-year --insert` to fix {} of these "
+                          "errors.\n").format(file_from_repo, n_fixable))
         retVal = 1
     else:
-        print("Copyright check passed")
+        logging.info("Copyright check passed")
 
     return retVal
 
@@ -462,5 +454,5 @@ EXT_LIC_MAPPING = {
 }
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
     sys.exit(checkCopyright_main())

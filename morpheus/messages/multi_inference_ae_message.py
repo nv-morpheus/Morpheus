@@ -17,6 +17,8 @@ import typing
 
 from dfencoder.autoencoder import AutoEncoder
 
+from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
 
@@ -28,10 +30,35 @@ class MultiInferenceAEMessage(MultiInferenceMessage):
     proper inputs are set and eases debugging. Associates a user ID with a message.
     """
 
+    required_tensors: typing.ClassVar[typing.List[str]] = ["seq_ids"]
+
     model: AutoEncoder
     # train_loss_scores: cp.ndarray
     train_scores_mean: float
     train_scores_std: float
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1,
+                 model: AutoEncoder = None,
+                 train_scores_mean: float = float("NaN"),
+                 train_scores_std: float = float("NaN")):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
+
+        self.model = model
+        self.train_scores_mean = train_scores_mean
+        self.train_scores_std = train_scores_std
 
     @property
     def user_id(self):
@@ -69,33 +96,3 @@ class MultiInferenceAEMessage(MultiInferenceMessage):
         """
 
         return self.get_input("seq_ids")
-
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
-
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
-
-        Returns
-        -------
-        `MultiInferenceAEMessage`
-            A new `MultiInferenceAEMessage` with sliced offset and count.
-
-        """
-        mess_start = self.mess_offset + self.seq_ids[start, 0].item()
-        mess_stop = self.mess_offset + self.seq_ids[stop - 1, 0].item() + 1
-        return MultiInferenceAEMessage(meta=self.meta,
-                                       mess_offset=mess_start,
-                                       mess_count=mess_stop - mess_start,
-                                       memory=self.memory,
-                                       offset=start,
-                                       count=stop - start,
-                                       model=self.model,
-                                       train_scores_mean=self.train_scores_mean,
-                                       train_scores_std=self.train_scores_std)

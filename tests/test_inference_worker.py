@@ -18,6 +18,7 @@ from unittest import mock
 
 import pytest
 
+from morpheus.config import Config
 from morpheus.stages.inference import inference_stage
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 from utils import IW
@@ -34,14 +35,18 @@ def test_constructor():
 
 
 @pytest.mark.use_python
-def test_build_output_message(config):
+def test_build_output_message(config: Config):
     pq = ProducerConsumerQueue()
     iw = IW(pq)
 
     mock_message = mock.MagicMock()
-    mock_message.count = 10
+    mock_message.meta = mock.MagicMock()
+    mock_message.meta.count = 20
     mock_message.mess_offset = 11
     mock_message.mess_count = 2
+    mock_message.memory = mock.MagicMock()
+    mock_message.memory.count = 30
+    mock_message.count = 10
     mock_message.offset = 12
 
     response = iw.build_output_message(mock_message)
@@ -51,9 +56,13 @@ def test_build_output_message(config):
     assert response.offset == 0
 
     mock_message = mock.MagicMock()
-    mock_message.count = 2
+    mock_message.meta = mock.MagicMock()
+    mock_message.meta.count = 20
     mock_message.mess_offset = 11
     mock_message.mess_count = 2
+    mock_message.memory = mock.MagicMock()
+    mock_message.memory.count = 30
+    mock_message.count = 2
     mock_message.offset = 12
 
     response = iw.build_output_message(mock_message)

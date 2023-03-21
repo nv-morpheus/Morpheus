@@ -20,11 +20,11 @@ import click
 import mrc
 
 from morpheus._lib.common import FileTypes
-from morpheus._lib.messages import MessageMeta
 from morpheus.config import Config
 from morpheus.config import CppConfig
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
+from morpheus.messages import MessageMeta
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource

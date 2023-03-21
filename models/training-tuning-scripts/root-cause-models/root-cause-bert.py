@@ -20,14 +20,16 @@ python root-cause-bert.py \
 """
 
 import argparse
-import cudf
+import time
+
+import numpy as np
+import pandas as pd
 import torch
 from binary_sequence_classifier import BinarySequenceClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
-import pandas as pd
-import numpy as np
-import time
+
+import cudf
 
 
 def train(trainingdata, unseenerrors):

@@ -22,15 +22,10 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
-#include <pybind11/pytypes.h>
-
-#include <cstddef>
 #include <memory>
 #include <string>
-#include <utility>  // for pair
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations********************/
@@ -54,7 +49,7 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
     /**
      * @brief Default copy constructor
      */
-    MultiInferenceMessage(const MultiInferenceMessage &other) = default;
+    MultiInferenceMessage(const MultiInferenceMessage& other) = default;
     /**
      * @brief Construct a new Multi Inference Message object
      *
@@ -66,40 +61,42 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
      */
-    MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                          std::size_t mess_offset,
-                          std::size_t mess_count,
-                          std::shared_ptr<morpheus::InferenceMemory> memory,
-                          std::size_t offset,
-                          std::size_t count);
+    MultiInferenceMessage(std::shared_ptr<MessageMeta> meta,
+                          TensorIndex mess_offset                 = 0,
+                          TensorIndex mess_count                  = -1,
+                          std::shared_ptr<InferenceMemory> memory = nullptr,
+                          TensorIndex offset                      = 0,
+                          TensorIndex count                       = -1);
 
     /**
-     * @brief Returns the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns the input tensor for the given `name`.
      *
      * @param name
      * @return const TensorObject
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
-    const TensorObject get_input(const std::string &name) const;
+    const TensorObject get_input(const std::string& name) const;
 
     /**
-     * @brief Returns the input tensor for the given `name`. Will halt on a fatal error if the tensor does not exist.
+     * @brief Returns the input tensor for the given `name`.
      *
      * @param name
      * @return TensorObject
+     * @throws std::runtime_error If no tensor matching `name` exists
      */
-    TensorObject get_input(const std::string &name);
+    TensorObject get_input(const std::string& name);
 
     /**
      * Update the value of ain input tensor. The tensor must already exist, otherwise this will halt on a fatal error.
      */
-    void set_input(const std::string &name, const TensorObject &value);
+    void set_input(const std::string& name, const TensorObject& value);
 };
 
 /****** MultiInferenceMessageInterfaceProxy****************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-struct MultiInferenceMessageInterfaceProxy
+struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceProxy
 {
     /**
      * @brief Create and initialize a MultiInferenceMessage object, and return a shared pointer to the result
@@ -114,57 +111,11 @@ struct MultiInferenceMessageInterfaceProxy
      * @return std::shared_ptr<MultiInferenceMessage>
      */
     static std::shared_ptr<MultiInferenceMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                       cudf::size_type mess_offset,
-                                                       cudf::size_type mess_count,
+                                                       TensorIndex mess_offset,
+                                                       TensorIndex mess_count,
                                                        std::shared_ptr<InferenceMemory> memory,
-                                                       cudf::size_type offset,
-                                                       cudf::size_type count);
-
-    /**
-     * @brief Get inference memory object shared pointer
-     *
-     * @param self
-     * @return std::shared_ptr<morpheus::InferenceMemory>
-     */
-    static std::shared_ptr<morpheus::InferenceMemory> memory(MultiInferenceMessage &self);
-
-    /**
-     * @brief Get message offset
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t offset(MultiInferenceMessage &self);
-
-    /**
-     * @brief Get messages count
-     *
-     * @param self
-     * @return std::size_t
-     */
-    static std::size_t count(MultiInferenceMessage &self);
-
-    /**
-     * @brief Get  'input_id' tensor as a python object, throws a `std::runtime_error` if it does not exist
-     *
-     * @param self
-     * @param name
-     * @return pybind11::object
-     */
-    static pybind11::object get_input(MultiInferenceMessage &self, const std::string &name);
-
-    /**
-     * @brief Get the shared pointer of a sliced batches based on offsets supplied. Automatically calculates the correct
-     * `mess_offset` and `mess_count`
-     *
-     * @param self
-     * @param start : Start offset address
-     * @param stop  : Stop offset address
-     * @return std::shared_ptr<MultiInferenceMessage>
-     */
-    static std::shared_ptr<MultiInferenceMessage> get_slice(MultiInferenceMessage &self,
-                                                            std::size_t start,
-                                                            std::size_t stop);
+                                                       TensorIndex offset,
+                                                       TensorIndex count);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group
