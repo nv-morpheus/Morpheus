@@ -28,7 +28,6 @@ from morpheus.utils.module_utils import verify_module_registration
 
 @pytest.mark.use_python
 def test_mrc_version():
-
     assert len(mrc_version) == 3
     assert isinstance(mrc_version, list)
     assert isinstance(mrc_version[0], int)
@@ -37,25 +36,22 @@ def test_mrc_version():
 
 
 def test_register_module():
-
     @register_module("TestModule", "test_morpheus_modules")
-    def module_init():
+    def module_init(builder: mrc.Builder):
         return True
 
-    assert module_init()
+    assert module_init(None)
 
     # Attempting to register duplicate module raises an error.
     with pytest.raises(TypeError):
-
         @register_module(None, "test_morpheus_modules")
-        def module_init2():
+        def module_init2(builder: mrc.Builder):
             pass
 
         module_init2()
 
 
 def test_verify_module_registration():
-
     module_config = {"module_id": "TestModule", "namespace": "test_morpheus_modules"}
     module_config2 = {"module_id": "TestModule", "namespace": "test_morpheus_modules", "module_name": "test_module"}
 
@@ -99,15 +95,15 @@ def test_make_nested_module():
     conf_module3 = {"module_id": "InnerModule3", "namespace": "test_morpheus_modules", "module_name": "inner_module3"}
 
     @register_module("InnerModule1", "test_morpheus_modules")
-    def module_init1(builde: mrc.Builder):
+    def module_init1(builder: mrc.Builder):
         pass
 
     @register_module("InnerModule2", "test_morpheus_modules")
-    def module_init2(builde: mrc.Builder):
+    def module_init2(builder: mrc.Builder):
         pass
 
     @register_module("InnerModule3", "test_morpheus_modules")
-    def module_init3(builde: mrc.Builder):
+    def module_init3(builder: mrc.Builder):
         pass
 
     ordered_inner_modules_meta = [conf_module1, conf_module2, conf_module3]

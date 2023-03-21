@@ -16,10 +16,12 @@
  */
 
 #include "morpheus/io/data_loader_registry.hpp"
+#include "morpheus/io/deserializers.hpp"  // for read_file_to_df
 #include "morpheus/io/loaders/all.hpp"
+#include "morpheus/messages/control.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 #include "morpheus/objects/fiber_queue.hpp"
-#include "morpheus/objects/file_types.hpp"
+#include "morpheus/objects/file_types.hpp"  // for FileTypes, determine_file_type
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
@@ -27,9 +29,11 @@
 #include "morpheus/version.hpp"
 
 #include <mrc/utils/string_utils.hpp>
+#include <pybind11/attr.h>
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pymrc/utils.hpp>  // for pymrc::import
 
 #include <memory>
 #include <string>
@@ -47,7 +51,7 @@ PYBIND11_MODULE(common, _module)
         )pbdoc";
 
     // Load the cudf helpers
-    load_cudf_helpers();
+    CudfHelper::load();
 
     LoaderRegistry::register_factory_fn(
         "file", [](nlohmann::json config) { return std::make_unique<FileDataLoader>(config); }, false);
@@ -58,21 +62,12 @@ PYBIND11_MODULE(common, _module)
     LoaderRegistry::register_factory_fn(
         "rest", [](nlohmann::json config) { return std::make_unique<RESTDataLoader>(config); }, false);
 
-    py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
-        .def_static("contains", &LoaderRegistry::contains, py::arg("name"))
-        .def_static("list", &LoaderRegistry::list)
-        .def_static("register_loader",
-                    &LoaderRegistryProxy::register_proxy_factory_fn,
-                    py::arg("name"),
-                    py::arg("loader"),
-                    py::arg("throw_if_exists") = true)
-        .def_static("unregister_loader",
-                    &LoaderRegistry::unregister_factory_fn,
-                    py::arg("name"),
-                    py::arg("throw_if_not_exists") = true);
-
     py::class_<TensorObject>(_module, "Tensor")
-        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
+        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface)
+        // No need to keep_alive here since cupy arrays have an owner object
+        .def("to_cupy", &TensorObjectInterfaceProxy::to_cupy)
+        // Need to set keep_alive here to keep the cupy array alive as long as the Tensor is
+        .def_static("from_cupy", &TensorObjectInterfaceProxy::from_cupy, py::keep_alive<0, 1>());
 
     py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(_module, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))
@@ -95,9 +90,6 @@ PYBIND11_MODULE(common, _module)
         .value("BOOL8", TypeId::BOOL8)
         .value("STRING", TypeId::STRING);
 
-    _module.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
-
-    // TODO(Devin): Add support for other file types (e.g. parquet, etc.)
     py::enum_<FileTypes>(_module,
                          "FileTypes",
                          "The type of files that the `FileSourceStage` can read and `WriteToFileStage` can write. Use "
@@ -106,7 +98,9 @@ PYBIND11_MODULE(common, _module)
         .value("JSON", FileTypes::JSON)
         .value("CSV", FileTypes::CSV);
 
-    _module.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
+    _module.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
+    _module.def("determine_file_type", &determine_file_type, py::arg("filename"));
+    _module.def("read_file_to_df", &read_file_to_df, py::arg("filename"), py::arg("file_type") = FileTypes::Auto);
 
     py::enum_<FilterSource>(
         _module, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")

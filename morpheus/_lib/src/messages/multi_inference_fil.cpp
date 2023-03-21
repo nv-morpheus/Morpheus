@@ -19,6 +19,7 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 
 #include <memory>
@@ -27,13 +28,13 @@
 namespace morpheus {
 /****** Component public implementations *******************/
 /****** MultiInferenceFILMessage****************************************/
-MultiInferenceFILMessage::MultiInferenceFILMessage(std::shared_ptr<morpheus::MessageMeta> meta,
+MultiInferenceFILMessage::MultiInferenceFILMessage(std::shared_ptr<MessageMeta> meta,
                                                    TensorIndex mess_offset,
                                                    TensorIndex mess_count,
-                                                   std::shared_ptr<morpheus::InferenceMemory> memory,
+                                                   std::shared_ptr<InferenceMemory> memory,
                                                    TensorIndex offset,
                                                    TensorIndex count) :
-  MultiInferenceMessage(meta, mess_offset, mess_count, memory, offset, count)
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
 {}
 
 const TensorObject MultiInferenceFILMessage::get_input__0() const

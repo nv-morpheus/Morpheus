@@ -19,7 +19,7 @@
 
 #include "morpheus/io/data_loader.hpp"
 #include "morpheus/io/loaders/lambda.hpp"
-#include "morpheus/messages/meta.hpp"
+#include "morpheus/messages/control.hpp"
 #include "morpheus/objects/factory_registry.hpp"
 
 #include <nlohmann/json.hpp>

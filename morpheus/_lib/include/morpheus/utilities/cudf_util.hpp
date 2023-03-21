@@ -19,7 +19,6 @@
 
 #include "morpheus/objects/table_info.hpp"
 
-#include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>
 
@@ -33,29 +32,42 @@ namespace morpheus {
  */
 
 /**
- * TODO(Documentation)
- */
-#pragma GCC visibility push(default)
-void load_cudf_helpers();
-#pragma GCC visibility pop
-
-/**
  * @brief These proxy functions allow us to have a shared set of cudf_helpers interfaces declarations, which proxy
  * the actual generated cython calls. The cython implementation in 'cudf_helpers_api.h' can only appear in the
- * translation unit for the pybind module declaration.
- *
- * @return pybind11::object
+ * translation unit for the pybind module declaration. These functions should be considered de
  */
-pybind11::object proxy_table_from_table_with_metadata(cudf::io::table_with_metadata&&, int);
-TableInfoData proxy_table_info_data_from_table(pybind11::object table);
+struct CudfHelper
+{
+  public:
+    __attribute__((visibility("default"))) static void load();
 
-/**
- * @brief cudf_helper stubs -- currently not used anywhere
- */
-pybind11::object /*PyColumn*/ proxy_column_from_view(cudf::column_view view);
-cudf::column_view proxy_view_from_column(pybind11::object* column /*PyColumn**/);
-pybind11::object /*PyTable*/ proxy_table_from_table_info(morpheus::TableInfo table_info, pybind11::object* object);
-pybind11::object /*PyTable*/ proxy_series_from_table_info(morpheus::TableInfo table_info, pybind11::object* object);
+    /**
+     * @brief Converts a C++ table to a Python DataTable object
+     *
+     * @param table C++ table with metadata
+     * @param index_col_count Number of index columns in the table_with_metadata
+     * @return pybind11::object
+     */
+    static pybind11::object table_from_table_with_metadata(cudf::io::table_with_metadata&& table, int index_col_count);
+
+    /**
+     * @brief Converts a C++ TableInfo (which is a view into a python table) into a Python DataTable object
+     *
+     * @param table_info C++ table view
+     * @return pybind11::object
+     */
+    static pybind11::object table_from_table_info(const morpheus::TableInfoBase& table_info);
+
+    /**
+     * @brief Converts a Python DataTable object into a C++ TableInfoData struct containing the column and index
+     * information
+     *
+     * @param table A Python DataTable instance
+     * @return TableInfoData
+     */
+    static TableInfoData table_info_data_from_table(pybind11::object table);
+};
 
 /** @} */  // end of group
+
 }  // namespace morpheus

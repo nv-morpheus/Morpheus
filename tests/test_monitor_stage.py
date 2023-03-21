@@ -24,6 +24,7 @@ import pytest
 import cudf
 
 from morpheus.messages import MultiMessage
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
@@ -142,7 +143,8 @@ def test_auto_count_fn(config):
     assert inspect.isfunction(m._auto_count_fn(['s']))
     assert inspect.isfunction(m._auto_count_fn('s'))
     assert inspect.isfunction(m._auto_count_fn(cudf.DataFrame()))
-    assert inspect.isfunction(m._auto_count_fn(MultiMessage(None, 0, 0)))
+    assert inspect.isfunction(
+        m._auto_count_fn(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"])))))
 
     # Other iterables return the len function
     assert m._auto_count_fn({}) is len
@@ -161,7 +163,7 @@ def test_progress_sink(mock_morph_tqdm, config):
     assert m._determine_count_fn is None
     mock_morph_tqdm.update.assert_not_called()
 
-    m._progress_sink(MultiMessage(None, 0, 12))
+    m._progress_sink(MultiMessage(meta=MessageMeta(df=cudf.DataFrame(range(12), columns=["test"]))))
     assert inspect.isfunction(m._determine_count_fn)
     mock_morph_tqdm.update.assert_called_once_with(n=12)
 

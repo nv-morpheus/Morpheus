@@ -15,30 +15,25 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "morpheus/utilities/python_util.hpp"
 
-#include <cstdint>
-#include <string>
+#include <pybind11/gil.h>
+#include <pybind11/pybind11.h>
+#include <pyerrors.h>
+#include <warnings.h>
 
-namespace morpheus {
+namespace morpheus::utilities {
 
-/**
- * @addtogroup objects
- * @{
- * @file
- */
-
-#pragma GCC visibility push(default)
-enum class FileTypes : int32_t
+void show_warning_message(const std::string& deprecation_message, PyObject* category, ssize_t stack_level)
 {
-    Auto,
-    JSON,
-    CSV
-};
+    pybind11::gil_scoped_acquire gil;
 
-FileTypes determine_file_type(const std::string& filename);
+    // Default to standard warnings
+    if (category == nullptr)
+    {
+        category = PyExc_Warning;
+    }
 
-#pragma GCC visibility pop
-
-/** @} */  // end of group
-}  // namespace morpheus
+    PyErr_WarnEx(category, deprecation_message.c_str(), stack_level);
+}
+}  // namespace morpheus::utilities

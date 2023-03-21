@@ -17,9 +17,9 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/ci"
-ARG CUDA_PKG_VER=11-5
-ARG CUDA_SHORT_VER=11.5
-ARG CUDA_VER=11.5.1
+ARG CUDA_PKG_VER=11-8
+ARG CUDA_SHORT_VER=11.8
+ARG CUDA_VER=11.8.0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 ARG PROJ_NAME=morpheus
@@ -63,7 +63,7 @@ RUN apt update && \
     libcufft-dev-${CUDA_PKG_VER} \
     libcurand-dev-${CUDA_PKG_VER} \
     libcusolver-dev-${CUDA_PKG_VER} \
-    libnvidia-compute-520 && \
+    libnvidia-compute-525 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
