@@ -17,6 +17,7 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/objects/file_types.hpp"  // for FileTypes
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
@@ -200,7 +201,7 @@ PYBIND11_MODULE(stages, m)
              py::arg("name"),
              py::arg("filename"),
              py::arg("mode")              = "w",
-             py::arg("file_type")         = 0,  // Setting this to FileTypes::AUTO throws a conversion error at runtime
+             py::arg("file_type")         = FileTypes::Auto,
              py::arg("include_index_col") = true,
              py::arg("flush")             = false);
 
