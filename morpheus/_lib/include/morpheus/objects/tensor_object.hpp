@@ -54,23 +54,6 @@ namespace morpheus {
 
 namespace detail {
 
-template <typename IterT>
-std::string join(IterT begin, IterT end, std::string const& separator)
-{
-    std::ostringstream result;
-    if (begin != end)
-        result << *begin++;
-    while (begin != end)
-        result << separator << *begin++;
-    return result.str();
-}
-
-template <typename IterT>
-std::string array_to_str(IterT begin, IterT end)
-{
-    return MORPHEUS_CONCAT_STR("[" << join(begin, end, ", ") << "]");
-}
-
 template <RankType R>
 void set_contiguous_stride(const std::array<TensorIndex, R>& shape, std::array<TensorIndex, R>& stride)
 {
@@ -317,8 +300,8 @@ struct TensorObject final
         CHECK(std::transform_reduce(
             shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::greater<>()))
             << "Index is outsize of the bounds of the tensor. Index="
-            << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
-            << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
+            << StringUtil::array_to_str(std::begin(idx), std::begin(idx) + N)
+            << ", Size=" << StringUtil::array_to_str(shape.begin(), shape.end()) << "";
 
         CHECK(DType::create<T>() == this->dtype())
             << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
@@ -347,8 +330,8 @@ struct TensorObject final
         CHECK(
             std::transform_reduce(shape.begin(), shape.end(), std::begin(idx), 1, std::logical_and<>(), std::less<>()))
             << "Index is outsize of the bounds of the tensor. Index="
-            << detail::array_to_str(std::begin(idx), std::begin(idx) + N)
-            << ", Size=" << detail::array_to_str(shape.begin(), shape.end()) << "";
+            << StringUtil::array_to_str(std::begin(idx), std::begin(idx) + N)
+            << ", Size=" << StringUtil::array_to_str(shape.begin(), shape.end()) << "";
 
         CHECK(DType::create<T>() == this->dtype())
             << "read_element type must match array type. read_element type: '" << DType::create<T>().name()
