@@ -100,7 +100,7 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
     Return
     ------
     message : MessageControl
-        Updated message control object with payload as a dataframe.
+        Updated message control object with payload as a MessageMeta.
 
     Raises
     ------

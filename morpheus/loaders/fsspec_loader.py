@@ -45,7 +45,7 @@ def fsspec_loader(message: MessageControl, task: dict) -> MessageControl:
     Return
     ------
     message : MessageControl
-        Updated message control object with payload as a dataframe (with filenames).
+        Updated message control object with payload as a MessageMeta with dataframe containing file names.
 
     Raises
     ------
