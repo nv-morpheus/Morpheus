@@ -38,6 +38,7 @@ dependencies:
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
+    - dill
     - docker-compose=1.29.2
     - docker-py=5.0
     - faker=12.3.0
