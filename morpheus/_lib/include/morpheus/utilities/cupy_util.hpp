@@ -53,6 +53,15 @@ struct CupyUtil
     static pybind11::module_ get_cp();
 
     /**
+     * @brief Tests whether or not an object is an instance of `cupy.ndarray`
+     *
+     * @param test_obj Python object to test
+     * @return true The object is a cupy array
+     * @return false The object is not a cupy array
+     */
+    static bool is_cupy_array(pybind11::object test_obj);
+
+    /**
      * @brief Convert a TensorObject to a CuPy array. Requires GIL to have already been aqcuired.
      *
      * @param tensor

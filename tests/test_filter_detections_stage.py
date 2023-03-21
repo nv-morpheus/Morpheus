@@ -20,8 +20,8 @@ import cupy as cp
 import pytest
 
 from morpheus._lib.common import FilterSource
-from morpheus.messages import MultiResponseProbsMessage
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 
@@ -36,8 +36,8 @@ def df_type():
 
 def _make_message(df, probs):
     df_ = df[0:len(probs)]
-    mem = ResponseMemoryProbs(count=len(df_), probs=probs)
-    return MultiResponseProbsMessage(meta=MessageMeta(df_), memory=mem)
+    mem = ResponseMemory(count=len(df_), tensors={'probs': probs})
+    return MultiResponseMessage(meta=MessageMeta(df_), memory=mem)
 
 
 def test_constructor(config):
