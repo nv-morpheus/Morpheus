@@ -23,7 +23,7 @@ import torch
 from morpheus._lib.common import FileTypes
 from morpheus.config import AEFeatureScalar
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.models.dfencoder import autoencoder
+from morpheus.models.dfencoder import autoencoder, ae_module
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
@@ -107,26 +107,26 @@ def test_ohe():
 
 def test_compute_embedding_size():
     for (input, expected) in [(0, 0), (5, 4), (20, 9), (40000, 600)]:
-        assert autoencoder.compute_embedding_size(input) == expected
+        assert ae_module.compute_embedding_size(input) == expected
 
 
 def test_complete_layer_constructor():
-    cc = autoencoder.CompleteLayer(4, 5)
+    cc = ae_module.CompleteLayer(4, 5)
     assert len(cc.layers) == 1
     assert isinstance(cc.layers[0], torch.nn.Linear)
     assert cc.layers[0].in_features == 4
     assert cc.layers[0].out_features == 5
 
-    cc = autoencoder.CompleteLayer(4, 5, activation='tanh')
+    cc = ae_module.CompleteLayer(4, 5, activation='tanh')
     assert len(cc.layers) == 2
     assert cc.layers[1] is torch.tanh
 
-    cc = autoencoder.CompleteLayer(4, 5, dropout=0.2)
+    cc = ae_module.CompleteLayer(4, 5, dropout=0.2)
     assert len(cc.layers) == 2
     assert isinstance(cc.layers[1], torch.nn.Dropout)
     assert cc.layers[1].p == 0.2
 
-    cc = autoencoder.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
+    cc = ae_module.CompleteLayer(6, 11, activation='sigmoid', dropout=0.3)
     assert len(cc.layers) == 3
     assert isinstance(cc.layers[0], torch.nn.Linear)
     assert cc.layers[0].in_features == 6
@@ -137,7 +137,7 @@ def test_complete_layer_constructor():
 
 
 def test_complete_layer_interpret_activation():
-    cc = autoencoder.CompleteLayer(4, 5)
+    cc = ae_module.CompleteLayer(4, 5)
     assert cc.interpret_activation('elu') is torch.nn.functional.elu
 
     # Test for bad activation, this really does raise the base Exception class.
@@ -147,7 +147,7 @@ def test_complete_layer_interpret_activation():
     with pytest.raises(Exception):
         cc.interpret_activation("does_not_exist")
 
-    cc = autoencoder.CompleteLayer(6, 11, activation='sigmoid')
+    cc = ae_module.CompleteLayer(6, 11, activation='sigmoid')
     cc.interpret_activation() is torch.sigmoid
 
 
@@ -155,7 +155,7 @@ def test_complete_layer_interpret_activation():
 def test_complete_layer_forward():
     # Setting dropout probability to 0. The results of dropout our deterministic, but are only
     # consistent when run on the same GPU.
-    cc = autoencoder.CompleteLayer(3, 5, activation='tanh', dropout=0)
+    cc = ae_module.CompleteLayer(3, 5, activation='tanh', dropout=0)
     t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=torch.float32)
     results = cc.forward(t)
     expected = torch.tensor([[0.7223, 0.7902, 0.9647, 0.5613, 0.9163], [0.9971, 0.9897, 0.9988, 0.8317, 0.9992],
@@ -168,13 +168,13 @@ def test_complete_layer_forward():
 def test_auto_encoder_constructor_default_vals():
     ae = autoencoder.AutoEncoder()
     assert isinstance(ae, torch.nn.Module)
-    assert ae.encoder_layers is None
-    assert ae.decoder_layers is None
+    assert ae.model.encoder_layers is None
+    assert ae.model.decoder_layers is None
     assert ae.min_cats == 10
     assert ae.swap_p == 0.15
     assert ae.batch_size == 256
     assert ae.eval_batch_size == 1024
-    assert ae.activation == 'relu'
+    assert ae.model.activation == 'relu'
     assert ae.optimizer == 'adam'
     assert ae.lr == 0.01
     assert ae.lr_decay is None
@@ -189,13 +189,13 @@ def test_auto_encoder_constructor(train_ae):
     Test copnstructor invokation using the values used by `train_ae_stage`
     """
     assert isinstance(train_ae, torch.nn.Module)
-    assert train_ae.encoder_layers == [512, 500]
-    assert train_ae.decoder_layers == [512]
+    assert train_ae.model.encoder_layers == [512, 500]
+    assert train_ae.model.decoder_layers == [512]
     assert train_ae.min_cats == 1
     assert train_ae.swap_p == 0.2
     assert train_ae.batch_size == 512
     assert train_ae.eval_batch_size == 1024
-    assert train_ae.activation == 'relu'
+    assert train_ae.model.activation == 'relu'
     assert train_ae.optimizer == 'sgd'
     assert train_ae.lr == 0.01
     assert train_ae.lr_decay == 0.99

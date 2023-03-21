@@ -128,7 +128,7 @@ class AutoEncoder:
         else:
             self.device = device
 
-        self.model = AutoEncoder(
+        self.model = AEModule(
             verbose=verbose, 
             encoder_layers=encoder_layers,
             decoder_layers=decoder_layers,
