@@ -49,42 +49,33 @@ The tasks component of each input object is an array of task objects, each of wh
 ```
 
 
-#### type
+- `type` : The type field of the task object is a string indicating the type of task to be executed. Currently, the following task types are supported:
 
-The type field of the task object is a string indicating the type of task to be executed. Currently, the following task types are supported:
+  - `load` : Load input data from a specified file or files
+  - `training` : Train a machine learning model on the input data
+  - `inference` : Perform inference using a trained machine learning model on the input data
 
-- **load** : Load input data from a specified file or files
-- **training** : Train a machine learning model on the input data
-- **inference** : Perform inference using a trained machine learning model on the input data
+- `properties` : The properties field of the task object is an object containing task-specific properties. The specific properties required for each task type are described below.
 
-#### properties
-The properties field of the task object is an object containing task-specific properties. The specific properties required for each task type are described below.
+  - The properties object for a `load` task has the following structure:
+    ```
+    {
+      "loader_id": "string",
+      "files": [
+        "string"
+      ]
+    }
+    ```
 
-##### Task Properties
-###### load
-The properties object for a `load` task has the following structure:
-```
-{
-  "loader_id": "string",
-  "files": [
-    "string"
-  ]
-}
-```
+    - `loader_id` (string): The ID of the loader to be used for loading the input data. Currently, only the `fsspec` and `file_to_df` loader is supported. The user has the option to register custom loaders in the dataloader registry and utilize them in the pipeline.
+    - `files` (array of strings): An array of file paths or glob patterns specifying the input data to be loaded.
 
-- **loader_id** (string): The ID of the loader to be used for loading the input data. Currently, only the `fsspec` and `file_to_df` loader is supported. The user has the option to register custom loaders in the dataloader registry and utilize them in the pipeline.
-- **files** (array of strings): An array of file paths or glob patterns specifying the input data to be loaded.
+  - Incorporate key and value updates to properties objects as required for `training` and `inference` tasks. There is no specified format.
 
-###### training
-The properties object for a `training` task can be included as needed.
-
-###### inference
-The properties object for an `inference` task can be included as needed.
-
-### metadata
+### Metadata
 The metadata component of each input object is an object containing metadata information. Properties defined in this metadata component can be accessed anywhere across the stages that consume `MessageControl` objects.
 
-- **data_type** (string): which is a string indicating the type of data being processed. The supported data types are:
+- *data_type* (string): which is a string indicating the type of data being processed. The supported data types are:
     - `payload` : Arbitrary input data
     - `Streaming` : Streaming data
 
