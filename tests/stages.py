@@ -250,7 +250,7 @@ class InMemorySinkStage(SinglePortStage):
         """
         return self._messages
 
-    def concat_dataframes(self, clear=False) -> pd.DataFrame:
+    def concat_dataframes(self, clear=True) -> pd.DataFrame:
         all_meta = [x.df for x in self._messages]
 
         # Convert to pandas
@@ -316,7 +316,7 @@ class CompareDataframeStage(InMemorySinkStage):
     def supports_cpp_node(self) -> bool:
         return False
 
-    def get_results(self, clear=False) -> dict:
+    def get_results(self, clear=True) -> dict:
         """
         Returns the results dictionary. This is the same dictionary that is written to results_file_name
 
