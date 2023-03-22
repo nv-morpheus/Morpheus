@@ -377,9 +377,22 @@ def reload_modules(request: pytest.FixtureRequest):
 
 @pytest.fixture(scope="function")
 def manual_seed():
+    """
+    Seeds the random number generators for the stdlib, PyTorch and NumPy.
+    By default this will seed with a value of `42`, however this fixture also yields the seed function allowing tests to
+    call this a second time, or seed with a different value.
+
+    Use this fixture to ensure repeatability of a test that depends on randomness.
+    Note: PyTorch only garuntees determanism on a per-GPU basis, resulting in some tests that might not be portable
+    across GPU models.
+    """
     from morpheus.utils import seed as seed_utils
-    seed_utils.manual_seed(42)
-    yield
+
+    def seed_fn(seed=42):
+        seed_utils.manual_seed(seed)
+
+    seed_fn()
+    yield seed_fn
 
 
 @pytest.fixture(scope="function")
