@@ -17,8 +17,7 @@
 
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"         // for DType
+#include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex
@@ -26,12 +25,8 @@
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
-#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
-#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
-#include <operators/rx-map.hpp>
-#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
-#include <rmm/device_buffer.hpp>     // for device_buffer
+#include <rxcpp/rx.hpp>
 
 #include <cstddef>
 #include <iterator>
@@ -40,6 +35,7 @@
 #include <utility>  // for move
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
+// IWYU pragma: no_include <operators/rx-map.hpp>
 
 namespace morpheus {
 
@@ -74,14 +70,10 @@ AddScoresStageBase::source_type_t AddScoresStageBase::on_data(sink_type_t x)
 
     if (m_threshold.has_value())
     {
-        // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
-        auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
-
-        MRC_CHECK_CUDA(cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
-
-        // Now call the threshold function
-        auto thresh_bool_buffer =
-            MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride}, *m_threshold, false);
+        auto thresh_bool_buffer = MatxUtil::threshold(
+            {probs.data(), probs.dtype(), probs.get_memory(), probs.get_shape(), probs.get_stride()},
+            *m_threshold,
+            false);
 
         output_tensor.swap(Tensor::create(thresh_bool_buffer, DType::create<bool>(), shape, stride));
     }
