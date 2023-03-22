@@ -24,7 +24,7 @@ from mrc.core.node import Broadcast
 
 import cudf
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
