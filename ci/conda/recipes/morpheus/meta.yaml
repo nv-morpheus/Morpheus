@@ -91,7 +91,11 @@ outputs:
         - tqdm 4.*
         - typing_utils 0.1.*
         - watchdog 2.1.*
-
+      run_constrained:
+        # If cuml is installed, we need to constrain these two libraries. See:
+        # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+        - libcusolver<=11.4.1.48
+        - libcusparse<12
     test:
       requires:
         - cudatoolkit {{ cuda_version }}.*
@@ -100,10 +104,7 @@ outputs:
         - pytest-cov
         - pytest-benchmark
         # test that cuml can be installed in the env
-        # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
         - cuml {{ rapids_version }}
-        # - libcusolver<=11.4.1.48
-        # - libcusparse<12
       source_files:
         - docker/conda/environments/*
         - pyproject.toml
