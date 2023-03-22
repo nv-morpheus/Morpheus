@@ -67,6 +67,9 @@ def test_fixing_non_unique_indexes(use_cpp):
 @pytest.mark.parametrize("dup_index", [False, True])
 @pytest.mark.parametrize("output_type", ["csv", "json"])
 def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
+    """
+    End to end test for FileSourceStage & WriteToFileStage
+    """
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
     if dup_index:
@@ -74,12 +77,8 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
     else:
         input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    # We want to force the Python impl of the file source (work-around for issue #690)
-    py_file_source = FileSourceStage(config, filename=input_file)
-    py_file_source._build_cpp_node = lambda *a, **k: False
-
     pipe = LinearPipeline(config)
-    pipe.set_source(py_file_source)
+    pipe.set_source(FileSourceStage(config, filename=input_file))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
     pipe.add_stage(
@@ -107,6 +106,9 @@ def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
 @pytest.mark.parametrize("dup_index", [False, True])
 @pytest.mark.parametrize("output_type", ["csv", "json"])
 def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_index: bool):
+    """
+    End to end test for FileSourceStage & WriteToFileStage across mulitiple segments
+    """
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
     if dup_index:
