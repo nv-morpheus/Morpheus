@@ -19,8 +19,8 @@ import os
 import numpy as np
 import pytest
 
-from morpheus.config import CppConfig
 from morpheus.common import FileTypes
+from morpheus.config import CppConfig
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MessageMeta
