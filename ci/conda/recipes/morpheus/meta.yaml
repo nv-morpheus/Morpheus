@@ -102,8 +102,8 @@ outputs:
         # test that cuml can be installed in the env
         # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
         - cuml {{ rapids_version }}
-        - libcusolver<=11.4.1.48
-        - libcusparse<12
+        # - libcusolver<=11.4.1.48
+        # - libcusparse<12
       source_files:
         - docker/conda/environments/*
         - pyproject.toml
