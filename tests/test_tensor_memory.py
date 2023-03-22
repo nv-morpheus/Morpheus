@@ -21,7 +21,7 @@ import cupy as cp
 import numpy as np
 import pytest
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
