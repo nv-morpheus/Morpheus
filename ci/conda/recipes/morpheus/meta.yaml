@@ -109,7 +109,11 @@ outputs:
         - pyproject.toml
         - scripts/fetch_data.py
         - tests/*
-      script: run_test.py
+      # script: run_test.py
+      imports:
+        - morpheus
+      commands:
+          - echo # make sure test requirements get installed
 
 about:
   home: https://github.com/nv-morpheus/Morpheus

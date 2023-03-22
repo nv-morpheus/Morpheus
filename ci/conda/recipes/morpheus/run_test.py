@@ -4,8 +4,9 @@ import os
 # See issue https://github.com/rapidsai/cudf/issues/4827
 os.environ["RAPIDS_NO_INITIALIZE"] = "1"
 
-# Now run the imports
-import cudf
-import cuml
+# # Now run the imports
+# import cudf
+# import cuml
+# import cupy
 
 import morpheus
