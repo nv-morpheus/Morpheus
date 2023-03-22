@@ -105,14 +105,14 @@ outputs:
         - libcusolver<=11.4.1.48
         - libcusparse<12
       source_files:
-        # - .git/*
         - docker/conda/environments/*
         - pyproject.toml
         - scripts/fetch_data.py
         - tests/*
       imports:
         - morpheus
-        - morpheus._lib
+        - cudf
+        - cuml
       commands:
           - echo # make sure test requirements get installed
 
