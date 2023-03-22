@@ -150,11 +150,11 @@ class CompareDataframeStage(SinglePortStage):
         return node, input_stream[1]
 
 
-def test_forking_pipeline(config, df):
+def test_forking_pipeline(config, filter_probs_df):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    compare_higher_df = df[df["v2"] >= 0.5]
-    compare_lower_df = df[df["v2"] < 0.5]
+    compare_higher_df = filter_probs_df[filter_probs_df["v2"] >= 0.5]
+    compare_lower_df = filter_probs_df[filter_probs_df["v2"] < 0.5]
 
     pipe = Pipeline(config)
 

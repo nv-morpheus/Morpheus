@@ -402,7 +402,7 @@ def _filter_probs_df():
 
 
 @pytest.fixture(scope="function")
-def df(_filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+def filter_probs_df(_filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
     if df_type == 'cudf':
         yield _filter_probs_df.copy(deep=True)
     elif df_type == 'pandas':
