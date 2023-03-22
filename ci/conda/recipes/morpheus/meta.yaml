@@ -109,12 +109,7 @@ outputs:
         - pyproject.toml
         - scripts/fetch_data.py
         - tests/*
-      imports:
-        - morpheus
-        - cudf
-        - cuml
-      commands:
-          - echo # make sure test requirements get installed
+      script: run_test.py
 
 about:
   home: https://github.com/nv-morpheus/Morpheus
