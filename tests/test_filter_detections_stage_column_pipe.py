@@ -30,15 +30,8 @@ from utils import TEST_DIRS
 from utils import ConvMsg
 
 
-@pytest.fixture
-def df_type():
-    """
-    We only need the df for our expected valus, and we don't want to double the number of our tests.
-    """
-    yield 'pandas'
-
-
 @pytest.mark.slow
+@pytest.mark.use_pandas
 @pytest.mark.parametrize('use_conv_msg', [True, False])
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])

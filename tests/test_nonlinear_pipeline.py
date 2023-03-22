@@ -36,14 +36,6 @@ from morpheus.utils import compare_df
 from utils import TEST_DIRS
 
 
-@pytest.fixture
-def df_type():
-    """
-    We only need the df for our expected valus, and we don't want to double the number of our tests.
-    """
-    yield 'pandas'
-
-
 class SplitStage(Stage):
 
     def __init__(self, c: Config):
@@ -150,6 +142,7 @@ class CompareDataframeStage(SinglePortStage):
         return node, input_stream[1]
 
 
+@pytest.mark.use_pandas
 def test_forking_pipeline(config, filter_probs_df):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 

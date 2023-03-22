@@ -26,16 +26,8 @@ from morpheus.messages.message_meta import MessageMeta
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 
 
-@pytest.fixture
-def df_type():
-    """
-    The tests in this module all require a cudf dataframe
-    """
-    yield 'cudf'
-
-
-def _make_message(filter_probs_df, probs):
-    df_ = filter_probs_df[0:len(probs)]
+def _make_message(df, probs):
+    df_ = df[0:len(probs)]
     mem = ResponseMemory(count=len(df_), tensors={'probs': probs})
     return MultiResponseMessage(meta=MessageMeta(df_), memory=mem)
 
@@ -53,6 +45,7 @@ def test_constructor(config):
     assert fds._threshold == 0.2
 
 
+@pytest.mark.use_cudf
 @pytest.mark.use_python
 def test_filter_copy(config, filter_probs_df):
     fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
@@ -109,6 +102,7 @@ def test_filter_copy(config, filter_probs_df):
     assert output_message.get_meta().to_cupy().tolist() == filter_probs_df.loc[mask, :].to_cupy().tolist()
 
 
+@pytest.mark.use_cudf
 @pytest.mark.use_python
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
@@ -131,6 +125,7 @@ def test_filter_column(config, filter_probs_df, do_copy, threshold, field_name):
     output_message.get_meta().to_cupy().tolist() == expected_df.to_numpy().tolist()
 
 
+@pytest.mark.use_cudf
 @pytest.mark.use_python
 def test_filter_slice(config, filter_probs_df):
     fds = FilterDetectionsStage(config, threshold=0.5, filter_source=FilterSource.TENSOR)
