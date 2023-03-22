@@ -26,7 +26,7 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-@register_stage("in-mem-sink")
+@register_stage("to-mem")
 class InMemorySinkStage(SinglePortStage):
     """
     Collects incoming messages into a list.
