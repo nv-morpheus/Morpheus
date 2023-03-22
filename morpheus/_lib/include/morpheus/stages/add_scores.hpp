@@ -17,21 +17,14 @@
 
 #pragma once
 
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/stages/add_scores_stage_base.hpp"
 
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/types.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
 #include <cstddef>  // for size_t
 #include <map>
 #include <memory>
 #include <string>
-#include <vector>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -48,31 +41,15 @@ namespace morpheus {
  * @brief Add probability scores to each message. Score labels based on probabilities calculated in inference stage.
  * Label indexes will be looked up in the idx2label property.
  */
-class AddScoresStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-                                                     std::shared_ptr<MultiResponseProbsMessage>>
+class AddScoresStage : public AddScoresStageBase
 {
   public:
-    using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-    using typename base_t::sink_type_t;
-    using typename base_t::source_type_t;
-    using typename base_t::subscribe_fn_t;
-
     /**
      * @brief Construct a new Add Scores Stage object
      *
-     * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
      */
-    AddScoresStage(std::size_t num_class_labels, std::map<std::size_t, std::string> idx2label);
-
-    /**
-     * TODO(Documentation)
-     */
-    subscribe_fn_t build_operator();
-
-    std::size_t m_num_class_labels;
-    std::map<std::size_t, std::string> m_idx2label;
+    AddScoresStage(std::map<std::size_t, std::string> idx2label);
 };
 
 /****** AddScoresStageInterfaceProxy******************/
@@ -92,7 +69,6 @@ struct AddScoresStageInterfaceProxy
      */
     static std::shared_ptr<mrc::segment::Object<AddScoresStage>> init(mrc::segment::Builder& builder,
                                                                       const std::string& name,
-                                                                      std::size_t num_class_labels,
                                                                       std::map<std::size_t, std::string> idx2label);
 };
 

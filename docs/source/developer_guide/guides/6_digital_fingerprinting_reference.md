@@ -225,7 +225,7 @@ The `DFPFileToDataFrameStage` ([examples/digital_fingerprinting/production/morph
 | `c` | `morpheus.config.Config` | Morpheus config object |
 | `schema` | `DataFrameInputSchema` | Schema specifying columns to load, along with any necessary renames and data type conversions  |
 | `filter_null` | `bool` | Optional: Whether to filter null rows after loading, by default True. |
-| `file_type` | `morpheus._lib.common.FileTypes` (enum) | Optional: Indicates file type to be loaded. Currently supported values at time of writing are: `FileTypes.Auto`, `FileTypes.CSV`, `FileTypes.JSON` and `FileTypes.PARQUET`. Default value is `FileTypes.Auto` which will infer the type based on the file extension, set this value if using a custom extension |
+| `file_type` | `morpheus.common.FileTypes` (enum) | Optional: Indicates file type to be loaded. Currently supported values at time of writing are: `FileTypes.Auto`, `FileTypes.CSV`, `FileTypes.JSON` and `FileTypes.PARQUET`. Default value is `FileTypes.Auto` which will infer the type based on the file extension, set this value if using a custom extension |
 | `parser_kwargs` | `dict` or `None` | Optional: additional keyword arguments to be passed into the `DataFrame` parser, currently this is going to be either [`pandas.read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html), [`pandas.read_json`](https://pandas.pydata.org/docs/reference/api/pandas.read_json.html) or [`pandas.read_parquet`](https://pandas.pydata.org/docs/reference/api/pandas.read_parquet.html) |
 | `cache_dir` | `str` | Optional: path to cache location, defaults to `./.cache/dfp` |
 

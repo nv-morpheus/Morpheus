@@ -19,9 +19,9 @@ import pandas as pd
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import determine_file_type
-from morpheus._lib.common import read_file_to_df as read_file_to_df_cpp
+from morpheus.common import FileTypes
+from morpheus.common import determine_file_type
+from morpheus.common import read_file_to_df as read_file_to_df_cpp
 from morpheus.config import CppConfig
 from morpheus.io.utils import filter_null_data
 
@@ -49,7 +49,7 @@ def read_file_to_df(file_name: str,
     ----------
     file_name : str
         File to read.
-    file_type : `morpheus._lib.common.FileTypes`
+    file_type : `morpheus.common.FileTypes`
         Type of file. Leave as Auto to determine from the extension.
     parser_kwargs : dict, optional
         Any argument to pass onto the parse, by default {}. Ignored when C++ execution is enabled and `df_type="cudf"`

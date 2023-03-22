@@ -16,8 +16,8 @@ list(APPEND CMAKE_MESSAGE_CONTEXT "_lib")
 ########### morpheus ###########
 set(MORPHEUS_LIB_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
-#----------cuda_utils---------
-include(cmake/libraries/cuda_utils.cmake)
+#----------morpheus_utils---------
+include(cmake/libraries/morpheus_utils.cmake)
 
 #----------cudf_helpers---------
 include(cmake/libraries/cudf_helpers.cmake)

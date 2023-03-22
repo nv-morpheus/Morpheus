@@ -28,7 +28,7 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
@@ -638,6 +638,52 @@ def test_tensor_constructor(df: cudf.DataFrame):
     # Count smaller than mess_count
     with pytest.raises(ValueError):
         MultiTensorMessage(meta=meta, mess_count=10, memory=memory, count=9)
+
+    # === ID Tensors ===
+    id_tensor = cp.expand_dims(cp.arange(0, mess_len, dtype=int), axis=1)
+
+    # With valid ID tensor
+    multi_tensor = MultiTensorMessage(meta=meta, memory=TensorMemory(count=mess_len, tensors={"seq_ids": id_tensor}))
+    assert cp.all(multi_tensor.get_id_tensor() == id_tensor)
+
+    # With different ID name
+    multi_tensor = MultiTensorMessage(meta=meta,
+                                      memory=TensorMemory(count=mess_len, tensors={"other_seq_ids": id_tensor}),
+                                      id_tensor_name="other_seq_ids")
+    assert cp.all(multi_tensor.get_id_tensor() == id_tensor)
+
+    # With message offset
+    multi_tensor = MultiTensorMessage(meta=meta,
+                                      mess_offset=4,
+                                      memory=TensorMemory(count=mess_len, tensors={"seq_ids": id_tensor}),
+                                      offset=4)
+    assert cp.all(multi_tensor.get_id_tensor() == id_tensor[4:])
+
+    # Incorrect start ID
+    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor[0] = -1
+    with pytest.raises(RuntimeError):
+        multi_tensor = MultiTensorMessage(meta=meta,
+                                          memory=TensorMemory(count=mess_len, tensors={"seq_ids": invalid_id_tensor}))
+
+    # Incorrect end ID
+    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor[-1] = invalid_id_tensor[-1] + 1
+    with pytest.raises(RuntimeError):
+        multi_tensor = MultiTensorMessage(meta=meta,
+                                          memory=TensorMemory(count=mess_len, tensors={"seq_ids": invalid_id_tensor}))
+
+    # Incorrect end ID, different id tensor name
+    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor[-1] = invalid_id_tensor[-1] + 1
+    with pytest.raises(RuntimeError):
+        multi_tensor = MultiTensorMessage(meta=meta,
+                                          id_tensor_name="id_tensor",
+                                          memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
+
+    # Doesnt check with invalid due to different name
+    multi_tensor = MultiTensorMessage(meta=meta,
+                                      memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
 
 
 def test_tensor_slicing(df: cudf.DataFrame):

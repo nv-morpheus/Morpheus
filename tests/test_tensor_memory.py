@@ -21,7 +21,7 @@ import cupy as cp
 import numpy as np
 import pytest
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
@@ -45,7 +45,7 @@ def compare_tensors(t1, t2):
 def check_tensor_memory(cls, count, tensors):
     other_tensors = {'ones': cp.ones(count), 'zeros': cp.zeros(count)}
 
-    m = cls(count)
+    m = cls(count=count)
     assert m.count == count
     assert m.get_tensors() == {}
 
@@ -55,7 +55,7 @@ def check_tensor_memory(cls, count, tensors):
     m.set_tensors(other_tensors)
     compare_tensors(m.get_tensors(), other_tensors)
 
-    m = cls(count, tensors)
+    m = cls(count=count, tensors=tensors)
     assert m.count == count
     compare_tensors(m.get_tensors(), tensors)
 
@@ -84,7 +84,7 @@ def test_inference_memory_ae(config):
 
     input = cp.array(test_data[:, 0])
     seq_ids = cp.array(test_data[:, 1])
-    m = InferenceMemoryAE(count, input=input, seq_ids=seq_ids)
+    m = InferenceMemoryAE(count=count, input=input, seq_ids=seq_ids)
 
     assert m.count == count
     compare_tensors(m.get_tensors(), {'input': input, 'seq_ids': seq_ids})
@@ -98,7 +98,7 @@ def test_inference_memory_fil(config):
 
     input_0 = cp.array(test_data[:, 0])
     seq_ids = cp.array(test_data[:, 1])
-    m = InferenceMemoryFIL(count, input__0=input_0, seq_ids=seq_ids)
+    m = InferenceMemoryFIL(count=count, input__0=input_0, seq_ids=seq_ids)
 
     assert m.count == count
     compare_tensors(m.get_tensors(), {'input__0': input_0, 'seq_ids': seq_ids})
@@ -113,7 +113,7 @@ def test_inference_memory_nlp(config):
     input_ids = cp.array(test_data[:, 0])
     input_mask = cp.array(test_data[:, 1])
     seq_ids = cp.array(test_data[:, 2])
-    m = InferenceMemoryNLP(count, input_ids=input_ids, input_mask=input_mask, seq_ids=seq_ids)
+    m = InferenceMemoryNLP(count=count, input_ids=input_ids, input_mask=input_mask, seq_ids=seq_ids)
 
     assert m.count == count
     compare_tensors(m.get_tensors(), {'input_ids': input_ids, 'input_mask': input_mask, 'seq_ids': seq_ids})
@@ -129,7 +129,7 @@ def check_response_memory_probs_and_ae(cls):
     m = cls(count=count, probs=test_data)
     assert m.count == count
     compare_tensors(m.get_tensors(), {'probs': test_data})
-    assert (m.probs == test_data).all()
+    assert (m.get_output('probs') == test_data).all()
     return m
 
 
@@ -156,19 +156,25 @@ def test_response_memory_probs(config):
 def test_constructor_length_error(config, tensor_cls):
     count = 10
     tensors = {"a": cp.zeros(count), "b": cp.ones(count)}
-    pytest.raises(ValueError, tensor_cls, count - 1, tensors)
+
+    with pytest.raises(ValueError):
+        tensor_cls(count=count - 1, tensors=tensors)
 
 
 @pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
 def test_set_tensor_length_error(config, tensor_cls):
     count = 10
-    m = tensor_cls(count)
-    pytest.raises(ValueError, m.set_tensor, 'a', cp.zeros(count + 1))
+    m = tensor_cls(count=count)
+
+    with pytest.raises(ValueError):
+        m.set_tensor('a', cp.zeros(count + 1))
 
 
 @pytest.mark.parametrize("tensor_cls", [TensorMemory, InferenceMemory, ResponseMemory])
 def test_set_tensors_length_error(config, tensor_cls):
     count = 10
     tensors = {"a": cp.zeros(count), "b": cp.ones(count)}
-    m = tensor_cls(count + 1)
-    pytest.raises(ValueError, m.set_tensors, tensors)
+    m = tensor_cls(count=count + 1)
+
+    with pytest.raises(ValueError):
+        m.set_tensors(tensors)

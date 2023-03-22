@@ -37,8 +37,10 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
     """
     count: int
+    tensors: typing.Dict[str, cp.ndarray]
 
-    def __init__(self, count: int, tensors: typing.Dict[str, cp.ndarray] = None):
+    def __init__(self, *, count: int = None, tensors: typing.Dict[str, cp.ndarray] = None):
+
         self.count = count
 
         if tensors is None:
@@ -65,6 +67,10 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
         if hasattr(super(), "__getattr__"):
             return super().__getattr__(name)
         raise AttributeError
+
+    @property
+    def tensor_names(self) -> typing.List[str]:
+        return list(self._tensors.keys())
 
     def has_tensor(self, name: str) -> bool:
         """
@@ -158,6 +164,8 @@ class TensorMemory(MessageData, cpp_class=_messages.TensorMemory):
 
         Parameters
         ----------
+        name : str
+            Tensor key name.
         tensor : cupy.ndarray
             Tensor as a CuPy array.
 

@@ -17,7 +17,6 @@
 
 #include "morpheus/messages/multi_inference_nlp.hpp"
 
-#include "morpheus/messages/memory/inference_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 
@@ -32,10 +31,11 @@ namespace morpheus {
 MultiInferenceNLPMessage::MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
                                                    TensorIndex mess_offset,
                                                    TensorIndex mess_count,
-                                                   std::shared_ptr<InferenceMemory> memory,
+                                                   std::shared_ptr<TensorMemory> memory,
                                                    TensorIndex offset,
-                                                   TensorIndex count) :
-  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
+                                                   TensorIndex count,
+                                                   std::string id_tensor_name) :
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count, std::move(id_tensor_name))
 {}
 
 const TensorObject MultiInferenceNLPMessage::get_input_ids() const
@@ -73,12 +73,13 @@ std::shared_ptr<MultiInferenceNLPMessage> MultiInferenceNLPMessageInterfaceProxy
     std::shared_ptr<MessageMeta> meta,
     TensorIndex mess_offset,
     TensorIndex mess_count,
-    std::shared_ptr<InferenceMemory> memory,
+    std::shared_ptr<TensorMemory> memory,
     TensorIndex offset,
-    TensorIndex count)
+    TensorIndex count,
+    std::string id_tensor_name)
 {
     return std::make_shared<MultiInferenceNLPMessage>(
-        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
+        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count, std::move(id_tensor_name));
 }
 
 pybind11::object MultiInferenceNLPMessageInterfaceProxy::input_ids(MultiInferenceNLPMessage& self)
