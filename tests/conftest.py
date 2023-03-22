@@ -13,10 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Treat all type hints as strings when parsing, removes the need to do an import just to provide a type hint
-# Remove once we are on Python 3.10
-from __future__ import annotations
-
 import ctypes
 import importlib
 import logging
@@ -417,7 +413,7 @@ def _filter_probs_df():
 
 
 @pytest.fixture(scope="function")
-def filter_probs_df(_filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+def filter_probs_df(_filter_probs_df, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
     if df_type == 'cudf':
         yield _filter_probs_df.copy(deep=True)
     elif df_type == 'pandas':
