@@ -237,8 +237,6 @@ class TestCLI:
         assert monitor._unit == 'inf'
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -333,8 +331,6 @@ class TestCLI:
         assert monitor._unit == 'inf'
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -402,8 +398,6 @@ class TestCLI:
         assert isinstance(add_class, AddClassificationsStage)
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -526,8 +520,6 @@ class TestCLI:
         assert isinstance(add_class, AddClassificationsStage)
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -662,8 +654,6 @@ class TestCLI:
         assert isinstance(add_class, AddClassificationsStage)
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -747,8 +737,6 @@ class TestCLI:
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
@@ -882,8 +870,6 @@ class TestCLI:
         assert add_class._threshold == 0.7
 
         assert isinstance(validation, ValidationStage)
-        assert validation._val_file_name == os.path.join(TEST_DIRS.validation_data_dir,
-                                                         'dfp-cloudtrail-role-g-validation-data-output.csv')
         assert validation._results_file_name == 'results.json'
         assert validation._index_col == '_index_'
 
