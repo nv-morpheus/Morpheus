@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Treat all type hints as strings when parsing, removes the need to do an import just to provide a type hint
+# Remove once we are on Python 3.10
+from __future__ import annotations
+
 import ctypes
 import importlib
 import logging
@@ -27,8 +31,6 @@ from functools import partial
 
 import pytest
 import requests
-
-import cudf
 
 # actual topic names not important, but we will need two of them.
 KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
