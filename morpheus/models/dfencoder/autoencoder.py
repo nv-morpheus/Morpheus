@@ -49,18 +49,25 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import gc
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 import torch
 import tqdm
 
-from .dataframe import EncoderDataFrame
-from .logging import BasicLogger, IpynbLogger, TensorboardXLogger
-from .scalers import GaussRankScaler, NullScaler, StandardScaler, ModifiedScaler
 from .ae_module import AEModule
+from .dataframe import EncoderDataFrame
 from .distributed_ae import DistributedAutoEncoder
+from .logging import BasicLogger
+from .logging import IpynbLogger
+from .logging import TensorboardXLogger
+from .scalers import GaussRankScaler
+from .scalers import ModifiedScaler
+from .scalers import NullScaler
+from .scalers import StandardScaler
+
 
 def ohe(input_vector, dim, device="cpu"):
     """Does one-hot encoding of input vector."""

@@ -14,10 +14,12 @@
 # limitations under the License.
 
 import os
+
 import numpy as np
 import pandas as pd
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
 from torch.utils.data.distributed import DistributedSampler
-from torch.utils.data import Dataset, DataLoader
 
 
 class DFEncoderDataLoader(DataLoader):

@@ -23,7 +23,8 @@ import torch
 from morpheus._lib.common import FileTypes
 from morpheus.config import AEFeatureScalar
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.models.dfencoder import autoencoder, ae_module
+from morpheus.models.dfencoder import ae_module
+from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
@@ -170,7 +171,7 @@ def test_complete_layer_forward():
 
 def test_auto_encoder_constructor_default_vals():
     ae = autoencoder.AutoEncoder()
-    assert isinstance(ae, torch.nn.Module)
+    assert isinstance(ae.model, torch.nn.Module)
     assert ae.model.encoder_layers is None
     assert ae.model.decoder_layers is None
     assert ae.min_cats == 10
@@ -191,7 +192,7 @@ def test_auto_encoder_constructor(train_ae):
     """
     Test copnstructor invokation using the values used by `train_ae_stage`
     """
-    assert isinstance(train_ae, torch.nn.Module)
+    assert isinstance(train_ae.model, torch.nn.Module)
     assert train_ae.model.encoder_layers == [512, 500]
     assert train_ae.model.decoder_layers == [512]
     assert train_ae.min_cats == 1
