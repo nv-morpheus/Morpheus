@@ -152,7 +152,7 @@ def test_get_meta_dup_index(filter_probs_df: cudf.DataFrame):
     df = duplicate_df_index(filter_probs_df, replace_ids={3: 1, 5: 4})
 
     # Now just run the other test to reuse code
-    test_get_meta(filter_probs_df)
+    test_get_meta(df)
 
 
 def test_set_meta(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
