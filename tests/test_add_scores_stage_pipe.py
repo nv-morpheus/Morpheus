@@ -33,6 +33,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
+from utils import assert_results_equal
 from utils import extend_df
 
 
@@ -60,7 +61,7 @@ def test_add_scores_stage_pipe(config, order, pipeline_batch_size, repeat):
     comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
-    comp_stage.get_results()["diff_rows"] == 0
+    assert_results_equal(comp_stage.get_results())
 
 
 @pytest.mark.slow
@@ -88,4 +89,4 @@ def test_add_scores_stage_multi_segment_pipe(config, repeat):
     comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
-    comp_stage.get_results()["diff_rows"] == 0
+    assert_results_equal(comp_stage.get_results())

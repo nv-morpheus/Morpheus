@@ -31,6 +31,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
+from utils import assert_results_equal
 
 
 @pytest.mark.slow
@@ -56,9 +57,7 @@ def test_add_classifications_stage_pipe(config):
     comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
-    results = comp_stage.get_results()
-    assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
-    assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
+    assert_results_equal(comp_stage.get_results())
 
 
 @pytest.mark.slow
@@ -89,6 +88,4 @@ def test_add_classifications_stage_multi_segment_pipe(config):
     comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
-    results = comp_stage.get_results()
-    assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
-    assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
+    assert_results_equal(comp_stage.get_results())

@@ -35,6 +35,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
+from utils import assert_results_equal
 from utils import extend_df
 
 
@@ -46,7 +47,7 @@ def build_expected(df: pd.DataFrame, threshold: float):
     return expected_df[expected_df.max(axis=1) >= threshold]
 
 
-def _test_filter_detections_stage_pipe(config, tmp_path, copy=True, order='K', pipeline_batch_size=256, repeat=1):
+def _test_filter_detections_stage_pipe(config, copy=True, order='K', pipeline_batch_size=256, repeat=1):
     config.pipeline_batch_size = pipeline_batch_size
 
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
@@ -66,12 +67,10 @@ def _test_filter_detections_stage_pipe(config, tmp_path, copy=True, order='K', p
     comp_stage = pipe.add_stage(CompareDataframeStage(config, build_expected(input_df, threshold)))
     pipe.run()
 
-    results = comp_stage.get_results()
-    assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
-    assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
+    assert_results_equal(comp_stage.get_results())
 
 
-def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True):
+def _test_filter_detections_stage_multi_segment_pipe(config, copy=True):
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     input_df = read_file_to_df(src_file, df_type='pandas')
 
@@ -91,9 +90,7 @@ def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True
     comp_stage = pipe.add_stage(CompareDataframeStage(config, build_expected(input_df, threshold)))
     pipe.run()
 
-    results = comp_stage.get_results()
-    assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
-    assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
+    assert_results_equal(comp_stage.get_results())
 
 
 @pytest.mark.slow
@@ -101,11 +98,11 @@ def _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, copy=True
 @pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
 @pytest.mark.parametrize('repeat', [1, 10, 100])
 @pytest.mark.parametrize('do_copy', [True, False])
-def test_filter_detections_stage_pipe(config, tmp_path, order, pipeline_batch_size, repeat, do_copy):
-    return _test_filter_detections_stage_pipe(config, tmp_path, do_copy, order, pipeline_batch_size, repeat)
+def test_filter_detections_stage_pipe(config, order, pipeline_batch_size, repeat, do_copy):
+    return _test_filter_detections_stage_pipe(config, do_copy, order, pipeline_batch_size, repeat)
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize('do_copy', [True, False])
-def test_filter_detections_stage_multi_segment_pipe(config, tmp_path, do_copy):
-    return _test_filter_detections_stage_multi_segment_pipe(config, tmp_path, do_copy)
+def test_filter_detections_stage_multi_segment_pipe(config, do_copy):
+    return _test_filter_detections_stage_multi_segment_pipe(config, do_copy)

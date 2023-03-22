@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import collections
+import io
 import json
 import os
 import random
@@ -194,12 +195,11 @@ def duplicate_df_index_rand(df: pd.DataFrame, count=1):
     return duplicate_df_index(df, replace_dict)
 
 
-def create_df_with_dup_ids(tmp_path: str, dup_row=8) -> str:
+def create_df_with_dup_ids(df, dup_row=8) -> str:
     """
     Helper method to test issue #686, takes the filter_probs.csv and sets the id in row `dup_row` to the id of the
     previous row (or the next row if dup_row==0)
     """
-    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), file_type=FileTypes.Auto)
     assert df.index.is_unique
 
     data = df_to_csv(df, include_header=True, include_index_col=True, strip_newline=True)
@@ -234,3 +234,13 @@ def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val
     bool_df = df_to_check == val_to_check
 
     return bool(bool_df.all(axis=None))
+
+
+def assert_results_equal(results: dict) -> dict:
+    """
+    Receives the results dict from the `CompareDataframeStage.get_results` method,
+    and asserts that all columns and rows match
+    """
+    assert results["diff_cols"] == 0, f"Expected diff_cols=0 : {results}"
+    assert results["diff_rows"] == 0, f"Expected diff_rows=0 : {results}"
+    return results
