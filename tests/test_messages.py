@@ -60,8 +60,8 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                   no_cpp_class,
                   **{"meta": messages.MessageMeta(df)})
 
-    check_message(tensor_memory.TensorMemory, _messages.TensorMemory, should_be_cpp, no_cpp_class, *(1, ))
-    check_message(messages.InferenceMemory, _messages.InferenceMemory, should_be_cpp, no_cpp_class, *(1, ))
+    check_message(tensor_memory.TensorMemory, _messages.TensorMemory, should_be_cpp, no_cpp_class, **{"count": 1})
+    check_message(messages.InferenceMemory, _messages.InferenceMemory, should_be_cpp, no_cpp_class, **{"count": 1})
 
     cp_array = cp.zeros((1, 2))
 
@@ -69,16 +69,26 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                   _messages.InferenceMemoryNLP,
                   should_be_cpp,
                   no_cpp_class,
-                  *(1, cp_array, cp_array, cp_array))
+                  **{
+                      "count": 1, "input_ids": cp_array, "input_mask": cp_array, "seq_ids": cp_array
+                  })
 
     check_message(messages.InferenceMemoryFIL,
                   _messages.InferenceMemoryFIL,
                   should_be_cpp,
                   no_cpp_class,
-                  *(1, cp_array, cp_array))
+                  **{
+                      "count": 1, "input__0": cp_array, "seq_ids": cp_array
+                  })
 
     # No C++ impl, should always get the Python class
-    check_message(messages.InferenceMemoryAE, None, should_be_cpp, no_cpp_class, *(1, cp_array, cp_array))
+    check_message(messages.InferenceMemoryAE,
+                  None,
+                  should_be_cpp,
+                  no_cpp_class,
+                  **{
+                      "count": 1, "input": cp_array, "seq_ids": cp_array
+                  })
 
     multi_tensor_message_tensors = {
         "input_ids": cp.zeros((1, 2)),
@@ -118,16 +128,18 @@ def check_all_messages(should_be_cpp: bool, no_cpp_class: bool):
                   meta=messages.MessageMeta(df),
                   memory=inference_memory.InferenceMemory(count=1, tensors=multi_tensor_message_tensors))
 
-    check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, *(1, ))
+    check_message(messages.ResponseMemory, _messages.ResponseMemory, should_be_cpp, no_cpp_class, **{"count": 1})
 
     check_message(messages.ResponseMemoryProbs,
                   _messages.ResponseMemoryProbs,
                   should_be_cpp,
                   no_cpp_class,
-                  *(1, cp_array))
+                  **{
+                      "count": 1, "probs": cp_array
+                  })
 
     # No C++ impl
-    check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, *(1, cp_array))
+    check_message(messages.ResponseMemoryAE, None, should_be_cpp, no_cpp_class, **{"count": 1, "probs": cp_array})
 
     check_message(messages.MultiResponseMessage,
                   _messages.MultiResponseMessage,

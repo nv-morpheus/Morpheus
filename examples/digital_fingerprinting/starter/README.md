@@ -135,7 +135,7 @@ The `PreprocessAEStage` is responsible for creating a Morpheus message that cont
 
 **Postprocessing stage** - The DFP pipeline uses the `AddScoresStage` for postprocessing to add anomaly scores and zscores from previous inference stage with matching labels.
 
-**Serialize stage** - `SerializeStage` is used to convert `MultiResponseProbsMessage` from previous stage to a `MessageMeta` to make it suitable for output (i.e. write to file or Kafka).
+**Serialize stage** - `SerializeStage` is used to convert `MultiResponseMessage` from previous stage to a `MessageMeta` to make it suitable for output (i.e. write to file or Kafka).
 
 **Write stage** - `WriteToFileStage` writes input data with inference results to an output file path.
 

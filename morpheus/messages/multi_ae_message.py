@@ -29,9 +29,8 @@ class MultiAEMessage(MultiMessage):
     """
 
     model: AutoEncoder
-    # train_loss_scores: cp.ndarray
-    train_scores_mean: float = 0.0
-    train_scores_std: float = 1.0
+    train_scores_mean: float
+    train_scores_std: float
 
     def __init__(self,
                  *,
@@ -39,8 +38,8 @@ class MultiAEMessage(MultiMessage):
                  mess_offset: int = 0,
                  mess_count: int = -1,
                  model: AutoEncoder,
-                 train_scores_mean: float,
-                 train_scores_std: float):
+                 train_scores_mean: float = 0.0,
+                 train_scores_std: float = 1.0):
         super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
         self.model = model

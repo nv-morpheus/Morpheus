@@ -28,6 +28,9 @@ from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS
 
+# Only pandas and C++ is supported
+pytestmark = [pytest.mark.use_pandas, pytest.mark.use_python]
+
 BIN_COLS = ['ts_anomaly']
 
 CAT_COLS = [
@@ -220,9 +223,9 @@ def test_auto_encoder_get_scaler():
         assert ae.get_scaler(value) is expected
 
 
-def test_auto_encoder_init_numeric(filter_probs_pandas_df):
+def test_auto_encoder_init_numeric(df):
     ae = autoencoder.AutoEncoder()
-    ae.init_numeric(filter_probs_pandas_df)
+    ae.init_numeric(df)
 
     expected_features = {
         'v1': {

@@ -17,7 +17,6 @@
 # pylint: disable=redefined-outer-name
 
 import dataclasses
-import os
 import string
 import typing
 
@@ -28,8 +27,6 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -44,18 +41,9 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
-from utils import TEST_DIRS
 from utils import assert_df_equal
 from utils import duplicate_df_index
 from utils import duplicate_df_index_rand
-
-
-@pytest.fixture(scope="function")
-def df(df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
-
-    return read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
-                           file_type=FileTypes.Auto,
-                           df_type=df_type)
 
 
 @pytest.mark.use_python
@@ -638,6 +626,52 @@ def test_tensor_constructor(df: cudf.DataFrame):
     # Count smaller than mess_count
     with pytest.raises(ValueError):
         MultiTensorMessage(meta=meta, mess_count=10, memory=memory, count=9)
+
+    # === ID Tensors ===
+    id_tensor = cp.expand_dims(cp.arange(0, mess_len, dtype=int), axis=1)
+
+    # With valid ID tensor
+    multi_tensor = MultiTensorMessage(meta=meta, memory=TensorMemory(count=mess_len, tensors={"seq_ids": id_tensor}))
+    assert cp.all(multi_tensor.get_id_tensor() == id_tensor)
+
+    # With different ID name
+    multi_tensor = MultiTensorMessage(meta=meta,
+                                      memory=TensorMemory(count=mess_len, tensors={"other_seq_ids": id_tensor}),
+                                      id_tensor_name="other_seq_ids")
+    assert cp.all(multi_tensor.get_id_tensor() == id_tensor)
+
+    # With message offset
+    multi_tensor = MultiTensorMessage(meta=meta,
+                                      mess_offset=4,
+                                      memory=TensorMemory(count=mess_len, tensors={"seq_ids": id_tensor}),
+                                      offset=4)
+    assert cp.all(multi_tensor.get_id_tensor() == id_tensor[4:])
+
+    # Incorrect start ID
+    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor[0] = -1
+    with pytest.raises(RuntimeError):
+        multi_tensor = MultiTensorMessage(meta=meta,
+                                          memory=TensorMemory(count=mess_len, tensors={"seq_ids": invalid_id_tensor}))
+
+    # Incorrect end ID
+    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor[-1] = invalid_id_tensor[-1] + 1
+    with pytest.raises(RuntimeError):
+        multi_tensor = MultiTensorMessage(meta=meta,
+                                          memory=TensorMemory(count=mess_len, tensors={"seq_ids": invalid_id_tensor}))
+
+    # Incorrect end ID, different id tensor name
+    invalid_id_tensor = cp.copy(id_tensor)
+    invalid_id_tensor[-1] = invalid_id_tensor[-1] + 1
+    with pytest.raises(RuntimeError):
+        multi_tensor = MultiTensorMessage(meta=meta,
+                                          id_tensor_name="id_tensor",
+                                          memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
+
+    # Doesnt check with invalid due to different name
+    multi_tensor = MultiTensorMessage(meta=meta,
+                                      memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
 
 
 def test_tensor_slicing(df: cudf.DataFrame):

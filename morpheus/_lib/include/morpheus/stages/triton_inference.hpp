@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/messages/multi_inference.hpp"
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/messages/multi_response.hpp"  // for MultiResponseMessage
 #include "morpheus/objects/triton_in_out.hpp"
 #include "morpheus/types.hpp"
 
@@ -52,11 +52,11 @@ namespace morpheus {
  * This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
  */
 class InferenceClientStage
-  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>
+  : public mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>
 {
   public:
     using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
+        mrc::pymrc::PythonNode<std::shared_ptr<MultiInferenceMessage>, std::shared_ptr<MultiResponseMessage>>;
     using typename base_t::sink_type_t;
     using typename base_t::source_type_t;
     using typename base_t::subscribe_fn_t;

@@ -17,11 +17,11 @@
 
 #include "morpheus/messages/meta.hpp"
 
+#include "morpheus/io/deserializers.hpp"
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/objects/python_data_table.hpp"
 #include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
-#include "morpheus/utilities/table_util.hpp"
 
 #include <cudf/io/types.hpp>
 #include <glog/logging.h>
@@ -165,9 +165,10 @@ MutableTableCtxMgr MessageMetaInterfaceProxy::mutable_dataframe(MessageMeta& sel
 std::shared_ptr<MessageMeta> MessageMetaInterfaceProxy::init_cpp(const std::string& filename)
 {
     // Load the file
-    auto df_with_meta = CuDFTableUtil::load_table(filename);
+    auto df_with_meta   = load_table_from_file(filename);
+    int index_col_count = prepare_df_index(df_with_meta);
 
-    return MessageMeta::create_from_cpp(std::move(df_with_meta));
+    return MessageMeta::create_from_cpp(std::move(df_with_meta), index_col_count);
 }
 
 bool MessageMetaInterfaceProxy::has_sliceable_index(MessageMeta& self)
