@@ -22,4 +22,5 @@ bool StringUtil::str_contains(const std::string& str, const std::string& search_
 {
     return str.find(search_str) != std::string::npos;
 }
+
 }  // namespace morpheus

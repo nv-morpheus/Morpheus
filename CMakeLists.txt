@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 
 list(APPEND CMAKE_MESSAGE_CONTEXT "morpheus")
@@ -169,11 +169,11 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
 
   morpheus_utils_print_target_properties(
       TARGETS
-        cuda_utils
-        morpheus
-        stages
-        messages
         common
+        messages
+        morpheus
+        morpheus_utils
+        stages
       WRITE_TO_FILE
   )
 

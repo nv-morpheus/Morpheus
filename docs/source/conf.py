@@ -294,7 +294,7 @@ def setup(app):
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve(
     'morpheus', 'https://github.com/nv-morpheus/Morpheus'
-    'morpheus/-/blob/{revision}/'
+    '/blob/{revision}/'
     '{package}/{path}#L{lineno}')
 
 # Set the default role for interpreted code (anything surrounded in `single

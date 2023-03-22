@@ -19,11 +19,12 @@
 
 #include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
 #include "morpheus/messages/multi_inference.hpp"
+#include "morpheus/objects/dev_mem_info.hpp"
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/table_info.hpp"  // for TableInfo
 #include "morpheus/objects/tensor.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/types.hpp"                  // for TensorIndex, TensorMap
+#include "morpheus/types.hpp"  // for TensorIndex, TensorMap
+#include "morpheus/utilities/matx_util.hpp"
 
 #include <cudf/column/column.hpp>                // for column, column::contents
 #include <cudf/strings/strings_column_view.hpp>  // for strings_column_view
@@ -99,31 +100,40 @@ PreprocessNLPStage::subscribe_fn_t PreprocessNLPStage::build_operator()
                     cudf::cast(token_results.tensor_token_ids->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
 
-                memory->tensors["input_ids"] =
-                    std::move(Tensor::create(std::move(input_ids_released.data),
-                                             DType::create<int32_t>(),
-                                             {length, static_cast<TensorIndex>(token_results.sequence_length)},
-                                             {},
-                                             0));
+                memory->set_tensor("input_ids",
+                                   Tensor::create(std::move(input_ids_released.data),
+                                                  DType::create<int32_t>(),
+                                                  {length, static_cast<TensorIndex>(token_results.sequence_length)},
+                                                  {},
+                                                  0));
 
                 length = token_results.tensor_attention_mask->size() / token_results.sequence_length;
                 auto input_mask_released =
                     cudf::cast(token_results.tensor_attention_mask->view(), cudf::data_type(cudf::type_id::INT32))
                         ->release();
-                memory->tensors["input_mask"] =
-                    std::move(Tensor::create(std::move(input_mask_released.data),
-                                             DType::create<int32_t>(),
-                                             {length, static_cast<TensorIndex>(token_results.sequence_length)},
-                                             {},
-                                             0));
+                memory->set_tensor("input_mask",
+                                   Tensor::create(std::move(input_mask_released.data),
+                                                  DType::create<int32_t>(),
+                                                  {length, static_cast<TensorIndex>(token_results.sequence_length)},
+                                                  {},
+                                                  0));
 
                 auto tensor_index_dtype = DType::create<TensorIndex>();
                 length                  = token_results.tensor_metadata->size() / 3;
                 auto seq_ids_released   = cudf::cast(token_results.tensor_metadata->view(),
                                                    cudf::data_type(tensor_index_dtype.cudf_type_id()))
                                             ->release();
-                memory->tensors["seq_ids"] =
-                    std::move(Tensor::create(std::move(seq_ids_released.data), tensor_index_dtype, {length, 3}, {}, 0));
+
+                std::shared_ptr<rmm::device_buffer> seq_ids_data = std::move(seq_ids_released.data);
+
+                if (x->mess_offset > 0)
+                {
+                    // Add an offset to the seq_ids so the message IDs line up
+                    MatxUtil::offset_seq_ids(
+                        DevMemInfo{seq_ids_data, tensor_index_dtype.type_id(), {length, 3}, {1, 3}}, x->mess_offset);
+                }
+
+                memory->set_tensor("seq_ids", Tensor::create(seq_ids_data, tensor_index_dtype, {length, 3}, {}, 0));
 
                 auto next = std::make_shared<MultiInferenceMessage>(
                     x->meta, x->mess_offset, x->mess_count, std::move(memory), 0, memory->count);

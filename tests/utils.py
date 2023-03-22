@@ -16,12 +16,15 @@
 import collections
 import json
 import os
+import random
 import time
 import typing
 
 import cupy as cp
 import mrc
 import pandas as pd
+
+import cudf
 
 import morpheus
 from morpheus._lib.common import FileTypes
@@ -31,8 +34,8 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import MultiResponseMessage
+from morpheus.messages import ResponseMemory
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.inference import inference_stage
 from morpheus.utils.atomic_integer import AtomicInteger
@@ -58,7 +61,7 @@ TEST_DIRS = TestDirectories()
 @register_stage("unittest-conv-msg")
 class ConvMsg(SinglePortStage):
     """
-    Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage
+    Simple test stage to convert a MultiMessage to a MultiResponseMessage
     Basically a cheap replacement for running an inference stage.
 
     Setting `expected_data_file` to the path of a cav/json file will cause the probs array to be read from file.
@@ -106,14 +109,15 @@ class ConvMsg(SinglePortStage):
         else:
             probs = cp.array(df.values, dtype=self._probs_type, copy=True, order=self._order)
 
-        memory = ResponseMemoryProbs(count=len(probs), probs=probs)
-        return MultiResponseProbsMessage(m.meta, m.mess_offset, len(probs), memory, 0, len(probs))
+        memory = ResponseMemory(count=len(probs), tensors={'probs': probs})
+
+        return MultiResponseMessage.from_message(m, memory=memory)
 
     def _build_single(self, builder: mrc.Builder, input_stream):
         stream = builder.make_node(self.unique_name, self._conv_message)
         builder.make_edge(input_stream[0], stream)
 
-        return stream, MultiResponseProbsMessage
+        return stream, MultiResponseMessage
 
 
 @register_stage("unittest-dfp-length-check")
@@ -287,3 +291,66 @@ def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500)
 
     # Finally, actually assert on the final try
     assert os.path.exists(filename)
+
+
+def duplicate_df_index(df: pd.DataFrame, replace_ids: typing.Dict[int, int]):
+
+    # Return a new dataframe where we replace some index values with others
+    return df.rename(index=replace_ids)
+
+
+def duplicate_df_index_rand(df: pd.DataFrame, count=1):
+
+    assert count * 2 <= len(df), "Count must be less than half the number of rows"
+
+    # Sample 2x the count. One for the old ID and one for the new ID. Dont want duplicates so we use random.sample
+    # (otherwise you could get less duplicates than requested if two IDs just swap)
+    dup_ids = random.sample(df.index.values.tolist(), 2 * count)
+
+    # Create a dictionary of old ID to new ID
+    replace_dict = {x: y for x, y in zip(dup_ids[:count], dup_ids[count:])}
+
+    # Return a new dataframe where we replace some index values with others
+    return duplicate_df_index(df, replace_dict)
+
+
+def create_df_with_dup_ids(tmp_path: str, dup_row=8) -> str:
+    """
+    Helper method to test issue #686, takes the filter_probs.csv and sets the id in row `dup_row` to the id of the
+    previous row (or the next row if dup_row==0)
+    """
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), file_type=FileTypes.Auto)
+    assert df.index.is_unique
+
+    data = df_to_csv(df, include_header=True, include_index_col=True, strip_newline=True)
+
+    # Duplicate id=7
+    dup_row_idx = dup_row + 1  # account for the header row
+    if dup_row > 0:
+        new_idx_val = dup_row - 1
+    else:
+        new_idx_val = 1
+
+    data[dup_row_idx] = data[dup_row_idx].replace(str(dup_row), str(new_idx_val), 1)
+
+    dup_file = os.path.join(tmp_path, 'dup_id.csv')
+    with open(dup_file, 'w') as fh:
+        fh.writelines("\n".join(data))
+
+    return dup_file
+
+
+def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val_to_check: typing.Any):
+
+    # Comparisons work better in cudf so convert everything to that
+    if (isinstance(df_to_check, cudf.DataFrame) or isinstance(df_to_check, cudf.Series)):
+        df_to_check = df_to_check.to_pandas()
+
+    if (isinstance(val_to_check, cudf.DataFrame) or isinstance(val_to_check, cudf.Series)):
+        val_to_check = val_to_check.to_pandas()
+    elif (isinstance(val_to_check, cp.ndarray)):
+        val_to_check = val_to_check.get()
+
+    bool_df = df_to_check == val_to_check
+
+    return bool(bool_df.all(axis=None))
