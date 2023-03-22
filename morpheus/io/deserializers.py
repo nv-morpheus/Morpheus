@@ -89,16 +89,13 @@ def read_file_to_df(file_name: str,
 
     df_class = cudf if df_type == "cudf" else pd
 
+    df = None
     if (mode == FileTypes.JSON):
         df = df_class.read_json(file_name, **kwargs)
-
-        if (filter_nulls):
-            df = filter_null_data(df)
 
         if (df_type == "cudf"):
             df = cudf_json_onread_cleanup(df)
 
-        return df
     elif (mode == FileTypes.CSV):
         df: pd.DataFrame = df_class.read_csv(file_name, **kwargs)
 
@@ -107,16 +104,15 @@ def read_file_to_df(file_name: str,
             df.index.name = ""
             df.sort_index(inplace=True)
 
-        if (filter_nulls):
-            df = filter_null_data(df)
-
-        return df
     elif (mode == FileTypes.PARQUET):
         df = df_class.read_parquet(file_name, **kwargs)
 
-        if (filter_nulls):
-            df = filter_null_data(df)
-
-        return df
     else:
         assert False, "Unsupported file type mode: {}".format(mode)
+
+    assert df is not None
+
+    if (filter_nulls):
+        df = filter_null_data(df)
+
+    return df
