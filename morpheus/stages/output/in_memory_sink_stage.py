@@ -19,14 +19,12 @@ import pandas as pd
 
 import cudf
 
-from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-@register_stage("to-mem")
 class InMemorySinkStage(SinglePortStage):
     """
     Collects incoming messages into a list.
@@ -44,7 +42,7 @@ class InMemorySinkStage(SinglePortStage):
 
     @property
     def name(self) -> str:
-        return "in-mem-sink"
+        return "to-mem"
 
     def accepted_types(self) -> typing.Tuple:
         """
