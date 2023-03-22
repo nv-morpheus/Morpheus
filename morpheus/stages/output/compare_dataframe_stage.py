@@ -18,7 +18,6 @@ import typing
 import pandas as pd
 
 from morpheus._lib.common import FileTypes
-from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
@@ -26,7 +25,6 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils import compare_df
 
 
-@register_stage("compare-df")
 class CompareDataframeStage(InMemorySinkStage):
     """
     Collects incoming messages, comparing the concatinated dataframe of all messages against an expected dataframe
