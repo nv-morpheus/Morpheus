@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus_export.h"
+
 #include "morpheus/objects/dtype.hpp"              // for DType, TypeId
 #include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
 #include "morpheus/types.hpp"                      // for ShapeType, TensorIndex
@@ -38,7 +40,7 @@ namespace morpheus {
 /**
  * @brief Simple object that describes a buffer in device memory
  */
-class DevMemInfo
+class MORPHEUS_EXPORT DevMemInfo
 {
   public:
     /**

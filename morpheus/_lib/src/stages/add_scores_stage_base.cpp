@@ -28,8 +28,7 @@
 
 #include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
-#include <mrc/cuda/common.hpp>  // for MRC_CHECK_CUDA
-#include <operators/rx-map.hpp>
+#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
 #include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
 #include <rmm/device_buffer.hpp>     // for device_buffer
 
@@ -74,14 +73,10 @@ AddScoresStageBase::source_type_t AddScoresStageBase::on_data(sink_type_t x)
 
     if (m_threshold.has_value())
     {
-        // A bit ugly, but we cant get access to the rmm::device_buffer here. So make a copy
-        auto tmp_buffer = std::make_shared<rmm::device_buffer>(probs.bytes(), rmm::cuda_stream_per_thread);
-
-        MRC_CHECK_CUDA(cudaMemcpy(tmp_buffer->data(), probs.data(), tmp_buffer->size(), cudaMemcpyDeviceToDevice));
-
-        // Now call the threshold function
-        auto thresh_bool_buffer =
-            MatxUtil::threshold(DevMemInfo{tmp_buffer, probs.dtype(), shape, stride}, *m_threshold, false);
+        auto thresh_bool_buffer = MatxUtil::threshold(
+            {probs.data(), probs.dtype(), probs.get_memory(), probs.get_shape(), probs.get_stride()},
+            *m_threshold,
+            false);
 
         output_tensor.swap(Tensor::create(thresh_bool_buffer, DType::create<bool>(), shape, stride));
     }

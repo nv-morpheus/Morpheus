@@ -33,11 +33,9 @@ add_executable(test_libmorpheus
 
 target_link_libraries(test_libmorpheus
   PRIVATE
-    cuda_utils
-    morpheus
-    mrc::pymrc
     GTest::gtest
     matx::matx
+    morpheus
     pybind11::embed
 )
 

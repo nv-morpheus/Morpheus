@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus_export.h"
+
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/device_memory_resource.hpp>
 
@@ -24,7 +26,7 @@
  * @brief Struct describing device memory resources.
  *
  */
-struct MemoryDescriptor
+struct MORPHEUS_EXPORT MemoryDescriptor
 {
     /**
      * @brief Construct a new MemoryDescriptor object.  If `memory_resource` is null the value returned by
