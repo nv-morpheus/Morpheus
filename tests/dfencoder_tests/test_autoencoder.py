@@ -23,7 +23,8 @@ import torch
 from morpheus._lib.common import FileTypes
 from morpheus.config import AEFeatureScalar
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.models.dfencoder import autoencoder, ae_module
+from morpheus.models.dfencoder import ae_module
+from morpheus.models.dfencoder import autoencoder
 from morpheus.models.dfencoder import scalers
 from morpheus.models.dfencoder.dataframe import EncoderDataFrame
 from utils import TEST_DIRS

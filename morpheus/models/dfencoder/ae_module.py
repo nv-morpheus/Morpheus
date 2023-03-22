@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import torch
 from collections import OrderedDict
+
+import torch
 
 
 def compute_embedding_size(n_categories):
