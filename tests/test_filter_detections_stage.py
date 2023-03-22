@@ -19,7 +19,7 @@ from unittest import mock
 import cupy as cp
 import pytest
 
-from morpheus._lib.common import FilterSource
+from morpheus.common import FilterSource
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
 from morpheus.messages.message_meta import MessageMeta
