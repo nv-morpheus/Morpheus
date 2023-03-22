@@ -24,6 +24,12 @@
 #include <cudf/types.hpp>
 #include <glog/logging.h>
 
+#include <algorithm>
+#include <iterator>
+#include <ostream>
+#include <stdexcept>
+#include <utility>
+
 // #include <algorithm>  // for find, transform
 // #include <array>      // needed for pybind11::make_tuple
 // #include <cstddef>    // for size_t

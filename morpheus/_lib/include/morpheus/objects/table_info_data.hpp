@@ -17,10 +17,10 @@
 
 #pragma once
 
-#include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table_view.hpp>
 #include <cudf/types.hpp>  // for size_type
 
+#include <string>
 #include <vector>
 
 namespace morpheus {

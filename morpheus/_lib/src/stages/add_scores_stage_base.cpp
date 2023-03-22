@@ -17,8 +17,7 @@
 
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
-#include "morpheus/objects/dev_mem_info.hpp"  // for DevMemInfo
-#include "morpheus/objects/dtype.hpp"         // for DType
+#include "morpheus/objects/dtype.hpp"  // for DType
 #include "morpheus/objects/tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/types.hpp"                  // for TensorIndex
@@ -26,11 +25,8 @@
 #include "morpheus/utilities/string_util.hpp"
 #include "morpheus/utilities/tensor_util.hpp"  // for TensorUtils::get_element_stride
 
-#include <cuda_runtime.h>  // for cudaMemcpy, cudaMemcpyDeviceToDevice
 #include <glog/logging.h>
-#include <mrc/cuda/common.hpp>       // for MRC_CHECK_CUDA
-#include <rmm/cuda_stream_view.hpp>  // for cuda_stream_per_thread
-#include <rmm/device_buffer.hpp>     // for device_buffer
+#include <rxcpp/rx.hpp>
 
 #include <cstddef>
 #include <iterator>
@@ -39,6 +35,7 @@
 #include <utility>  // for move
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
+// IWYU pragma: no_include <operators/rx-map.hpp>
 
 namespace morpheus {
 
