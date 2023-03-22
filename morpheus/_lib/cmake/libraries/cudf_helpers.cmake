@@ -17,7 +17,9 @@ morpheus_add_cython_library(
     PYX_FILE
       "${MORPHEUS_LIB_ROOT}/cudf_helpers.pyx"
     LINK_TARGETS
-      cuda_utils
+      morpheus_utils
+      Python::Module
+      Python::NumPy
     OUTPUT_TARGET
       cudf_helpers_target
 )

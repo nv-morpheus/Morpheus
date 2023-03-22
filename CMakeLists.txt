@@ -169,11 +169,11 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
 
   morpheus_utils_print_target_properties(
       TARGETS
-        cuda_utils
-        morpheus
-        stages
-        messages
         common
+        messages
+        morpheus
+        morpheus_utils
+        stages
       WRITE_TO_FILE
   )
 
