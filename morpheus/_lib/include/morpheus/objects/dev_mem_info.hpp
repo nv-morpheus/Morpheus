@@ -17,12 +17,15 @@
 
 #pragma once
 
-#include "morpheus/objects/dtype.hpp"
+#include "morpheus_export.h"
 
-#include <rmm/device_buffer.hpp>
+#include "morpheus/objects/dtype.hpp"              // for DType, TypeId
+#include "morpheus/objects/memory_descriptor.hpp"  // for MemoryDescriptor
+#include "morpheus/types.hpp"                      // for ShapeType, TensorIndex
 
-#include <cstddef>  // for size_t
-#include <memory>   // for shared_ptr, unique_ptr & make_unique
+#include <rmm/device_buffer.hpp>  // for device_buffer
+
+#include <memory>  // for shared_ptr, unique_ptr & make_unique
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -37,28 +40,107 @@ namespace morpheus {
 /**
  * @brief Simple object that describes a buffer in device memory
  */
-class DevMemInfo
+class MORPHEUS_EXPORT DevMemInfo
 {
   public:
+    /**
+     * @brief Construct a new DevMemInfo object.
+     *
+     * @param data
+     * @param dtype
+     * @param shape
+     * @param stride
+     * @param offset_bytes
+     * @param stream
+     * @param memory_resource
+     */
+    DevMemInfo(void* data,
+               DType dtype,
+               std::shared_ptr<MemoryDescriptor> md,
+               ShapeType shape,
+               ShapeType stride,
+               TensorIndex offset_bytes = 0);
+
+    /**
+     * @brief Construct a new DevMemInfo object from an existing `rmm::device_buffer`.
+     *
+     * @param buffer
+     * @param dtype
+     * @param shape
+     * @param stride
+     * @param offset_bytes
+     */
     DevMemInfo(std::shared_ptr<rmm::device_buffer> buffer,
                DType dtype,
-               std::vector<std::size_t> shape,
-               std::vector<std::size_t> stride,
-               size_t offset_bytes = 0);
+               ShapeType shape,
+               ShapeType stride,
+               TensorIndex offset_bytes = 0);
     DevMemInfo(DevMemInfo&& other) = default;
 
-    std::size_t bytes() const;
-    std::size_t count() const;
-    std::size_t offset_bytes() const;
+    /**
+     * @brief Return the number of bytes stored in the underlying buffer
+     *
+     * @return TensorIndex
+     */
+    TensorIndex bytes() const;
+
+    /**
+     * @brief Return the element count stored in the underlying buffer
+     *
+     * @return TensorIndex
+     */
+    TensorIndex count() const;
+
+    /**
+     * @brief Return the number of bytes offset from the head of the buffer
+     *
+     * @return TensorIndex
+     */
+    TensorIndex offset_bytes() const;
+
+    /**
+     * @brief Return the type of the data stored in the buffer
+     *
+     * @return const DType&
+     */
     const DType& dtype() const;
+
+    /**
+     * @brief Return the type id of the data stored in the buffer
+     *
+     * @return TypeId
+     */
     TypeId type_id() const;
 
-    const std::vector<std::size_t>& shape() const;
-    std::size_t shape(std::size_t idx) const;
+    /**
+     * @brief Return a reference to the shape
+     *
+     * @return const ShapeType&
+     */
+    const ShapeType& shape() const;
 
-    // Stride in elements
-    const std::vector<std::size_t>& stride() const;
-    std::size_t stride(std::size_t idx) const;
+    /**
+     * @brief Return a the dimension at `idx`
+     *
+     * @param idx
+     * @return TensorIndex
+     */
+    TensorIndex shape(TensorIndex idx) const;
+
+    /**
+     * @brief Return a reference to the stride expressed in elements
+     *
+     * @return const ShapeType&
+     */
+    const ShapeType& stride() const;
+
+    /**
+     * @brief Return the stride at `idx`
+     *
+     * @param idx
+     * @return TensorIndex
+     */
+    TensorIndex stride(TensorIndex idx) const;
 
     /**
      * @brief Returns raw pointer to underlying buffer offset by the `offset`
@@ -68,26 +150,36 @@ class DevMemInfo
     void* data() const;
 
     /**
+     * @brief Return the memory descriptor
+     *
+     * @return std::shared_ptr<MemoryDescriptor>
+     */
+    std::shared_ptr<MemoryDescriptor> memory() const;
+
+    /**
      * @brief Constructs a new rmm buffer with the same stream and memory resource as the current buffer
      *
      * @param bytes
      * @return std::unique_ptr<rmm::device_buffer>
      */
-    std::unique_ptr<rmm::device_buffer> make_new_buffer(std::size_t bytes) const;
+    std::unique_ptr<rmm::device_buffer> make_new_buffer(TensorIndex bytes) const;
 
   private:
-    // Buffer of data
-    std::shared_ptr<rmm::device_buffer> m_buffer;
+    // Pointer to the head of our data
+    void* m_data;
 
     // Type of elements in the buffer
     const DType m_dtype;
 
     // Shape & stride of the data in the buffer
-    const std::vector<std::size_t> m_shape;
-    const std::vector<std::size_t> m_stride;
+    const ShapeType m_shape;
+    const ShapeType m_stride;
 
     // Offset from head of data in bytes
-    const size_t m_offset_bytes;
+    const TensorIndex m_offset_bytes;
+
+    // Device resources used to allocate this memory
+    std::shared_ptr<MemoryDescriptor> m_md;
 };
 
 /** @} */  // end of group

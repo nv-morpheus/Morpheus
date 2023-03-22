@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/data_table.hpp"  // for IDataTable
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info_data.hpp"
 
 #include <cudf/types.hpp>      // for size_type
 #include <pybind11/pytypes.h>  // for object
@@ -43,7 +43,7 @@ struct PyDataTable : public IDataTable
      *
      * @param py_table
      */
-    PyDataTable(pybind11::object &&py_table);
+    PyDataTable(pybind11::object&& py_table);
     ~PyDataTable();
 
     /**
@@ -58,7 +58,7 @@ struct PyDataTable : public IDataTable
      *
      * @return TableInfo
      */
-    const pybind11::object &get_py_object() const override;
+    const pybind11::object& get_py_object() const override;
 
   private:
     TableInfoData get_table_data() const override;

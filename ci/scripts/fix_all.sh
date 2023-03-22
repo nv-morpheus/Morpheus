@@ -19,40 +19,48 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 source ${SCRIPT_DIR}/../scripts/common.sh
 
-# Get the list of modified files to check
-get_modified_files ${PYTHON_FILE_REGEX} PY_MODIFIED_FILES
-get_modified_files ${CPP_FILE_REGEX} CPP_MODIFIED_FILES
+# If IGNORE_GIT_DIFF is enabled, use all files
+if [[ "${IGNORE_GIT_DIFF}" == "1" ]]; then
+   PY_MODIFIED_FILES=$(find ./ -name '*' | grep -P "${PYTHON_FILE_REGEX}")
+   CPP_MODIFIED_FILES=$(find ./ -name '*' | grep -P "${CPP_FILE_REGEX}")
+else
+   # Get the list of modified files to check
+   get_modified_files ${PYTHON_FILE_REGEX} PY_MODIFIED_FILES
+   get_modified_files ${CPP_FILE_REGEX} CPP_MODIFIED_FILES
+fi
 
 # Run copyright fix
 if [[ "${SKIP_COPYRIGHT}" == "" ]]; then
    echo "Running copyright check..."
-   python3 ./ci/scripts/copyright.py --fix-all --git-modified-only ./ 2>&1
-fi
 
-# Run clang-format
-if [[ "${SKIP_CLANG_FORMAT}" == "" ]]; then
-
-   CLANG_FORMAT_DIFF=$(find_clang_format_diff)
-
-   if [[ -x "${CLANG_FORMAT_DIFF}" ]]; then
-      echo "Running clang-format from '${CLANG_FORMAT_DIFF}'..."
-      get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_FORMAT_DIFF} -p1 -i -sort-includes 2>&1
+   # If IGNORE_GIT_DIFF is enabled, use all files
+   if [[ "${IGNORE_GIT_DIFF}" == "1" ]]; then
+      python3 ./ci/scripts/copyright.py --fix-all ./ 2>&1
    else
-      echo "Skipping clang-format. Could not find clang-format-diff at '${CLANG_FORMAT_DIFF}'"
+      python3 ./ci/scripts/copyright.py --fix-all --git-modified-only ./ 2>&1
    fi
 fi
 
 # Run clang-tidy
 if [[ "${SKIP_CLANG_TIDY}" == "" ]]; then
 
-   CLANG_TIDY_DIFF=$(find_clang_tidy_diff)
+   # If IGNORE_GIT_DIFF is enabled, use all files
+   if [[ "${IGNORE_GIT_DIFF}" == "1" ]]; then
+      # Now find clang-tidy
+      export CLANG_TIDY=$(find_clang_tidy)
 
-   # Use -n here since the output could be multiple commands
-   if [[ -n "${CLANG_TIDY_DIFF}" ]]; then
-      echo "Running clang-tidy from '${CLANG_TIDY_DIFF}'..."
-      get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_TIDY_DIFF} -p1 -j 0 -path ${BUILD_DIR} -fix -quiet 2>&1
+      echo "Running clang-tidy from '${CLANG_TIDY}'..."
+      run-clang-tidy -clang-tidy-binary ${SCRIPT_DIR}/run_clang_tidy_for_ci.sh -j 0 -p ${BUILD_DIR} -fix -quiet ${CPP_MODIFIED_FILES[@]} 2>&1
    else
-      echo "Skipping clang-tidy. Could not find clang-tidy-diff.py at '${CLANG_TIDY_DIFF}'"
+      CLANG_TIDY_DIFF=$(find_clang_tidy_diff)
+
+      # Use -n here since the output could be multiple commands
+      if [[ -n "${CLANG_TIDY_DIFF}" ]]; then
+         echo "Running clang-tidy from '${CLANG_TIDY_DIFF}'..."
+         get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_TIDY_DIFF} -p1 -j 0 -path ${BUILD_DIR} -fix -quiet 2>&1
+      else
+         echo "Skipping clang-tidy. Could not find clang-tidy-diff.py at '${CLANG_TIDY_DIFF}'"
+      fi
    fi
 fi
 
@@ -63,9 +71,28 @@ if [[ "${SKIP_IWYU}" == "" && "${CPP_MODIFIED_FILES}" != "" ]]; then
 
    if [[ -x "${IWYU_TOOL}" ]]; then
       echo "Running include-what-you-use from '${IWYU_TOOL}'..."
-      ${IWYU_TOOL} -j $(nproc) -p ${BUILD_DIR} ${CPP_MODIFIED_FILES[@]} 2>&1
+      ${IWYU_TOOL} -j $(nproc) -p ${BUILD_DIR} morpheus | fix_includes.py --nosafe_headers --nocomments 2>&1
    else
       echo "Skipping include-what-you-use. Could not find iwyu_tool.py at '${IWYU_TOOL}'"
+   fi
+fi
+
+# Run clang-format (Should be after IWYU because that messes up include ordering)
+if [[ "${SKIP_CLANG_FORMAT}" == "" ]]; then
+
+   # If IGNORE_GIT_DIFF is enabled, use all files
+   if [[ "${IGNORE_GIT_DIFF}" == "1" ]]; then
+      echo "Running clang-format from '${SCRIPT_DIR}/run-clang-format.py'..."
+      python3 ${SCRIPT_DIR}/run-clang-format.py -inplace -regex "${CPP_FILE_REGEX}" ./ 2>&1
+   else
+      CLANG_FORMAT_DIFF=$(find_clang_format_diff)
+
+      if [[ -x "${CLANG_FORMAT_DIFF}" ]]; then
+         echo "Running clang-format from '${CLANG_FORMAT_DIFF}'..."
+         get_unified_diff ${CPP_FILE_REGEX} | ${CLANG_FORMAT_DIFF} -p1 -i -sort-includes 2>&1
+      else
+         echo "Skipping clang-format. Could not find clang-format-diff at '${CLANG_FORMAT_DIFF}'"
+      fi
    fi
 fi
 

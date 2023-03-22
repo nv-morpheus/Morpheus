@@ -19,14 +19,15 @@
 
 #include "morpheus/objects/data_table.hpp"  // for IDataTable
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
 #include <cudf/io/types.hpp>
-#include <cudf/types.hpp>  // for size_type
 #include <pybind11/pytypes.h>
 
-#include <cstddef>  // for size_t
 #include <memory>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace morpheus {
 #pragma GCC visibility push(default)
@@ -54,7 +55,7 @@ class MessageMeta
      *
      * @return pybind11::object
      */
-    size_t count() const;
+    TensorIndex count() const;
 
     /**
      * @brief Get the info object
@@ -67,6 +68,23 @@ class MessageMeta
      * TODO(Documentation)
      */
     virtual MutableTableInfo get_mutable_info() const;
+
+    /**
+     * @brief Returns true if the underlying DataFrame's index is unique and monotonic. Sliceable indices have better
+     * performance since a range of rows can be specified by a start and stop index instead of requiring boolean masks.
+     *
+     * @return bool
+     */
+    bool has_sliceable_index() const;
+
+    /**
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old
+     * index will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is
+     * a no-op.
+     *
+     * @return std::string The name of the column with the old index or nullopt if no changes were made.
+     */
+    virtual std::optional<std::string> ensure_sliceable_index();
 
     /**
      * @brief Create MessageMeta cpp object from a python object
@@ -110,17 +128,19 @@ class SlicedMessageMeta : public MessageMeta
 {
   public:
     SlicedMessageMeta(std::shared_ptr<MessageMeta> other,
-                      cudf::size_type start            = 0,
-                      cudf::size_type stop             = -1,
+                      TensorIndex start                = 0,
+                      TensorIndex stop                 = -1,
                       std::vector<std::string> columns = {});
 
     TableInfo get_info() const override;
 
     MutableTableInfo get_mutable_info() const override;
 
+    std::optional<std::string> ensure_sliceable_index() override;
+
   private:
-    cudf::size_type m_start{0};
-    cudf::size_type m_stop{-1};
+    TensorIndex m_start{0};
+    TensorIndex m_stop{-1};
     std::vector<std::string> m_column_names;
 };
 
@@ -151,9 +171,9 @@ struct MessageMetaInterfaceProxy
      * @brief Get messages count
      *
      * @param self
-     * @return cudf::size_type
+     * @return TensorIndex
      */
-    static cudf::size_type count(MessageMeta& self);
+    static TensorIndex count(MessageMeta& self);
 
     /**
      * @brief Get a copy of the data frame object as a python object
@@ -165,6 +185,23 @@ struct MessageMetaInterfaceProxy
     static pybind11::object df_property(MessageMeta& self);
 
     static MutableTableCtxMgr mutable_dataframe(MessageMeta& self);
+
+    /**
+     * @brief Returns true if the underlying DataFrame's index is unique and monotonic. Sliceable indices have better
+     * performance since a range of rows can be specified by a start and stop index instead of requiring boolean masks.
+     *
+     * @return bool
+     */
+    static bool has_sliceable_index(MessageMeta& self);
+
+    /**
+     * @brief Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old
+     * index will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is
+     * a no-op.
+     *
+     * @return std::string The name of the column with the old index or nullopt if no changes were made.
+     */
+    static std::optional<std::string> ensure_sliceable_index(MessageMeta& self);
 };
 
 #pragma GCC visibility pop

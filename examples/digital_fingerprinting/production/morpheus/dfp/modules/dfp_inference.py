@@ -1,4 +1,4 @@
-# Copyright (c) 2023, NVIDIA CORPORATION.
+# Copyright (c) 2022-2023, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ def dfp_inference(builder: mrc.Builder):
         results_df = loaded_model.get_results(df_user, return_abs=True)
 
         # Create an output message to allow setting meta
-        output_message = MultiAEMessage(message.meta,
+        output_message = MultiAEMessage(meta=message.meta,
                                         mess_offset=message.mess_offset,
                                         mess_count=message.mess_count,
                                         model=loaded_model)

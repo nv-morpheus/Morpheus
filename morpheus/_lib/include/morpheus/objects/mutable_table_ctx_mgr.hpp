@@ -18,11 +18,11 @@
 #pragma once
 
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/objects/table_info.hpp"
 
 #include <pybind11/pytypes.h>  // for object
 
-#include <memory>   // for unique_ptr
-#include <utility>  // for move
+#include <memory>  // for unique_ptr
 
 namespace morpheus {
 /**

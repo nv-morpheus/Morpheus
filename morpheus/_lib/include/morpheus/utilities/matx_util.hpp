@@ -21,8 +21,8 @@
 #include "morpheus/objects/dtype.hpp"
 #include "morpheus/objects/rmm_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
-#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -51,9 +51,22 @@ struct MatxUtil
      * @param row_count
      * @param fea_len
      * @param output_type
+     * @param start_idx
      * @return std::shared_ptr<rmm::device_buffer>
      */
-    static std::shared_ptr<rmm::device_buffer> create_seg_ids(size_t row_count, size_t fea_len, TypeId output_type);
+    static std::shared_ptr<rmm::device_buffer> create_seq_ids(TensorIndex row_count,
+                                                              TensorIndex fea_len,
+                                                              TypeId output_type,
+                                                              std::shared_ptr<MemoryDescriptor> md,
+                                                              TensorIndex start_idx = 0);
+
+    /**
+     * @brief Adds a constant offset to a seg_ids tensor
+     *
+     * @param input
+     * @param offset
+     */
+    static void offset_seq_ids(const DevMemInfo& input, TensorIndex offset);
 
     /**
      * @brief Calculate logits on device_buffer
@@ -100,9 +113,9 @@ struct MatxUtil
      * @return std::shared_ptr<rmm::device_buffer>
      */
     static std::shared_ptr<rmm::device_buffer> reduce_max(const DevMemInfo& input,
-                                                          const std::vector<int32_t>& seq_ids,
-                                                          size_t seq_id_offset,
-                                                          const std::vector<int64_t>& output_shape);
+                                                          const ShapeType& seq_ids,
+                                                          TensorIndex seq_id_offset,
+                                                          const ShapeType& output_shape);
 };
 /** @} */  // end of group
 }  // namespace morpheus

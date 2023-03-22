@@ -56,7 +56,7 @@ class DFPTraining(SinglePortStage):
 
         self._epochs = epochs
 
-        if (validation_size > 0.0 and validation_size < 1.0):
+        if (validation_size >= 0.0 and validation_size < 1.0):
             self._validation_size = validation_size
         else:
             raise ValueError("validation_size={0} should be a positive float in the "
@@ -85,16 +85,18 @@ class DFPTraining(SinglePortStage):
         # Only train on the feature columns
         train_df = train_df[train_df.columns.intersection(self._config.ae.feature_columns)]
         validation_df = None
+        run_validation = False
 
         # Split into training and validation sets
         if self._validation_size > 0.0:
             train_df, validation_df = train_test_split(train_df, test_size=self._validation_size, shuffle=False)
+            run_validation = True
 
         logger.debug("Training AE model for user: '%s'...", user_id)
-        model.fit(train_df, epochs=self._epochs, val=validation_df)
+        model.fit(train_df, epochs=self._epochs, val=validation_df, run_validation=run_validation)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-        output_message = MultiAEMessage(message.meta,
+        output_message = MultiAEMessage(meta=message.meta,
                                         mess_offset=message.mess_offset,
                                         mess_count=message.mess_count,
                                         model=model)

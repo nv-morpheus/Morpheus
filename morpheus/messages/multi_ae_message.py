@@ -14,11 +14,10 @@
 
 import dataclasses
 import logging
-import typing
 
 from dfencoder import AutoEncoder
 
-from morpheus.messages.message_meta import UserMessageMeta
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_message import MultiMessage
 
 logger = logging.getLogger(__name__)
@@ -31,62 +30,19 @@ class MultiAEMessage(MultiMessage):
     """
 
     model: AutoEncoder
-    # train_loss_scores: cp.ndarray
-    train_scores_mean: float = 0.0
-    train_scores_std: float = 1.0
+    train_scores_mean: float
+    train_scores_std: float
 
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 model: AutoEncoder,
+                 train_scores_mean: float = 0.0,
+                 train_scores_std: float = 1.0):
+        super().__init__(meta=meta, mess_offset=mess_offset, mess_count=mess_count)
 
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
-
-        Returns
-        -------
-        morpheus.pipeline.preprocess.autoencoder.MultiAEMessage
-            A new `MultiAEMessage` with sliced offset and count.
-
-        """
-        return MultiAEMessage(meta=self.meta,
-                              mess_offset=start,
-                              mess_count=stop - start,
-                              model=self.model,
-                              train_scores_mean=self.train_scores_mean,
-                              train_scores_std=self.train_scores_std)
-
-    def copy_ranges(self, ranges: typing.List[typing.Tuple[int, int]], num_selected_rows: int = None):
-        """
-        Perform a copy of the current message instance for the given `ranges` of rows.
-
-        Parameters
-        ----------
-        ranges : typing.List[typing.Tuple[int, int]]
-            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
-            The final output is exclusive of the `stop_row`, i.e. `[start_row, stop_row)`. For example to copy rows
-            1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
-
-        num_selected_rows : typing.Union[None, int]
-            Optional specify the number of rows selected by `ranges`, otherwise this is computed by the result.
-
-        Returns
-        -------
-        `MultiAEMessage`
-        """
-
-        sliced_rows = self.copy_meta_ranges(ranges)
-
-        if num_selected_rows is None:
-            num_selected_rows = len(sliced_rows)
-
-        return MultiAEMessage(meta=UserMessageMeta(sliced_rows, user_id=self.meta.user_id),
-                              mess_offset=0,
-                              mess_count=num_selected_rows,
-                              model=self.model,
-                              train_scores_mean=self.train_scores_mean,
-                              train_scores_std=self.train_scores_std)
+        self.model = model
+        self.train_scores_mean = train_scores_mean
+        self.train_scores_std = train_scores_std

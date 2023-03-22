@@ -20,15 +20,16 @@
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 
-#include <mrc/channel/status.hpp>          // for Status
-#include <mrc/node/sink_properties.hpp>    // for SinkProperties<>::sink_type_t
-#include <mrc/node/source_properties.hpp>  // for SourceProperties<>::source_type_t
+#include <boost/fiber/future/future.hpp>
+#include <mrc/node/rx_sink_base.hpp>
+#include <mrc/node/rx_source_base.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/segment/object.hpp>  // for Object
+#include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from
 
 #include <cstdint>  // for uint32_t
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -61,7 +62,7 @@ class PreprocessNLPStage
      *
      * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
      * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
-     * @param sequence_length : Sequence Length to use (We add to special tokens for ner classification job).
+     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
      * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
      * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
      * max_length is smaller than generated tokens.
@@ -110,7 +111,7 @@ struct PreprocessNLPStageInterfaceProxy
      * @param name : Name of a stage reference
      * @param vocab_hash_file : Path to hash file containing vocabulary of words with token-ids. This can be created
      * from the raw vocabulary using the `cudf.utils.hash_vocab_utils.hash_vocab` function.
-     * @param sequence_length : Sequence Length to use (We add to special tokens for ner classification job).
+     * @param sequence_length : Sequence Length to use (We add to special tokens for NER classification job).
      * @param truncation : If set to true, strings will be truncated and padded to max_length. Each input string will
      * result in exactly one output sequence. If set to false, there may be multiple output sequences when the
      * max_length is smaller than generated tokens.

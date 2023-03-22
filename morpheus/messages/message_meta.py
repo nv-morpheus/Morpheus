@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import dataclasses
+import logging
 import threading
 import warnings
 
@@ -20,6 +21,8 @@ import pandas as pd
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.message_base import MessageBase
+
+logger = logging.getLogger(__name__)
 
 
 class MutableTableCtxMgr:
@@ -40,7 +43,7 @@ class MutableTableCtxMgr:
     def __init__(self, meta) -> None:
         self.__dict__['__meta'] = meta
 
-    def __enter__(self):
+    def __enter__(self) -> pd.DataFrame:
         meta = self.__dict__['__meta']
         meta._mutex.acquire()
         return meta._df
@@ -88,7 +91,7 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         warnings.warn(msg, DeprecationWarning)
         return self.copy_dataframe()
 
-    def copy_dataframe(self):
+    def copy_dataframe(self) -> pd.DataFrame:
         return self._df.copy(deep=True)
 
     def mutable_dataframe(self):
@@ -103,10 +106,54 @@ class MessageMeta(MessageBase, cpp_class=_messages.MessageMeta):
         -------
         int
             number of messages in the MessageMeta.df.
-
         """
 
         return len(self._df)
+
+    def has_sliceable_index(self) -> bool:
+        """
+        Returns True if the underlying DataFrame's index is unique and monotonic. Sliceable indices have better
+        performance since a range of rows can be specified by a start and stop index instead of requiring boolean masks.
+
+        Returns
+        -------
+        bool
+        """
+
+        # Must be either increasing or decreasing with unique values to slice
+        return self._df.index.is_unique and (self._df.index.is_monotonic_increasing
+                                             or self._df.index.is_monotonic_decreasing)
+
+    def ensure_sliceable_index(self) -> str:
+        """
+        Replaces the index in the underlying dataframe if the existing one is not unique and monotonic. The old index
+        will be preserved in a column named `_index_{old_index.name}`. If `has_sliceable_index() == true`, this is a
+        no-op.
+
+        Returns
+        -------
+        str
+            The name of the column with the old index or `None` if no changes were made
+        """
+
+        if (not self.has_sliceable_index()):
+
+            # Reset the index preserving the original index in a new column
+            with self.mutable_dataframe() as df:
+                # We could have had a race condition between calling has_sliceable_index() and acquiring the mutex.
+                # Perform a second check here while we hold the lock.
+                if (not df.index.is_unique
+                        or not (df.index.is_monotonic_increasing or df.index.is_monotonic_decreasing)):
+                    logger.info("Non unique index found in dataframe, generating new index.")
+                    df.index.name = "_index_" + (df.index.name or "")
+
+                    old_index_name = df.index.name
+
+                    df.reset_index(inplace=True)
+
+                    return old_index_name
+
+        return None
 
 
 @dataclasses.dataclass(init=False)

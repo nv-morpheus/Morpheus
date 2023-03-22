@@ -17,82 +17,95 @@
 
 #include "morpheus/messages/multi_response.hpp"
 
-#include "morpheus/messages/memory/response_memory.hpp"
-#include "morpheus/messages/memory/tensor_memory.hpp"  // for TensorMemory::tensor_map_t
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/utilities/cupy_util.hpp"
+#include "morpheus/utilities/string_util.hpp"
 
-#include <cudf/types.hpp>
-#include <glog/logging.h>
-#include <pybind11/pytypes.h>
-
-#include <cstddef>
 #include <memory>
-#include <ostream>  // needed for logging
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
 namespace morpheus {
 /****** Component public implementations *******************/
 MultiResponseMessage::MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
-                                           std::size_t mess_offset,
-                                           std::size_t mess_count,
-                                           std::shared_ptr<ResponseMemory> memory,
-                                           std::size_t offset,
-                                           std::size_t count) :
-  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count)
+                                           TensorIndex mess_offset,
+                                           TensorIndex mess_count,
+                                           std::shared_ptr<TensorMemory> memory,
+                                           TensorIndex offset,
+                                           TensorIndex count,
+                                           std::string id_tensor_name,
+                                           std::string probs_tensor_name) :
+  DerivedMultiMessage(meta, mess_offset, mess_count, memory, offset, count, std::move(id_tensor_name)),
+  probs_tensor_name(std::move(probs_tensor_name))
 {}
 
-const TensorObject MultiResponseMessage::get_output(const std::string &name) const
+const TensorObject MultiResponseMessage::get_output(const std::string& name) const
 {
     return get_tensor(name);
 }
 
-TensorObject MultiResponseMessage::get_output(const std::string &name)
+TensorObject MultiResponseMessage::get_output(const std::string& name)
 {
     return get_tensor(name);
 }
 
-void MultiResponseMessage::set_output(const std::string &name, const TensorObject &value)
+void MultiResponseMessage::set_output(const std::string& name, const TensorObject& value)
 {
     set_tensor(name, value);
 }
 
+TensorObject MultiResponseMessage::get_probs_tensor() const
+{
+    try
+    {
+        return this->get_tensor(this->probs_tensor_name);
+    } catch (std::runtime_error)
+    {
+        // Throw a better error here if we are missing the ID tensor
+        throw pybind11::key_error{MORPHEUS_CONCAT_STR("Cannot get probabilities tensor. Tensor with name '"
+                                                      << this->probs_tensor_name
+                                                      << "' does not exist in the memory object")};
+    }
+}
+
 /****** MultiResponseMessageInterfaceProxy *************************/
 std::shared_ptr<MultiResponseMessage> MultiResponseMessageInterfaceProxy::init(std::shared_ptr<MessageMeta> meta,
-                                                                               cudf::size_type mess_offset,
-                                                                               cudf::size_type mess_count,
-                                                                               std::shared_ptr<ResponseMemory> memory,
-                                                                               cudf::size_type offset,
-                                                                               cudf::size_type count)
+                                                                               TensorIndex mess_offset,
+                                                                               TensorIndex mess_count,
+                                                                               std::shared_ptr<TensorMemory> memory,
+                                                                               TensorIndex offset,
+                                                                               TensorIndex count,
+                                                                               std::string id_tensor_name,
+                                                                               std::string probs_tensor_name)
 {
-    return std::make_shared<MultiResponseMessage>(
-        std::move(meta), mess_offset, mess_count, std::move(memory), offset, count);
+    return std::make_shared<MultiResponseMessage>(std::move(meta),
+                                                  mess_offset,
+                                                  mess_count,
+                                                  std::move(memory),
+                                                  offset,
+                                                  count,
+                                                  std::move(id_tensor_name),
+                                                  std::move(probs_tensor_name));
 }
 
-std::shared_ptr<morpheus::ResponseMemory> MultiResponseMessageInterfaceProxy::memory(MultiResponseMessage &self)
+std::string MultiResponseMessageInterfaceProxy::probs_tensor_name_getter(MultiResponseMessage& self)
 {
-    DCHECK(std::dynamic_pointer_cast<morpheus::ResponseMemory>(self.memory) != nullptr);
-
-    return std::static_pointer_cast<morpheus::ResponseMemory>(self.memory);
+    return self.probs_tensor_name;
 }
 
-std::size_t MultiResponseMessageInterfaceProxy::offset(MultiResponseMessage &self)
+void MultiResponseMessageInterfaceProxy::probs_tensor_name_setter(MultiResponseMessage& self,
+                                                                  std::string probs_tensor_name)
 {
-    return self.offset;
+    self.probs_tensor_name = probs_tensor_name;
 }
 
-std::size_t MultiResponseMessageInterfaceProxy::count(MultiResponseMessage &self)
+pybind11::object MultiResponseMessageInterfaceProxy::get_probs_tensor(MultiResponseMessage& self)
 {
-    return self.count;
+    return CupyUtil::tensor_to_cupy(self.get_probs_tensor());
 }
 
-pybind11::object MultiResponseMessageInterfaceProxy::get_output(MultiResponseMessage &self, const std::string &name)
-{
-    auto tensor = self.get_output(name);
-
-    return CupyUtil::tensor_to_cupy(tensor);
-}
 }  // namespace morpheus

@@ -18,11 +18,11 @@
 #pragma once
 
 #include "morpheus/messages/memory/tensor_memory.hpp"
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
+#include "morpheus/types.hpp"  // for TensorMap
 
-#include <pybind11/pytypes.h>
+#include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>  // for size_t
+#include <memory>  // for shared_ptr
 #include <string>
 
 namespace morpheus {
@@ -46,23 +46,23 @@ class ResponseMemory : public TensorMemory
      *
      * @param count
      */
-    ResponseMemory(size_t count);
+    ResponseMemory(TensorIndex count);
     /**
      * @brief Construct a new Response Memory object
      *
      * @param count
      * @param tensors
      */
-    ResponseMemory(size_t count, tensor_map_t &&tensors);
+    ResponseMemory(TensorIndex count, TensorMap&& tensors);
 
     /**
-     * @brief Checks if a tensor named `name` exists in `tensors`
+     * @brief Checks if a tensor named `name` exists in `tensors`. Alias for `has_tensor`.
      *
      * @param name
      * @return true
      * @return false
      */
-    bool has_output(const std::string &name) const;
+    bool has_output(const std::string& name) const;
 };
 
 /****** ResponseMemoryInterfaceProxy *************************/
@@ -71,25 +71,17 @@ class ResponseMemory : public TensorMemory
  * @brief Interface proxy, used to insulate python bindings.
  *
  */
-struct ResponseMemoryInterfaceProxy
+struct ResponseMemoryInterfaceProxy : public TensorMemoryInterfaceProxy
 {
     /**
-     * @brief Get the output object
+     * @brief Create and initialize a ResponseMemory object, and return a shared pointer to the result. Each array in
+     * `cupy_tensors` should be of length `count`.
      *
-     * @param self
-     * @param name
-     * @return pybind11::object
+     * @param count : Lenght of each array in `cupy_tensors`
+     * @param cupy_tensors : Map of string on to cupy arrays
+     * @return std::shared_ptr<ResponseMemory>
      */
-    static pybind11::object get_output(ResponseMemory &self, const std::string &name);
-
-    /**
-     * @brief Get the output tensor object
-     *
-     * @param self
-     * @param name
-     * @return TensorObject
-     */
-    static TensorObject get_output_tensor(ResponseMemory &self, const std::string &name);
+    static std::shared_ptr<ResponseMemory> init(TensorIndex count, pybind11::object& tensors);
 };
 #pragma GCC visibility pop
 
