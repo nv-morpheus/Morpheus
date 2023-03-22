@@ -21,6 +21,7 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -54,7 +55,7 @@ class InMemorySinkStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MessageMeta, )
+        return (MessageMeta, MultiMessage)
 
     def supports_cpp_node(self) -> bool:
         return False
@@ -65,7 +66,7 @@ class InMemorySinkStage(SinglePortStage):
         """
         self._messages.clear()
 
-    def get_messages(self) -> typing.List[MessageMeta]:
+    def get_messages(self) -> typing.List[typing.Union[MessageMeta, MultiMessage]]:
         """
         Returns
         -------
@@ -83,10 +84,17 @@ class InMemorySinkStage(SinglePortStage):
         -------
         pd.DataFrame
         """
-        all_meta = [x.df for x in self._messages]
+        all_meta = []
+        for x in self._messages:
+            if isinstance(x, MultiMessage):
+                df = x.get_meta()
+            else:
+                df = x.df
 
-        # Convert to pandas
-        all_meta = [x.to_pandas() if isinstance(x, cudf.DataFrame) else x for x in all_meta]
+            if isinstance(df, cudf.DataFrame):
+                df = df.to_pandas()
+
+            all_meta.append(df)
 
         df = pd.concat(all_meta)
 
@@ -95,7 +103,8 @@ class InMemorySinkStage(SinglePortStage):
 
         return df
 
-    def _append_message(self, message: MessageMeta) -> MessageMeta:
+    def _append_message(self, message: typing.Union[MessageMeta,
+                                                    MultiMessage]) -> typing.Union[MessageMeta, MultiMessage]:
         self._messages.append(message)
         return message
 
