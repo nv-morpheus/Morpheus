@@ -196,7 +196,7 @@ def test_kafka_source_batch_pipe(tmp_path,
     pipe.add_stage(DFPLengthChecker(config, expected_length=expected_length, num_exact=num_exact))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, input_file))
+    comp_stage = pipe.add_stage(CompareDataframeStage(config, input_file, include=[r'^v$'], reset_index=True))
     pipe.run()
 
     assert_results(comp_stage.get_results())
