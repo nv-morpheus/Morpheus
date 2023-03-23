@@ -23,6 +23,7 @@ from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MessageMeta
+from morpheus.messages import MultiMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -190,7 +191,7 @@ def test_file_rw_serialize_deserialize_pipe(tmp_path, config, output_type):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
-def test_sfile_rw_serialize_deserialize_multi_segment_pipe(tmp_path, config, output_type):
+def test_file_rw_serialize_deserialize_multi_segment_pipe(tmp_path, config, output_type):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
 
