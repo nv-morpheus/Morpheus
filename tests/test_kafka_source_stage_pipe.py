@@ -123,7 +123,6 @@ class OffsetChecker(SinglePortStage):
 
 
 @pytest.mark.kafka
-@pytest.mark.slow
 @pytest.mark.parametrize('num_records', [10, 100, 1000])
 def test_kafka_source_commit(num_records, config, kafka_bootstrap_servers: str,
                              kafka_topics: typing.Tuple[str, str]) -> None:
@@ -157,7 +156,6 @@ def test_kafka_source_commit(num_records, config, kafka_bootstrap_servers: str,
 
 
 @pytest.mark.kafka
-@pytest.mark.slow
 @pytest.mark.parametrize('num_records', [1000])
 def test_kafka_source_batch_pipe(config,
                                  kafka_bootstrap_servers: str,

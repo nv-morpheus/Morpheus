@@ -41,7 +41,6 @@ def build_expected(df: pd.DataFrame, threshold: float, class_labels: typing.List
     return df.rename(columns=dict(zip(df.columns, class_labels)))
 
 
-@pytest.mark.slow
 @pytest.mark.use_cudf
 def test_add_classifications_stage_pipe(config, filter_probs_df):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
@@ -61,7 +60,6 @@ def test_add_classifications_stage_pipe(config, filter_probs_df):
     assert_results(comp_stage.get_results())
 
 
-@pytest.mark.slow
 @pytest.mark.use_cudf
 def test_add_classifications_stage_multi_segment_pipe(config, filter_probs_df):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']

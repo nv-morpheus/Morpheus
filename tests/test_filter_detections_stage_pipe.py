@@ -91,7 +91,6 @@ def test_filter_detections_stage_pipe(config, filter_probs_df, order, pipeline_b
     return _test_filter_detections_stage_pipe(config, filter_probs_df, do_copy, order, pipeline_batch_size, repeat)
 
 
-@pytest.mark.slow
 @pytest.mark.use_pandas
 @pytest.mark.parametrize('do_copy', [True, False])
 def test_filter_detections_stage_multi_segment_pipe(config, filter_probs_df, do_copy):
