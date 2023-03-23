@@ -83,7 +83,7 @@ def ohe(input_vector, dim, device="cpu"):
     return y_onehot
 
 
-class AutoEncoder:
+class AutoEncoder(torch.nn.Module):
 
     def __init__(
             self,
@@ -123,6 +123,7 @@ class AutoEncoder:
             loss_scaler='standard',  # scaler for the losses (z score)
             *args,
             **kwargs):
+        super().__init__()
 
         self.numeric_fts = OrderedDict()
         self.binary_fts = OrderedDict()
