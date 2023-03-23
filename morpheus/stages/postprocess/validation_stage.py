@@ -24,13 +24,13 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.messages import MultiMessage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 
 logger = logging.getLogger(__name__)
 
 
 @register_stage("validate")
-class ValidationStage(CompareDataframeStage):
+class ValidationStage(CompareDataFrameStage):
     """
     Validate pipeline output for testing.
 

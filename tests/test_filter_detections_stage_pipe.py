@@ -28,7 +28,7 @@ from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
@@ -64,7 +64,7 @@ def _test_filter_detections_stage_pipe(config, copy=True, order='K', pipeline_ba
     pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(FilterDetectionsStage(config, threshold=threshold, copy=copy))
     pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, build_expected(input_df, threshold)))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, build_expected(input_df, threshold)))
     pipe.run()
 
     assert_results(comp_stage.get_results())
@@ -87,7 +87,7 @@ def _test_filter_detections_stage_multi_segment_pipe(config, copy=True):
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config))
     pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, build_expected(input_df, threshold)))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, build_expected(input_df, threshold)))
     pipe.run()
 
     assert_results(comp_stage.get_results())

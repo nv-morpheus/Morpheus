@@ -29,7 +29,7 @@ from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from utils import TEST_DIRS
 
 
@@ -87,8 +87,8 @@ def test_forking_pipeline(config):
 
     split_stage = pipe.add_stage(SplitStage(config))
 
-    comp_higher = pipe.add_stage(CompareDataframeStage(config, compare_df=compare_higher_df))
-    comp_lower = pipe.add_stage(CompareDataframeStage(config, compare_df=compare_lower_df))
+    comp_higher = pipe.add_stage(CompareDataFrameStage(config, compare_df=compare_higher_df))
+    comp_lower = pipe.add_stage(CompareDataFrameStage(config, compare_df=compare_lower_df))
 
     # Create the edges
     pipe.add_edge(source, split_stage)

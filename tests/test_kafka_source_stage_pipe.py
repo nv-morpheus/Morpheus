@@ -29,7 +29,7 @@ from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.dfp_length_checker import DFPLengthChecker
@@ -57,7 +57,7 @@ def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_top
                          stop_after=num_records))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, input_file))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, input_file))
     pipe.run()
 
     assert_results(comp_stage.get_results())
@@ -159,7 +159,7 @@ def test_kafka_source_commit(num_records,
 
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, input_file, include=[r'^v$'], reset_index=True))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, input_file, include=[r'^v$'], reset_index=True))
     pipe.run()
 
     assert_results(comp_stage.get_results())
@@ -196,7 +196,7 @@ def test_kafka_source_batch_pipe(tmp_path,
     pipe.add_stage(DFPLengthChecker(config, expected_length=expected_length, num_exact=num_exact))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, input_file, include=[r'^v$'], reset_index=True))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, input_file, include=[r'^v$'], reset_index=True))
     pipe.run()
 
     assert_results(comp_stage.get_results())

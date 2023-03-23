@@ -26,7 +26,7 @@ from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from utils import TEST_DIRS
@@ -82,7 +82,7 @@ def test_deserialize_pipe(config, dup_index: bool):
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
     assert_results(comp_stage.get_results())
@@ -106,7 +106,7 @@ def test_deserialize_multi_segment_pipe(config, dup_index: bool):
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
     assert_results(comp_stage.get_results())

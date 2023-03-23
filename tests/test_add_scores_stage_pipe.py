@@ -27,7 +27,7 @@ from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
@@ -58,7 +58,7 @@ def test_add_scores_stage_pipe(config, order, pipeline_batch_size, repeat):
     pipe.add_stage(ConvMsg(config, order=order, columns=list(input_df.columns)))
     pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
     assert_results(comp_stage.get_results())
@@ -86,7 +86,7 @@ def test_add_scores_stage_multi_segment_pipe(config, repeat):
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
     assert_results(comp_stage.get_results())

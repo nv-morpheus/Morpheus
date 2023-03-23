@@ -23,7 +23,7 @@ from morpheus._lib.common import FilterSource
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.filter_detections_stage import FilterDetectionsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
@@ -60,7 +60,7 @@ def test_filter_column(config, use_conv_msg, do_copy, threshold, field_name):
                               filter_source=FilterSource.DATAFRAME,
                               field_name=field_name))
     pipe.add_stage(SerializeStage(config))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
     assert_results(comp_stage.get_results())

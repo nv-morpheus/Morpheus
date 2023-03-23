@@ -25,7 +25,7 @@ from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
@@ -54,7 +54,7 @@ def test_add_classifications_stage_pipe(config):
     pipe.add_stage(ConvMsg(config, input_file))
     pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
     assert_results(comp_stage.get_results())
@@ -85,7 +85,7 @@ def test_add_classifications_stage_multi_segment_pipe(config):
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
     assert_results(comp_stage.get_results())

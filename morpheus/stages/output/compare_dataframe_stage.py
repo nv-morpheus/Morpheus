@@ -25,7 +25,7 @@ from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils import compare_df
 
 
-class CompareDataframeStage(InMemorySinkStage):
+class CompareDataFrameStage(InMemorySinkStage):
     """
     Collects incoming messages, comparing the concatinated dataframe of all messages against an expected dataframe
     `compare_df`.
