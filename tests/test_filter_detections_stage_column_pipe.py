@@ -29,7 +29,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
-from utils import assert_results_equal
+from utils import assert_results
 
 
 @pytest.mark.slow
@@ -63,4 +63,4 @@ def test_filter_column(config, use_conv_msg, do_copy, threshold, field_name):
     comp_stage = pipe.add_stage(CompareDataframeStage(config, expected_df))
     pipe.run()
 
-    assert_results_equal(comp_stage.get_results())
+    assert_results(comp_stage.get_results())

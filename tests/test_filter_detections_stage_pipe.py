@@ -35,7 +35,7 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
-from utils import assert_results_equal
+from utils import assert_results
 from utils import extend_df
 
 
@@ -67,7 +67,7 @@ def _test_filter_detections_stage_pipe(config, copy=True, order='K', pipeline_ba
     comp_stage = pipe.add_stage(CompareDataframeStage(config, build_expected(input_df, threshold)))
     pipe.run()
 
-    assert_results_equal(comp_stage.get_results())
+    assert_results(comp_stage.get_results())
 
 
 def _test_filter_detections_stage_multi_segment_pipe(config, copy=True):
@@ -90,7 +90,7 @@ def _test_filter_detections_stage_multi_segment_pipe(config, copy=True):
     comp_stage = pipe.add_stage(CompareDataframeStage(config, build_expected(input_df, threshold)))
     pipe.run()
 
-    assert_results_equal(comp_stage.get_results())
+    assert_results(comp_stage.get_results())
 
 
 @pytest.mark.slow

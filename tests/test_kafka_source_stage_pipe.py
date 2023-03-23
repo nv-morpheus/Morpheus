@@ -29,20 +29,19 @@ from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.general.trigger_stage import TriggerStage
 from morpheus.stages.input.kafka_source_stage import KafkaSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataframeStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.dfp_length_checker import DFPLengthChecker
 from utils import TEST_DIRS
 from utils import assert_path_exists
+from utils import assert_results
 from utils import write_file_to_kafka
 
 
 @pytest.mark.kafka
-def test_kafka_source_stage_pipe(tmp_path, config, kafka_bootstrap_servers: str,
-                                 kafka_topics: typing.Tuple[str, str]) -> None:
+def test_kafka_source_stage_pipe(config, kafka_bootstrap_servers: str, kafka_topics: typing.Tuple[str, str]) -> None:
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
-    out_file = os.path.join(tmp_path, 'results.jsonlines')
 
     # Fill our topic with the input data
     num_records = write_file_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, input_file)
@@ -58,22 +57,10 @@ def test_kafka_source_stage_pipe(tmp_path, config, kafka_bootstrap_servers: str,
                          stop_after=num_records))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataframeStage(config, input_file))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
-    output_data = read_file_to_df(out_file, file_type=FileTypes.Auto).values
-
-    assert len(input_data) == num_records
-    assert len(output_data) == num_records
-
-    # Somehow 0.7 ends up being 0.7000000000000001
-    input_data = np.around(input_data, 2)
-    output_data = np.around(output_data, 2)
-
-    assert output_data.tolist() == input_data.tolist()
+    assert_results(comp_stage.get_results())
 
 
 class OffsetChecker(SinglePortStage):
@@ -125,7 +112,6 @@ class OffsetChecker(SinglePortStage):
                 if new_offset.offset > prev_offset.offset:
                     at_least_one_gt = True
 
-            print(f"************\n{self._offsets}\n{new_offsets}\n********", flush=True)
             assert at_least_one_gt
 
         self._offsets = new_offsets
@@ -156,8 +142,6 @@ def test_kafka_source_commit(num_records,
     num_written = write_file_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, input_file)
     assert num_written == num_records
 
-    out_file = os.path.join(tmp_path, 'results.jsonlines')
-
     pipe = LinearPipeline(config)
     pipe.set_source(
         KafkaSourceStage(config,
@@ -175,22 +159,10 @@ def test_kafka_source_commit(num_records,
 
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataframeStage(config, input_file, include=[r'^v$'], reset_index=True))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
-    output_data = read_file_to_df(out_file, file_type=FileTypes.Auto).values
-
-    assert len(input_data) == num_records
-    assert len(output_data) == num_records
-
-    # Somehow 0.7 ends up being 0.7000000000000001
-    input_data = np.around(input_data, 2)
-    output_data = np.around(output_data, 2)
-
-    assert output_data.tolist() == input_data.tolist()
+    assert_results(comp_stage.get_results())
 
 
 @pytest.mark.kafka
@@ -209,8 +181,6 @@ def test_kafka_source_batch_pipe(tmp_path,
     num_written = write_file_to_kafka(kafka_bootstrap_servers, kafka_topics.input_topic, input_file)
     assert num_written == num_records
 
-    out_file = os.path.join(tmp_path, 'results.jsonlines')
-
     expected_length = config.pipeline_batch_size
     num_exact = num_records // expected_length
 
@@ -226,19 +196,7 @@ def test_kafka_source_batch_pipe(tmp_path,
     pipe.add_stage(DFPLengthChecker(config, expected_length=expected_length, num_exact=num_exact))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataframeStage(config, input_file))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    input_data = read_file_to_df(input_file, file_type=FileTypes.Auto).values
-    output_data = read_file_to_df(out_file, file_type=FileTypes.Auto).values
-
-    assert len(input_data) == num_records
-    assert len(output_data) == num_records
-
-    # Somehow 0.7 ends up being 0.7000000000000001
-    input_data = np.around(input_data, 2)
-    output_data = np.around(output_data, 2)
-
-    assert output_data.tolist() == input_data.tolist()
+    assert_results(comp_stage.get_results())

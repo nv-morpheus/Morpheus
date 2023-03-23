@@ -236,7 +236,7 @@ def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val
     return bool(bool_df.all(axis=None))
 
 
-def assert_results_equal(results: dict) -> dict:
+def assert_results(results: dict) -> dict:
     """
     Receives the results dict from the `CompareDataframeStage.get_results` method,
     and asserts that all columns and rows match
