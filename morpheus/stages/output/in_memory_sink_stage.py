@@ -55,7 +55,7 @@ class InMemorySinkStage(SinglePortStage):
             Accepted input types.
 
         """
-        return (MessageMeta, MultiMessage)
+        return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
         return False

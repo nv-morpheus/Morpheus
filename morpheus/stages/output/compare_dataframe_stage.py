@@ -37,7 +37,7 @@ class CompareDataFrameStage(InMemorySinkStage):
     ----------
     c : `morpheus.config.Config`
         Pipeline configuration instance.
-    compare_df : typing.Union[pd.DataFrame, str]
+    compare_df : typing.Union[pd.DataFrame, cudf.DataFrame, str]
         Dataframe to compare against the aggregate DataFrame composed from the received messages. When `compare_df` is
         a string it is assumed to be a file path.
     include : typing.List[str], optional
@@ -58,7 +58,7 @@ class CompareDataFrameStage(InMemorySinkStage):
 
     def __init__(self,
                  c: Config,
-                 compare_df: typing.Union[pd.DataFrame, str],
+                 compare_df: typing.Union[pd.DataFrame, cudf.DataFrame, str],
                  include: typing.List[str] = None,
                  exclude: typing.List[str] = None,
                  index_col: str = None,
@@ -85,18 +85,6 @@ class CompareDataFrameStage(InMemorySinkStage):
     @property
     def name(self) -> str:
         return "compare"
-
-    def accepted_types(self) -> typing.Tuple:
-        """
-        Accepted input types for this stage are returned.
-
-        Returns
-        -------
-        typing.Tuple(`morpheus.messages.MessageMeta`, )
-            Accepted input types.
-
-        """
-        return (MessageMeta, )
 
     def supports_cpp_node(self) -> bool:
         return False
