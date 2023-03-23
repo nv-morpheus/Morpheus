@@ -31,7 +31,6 @@ sccache --version
 rapids-logger "Configuring cmake for Morpheus"
 git submodule update --init --recursive
 
-# Explicitly setting nvcc path Work-around for https://github.com/rapidsai/cudf/issues/12862
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
     -DCCACHE_PROGRAM_PATH=$(which sccache) \
     -DMORPHEUS_PYTHON_BUILD_WHEEL=ON \
