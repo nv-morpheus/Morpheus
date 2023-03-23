@@ -62,4 +62,4 @@ def test_write_to_kafka_stage_pipe(config,
 
     assert len(output_df) == len(filter_probs_df)
 
-    assert_results(compare_df.compare_df(filter_probs_df, output_df))
+    assert_results(compare_df.compare_df(filter_probs_df.to_pandas(), output_df))

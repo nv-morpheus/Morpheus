@@ -22,9 +22,7 @@ import pandas as pd
 import cudf
 
 from morpheus.cli.register_stage import register_stage
-from morpheus.common import FileTypes
 from morpheus.config import Config
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.messages import ResponseMemory
@@ -32,29 +30,32 @@ from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
-@register_stage("unittest-conv-msg")
+@register_stage("unittest-conv-msg", ignore_args=["expected_data"])
 class ConvMsg(SinglePortStage):
     """
     Simple test stage to convert a MultiMessage to a MultiResponseProbsMessage
     Basically a cheap replacement for running an inference stage.
 
-    Setting `expected_data_file` to the path of a cav/json file will cause the probs array to be read from file.
-    Setting `expected_data_file` to `None` causes the probs array to be a copy of the incoming dataframe.
+    Setting `expected_data` to a DataFrame will cause the probs array to by populated by the values in the DataFrame.
+    Setting `expected_data` to `None` causes the probs array to be a copy of the incoming dataframe.
     Setting `columns` restricts the columns copied into probs to just the ones specified.
     Setting `order` specifies probs to be in either column or row major
     Setting `empty_probs` will create an empty probs array with 3 columns, and the same number of rows as the dataframe
     """
 
-    def __init__(
-            self,
-            c: Config,
-            expected_data_file: str = None,  # TODO: rename
-            columns: typing.List[str] = None,
-            order: str = 'K',
-            probs_type: str = 'f4',
-            empty_probs: bool = False):
+    def __init__(self,
+                 c: Config,
+                 expected_data: typing.Union[pd.DataFrame, cudf.DataFrame] = None,
+                 columns: typing.List[str] = None,
+                 order: str = 'K',
+                 probs_type: str = 'f4',
+                 empty_probs: bool = False):
         super().__init__(c)
-        self._expected_data_file = expected_data_file
+
+        if expected_data is not None:
+            assert isinstance(expected_data, (pd.DataFrame, cudf.DataFrame))
+
+        self._expected_data = expected_data
         self._columns = columns
         self._order = order
         self._probs_type = probs_type
@@ -71,14 +72,12 @@ class ConvMsg(SinglePortStage):
         return False
 
     def _conv_message(self, m: MultiMessage) -> MultiResponseMessage:
-        if self._expected_data_file is not None:
-            if (isinstance(self._expected_data_file, cudf.DataFrame)):
-                df = self._expected_data_file.copy(deep=True)
-            elif (isinstance(self._expected_data_file, pd.DataFrame)):
-                df = pd.DataFrame(self._expected_data_file)
+        if self._expected_data is not None:
+            if (isinstance(self._expected_data, cudf.DataFrame)):
+                df = self._expected_data.copy(deep=True)
             else:
-                # TODO: remove
-                df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
+                df = cudf.DataFrame(self._expected_data)
+
         else:
             if self._columns is not None:
                 df = m.get_meta(self._columns)
