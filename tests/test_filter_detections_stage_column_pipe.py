@@ -16,7 +16,6 @@
 
 import os
 
-import numpy as np
 import pytest
 
 from morpheus._lib.common import FilterSource

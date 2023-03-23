@@ -19,12 +19,9 @@ import os
 import typing
 
 import mrc
-import numpy as np
 import pytest
 
-from morpheus._lib.common import FileTypes
 from morpheus.config import Config
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.general.trigger_stage import TriggerStage
@@ -34,7 +31,6 @@ from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.dfp_length_checker import DFPLengthChecker
 from utils import TEST_DIRS
-from utils import assert_path_exists
 from utils import assert_results
 from utils import write_file_to_kafka
 
