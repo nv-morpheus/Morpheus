@@ -3,11 +3,13 @@
 ## Table of Contents
 
 1. [Introduction](#introduction)
+    1. [Motivation](#motivation)
+    2. [Overview](#overview)
 2. [Setting up Morpheus](#setting-up-morpheus)
-2. [Morpheus Modules](#morpheus-modules)
-3. [dfp_deployment](#dfp_deployment)
+3. [Morpheus Modules](#morpheus-modules)
+4. [dfp_deployment](#dfp_deployment)
     1. [fsspec_dataloader](#fsspec_dataloader)
-4. [dfp_training_pipeline](#dfp_training_pipeline)
+5. [dfp_training_and_inference_pipelines](#dfp_training_and_inference_pipelines)
     1. [dfp_preproc](#dfp_preproc)
         1. [filter_control_messages](#filter_control_messages)
         2. [file_batcher](#file_batcher)
@@ -15,29 +17,24 @@
         4. [dfp_split_users](#dfp_split_users)
     2. [dfp_rolling_window](#dfp_rolling_window)
     3. [dfp_data_prep](#dfp_data_prep)
-    4. [dfp_inference](#dfp_inference)
-    5. [filter_detections](#filter_detections)
-    6. [dfp_post_proc](#dfp_post_proc)
-    7. [serialize](#serialize)
-    8. [write_to_file](#write_to_file)
-5. [dfp_inference_pipeline](#dfp_inference_pipeline)
-    1. [dfp_preproc](#dfp_preproc-1)
-        1. [filter_control_messages](#filter_control_messages-1)
-        2. [file_batcher](#file_batcher-1)
-        3. [file_to_df_dataloader](#file_to_df_dataloader-1)
-        4. [dfp_split_users](#dfp_split_users-1)
-    2. [dfp_rolling_window](#dfp_rolling_window-1)
-    3. [dfp_data_prep](#dfp_data_prep-1)
-    4. [dfp_training](#dfp_training)
-    5. [mlflow_model_writer](#mlflow_model_writer)
-6. [Combining modules and creating the pipeline](#combining-modules-and-creating-the-pipeline)
-7. [Conclusion](#conclusion)
+6. [dfp_training_pipeline](#dfp_training_pipeline)
+    1. [dfp_training](#dfp_training)
+    2. [mlflow_model_writer](#mlflow_model_writer)
+7. [dfp_inference_pipeline](#dfp_inference_pipeline)
+    1. [dfp_inference](#dfp_inference)
+    2. [filter_detections](#filter_detections)
+    3. [dfp_post_proc](#dfp_post_proc)
+    4. [serialize](#serialize)
+    5. [write_to_file](#write_to_file)
 
 ## Introduction
 
+<a id="introduction"></a>
+
 ### Motivation
 
-<a id="introduction"></a>
+<a id="motivation"></a>
+
 This document presents the adaptation of the Digital Fingerprinting pipeline in Morpheus from the existing stage-based
 approach to one that is module-based; this process will provide a basis to work through motivation and
 usage examples for number of new features found in the 23.03 release. The updated pipeline incorporates extensions
@@ -50,6 +47,8 @@ events using either generic or user-specific models. Additionally, the pipeline 
 or predefined training data, offering a more adaptable and user-friendly experience.
 
 ### Overview
+
+<a id="overview"></a>
 
 At a high level, the pipeline consists of three parts: the front-end file list loader that reads new control messages
 from a Kafka topic and expands the described data sources to be processed, and the training and inference pipelines that
