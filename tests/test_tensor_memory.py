@@ -21,8 +21,6 @@ import cupy as cp
 import numpy as np
 import pytest
 
-from morpheus.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
 from morpheus.messages.memory.inference_memory import InferenceMemoryFIL
@@ -134,18 +132,17 @@ def check_response_memory_probs_and_ae(cls):
 
 
 @pytest.mark.use_python
-def test_response_memory_ae(config):
+def test_response_memory_ae(config, filter_probs_df):
     m = check_response_memory_probs_and_ae(ResponseMemoryAE)
 
     assert m.user_id == ""
     assert m.explain_df is None
 
-    df = read_file_to_df(INPUT_FILE, file_type=FileTypes.Auto, df_type='pandas')
     m.user_id = "testy"
-    m.explain_df = df
+    m.explain_df = filter_probs_df
 
     assert m.user_id == "testy"
-    assert (m.explain_df.values == df.values).all()
+    assert (m.explain_df.values == filter_probs_df.values).all()
 
 
 def test_response_memory_probs(config):
