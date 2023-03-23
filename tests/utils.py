@@ -26,9 +26,7 @@ import pandas as pd
 import cudf
 
 import morpheus
-from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.io.serializers import df_to_csv
 from morpheus.stages.inference import inference_stage
 
 
@@ -100,7 +98,7 @@ def write_file_to_kafka(bootstrap_servers: str,
 
 
 def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, threshold):
-    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
+    df = read_file_to_df(file_name, df_type='pandas')
     for field_name in field_names:
         class_field = f"{class_prefix}{field_name}"
         score_field = f"{score_prefix}{field_name}"
