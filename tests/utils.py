@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import collections
-import io
 import json
 import os
 import random
@@ -114,25 +113,9 @@ def compare_class_to_scores(file_name, field_names, class_prefix, score_prefix, 
         assert all(above_thresh == df[class_field]), f"Mismatch on {field_name}"
 
 
-def get_column_names_from_file(file_name):
-    df = read_file_to_df(file_name, file_type=FileTypes.Auto, df_type='pandas')
-    return list(df.columns)
-
-
 def extend_df(df, repeat_count) -> pd.DataFrame:
     extended_df = pd.concat([df for _ in range(repeat_count)])
     return extended_df.reset_index(inplace=False, drop=True)
-
-
-def extend_data(input_file, output_file, repeat_count):
-    df = read_file_to_df(input_file, FileTypes.Auto, df_type='pandas')
-    data = extend_df(df, repeat_count)
-    with open(output_file, 'w') as fh:
-        output_strs = df_to_csv(data, include_header=True, include_index_col=False)
-        # Remove any trailing whitespace
-        if (len(output_strs[-1].strip()) == 0):
-            output_strs = output_strs[:-1]
-        fh.writelines(output_strs)
 
 
 def assert_path_exists(filename: str, retry_count: int = 5, delay_ms: int = 500):
@@ -193,31 +176,6 @@ def duplicate_df_index_rand(df: pd.DataFrame, count=1):
 
     # Return a new dataframe where we replace some index values with others
     return duplicate_df_index(df, replace_dict)
-
-
-def create_df_with_dup_ids(df, dup_row=8) -> str:
-    """
-    Helper method to test issue #686, takes the filter_probs.csv and sets the id in row `dup_row` to the id of the
-    previous row (or the next row if dup_row==0)
-    """
-    assert df.index.is_unique
-
-    data = df_to_csv(df, include_header=True, include_index_col=True, strip_newline=True)
-
-    # Duplicate id=7
-    dup_row_idx = dup_row + 1  # account for the header row
-    if dup_row > 0:
-        new_idx_val = dup_row - 1
-    else:
-        new_idx_val = 1
-
-    data[dup_row_idx] = data[dup_row_idx].replace(str(dup_row), str(new_idx_val), 1)
-
-    dup_file = os.path.join(tmp_path, 'dup_id.csv')
-    with open(dup_file, 'w') as fh:
-        fh.writelines("\n".join(data))
-
-    return dup_file
 
 
 def assert_df_equal(df_to_check: typing.Union[pd.DataFrame, cudf.DataFrame], val_to_check: typing.Any):
