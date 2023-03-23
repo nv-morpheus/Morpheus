@@ -28,8 +28,6 @@ from functools import partial
 import pytest
 import requests
 
-import cudf
-
 # actual topic names not important, but we will need two of them.
 KAFKA_TOPICS = namedtuple('KAFKA_TOPICS', ['input_topic', 'output_topic'])('morpheus_input_topic',
                                                                            'morpheus_output_topic')
@@ -377,9 +375,22 @@ def reload_modules(request: pytest.FixtureRequest):
 
 @pytest.fixture(scope="function")
 def manual_seed():
+    """
+    Seeds the random number generators for the stdlib, PyTorch and NumPy.
+    By default this will seed with a value of `42`, however this fixture also yields the seed function allowing tests to
+    call this a second time, or seed with a different value.
+
+    Use this fixture to ensure repeatability of a test that depends on randomness.
+    Note: PyTorch only garuntees determanism on a per-GPU basis, resulting in some tests that might not be portable
+    across GPU models.
+    """
     from morpheus.utils import seed as seed_utils
-    seed_utils.manual_seed(42)
-    yield
+
+    def seed_fn(seed=42):
+        seed_utils.manual_seed(seed)
+
+    seed_fn()
+    yield seed_fn
 
 
 @pytest.fixture(scope="function")
@@ -402,7 +413,7 @@ def _filter_probs_df():
 
 
 @pytest.fixture(scope="function")
-def df(_filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+def filter_probs_df(_filter_probs_df, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
     if df_type == 'cudf':
         yield _filter_probs_df.copy(deep=True)
     elif df_type == 'pandas':

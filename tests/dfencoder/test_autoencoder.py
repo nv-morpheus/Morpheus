@@ -224,9 +224,9 @@ def test_auto_encoder_get_scaler():
         assert ae.get_scaler(value) is expected
 
 
-def test_auto_encoder_init_numeric(df):
+def test_auto_encoder_init_numeric(filter_probs_df):
     ae = autoencoder.AutoEncoder()
-    ae.init_numeric(df)
+    ae.init_numeric(filter_probs_df)
 
     expected_features = {
         'v1': {

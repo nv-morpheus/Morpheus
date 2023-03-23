@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/dtype.hpp"  // for DType
+#include "morpheus/objects/memory_descriptor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
 #include "morpheus/types.hpp"  // for RankType, ShapeType, TensorIndex
 
@@ -154,6 +155,7 @@ class RMMTensor : public ITensor
     TensorIndex offset_bytes() const;
 
     // Memory info
+    std::shared_ptr<MemoryDescriptor> m_mem_descriptor;
     std::shared_ptr<rmm::device_buffer> m_md;
     TensorIndex m_offset;
 

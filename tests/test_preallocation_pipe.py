@@ -21,8 +21,8 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import TypeId
-from morpheus._lib.common import tyepid_to_numpy_str
+from morpheus.common import TypeId
+from morpheus.common import tyepid_to_numpy_str
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
