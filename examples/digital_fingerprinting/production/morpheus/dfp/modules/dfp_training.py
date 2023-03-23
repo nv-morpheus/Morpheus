@@ -15,10 +15,10 @@
 import logging
 
 import mrc
-from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
