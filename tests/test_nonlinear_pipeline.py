@@ -30,9 +30,9 @@ from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.stage import Stage
 from morpheus.pipeline.stream_pair import StreamPair
-from morpheus.stages.input.file_source_stage import FileSourceStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
-from utils import TEST_DIRS
+from utils import assert_results
 
 
 class SplitStage(Stage):
@@ -76,15 +76,13 @@ class SplitStage(Stage):
 
 @pytest.mark.use_pandas
 def test_forking_pipeline(config, filter_probs_df):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-
     compare_higher_df = filter_probs_df[filter_probs_df["v2"] >= 0.5]
     compare_lower_df = filter_probs_df[filter_probs_df["v2"] < 0.5]
 
     pipe = Pipeline(config)
 
     # Create the stages
-    source = pipe.add_stage(FileSourceStage(config, filename=input_file))
+    source = pipe.add_stage(InMemorySourceStage(config, [cudf.DataFrame(filter_probs_df)]))
 
     split_stage = pipe.add_stage(SplitStage(config))
 
@@ -99,8 +97,5 @@ def test_forking_pipeline(config, filter_probs_df):
     pipe.run()
 
     # Get the results
-    results1 = comp_higher.get_results()
-    results2 = comp_lower.get_results()
-
-    assert results1["diff_rows"] == 0
-    assert results2["diff_rows"] == 0
+    assert_results(comp_higher.get_results())
+    assert_results(comp_lower.get_results())

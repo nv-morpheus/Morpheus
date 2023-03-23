@@ -15,10 +15,11 @@
 # limitations under the License.
 
 import os
+import typing
 
+import pandas as pd
 import pytest
 
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -33,17 +34,26 @@ from utils import TEST_DIRS
 from utils import assert_results
 
 
+def build_expected(df: pd.DataFrame, threshold: float, class_labels: typing.List[str]):
+    """
+    Generate the expected output of an add class by filtering by a threshold and applying the class labels
+    """
+    df = (df > threshold)
+    # Replace input columns with the class labels
+    return df.rename(columns=dict(zip(df.columns, class_labels)))
+
+
 @pytest.mark.slow
-def test_add_classifications_stage_pipe(config):
+@pytest.mark.use_pandas
+def test_add_classifications_stage_pipe(config, filter_probs_df):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
 
     threshold = 0.75
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(input_file, df_type='pandas')
-    expected_df = (input_df > threshold)
 
+    expected_df = (filter_probs_df > threshold)
     # Replace input columns with the class labels
     expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
 
@@ -53,25 +63,22 @@ def test_add_classifications_stage_pipe(config):
     pipe.add_stage(ConvMsg(config, input_file))
     pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+    comp_stage = pipe.add_stage(
+        CompareDataFrameStage(config, build_expected(filter_probs_df, threshold, config.class_labels)))
     pipe.run()
 
     assert_results(comp_stage.get_results())
 
 
 @pytest.mark.slow
-def test_add_classifications_stage_multi_segment_pipe(config):
+@pytest.mark.use_pandas
+def test_add_classifications_stage_multi_segment_pipe(config, filter_probs_df):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
 
     threshold = 0.75
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(input_file, df_type='pandas')
-    expected_df = (input_df > threshold)
-
-    # Replace input columns with the class labels
-    expected_df = expected_df.rename(columns=dict(zip(expected_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
     pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
@@ -84,7 +91,8 @@ def test_add_classifications_stage_multi_segment_pipe(config):
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+    comp_stage = pipe.add_stage(
+        CompareDataFrameStage(config, build_expected(filter_probs_df, threshold, config.class_labels)))
     pipe.run()
 
     assert_results(comp_stage.get_results())

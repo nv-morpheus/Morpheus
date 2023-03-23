@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 import pytest
 
 from morpheus.common import FilterSource
@@ -26,25 +24,21 @@ from morpheus.stages.postprocess.filter_detections_stage import FilterDetections
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
-from utils import TEST_DIRS
 from utils import assert_results
 
 
 @pytest.mark.slow
-@pytest.mark.use_pandas
+@pytest.mark.use_cudf
 @pytest.mark.parametrize('use_conv_msg', [True, False])
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
 @pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
 def test_filter_column(config, filter_probs_df, use_conv_msg, do_copy, threshold, field_name):
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(input_file, df_type='cudf')
-
-    expected_df = input_df.to_pandas()
+    expected_df = filter_probs_df.to_pandas()
     expected_df = expected_df[expected_df[field_name] > threshold]
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [input_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
 
     # When `use_conv_msg` is true, ConvMsg will convert messages to MultiResponseProbs,

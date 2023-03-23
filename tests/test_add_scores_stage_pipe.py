@@ -37,19 +37,19 @@ from utils import extend_df
 
 
 @pytest.mark.slow
+@pytest.mark.use_pandas
 @pytest.mark.parametrize('order', ['F', 'C'])
 @pytest.mark.parametrize('pipeline_batch_size', [256, 1024, 2048])
 @pytest.mark.parametrize('repeat', [1, 10, 100])
-def test_add_scores_stage_pipe(config, order, pipeline_batch_size, repeat):
+def test_add_scores_stage_pipe(config, filter_probs_df, order, pipeline_batch_size, repeat):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.pipeline_batch_size = pipeline_batch_size
 
-    src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(src_file, df_type='pandas')
+    input_df = filter_probs_df.copy(deep=True)
     if repeat > 1:
         input_df = extend_df(input_df, repeat)
 
-    expected_df = input_df.rename(columns=dict(zip(input_df.columns, config.class_labels)))
+    expected_df = filter_probs_df.rename(columns=dict(zip(filter_probs_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
     pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
@@ -64,6 +64,7 @@ def test_add_scores_stage_pipe(config, order, pipeline_batch_size, repeat):
 
 
 @pytest.mark.slow
+@pytest.mark.use_pandas
 @pytest.mark.parametrize('repeat', [1, 2, 5])
 def test_add_scores_stage_multi_segment_pipe(config, repeat):
     # Intentionally using FileSourceStage's repeat argument as this triggers a bug in #443
