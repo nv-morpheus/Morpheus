@@ -59,7 +59,7 @@ def test_deserialize_pipe(config, filter_probs_df, dup_index: bool):
     """
     End to end test for DeserializeStage
     """
-    expected_df = filter_probs_df.to_pandas()
+    expected_df = filter_probs_df.to_pandas()  # take a copy before we mess with the index
 
     if dup_index:
         filter_probs_df = duplicate_df_index(filter_probs_df, {8: 7})
@@ -80,7 +80,7 @@ def test_deserialize_multi_segment_pipe(config, filter_probs_df, dup_index: bool
     """
     End to end test across mulitiple segments
     """
-    expected_df = filter_probs_df.to_pandas()
+    expected_df = filter_probs_df.to_pandas()  # take a copy before we mess with the index
 
     if dup_index:
         filter_probs_df = duplicate_df_index(filter_probs_df, {8: 7})

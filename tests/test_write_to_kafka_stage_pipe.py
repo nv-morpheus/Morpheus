@@ -14,21 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import typing
 
 import pytest
 
 import cudf
 
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.write_to_kafka_stage import WriteToKafkaStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils import compare_df
-from utils import TEST_DIRS
 from utils import assert_results
 
 if (typing.TYPE_CHECKING):
@@ -36,7 +33,9 @@ if (typing.TYPE_CHECKING):
 
 
 @pytest.mark.kafka
+@pytest.mark.use_cudf
 def test_write_to_kafka_stage_pipe(config,
+                                   filter_probs_df,
                                    kafka_bootstrap_servers: str,
                                    kafka_consumer: "KafkaConsumer",
                                    kafka_topics: typing.Tuple[str, str]) -> None:
@@ -44,11 +43,8 @@ def test_write_to_kafka_stage_pipe(config,
     Even though WriteToKafkaStage only has a Python impl, testing with both C++ and Python execution
     to ensure it works just as well with the C++ impls of the message classes.
     """
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines")
-    input_df = read_file_to_df(input_file, df_type='pandas')
-
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config))
     pipe.add_stage(
@@ -59,11 +55,11 @@ def test_write_to_kafka_stage_pipe(config,
     pipe.run()
 
     kafka_messages = list(kafka_consumer)
-    assert len(kafka_messages) == len(input_df)
+    assert len(kafka_messages) == len(filter_probs_df)
 
     output_df = cudf.io.read_json("\n".join(rec.value.decode("utf-8") for rec in kafka_messages),
                                   lines=True).to_pandas()
 
-    assert len(output_df) == len(input_df)
+    assert len(output_df) == len(filter_probs_df)
 
-    assert_results(compare_df.compare_df(input_df, output_df))
+    assert_results(compare_df.compare_df(filter_probs_df, output_df))

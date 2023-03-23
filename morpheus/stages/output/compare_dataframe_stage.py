@@ -17,6 +17,8 @@ import typing
 
 import pandas as pd
 
+import cudf
+
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
@@ -67,6 +69,8 @@ class CompareDataFrameStage(InMemorySinkStage):
 
         if isinstance(compare_df, str):
             compare_df = read_file_to_df(compare_df, df_type='pandas')
+        elif isinstance(compare_df, cudf.DataFrame):
+            compare_df = compare_df.to_pandas()
 
         self._compare_df = compare_df
 

@@ -16,8 +16,6 @@
 
 import pytest
 
-import cudf
-
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
@@ -27,26 +25,24 @@ from utils import assert_results
 
 
 # Adapted from fil_in_out_stage -- used for testing multi-segment error conditions
-def test_linear_boundary_stages(config):
-    input_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), df_type='pandas')
-
+@pytest.mark.use_cudf
+def test_linear_boundary_stages(config, filter_probs_df):
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
-    comp_stage = pipe.add_stage(CompareDataFrameStage(config, input_df))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, filter_probs_df))
     pipe.run()
 
     assert_results(comp_stage.get_results())
 
 
-def test_multi_segment_bad_data_type(config):
-    input_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), df_type='pandas')
-
+@pytest.mark.use_cudf
+def test_multi_segment_bad_data_type(config, filter_probs_df):
     with pytest.raises(RuntimeError):
         pipe = LinearPipeline(config)
-        pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+        pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
         pipe.add_segment_boundary(int)
-        mem_sink = pipe.add_stage(InMemorySinkStage(config))
+        mem_sink = pipe.add_stage(InMemorySinkStage(config, filter_probs_df))
         pipe.run()
 
     assert len(mem_sink.get_messages()) == 0

@@ -25,7 +25,6 @@ import cudf
 
 from morpheus.common import TypeId
 from morpheus.common import tyepid_to_numpy_str
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -79,18 +78,19 @@ class CheckPreAlloc(SinglePortStage):
         return stream, input_stream[1]
 
 
+@pytest.mark.use_cudf
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
-def test_preallocation(config, probs_type):
+def test_preallocation(config, filter_probs_df, probs_type):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
-    input_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), df_type='pandas')
-
     probs_np_type = tyepid_to_numpy_str(probs_type)
-    expected_df = pd.DataFrame(data={c: np.zeros(len(input_df), dtype=probs_np_type) for c in config.class_labels})
+    expected_df = pd.DataFrame(
+        data={c: np.zeros(len(filter_probs_df), dtype=probs_np_type)
+              for c in config.class_labels})
 
     pipe = LinearPipeline(config)
-    mem_src = pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, columns=list(input_df.columns), probs_type=probs_np_type))
+    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type=probs_np_type))
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
@@ -106,25 +106,26 @@ def test_preallocation(config, probs_type):
     assert_results(comp_stage.get_results())
 
 
+@pytest.mark.use_cudf
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
-def test_preallocation_multi_segment_pipe(config, probs_type):
+def test_preallocation_multi_segment_pipe(config, filter_probs_df, probs_type):
     """
     Test ensures that when columns are needed for preallocation in a multi-segment pipeline, the preallocagtion will
     always be performed on the closest source to the stage that requested preallocation. Which in cases where the
     requesting stage is not in the first segment, then the preallocation will be performed on the segment ingress
     """
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
-    input_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), df_type='pandas')
-
     probs_np_type = tyepid_to_numpy_str(probs_type)
-    expected_df = pd.DataFrame(data={c: np.zeros(len(input_df), dtype=probs_np_type) for c in config.class_labels})
+    expected_df = pd.DataFrame(
+        data={c: np.zeros(len(filter_probs_df), dtype=probs_np_type)
+              for c in config.class_labels})
 
     pipe = LinearPipeline(config)
-    mem_src = pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(ConvMsg(config, columns=list(input_df.columns), probs_type=tyepid_to_numpy_str(probs_type)))
+    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type=tyepid_to_numpy_str(probs_type)))
     (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
     pipe.add_segment_boundary(MultiResponseMessage)
@@ -145,17 +146,16 @@ def test_preallocation_multi_segment_pipe(config, probs_type):
 
 
 @pytest.mark.use_cpp
-def test_preallocation_error(config):
+def test_preallocation_error(config, filter_probs_df):
     """
     Verify that we get a raised exception when add_scores attempts to use columns that don't exist
     """
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
-    input_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), df_type='pandas')
 
     pipe = LinearPipeline(config)
-    mem_src = pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    mem_src = pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, columns=list(input_df.columns), probs_type='f4'))
+    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns), probs_type='f4'))
     add_scores = pipe.add_stage(AddScoresStage(config))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     mem_sink = pipe.add_stage(InMemorySinkStage(config))

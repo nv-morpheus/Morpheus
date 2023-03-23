@@ -19,7 +19,6 @@ import os
 
 import pytest
 
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
@@ -28,25 +27,22 @@ from morpheus.stages.postprocess.add_classifications_stage import AddClassificat
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
-from utils import TEST_DIRS
 from utils import assert_path_exists
 
 
+@pytest.mark.use_cudf
 @pytest.fixture(scope="function")
-def viz_pipeline(config, tmp_path):
+def viz_pipeline(config, filter_probs_df):
     """
     Creates a quick pipeline.
     """
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(input_file, df_type='cudf')
-
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [input_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, input_file))
+    pipe.add_stage(ConvMsg(config, filter_probs_df))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_stage(InMemorySinkStage(config))
