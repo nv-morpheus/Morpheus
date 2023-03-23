@@ -60,13 +60,8 @@ import tqdm
 from .ae_module import AEModule
 from .dataframe import EncoderDataFrame
 from .distributed_ae import DistributedAutoEncoder
-from .logging import BasicLogger
-from .logging import IpynbLogger
-from .logging import TensorboardXLogger
-from .scalers import GaussRankScaler
-from .scalers import ModifiedScaler
-from .scalers import NullScaler
-from .scalers import StandardScaler
+from .logging import BasicLogger, IpynbLogger, TensorboardXLogger
+from .scalers import GaussRankScaler, NullScaler, StandardScaler, ModifiedScaler
 
 
 def ohe(input_vector, dim, device="cpu"):
@@ -123,7 +118,7 @@ class AutoEncoder(torch.nn.Module):
             loss_scaler='standard',  # scaler for the losses (z score)
             *args,
             **kwargs):
-        super().__init__()
+        super(AutoEncoder, self).__init__(*args, **kwargs)
 
         self.numeric_fts = OrderedDict()
         self.binary_fts = OrderedDict()
@@ -174,6 +169,7 @@ class AutoEncoder(torch.nn.Module):
         self.dampening = dampening
         self.weight_decay = weight_decay
         self.nesterov = nesterov
+
         self.progress_bar = progress_bar
 
         self.mse = torch.nn.modules.loss.MSELoss(reduction='none')
@@ -445,11 +441,13 @@ class AutoEncoder(torch.nn.Module):
         lr = self.lr
         params = self.model.parameters()
         if self.optimizer == 'adam':
-            optim = torch.optim.Adam(params,
-                                    lr=self.lr,
-                                    amsgrad=self.amsgrad,
-                                    weight_decay=self.weight_decay,
-                                    betas=self.betas)
+            optim = torch.optim.Adam(
+                params,
+                lr=self.lr,
+                amsgrad=self.amsgrad,
+                weight_decay=self.weight_decay,
+                betas=self.betas
+            )
         elif self.optimizer == 'sgd':
             optim = torch.optim.SGD(
                 params,
@@ -607,6 +605,7 @@ class AutoEncoder(torch.nn.Module):
         net_loss += list(mse_loss.mean(dim=0).cpu().detach().numpy())
         mse_loss = mse_loss.mean()
         bce_loss = self.bce(bin, bin_target)
+
         net_loss += list(bce_loss.mean(dim=0).cpu().detach().numpy())
         bce_loss = bce_loss.mean()
         cce_loss = []
@@ -623,11 +622,12 @@ class AutoEncoder(torch.nn.Module):
                 self.logger.id_val_step(net_loss)
             elif not self.model.training:
                 self.logger.val_step(net_loss)
+
         net_loss = np.array(net_loss).mean()
         return mse_loss, bce_loss, cce_loss, net_loss
 
     def do_backward(self, mse, bce, cce):
-        # running `backward()` sepeately on mse/bce/cce is equivalent to summing them up and run `backward()` once
+        # running `backward()` seperately on mse/bce/cce is equivalent to summing them up and run `backward()` once
         loss_fn = mse + bce
         for ls in cce:
             loss_fn += ls
@@ -647,6 +647,7 @@ class AutoEncoder(torch.nn.Module):
             (sum of all losses)
         """
         self.model.eval()
+
         num_pred, bin_pred, codes = self.compute_targets(in_)
         bin_pred += ((bin_pred == 0).float() * 0.05)
         bin_pred -= ((bin_pred == 1).float() * 0.05)
@@ -708,6 +709,7 @@ class AutoEncoder(torch.nn.Module):
             baseline = self.compute_baseline_performance(val_in, val_df)
             if self.verbose:
                 print(msg)
+
             val_batches = len(val_df) // self.eval_batch_size
             if len(val_df) % self.eval_batch_size != 0:
                 val_batches += 1
@@ -716,10 +718,11 @@ class AutoEncoder(torch.nn.Module):
         if len(df) % self.batch_size > 0:
             n_updates += 1
         last_loss = 5000
-        
+
         count_es = 0
         for i in range(epochs):
             self.model.train()
+
             if self.verbose:
                 print(f'training epoch {i + 1}...')
             df = df.sample(frac=1.0)
@@ -1274,6 +1277,7 @@ class AutoEncoder(torch.nn.Module):
             n_batches += 1
 
         self.model.eval()
+
         if self.optim is None:
             self.build_model(df)
         df = self.prepare_df(df)
@@ -1443,6 +1447,7 @@ class AutoEncoder(torch.nn.Module):
                 bce_loss_slice: torch.Tensor = self.bce(bin, bin_target)
                 # each entry in `cce_loss_slice_of_each_feat` is the cce loss of a feature, ordered by the feature list self.categorical_fts
                 cce_loss_slice_of_each_feat = [] 
+
                 for i, ft in enumerate(self.categorical_fts):
                     loss = self.cce(cat[i], codes[i])
                     # Convert to 2 dimensions
@@ -1453,7 +1458,7 @@ class AutoEncoder(torch.nn.Module):
                 mse_loss_slices.append(mse_loss_slice)
                 bce_loss_slices.append(bce_loss_slice)
                 cce_loss_slices.append(cce_loss_slice)
-        
+
         mse_loss = torch.cat(mse_loss_slices, dim=0)
         bce_loss = torch.cat(bce_loss_slices, dim=0)
         cce_loss = torch.cat(cce_loss_slices, dim=0)
@@ -1501,7 +1506,7 @@ class AutoEncoder(torch.nn.Module):
             cce_scaled = abs(cce_scaled)
 
         combined_loss = torch.cat([mse_scaled, bce_scaled, cce_scaled], dim=1)
-            
+
         for i, ft in enumerate(self.numeric_fts):
             pdf[ft] = df[ft]
             pdf[ft + '_pred'] = output_df[ft]
@@ -1534,3 +1539,4 @@ class AutoEncoder(torch.nn.Module):
         pdf['z_loss_scaler_type'] = output_scaled_loss_str
 
         return pdf
+    
