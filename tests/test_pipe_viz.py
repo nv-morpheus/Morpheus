@@ -19,10 +19,11 @@ import os
 
 import pytest
 
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.pipeline import Pipeline
-from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
@@ -36,21 +37,19 @@ def viz_pipeline(config, tmp_path):
     """
     Creates a quick pipeline.
     """
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    input_df = read_file_to_df(input_file, df_type='cudf')
 
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
 
-    # Silly data with all false values
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
-
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.set_source(InMemorySourceStage(config, [input_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(ConvMsg(config, input_file))
     pipe.add_stage(AddClassificationsStage(config))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    pipe.add_stage(InMemorySinkStage(config))
 
     return pipe
 

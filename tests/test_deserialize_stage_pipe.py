@@ -92,7 +92,7 @@ def test_deserialize_pipe(config, dup_index: bool):
 @pytest.mark.parametrize("dup_index", [False, True])
 def test_deserialize_multi_segment_pipe(config, dup_index: bool):
     """
-    End to end test for FileSourceStage & WriteToFileStage across mulitiple segments
+    End to end test across mulitiple segments
     """
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     input_df = read_file_to_df(src_file, df_type='pandas')
