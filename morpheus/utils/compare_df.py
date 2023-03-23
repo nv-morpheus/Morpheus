@@ -63,10 +63,10 @@ def filter_df(df: pd.DataFrame,
     columns: typing.List[str] = []
 
     # First build up list of included. If no include regex is specified, select all
-    if (include_columns is None or len(include_columns) == 0):
-        columns = list(df.columns)
-    else:
+    if (isinstance(include_columns, re.Pattern)):
         columns = [y for y in list(df.columns) if include_columns.match(y)]
+    else:
+        columns = list(df.columns)
 
     # Now remove by the ignore
     for test in exclude_columns:
