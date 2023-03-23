@@ -18,7 +18,7 @@ import os
 
 import pytest
 
-from morpheus._lib.common import FilterSource
+from morpheus.common import FilterSource
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage

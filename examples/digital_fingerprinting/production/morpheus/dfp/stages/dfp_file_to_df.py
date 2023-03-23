@@ -32,7 +32,7 @@ from dask.distributed import LocalCluster
 
 import cudf
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin

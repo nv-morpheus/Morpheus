@@ -19,7 +19,7 @@ import os
 import numpy as np
 import pytest
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.serializers import df_to_csv
 from morpheus.messages import MessageMeta

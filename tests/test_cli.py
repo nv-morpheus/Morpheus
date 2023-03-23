@@ -24,9 +24,9 @@ from click.testing import CliRunner
 from mlflow.tracking import fluent
 
 import morpheus
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import FilterSource
 from morpheus.cli import commands
+from morpheus.common import FileTypes
+from morpheus.common import FilterSource
 from morpheus.config import Config
 from morpheus.config import ConfigAutoEncoder
 from morpheus.config import CppConfig

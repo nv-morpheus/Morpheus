@@ -18,9 +18,7 @@ import os
 
 import pytest
 
-import cudf
-
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
