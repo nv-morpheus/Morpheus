@@ -19,7 +19,6 @@ import os
 import pytest
 
 from morpheus.common import FilterSource
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
@@ -32,11 +31,12 @@ from utils import assert_results
 
 
 @pytest.mark.slow
+@pytest.mark.use_pandas
 @pytest.mark.parametrize('use_conv_msg', [True, False])
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
 @pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
-def test_filter_column(config, use_conv_msg, do_copy, threshold, field_name):
+def test_filter_column(config, filter_probs_df, use_conv_msg, do_copy, threshold, field_name):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     input_df = read_file_to_df(input_file, df_type='cudf')
 

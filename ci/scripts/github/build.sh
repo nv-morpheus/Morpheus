@@ -30,6 +30,8 @@ sccache --version
 
 rapids-logger "Configuring cmake for Morpheus"
 git submodule update --init --recursive
+
+# Explicitly setting nvcc path Work-around for https://github.com/rapidsai/cudf/issues/12862
 cmake -B build -G Ninja ${CMAKE_BUILD_ALL_FEATURES} \
     -DCCACHE_PROGRAM_PATH=$(which sccache) \
     -DMORPHEUS_PYTHON_BUILD_WHEEL=ON \
@@ -45,8 +47,16 @@ sccache --show-stats
 rapids-logger "Archiving results"
 tar cfj "${WORKSPACE_TMP}/wheel.tar.bz" build/dist
 
+MORPHEUS_LIBS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib -name "*.so" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
+tar cfj "${WORKSPACE_TMP}/morhpeus_libs.tar.bz" "${MORPHEUS_LIBS[@]}"
+
+CPP_TESTS=($(find ${MORPHEUS_ROOT}/build/morpheus/_lib/tests -name "*.x" -exec realpath --relative-to ${MORPHEUS_ROOT} {} \;))
+tar cfj "${WORKSPACE_TMP}/cpp_tests.tar.bz" "${CPP_TESTS[@]}"
+
 rapids-logger "Pushing results to ${DISPLAY_ARTIFACT_URL}"
 aws s3 cp --no-progress "${WORKSPACE_TMP}/wheel.tar.bz" "${ARTIFACT_URL}/wheel.tar.bz"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/morhpeus_libs.tar.bz" "${ARTIFACT_URL}/morhpeus_libs.tar.bz"
+aws s3 cp --no-progress "${WORKSPACE_TMP}/cpp_tests.tar.bz" "${ARTIFACT_URL}/cpp_tests.tar.bz"
 
 rapids-logger "Success"
 exit 0

@@ -19,11 +19,13 @@ import typing
 
 import mrc
 import mrc.core.operators as ops
+import pandas as pd
+import pytest
 from mrc.core.node import Broadcast
 
-from morpheus.common import FileTypes
+import cudf
+
 from morpheus.config import Config
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline.pipeline import Pipeline
 from morpheus.pipeline.stage import Stage
@@ -72,13 +74,12 @@ class SplitStage(Stage):
         return [(filter_higher, in_ports_streams[0][1]), (filter_lower, in_ports_streams[0][1])]
 
 
-def test_forking_pipeline(config):
+@pytest.mark.use_pandas
+def test_forking_pipeline(config, filter_probs_df):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
 
-    full_compare_df = read_file_to_df(input_file, FileTypes.Auto, df_type="pandas")
-
-    compare_higher_df = full_compare_df[full_compare_df["v2"] >= 0.5]
-    compare_lower_df = full_compare_df[full_compare_df["v2"] < 0.5]
+    compare_higher_df = filter_probs_df[filter_probs_df["v2"] >= 0.5]
+    compare_lower_df = filter_probs_df[filter_probs_df["v2"] < 0.5]
 
     pipe = Pipeline(config)
 
