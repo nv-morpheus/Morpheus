@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 import mrc
 import numpy as np
 import pandas as pd
@@ -37,7 +35,6 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
-from utils import TEST_DIRS
 from utils import assert_results
 
 

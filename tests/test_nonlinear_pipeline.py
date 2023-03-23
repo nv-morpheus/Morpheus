@@ -14,12 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import typing
 
 import mrc
 import mrc.core.operators as ops
-import pandas as pd
 import pytest
 from mrc.core.node import Broadcast
 

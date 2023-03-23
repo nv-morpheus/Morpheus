@@ -21,7 +21,6 @@ import cudf
 
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.messages import MessageMeta
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils import compare_df
 
