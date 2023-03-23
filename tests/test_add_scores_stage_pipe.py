@@ -20,7 +20,6 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -46,7 +45,7 @@ def test_add_scores_stage_pipe(config, order, pipeline_batch_size, repeat):
     config.pipeline_batch_size = pipeline_batch_size
 
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(src_file, df_type='pandas', file_type=FileTypes.Auto)
+    input_df = read_file_to_df(src_file, df_type='pandas')
     if repeat > 1:
         input_df = extend_df(input_df, repeat)
 
@@ -71,7 +70,7 @@ def test_add_scores_stage_multi_segment_pipe(config, repeat):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
+    input_df = read_file_to_df(input_file, df_type='pandas')
 
     expected_df = input_df.rename(columns=dict(zip(input_df.columns, config.class_labels)))
 

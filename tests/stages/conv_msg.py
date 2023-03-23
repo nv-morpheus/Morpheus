@@ -18,8 +18,8 @@ import typing
 import cupy as cp
 import mrc
 
-from morpheus._lib.common import FileTypes
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import FileTypes
 from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MultiMessage

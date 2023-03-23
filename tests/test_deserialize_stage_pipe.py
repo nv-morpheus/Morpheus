@@ -18,7 +18,6 @@ import os
 
 import pytest
 
-from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
@@ -35,9 +34,7 @@ from utils import duplicate_df_index_rand
 
 def test_fixing_non_unique_indexes(use_cpp):
 
-    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
-                         file_type=FileTypes.Auto,
-                         df_type="cudf")
+    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), df_type="cudf")
 
     # Set 2 ids equal to others
     df = duplicate_df_index_rand(df, count=2)
@@ -69,14 +66,14 @@ def test_deserialize_pipe(config, dup_index: bool):
     End to end test for DeserializeStage
     """
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(src_file, df_type='pandas')
-    expected_df = input_df.copy(deep=True)
+    input_df = read_file_to_df(src_file, df_type='cudf')
+    expected_df = input_df.to_pandas()
 
     if dup_index:
         input_df = duplicate_df_index(input_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe.set_source(InMemorySourceStage(config, [input_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
@@ -92,14 +89,14 @@ def test_deserialize_multi_segment_pipe(config, dup_index: bool):
     End to end test across mulitiple segments
     """
     src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(src_file, df_type='pandas')
-    expected_df = input_df.copy(deep=True)
+    input_df = read_file_to_df(src_file, df_type='cudf')
+    expected_df = input_df.to_pandas()
 
     if dup_index:
         input_df = duplicate_df_index(input_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe.set_source(InMemorySourceStage(config, [input_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))

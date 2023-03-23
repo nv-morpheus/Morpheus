@@ -18,7 +18,6 @@ import os
 
 import pytest
 
-from morpheus._lib.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -42,7 +41,7 @@ def test_add_classifications_stage_pipe(config):
     threshold = 0.75
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
+    input_df = read_file_to_df(input_file, df_type='pandas')
     expected_df = (input_df > threshold)
 
     # Replace input columns with the class labels
@@ -68,7 +67,7 @@ def test_add_classifications_stage_multi_segment_pipe(config):
     threshold = 0.75
 
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
+    input_df = read_file_to_df(input_file, df_type='pandas')
     expected_df = (input_df > threshold)
 
     # Replace input columns with the class labels
