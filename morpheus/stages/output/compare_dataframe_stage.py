@@ -37,7 +37,7 @@ class CompareDataframeStage(InMemorySinkStage):
     c : `morpheus.config.Config`
         Pipeline configuration instance.
     compare_df : typing.Union[pd.DataFrame, str]
-        Dataframe to compare against the aggregate Dataframe composed from the received messages. When `compare_df` is
+        Dataframe to compare against the aggregate DataFrame composed from the received messages. When `compare_df` is
         a string it is assumed to be a file path.
     include : typing.List[str], optional
         List of regex patterns to match columns to include. By default all columns are included.
@@ -50,6 +50,9 @@ class CompareDataframeStage(InMemorySinkStage):
         Absolute tolerance to use when comparing float columns.
     rel_tol : float, default = 0.05
         Relative tolerance to use when comparing float columns.
+    reset_index : bool, default = False
+        When `True` the index of the aggregate DataFrame will be reset. Useful for testing with KafkaSourceStage,
+        where the index restarts for each `MessageMeta` emitted.
     """
 
     def __init__(self,
@@ -59,7 +62,8 @@ class CompareDataframeStage(InMemorySinkStage):
                  exclude: typing.List[str] = None,
                  index_col: str = None,
                  abs_tol: float = 0.001,
-                 rel_tol: float = 0.005):
+                 rel_tol: float = 0.005,
+                 reset_index=False):
         super().__init__(c)
 
         if isinstance(compare_df, str):
@@ -73,6 +77,7 @@ class CompareDataframeStage(InMemorySinkStage):
         self._index_col = index_col
         self._abs_tol = abs_tol
         self._rel_tol = rel_tol
+        self._reset_index = reset_index
 
     @property
     def name(self) -> str:
@@ -106,6 +111,9 @@ class CompareDataframeStage(InMemorySinkStage):
             return {}
 
         combined_df = self.concat_dataframes(clear=clear)
+
+        if self._reset_index:
+            combined_df.reset_index(inplace=True)
 
         return compare_df.compare_df(self._compare_df,
                                      combined_df,
