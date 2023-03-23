@@ -17,6 +17,9 @@ import typing
 
 import cupy as cp
 import mrc
+import pandas as pd
+
+import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.common import FileTypes
@@ -42,13 +45,14 @@ class ConvMsg(SinglePortStage):
     Setting `empty_probs` will create an empty probs array with 3 columns, and the same number of rows as the dataframe
     """
 
-    def __init__(self,
-                 c: Config,
-                 expected_data_file: str = None,
-                 columns: typing.List[str] = None,
-                 order: str = 'K',
-                 probs_type: str = 'f4',
-                 empty_probs: bool = False):
+    def __init__(
+            self,
+            c: Config,
+            expected_data_file: str = None,  # TODO: rename
+            columns: typing.List[str] = None,
+            order: str = 'K',
+            probs_type: str = 'f4',
+            empty_probs: bool = False):
         super().__init__(c)
         self._expected_data_file = expected_data_file
         self._columns = columns
@@ -68,7 +72,13 @@ class ConvMsg(SinglePortStage):
 
     def _conv_message(self, m: MultiMessage) -> MultiResponseMessage:
         if self._expected_data_file is not None:
-            df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
+            if (isinstance(self._expected_data_file, cudf.DataFrame)):
+                df = self._expected_data_file.copy(deep=True)
+            elif (isinstance(self._expected_data_file, pd.DataFrame)):
+                df = pd.DataFrame(self._expected_data_file)
+            else:
+                # TODO: remove
+                df = read_file_to_df(self._expected_data_file, FileTypes.CSV, df_type="cudf")
         else:
             if self._columns is not None:
                 df = m.get_meta(self._columns)

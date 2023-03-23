@@ -14,30 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 import pytest
 
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
 from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS
 from utils import assert_df_equal
 from utils import assert_results
 from utils import duplicate_df_index
 from utils import duplicate_df_index_rand
 
 
-def test_fixing_non_unique_indexes(use_cpp):
-
-    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), df_type="cudf")
-
+@pytest.mark.use_cudf
+def test_fixing_non_unique_indexes(use_cpp, filter_probs_df):
     # Set 2 ids equal to others
-    df = duplicate_df_index_rand(df, count=2)
+    df = duplicate_df_index_rand(filter_probs_df, count=2)
 
     meta = MessageMeta(df.copy())
 
@@ -59,21 +53,19 @@ def test_fixing_non_unique_indexes(use_cpp):
     assert "_index_" in meta.df.columns
 
 
-@pytest.mark.slow
+@pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-def test_deserialize_pipe(config, dup_index: bool):
+def test_deserialize_pipe(config, filter_probs_df, dup_index: bool):
     """
     End to end test for DeserializeStage
     """
-    src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(src_file, df_type='cudf')
-    expected_df = input_df.to_pandas()
+    expected_df = filter_probs_df.to_pandas()
 
     if dup_index:
-        input_df = duplicate_df_index(input_df, {8: 7})
+        filter_probs_df = duplicate_df_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [input_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
     comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
@@ -82,21 +74,19 @@ def test_deserialize_pipe(config, dup_index: bool):
     assert_results(comp_stage.get_results())
 
 
-@pytest.mark.slow
+@pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-def test_deserialize_multi_segment_pipe(config, dup_index: bool):
+def test_deserialize_multi_segment_pipe(config, filter_probs_df, dup_index: bool):
     """
     End to end test across mulitiple segments
     """
-    src_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(src_file, df_type='cudf')
-    expected_df = input_df.to_pandas()
+    expected_df = filter_probs_df.to_pandas()
 
     if dup_index:
-        input_df = duplicate_df_index(input_df, {8: 7})
+        filter_probs_df = duplicate_df_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [input_df]))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))

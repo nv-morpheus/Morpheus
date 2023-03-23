@@ -14,13 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 import pytest
 
 import cudf
 
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
@@ -31,7 +28,6 @@ from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
-from utils import TEST_DIRS
 from utils import assert_results
 from utils import extend_df
 
@@ -66,21 +62,18 @@ def test_add_scores_stage_pipe(config, filter_probs_df, order, pipeline_batch_si
 @pytest.mark.slow
 @pytest.mark.use_pandas
 @pytest.mark.parametrize('repeat', [1, 2, 5])
-def test_add_scores_stage_multi_segment_pipe(config, repeat):
+def test_add_scores_stage_multi_segment_pipe(config, filter_probs_df, repeat):
     # Intentionally using FileSourceStage's repeat argument as this triggers a bug in #443
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
 
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_df = read_file_to_df(input_file, df_type='pandas')
-
-    expected_df = input_df.rename(columns=dict(zip(input_df.columns, config.class_labels)))
+    expected_df = filter_probs_df.rename(columns=dict(zip(filter_probs_df.columns, config.class_labels)))
 
     pipe = LinearPipeline(config)
-    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)], repeat=repeat))
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(filter_probs_df)], repeat=repeat))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(ConvMsg(config, columns=list(input_df.columns)))
+    pipe.add_stage(ConvMsg(config, columns=list(filter_probs_df.columns)))
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(AddScoresStage(config))
     pipe.add_segment_boundary(MultiResponseMessage)
