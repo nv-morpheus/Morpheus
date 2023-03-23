@@ -42,7 +42,7 @@ def test_multi_segment_bad_data_type(config, filter_probs_df):
         pipe = LinearPipeline(config)
         pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
         pipe.add_segment_boundary(int)
-        mem_sink = pipe.add_stage(InMemorySinkStage(config, filter_probs_df))
+        mem_sink = pipe.add_stage(InMemorySinkStage(config))
         pipe.run()
 
     assert len(mem_sink.get_messages()) == 0
