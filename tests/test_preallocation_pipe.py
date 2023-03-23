@@ -17,26 +17,29 @@
 import os
 
 import mrc
+import numpy as np
+import pandas as pd
 import pytest
 
 import cudf
 
 from morpheus._lib.common import TypeId
 from morpheus._lib.common import tyepid_to_numpy_str
+from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
-from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
+from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from stages.conv_msg import ConvMsg
 from utils import TEST_DIRS
-from utils import assert_path_exists
-from utils import get_column_names_from_file
+from utils import assert_results
 
 
 class CheckPreAlloc(SinglePortStage):
@@ -76,103 +79,91 @@ class CheckPreAlloc(SinglePortStage):
         return stream, input_stream[1]
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
-def test_preallocation(config, tmp_path, probs_type):
+def test_preallocation(config, probs_type):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
+    input_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), df_type='pandas')
 
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
-
-    input_cols = get_column_names_from_file(input_file)
-
-    file_src = FileSourceStage(config, filename=input_file, iterative=False)
-    assert len(file_src.get_needed_columns()) == 0
+    probs_np_type = tyepid_to_numpy_str(probs_type)
+    expected_df = pd.DataFrame(data={c: np.zeros(len(input_df), dtype=probs_np_type) for c in config.class_labels})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(file_src)
+    mem_src = pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, columns=input_cols, probs_type=tyepid_to_numpy_str(probs_type)))
+    pipe.add_stage(ConvMsg(config, columns=list(input_df.columns), probs_type=probs_np_type))
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+
+    assert len(mem_src.get_needed_columns()) == 0
+
     pipe.run()
 
-    assert file_src.get_needed_columns() == {
+    assert mem_src.get_needed_columns() == {
         'frogs': probs_type, 'lizards': probs_type, 'toads': probs_type, 'turtles': probs_type
     }
 
-    # There seems to be some sort of race between the sync to the output file when cpp=True and repeat=100
-    assert_path_exists(out_file, 1.0)
+    assert_results(comp_stage.get_results())
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize('probs_type', [TypeId.FLOAT32, TypeId.FLOAT64])
-def test_preallocation_multi_segment_pipe(config, tmp_path, probs_type):
+def test_preallocation_multi_segment_pipe(config, probs_type):
     """
     Test ensures that when columns are needed for preallocation in a multi-segment pipeline, the preallocagtion will
     always be performed on the closest source to the stage that requested preallocation. Which in cases where the
     requesting stage is not in the first segment, then the preallocation will be performed on the segment ingress
     """
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
+    input_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), df_type='pandas')
 
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
-
-    file_src = FileSourceStage(config, filename=input_file, iterative=False)
-    assert len(file_src.get_needed_columns()) == 0
+    probs_np_type = tyepid_to_numpy_str(probs_type)
+    expected_df = pd.DataFrame(data={c: np.zeros(len(input_df), dtype=probs_np_type) for c in config.class_labels})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(file_src)
+    mem_src = pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(
-        ConvMsg(config, columns=get_column_names_from_file(input_file), probs_type=tyepid_to_numpy_str(probs_type)))
+    pipe.add_stage(ConvMsg(config, columns=list(input_df.columns), probs_type=tyepid_to_numpy_str(probs_type)))
     (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
+
+    assert len(mem_src.get_needed_columns()) == 0
+
     pipe.run()
 
-    assert len(file_src.get_needed_columns()) == 0
+    assert len(mem_src.get_needed_columns()) == 0
     boundary_ingress.get_needed_columns() == {
         'frogs': probs_type, 'lizards': probs_type, 'toads': probs_type, 'turtles': probs_type
     }
 
-    assert_path_exists(out_file, 1.0)
+    assert_results(comp_stage.get_results())
 
 
-@pytest.mark.slow
 @pytest.mark.use_cpp
-def test_preallocation_error(config, tmp_path):
+def test_preallocation_error(config):
     """
     Verify that we get a raised exception when add_scores attempts to use columns that don't exist
     """
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
+    input_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv"), df_type='pandas')
 
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
+    pipe = LinearPipeline(config)
+    mem_src = pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
+    pipe.add_stage(DeserializeStage(config))
+    pipe.add_stage(ConvMsg(config, columns=list(input_df.columns), probs_type='f4'))
+    add_scores = pipe.add_stage(AddScoresStage(config))
+    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
+    mem_sink = pipe.add_stage(InMemorySinkStage(config))
 
-    input_cols = get_column_names_from_file(input_file)
-
-    file_src = FileSourceStage(config, filename=input_file, iterative=False)
-    assert len(file_src.get_needed_columns()) == 0
-
-    add_scores = AddScoresStage(config)
+    assert len(mem_src.get_needed_columns()) == 0
     assert len(add_scores.get_needed_columns()) > 0
     add_scores._needed_columns = {}
     assert len(add_scores.get_needed_columns()) == 0
-
-    pipe = LinearPipeline(config)
-    pipe.set_source(file_src)
-    pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, columns=input_cols, probs_type='f4'))
-    pipe.add_stage(add_scores)
-    pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
 
     try:
         pipe.run()
@@ -185,4 +176,5 @@ def test_preallocation_error(config, tmp_path):
         assert "PreallocatorMixin" in str(e)
         assert "needed_columns" in str(e)
 
-    assert len(file_src.get_needed_columns()) == 0
+    assert len(mem_src.get_needed_columns()) == 0
+    assert len(mem_sink.get_messages()) == 0
