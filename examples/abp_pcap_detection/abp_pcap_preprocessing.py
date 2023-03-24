@@ -85,7 +85,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
 
         # adding [ack, psh, rst, syn, fin] details from the binary flag
         rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
-        df.rename(columns=rename_cols_dct)
+        df = df.rename(columns=rename_cols_dct)
 
         df["flags_bin"] = flags_bin_series
         df["timestamp"] = x.get_meta("timestamp").astype("int64")
@@ -171,8 +171,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         req_cols = ["flow_id", "rollup_time"]
 
         for col in req_cols:
-            # TODO: temporary work-around for Issue #286
-            x.meta.df[col] = merged_df[col].copy(True)
+            x.set_meta(col, merged_df[col])
 
         del merged_df
 
