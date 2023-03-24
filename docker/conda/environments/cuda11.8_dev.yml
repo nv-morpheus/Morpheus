@@ -35,7 +35,6 @@ dependencies:
     - cuda-python<=11.7.0 # Remove when Issue #251 is closed
     - cudatoolkit=11.8
     - cudf 22.10
-    - cuml 22.10
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
@@ -58,9 +57,6 @@ dependencies:
     - gxx_linux-64=11.2
     - include-what-you-use=0.18
     - isort
-    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
-    - libcusolver<=11.4.1.48
-    - libcusparse<12
     - librdkafka=1.7.0
     - mlflow>1.29,<2
     - mrc=23.03
