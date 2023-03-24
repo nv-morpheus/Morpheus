@@ -1344,29 +1344,26 @@ class AutoEncoder(torch.nn.Module):
 
         return net_loss
 
-    def decode_outputs_to_df(self, num, bin, cat, df=None):
+    def decode_outputs_to_df(self, num, bin, cat):
         """
         Converts the model outputs of the numerical, binary, and categorical features 
         back into a pandas dataframe.
         """
-        if df is None:
-            cols = [x for x in self.binary_fts.keys()]
-            cols += [x for x in self.numeric_fts.keys()]
-            cols += [x for x in self.categorical_fts.keys()]
-            df = pd.DataFrame(index=range(len(num)), columns=cols)
+        row_count = len(num)
+        index = range(row_count)
 
         num_cols = [x for x in self.numeric_fts.keys()]
-        num_df = pd.DataFrame(data=num.cpu().numpy(), index=df.index)
+        num_df = pd.DataFrame(data=num.cpu().numpy(), index=index)
         num_df.columns = num_cols
         for ft in num_df.columns:
             feature = self.numeric_fts[ft]
             col = num_df[ft]
             trans_col = feature['scaler'].inverse_transform(col.values)
-            result = pd.Series(index=df.index, data=trans_col)
+            result = pd.Series(index=index, data=trans_col)
             num_df[ft] = result
 
         bin_cols = [x for x in self.binary_fts.keys()]
-        bin_df = pd.DataFrame(data=bin.cpu().numpy(), index=df.index)
+        bin_df = pd.DataFrame(data=bin.cpu().numpy(), index=index)
         bin_df.columns = bin_cols
         bin_df = bin_df.apply(lambda x: round(x)).astype(bool)
         for ft in bin_df.columns:
@@ -1374,7 +1371,7 @@ class AutoEncoder(torch.nn.Module):
             map = {False: feature['cats'][0], True: feature['cats'][1]}
             bin_df[ft] = bin_df[ft].apply(lambda x: map[x])
 
-        cat_df = pd.DataFrame(index=df.index)
+        cat_df = pd.DataFrame(index=index)
         for i, ft in enumerate(self.categorical_fts):
             feature = self.categorical_fts[ft]
             cats = feature['cats']
@@ -1392,7 +1389,7 @@ class AutoEncoder(torch.nn.Module):
         # concat
         output_df = pd.concat([num_df, bin_df, cat_df], axis=1)
 
-        return output_df[df.columns]
+        return output_df
 
     def df_predict(self, df):
         """
@@ -1492,7 +1489,7 @@ class AutoEncoder(torch.nn.Module):
             num, bin, embeddings = self.encode_input(data)
             x = torch.cat(num + bin + embeddings, dim=1)
             num, bin, cat = self.model(x)
-            output_df = self.decode_outputs_to_df(num=num, bin=bin, cat=cat, df=df)
+            output_df = self.decode_outputs_to_df(num=num, bin=bin, cat=cat)
             
         # set the index of the prediction df to match the input df    
         output_df.index = df.index
