@@ -93,6 +93,13 @@ class WriteToFileStage : public mrc::pymrc::PythonNode<std::shared_ptr<MessageMe
      */
     void write_csv(sink_type_t& msg);
 
+    /**
+     * @brief Write messages (rows in a DataFrame) to a Parquet format
+     *
+     * @param msg
+     */
+    void write_parquet(sink_type_t& msg);
+
     subscribe_fn_t build_operator();
 
     bool m_is_first{};

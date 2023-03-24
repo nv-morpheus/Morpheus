@@ -19,9 +19,11 @@
 
 #include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 #include "morpheus/utilities/stage_util.hpp"
+#include "morpheus/utilities/string_util.hpp"
 
 #include <cudf/column/column.hpp>
 #include <cudf/io/csv.hpp>
+#include <cudf/io/parquet.hpp>
 #include <cudf/scalar/scalar.hpp>  // for string_scalar
 #include <cudf/strings/replace.hpp>
 #include <cudf/strings/strings_column_view.hpp>
@@ -36,6 +38,7 @@
 #include <memory>
 #include <ostream>  // needed for logging
 #include <regex>
+#include <stdexcept>
 #include <utility>
 // We're already including pybind11.h, and including only gil.h as IWYU suggests yields an undefined symbol error
 // IWYU pragma: no_include <pybind11/gil.h>
@@ -108,17 +111,36 @@ cudf::io::table_with_metadata load_table_from_file(const std::string& filename, 
         file_type = determine_file_type(filename);  // throws if it is unable to determine the type
     }
 
-    if (file_type == FileTypes::JSON)
+    cudf::io::table_with_metadata table;
+
+    switch (file_type)
     {
-        // First, load the file into json
+    case FileTypes::JSON: {
         auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{filename}).lines(true);
-        return load_json_table(options.build());
+        table        = load_json_table(options.build());
+        break;
     }
-    else  // CSV
-    {
+    case FileTypes::CSV: {
         auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{filename});
-        return cudf::io::read_csv(options.build());
+        table        = cudf::io::read_csv(options.build());
+        break;
     }
+    case FileTypes::PARQUET: {
+        auto options = cudf::io::parquet_reader_options::builder(cudf::io::source_info{filename});
+        table        = cudf::io::read_parquet(options.build());
+        break;
+    }
+    case FileTypes::Auto:
+    default:
+        throw std::logic_error(MORPHEUS_CONCAT_STR("Unsupported filetype: " << file_type));
+    }
+
+    if (!table.tbl)
+    {
+        throw std::runtime_error(MORPHEUS_CONCAT_STR("Failed to load file '" << filename << "' as type " << file_type));
+    }
+
+    return table;
 }
 
 pybind11::object read_file_to_df(const std::string& filename, FileTypes file_type)
