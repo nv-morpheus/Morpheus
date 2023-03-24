@@ -23,7 +23,7 @@
 #include <string>
 
 namespace morpheus {
-
+#pragma GCC visibility push(default)
 /**
  * @addtogroup IO
  * @{
@@ -79,4 +79,5 @@ std::string df_to_json(MutableTableInfo& tbl, bool include_index_col = true);
 void df_to_json(MutableTableInfo& tbl, std::ostream& out_stream, bool include_index_col = true, bool flush = false);
 
 /** @} */  // end of group
+#pragma GCC visibility pop
 }  // namespace morpheus

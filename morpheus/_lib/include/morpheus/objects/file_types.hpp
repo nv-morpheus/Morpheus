@@ -38,10 +38,6 @@ enum class FileTypes : int32_t
 
 FileTypes determine_file_type(const std::string& filename);
 
-struct FileTypesInterfaceProxy
-{
-    static FileTypes determine_file_type(const std::string& filename);
-};
 #pragma GCC visibility pop
 
 /** @} */  // end of group

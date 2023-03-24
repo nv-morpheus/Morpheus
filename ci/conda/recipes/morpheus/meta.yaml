@@ -16,7 +16,7 @@
 {% set version = environ.get('GIT_VERSION', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
 {% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
 {% set py_version=environ.get('CONDA_PY', '3.8') %}
-{% set cuda_version='.'.join(environ.get('CUDA', '11.5').split('.')[:2]) %}
+{% set cuda_version='.'.join(environ.get('CUDA', '11.8').split('.')[:2]) %}
 {% set cuda_major=cuda_version.split('.')[0] %}
 {% set rapids_version = "22.10" %}
 
@@ -37,7 +37,7 @@ outputs:
         # Note: Setting a default value here will overwrite the value from the
         # shell! Defaults should be set in the run_conda_build.sh script
         - CMAKE_CUDA_ARCHITECTURES
-        - MORPHEUS_BUILD_PYTHON_STUBS
+        - MORPHEUS_PYTHON_BUILD_STUBS
         - MORPHEUS_CACHE_DIR
         - PARALLEL_LEVEL
       run_exports:

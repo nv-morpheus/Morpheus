@@ -17,7 +17,6 @@
 
 #include "morpheus/objects/python_data_table.hpp"
 
-#include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <cudf/types.hpp>
@@ -58,7 +57,7 @@ TableInfoData PyDataTable::get_table_data() const
 {
     pybind11::gil_scoped_acquire gil;
 
-    auto info = proxy_table_info_data_from_table(m_py_table);
+    auto info = CudfHelper::table_info_data_from_table(m_py_table);
 
     return info;
 }

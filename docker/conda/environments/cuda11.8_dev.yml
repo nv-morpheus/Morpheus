@@ -16,8 +16,8 @@
 name: morpheus
 channels:
     - rapidsai
-    - nvidia/label/cuda-11.5.2 # Prefer packages with a specific cuda label over ones without
     - nvidia
+    - nvidia/label/cuda-11.8.0
     - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
     - conda-forge
 dependencies:
@@ -31,14 +31,15 @@ dependencies:
     - click >=8
     - cmake=3.24
     - configargparse=1.5
-    - cuda-nvml-dev=11.5
+    - cuda-nvml-dev=11.8
     - cuda-python<=11.7.0 # Remove when Issue #251 is closed
-    - cudatoolkit=11.5
+    - cudatoolkit=11.8
     - cudf 22.10
     - cuml 22.10
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
+    - dill
     - docker-compose=1.29.2
     - docker-py=5.0
     - faker=12.3.0
@@ -69,7 +70,7 @@ dependencies:
     - nodejs=17.4.0
     - numba>=0.56.2
     - numpydoc=1.4
-    - nvcc_linux-64=11.5
+    - nvcc_linux-64=11.8
     - pandas=1.3
     - pip
     - pkg-config # for mrc cmake
@@ -85,6 +86,7 @@ dependencies:
     - python=3.8
     - rapidjson=1.1.0
     - scikit-build=0.13
+    - scikit-learn=0.23.1
     - sphinx
     - sphinx_rtd_theme
     - sysroot_linux-64=2.17

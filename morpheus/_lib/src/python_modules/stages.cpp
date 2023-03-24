@@ -17,6 +17,7 @@
 
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
+#include "morpheus/objects/file_types.hpp"  // for FileTypes
 #include "morpheus/stages/add_classification.hpp"
 #include "morpheus/stages/add_scores.hpp"
 #include "morpheus/stages/deserialize.hpp"
@@ -54,7 +55,7 @@ PYBIND11_MODULE(stages, m)
         )pbdoc";
 
     // Load the cudf helpers
-    load_cudf_helpers();
+    CudfHelper::load();
 
     mrc::pymrc::from_import(m, "morpheus._lib.common", "FilterSource");
 
@@ -65,18 +66,14 @@ PYBIND11_MODULE(stages, m)
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("threshold"),
-             py::arg("num_class_labels"),
-             py::arg("idx2label"));
+             py::arg("idx2label"),
+             py::arg("threshold"));
 
     py::class_<mrc::segment::Object<AddScoresStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<AddScoresStage>>>(m, "AddScoresStage", py::multiple_inheritance())
-        .def(py::init<>(&AddScoresStageInterfaceProxy::init),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("num_class_labels"),
-             py::arg("idx2label"));
+        .def(
+            py::init<>(&AddScoresStageInterfaceProxy::init), py::arg("builder"), py::arg("name"), py::arg("idx2label"));
 
     py::class_<mrc::segment::Object<DeserializeStage>,
                mrc::segment::ObjectProperties,
@@ -85,7 +82,8 @@ PYBIND11_MODULE(stages, m)
         .def(py::init<>(&DeserializeStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("batch_size"));
+             py::arg("batch_size"),
+             py::arg("ensure_sliceable_index") = true);
 
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,
@@ -199,7 +197,7 @@ PYBIND11_MODULE(stages, m)
              py::arg("name"),
              py::arg("filename"),
              py::arg("mode")              = "w",
-             py::arg("file_type")         = 0,  // Setting this to FileTypes::AUTO throws a conversion error at runtime
+             py::arg("file_type")         = FileTypes::Auto,
              py::arg("include_index_col") = true,
              py::arg("flush")             = false);
 

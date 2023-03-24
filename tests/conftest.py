@@ -118,25 +118,48 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     supports
     """
 
-    # Only care about the config fixture
-    if ("config" not in metafunc.fixturenames):
-        return
-
+    # === use_cpp Parameterize ===
     use_cpp = metafunc.definition.get_closest_marker("use_cpp") is not None
     use_python = metafunc.definition.get_closest_marker("use_python") is not None
 
-    if (use_cpp and use_python):
-        raise RuntimeError(
-            "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".format(
-                metafunc.definition.nodeid))
-    elif (not use_cpp and not use_python):
-        # Add the markers to the parameters
-        metafunc.parametrize("config",
-                             [
-                                 pytest.param(True, marks=pytest.mark.use_cpp, id="use_cpp"),
-                                 pytest.param(False, marks=pytest.mark.use_python, id="use_python")
-                             ],
-                             indirect=True)
+    use_cpp_param = pytest.param(True, marks=pytest.mark.use_cpp(added_by="generate_tests"), id="use_cpp")
+    use_python_param = pytest.param(False, marks=pytest.mark.use_python(added_by="generate_tests"), id="use_python")
+
+    _set_use_cpp_params = []
+
+    if ("use_cpp" in metafunc.fixturenames):
+        # Need to add some params since the fixture was requested
+
+        # Add cpp unless use_cpp == True and use_python == False
+        if not (use_python and not use_cpp):
+            _set_use_cpp_params.append(use_cpp_param)
+
+        # Add python unless use_cpp == False and use_python == True
+        if not (not use_python and use_cpp):
+            _set_use_cpp_params.append(use_python_param)
+
+    elif (use_cpp and use_python):
+        # Need to parameterize since we have multiple
+        _set_use_cpp_params.extend([use_cpp_param, use_python_param])
+
+    if (len(_set_use_cpp_params) > 0):
+        metafunc.parametrize("_set_use_cpp", _set_use_cpp_params, indirect=True)
+
+    # === df_type Parameterize ===
+    if ("df_type" in metafunc.fixturenames):
+        # df_type fixture was requested. Only parameterize if both marks or neither marks are found. Otherwise, the
+        # fixture will determine it from the mark
+        use_cudf = metafunc.definition.get_closest_marker("use_cudf") is not None
+        use_pandas = metafunc.definition.get_closest_marker("use_pandas") is not None
+
+        if (use_pandas == use_cudf):
+            metafunc.parametrize(
+                "df_type",
+                [
+                    pytest.param("cudf", marks=pytest.mark.use_cudf(added_by="generate_tests"), id="use_cudf"),
+                    pytest.param("pandas", marks=pytest.mark.use_pandas(added_by="generate_tests"), id="use_pandas")
+                ],
+                indirect=True)
 
 
 def pytest_runtest_setup(item):
@@ -153,7 +176,7 @@ def pytest_runtest_setup(item):
             pytest.skip("Skipping benchmark tests by default. Use --run_benchmark to enable")
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: typing.List[pytest.Item]):
     """
     To support old unittest style tests, try to determine the mark from the name
     """
@@ -163,10 +186,23 @@ def pytest_collection_modifyitems(config, items):
             "--run_kafka requested but pytest_kafka not available due to: {}".format(pytest_kafka_setup_error))
 
     for item in items:
-        if "no_cpp" in item.nodeid:
-            item.add_marker(pytest.mark.use_python)
-        elif "cpp" in item.nodeid:
-            item.add_marker(pytest.mark.use_cpp)
+        if "no_cpp" in item.nodeid and item.get_closest_marker("use_python") is None:
+            item.add_marker(pytest.mark.use_python(added_in="collection_modifyitems"))
+        elif "cpp" in item.nodeid and item.get_closest_marker("use_cpp") is None:
+            item.add_marker(pytest.mark.use_cpp(added_in="collection_modifyitems"))
+
+    def should_filter_test(item: pytest.Item):
+
+        use_cpp = item.get_closest_marker("use_cpp")
+        use_pandas = item.get_closest_marker("use_pandas")
+
+        if (use_cpp and use_pandas):
+            return False
+
+        return True
+
+    # Now delete tests with incompatible markers
+    items[:] = [x for x in items if should_filter_test(x)]
 
 
 def clear_handlers(logger):
@@ -179,6 +215,43 @@ def clear_handlers(logger):
 def pytest_runtest_teardown(item, nextitem):
     clear_handlers(logging.getLogger("morpheus"))
     clear_handlers(logging.getLogger())
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function", autouse=True)
+def _set_use_cpp(request: pytest.FixtureRequest):
+
+    do_use_cpp: bool = True
+
+    # Check for the param if this was indirectly set
+    if (hasattr(request, "param") and isinstance(request.param, bool)):
+        do_use_cpp = request.param
+    else:
+        # If not, check for the marker and use that
+        use_cpp = request.node.get_closest_marker("use_cpp") is not None
+        use_python = request.node.get_closest_marker("use_python") is not None
+
+        if (use_cpp and use_python):
+            raise RuntimeError(
+                "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".
+                format(request.node.nodeid))
+        else:
+            # This will default to True or follow use_cpp
+            do_use_cpp = not use_python
+
+    from morpheus.config import CppConfig
+
+    CppConfig.set_should_use_cpp(do_use_cpp)
+
+    yield do_use_cpp
+
+
+# This fixture will be used by all tests.
+@pytest.fixture(scope="function")
+def use_cpp(_set_use_cpp: bool):
+
+    # Just return the set value
+    yield _set_use_cpp
 
 
 @pytest.fixture(scope="function")
@@ -212,7 +285,33 @@ def config_no_cpp():
 
 
 @pytest.fixture(scope="function")
-def config(request: pytest.FixtureRequest):
+def df_type(request: pytest.FixtureRequest):
+
+    df_type_str: typing.Literal["cudf", "pandas"]
+
+    # Check for the param if this was indirectly set
+    if (hasattr(request, "param")):
+        assert request.param in ["pandas", "cudf"], "Invalid parameter for df_type"
+
+        df_type_str = request.param
+    else:
+        # If not, check for the marker and use that
+        use_pandas = request.node.get_closest_marker("use_pandas") is not None
+        use_cudf = request.node.get_closest_marker("use_cudf") is not None
+
+        if (use_pandas and use_cudf):
+            raise RuntimeError(
+                "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".
+                format(request.node.nodeid))
+        else:
+            # This will default to "cudf" or follow use_pandas
+            df_type_str = "cudf" if not use_pandas else "pandas"
+
+    yield df_type_str
+
+
+@pytest.fixture(scope="function")
+def config(use_cpp: bool):
     """
     For new pytest style tests, get the config by using this fixture. It will setup the config based on the marks set on
     the object. If no marks are added to the test, it will be parameterized for both C++ and python. For example,
@@ -225,18 +324,6 @@ def config(request: pytest.FixtureRequest):
     """
 
     from morpheus.config import Config
-    from morpheus.config import CppConfig
-
-    if (not hasattr(request, "param")):
-        use_cpp = request.node.get_closest_marker("use_cpp") is not None
-        use_python = request.node.get_closest_marker("use_python") is not None
-
-        assert use_cpp != use_python, "Invalid config"
-
-        CppConfig.set_should_use_cpp(True if use_cpp else False)
-
-    else:
-        CppConfig.set_should_use_cpp(True if request.param else False)
 
     yield Config()
 
@@ -287,6 +374,26 @@ def reload_modules(request: pytest.FixtureRequest):
 
 
 @pytest.fixture(scope="function")
+def manual_seed():
+    """
+    Seeds the random number generators for the stdlib, PyTorch and NumPy.
+    By default this will seed with a value of `42`, however this fixture also yields the seed function allowing tests to
+    call this a second time, or seed with a different value.
+
+    Use this fixture to ensure repeatability of a test that depends on randomness.
+    Note: PyTorch only garuntees determanism on a per-GPU basis, resulting in some tests that might not be portable
+    across GPU models.
+    """
+    from morpheus.utils import seed as seed_utils
+
+    def seed_fn(seed=42):
+        seed_utils.manual_seed(seed)
+
+    seed_fn()
+    yield seed_fn
+
+
+@pytest.fixture(scope="function")
 def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     """
     Executes a test in the tmp_path directory
@@ -294,6 +401,25 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     os.chdir(tmp_path)
     yield
     os.chdir(request.config.invocation_dir)
+
+
+@pytest.fixture(scope="session")
+def _filter_probs_df():
+    from morpheus._lib.common import FileTypes
+    from morpheus.io.deserializers import read_file_to_df
+    from utils import TEST_DIRS
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    yield read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+
+
+@pytest.fixture(scope="function")
+def filter_probs_df(_filter_probs_df, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+    if df_type == 'cudf':
+        yield _filter_probs_df.copy(deep=True)
+    elif df_type == 'pandas':
+        yield _filter_probs_df.to_pandas()
+    else:
+        assert False, "Unknown df_type type"
 
 
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):
@@ -540,3 +666,6 @@ def loglevel_fatal():
     Sets the logging level to `logging.FATAL` for this function only.
     """
     _wrap_set_log_level(logging.FATAL)
+
+
+# ==== DataFrame Fixtures ====

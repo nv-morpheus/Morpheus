@@ -19,8 +19,8 @@
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
 ARG CUDA_MAJOR_VER=11
-ARG CUDA_MINOR_VER=5
-ARG CUDA_REV_VER=1
+ARG CUDA_MINOR_VER=8
+ARG CUDA_REV_VER=0
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 ARG PYTHON_VER=3.8
@@ -50,9 +50,10 @@ RUN apt-get update &&\
     apt-get install --no-install-recommends -y \
         bc \
         build-essential \
-        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cudart-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         curl \
         git-lfs \
         jq \
@@ -142,6 +143,7 @@ ARG CUDA_MINOR_VER
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvml-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
@@ -161,7 +163,7 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     source activate base &&\
     # Need to get around recent versions of git locking paths until they are deemed safe
     git config --global --add safe.directory "*" &&\
-    MORPHEUS_BUILD_PYTHON_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # sid_visualization is a submodule we need to init
 RUN git submodule update --init --recursive
@@ -178,7 +180,7 @@ RUN --mount=type=bind,from=conda_bld_morpheus,source=/opt/conda/conda-bld,target
     --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     source activate morpheus &&\
     # Install morpheus
-    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/dev -c conda-forge morpheus &&\
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba install -n morpheus -c local -c rapidsai -c nvidia -c nvidia/label/cuda-11.8.0 -c nvidia/label/dev -c conda-forge morpheus &&\
     # Install runtime dependencies that are pip-only
     /opt/conda/bin/mamba env update -n morpheus --file docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml &&\
     # Clean and activate

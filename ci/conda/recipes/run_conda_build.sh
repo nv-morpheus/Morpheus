@@ -45,7 +45,7 @@ export MORPHEUS_ROOT=${MORPHEUS_ROOT:-$(git rev-parse --show-toplevel)}
 
 # Export script_env variables that must be set for conda build
 export CMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES:-"ALL"}
-export MORPHEUS_BUILD_PYTHON_STUBS=${MORPHEUS_BUILD_PYTHON_STUBS:-"ON"}
+export MORPHEUS_PYTHON_BUILD_STUBS=${MORPHEUS_PYTHON_BUILD_STUBS:-"ON"}
 export MORPHEUS_CACHE_DIR=${MORPHEUS_CACHE_DIR:-"${MORPHEUS_ROOT}/.cache"}
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-$(nproc)}
 
@@ -55,7 +55,7 @@ export USE_SCCACHE=${USE_SCCACHE:-""}
 
 export CUDA="$(conda list | grep cudatoolkit | egrep -o "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+")"
 export PYTHON_VER="$(python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")"
-export CUDA=11.5
+export CUDA=11.8
 echo "CUDA        : ${CUDA}"
 echo "PYTHON_VER  : ${PYTHON_VER}"
 echo ""
@@ -100,8 +100,8 @@ CONDA_ARGS_ARRAY+=("--variants" "{python: 3.8}")
 
 # And default channels (with optional channel alias)
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}rapidsai")
-CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.5.2") # Prefer labeled versions over the latest
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia")
+CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/cuda-11.8.0")
 CONDA_ARGS_ARRAY+=("-c" "${CONDA_CHANNEL_ALIAS:+"${CONDA_CHANNEL_ALIAS%/}/"}nvidia/label/dev")
 CONDA_ARGS_ARRAY+=("-c" "conda-forge")
 

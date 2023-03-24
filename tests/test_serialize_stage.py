@@ -31,14 +31,14 @@ def test_fixed_columns(config):
     df1['apples'] = range(0, 4)
     df1['pears'] = range(5, 9)
     df1['apple_sauce'] = range(4, 0, -1)
-    mm1 = MultiMessage(MessageMeta(df1), 0, 1)
+    mm1 = MultiMessage(meta=MessageMeta(df1))
 
     df2 = cudf.DataFrame()
     df2['apples'] = range(4, 7)
     df2['applause'] = range(9, 6, -1)
     df2['pears'] = range(7, 10)
     df2['apple_sauce'] = range(6, 3, -1)
-    mm2 = MultiMessage(MessageMeta(df2), 0, 1)
+    mm2 = MultiMessage(meta=MessageMeta(df2))
 
     include_re_str = '^app.*'
     include_re = re.compile(include_re_str)

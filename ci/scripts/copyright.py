@@ -45,7 +45,8 @@ ExemptFiles: typing.List[re.Pattern] = [
     r"^[^ \/\n]*\.cache[^ \/\n]*\/.*$",  # Ignore .cache folder
     r"^[^ \/\n]*build[^ \/\n]*\/.*$",  # Ignore any build*/ folder
     r"^external\/.*$",  # Ignore external
-    r"[^ \/\n]*docs/source/(_lib|_modules|_templates)/.*$"
+    r"[^ \/\n]*docs/source/(_lib|_modules|_templates)/.*$",
+    r"PULL_REQUEST_TEMPLATE.md"  # Ignore the PR template
 ]
 
 # this will break starting at year 10000, which is probably OK :)
