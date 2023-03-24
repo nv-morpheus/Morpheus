@@ -39,7 +39,6 @@
 #include <exception>  // for exception
 #include <fstream>
 #include <numeric>
-#include <ostream>
 #include <sstream>  // IWYU pragma: keep
 #include <vector>
 // IWYU pragma: no_include <unordered_map>

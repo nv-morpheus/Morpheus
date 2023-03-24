@@ -23,6 +23,7 @@
 
 #include <pybind11/pytypes.h>
 
+#include <fstream>  // IWYU pragma: keep
 #include <sstream>
 #include <stdexcept>
 #include <string>
