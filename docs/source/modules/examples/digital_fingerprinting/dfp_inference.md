@@ -34,3 +34,11 @@ This module function performs the inference process.
   "timestamp_column_name": "timestamp"
 }
 ```
+
+### Default Settings
+
+| Property | Value |
+| -------- | ----- |
+| fallback_username   | generic_user |
+| model_name_formatter   | None  |
+| timestamp_column_name   | timestamp  |

@@ -19,6 +19,8 @@ limitations under the License.
 
 Loads data from external sources using the fsspec library, and returns the updated MessageControl object with payload as MessageMeta, which contains dataframe (with filenames).
 
+**Note** :  Loaders receive configuration from `load` task via the [control message](./../../source/control_message_guide.md) during runtime.
+
 ### Configurable Parameters
 
 - `id` (str): Registered loader id.
@@ -32,3 +34,9 @@ Loads data from external sources using the fsspec library, and returns the updat
 	}]
 }
 ```
+
+### Default Settings
+
+| Property | Value |
+| -------- | ----- |
+| files    | []    |

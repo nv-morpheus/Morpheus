@@ -30,3 +30,9 @@ This module function performs postprocessing tasks after the inference process.
   "timestamp_column_name": "timestamp"
 }
 ```
+
+### Default Settings
+
+| Property | Value |
+| -------- | ----- |
+| timestamp_column_name   | timestamp  |

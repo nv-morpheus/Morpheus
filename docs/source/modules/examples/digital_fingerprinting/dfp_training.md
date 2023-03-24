@@ -60,3 +60,11 @@ This module function is responsible for training the model.
   "validation_size": 0.1
 }
 ```
+
+### Default Settings
+
+| Property | Value |
+| -------- | ----- |
+| epochs   | 1  |
+| model_kwargs   | {} |
+| validation_size   | 0.0  |

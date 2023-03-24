@@ -49,7 +49,7 @@ This module loads the input files, removes files that are older than the chosen 
     "start_time": "2023-03-01T00:00:00"
   },
   "cache_dir": "./file_batcher_cache",
-  "file_type": "csv",
+  "file_type": "CSV",
   "filter_nulls": true,
   "schema": {
     "column1": "string",
@@ -59,3 +59,11 @@ This module loads the input files, removes files that are older than the chosen 
   "timestamp_column_name": "timestamp"
 }
 ```
+
+### Default Settings
+
+| Property | Value |
+| -------- | ----- |
+| iso_date_regex_pattern | (?P\<year\>\d{4})-(?P\<month\>\d{1,2})-(?P\<day\>\d{1,2})T(?P\<hour\>\d{1,2})(:\\\|_)(?P\<minute\>\d{1,2})(:\\\|_)(?P\<second\>\d{1,2})(?P\<microsecond\>\.\d{1,6})?Z|
+| period   | D  |
+| sampling_rate_s   | 0|

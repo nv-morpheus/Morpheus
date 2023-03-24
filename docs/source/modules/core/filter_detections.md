@@ -45,3 +45,12 @@ The Filter Detections module is used to filter rows from a dataframe based on va
   }
 }
 ```
+
+### Default Settings
+
+| Property     | Value   |
+| -------------| --------|
+| copy         | False   |
+| field_name   | probs   |
+| filter_source| AUTO    |
+| threshold    | 0.5     |

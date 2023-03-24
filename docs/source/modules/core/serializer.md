@@ -38,3 +38,13 @@ This module filters columns from a `MultiMessage` object, emitting a `MessageMet
   "use_cpp": true
 }
 ```
+
+### Default Settings
+
+| Property       | Value              |
+| -------------- | ------------------|
+| columns        | None               |
+| exclude        | [r'^ID$', r'^_ts_']|
+| fixed_columns  | True               |
+| include        | None               |
+| use_cpp        | False              |

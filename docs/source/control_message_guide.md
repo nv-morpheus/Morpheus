@@ -21,9 +21,9 @@ The control message is a JSON object used in the Morpheus pipeline workflow. It 
 
 ## Components
 
-The control message has one main component: `inputs`. The inputs component is an array of input objects, each of which represents a separate input to the pipeline. Each input object has the following structure:
+The primary component `inputs` are used to group control messages together, treating them as if they were inputs in a pipeline. In the form of an array, the inputs component is made up of individual control message objects, each representing a distinct input to the pipeline. Each control message object has the following structure:
 
-### Inputs
+### Control Message
 ```
 {
   "tasks": [
@@ -35,9 +35,9 @@ The control message has one main component: `inputs`. The inputs component is an
 }
 ```
 
-### Tasks
+#### Tasks
 
-The tasks component of each input object is an array of task objects, each of which represents a separate task to be executed on the input data. Each task object has the following structure:
+The tasks component of each control message object is an array of task objects, each of which represents a separate task to be executed on the input data. Each task object has the following structure:
 
 ```
 {
@@ -67,15 +67,15 @@ The tasks component of each input object is an array of task objects, each of wh
     }
     ```
 
-    - `loader_id` : The ID of the loader to be used for loading the input data. Currently, only the `fsspec` and `file_to_df` loader is supported. The user has the option to register custom loaders in the dataloader registry and utilize them in the pipeline.
+    - `loader_id` : The ID of the loader to be used for loading the input data. Currently, only the `fsspec` and `file_to_df` loaders are supported. The user has the option to register custom loaders in the dataloader registry and utilize them in the pipeline.
     - `files` : An array of file paths or glob patterns specifying the input data to be loaded.
 
   - Incorporate key and value updates to properties objects as required for `training` and `inference` tasks. There is no specified format.
 
-### Metadata
+#### Metadata
 The metadata component of each input object is an object containing metadata information. Properties defined in this metadata component can be accessed anywhere across the stages that consume `MessageControl` objects.
 
-- `data_type` : which is a string indicating the type of data being processed. The supported data types are:
+- `data_type` : which is a string indicates how to process the data. The supported data types are:
     - `payload` : Arbitrary input data
     - `Streaming` : Streaming data
 

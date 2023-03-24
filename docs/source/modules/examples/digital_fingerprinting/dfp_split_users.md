@@ -42,3 +42,16 @@ This module function splits the data based on user IDs.
   "userid_column_name": "username"
 }
 ```
+
+### Default Settings
+
+| Property | Value |
+| -------- | ----- |
+| fallback_username   | generic_user  |
+| include_generic   | False  |
+| include_individual   | False  |
+| include_individual   | False  |
+| only_users   | [] |
+| skip_users   | []  |
+| timestamp_column_name   | timestamp  |
+| userid_column_name   | username  |

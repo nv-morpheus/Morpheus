@@ -38,3 +38,13 @@ This module writes messages to a file.
   "include_index_col": false
 }
 ```
+
+### Default Settings
+
+| Property             | Value          |
+| --------------------| -------------- |
+| file_type            | FileTypes.Auto |
+| filename             | None           |
+| flush                | False          |
+| include_index_col    | True           |
+| overwrite            | False          |

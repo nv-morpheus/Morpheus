@@ -41,3 +41,10 @@ This module uploads trained models to the MLflow server.
   }
 }
 ```
+
+### Default Settings
+
+| Property                | Value    |
+| -----------------------| ----------|
+| databricks_permissions | None      |
+| timestamp_column_name  | timestamp |

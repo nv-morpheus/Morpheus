@@ -36,3 +36,10 @@ When the requirements are met, this module gently discards the control messages.
   "filter_data_type": "desired_data_type"
 }
 ```
+
+### Default Settings
+
+| Property                     | Value  |
+| ----------------------------| -------|
+| enable_data_type_filtering   | False  |
+| enable_task_filtering        | False  |

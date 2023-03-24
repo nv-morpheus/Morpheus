@@ -45,3 +45,13 @@ This module reads data from the batched files into a dataframe after receiving i
   "timestamp_column_name": "timestamp"
 }
 ```
+
+### Default Settings
+
+| Property                | Value      |
+| -----------------------| ----------|
+| cache_dir               | ./.cache  |
+| file_type               | JSON      |
+| filter_null             | False     |
+| parser_kwargs           | None      |
+| timestamp_column_name   | timestamp |

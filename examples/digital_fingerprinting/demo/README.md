@@ -1,7 +1,7 @@
 ### Control Messages Submission Demo Setup
 
 #### Introduction
-This document will provide you instructions for setting up a Control Messages Submission GUI that enables users to create and submit control messages to a Kafka topic, which can then be used for training, evaluating and inference on a digital fingerprinting model (AutoEncoder). The Control Messages Submission GUI is a web-based application that provides a user-friendly interface for generating control messages, and it can be set up with the help of this guide. It provides step-by-step instructions for setting up the required dependencies for Kafka, Flask server, and endpoint URLs. By the end of this document, you will have a fully functional demo Control Messages Submission GUI that you can use for your digital fingerprinting workflow.
+This document will provide you instructions for setting up a Control Messages Submission GUI that enables users to create and submit control messages to a Kafka topic, which can then be used for training, evaluating and inference on a digital fingerprinting model (AutoEncoder). The Control Messages Submission GUI is a web-based application that provides a user-friendly interface for generating control messages, and it can be set up with the help of this guide. It provides step-by-step instructions for setting up the required dependencies for Kafka, Flask server, and endpoint URLs. By the end of this document, you will have a fully functional demo Control Messages Submission GUI that you can use for your digital fingerprinting workflow. The Structure of the control message is explained in more detail [here](../../../docs/source/control_message_guide.md).
 
 #### Requirements
 

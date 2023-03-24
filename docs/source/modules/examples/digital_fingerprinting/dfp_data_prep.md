@@ -39,3 +39,9 @@ This module function prepares data for either inference or model training.
   "timestamp_column_name": "timestamp"
 }
 ```
+
+### Default Settings
+
+| Property | Value |
+| -------- | ----- |
+| timestamp_column_name   | timestamp  |
