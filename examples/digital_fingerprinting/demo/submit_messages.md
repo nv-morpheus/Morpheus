@@ -1,4 +1,4 @@
-# Control Message GUI
+# Multi Control Message GUI
 
 ## Introduction
 This document provides a comprehensive guide on how to use a Control Messages Submission GUI for digital fingerprinting workflow. With this GUI, users can create and submit control messages to a Kafka topic for load, training, inference of a digital fingerprinting workflow. The GUI provides extensive options for control message creation, such as adding multiple tasks, configuring key-value parameters at task and control message levels, and also provides option for selecting the data type (payload or streaming). In addition, users can easily remove tasks and submit multiple control messages with just a click. By the end of this document, you will have a working Control Messages Submission GUI that will enhance your digital fingerprinting workflow usage experience.
