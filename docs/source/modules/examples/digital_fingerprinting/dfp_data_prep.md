@@ -21,11 +21,18 @@ This module function prepares data for either inference or model training.
 
 ### Configurable Parameters
 
-- `schema`: (dict)
-    - `schema_str`: (str) Serialized string representing the schema.
-    - `encoding`: (str) Encoding type for the schema_str.
-    - `input_message_type`: (str) Pickled message type.
-- `timestamp_column_name`: Name of the timestamp column (string, default: 'timestamp')
+| Parameter               | Type   | Description                  | Example Value | Default Value |
+|-------------------------|--------|------------------------------|---------------|---------------|
+| `schema`                | dict   | Schema configuration         | See Below     | -             |
+| `timestamp_column_name` | string | Name of the timestamp column | `timestamp`   | timestamp     |
+
+#### `schema`
+
+| Key                  | Type   | Description                      | Example Value             | Default Value |
+|----------------------|--------|----------------------------------|---------------------------|---------------|
+| `schema_str`         | string | Serialized schema string         | `"cPickle schema string"` | -             |
+| `encoding`           | string | Encoding used for the schema_str | `"latin1"`                | -             |
+| `input_message_type` | string | Pickled message type             | `"message type"`          | -             |
 
 ### Example JSON Configuration
 
@@ -38,4 +45,3 @@ This module function prepares data for either inference or model training.
   },
   "timestamp_column_name": "timestamp"
 }
-```

@@ -21,11 +21,20 @@ This module uploads trained models to the MLflow server.
 
 ### Configurable Parameters
 
-- `model_name_formatter` (str): Formatter for the model name.
-- `experiment_name_formatter` (str): Formatter for the experiment name.
-- `conda_env` (str): Conda environment for the model.
-- `timestamp_column_name` (str): Name of the timestamp column.
-- `databricks_permissions` (dict): Permissions for the model.
+| Parameter                   | Type       | Description                       | Example Value                 | Default Value |
+|-----------------------------|------------|-----------------------------------|-------------------------------|---------------|
+| `conda_env`                 | string     | Conda environment for the model   | `path/to/conda_env.yml`       | `[Required]`  |
+| `databricks_permissions`    | dictionary | Permissions for the model         | See Below                     | None          |
+| `experiment_name_formatter` | string     | Formatter for the experiment name | `experiment_name_{timestamp}` | `[Required]`  |
+| `model_name_formatter`      | string     | Formatter for the model name      | `model_name_{timestamp}`      | `[Required]`  |
+| `timestamp_column_name`     | string     | Name of the timestamp column      | `timestamp`                   | timestamp     |
+
+### `databricks_permissions`
+
+| Key     | Type  | Description                          | Example Value                    | Default Value |
+|---------|-------|--------------------------------------|----------------------------------|---------------|
+| `read`  | array | List of users with read permissions  | `["read_user1", "read_user2"]`   | -             |
+| `write` | array | List of users with write permissions | `["write_user1", "write_user2"]` | -             |
 
 ### Example JSON Configuration
 
@@ -40,4 +49,3 @@ This module uploads trained models to the MLflow server.
     "write": ["write_user1", "write_user2"]
   }
 }
-```

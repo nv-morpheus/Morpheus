@@ -21,11 +21,13 @@ This module filters columns from a `MultiMessage` object, emitting a `MessageMet
 
 ### Configurable Parameters
 
-- `include` (str): Regex to include columns.
-- `exclude` (List[str]): List of regex patterns to exclude columns.
-- `fixed_columns` (bool): If true, the columns are fixed and not determined at runtime.
-- `columns` (List[str]): List of columns to include.
-- `use_cpp` (bool): If true, use C++ to serialize.
+| Parameter       | Type         | Description                                                  | Example Value                       | Default Value         |
+|-----------------|--------------|--------------------------------------------------------------|-------------------------------------|-----------------------|
+| `columns`       | list[string] | List of columns to include                                   | `["column1", "column2", "column3"]` | None                  |
+| `exclude`       | list[string] | List of regex patterns to exclude columns                    | `["column_to_exclude"]`             | `[r'^ID$', r'^_ts_']` |
+| `fixed_columns` | bool         | If true, the columns are fixed and not determined at runtime | `true`                              | true                  |
+| `include`       | string       | Regex to include columns                                     | `^column`                           | None                  |
+| `use_cpp`       | bool         | If true, use C++ to serialize                                | `true`                              | false                 |
 
 ### Example JSON Configuration
 
@@ -37,4 +39,3 @@ This module filters columns from a `MultiMessage` object, emitting a `MessageMet
   "columns": ["column1", "column2", "column3"],
   "use_cpp": true
 }
-```

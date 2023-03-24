@@ -120,7 +120,7 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
 
     schema_config = config["schema"]
     schema_str = schema_config["schema_str"]
-    encoding = schema_config["encoding"]
+    encoding = schema_config.get("encoding", 'latin1')
 
     file_type = config.get("file_type", "JSON")
     filter_null = config.get("filter_null", False)
