@@ -4,7 +4,6 @@
 
 ####### Pip-only runtime dependencies (keep sorted!) #######
 # Packages listed here should also be listed in setup.py
-git+https://github.com/nv-morpheus/dfencoder.git@branch-23.01#egg=dfencoder
 ipywidgets
 jupyter-core>=4.11.2,<5.0
 jupyterlab

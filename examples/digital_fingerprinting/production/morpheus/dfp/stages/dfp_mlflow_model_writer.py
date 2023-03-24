@@ -21,7 +21,6 @@ import urllib.parse
 import mlflow
 import mrc
 import requests
-from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
 from mlflow.protos.databricks_pb2 import RESOURCE_ALREADY_EXISTS
@@ -36,6 +35,7 @@ from mrc.core import operators as ops
 
 from morpheus.config import Config
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
