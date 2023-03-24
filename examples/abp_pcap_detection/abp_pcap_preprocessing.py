@@ -81,7 +81,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         flags_bin_series = x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b"))
 
         # Expand binary string into an array
-        df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"))
+        df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"), index=x.get_meta().index)
 
         # adding [ack, psh, rst, syn, fin] details from the binary flag
         rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
@@ -176,7 +176,7 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         del merged_df
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count
