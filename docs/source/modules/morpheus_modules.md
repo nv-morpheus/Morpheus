@@ -19,6 +19,7 @@ limitations under the License.
 
 ## Core Modules
 
+- [Data Loader](./core/data_loader.md)
 - [File Batcher](./core/file_batcher.md)
 - [File to DataFrame](./core/file_to_df.md)
 - [Filter Control Message](./core/filter_control_message.md)

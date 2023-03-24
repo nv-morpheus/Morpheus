@@ -88,25 +88,24 @@ def file_to_df_loader(control_message: MessageControl, task: dict):
     the download method to use, and if it starts with "dask," it creates a dask client and uses it to process the files.
     Otherwise, it uses a single thread or multiprocess to process the files. This function then caches the resulting
     dataframe using a hash of the file paths. The dataframe is wrapped in a MessageMeta and then attached as a payload
-    to a MessageControl objec and passing on to further stages.
+    to a MessageControl object and passed on to further stages.
 
     Parameters
     ----------
-    message : MessageControl
+    control_message : MessageControl
         The MessageControl object containing the pipeline control message.
     task : typing.Dict[any, any]
         A dictionary representing the current task in the pipeline control message.
 
-    Return
-    ------
+    Returns
+    -------
     message : MessageControl
         Updated message control object with payload as a MessageMeta.
 
     Raises
     ------
-    RuntimeError :
+    RuntimeError:
         If no files matched the input strings specified in the task, or if there was an error loading the data.
-
     """
     if task.get("strategy", "aggregate") != "aggregate":
         raise RuntimeError("Only 'aggregate' strategy is supported for file_to_df loader.")

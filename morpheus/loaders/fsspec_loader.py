@@ -30,28 +30,28 @@ dask_cluster = None
 
 
 @register_loader(FSSPEC_LOADER)
-def fsspec_loader(message: MessageControl, task: dict) -> MessageControl:
+def fsspec_loader(control_message: MessageControl, task: dict) -> MessageControl:
     """
-    Loads data from external sources using the fsspec library, and returns the updated MessageControl
-    object with payload as MessageMeta, which contains dataframe (with filenames).
+    Loads data from external sources using the fsspec library, and returns an updated MessageControl
+    object with payload as MessageMeta, which contains a dataframe with file names and data.
 
     Parameters
     ----------
-    message : MessageControl
+    control_message : MessageControl
         The MessageControl object containing the pipeline control message.
     task : typing.Dict[any, any]
         A dictionary representing the current task in the pipeline control message.
 
-    Return
-    ------
-    message : MessageControl
-        Updated message control object with payload as a MessageMeta with dataframe containing file names.
+    Returns
+    -------
+    control_message : MessageControl
+        An updated MessageControl object with payload as a MessageMeta containing a dataframe
+        with file names and data.
 
     Raises
     ------
-    RuntimeError :
+    RuntimeError:
         If no files matched the input strings specified in the task, or if there was an error loading the data.
-
     """
 
     files = task.get("files", [])
@@ -69,6 +69,6 @@ def fsspec_loader(message: MessageControl, task: dict) -> MessageControl:
 
     df = cudf.DataFrame(full_filenames, columns=['files'])
 
-    message.payload(MessageMeta(df=df))
+    control_message.payload(MessageMeta(df=df))
 
-    return message
+    return control_message
