@@ -1,10 +1,27 @@
+/*
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+*/
+
 $(document).ready(function() {
 
     $("#submit").click(function() {
       convertToJson();
     });
 
-  // Function to convert inputs-container and child data to JSON
+  // Function to convert list of control messages to JSON object
   function convertToJson() {
   var inputsContainer = $('#inputs-container');
   var inputs = inputsContainer.find('.input');
@@ -18,6 +35,7 @@ $(document).ready(function() {
      var metadata = metadataContainer.find('.metadata');
      var metadataJson = {};
 
+     // add metadata section
      metadata.each(function(index) {
         var metadataItem = $(this);
         var key = metadataItem.find('input[name="metadata-key"]').val();
@@ -38,6 +56,7 @@ $(document).ready(function() {
      var tasks = tasksContainer.find('.task');
      var tasksJson = [];
 
+     // add tasks section
      tasks.each(function(index) {
         var task = $(this);
         var taskType = task.find('select[name="task-type"]').val();
@@ -66,6 +85,7 @@ $(document).ready(function() {
         tasksJson.push({ "type": taskType, "properties": propertiesJson });
      });
 
+     // add datatype to metadata
      metadataJson['data_type'] = dataType
      var inputJson = { "metadata": metadataJson, "tasks": tasksJson };
      jsonOutput.inputs.push(inputJson);
@@ -77,7 +97,7 @@ $(document).ready(function() {
 
 
 
-    // Add new input button functionality
+    // Add new control message button functionality
     $("#add-input-btn").click(function() {
       var inputHtml = `
       <div class="input">
