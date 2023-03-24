@@ -37,6 +37,7 @@
 #include <array>      // for array
 #include <cstddef>    // for size_t
 #include <exception>  // for exception
+#include <fstream>
 #include <numeric>
 #include <ostream>
 #include <sstream>  // IWYU pragma: keep

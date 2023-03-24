@@ -23,9 +23,10 @@
 
 #include <pybind11/pytypes.h>
 
-#include <fstream>
-#include <ostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace morpheus {
 #pragma GCC visibility push(default)

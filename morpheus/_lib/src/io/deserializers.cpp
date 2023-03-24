@@ -36,8 +36,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
-#include <ostream>  // needed for logging
 #include <regex>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
 // We're already including pybind11.h, and including only gil.h as IWYU suggests yields an undefined symbol error

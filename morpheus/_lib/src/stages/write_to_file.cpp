@@ -20,10 +20,9 @@
 #include "morpheus/io/serializers.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
-#include <glog/logging.h>
-
 #include <exception>
 #include <memory>
+#include <sstream>
 #include <stdexcept>  // for invalid_argument, runtime_error
 #include <string>
 #include <utility>  // for forward, move, addressof
