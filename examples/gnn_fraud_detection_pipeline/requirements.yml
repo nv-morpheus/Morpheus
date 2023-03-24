@@ -21,5 +21,6 @@ channels:
     - conda-forge
 dependencies:
     - chardet=5.0.0
+    - cuml=22.10
     - stellargraph=1.2.1
     - tensorflow=2.9.1
