@@ -19,7 +19,7 @@ import os
 import numpy as np
 import pytest
 
-from morpheus._lib.common import FilterSource
+from morpheus.common import FilterSource
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage

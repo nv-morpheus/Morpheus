@@ -20,7 +20,7 @@ from abc import abstractmethod
 import mrc
 import mrc.core.operators as ops
 
-from morpheus._lib.common import TypeId
+from morpheus.common import TypeId
 from morpheus.config import Config
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline.single_port_stage import SinglePortStage

@@ -26,7 +26,7 @@ from watchdog.utils.dirsnapshot import DirectorySnapshotDiff
 from watchdog.utils.dirsnapshot import EmptyDirectorySnapshot
 from watchdog.utils.patterns import filter_paths
 
-from morpheus._lib.common import FiberQueue
+from morpheus.common import FiberQueue
 from morpheus.utils.producer_consumer_queue import Closed
 
 logger = logging.getLogger(__name__)
