@@ -18,6 +18,7 @@ from functools import partial
 import cupy as cp
 import mrc
 import numpy as np
+import pandas as pd
 
 import cudf
 
@@ -76,18 +77,12 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
 
     @staticmethod
     def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
-        flags_bin_series = cudf.Series(x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b")))
-
-        df = flags_bin_series.str.findall("[0-1]")
-
-        rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
+        flags_bin_series = x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b"))
+        df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"))
 
         # adding [ack, psh, rst, syn, fin] details from the binary flag
-        for col in df.columns:
-            rename_col = rename_cols_dct[col]
-            df[rename_col] = df[col].astype("int8")
-
-        df = df.drop([0, 1, 2, 3, 4], axis=1)
+        rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
+        df.rename(columns=rename_cols_dct)
 
         df["flags_bin"] = flags_bin_series
         df["timestamp"] = x.get_meta("timestamp").astype("int64")
