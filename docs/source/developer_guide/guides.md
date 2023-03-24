@@ -35,23 +35,25 @@ in both Python and C++.
 
 ## Morpheus Modules
 
-Morpheus includes, as of version 23.03, a number of pre-defined module implementations to choose from when building a 
-custom pipeline. Modules can be thought of as units of work, which exist at a lower level than stages. Modules can 
+Morpheus includes, as of version 23.03, a number of pre-defined module implementations to choose from when building a
+custom pipeline. Modules can be thought of as units of work, which exist at a lower level than stages. Modules can
 be defined, registered, chained, nested, and loaded at runtime. Modules can be written in Python or C++.
 
 - [List of available Morpheus modules](../modules/morpheus_modules.md)
 
-However, there are likely going to be situations that require writing a custom module, either for creating your own 
-reusable work units, or for creating a new compound module from a set of existing primitives. The following guides 
+However, there are likely going to be situations that require writing a custom module, either for creating your own
+reusable work units, or for creating a new compound module from a set of existing primitives. The following guides
 will walk through the process of creating a custom module in Python and C++.
 
 - [Python Modules](./guides/7_python_modules.md)
 - [C++ Modules](./guides/8_cpp_modules.md)
 
 ## Morpheus Control messages
+
 - [Control Messages Overview](./guides/9_control_messages.md)
 
 ## Example Workflows
 
 - [Digital Fingerprinting (DFP)](./guides/5_digital_fingerprinting.md)
 - [Digital Fingerprinting (DFP) Reference](./guides/6_digital_fingerprinting_reference.md)
+- [Modular DFP Reference](./guides/10_modular_pipeline_digital_fingerprinting.md)
