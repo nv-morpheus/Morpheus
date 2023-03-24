@@ -77,7 +77,10 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
 
     @staticmethod
     def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
+        # Converts the int flags field into a binary string
         flags_bin_series = x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b"))
+
+        # Expand binary string into an array
         df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"))
 
         # adding [ack, psh, rst, syn, fin] details from the binary flag
