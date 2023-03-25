@@ -245,7 +245,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
                 try:
                     # Now update the slice
                     df.iloc[row_indexer, column_indexer] = value
-                except ValueError:
+                except (ValueError, TypeError):
                     # Try this as a fallback. Works better for strings. See issue #286
                     df[columns].iloc[row_indexer] = value
 
