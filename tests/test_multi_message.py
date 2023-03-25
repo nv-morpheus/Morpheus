@@ -240,13 +240,20 @@ def test_set_meta_new_column_dup_index(filter_probs_df: cudf.DataFrame, df_type:
     test_set_meta_new_column(df, df_type)
 
 
-def test_set_meta_issue_286(filter_probs_df: cudf.DataFrame):
+@pytest.mark.use_cudf
+@pytest.mark.parametrize('use_series', [True, False])
+def test_set_meta_issue_286(filter_probs_df: cudf.DataFrame, use_series: bool):
+    """
+    Explicitly calling set_meta on two different non-overlapping slices.
+    """
 
     meta = MessageMeta(filter_probs_df)
     mm1 = MultiMessage(meta=meta, mess_offset=0, mess_count=5)
     mm2 = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
 
     values = list(string.ascii_letters)
+    if use_series:
+        values = cudf.Series(values)
 
     mm1.set_meta('letters', values[0:5])
     mm2.set_meta('letters', values[5:10])
