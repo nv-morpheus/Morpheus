@@ -17,7 +17,6 @@
 # pylint: disable=redefined-outer-name
 
 import dataclasses
-import os
 import string
 import typing
 
@@ -28,8 +27,6 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.response_memory import ResponseMemory
 from morpheus.messages.memory.response_memory import ResponseMemoryProbs
@@ -44,18 +41,9 @@ from morpheus.messages.multi_message import MultiMessage
 from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.messages.multi_response_message import MultiResponseProbsMessage
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
-from utils import TEST_DIRS
 from utils import assert_df_equal
 from utils import duplicate_df_index
 from utils import duplicate_df_index_rand
-
-
-@pytest.fixture(scope="function")
-def df(df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
-
-    return read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
-                           file_type=FileTypes.Auto,
-                           df_type=df_type)
 
 
 @pytest.mark.use_python
@@ -71,9 +59,9 @@ def test_missing_explicit_init():
         BadMultiMessage(meta=None, value=5)
 
 
-def test_constructor_empty(df: cudf.DataFrame):
+def test_constructor_empty(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     multi = MultiMessage(meta=meta)
 
@@ -82,9 +70,9 @@ def test_constructor_empty(df: cudf.DataFrame):
     assert multi.mess_count == meta.count
 
 
-def test_constructor_values(df: cudf.DataFrame):
+def test_constructor_values(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     # No count
     multi = MultiMessage(meta=meta, mess_offset=2)
@@ -105,9 +93,9 @@ def test_constructor_values(df: cudf.DataFrame):
     assert multi.mess_count == 5
 
 
-def test_constructor_invalid(df: cudf.DataFrame):
+def test_constructor_invalid(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     # Negative offset
     with pytest.raises(ValueError):
@@ -126,14 +114,14 @@ def test_constructor_invalid(df: cudf.DataFrame):
         MultiMessage(meta=meta, mess_offset=5, mess_count=(meta.count - 5) + 1)
 
 
-def test_get_meta(df: cudf.DataFrame):
+def test_get_meta(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
     # Manually slice the dataframe according to the multi settings
-    df_sliced: cudf.DataFrame = df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
+    df_sliced: cudf.DataFrame = filter_probs_df.iloc[multi.mess_offset:multi.mess_offset + multi.mess_count, :]
 
     assert assert_df_equal(multi.get_meta(), df_sliced)
 
@@ -158,23 +146,23 @@ def test_get_meta(df: cudf.DataFrame):
     assert assert_df_equal(multi.get_meta(col_name), df_sliced[col_name])
 
 
-def test_get_meta_dup_index(df: cudf.DataFrame):
+def test_get_meta_dup_index(filter_probs_df: cudf.DataFrame):
 
     # Duplicate some indices before creating the meta
-    df = duplicate_df_index(df, replace_ids={3: 1, 5: 4})
+    df = duplicate_df_index(filter_probs_df, replace_ids={3: 1, 5: 4})
 
     # Now just run the other test to reuse code
     test_get_meta(df)
 
 
-def test_set_meta(df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
+def test_set_meta(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
 
-    df_saved = df.copy()
+    df_saved = filter_probs_df.copy()
 
     if (df_type == "cudf"):
         df_saved = df_saved.to_pandas()
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
@@ -208,14 +196,14 @@ def test_set_meta(df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas'])
     test_value(multi_columns, np.random.randn(multi.mess_count, 1))
 
     # Setting numpy arrays (multi column)
-    test_value(None, np.random.randn(multi.mess_count, len(df.columns)))
+    test_value(None, np.random.randn(multi.mess_count, len(filter_probs_df.columns)))
     test_value(two_columns, np.random.randn(multi.mess_count, len(two_columns)))
     test_value(multi_columns, np.random.randn(multi.mess_count, len(multi_columns)))
 
 
-def test_set_meta_new_column(df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
+def test_set_meta_new_column(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=5)
 
@@ -244,17 +232,17 @@ def test_set_meta_new_column(df: cudf.DataFrame, df_type: typing.Literal['cudf',
     assert assert_df_equal(multi.get_meta(["v2", "new_column2"]), val_to_set)
 
 
-def test_set_meta_new_column_dup_index(df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
+def test_set_meta_new_column_dup_index(filter_probs_df: cudf.DataFrame, df_type: typing.Literal['cudf', 'pandas']):
 
     # Duplicate some indices before creating the meta
-    df = duplicate_df_index(df, replace_ids={3: 4, 5: 4})
+    df = duplicate_df_index(filter_probs_df, replace_ids={3: 4, 5: 4})
 
     test_set_meta_new_column(df, df_type)
 
 
-def test_set_meta_issue_286(df: cudf.DataFrame):
+def test_set_meta_issue_286(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
     mm1 = MultiMessage(meta=meta, mess_offset=0, mess_count=5)
     mm2 = MultiMessage(meta=meta, mess_offset=5, mess_count=5)
 
@@ -264,9 +252,9 @@ def test_set_meta_issue_286(df: cudf.DataFrame):
     mm2.set_meta('letters', values[5:10])
 
 
-def test_copy_ranges(df: cudf.DataFrame):
+def test_copy_ranges(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     mm = MultiMessage(meta=meta)
 
@@ -275,10 +263,10 @@ def test_copy_ranges(df: cudf.DataFrame):
     assert mm2.meta.count == 4
     assert len(mm2.get_meta()) == 4
     assert mm2.meta is not meta
-    assert mm2.meta.df is not df
+    assert mm2.meta.df is not filter_probs_df
     assert mm2.mess_offset == 0
     assert mm2.mess_count == 6 - 2
-    assert assert_df_equal(mm2.get_meta(), df.iloc[2:6])
+    assert assert_df_equal(mm2.get_meta(), filter_probs_df.iloc[2:6])
 
     # slice two different ranges of rows
     mm3 = mm.copy_ranges([(2, 6), (12, 15)])
@@ -287,25 +275,25 @@ def test_copy_ranges(df: cudf.DataFrame):
     assert len(mm3.get_meta()) == 7
     assert mm3.meta is not meta
     assert mm3.meta is not mm2.meta
-    assert mm3.meta.df is not df
+    assert mm3.meta.df is not filter_probs_df
     assert mm3.meta.df is not mm2.meta.df
     assert mm3.mess_offset == 0
     assert mm3.mess_count == (6 - 2) + (15 - 12)
-    assert assert_df_equal(mm3.get_meta(), df.iloc[2:6].append(df.iloc[12:15]))
+    assert assert_df_equal(mm3.get_meta(), filter_probs_df.iloc[2:6].append(filter_probs_df.iloc[12:15]))
 
 
-def test_copy_ranges_dup_index(df: cudf.DataFrame):
+def test_copy_ranges_dup_index(filter_probs_df: cudf.DataFrame):
 
     # Duplicate some indices before creating the meta
-    df = duplicate_df_index_rand(df, count=4)
+    df = duplicate_df_index_rand(filter_probs_df, count=4)
 
     # Now just run the other test to reuse code
     test_copy_ranges(df)
 
 
-def test_get_slice_ranges(df: cudf.DataFrame):
+def test_get_slice_ranges(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     multi_full = MultiMessage(meta=meta)
 
@@ -354,71 +342,76 @@ def test_get_slice_ranges(df: cudf.DataFrame):
         multi_full.get_slice(13, 16).get_slice(4, 5)
 
 
-def test_get_slice_values(df: cudf.DataFrame):
+def test_get_slice_values(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     multi_full = MultiMessage(meta=meta)
 
     # Single slice
-    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta(), df.iloc[3:8])
+    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta(), filter_probs_df.iloc[3:8])
 
     # Single slice with one columns
-    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta("v1"), df.iloc[3:8]["v1"])
+    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta("v1"), filter_probs_df.iloc[3:8]["v1"])
 
     # Single slice with multiple columns
-    assert assert_df_equal(multi_full.get_slice(3, 8).get_meta(["v4", "v3", "v1"]), df.iloc[3:8][["v4", "v3", "v1"]])
+    assert assert_df_equal(
+        multi_full.get_slice(3, 8).get_meta(["v4", "v3", "v1"]), filter_probs_df.iloc[3:8][["v4", "v3", "v1"]])
 
     # Chained slice
-    assert assert_df_equal(multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(), df.iloc[2 + 5:(2 + 5) + (9 - 5)])
+    assert assert_df_equal(
+        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(), filter_probs_df.iloc[2 + 5:(2 + 5) + (9 - 5)])
 
     # Chained slice one column
     assert assert_df_equal(
-        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta("v1"), df.iloc[2 + 5:(2 + 5) + (9 - 5)]["v1"])
+        multi_full.get_slice(2, 18).get_slice(5, 9).get_meta("v1"), filter_probs_df.iloc[2 + 5:(2 + 5) + (9 - 5)]["v1"])
 
     # Chained slice multi column
     assert assert_df_equal(
         multi_full.get_slice(2, 18).get_slice(5, 9).get_meta(["v4", "v3", "v1"]),
-        df.iloc[2 + 5:(2 + 5) + (9 - 5)][["v4", "v3", "v1"]])
+        filter_probs_df.iloc[2 + 5:(2 + 5) + (9 - 5)][["v4", "v3", "v1"]])
 
     # Set values
     multi_full.get_slice(4, 10).set_meta(None, 1.15)
-    assert assert_df_equal(multi_full.get_slice(4, 10).get_meta(), df.iloc[4:10])
+    assert assert_df_equal(multi_full.get_slice(4, 10).get_meta(), filter_probs_df.iloc[4:10])
 
     # Set values one column
     multi_full.get_slice(1, 6).set_meta("v3", 5.3)
-    assert assert_df_equal(multi_full.get_slice(1, 6).get_meta("v3"), df.iloc[1:6]["v3"])
+    assert assert_df_equal(multi_full.get_slice(1, 6).get_meta("v3"), filter_probs_df.iloc[1:6]["v3"])
 
     # Set values multi column
     multi_full.get_slice(5, 8).set_meta(["v4", "v1", "v3"], 7)
-    assert assert_df_equal(multi_full.get_slice(5, 8).get_meta(["v4", "v1", "v3"]), df.iloc[5:8][["v4", "v1", "v3"]])
+    assert assert_df_equal(
+        multi_full.get_slice(5, 8).get_meta(["v4", "v1", "v3"]), filter_probs_df.iloc[5:8][["v4", "v1", "v3"]])
 
     # Chained Set values
     multi_full.get_slice(10, 20).get_slice(1, 4).set_meta(None, 8)
-    assert assert_df_equal(multi_full.get_slice(10, 20).get_slice(1, 4).get_meta(), df.iloc[10 + 1:(10 + 1) + (4 - 1)])
+    assert assert_df_equal(
+        multi_full.get_slice(10, 20).get_slice(1, 4).get_meta(), filter_probs_df.iloc[10 + 1:(10 + 1) + (4 - 1)])
 
     # Chained Set values one column
     multi_full.get_slice(10, 20).get_slice(3, 5).set_meta("v4", 112)
     assert assert_df_equal(
-        multi_full.get_slice(10, 20).get_slice(3, 5).get_meta("v4"), df.iloc[10 + 3:(10 + 3) + (5 - 3)]["v4"])
+        multi_full.get_slice(10, 20).get_slice(3, 5).get_meta("v4"),
+        filter_probs_df.iloc[10 + 3:(10 + 3) + (5 - 3)]["v4"])
 
     # Chained Set values multi column
     multi_full.get_slice(10, 20).get_slice(5, 8).set_meta(["v4", "v1", "v2"], 22)
     assert assert_df_equal(
         multi_full.get_slice(10, 20).get_slice(5, 8).get_meta(["v4", "v1", "v2"]),
-        df.iloc[10 + 5:(10 + 5) + (8 - 5)][["v4", "v1", "v2"]])
+        filter_probs_df.iloc[10 + 5:(10 + 5) + (8 - 5)][["v4", "v1", "v2"]])
 
 
-def test_get_slice_values_dup_index(df: cudf.DataFrame):
+def test_get_slice_values_dup_index(filter_probs_df: cudf.DataFrame):
 
     # Duplicate some indices before creating the meta
-    df = duplicate_df_index_rand(df, count=4)
+    df = duplicate_df_index_rand(filter_probs_df, count=4)
 
     # Now just run the other test to reuse code
     test_get_slice_values(df)
 
 
-def test_get_slice_derived(df: cudf.DataFrame):
+def test_get_slice_derived(filter_probs_df: cudf.DataFrame):
 
     multi_tensor_message_tensors = {
         "input_ids": cp.zeros((20, 2)),
@@ -432,7 +425,7 @@ def test_get_slice_derived(df: cudf.DataFrame):
         multi = message_class(**kwargs)
         assert isinstance(multi.get_slice(0, 20), message_class)
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     # Base MultiMessages
     compare_slice(MultiMessage, meta=meta)
@@ -464,9 +457,9 @@ def test_get_slice_derived(df: cudf.DataFrame):
                   memory=ResponseMemoryProbs(count=20, probs=multi_tensor_message_tensors["probs"]))
 
 
-def test_from_message(df: cudf.DataFrame):
+def test_from_message(filter_probs_df: cudf.DataFrame):
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     multi = MultiMessage(meta=meta, mess_offset=3, mess_count=10)
 
@@ -491,7 +484,7 @@ def test_from_message(df: cudf.DataFrame):
     assert multi2.mess_offset == 6
     assert multi2.mess_count == 9
 
-    meta2 = MessageMeta(df[7:14])
+    meta2 = MessageMeta(filter_probs_df[7:14])
     multi2 = MultiMessage.from_message(multi, meta=meta2)
     assert multi2.meta is meta2
     assert multi2.mess_offset == 0
@@ -584,12 +577,12 @@ def test_from_message(df: cudf.DataFrame):
         MultiAEMessage.from_message(multi)
 
 
-def test_tensor_constructor(df: cudf.DataFrame):
+def test_tensor_constructor(filter_probs_df: cudf.DataFrame):
 
-    mess_len = len(df)
+    mess_len = len(filter_probs_df)
     ten_len = mess_len * 2
 
-    meta = MessageMeta(df)
+    meta = MessageMeta(filter_probs_df)
 
     memory = TensorMemory(count=ten_len)
 
@@ -686,9 +679,9 @@ def test_tensor_constructor(df: cudf.DataFrame):
                                       memory=TensorMemory(count=mess_len, tensors={"id_tensor": invalid_id_tensor}))
 
 
-def test_tensor_slicing(df: cudf.DataFrame):
+def test_tensor_slicing(filter_probs_df: cudf.DataFrame):
 
-    mess_len = len(df)
+    mess_len = len(filter_probs_df)
 
     repeat_counts = [1] * mess_len
     repeat_counts[1] = 2
@@ -705,7 +698,7 @@ def test_tensor_slicing(df: cudf.DataFrame):
 
     # First with no offsets
     memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})
-    multi = MultiInferenceMessage(meta=MessageMeta(df), memory=memory)
+    multi = MultiInferenceMessage(meta=MessageMeta(filter_probs_df), memory=memory)
     multi_slice = multi.get_slice(3, 10)
     assert multi_slice.mess_offset == seq_ids[3, 0].item()
     assert multi_slice.mess_count == seq_ids[10, 0].item() - seq_ids[3, 0].item()
@@ -714,7 +707,10 @@ def test_tensor_slicing(df: cudf.DataFrame):
     assert cp.all(multi_slice.get_tensor("probs") == probs[3:10, :])
 
     # Offset on memory
-    multi = MultiInferenceMessage(meta=MessageMeta(df), mess_offset=seq_ids[4, 0].item(), memory=memory, offset=4)
+    multi = MultiInferenceMessage(meta=MessageMeta(filter_probs_df),
+                                  mess_offset=seq_ids[4, 0].item(),
+                                  memory=memory,
+                                  offset=4)
     multi_slice = multi.get_slice(6, 13)
     assert multi_slice.mess_offset == seq_ids[multi.offset + 6, 0].item()
     assert multi_slice.mess_count == seq_ids[multi.offset + 13 - 1, 0].item() + 1 - seq_ids[multi.offset + 6, 0].item()
@@ -724,7 +720,9 @@ def test_tensor_slicing(df: cudf.DataFrame):
 
     # Should be equivalent to shifting the input tensors and having no offset
     equiv_memory = InferenceMemory(count=tensor_count - 4, tensors={"seq_ids": seq_ids[4:], "probs": probs[4:]})
-    equiv_multi = MultiInferenceMessage(meta=MessageMeta(df), mess_offset=seq_ids[4, 0].item(), memory=equiv_memory)
+    equiv_multi = MultiInferenceMessage(meta=MessageMeta(filter_probs_df),
+                                        mess_offset=seq_ids[4, 0].item(),
+                                        memory=equiv_memory)
     equiv_slice = equiv_multi.get_slice(6, 13)
     assert multi_slice.mess_offset == equiv_slice.mess_offset
     assert multi_slice.mess_count == equiv_slice.mess_count
@@ -734,7 +732,7 @@ def test_tensor_slicing(df: cudf.DataFrame):
 
     # Offset on meta
     memory = InferenceMemory(count=tensor_count - 3, tensors={"seq_ids": seq_ids[:-3] + 3, "probs": probs[:-3]})
-    multi = MultiInferenceMessage(meta=MessageMeta(df), mess_offset=3, memory=memory)
+    multi = MultiInferenceMessage(meta=MessageMeta(filter_probs_df), mess_offset=3, memory=memory)
     multi_slice = multi.get_slice(2, 9)
     assert multi_slice.mess_offset == seq_ids[multi.offset + 2, 0].item() + 3
     assert multi_slice.mess_count == seq_ids[multi.offset + 9 - 1, 0].item() + 1 - seq_ids[multi.offset + 2, 0].item()
@@ -744,7 +742,7 @@ def test_tensor_slicing(df: cudf.DataFrame):
 
     # Should be equivalent to shifting the input dataframe and having no offset
     equiv_memory = InferenceMemory(count=tensor_count - 3, tensors={"seq_ids": seq_ids[:-3], "probs": probs[:-3]})
-    equiv_multi = MultiInferenceMessage(meta=MessageMeta(df.iloc[3:, :]), memory=equiv_memory)
+    equiv_multi = MultiInferenceMessage(meta=MessageMeta(filter_probs_df.iloc[3:, :]), memory=equiv_memory)
     equiv_slice = equiv_multi.get_slice(2, 9)
     assert multi_slice.mess_offset == equiv_slice.mess_offset + 3
     assert multi_slice.mess_count == equiv_slice.mess_count
@@ -754,7 +752,7 @@ def test_tensor_slicing(df: cudf.DataFrame):
 
     # Finally, compare a double slice to a single
     memory = InferenceMemory(count=tensor_count, tensors={"seq_ids": seq_ids, "probs": probs})
-    multi = MultiInferenceMessage(meta=MessageMeta(df), memory=memory)
+    multi = MultiInferenceMessage(meta=MessageMeta(filter_probs_df), memory=memory)
     double_slice = multi.get_slice(4, 17).get_slice(3, 10)
     single_slice = multi.get_slice(4 + 3, 4 + 10)
     assert double_slice.mess_offset == single_slice.mess_offset

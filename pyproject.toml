@@ -16,6 +16,8 @@ markers = [
    "kafka: Tests that require a running instance of kafka",
    "use_cpp: Test support C++ nodes and objects",
    "use_python: Test only supports Python nodes and objects",
+   "use_cudf: Test supports cuDF datasets",
+   "use_pandas: Test supports Pandas datasets",
    "replace_callback: Replaces the results_callback in cli",
    "reload_modules: Reloads a set of python modules after running the current test"
 ]
