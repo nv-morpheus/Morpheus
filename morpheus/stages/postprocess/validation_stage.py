@@ -18,7 +18,10 @@ import os
 import typing
 
 import mrc
+import pandas as pd
 from mrc.core import operators as ops
+
+import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -43,8 +46,8 @@ class ValidationStage(CompareDataFrameStage):
     ----------
     c : `morpheus.config.Config`
         The global configuration.
-    val_file_name : str
-        The comparison file.
+    val_file_name : typing.Union[pd.DataFrame, cudf.DataFrame, str]
+        The comparison file, or an instance of a DataFrame.
     results_file_name : str, optional
         If not `None` specifies an output file path to write a JSON file containing the validation results.
     overwrite : boolean, default = False, is_flag = True
@@ -70,7 +73,7 @@ class ValidationStage(CompareDataFrameStage):
     def __init__(
         self,
         c: Config,
-        val_file_name: str,
+        val_file_name: typing.Union[pd.DataFrame, cudf.DataFrame, str],
         results_file_name: str = None,
         overwrite: bool = False,
         include: typing.List[str] = None,
@@ -115,7 +118,7 @@ class ValidationStage(CompareDataFrameStage):
         return (MultiMessage, )
 
     def _do_comparison(self):
-        results = self.get_results()
+        results = self.get_results(clear=False)
         if (len(results) and self._results_file_name is not None):
             with open(self._results_file_name, "w") as f:
                 json.dump(results, f, indent=2, sort_keys=True)
