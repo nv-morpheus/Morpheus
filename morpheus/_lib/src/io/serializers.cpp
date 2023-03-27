@@ -305,14 +305,6 @@ void SerializersProxy::write_df_to_file(pybind11::object df,
                      get_with_default(kwargs, "flush", false));
         break;
     }
-    case FileTypes::PARQUET: {
-        table_to_parquet(CudfHelper::CudfHelper::table_info_data_from_table(df),
-                         out_file,
-                         get_with_default(kwargs, "include_header", true),
-                         get_with_default(kwargs, "include_index_col", true),
-                         get_with_default(kwargs, "flush", false));
-        break;
-    }
     case FileTypes::Auto:
     default:
         throw std::logic_error(MORPHEUS_CONCAT_STR("Unsupported filetype: " << file_type));

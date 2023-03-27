@@ -35,7 +35,7 @@ from utils import assert_path_exists
 
 @pytest.mark.slow
 @pytest.mark.parametrize("input_type", ["csv", "jsonlines", "parquet"])
-@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines", "parquet"])
+@pytest.mark.parametrize("output_type", ["csv", "json", "jsonlines"])
 @pytest.mark.parametrize("flush", [False, True], ids=["no_flush", "flush"])
 @pytest.mark.parametrize("repeat", [1, 2, 5], ids=["repeat1", "repeat2", "repeat5"])
 def test_file_rw_pipe(tmp_path, config, input_type, output_type, flush, repeat: int):
@@ -158,9 +158,8 @@ def test_file_rw_index_pipe(tmp_path, config, input_file):
                              "include_header": True, "include_index_col": False
                          }), (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs_w_id_col.csv"), {
                              "include_header": True
-                         }), (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines"), {}),
-                          (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.parquet"), {})],
-                         ids=["CSV", "CSV_ID", "JSON", "PARQUET"])
+                         }), (os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.jsonlines"), {})],
+                         ids=["CSV", "CSV_ID", "JSON"])
 def test_file_roundtrip(use_cpp, tmp_path, input_file, extra_kwargs):
 
     # Output file should be same type as input
