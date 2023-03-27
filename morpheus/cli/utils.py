@@ -38,7 +38,7 @@ PluginSpec = typing.Union[None, types.ModuleType, str, typing.Sequence[str]]
 
 def str_to_file_type(file_type_str: str):
     # Delay FileTypes since this will import ._lib
-    from morpheus._lib.common import FileTypes
+    from morpheus.common import FileTypes
     file_type_members = {name.lower(): t for (name, t) in FileTypes.__members__.items()}
 
     return file_type_members[file_type_str]

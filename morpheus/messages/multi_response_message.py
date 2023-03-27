@@ -14,12 +14,16 @@
 # limitations under the License.
 
 import dataclasses
+import logging
 import typing
 
 import morpheus._lib.messages as _messages
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
+from morpheus.utils import logger as morpheus_logger
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -28,6 +32,9 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
     This class contains several inference responses as well as the cooresponding message metadata.
     """
 
+    probs_tensor_name: typing.ClassVar[str] = "probs"
+    """Name of the tensor that holds output probabilities"""
+
     def __init__(self,
                  *,
                  meta: MessageMeta,
@@ -35,19 +42,32 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
                  mess_count: int = -1,
                  memory: TensorMemory = None,
                  offset: int = 0,
-                 count: int = -1):
+                 count: int = -1,
+                 id_tensor_name: str = "seq_ids",
+                 probs_tensor_name: str = "probs"):
+
+        if probs_tensor_name is None:
+            raise ValueError("Cannot use None for `probs_tensor_name`")
+
+        self.probs_tensor_name = probs_tensor_name
+
+        # Add the tensor name to the required list
+        if (self.probs_tensor_name not in self.required_tensors):
+            # Make sure to set a new variable here instead of append otherwise you change all classes
+            self.required_tensors = self.required_tensors + [self.probs_tensor_name]
 
         super().__init__(meta=meta,
                          mess_offset=mess_offset,
                          mess_count=mess_count,
                          memory=memory,
                          offset=offset,
-                         count=count)
+                         count=count,
+                         id_tensor_name=id_tensor_name)
 
     @property
     def outputs(self):
         """
-        Get outputs stored in the ResponseMemory container. Alias for `MultiResponseMessage.tensors`.
+        Get outputs stored in the TensorMemory container. Alias for `MultiResponseMessage.tensors`.
 
         Returns
         -------
@@ -59,7 +79,7 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
 
     def get_output(self, name: str):
         """
-        Get output stored in the ResponseMemory container. Alias for `MultiResponseMessage.get_tensor`.
+        Get output stored in the TensorMemory container. Alias for `MultiResponseMessage.get_tensor`.
 
         Parameters
         ----------
@@ -74,27 +94,26 @@ class MultiResponseMessage(MultiTensorMessage, cpp_class=_messages.MultiResponse
         """
         return self.get_tensor(name)
 
-    def copy_output_ranges(self, ranges, mask=None):
+    def get_probs_tensor(self):
         """
-        Perform a copy of the underlying output tensors for the given `ranges` of rows.
-        Alias for `MultiResponseMessage.copy_output_ranges`
-
-        Parameters
-        ----------
-        ranges : typing.List[typing.Tuple[int, int]]
-            Rows to include in the copy in the form of `[(`start_row`, `stop_row`),...]`
-            The `stop_row` isn't included. For example to copy rows 1-2 & 5-7 `ranges=[(1, 3), (5, 8)]`
-
-        mask : typing.Union[None, cupy.ndarray, numpy.ndarray]
-            Optionally specify rows as a cupy array (when using cudf Dataframes) or a numpy array (when using pandas
-            Dataframes) of booleans. When not-None `ranges` will be ignored. This is useful as an optimization as this
-            avoids needing to generate the mask on it's own.
+        Get the tensor that holds output probabilities. Equivalent to `get_tensor(probs_tensor_name)`
 
         Returns
         -------
-        typing.Dict[str, cupy.ndarray]
+        cupy.ndarray
+            The probabilities tensor
+
+        Raises
+        ------
+        KeyError
+            If `self.probs_tensor_name` is not found in the tensors
         """
-        return self.copy_tensor_ranges(ranges, mask=mask)
+
+        try:
+            return self.get_tensor(self.probs_tensor_name)
+        except KeyError as exc:
+            raise KeyError(f"Cannopt get ID tensor. Tensor with name '{self.probs_tensor_name}' "
+                           "does not exist in the memory object") from exc
 
 
 @dataclasses.dataclass
@@ -106,6 +125,10 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
 
     required_tensors: typing.ClassVar[typing.List[str]] = ["probs"]
 
+    def __new__(cls, *args, **kwargs):
+        morpheus_logger.deprecated_message_warning(logger, cls, MultiResponseMessage)
+        return super(MultiResponseMessage, cls).__new__(cls, *args, **kwargs)
+
     def __init__(self,
                  *,
                  meta: MessageMeta,
@@ -113,14 +136,18 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
                  mess_count: int = -1,
                  memory: TensorMemory,
                  offset: int = 0,
-                 count: int = -1):
+                 count: int = -1,
+                 id_tensor_name: str = "seq_ids",
+                 probs_tensor_name: str = "probs"):
 
         super().__init__(meta=meta,
                          mess_offset=mess_offset,
                          mess_count=mess_count,
                          memory=memory,
                          offset=offset,
-                         count=count)
+                         count=count,
+                         id_tensor_name=id_tensor_name,
+                         probs_tensor_name=probs_tensor_name)
 
     @property
     def probs(self):
@@ -138,7 +165,7 @@ class MultiResponseProbsMessage(MultiResponseMessage, cpp_class=_messages.MultiR
 
 
 @dataclasses.dataclass
-class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
+class MultiResponseAEMessage(MultiResponseMessage, cpp_class=None):
     """
     A stronger typed version of `MultiResponseProbsMessage` that is used for inference workloads that return a
     probability array. Helps ensure the proper outputs are set and eases debugging.
@@ -154,6 +181,8 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
                  memory: TensorMemory = None,
                  offset: int = 0,
                  count: int = -1,
+                 id_tensor_name: str = "seq_ids",
+                 probs_tensor_name: str = "probs",
                  user_id: str = None):
 
         if (user_id is None):
@@ -166,4 +195,6 @@ class MultiResponseAEMessage(MultiResponseProbsMessage, cpp_class=None):
                          mess_count=mess_count,
                          memory=memory,
                          offset=offset,
-                         count=count)
+                         count=count,
+                         id_tensor_name=id_tensor_name,
+                         probs_tensor_name=probs_tensor_name)

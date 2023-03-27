@@ -17,8 +17,11 @@
 
 #pragma once
 
+#include "morpheus_export.h"
+
 #include "morpheus/objects/data_table.hpp"
 #include "morpheus/objects/dtype.hpp"
+#include "morpheus/objects/table_info_data.hpp"
 
 #include <cudf/column/column_view.hpp>  // for column_view
 #include <cudf/table/table_view.hpp>
@@ -37,30 +40,9 @@ namespace morpheus {
 
 struct CudfHelper;
 
-/**
- * @brief Simple structure which provides a general method for holding a cudf:table_view together with index and column
- * names. Also provides slicing mechanics.
- *
- */
-struct TableInfoData
-{
-    TableInfoData() = default;
-    TableInfoData(cudf::table_view view, std::vector<std::string> indices, std::vector<std::string> columns);
-
-    TableInfoData get_slice(std::vector<std::string> column_names = {}) const;
-
-    TableInfoData get_slice(cudf::size_type start,
-                            cudf::size_type stop,
-                            std::vector<std::string> column_names = {}) const;
-
-    cudf::table_view table_view;
-    std::vector<std::string> index_names;
-    std::vector<std::string> column_names;
-};
-
 /****** Component public implementations *******************/
 /****** TableInfo******************************************/
-struct __attribute__((visibility("default"))) TableInfoBase
+struct MORPHEUS_EXPORT TableInfoBase
 {
     /**
      * @brief Get reference of a cudf table view
@@ -140,7 +122,7 @@ struct __attribute__((visibility("default"))) TableInfoBase
     friend CudfHelper;
 };
 
-struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
+struct MORPHEUS_EXPORT TableInfo : public TableInfoBase
 {
   public:
     TableInfo() = default;
@@ -161,7 +143,7 @@ struct __attribute__((visibility("default"))) TableInfo : public TableInfoBase
     std::shared_lock<std::shared_mutex> m_lock;
 };
 
-struct __attribute__((visibility("default"))) MutableTableInfo : public TableInfoBase
+struct MORPHEUS_EXPORT MutableTableInfo : public TableInfoBase
 {
   public:
     MutableTableInfo(std::shared_ptr<const IDataTable> parent,

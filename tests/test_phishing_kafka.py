@@ -23,7 +23,7 @@ import numpy as np
 import pandas
 import pytest
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.config import PipelineModes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.io.utils import filter_null_data
