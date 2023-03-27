@@ -28,7 +28,7 @@ rapids_find_package(Protobuf
   INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
 )
 
-find_package(CUDAToolkit)
+find_package(CUDAToolkit REQUIRED)
 
 if(MORPHEUS_BUILD_BENCHMARKS)
   # google benchmark
