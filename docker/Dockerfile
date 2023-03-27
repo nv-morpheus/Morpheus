@@ -80,9 +80,8 @@ WORKDIR ${MORPHEUS_ROOT}
 # Install mamba to speed the solve up
 RUN conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
-    conda config --env --add channels conda-forge &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" "tini=0.19" &&\
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" "tini=0.19" &&\
     source activate base &&\
     git lfs install
     # conda clean -afy
@@ -148,10 +147,10 @@ RUN apt update && \
         cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvml-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
+        libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -163,7 +162,7 @@ RUN --mount=type=cache,id=workspace_cache,target=/workspace/.cache,sharing=locke
     source activate base &&\
     # Need to get around recent versions of git locking paths until they are deemed safe
     git config --global --add safe.directory "*" &&\
-    MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld CONDA_ARGS="--no-test" ./ci/conda/recipes/run_conda_build.sh morpheus
+    MORPHEUS_PYTHON_BUILD_STUBS=OFF CONDA_BLD_PATH=/opt/conda/conda-bld ./ci/conda/recipes/run_conda_build.sh morpheus
 
 # sid_visualization is a submodule we need to init
 RUN git submodule update --init --recursive
@@ -212,13 +211,14 @@ ARG CUDA_MINOR_VER
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvtx-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcufft-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcurand-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         libcusolver-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcublas-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         nodejs \
         npm && \
     apt clean && \
@@ -247,7 +247,6 @@ ARG MORPHEUS_USER="root"
 RUN source activate morpheus \
     && MORPHEUS_ROOT=/workspace \
        CONDA_BLD_PATH=/opt/conda/conda-bld \
-       CONDA_ARGS="--no-test" \
        ./ci/conda/recipes/run_conda_build.sh pydebug \
     && ./ci/conda/recipes/python_dbg_install.sh \
        -s $( ls /opt/conda/conda-bld/src_cache/Python-${PYTHON_VER}*.tar.xz ) \
