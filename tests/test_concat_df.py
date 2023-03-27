@@ -19,7 +19,6 @@ import cudf
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseMessage
 from morpheus.utils import concat_df
 from utils import assert_df_equal
 
