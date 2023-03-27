@@ -21,11 +21,11 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import TypeId
-from morpheus._lib.common import tyepid_to_numpy_str
+from morpheus.common import TypeId
+from morpheus.common import tyepid_to_numpy_str
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
@@ -129,9 +129,9 @@ def test_preallocation_multi_segment_pipe(config, tmp_path, probs_type):
     pipe.add_segment_boundary(MultiMessage)
     pipe.add_stage(
         ConvMsg(config, columns=get_column_names_from_file(input_file), probs_type=tyepid_to_numpy_str(probs_type)))
-    (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseProbsMessage)
+    (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
-    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))

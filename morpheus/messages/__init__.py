@@ -18,6 +18,7 @@ Message classes, which contain data being transfered between pipeline stages
 # Import order is very important here. Import base classes before child ones
 # isort: off
 
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.memory.inference_memory import InferenceMemory
 from morpheus.messages.memory.inference_memory import InferenceMemoryAE
 from morpheus.messages.memory.inference_memory import InferenceMemoryFIL
@@ -57,5 +58,6 @@ __all__ = [
     "ResponseMemory",
     "ResponseMemoryAE",
     "ResponseMemoryProbs",
+    "TensorMemory",
     "UserMessageMeta",
 ]

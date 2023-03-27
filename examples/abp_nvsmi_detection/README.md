@@ -187,13 +187,13 @@ Added stage: <deserialize-1; DeserializeStage()>
 Added stage: <preprocess-fil-2; PreprocessFILStage()>
   └─ morpheus.MultiMessage -> morpheus.MultiInferenceFILMessage
 Added stage: <inference-3; TritonInferenceStage(model_name=abp-nvsmi-xgb, server_url=localhost:8000, force_convert_inputs=False, use_shared_memory=False)>
-  └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiInferenceFILMessage -> morpheus.MultiResponseMessage
 Added stage: <monitor-4; MonitorStage(description=Inference Rate, smoothing=0.001, unit=inf, delayed_start=False, determine_count_fn=None)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <add-class-5; AddClassificationsStage(threshold=0.5, labels=[], prefix=)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MultiResponseProbsMessage
+  └─ morpheus.MultiResponseMessage -> morpheus.MultiResponseMessage
 Added stage: <serialize-6; SerializeStage(include=['mining'], exclude=['^ID$', '^_ts_'], fixed_columns=True)>
-  └─ morpheus.MultiResponseProbsMessage -> morpheus.MessageMeta
+  └─ morpheus.MultiResponseMessage -> morpheus.MessageMeta
 Added stage: <to-file-7; WriteToFileStage(filename=detections.jsonlines, overwrite=True, file_type=FileTypes.Auto)>
   └─ morpheus.MessageMeta -> morpheus.MessageMeta
 ====Building Pipeline Complete!====

@@ -22,14 +22,13 @@ python root-cause-bert.py \
 import argparse
 import time
 
-import numpy as np
+import cudf
 import pandas as pd
-import torch
 from binary_sequence_classifier import BinarySequenceClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 
-import cudf
+from morpheus.utils.seed import manual_seed
 
 
 def train(trainingdata, unseenerrors):
@@ -67,10 +66,7 @@ def train(trainingdata, unseenerrors):
 
     seq_classifier.init_model('bert-base-uncased')
 
-    torch.manual_seed(random_seed)
-    torch.cuda.manual_seed(random_seed)
-    np.random.seed(random_seed)
-    torch.backends.cudnn.deterministic = True
+    manual_seed(random_seed)
     seq_classifier.train_model(X_train['log'], y_train, batch_size=128, epochs=1, learning_rate=3.6e-04)
 
     timestr = time.strftime('%Y%m%d-%H%M%S')

@@ -34,8 +34,7 @@ from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.inference.inference_stage import InferenceStage
 from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
@@ -582,11 +581,11 @@ class _TritonInferenceWorker(InferenceWorker):
         return (x.count, self._outputs[list(self._outputs.keys())[0]].shape[1])
 
     @abstractmethod
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemory:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
         pass
 
     def _infer_callback(self,
-                        cb: typing.Callable[[ResponseMemory], None],
+                        cb: typing.Callable[[TensorMemory], None],
                         m: InputWrapper,
                         b: MultiInferenceMessage,
                         result: tritonclient.InferResult,
@@ -604,7 +603,7 @@ class _TritonInferenceWorker(InferenceWorker):
 
         self._mem_pool.return_obj(m)
 
-    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[ResponseMemory], None]):
+    def process(self, batch: MultiInferenceMessage, cb: typing.Callable[[TensorMemory], None]):
         """
         This function sends batch of events as a requests to Triton inference server using triton client API.
 
@@ -612,7 +611,7 @@ class _TritonInferenceWorker(InferenceWorker):
         ----------
         batch : `morpheus.pipeline.messages.MultiInferenceMessage`
             Mini-batch of inference messages.
-        cb : typing.Callable[[`morpheus.pipeline.messages.ResponseMemory`], None]
+        cb : typing.Callable[[`morpheus.pipeline.messages.TensorMemory`], None]
             Callback to set the values for the inference response.
 
         """
@@ -702,16 +701,16 @@ class TritonInferenceNLP(_TritonInferenceWorker):
             "output": "probs",
         }
 
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemoryProbs:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
 
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
 
         if (self._needs_logits):
             output = {key: 1.0 / (1.0 + np.exp(-val)) for key, val in output.items()}
 
-        mem = ResponseMemoryProbs(
+        mem = TensorMemory(
             count=output["probs"].shape[0],
-            probs=cp.array(output["probs"]),  # For now, only support one output
+            tensors={'probs': cp.array(output["probs"])}  # For now, only support one output
         )
 
         return mem
@@ -777,7 +776,7 @@ class TritonInferenceFIL(_TritonInferenceWorker):
             "output__0": "probs",
         }
 
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemoryProbs:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
 
         output = {output.mapped_name: result.as_numpy(output.name) for output in self._outputs.values()}
 
@@ -785,9 +784,9 @@ class TritonInferenceFIL(_TritonInferenceWorker):
             if (len(val.shape) == 1):
                 output[key] = np.expand_dims(val, 1)
 
-        mem = ResponseMemoryProbs(
+        mem = TensorMemory(
             count=output["probs"].shape[0],
-            probs=cp.array(output["probs"]),  # For now, only support one output
+            tensors={'probs': cp.array(output["probs"])}  # For now, only support one output
         )
 
         return mem
@@ -838,7 +837,8 @@ class TritonInferenceAE(_TritonInferenceWorker):
                          inout_mapping=inout_mapping)
 
         import torch
-        from dfencoder import AutoEncoder
+
+        from morpheus.models.dfencoder import AutoEncoder
 
         # Save the autoencoder path
         with open(c.ae.autoencoder_path, 'rb') as in_strm:
@@ -854,7 +854,7 @@ class TritonInferenceAE(_TritonInferenceWorker):
         # Enable support by default
         return False
 
-    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> ResponseMemoryProbs:
+    def _build_response(self, batch: MultiInferenceMessage, result: tritonclient.InferResult) -> TensorMemory:
 
         import torch
 
@@ -876,9 +876,9 @@ class TritonInferenceAE(_TritonInferenceWorker):
         ae_scores = cp.asarray(net_loss)
         ae_scores = ae_scores.reshape((batch.count, 1))
 
-        mem = ResponseMemoryProbs(
+        mem = TensorMemory(
             count=batch.count,
-            probs=ae_scores,  # For now, only support one output
+            tensors={'probs': ae_scores}  # For now, only support one output
         )
 
         return mem

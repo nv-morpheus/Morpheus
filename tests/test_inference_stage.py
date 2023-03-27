@@ -22,11 +22,12 @@ import pytest
 
 import cudf
 
-from morpheus.messages import ResponseMemoryProbs
+from morpheus.messages import ResponseMemory
 from morpheus.messages.memory.inference_memory import InferenceMemory
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_inference_message import MultiInferenceMessage
-from morpheus.messages.multi_response_message import MultiResponseProbsMessage
+from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.inference.inference_stage import InferenceStage
 from utils import IW
 
@@ -210,16 +211,17 @@ def test_convert_response(config):
 
     for i, s in enumerate(message_sizes):
         output_memory.append(
-            ResponseMemoryProbs(count=s, probs=full_output[sum(message_sizes[:i]):sum(message_sizes[:i]) + s, :]))
+            ResponseMemory(count=s,
+                           tensors={"probs": full_output[sum(message_sizes[:i]):sum(message_sizes[:i]) + s, :]}))
 
     resp = InferenceStage._convert_response((input_messages, output_memory))
     assert resp.meta == full_input.meta
     assert resp.mess_offset == 0
     assert resp.mess_count == total_size
-    assert isinstance(resp.memory, ResponseMemoryProbs)
+    assert isinstance(resp.memory, TensorMemory)
     assert resp.offset == 0
     assert resp.count == total_size
-    assert (resp.memory.probs == full_output).all()
+    assert (resp.memory.get_tensor("probs") == full_output).all()
 
 
 def test_convert_response_errors():
@@ -231,8 +233,8 @@ def test_convert_response_errors():
     mm1 = _mk_message()
     mm2 = _mk_message(mess_offset=12)
 
-    out_msg1 = ResponseMemoryProbs(count=1, probs=cp.random.rand(1, 3))
-    out_msg2 = ResponseMemoryProbs(count=1, probs=cp.random.rand(1, 3))
+    out_msg1 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
+    out_msg2 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
 
     with pytest.raises(AssertionError):
         InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
@@ -242,8 +244,8 @@ def test_convert_response_errors():
     mm1 = mm.get_slice(0, 1)
     mm2 = mm.get_slice(1, 2)
 
-    out_msg1 = ResponseMemoryProbs(count=1, probs=cp.random.rand(1, 3))
-    out_msg2 = ResponseMemoryProbs(count=2, probs=cp.random.rand(2, 3))
+    out_msg1 = ResponseMemory(count=1, tensors={"probs": cp.random.rand(1, 3)})
+    out_msg2 = ResponseMemory(count=2, tensors={"probs": cp.random.rand(2, 3)})
 
     with pytest.raises(AssertionError):
         InferenceStage._convert_response(([mm1, mm2], [out_msg1, out_msg2]))
@@ -252,12 +254,12 @@ def test_convert_response_errors():
 @pytest.mark.use_python
 def test_convert_one_response():
     # Test first branch where `inf.mess_count == inf.count`
-    mem = ResponseMemoryProbs(4, probs=cp.zeros((4, 3)))
+    mem = ResponseMemory(count=4, tensors={"probs": cp.zeros((4, 3))})
 
     inf = _mk_message(mess_count=4, count=4)
-    res = ResponseMemoryProbs(count=4, probs=cp.random.rand(4, 3))
+    res = ResponseMemory(count=4, tensors={"probs": cp.random.rand(4, 3)})
 
-    mpm = InferenceStage._convert_one_response(MultiResponseProbsMessage.from_message(inf, memory=mem), inf, res)
+    mpm = InferenceStage._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
     assert mpm.meta == inf.meta
     assert mpm.mess_offset == 0
     assert mpm.mess_count == 4
@@ -269,17 +271,17 @@ def test_convert_one_response():
     inf = _mk_message(mess_count=3, count=3)
     inf.memory.set_tensor("seq_ids", cp.array([[0], [1], [1]]))
     inf.mess_count = 2  # Get around the consistency check
-    res = ResponseMemoryProbs(count=3, probs=cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]]))
+    res = ResponseMemory(count=3, tensors={"probs": cp.array([[0, 0.6, 0.7], [5.6, 4.4, 9.2], [4.5, 6.7, 8.9]])})
 
-    mem = ResponseMemoryProbs(2, probs=cp.zeros((2, 3)))
-    mpm = InferenceStage._convert_one_response(MultiResponseProbsMessage.from_message(inf, memory=mem), inf, res)
+    mem = ResponseMemory(count=2, tensors={"probs": cp.zeros((2, 3))})
+    mpm = InferenceStage._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res)
     assert mem.get_output('probs').tolist() == [[0, 0.6, 0.7], [5.6, 6.7, 9.2]]
 
 
 def test_convert_one_response_error():
-    mem = ResponseMemoryProbs(2, probs=cp.zeros((2, 2)))
+    mem = ResponseMemory(2, tensors={"probs": cp.zeros((2, 2))})
     inf = _mk_message(mess_count=2, count=2)
     res = _mk_message(mess_count=1, count=1)
 
     with pytest.raises(AssertionError):
-        InferenceStage._convert_one_response(MultiResponseProbsMessage.from_message(inf, memory=mem), inf, res.memory)
+        InferenceStage._convert_one_response(MultiResponseMessage.from_message(inf, memory=mem), inf, res.memory)

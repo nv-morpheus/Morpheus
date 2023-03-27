@@ -19,6 +19,7 @@ import typing
 
 import cupy as cp
 import numpy as np
+import pandas as pd
 
 import cudf
 
@@ -229,6 +230,11 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
         # Get exclusive access to the dataframe
         with self.meta.mutable_dataframe() as df:
+
+            # Check if the value is a cupy array and we have a pandas dataframe, convert to numpy
+            if (isinstance(value, cp.ndarray) and isinstance(df, pd.DataFrame)):
+                value = value.get()
+
             # Check to see if we are adding a column. If so, we need to use df.loc instead of df.iloc
             if (-1 not in column_indexer):
 
@@ -239,7 +245,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
                 try:
                     # Now update the slice
                     df.iloc[row_indexer, column_indexer] = value
-                except ValueError:
+                except (ValueError, TypeError):
                     # Try this as a fallback. Works better for strings. See issue #286
                     df[columns].iloc[row_indexer] = value
 

@@ -409,7 +409,7 @@ class StreamWrapper(ABC, collections.abc.Hashable):
     def get_needed_columns(self):
         """
         Stages which need to have columns inserted into the dataframe, should populate the `self._needed_columns`
-        dictionary with mapping of column names to `morpheus._lib.common.TypeId`. This will ensure that the columns are
+        dictionary with mapping of column names to `morpheus.common.TypeId`. This will ensure that the columns are
         allocated and populated with null values.
         """
         return self._needed_columns.copy()

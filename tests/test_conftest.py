@@ -30,6 +30,17 @@ def cpp_from_marker(request: pytest.FixtureRequest) -> bool:
     return use_cpp
 
 
+@pytest.fixture(scope="function")
+def df_type_from_marker(request: pytest.FixtureRequest) -> bool:
+
+    use_cudf = len([x for x in request.node.iter_markers("use_cudf") if "added_by" in x.kwargs]) > 0
+    use_pandas = len([x for x in request.node.iter_markers("use_pandas") if "added_by" in x.kwargs]) > 0
+
+    assert use_cudf != use_pandas
+
+    return "cudf" if use_cudf else "pandas"
+
+
 # === No Marks ===
 def test_no_mark():
     assert CppConfig.get_should_use_cpp()
@@ -164,3 +175,24 @@ class TestCppMarkerClass:
     @pytest.mark.use_python
     def test_add_marker(self, cpp_from_marker: bool):
         assert CppConfig.get_should_use_cpp() == cpp_from_marker
+
+
+# === DF Type ===
+def test_df_type_no_marks(df_type, df_type_from_marker):
+    assert df_type == df_type_from_marker
+
+
+@pytest.mark.use_pandas
+def test_df_type_pandas_marker(df_type):
+    assert df_type == "pandas"
+
+
+@pytest.mark.use_cudf
+def test_df_type_cudf_marker(df_type):
+    assert df_type == "cudf"
+
+
+@pytest.mark.use_cudf
+@pytest.mark.use_pandas
+def test_df_type_both_markers(df_type, df_type_from_marker):
+    assert df_type == df_type_from_marker
