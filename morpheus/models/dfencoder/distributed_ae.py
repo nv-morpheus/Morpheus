@@ -17,16 +17,17 @@ import torch
 
 
 class DistributedAutoEncoder(torch.nn.parallel.DistributedDataParallel):
+
     def __init__(self, *args, **kwargs):
         self.__dict__['initialized'] = False
 
-        # set placeholder attribute for the pytorch module, which will be 
+        # set placeholder attribute for the pytorch module, which will be
         # populated in the init function of the super class
         self.module = None
         super().__init__(*args, **kwargs)
-        
+
         self.__dict__['initialized'] = True
-        
+
     def __getattr__(self, name: str):
         try:
             return super().__getattr__(name)
@@ -39,4 +40,3 @@ class DistributedAutoEncoder(torch.nn.parallel.DistributedDataParallel):
             super().__setattr__(name, value)
         else:
             setattr(self.module, name, value)
-        

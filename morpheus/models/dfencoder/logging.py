@@ -48,8 +48,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from collections import OrderedDict
 import math
+from collections import OrderedDict
 from time import time
 
 import numpy as np
@@ -146,8 +146,9 @@ class TensorboardXLogger(BasicLogger):
 
     def __init__(self, logdir='logdir/', run=None, *args, **kwargs):
         super(TensorboardXLogger, self).__init__(*args, **kwargs)
-        from tensorboardX import SummaryWriter
         import os
+
+        from tensorboardX import SummaryWriter
 
         if run is None:
             try:

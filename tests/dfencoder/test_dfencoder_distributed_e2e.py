@@ -14,16 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 
-import json
 import numpy as np
 import pandas as pd
 import pytest
 import torch
 
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
-from morpheus.models.dfencoder.dataloader import DatasetFromPath, get_distributed_training_dataloader_from_path, get_validation_dataset_from_path
+from morpheus.models.dfencoder.dataloader import DatasetFromPath
+from morpheus.models.dfencoder.dataloader import get_distributed_training_dataloader_from_path
+from morpheus.models.dfencoder.dataloader import get_validation_dataset_from_path
 from utils import TEST_DIRS
 
 INFERENCE_START_DATE = "2022-11-01"
@@ -95,12 +97,15 @@ def setup(rank, world_size):
     # initialize the process group
     torch.distributed.init_process_group("nccl", rank=rank, world_size=world_size)
 
+
 def cleanup():
     torch.distributed.destroy_process_group()
 
+
 def test_dfencoder_distributed_e2e():
     world_size = 1
-    torch.multiprocessing.spawn(_run_test, args=(world_size,), nprocs=world_size, join=True)    
+    torch.multiprocessing.spawn(_run_test, args=(world_size, ), nprocs=world_size, join=True)
+
 
 @pytest.mark.usefixtures("manual_seed")
 def _run_test(rank, world_size):
@@ -110,22 +115,22 @@ def _run_test(rank, world_size):
 
     preset_cats = json.load(open(PRESET_CATS_FILEPATH, 'r'))
     preset_numerical_scaler_params = json.load(open(PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH, 'r'))
-    
+
     # Initializing model
     model = AutoEncoder(
-        encoder_layers = [512, 500],
-        decoder_layers = [512],
+        encoder_layers=[512, 500],
+        decoder_layers=[512],
         activation='relu',
         swap_p=0.2,
-        lr = 0.01, 
+        lr=0.01,
         lr_decay=0.99,
         batch_size=4096,
-        logger='basic', 
+        logger='basic',
         verbose=True,
         progress_bar=False,
-        optimizer='adam', 
+        optimizer='adam',
         scaler='standard',
-        min_cats=1, 
+        min_cats=1,
         device=rank,
         preset_numerical_scaler_params=preset_numerical_scaler_params,
         binary_feature_list=[],
@@ -136,23 +141,23 @@ def _run_test(rank, world_size):
     )
 
     # Prepare the dataloader
-    dataloader = get_distributed_training_dataloader_from_path(
-        model, data_folder=TRAIN_FOLDER, rank=rank, world_size=world_size)
+    dataloader = get_distributed_training_dataloader_from_path(model,
+                                                               data_folder=TRAIN_FOLDER,
+                                                               rank=rank,
+                                                               world_size=world_size)
     # Load validation set
     val_dataset = get_validation_dataset_from_path(model, VALIDATION_FOLDER)
 
     # Train
-    model.fit(
-        train_data=dataloader, 
-        rank=rank, 
-        world_size=world_size, 
-        epochs=10,
-        val_data=val_dataset, 
-        run_validation=True, 
-        use_val_for_loss_stats=True
-    )
+    model.fit(train_data=dataloader,
+              rank=rank,
+              world_size=world_size,
+              epochs=10,
+              val_data=val_dataset,
+              run_validation=True,
+              use_val_for_loss_stats=True)
 
-    if rank == 0: 
+    if rank == 0:
         # Make sure model converges (low loss)
         for loss_type in LOSS_TYPES:
             ft_losses = getattr(model.logger, f"{loss_type}_fts")
@@ -164,9 +169,9 @@ def _run_test(rank, world_size):
         inf_dataset = DatasetFromPath(
             data_folder=INFERENCE_FOLDER,
             batch_size=1024,
-            preprocess_fn=model.preprocess_validation_data, 
+            preprocess_fn=model.preprocess_validation_data,
             shuffle_rows_in_batch=False,
-            preload_data_into_memory=True, # very small inference set
+            preload_data_into_memory=True,  # very small inference set
         )
         inf_pdf = inf_dataset.get_preloaded_data()
         inf_res = model.get_results_from_dataset(inf_dataset, preloaded_df=inf_pdf, return_abs=True)
@@ -175,7 +180,7 @@ def _run_test(rank, world_size):
         assert len(inf_res) == len(inf_pdf)
         assert sorted(inf_res.columns) == sorted(
             [ft + col_suffix for ft in FEATURE_COLUMNS
-            for col_suffix in ["", "_pred", "_loss", "_z_loss"]] + ["max_abs_z", "mean_abs_z", "z_loss_scaler_type"])
+             for col_suffix in ["", "_pred", "_loss", "_z_loss"]] + ["max_abs_z", "mean_abs_z", "z_loss_scaler_type"])
         # make sure the user baseline is modeled well enough so the minimum and median z scores
         # from inference are in range
         assert min(inf_res.mean_abs_z) < 1

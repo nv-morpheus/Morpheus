@@ -23,13 +23,14 @@ from torch.utils.data.distributed import DistributedSampler
 
 
 class DFEncoderDataLoader(DataLoader):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def __iter__(self):
         for data_d in super().__iter__():
             if self.batch_size == 1:
-                # unbatch to get rid of the first dimention of 1 intorduced by DataLoaders batching 
+                # unbatch to get rid of the first dimention of 1 intorduced by DataLoaders batching
                 # (if batch size is set to 1)
                 data_d["data"] = {
                     k: v[0] if type(v) != list else [_v[0] for _v in v]
@@ -39,6 +40,7 @@ class DFEncoderDataLoader(DataLoader):
 
 
 class DatasetFromPath(Dataset):
+
     def __init__(
         self,
         data_folder,
@@ -70,15 +72,10 @@ class DatasetFromPath(Dataset):
 
         self.preloaded_data = None
         if preload_data_into_memory:
-            self.preloaded_data = {
-                fn: self.load_data_fn(f"{self.data_folder}/{fn}")
-                for fn in self.filenames
-            }
+            self.preloaded_data = {fn: self.load_data_fn(f"{self.data_folder}/{fn}") for fn in self.filenames}
 
         self.file_sizes = {
-            fn: self._get_file_len(fn) - 1
-            if not self.preloaded_data
-            else len(self.preloaded_data[fn])
+            fn: self._get_file_len(fn) - 1 if not self.preloaded_data else len(self.preloaded_data[fn])
             for fn in self.filenames
         }
         self.len = sum(v for v in self.file_sizes.values())
@@ -188,14 +185,12 @@ class DatasetFromPath(Dataset):
             pandas dataframe
         """
         if self.preloaded_data is None:
-            self.preloaded_data = {
-                fn: self.load_data_fn(f"{self.data_folder}/{fn}")
-                for fn in self.filenames
-            }
+            self.preloaded_data = {fn: self.load_data_fn(f"{self.data_folder}/{fn}") for fn in self.filenames}
         return pd.concat(pdf for pdf in self.preloaded_data.values())
 
 
 class DatasetFromDataframe(Dataset):
+
     def __init__(
         self,
         df,
@@ -291,9 +286,13 @@ class DatasetFromDataframe(Dataset):
         return {"batch_index": batch_index, "data": data}
 
 
-def get_distributed_training_dataloader_from_path(
-    model, data_folder, load_data_fn, rank, world_size, pin_memory=False, num_workers=0
-):
+def get_distributed_training_dataloader_from_path(model,
+                                                  data_folder,
+                                                  load_data_fn,
+                                                  rank,
+                                                  world_size,
+                                                  pin_memory=False,
+                                                  num_workers=0):
     dataset = DatasetFromPath(
         data_folder,
         model.batch_size,
@@ -301,13 +300,16 @@ def get_distributed_training_dataloader_from_path(
         load_data_fn=load_data_fn,
     )
     dataloader = get_distributed_training_dataloader_from_dataset(
-        dataset=dataset, rank=rank, world_size=world_size, pin_memory=pin_memory, num_workers=num_workers,
+        dataset=dataset,
+        rank=rank,
+        world_size=world_size,
+        pin_memory=pin_memory,
+        num_workers=num_workers,
     )
     return dataloader
 
-def get_distributed_training_dataloader_from_df(
-    model, df, rank, world_size, pin_memory=False, num_workers=0
-):
+
+def get_distributed_training_dataloader_from_df(model, df, rank, world_size, pin_memory=False, num_workers=0):
     dataset = DatasetFromDataframe(
         df=df,
         batch_size=model.batch_size,
@@ -315,16 +317,17 @@ def get_distributed_training_dataloader_from_df(
         shuffle_rows_in_batch=True,
     )
     dataloader = get_distributed_training_dataloader_from_dataset(
-        dataset=dataset, rank=rank, world_size=world_size, pin_memory=pin_memory, num_workers=num_workers,
+        dataset=dataset,
+        rank=rank,
+        world_size=world_size,
+        pin_memory=pin_memory,
+        num_workers=num_workers,
     )
     return dataloader
-    
-def get_distributed_training_dataloader_from_dataset(
-    dataset, rank, world_size, pin_memory=False, num_workers=0
-):
-    sampler = DistributedSampler(
-        dataset, num_replicas=world_size, rank=rank, shuffle=True, drop_last=False
-    )
+
+
+def get_distributed_training_dataloader_from_dataset(dataset, rank, world_size, pin_memory=False, num_workers=0):
+    sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True, drop_last=False)
     dataloader = DFEncoderDataLoader(
         dataset,
         batch_size=1,
@@ -336,22 +339,24 @@ def get_distributed_training_dataloader_from_dataset(
     )
     return dataloader
 
+
 def get_validation_dataset_from_path(model, data_folder, load_data_fn, preload_data_into_memory=True):
     dataset = DatasetFromPath(
-        data_folder, 
-        model.eval_batch_size, 
-        model.preprocess_validation_data, 
+        data_folder,
+        model.eval_batch_size,
+        model.preprocess_validation_data,
         load_data_fn=load_data_fn,
-        shuffle_rows_in_batch=False, 
+        shuffle_rows_in_batch=False,
         preload_data_into_memory=preload_data_into_memory,
     )
     return dataset
+
 
 def get_validation_dataset_from_df(model, df):
     dataset = DatasetFromDataframe(
         df=df,
         batch_size=model.eval_batch_size,
         preprocess_fn=model.preprocess_validation_data,
-        shuffle_rows_in_batch=False, 
+        shuffle_rows_in_batch=False,
     )
     return dataset

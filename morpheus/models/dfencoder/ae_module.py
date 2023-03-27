@@ -82,8 +82,9 @@ class CompleteLayer(torch.nn.Module):
         return x
 
 
-class AEModule(torch.nn.Module): 
+class AEModule(torch.nn.Module):
     """ Auto Encoder Pytorch Module."""
+
     def __init__(
         self,
         verbose,
@@ -184,18 +185,14 @@ class AEModule(torch.nn.Module):
 
         for i, dim in enumerate(self.encoder_layers):
             activation = self.encoder_activations[i]
-            layer = CompleteLayer(
-                input_dim, dim, activation=activation, dropout=self.encoder_dropout[i]
-            )
+            layer = CompleteLayer(input_dim, dim, activation=activation, dropout=self.encoder_dropout[i])
             input_dim = dim
             self.encoder.append(layer)
             self.add_module(f"encoder_{i}", layer)
 
         for i, dim in enumerate(self.decoder_layers):
             activation = self.decoder_activations[i]
-            layer = CompleteLayer(
-                input_dim, dim, activation=activation, dropout=self.decoder_dropout[i]
-            )
+            layer = CompleteLayer(input_dim, dim, activation=activation, dropout=self.decoder_dropout[i])
             input_dim = dim
             self.decoder.append(layer)
             self.add_module(f"decoder_{i}", layer)
