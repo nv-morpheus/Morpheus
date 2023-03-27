@@ -45,7 +45,7 @@ using namespace morpheus::test;
 //    using namespace mrc::modules;
 //    using namespace mrc;
 //
-//    using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
+//    using sp_msg_ctrl_t = std::shared_ptr<ControlMessage>;
 //
 //    std::size_t packet_count{0};
 //
@@ -78,7 +78,7 @@ using namespace morpheus::test;
 //            {
 //                for (int i = 0; i < 10; i++)
 //                {
-//                    sub.on_next(std::make_shared<MessageControl>(config));
+//                    sub.on_next(std::make_shared<ControlMessage>(config));
 //                }
 //            }
 //
@@ -119,7 +119,7 @@ using namespace morpheus::test;
 //     using namespace mrc::modules;
 //     using namespace mrc;
 //
-//     using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
+//     using sp_msg_ctrl_t = std::shared_ptr<ControlMessage>;
 //
 //     std::size_t packet_count{0};
 //
@@ -135,7 +135,7 @@ using namespace morpheus::test;
 //                 {
 //                     nlohmann::json config;
 //                     config["loader_id"] = "grpc";
-//                     sub.on_next(std::make_shared<MessageControl>(config));
+//                     sub.on_next(std::make_shared<ControlMessage>(config));
 //                 }
 //             }
 //
@@ -223,7 +223,7 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
 
     using namespace nlohmann;
 
-    using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
+    using sp_msg_ctrl_t = std::shared_ptr<ControlMessage>;
 
     std::size_t packet_count{0};
 
@@ -245,7 +245,7 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
                                                      {"loader_id", "payload"},
                                                  }}}};
 
-                    sub.on_next(std::make_shared<MessageControl>(message_config));
+                    sub.on_next(std::make_shared<ControlMessage>(message_config));
                 }
             }
 
@@ -278,58 +278,3 @@ TEST_F(TestDataLoaderModule, EndToEndPayloadDataLoaderTest)
 
     EXPECT_EQ(packet_count, 10);
 }
-
-// TEST_F(TestDataLoaderModule, EndToEndRESTDataLoaderTest)
-//{
-//     using namespace mrc::modules;
-//     using namespace mrc;
-//
-//     using sp_msg_ctrl_t = std::shared_ptr<MessageControl>;
-//
-//     std::size_t packet_count{0};
-//
-//     auto init_wrapper = [&packet_count](segment::Builder& builder) {
-//         nlohmann::json config;
-//         config["loaders"]       = {"rest"};
-//         auto data_loader_module = builder.make_module<DataLoaderModule>("DataLoaderTest", config);
-//
-//         auto source = builder.make_source<sp_msg_ctrl_t>("source", [](rxcpp::subscriber<sp_msg_ctrl_t>& sub) {
-//             if (sub.is_subscribed())
-//             {
-//                 for (int i = 0; i < 10; i++)
-//                 {
-//                     nlohmann::json config;
-//                     config["loader_id"] = "rest";
-//                     sub.on_next(std::make_shared<MessageControl>(config));
-//                 }
-//             }
-//
-//             sub.on_completed();
-//         });
-//
-//         builder.make_edge(source, data_loader_module->input_port("input"));
-//         auto sink = builder.make_sink<sp_msg_ctrl_t>("sink", [&packet_count](sp_msg_ctrl_t input) {
-//             packet_count++;
-//             VLOG(10) << "Received message";
-//         });
-//
-//         builder.make_edge(data_loader_module->output_port("output"), sink);
-//     };
-//
-//     std::unique_ptr<pipeline::Pipeline> m_pipeline;
-//     m_pipeline = pipeline::make_pipeline();
-//
-//     m_pipeline->make_segment("main", init_wrapper);
-//
-//     auto options = std::make_shared<Options>();
-//     options->topology().user_cpuset("0");
-//     options->topology().restrict_gpus(true);
-//     options->engine_factories().set_default_engine_type(runnable::EngineType::Thread);
-//
-//     Executor executor(options);
-//     executor.register_pipeline(std::move(m_pipeline));
-//     executor.start();
-//     executor.join();
-//
-//     EXPECT_EQ(packet_count, 10);
-// }

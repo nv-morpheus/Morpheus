@@ -46,7 +46,7 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
     std::vector<std::string> loaders = {"payload"};
     for (auto& loader : loaders)
     {
-        auto msg = std::make_shared<MessageControl>(message_config);
+        auto msg = std::make_shared<ControlMessage>(message_config);
 
         EXPECT_THROW(data_loader.load(msg), std::runtime_error);
     }
@@ -55,7 +55,7 @@ TEST_F(TestDataLoader, DataLoaderRegisterLoaderTest)
 
     for (auto& loader : loaders)
     {
-        auto msg = std::make_shared<MessageControl>(message_config);
+        auto msg = std::make_shared<ControlMessage>(message_config);
 
         EXPECT_NO_THROW(data_loader.load(msg));
     }
@@ -68,7 +68,7 @@ TEST_F(TestDataLoader, DataLoaderRemoveLoaderTest)
     nlohmann::json task_properties;
     task_properties = {{"loader_id", "payload"}};
 
-    auto msg = std::make_shared<MessageControl>();
+    auto msg = std::make_shared<ControlMessage>();
 
     // Load should fail if there are no loaders registered
     msg->add_task("load", task_properties);
@@ -104,7 +104,7 @@ TEST_F(TestDataLoader, PayloadLoaderTest)
                                      {"loader_id", "payload"},
                                  }}}};
 
-    auto msg = std::make_shared<MessageControl>(message_config);
+    auto msg = std::make_shared<ControlMessage>(message_config);
 
     auto mm = create_mock_msg_meta({"col1", "col2", "col3"}, {"int32", "float32", "string"}, 5);
     msg->payload(mm);
@@ -143,7 +143,7 @@ TEST_F(TestDataLoader, FileLoaderTest)
                                       }},
                                  }}}};
 
-    auto msg = std::make_shared<MessageControl>(message_config);
+    auto msg = std::make_shared<ControlMessage>(message_config);
 
     std::fstream data_file(temp_file, std::ios::out | std::ios::binary | std::ios::trunc);
     data_file << string_df;

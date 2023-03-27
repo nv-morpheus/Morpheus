@@ -20,7 +20,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus.messages.message_control import MessageControl
+from morpheus.messages.message_control import ControlMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
@@ -65,7 +65,7 @@ def dfp_training(builder: mrc.Builder):
         raise ValueError("validation_size={0} should be a positive float in the "
                          "(0, 1) range".format(validation_size))
 
-    def on_data(control_message: MessageControl):
+    def on_data(control_message: ControlMessage):
         if (control_message is None):
             return None
 

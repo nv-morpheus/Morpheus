@@ -20,7 +20,6 @@ add_library(morpheus
     ${MORPHEUS_LIB_ROOT}/src/io/data_loader_registry.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/deserializers.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/loaders/file.cpp
-    ${MORPHEUS_LIB_ROOT}/src/io/loaders/file_list.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/loaders/grpc.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/loaders/lambda.cpp
     ${MORPHEUS_LIB_ROOT}/src/io/loaders/payload.cpp

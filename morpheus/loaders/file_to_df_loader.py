@@ -31,7 +31,7 @@ import cudf
 from morpheus._lib.common import FileTypes
 from morpheus.cli.utils import str_to_file_type
 from morpheus.io.deserializers import read_file_to_df
-from morpheus.messages import MessageControl
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
@@ -81,25 +81,25 @@ def close_dask_cluster():
 
 
 @register_loader(FILE_TO_DF_LOADER)
-def file_to_df_loader(control_message: MessageControl, task: dict):
+def file_to_df_loader(control_message: ControlMessage, task: dict):
     """
     This function is used to load files containing data into a dataframe. Dataframe is created by
     processing files either using a single thread, multiprocess, dask, or dask_thread. This function determines
     the download method to use, and if it starts with "dask," it creates a dask client and uses it to process the files.
     Otherwise, it uses a single thread or multiprocess to process the files. This function then caches the resulting
     dataframe using a hash of the file paths. The dataframe is wrapped in a MessageMeta and then attached as a payload
-    to a MessageControl object and passed on to further stages.
+    to a ControlMessage object and passed on to further stages.
 
     Parameters
     ----------
-    control_message : MessageControl
-        The MessageControl object containing the pipeline control message.
+    control_message : ControlMessage
+        The ControlMessage object containing the pipeline control message.
     task : typing.Dict[any, any]
         A dictionary representing the current task in the pipeline control message.
 
     Returns
     -------
-    message : MessageControl
+    message : ControlMessage
         Updated message control object with payload as a MessageMeta.
 
     Raises

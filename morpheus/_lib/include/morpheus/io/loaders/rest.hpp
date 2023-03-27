@@ -35,7 +35,7 @@ class RESTDataLoader : public Loader
     RESTDataLoader() = default;
     RESTDataLoader(nlohmann::json config);
 
-    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message, nlohmann::json task) final;
+    std::shared_ptr<ControlMessage> load(std::shared_ptr<ControlMessage> message, nlohmann::json task) final;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

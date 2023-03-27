@@ -35,7 +35,7 @@ class PayloadDataLoader : public Loader
     PayloadDataLoader() = default;
     PayloadDataLoader(nlohmann::json config);
 
-    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> control_message, nlohmann::json task) final;
+    std::shared_ptr<ControlMessage> load(std::shared_ptr<ControlMessage> control_message, nlohmann::json task) final;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

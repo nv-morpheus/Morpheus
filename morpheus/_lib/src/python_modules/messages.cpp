@@ -91,7 +91,7 @@ PYBIND11_MODULE(messages, _module)
     // Allows python objects to keep DataTable objects alive
     py::class_<IDataTable, std::shared_ptr<IDataTable>>(_module, "DataTable");
 
-    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageControl>>();
+    mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<ControlMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MessageMeta>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiMessage>>();
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiTensorMessage>>();
@@ -102,10 +102,10 @@ PYBIND11_MODULE(messages, _module)
     mrc::pymrc::PortBuilderUtil::register_port_util<std::shared_ptr<MultiResponseProbsMessage>>();
 
     // EdgeConnectors for converting between PyObjectHolders and various Message types
-    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MessageControl>,
+    mrc::edge::EdgeConnector<std::shared_ptr<morpheus::ControlMessage>,
                              mrc::pymrc::PyObjectHolder>::register_converter();
     mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder,
-                             std::shared_ptr<morpheus::MessageControl>>::register_converter();
+                             std::shared_ptr<morpheus::ControlMessage>>::register_converter();
 
     mrc::edge::EdgeConnector<std::shared_ptr<morpheus::MessageMeta>, mrc::pymrc::PyObjectHolder>::register_converter();
     mrc::edge::EdgeConnector<mrc::pymrc::PyObjectHolder, std::shared_ptr<morpheus::MessageMeta>>::register_converter();
@@ -333,34 +333,33 @@ PYBIND11_MODULE(messages, _module)
         .def_property_readonly("probs", &MultiResponseProbsMessageInterfaceProxy::probs);
 
     py::enum_<ControlMessageType>(_module, "ControlMessageType")
+        .value("NONE", ControlMessageType::NONE)
         .value("INFERENCE", ControlMessageType::INFERENCE)
-        .value("NONE", ControlMessageType::INFERENCE)
         .value("TRAINING", ControlMessageType::TRAINING);
 
-    // TODO(Devin): Circle back on return value policy choices
-    py::class_<MessageControl, std::shared_ptr<MessageControl>>(_module, "MessageControl")
+    py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(_module, "ControlMessage")
         .def(py::init<>(), py::return_value_policy::reference_internal)
         .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)),
              py::return_value_policy::reference_internal)
-        .def(py::init(py::overload_cast<std::shared_ptr<MessageControl>>(&ControlMessageProxy::create)),
+        .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)),
              py::return_value_policy::reference_internal)
         .def("config",
-             pybind11::overload_cast<MessageControl&>(&ControlMessageProxy::config),
+             pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config),
              py::return_value_policy::reference_internal)
         .def("config",
-             pybind11::overload_cast<MessageControl&, py::dict&>(&ControlMessageProxy::config),
+             pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"))
         .def("copy", &ControlMessageProxy::copy, py::return_value_policy::reference_internal)
         .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
-        .def("has_task", &MessageControl::has_task, py::arg("task_type"))
-        .def("pop_task", &ControlMessageProxy::pop_task, py::arg("task_type"))
-        .def("task_type", pybind11::overload_cast<>(&MessageControl::task_type))
-        .def("task_type", pybind11::overload_cast<ControlMessageType>(&MessageControl::task_type), py::arg("task_type"))
+        .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
+        .def("remove_task", &ControlMessageProxy::pop_task, py::arg("task_type"))
+        .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
+        .def("task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
-        .def("has_metadata", &MessageControl::has_metadata, py::arg("key"))
+        .def("has_metadata", &ControlMessage::has_metadata, py::arg("key"))
         .def("get_metadata", &ControlMessageProxy::get_metadata, py::arg("key"))
-        .def("payload", pybind11::overload_cast<>(&MessageControl::payload), py::return_value_policy::move)
-        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&MessageControl::payload));
+        .def("payload", pybind11::overload_cast<>(&ControlMessage::payload), py::return_value_policy::move)
+        .def("payload", pybind11::overload_cast<const std::shared_ptr<MessageMeta>&>(&ControlMessage::payload));
 
     py::class_<LoaderRegistry, std::shared_ptr<LoaderRegistry>>(_module, "DataLoaderRegistry")
         .def_static("contains", &LoaderRegistry::contains, py::arg("name"))

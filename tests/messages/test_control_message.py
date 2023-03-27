@@ -22,23 +22,23 @@ import morpheus.messages as messages
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_init():
-    raw_control_message_one = _messages.MessageControl()
-    raw_control_message_two = _messages.MessageControl({"test": "test"})
+    raw_control_message_one = _messages.ControlMessage()
+    raw_control_message_two = _messages.ControlMessage({"test": "test"})
 
-    control_message_one = messages.MessageControl()
-    control_message_two = messages.MessageControl({"test": "test"})
+    control_message_one = messages.ControlMessage()
+    control_message_two = messages.ControlMessage({"test": "test"})
 
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_get():
-    raw_control_message = _messages.MessageControl({
+    raw_control_message = _messages.ControlMessage({
         "test": "test_rcm", "tasks": [{
             "type": "load", "properties": {
                 "loader_id": "payload"
             }
         }]
     })
-    control_message = messages.MessageControl({
+    control_message = messages.ControlMessage({
         "test": "test_cm", "tasks": [{
             "type": "load", "properties": {
                 "loader_id": "payload"
@@ -55,8 +55,8 @@ def test_control_message_get():
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_set():
-    raw_control_message = _messages.MessageControl()
-    control_message = messages.MessageControl()
+    raw_control_message = _messages.ControlMessage()
+    control_message = messages.ControlMessage()
 
     raw_control_message.config({
         "test": "test_rcm", "tasks": [{
@@ -83,7 +83,7 @@ def test_control_message_set_and_get_payload():
         'col4': [True, False, True, False, True]
     })
 
-    msg = messages.MessageControl()
+    msg = messages.ControlMessage()
     payload = messages.MessageMeta(df)
     msg.payload(payload)
 

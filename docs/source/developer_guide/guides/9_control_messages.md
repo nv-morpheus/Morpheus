@@ -53,7 +53,7 @@ pipeline.
 
 Control Messages can handle tasks such as `training`, `inference`, and a catchall category `other`. Tasks can be added,
 checked for
-existence, or removed from the Control Message using methods like `add_task`, `has_task`, and `pop_task`.
+existence, or removed from the Control Message using methods like `add_task`, `has_task`, and `remove_task`.
 
 ```python
 import morpheus._lib.messages as messages
@@ -62,10 +62,10 @@ task_data = {
     "....": "...."
 }
 
-msg = messages.MessageControl()
+msg = messages.ControlMessage()
 msg.add_task("training", task_data)
 if msg.has_task("training"):
-    task = msg.pop_task("training")
+    task = msg.remove_task("training")
 ```
 
 ### Managing Metadata
@@ -77,7 +77,7 @@ and `get_metadata` methods, respectively.
 ```python
 import morpheus._lib.messages as messages
 
-msg = messages.MessageControl()
+msg = messages.ControlMessage()
 msg.set_metadata("description", "This is a sample control message.")
 if msg.has_metadata("description"):
     description = msg.get_metadata("description")
@@ -96,7 +96,7 @@ import morpheus._lib.messages as messages
 data = cudf.DataFrame()  # some data
 
 msg_meta = messages.MessageMeta(data)
-msg = messages.MessageControl()
+msg = messages.ControlMessage()
 
 msg.payload(msg_meta)
 

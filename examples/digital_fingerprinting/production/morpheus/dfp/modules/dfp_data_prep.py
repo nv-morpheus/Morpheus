@@ -19,7 +19,7 @@ import time
 import mrc
 from mrc.core import operators as ops
 
-from morpheus.messages import MessageControl
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
@@ -60,7 +60,7 @@ def dfp_data_prep(builder: mrc.Builder):
 
     schema = pickle.loads(bytes(schema_str, encoding))
 
-    def process_features(message: MessageControl):
+    def process_features(message: ControlMessage):
 
         if (message is None):
             return None

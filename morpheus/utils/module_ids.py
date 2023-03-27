@@ -14,11 +14,11 @@
 
 MORPHEUS_MODULE_NAMESPACE = "morpheus"
 
+DATA_LOADER = "DataLoader"
 FILE_BATCHER = "FileBatcher"
-FILTER_CONTROL_MESSAGE = "FilterControlMessage"
 FILE_TO_DF = "FileToDF"
+FILTER_CONTROL_MESSAGE = "FilterControlMessage"
+FILTER_DETECTIONS = "FilterDetections"
 MLFLOW_MODEL_WRITER = "MLFlowModelWriter"
 SERIALIZE = "Serialize"
 WRITE_TO_FILE = "WriteToFile"
-FILTER_DETECTIONS = "FilterDetections"
-DATA_LOADER = "DataLoader"

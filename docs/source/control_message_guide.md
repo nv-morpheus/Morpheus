@@ -17,7 +17,7 @@ limitations under the License.
 
 # Control Message Documentation
 
-The control message is a JSON object used in the Morpheus pipeline workflow. It is wrapped in a `MessageControl` object and passed between the Morpheus stages.
+The control message is a JSON object used in the Morpheus pipeline workflow. It is wrapped in a `ControlMessage` object and passed between the Morpheus stages.
 
 ## Components
 
@@ -73,7 +73,7 @@ The tasks component of each input object is an array of task objects, each of wh
   - Incorporate key and value updates to properties objects as required for `training` and `inference` tasks. There is no specified format.
 
 ### Metadata
-The metadata component of each input object is an object containing metadata information. Properties defined in this metadata component can be accessed anywhere across the stages that consume `MessageControl` objects.
+The metadata component of each input object is an object containing metadata information. Properties defined in this metadata component can be accessed anywhere across the stages that consume `ControlMessage` objects.
 
 - `data_type` : which is a string indicating the type of data being processed. The supported data types are:
     - `payload` : Arbitrary input data

@@ -25,7 +25,7 @@
 namespace morpheus {
 PayloadDataLoader::PayloadDataLoader(nlohmann::json config) : Loader(config) {}
 
-std::shared_ptr<MessageControl> PayloadDataLoader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
+std::shared_ptr<ControlMessage> PayloadDataLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
 {
     VLOG(30) << "Called PayloadDataLoader::load()";
     return std::move(message);

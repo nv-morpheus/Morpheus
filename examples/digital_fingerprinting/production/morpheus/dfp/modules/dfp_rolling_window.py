@@ -25,7 +25,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus.messages import MessageControl
+from morpheus.messages import ControlMessage
 from morpheus.messages import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
@@ -151,7 +151,7 @@ def dfp_rolling_window(builder: mrc.Builder):
 
             return MessageMeta(cudf.from_pandas(df_window))
 
-    def on_data(control_message: MessageControl):
+    def on_data(control_message: ControlMessage):
         try:
             payload = control_message.payload()
             user_id = control_message.get_metadata("user_id")

@@ -74,7 +74,7 @@ def test_get_module_with_bad_config_no_loaders():
         def gen_data():
             for i in range(packet_count):
                 config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
-                msg = messages.MessageControl(config)
+                msg = messages.ControlMessage(config)
                 yield msg
 
         source = builder.make_source("source", gen_data)
@@ -112,7 +112,7 @@ def test_get_module_with_bad_loader_type():
         def gen_data():
             for i in range(packet_count):
                 config = {"tasks": [{"type": "load", "properties": {"loader_id": "payload", "strategy": "aggregate"}}]}
-                msg = messages.MessageControl(config)
+                msg = messages.ControlMessage(config)
                 yield msg
 
         source = builder.make_source("source", gen_data)
@@ -153,7 +153,7 @@ def test_get_module_with_bad_control_message():
                         }
                     }]
                 }
-                msg = messages.MessageControl(config)
+                msg = messages.ControlMessage(config)
                 yield msg
 
         source = builder.make_source("source", gen_data)
@@ -208,7 +208,7 @@ def test_payload_loader_module():
 
             payload = messages.MessageMeta(df)
             for i in range(packet_count):
-                msg = messages.MessageControl(config)
+                msg = messages.ControlMessage(config)
                 msg.payload(payload)
 
                 yield msg
@@ -288,7 +288,7 @@ def test_file_loader_module():
                         }
                     }]
                 }
-                msg = messages.MessageControl(config)
+                msg = messages.ControlMessage(config)
                 yield msg
 
                 # Make sure we can auto-detect the file type
@@ -302,7 +302,7 @@ def test_file_loader_module():
                         }
                     }]
                 }
-                msg = messages.MessageControl(config)
+                msg = messages.ControlMessage(config)
                 yield msg
 
         def _on_next(control_msg):

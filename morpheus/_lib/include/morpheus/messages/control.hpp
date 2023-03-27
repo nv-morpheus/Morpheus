@@ -27,72 +27,85 @@ class MessageMeta;
 #pragma GCC visibility push(default)
 enum class ControlMessageType
 {
-    INFERENCE,
     NONE,
+    INFERENCE,
     TRAINING
 };
 
-class MessageControl
+/**
+ * @brief Class representing a control message for coordinating data processing tasks.
+ *
+ * This class contains configuration information, task definitions, and metadata, as well as a
+ * pointer to an associated message payload. It provides methods for accessing and modifying these
+ * elements of the control message.
+ */
+class ControlMessage
 {
   public:
-    MessageControl();
-    MessageControl(const nlohmann::json& config);
-    MessageControl(const MessageControl& other);  // NO payload copy
+    ControlMessage();
+    ControlMessage(const nlohmann::json& config);
+    ControlMessage(const ControlMessage& other);  // Copies config and metadata, but not payload
 
     /**
-     * @brief Set the config object
-     * @param config
+     * @brief Set the configuration object for the control message.
+     * @param config A json object containing configuration information.
      */
     void config(const nlohmann::json& config);
 
     /**
-     * @brief Get the config object
-     * @return
+     * @brief Get the configuration object for the control message.
+     * @return A const reference to the json object containing configuration information.
      */
     const nlohmann::json& config() const;
 
     /**
-     * @brief Add a task to the control message
-     * @param task
-     * @param type
+     * @brief Add a task of the given type to the control message.
+     * @param task_type A string indicating the type of the task.
+     * @param task A json object describing the task.
      */
     void add_task(const std::string& task_type, const nlohmann::json& task);
 
     /**
-     * @brief Check if a task of a given type exists
-     * @param type
-     * @return
+     * @brief Check if a task of the given type exists in the control message.
+     * @param task_type A string indicating the type of the task.
+     * @return True if a task of the given type exists, false otherwise.
      */
     bool has_task(const std::string& task_type) const;
 
     /**
-     * @brief Get a task of the given type
-     * @param type
-     * @return
+     * @brief Remove and return a task of the given type from the control message.
+     * @param task_type A string indicating the type of the task.
+     * @return A json object describing the task.
      */
-    const nlohmann::json pop_task(const std::string& task_type);
+    const nlohmann::json remove_task(const std::string& task_type);
 
     /**
-     * @brief Add a metadata key-value pair to the control message
-     * @param key
-     * @param value
+     * @brief Add a key-value pair to the metadata for the control message.
+     * @param key A string key for the metadata value.
+     * @param value A json object describing the metadata value.
      */
     void set_metadata(const std::string& key, const nlohmann::json& value);
 
     /**
-     * @brief Check if a metadata key exists
-     * @param key
-     * @return
+     * @brief Check if a metadata key exists in the control message.
+     * @param key A string indicating the metadata key.
+     * @return True if the metadata key exists, false otherwise.
      */
     bool has_metadata(const std::string& key) const;
 
-    // TODO(Devin): Allow for a default value
     /**
-     * @brief Get the metadata value for a given key
-     * @param key
-     * @return
+     * @brief Get the metadata value for the given key from the control message.
+     * @param key A string indicating the metadata key.
+     * @return A json object describing the metadata value.
      */
     const nlohmann::json get_metadata(const std::string& key) const;
+
+    /**
+     * @brief Set the payload object for the control message.
+     * @param payload
+     * A shared pointer to the message payload.
+     */
+    std::shared_ptr<MessageMeta> payload();
 
     /**
      * @brief Set the payload object
@@ -101,14 +114,8 @@ class MessageControl
     void payload(const std::shared_ptr<MessageMeta>& payload);
 
     /**
-     * @brief Get the payload object
-     * @return Shared pointer to the message payload
-     */
-    std::shared_ptr<MessageMeta> payload();
-
-    /**
-     * @brief Get the type of the task
-     * @return ControlMessageType
+     * @brief Get the type of task associated with the control message.
+     * @return An enum value indicating the task type.
      */
     ControlMessageType task_type();
 
@@ -120,12 +127,11 @@ class MessageControl
     void task_type(ControlMessageType task_type);
 
   private:
-    static const std::string s_config_schema;  // NOLINT
+    static const std::string s_config_schema;                          // NOLINT
+    static std::map<std::string, ControlMessageType> s_task_type_map;  // NOLINT
 
     ControlMessageType m_cm_type{ControlMessageType::NONE};
     std::shared_ptr<MessageMeta> m_payload{nullptr};
-    std::map<std::string, ControlMessageType> m_task_type_map{{"inference", ControlMessageType::INFERENCE},
-                                                              {"training", ControlMessageType::TRAINING}};
 
     nlohmann::json m_tasks{};
     nlohmann::json m_config{};
@@ -133,18 +139,18 @@ class MessageControl
 
 struct ControlMessageProxy
 {
-    static std::shared_ptr<MessageControl> create(pybind11::dict& config);
-    static std::shared_ptr<MessageControl> create(std::shared_ptr<MessageControl> other);
+    static std::shared_ptr<ControlMessage> create(pybind11::dict& config);
+    static std::shared_ptr<ControlMessage> create(std::shared_ptr<ControlMessage> other);
 
-    static std::shared_ptr<MessageControl> copy(MessageControl& self);
+    static std::shared_ptr<ControlMessage> copy(ControlMessage& self);
 
-    static pybind11::dict config(MessageControl& self);
+    static pybind11::dict config(ControlMessage& self);
 
     // Required for proxy conversion of json -> dict in python
-    static void config(MessageControl& self, pybind11::dict& config);
+    static void config(ControlMessage& self, pybind11::dict& config);
 
-    static void add_task(MessageControl& self, const std::string& type, pybind11::dict& task);
-    static pybind11::dict pop_task(MessageControl& self, const std::string& type);
+    static void add_task(ControlMessage& self, const std::string& type, pybind11::dict& task);
+    static pybind11::dict pop_task(ControlMessage& self, const std::string& type);
 
     /**
      * @brief Set a metadata key-value pair -- value must be json serializable
@@ -152,8 +158,8 @@ struct ControlMessageProxy
      * @param key
      * @param value
      */
-    static void set_metadata(MessageControl& self, const std::string& key, pybind11::object& value);
-    static pybind11::object get_metadata(MessageControl& self, const std::string& key);
+    static void set_metadata(ControlMessage& self, const std::string& key, pybind11::object& value);
+    static pybind11::object get_metadata(ControlMessage& self, const std::string& key);
 };
 
 #pragma GCC visibility pop

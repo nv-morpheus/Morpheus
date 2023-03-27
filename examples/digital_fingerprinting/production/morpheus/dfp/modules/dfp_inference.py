@@ -22,7 +22,7 @@ from dfp.utils.model_cache import ModelManager
 from mlflow.tracking.client import MlflowClient
 from mrc.core import operators as ops
 
-from morpheus.messages import MessageControl
+from morpheus.messages import ControlMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
@@ -72,7 +72,7 @@ def dfp_inference(builder: mrc.Builder):
 
         return model_manager.load_user_model(client, user_id=user, fallback_user_ids=[fallback_user])
 
-    def process_task(control_message: MessageControl, task: dict):
+    def process_task(control_message: ControlMessage, task: dict):
         start_time = time.time()
 
         user_id = control_message.get_metadata("user_id")
@@ -128,7 +128,7 @@ def dfp_inference(builder: mrc.Builder):
 
         return output_message
 
-    def on_data(control_message: MessageControl):
+    def on_data(control_message: ControlMessage):
         if (control_message is None):
             return None
 

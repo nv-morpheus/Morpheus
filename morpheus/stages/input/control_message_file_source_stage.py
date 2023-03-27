@@ -21,7 +21,7 @@ import fsspec.utils
 import mrc
 
 from morpheus.config import Config
-from morpheus.messages.message_control import MessageControl
+from morpheus.messages.message_control import ControlMessage
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -53,7 +53,7 @@ class ControlMessageFileSourceStage(SingleOutputSource):
     def supports_cpp_node(self):
         return True
 
-    def _create_control_message(self) -> MessageControl:
+    def _create_control_message(self) -> ControlMessage:
 
         openfiles: fsspec.core.OpenFiles = fsspec.open_files(self._filenames)
 
@@ -66,7 +66,7 @@ class ControlMessageFileSourceStage(SingleOutputSource):
             with openfile as f:
                 message_configs = json.load(f)
                 for message_config in message_configs.get("inputs", []):
-                    message_control = MessageControl(message_config)
+                    message_control = ControlMessage(message_config)
                     yield message_control
 
     def _build_source(self, builder: mrc.Builder) -> StreamPair:

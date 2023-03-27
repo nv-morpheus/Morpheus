@@ -17,7 +17,7 @@ limitations under the License.
 
 ## Filesystem Spec Loader
 
-Loads data from external sources using the fsspec library, and returns the updated MessageControl object with payload as MessageMeta, which contains dataframe (with filenames).
+Loads data from external sources using the fsspec library, and returns the updated ControlMessage object with payload as MessageMeta, which contains dataframe (with filenames).
 
 ### Configurable Parameters
 

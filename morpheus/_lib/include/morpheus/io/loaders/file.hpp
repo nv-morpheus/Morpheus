@@ -26,7 +26,7 @@ namespace morpheus {
 #pragma GCC visibility push(default)
 /**
  * @brief Very simple raw data loader that takes a list of files containing data that can be converted into a cuDF
- * DataFrame. Loads the files into a cuDF DataFrame and returns a MessageControl containing the DataFrame.
+ * DataFrame. Loads the files into a cuDF DataFrame and returns a ControlMessage containing the DataFrame.
  *
  */
 class FileDataLoader : public Loader
@@ -37,7 +37,7 @@ class FileDataLoader : public Loader
     FileDataLoader() = default;
     FileDataLoader(nlohmann::json config);
 
-    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message, nlohmann::json task) final;
+    std::shared_ptr<ControlMessage> load(std::shared_ptr<ControlMessage> message, nlohmann::json task) final;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

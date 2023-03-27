@@ -25,7 +25,7 @@
 namespace morpheus {
 RESTDataLoader::RESTDataLoader(nlohmann::json config) : Loader(config) {}
 
-std::shared_ptr<MessageControl> RESTDataLoader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
+std::shared_ptr<ControlMessage> RESTDataLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
 {
     VLOG(30) << "Called RESTDataLoader::load()";
 
