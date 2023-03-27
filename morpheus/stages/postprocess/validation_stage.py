@@ -18,10 +18,7 @@ import os
 import typing
 
 import mrc
-import pandas as pd
 from mrc.core import operators as ops
-
-import cudf
 
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
@@ -46,7 +43,7 @@ class ValidationStage(CompareDataFrameStage):
     ----------
     c : `morpheus.config.Config`
         The global configuration.
-    val_file_name : typing.Union[pd.DataFrame, cudf.DataFrame, str]
+    val_file_name : str
         The comparison file, or an instance of a DataFrame.
     results_file_name : str, optional
         If not `None` specifies an output file path to write a JSON file containing the validation results.
