@@ -110,7 +110,6 @@ outputs:
         - pyproject.toml
         - scripts/fetch_data.py
         - tests/*
-      # script: run_test.py
       imports:
         - morpheus
       commands:
