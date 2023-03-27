@@ -73,7 +73,7 @@ class ValidationStage(CompareDataFrameStage):
     def __init__(
         self,
         c: Config,
-        val_file_name: typing.Union[pd.DataFrame, cudf.DataFrame, str],
+        val_file_name: str,
         results_file_name: str = None,
         overwrite: bool = False,
         include: typing.List[str] = None,
