@@ -15,177 +15,121 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-## Pipeline Module
+## DFP Deployment Module
 
-This module function sets up a pipeline builder instance.
+This module function sets up modular Digital Fingerprinting Pipeline instance.
 
 ### Configurable Parameters
 
-- `training_options` (dict): Options for the training pipeline module, including:
-    - `timestamp_column_name` (str): Name of the timestamp column used in the data
-    - `cache_dir` (str): Directory to cache the rolling window data
-    - `batching_options` (dict): Options for batching the data, including:
-        - `end_time` (datetime|str): End time of the time window
-        - `iso_date_regex_pattern` (str): Regex pattern for ISO date matching
-        - `parser_kwargs` (dict): Additional arguments for the parser
-        - `period` (str): Time period for grouping files
-        - `sampling_rate_s` (int): Sampling rate in seconds
-        - `start_time` (datetime|str): Start time of the time window
-    - `user_splitting_options` (dict): Options for splitting the data by user, including:
-        - `fallback_username` (str): User ID to use if user ID not found (default: 'generic_user')
-        - `include_generic` (bool): Include generic user ID in output (default: False)
-        - `include_individual` (bool): Include individual user IDs in output (default: False)
-        - `only_users` (list): List of user IDs to include in output, others will be excluded (default: [])
-        - `skip_users` (list): List of user IDs to exclude from output (default: [])
-        - `timestamp_column_name` (str): Name of column containing timestamps (default: 'timestamp')
-        - `userid_column_name` (str): Name of column containing user IDs (default: 'username')
-    - `stream_aggregation_options` (dict): Options for aggregating the data by stream
-    - `preprocessing_options` (dict): Options for preprocessing the data
-    - `dfencoder_options` (dict): Options for configuring the data frame encoder, used for training the model
-    - `mlflow_writer_options` (dict): Options for the MLflow model writer, responsible for saving the trained model,
-      including:
-        - `model_name_formatter` (str): Format string for the model name, e.g. "model_{timestamp}"
-        - `experiment_name_formatter` (str): Format string for the experiment name, e.g. "experiment_{timestamp}"
-        - `timestamp_column_name` (str): Name of the timestamp column used in the data
-        - `conda_env` (dict): Conda environment settings, including:
-            - `channels` (list): List of channels to use for the environment
-            - `dependencies` (list): List of dependencies for the environment
-            - `pip` (list): List of pip packages to install in the environment
-            - `name` (str): Name of the conda environment
-- `inference_options` (dict): Options for the inference pipeline module, including:
-    - `model_name_formatter` (str): Format string for the model name, e.g. "model_{timestamp}"
-    - `fallback_username` (str): User ID to use if user ID not found (default: 'generic_user')
-    - `timestamp_column_name` (str): Name of the timestamp column in the input data
-    - `batching_options` (dict): Options for batching the data, including:
-      [omitted for brevity]
-    - `cache_dir` (str): Directory to cache the rolling window data
-    - `detection_criteria` (dict): Criteria for filtering detections, such as threshold and field_name
-    - `inference_options` (dict): Options for the inference module, including model settings and other configurations
-    - `num_output_ports` (int): Number of output ports for the module
-    - `preprocessing_options` (dict): Options for preprocessing the data, including schema and timestamp column name
-    - `stream_aggregation_options` (dict): Options for aggregating the data by stream, including:
-        - `aggregation_span` (int): The time span for the aggregation window, in seconds
-        - `cache_to_disk` (bool): Whether to cache the aggregated data to disk
-    - `user_splitting_options` (dict): Options for splitting the data by user, including:
-      [omitted for brevity]
-    - `write_to_file_options` (dict): Options for writing the detections to a file, such as filename and overwrite
-      settings
+| Parameter           | Type | Description                               | Example Value | Default Value |
+|---------------------|------|-------------------------------------------|---------------|---------------|
+| `inference_options` | dict | Options for the inference pipeline module | See Below     | `[Required]`  |
+| `training_options`  | dict | Options for the training pipeline module  | See Below     | `[Required]`  |
 
-### Example JSON Configuration
+### Training Options Parameters
 
-```json
-{
-  "training_options": {
-    "timestamp_column_name": "my_timestamp",
-    "cache_dir": "/path/to/cache/dir",
-    "batching_options": {
-      "end_time": "2023-03-17 12:00:00",
-      "iso_date_regex_pattern": "YYYY-MM-DD",
-      "parser_kwargs": {
-        "delimiter": ","
-      },
-      "period": "1h",
-      "sampling_rate_s": 5,
-      "start_time": "2023-03-17 11:00:00"
-    },
-    "user_splitting_options": {
-      "fallback_username": "generic_user",
-      "include_generic": false,
-      "include_individual": false,
-      "only_users": [
-        "user1",
-        "user2"
-      ],
-      "skip_users": [
-        "user3",
-        "user4"
-      ],
-      "timestamp_column_name": "timestamp",
-      "userid_column_name": "username"
-    },
-    "stream_aggregation_options": {
-      "aggregation_span": 60,
-      "cache_to_disk": true
-    },
-    "preprocessing_options": {
-      "option1": "value1",
-      "option2": "value2"
-    },
-    "dfencoder_options": {
-      "option1": "value1",
-      "option2": "value2"
-    },
-    "mlflow_writer_options": {
-      "model_name_formatter": "model_{timestamp}",
-      "experiment_name_formatter": "experiment_{timestamp}",
-      "timestamp_column_name": "my_timestamp",
-      "conda_env": {
-        "channels": [
-          "conda-forge",
-          "defaults"
-        ],
-        "dependencies": [
-          "numpy",
-          "pandas"
-        ],
-        "pip": [
-          "tensorflow==2.5.0"
-        ],
-        "name": "my_conda_env"
-      }
-    }
-  },
-  "inference_options": {
-    "model_name_formatter": "model_{timestamp}",
-    "fallback_username": "generic_user",
-    "timestamp_column_name": "timestamp",
-    "batching_options": {
-      "end_time": "2023-03-17 14:00:00",
-      "iso_date_regex_pattern": "YYYY-MM-DD",
-      "parser_kwargs": {
-        "delimiter": ","
-      },
-      "period": "1h",
-      "sampling_rate_s": 5,
-      "start_time": "2023-03-17 13:00:00"
-    },
-    "cache_dir": "/path/to/cache/dir",
-    "detection_criteria": {
-      "threshold": 0.5,
-      "field_name": "score"
-    },
-    "inference_options": {
-      "option1": "value1",
-      "option2": "value2"
-    },
-    "num_output_ports": 3,
-    "preprocessing_options": {
-      "option1": "value1",
-      "option2": "value2"
-    },
-    "stream_aggregation_options": {
-      "aggregation_span": 60,
-      "cache_to_disk": true
-    },
-    "user_splitting_options": {
-      "fallback_username": "generic_user",
-      "include_generic": false,
-      "include_individual": false,
-      "only_users": [
-        "user1",
-        "user2"
-      ],
-      "skip_users": [
-        "user3",
-        "user4"
-      ],
-      "timestamp_column_name": "timestamp",
-      "userid_column_name": "username"
-    },
-    "write_to_file_options": {
-      "filename": "output.txt",
-      "overwrite": true
-    }
-  }
-}
-```
+| Parameter                    | Type | Description                                    | Example Value        | Default Value |
+|------------------------------|------|------------------------------------------------|----------------------|---------------|
+| `batching_options`           | dict | Options for batching the data                  | See Below            | -             |
+| `cache_dir`                  | str  | Directory to cache the rolling window data     | "/path/to/cache/dir" | ./.cache      |
+| `dfencoder_options`          | dict | Options for configuring the data frame encoder | See Below            | -             |
+| `mlflow_writer_options`      | dict | Options for the MLflow model writer            | See Below            | -             |
+| `preprocessing_options`      | dict | Options for preprocessing the data             | See Below            | -             |
+| `stream_aggregation_options` | dict | Options for aggregating the data by stream     | See Below            | -             |
+| `timestamp_column_name`      | str  | Name of the timestamp column used in the data  | "my_timestamp"       | "timestamp"   |
+| `user_splitting_options`     | dict | Options for splitting the data by user         | See Below            | -             |
+
+### Inference Options Parameters
+
+| Parameter                    | Type | Description                                    | Example Value        | Default Value  |
+|------------------------------|------|------------------------------------------------|----------------------|----------------|
+| `batching_options`           | dict | Options for batching the data                  | See Below            | -              |
+| `cache_dir`                  | str  | Directory to cache the rolling window data     | "/path/to/cache/dir" | ./.cache       |
+| `detection_criteria`         | dict | Criteria for filtering detections              | See Below            | -              |
+| `fallback_username`          | str  | User ID to use if user ID not found            | "generic_user"       | "generic_user" |
+| `inference_options`          | dict | Options for the inference module               | See Below            | -              |
+| `model_name_formatter`       | str  | Format string for the model name               | "model_{timestamp}"  | `[Required]`   |
+| `num_output_ports`           | int  | Number of output ports for the module          | 3                    | -              |
+| `timestamp_column_name`      | str  | Name of the timestamp column in the input data | "timestamp"          | "timestamp"    |
+| `stream_aggregation_options` | dict | Options for aggregating the data by stream     | See Below            | -              |
+| `user_splitting_options`     | dict | Options for splitting the data by user         | See Below            | -              |
+| `write_to_file_options`      | dict | Options for writing the detections to a file   | See Below            | -              |
+
+### `batching_options`
+
+| Key                      | Type            | Description                         | Example Value                               | Default Value            |
+|--------------------------|-----------------|-------------------------------------|---------------------------------------------|--------------------------|
+| `end_time`               | datetime/string | Endtime of the time window          | "2023-03-14T23:59:59"                       | None                     |
+| `iso_date_regex_pattern` | string          | Regex pattern for ISO date matching | "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" | <iso_date_regex_pattern> |
+| `parser_kwargs`          | dictionary      | Additional arguments for the parser | {}                                          | {}                       |
+| `period`                 | string          | Time period for grouping files      | "1d"                                        | "1d"                     |
+| `sampling_rate_s`        | integer         | Sampling rate in seconds            | 60                                          | 60                       |
+| `start_time`             | datetime/string | Start time of the time window       | "2023-03-01T00:00:00"                       | None                     |
+
+### `dfencoder_options`
+
+| Parameter         | Type  | Description                            | Example Value                                                                                                                                                                                                                                                 | Default Value |
+|-------------------|-------|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| `feature_columns` | list  | List of feature columns to train on    | ["column1", "column2", "column3"]                                                                                                                                                                                                                             | -             |
+| `epochs`          | int   | Number of epochs to train for          | 50                                                                                                                                                                                                                                                            | -             |
+| `model_kwargs`    | dict  | Keyword arguments to pass to the model | {"encoder_layers": [64, 32], "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9, "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10, "progress_bar": false, "device": "cpu"} | -             |
+| `validation_size` | float | Size of the validation set             | 0.1                                                                                                                                                                                                                                                           | -             |
+
+### `mlflow_writer_options`
+
+| Key                         | Type       | Description                       | Example Value                 | Default Value |
+|-----------------------------|------------|-----------------------------------|-------------------------------|---------------|
+| `conda_env`                 | string     | Conda environment for the model   | `path/to/conda_env.yml`       | `[Required]`  |
+| `databricks_permissions`    | dictionary | Permissions for the model         | See Below                     | None          |
+| `experiment_name_formatter` | string     | Formatter for the experiment name | `experiment_name_{timestamp}` | `[Required]`  |
+| `model_name_formatter`      | string     | Formatter for the model name      | `model_name_{timestamp}`      | `[Required]`  |
+| `timestamp_column_name`     | string     | Name of the timestamp column      | `timestamp`                   | timestamp     |
+
+### `stream_aggregation_options`
+
+| Parameter               | Type   | Description                                                 | Example Value | Default Value |
+|-------------------------|--------|-------------------------------------------------------------|---------------|---------------|
+| `cache_mode`            | string | The user ID to use if the user ID is not found              | 'batch'       | 'batch'       |
+| `min_history`           | int    | Minimum history to trigger a new training event             | 1             | 1             |
+| `max_history`           | int    | Maximum history to include in a new training event          | 0             | 0             |
+| `timestamp_column_name` | string | Name of the column containing timestamps                    | 'timestamp'   | 'timestamp'   |
+| `aggregation_span`      | string | Lookback timespan for training data in a new training event | '60d'         | '60d'         |
+| `cache_to_disk`         | bool   | Whether or not to cache streaming data to disk              | false         | false         |
+| `cache_dir`             | string | Directory to use for caching streaming data                 | './.cache'    | './.cache'    |
+
+### `user_splitting_options`
+
+| Key                     | Type | Description                                          | Example Value               | Default Value  |
+|-------------------------|------|------------------------------------------------------|-----------------------------|----------------|
+| `fallback_username`     | str  | The user ID to use if the user ID is not found       | "generic_user"              | 'generic_user' |
+| `include_generic`       | bool | Whether to include a generic user ID in the output   | false                       | False          |
+| `include_individual`    | bool | Whether to include individual user IDs in the output | true                        | False          |
+| `only_users`            | list | List of user IDs to include; others will be excluded | ["user1", "user2", "user3"] | []             |
+| `skip_users`            | list | List of user IDs to exclude from the output          | ["user4", "user5"]          | []             |
+| `timestamp_column_name` | str  | Name of the column containing timestamps             | "timestamp"                 | 'timestamp'    |
+| `userid_column_name`    | str  | Name of the column containing user IDs               | "username"                  | 'username'     |
+
+### `detection_criteria`
+
+| Key          | Type  | Description                              | Example Value | Default Value |
+|--------------|-------|------------------------------------------|---------------|---------------|
+| `threshold`  | float | Threshold for filtering detections       | 0.5           | 0.5           |
+| `field_name` | str   | Name of the field to filter by threshold | "score"       | probs         |
+
+### `inference_options`
+
+| Parameter               | Type   | Description                                          | Example Value           | Default Value |
+|-------------------------|--------|------------------------------------------------------|-------------------------|---------------|
+| `model_name_formatter`  | string | Formatter for model names                            | "user_{username}_model" | `[Required]`  |
+| `fallback_username`     | string | Fallback user to use if no model is found for a user | "generic_user"          | generic_user  |
+| `timestamp_column_name` | string | Name of the timestamp column                         | "timestamp"             | timestamp     |
+
+### `write_to_file_options`
+
+| Key                 | Type      | Description                              | Example Value   | Default Value    |
+|---------------------|-----------|------------------------------------------|-----------------|------------------|
+| `filename`          | string    | Path to the output file                  | `output.csv`    | None             |
+| `file_type`         | FileTypes | Type of file to write                    | `FileTypes.CSV` | `FileTypes.Auto` |
+| `flush`             | bool      | If true, flush the file after each write | `false`         | false            |
+| `include_index_col` | bool      | If true, include the index column        | `false`         | true             |
+| `overwrite`         | bool      | If true, overwrite the file if it exists | `true`          | false            |

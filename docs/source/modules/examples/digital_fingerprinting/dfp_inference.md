@@ -21,9 +21,11 @@ This module function performs the inference process.
 
 ### Configurable Parameters
 
-- `model_name_formatter`: Formatter for model names (string).
-- `fallback_username`: Fallback user to use if no model is found for a user (string).
-- `timestamp_column_name`: Name of the timestamp column (string).
+| Parameter             | Type   | Description                                          | Example Value           | Default Value |
+|-----------------------|--------|------------------------------------------------------|-------------------------|---------------|
+| model_name_formatter  | string | Formatter for model names                            | "user_{username}_model" | `[Required]`  |
+| fallback_username     | string | Fallback user to use if no model is found for a user | "generic_user"          | generic_user  |
+| timestamp_column_name | string | Name of the timestamp column                         | "timestamp"             | timestamp     |
 
 ### Example JSON Configuration
 

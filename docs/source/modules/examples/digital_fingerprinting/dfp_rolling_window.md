@@ -21,24 +21,26 @@ This module function splits the data based on user IDs.
 
 ### Configurable Parameters
 
-- `fallback_username`: The user ID to use if the user ID is not found (string, default: 'generic_user')
-- `include_generic`: Whether to include a generic user ID in the output (boolean, default: `False`)
-- `include_individual`: Whether to include individual user IDs in the output (boolean, default: `False`)
-- `only_users`: List of user IDs to include in the output; other user IDs will be excluded (list, default: `[]`). *Note: You can specify either `only_users` or `skip_users`, but not both.*
-- `skip_users`: List of user IDs to exclude from the output (list, default: `[]`). *Note: You can specify either `only_users` or `skip_users`, but not both.*
-- `timestamp_column_name`: Name of the column containing timestamps (string, default: 'timestamp')
-- `userid_column_name`: Name of the column containing user IDs (string, default: 'username')
+| Parameter             | Type   | Description                                                 | Example Value | Default Value |
+|-----------------------|--------|-------------------------------------------------------------|---------------|---------------|
+| cache_mode            | string | The user ID to use if the user ID is not found              | 'batch'       | 'batch'       |
+| min_history           | int    | Minimum history to trigger a new training event             | 1             | 1             |
+| max_history           | int    | Maximum history to include in a new training event          | 0             | 0             |
+| timestamp_column_name | string | Name of the column containing timestamps                    | 'timestamp'   | 'timestamp'   |
+| aggregation_span      | string | Lookback timespan for training data in a new training event | '60d'         | '60d'         |
+| cache_to_disk         | bool   | Whether or not to cache streaming data to disk              | false         | false         |
+| cache_dir             | string | Directory to use for caching streaming data                 | './.cache'    | './.cache'    |
 
 ### Example JSON Configuration
 
 ```json
 {
-  "fallback_username": "generic_user",
-  "include_generic": false,
-  "include_individual": true,
-  "only_users": ["user1", "user2", "user3"],
-  "skip_users": [],
+  "cache_mode": "batch",
+  "min_history": 1,
+  "max_history": 0,
   "timestamp_column_name": "timestamp",
-  "userid_column_name": "username"
+  "aggregation_span": "60d",
+  "cache_to_disk": false,
+  "cache_dir": "./.cache"
 }
 ```

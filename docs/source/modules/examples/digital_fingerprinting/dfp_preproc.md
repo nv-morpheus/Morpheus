@@ -22,28 +22,45 @@ process into a single module.
 
 ### Configurable Parameters
 
-- `cache_dir` (str): Directory used for caching intermediate results.
-- `timestamp_column_name` (str): Name of the column containing timestamps.
-- `pre_filter_options` (dict): Options for pre-filtering control messages.
-    - `enable_task_filtering` (bool): Enables filtering based on task type.
-    - `filter_task_type` (str): The task type to be used as a filter.
-    - `enable_data_filtering` (bool): Enables filtering based on data type.
-    - `filter_data_type` (str): The data type to be used as a filter.
-- `batching_options` (dict): Options for batching files.
-    - `end_time` (str): End time of the time range to process.
-    - `iso_date_regex_pattern` (str): ISO date regex pattern.
-    - `parser_kwargs` (dict): Keyword arguments to pass to the parser.
-    - `period` (str): Time period to batch the data.
-    - `sampling_rate_s` (float): Sampling rate in seconds.
-    - `start_time` (str): Start time of the time range to process.
-- `user_splitting_options` (dict): Options for splitting data by user.
-    - `fallback_username` (str): Fallback user to use if no model is found for a user.
-    - `include_generic` (bool): Include generic models in the results.
-    - `include_individual` (bool): Include individual models in the results.
-    - `only_users` (List[str]): List of users to include in the results.
-    - `skip_users` (List[str]): List of users to exclude from the results.
-    - `userid_column_name` (str): Column name for the user ID.
-- `supported_loaders` (dict): Supported data loaders for different file types.
+| Parameter                | Type       | Description                                      | Example Value | Default Value |
+|--------------------------|------------|--------------------------------------------------|---------------|---------------|
+| `cache_dir`              | string     | Directory used for caching intermediate results. | `/tmp/cache`  | -             |
+| `timestamp_column_name`  | string     | Name of the column containing timestamps.        | `timestamp`   | -             |
+| `pre_filter_options`     | dictionary | Options for pre-filtering control messages.      | See Below     | -             |
+| `batching_options`       | dictionary | Options for batching files.                      | See Below     | -             |
+| `user_splitting_options` | dictionary | Options for splitting data by user.              | See Below     | -             |
+| `supported_loaders`      | dictionary | Supported data loaders for different file types. | -             | -             |
+
+#### `pre_filter_options`
+
+| Parameter               | Type    | Description                           | Example Value | Default Value |
+|-------------------------|---------|---------------------------------------|---------------|---------------|
+| `enable_task_filtering` | boolean | Enables filtering based on task type. | `true`        | -             |
+| `filter_task_type`      | string  | The task type to be used as a filter. | `task_a`      | -             |
+| `enable_data_filtering` | boolean | Enables filtering based on data type. | `true`        | -             |
+| `filter_data_type`      | string  | The data type to be used as a filter. | `type_a`      | -             |
+
+#### `batching_options`
+
+| Parameter                | Type       | Description                              | Example Value                          | Default Value |
+|--------------------------|------------|------------------------------------------|----------------------------------------|---------------|
+| `end_time`               | string     | End time of the time range to process.   | `2022-01-01T00:00:00Z`                 | -             |
+| `iso_date_regex_pattern` | string     | ISO date regex pattern.                  | `\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z` | -             |
+| `parser_kwargs`          | dictionary | Keyword arguments to pass to the parser. | `{}`                                   | -             |
+| `period`                 | string     | Time period to batch the data.           | `1D`                                   | -             |
+| `sampling_rate_s`        | float      | Sampling rate in seconds.                | `1.0`                                  | -             |
+| `start_time`             | string     | Start time of the time range to process. | `2021-01-01T00:00:00Z`                 | -             |
+
+#### `user_splitting_options`
+
+| Parameter            | Type    | Description                                           | Example Value          | Default Value |
+|----------------------|---------|-------------------------------------------------------|------------------------|---------------|
+| `fallback_username`  | string  | Fallback user to use if no model is found for a user. | `generic`              | -             |
+| `include_generic`    | boolean | Include generic models in the results.                | `true`                 | -             |
+| `include_individual` | boolean | Include individual models in the results.             | `true`                 | -             |
+| `only_users`         | list    | List of users to include in the results.              | `["user_a", "user_b"]` | -             |
+| `skip_users`         | list    | List of users to exclude from the results.            | `["user_c"]`           | -             |
+| `userid_column_name` | string  | Column name for the user ID.                          | `user_id`              | -             |
 
 ### Example JSON Configuration
 
@@ -79,5 +96,5 @@ process into a single module.
     "userid_column_name": "user_id"
   },
   "supported_loaders": {}
-}
+} 
 ```

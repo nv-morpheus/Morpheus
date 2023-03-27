@@ -15,13 +15,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-## DFP Postprocessing Module
+## DFP Postprocessing Module## DFP Postprocessing Module
 
 This module function performs postprocessing tasks after the inference process.
 
 ### Configurable Parameters
 
-- `timestamp_column_name` (string): Name of the timestamp column in the input data.
+| Parameter               | Type   | Description                                     | Example Value | Default Value |
+|-------------------------|--------|-------------------------------------------------|---------------|---------------|
+| `timestamp_column_name` | string | Name of the timestamp column in the input data. | `timestamp`   | -             |
 
 ### Example JSON Configuration
 

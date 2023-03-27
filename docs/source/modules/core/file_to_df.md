@@ -17,16 +17,19 @@ limitations under the License.
 
 ## File to DataFrame Module
 
-This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module. In addition to loading data from the disk, it has the ability to load the file content from S3 buckets.
+This module reads data from the batched files into a dataframe after receiving input from the "FileBatcher" module. In
+addition to loading data from the disk, it has the ability to load the file content from S3 buckets.
 
 ### Configurable Parameters
 
-- `cache_dir` (str): Directory to cache the rolling window data.
-- `file_type` (str): Type of the input file.
-- `filter_null` (bool): Whether to filter out null values.
-- `parser_kwargs` (dict): Keyword arguments to pass to the parser.
-- `schema` (dict): Schema of the input data.
-- `timestamp_column_name` (str): Name of the timestamp column.
+| Parameter               | Type       | Description                                | Example Value        | Default Value |
+|-------------------------|------------|--------------------------------------------|----------------------|---------------|
+| `cache_dir`             | string     | Directory to cache the rolling window data | `/path/to/cache`     | -             |
+| `file_type`             | string     | Type of the input file                     | `csv`                | JSON          |
+| `filter_null`           | boolean    | Whether to filter out null values          | true                 | false         |
+| `parser_kwargs`         | dictionary | Keyword arguments to pass to the parser    | `{"delimiter": ","}` | -             |
+| `schema`                | dictionary | Schema of the input data                   | See Below            | -             |
+| `timestamp_column_name` | string     | Name of the timestamp column               | `timestamp`          | -             |
 
 ### Example JSON Configuration
 
@@ -39,19 +42,9 @@ This module reads data from the batched files into a dataframe after receiving i
     "delimiter": ","
   },
   "schema": {
-    "column1": "float",
-    "column2": "float"
+    "schema_str": "string",
+    "encoding": "latin1"
   },
   "timestamp_column_name": "timestamp"
 }
 ```
-
-### Default Settings
-
-| Property                | Value      |
-| -----------------------| ----------|
-| cache_dir               | ./.cache  |
-| file_type               | JSON      |
-| filter_null             | False     |
-| parser_kwargs           | None      |
-| timestamp_column_name   | timestamp |

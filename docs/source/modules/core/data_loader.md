@@ -23,8 +23,16 @@ are specified in the module configuration file at the time of object constructio
 
 ### Configurable Parameters
 
-- `loaders`: An array containing entries for `id` and `properties` for each loader. Each `id` is a unique identifier for
-  the loader and `properties` is a dictionary of properties for that loader.
+| Parameter | Type  | Description                                       | Example Value | Default Value |
+|-----------|-------|---------------------------------------------------|---------------|---------------|
+| `loaders` | array | An array containing information on loaders to use | See Below     | []            |
+
+### `loaders`
+
+| Parameter    | Type       | Description                              | Example Value                          | Default Value |
+|--------------|------------|------------------------------------------|----------------------------------------|---------------|
+| `id`         | string     | Unique identifier for the loader         | `loader1`                              | -             |
+| `properties` | dictionary | Dictionary of properties for that loader | `{... loader specific parameters ...}` | `{}`          |
 
 ### Example JSON Configuration
 
@@ -45,3 +53,4 @@ are specified in the module configuration file at the time of object constructio
     }
   ]
 }
+```

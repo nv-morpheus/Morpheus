@@ -22,36 +22,59 @@ into a single module.
 
 ### Configurable Parameters
 
-- `timestamp_column_name` (str): Name of the column containing timestamps.
-- `cache_dir` (str): Directory used for caching intermediate results.
-- `batching_options` (dict): Options for batching files.
-    - `end_time` (str): End time of the time range to process.
-    - `iso_date_regex_pattern` (str): ISO date regex pattern.
-    - `parser_kwargs` (dict): Keyword arguments to pass to the parser.
-    - `period` (str): Time period to batch the data.
-    - `sampling_rate_s` (float): Sampling rate in seconds.
-    - `start_time` (str): Start time of the time range to process.
-- `user_splitting_options` (dict): Options for splitting data by user.
-    - `fallback_username` (str): Fallback user to use if no model is found for a user.
-    - `include_generic` (bool): Include generic models in the results.
-    - `include_individual` (bool): Include individual models in the results.
-    - `only_users` (List[str]): List of users to include in the results.
-    - `skip_users` (List[str]): List of users to exclude from the results.
-    - `userid_column_name` (str): Column name for the user ID.
-- `stream_aggregation_options` (dict): Options for aggregating data by stream.
-    - `timestamp_column_name` (str): Name of the column containing timestamps.
-    - `cache_mode` (str): Cache mode to use.
-    - `trigger_on_min_history` (bool): Trigger on minimum history.
-    - `aggregation_span` (str): Aggregation span.
-    - `trigger_on_min_increment` (bool): Trigger on minimum increment.
-    - `cache_to_disk` (bool): Cache to disk.
-- `preprocessing_options` (dict): Options for preprocessing data.
-- `inference_options` (dict): Options for configuring the inference process.
-    - `model_name_formatter` (str): Formatter for the model name.
-    - `fallback_username` (str): Fallback user to use if no model is found for a user.
-    - `timestamp_column_name` (str): Name of the column containing timestamps.
-- `detection_criteria` (dict): Criteria for filtering detections.
-- `write_to_file_options` (dict): Options for writing results to a file.
+| Parameter                    | Type       | Description                                      | Example Value | Default Value |
+|------------------------------|------------|--------------------------------------------------|---------------|---------------|
+| `batching_options`           | dictionary | Options for batching files.                      | See below     | -             |
+| `cache_dir`                  | string     | Directory used for caching intermediate results. | `/tmp/cache`  | -             |
+| `detection_criteria`         | dictionary | Criteria for filtering detections.               | -             | -             |
+| `inference_options`          | dictionary | Options for configuring the inference process.   | See below     | -             |
+| `preprocessing_options`      | dictionary | Options for preprocessing data.                  | -             | -             |
+| `stream_aggregation_options` | dictionary | Options for aggregating data by stream.          | See below     | -             |
+| `timestamp_column_name`      | string     | Name of the column containing timestamps.        | `timestamp`   | -             |
+| `user_splitting_options`     | dictionary | Options for splitting data by user.              | See below     | -             |
+| `write_to_file_options`      | dictionary | Options for writing results to a file.           | -             | -             |
+
+#### `batching_options`
+
+| Parameter                | Type   | Description                              | Example Value                                | Default Value |
+|--------------------------|--------|------------------------------------------|----------------------------------------------|---------------|
+| `end_time`               | string | End time of the time range to process.   | `2022-01-01T00:00:00Z`                       | -             |
+| `iso_date_regex_pattern` | string | ISO date regex pattern.                  | `\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z` | -             |
+| `parser_kwargs`          | dict   | Keyword arguments to pass to the parser. | -                                            | -             |
+| `period`                 | string | Time period to batch the data.           | `1D`                                         | -             |
+| `sampling_rate_s`        | float  | Sampling rate in seconds.                | `1.0`                                        | -             |
+| `start_time`             | string | Start time of the time range to process. | `2021-01-01T00:00:00Z`                       | -             |
+
+#### `user_splitting_options`
+
+| Parameter            | Type    | Description                                           | Example Value         | Default Value |
+|----------------------|---------|-------------------------------------------------------|-----------------------|---------------|
+| `fallback_username`  | string  | Fallback user to use if no model is found for a user. | `generic_user`        | generic_user  |
+| `include_generic`    | boolean | Include generic models in the results.                | `true`                | true          |
+| `include_individual` | boolean | Include individual models in the results.             | `true`                | false         |
+| `only_users`         | list    | List of users to include in the results.              | `["user_a","user_b"]` | -             |
+| `skip_users`         | list    | List of users to exclude from the results.            | `["user_c"]`          | -             |
+| `userid_column_name` | string  | Column                                                | name for the user ID. | user_id       |
+
+### `stream_aggregation_options`
+
+| Parameter               | Type   | Description                                                 | Example Value | Default Value |
+|-------------------------|--------|-------------------------------------------------------------|---------------|---------------|
+| `cache_mode`            | string | The user ID to use if the user ID is not found              | 'batch'       | 'batch'       |
+| `min_history`           | int    | Minimum history to trigger a new training event             | 1             | 1             |
+| `max_history`           | int    | Maximum history to include in a new training event          | 0             | 0             |
+| `timestamp_column_name` | string | Name of the column containing timestamps                    | 'timestamp'   | 'timestamp'   |
+| `aggregation_span`      | string | Lookback timespan for training data in a new training event | '60d'         | '60d'         |
+| `cache_to_disk`         | bool   | Whether or not to cache streaming data to disk              | false         | false         |
+| `cache_dir`             | string | Directory to use for caching streaming data                 | './.cache'    | './.cache'    |
+
+### `inference_options`
+
+| Parameter               | Type   | Description                                          | Example Value           | Default Value |
+|-------------------------|--------|------------------------------------------------------|-------------------------|---------------|
+| `model_name_formatter`  | string | Formatter for model names                            | "user_{username}_model" | `[Required]`  |
+| `fallback_username`     | string | Fallback user to use if no model is found for a user | "generic_user"          | generic_user  |
+| `timestamp_column_name` | string | Name of the timestamp column                         | "timestamp"             | timestamp     |
 
 ### Example JSON Configuration
 

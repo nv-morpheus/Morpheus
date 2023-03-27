@@ -17,24 +17,37 @@ limitations under the License.
 
 ## File Batcher Module
 
-This module loads the input files, removes files that are older than the chosen window of time, and then groups the remaining files by period that fall inside the window.
+This module loads the input files, removes files that are older than the chosen window of time, and then groups the
+remaining files by period that fall inside the window.
 
 ### Configurable Parameters
 
-- `batching_options`: A dictionary containing the following options:
-    - `end_time`: End time of the time window (datetime or string format)
-    - `iso_date_regex_pattern`: Regex pattern for ISO date matching
-    - `parser_kwargs`: Additional arguments for the parser (dictionary)
-    - `period`: Time period for grouping files (e.g., '1d' for 1 day)
-    - `sampling_rate_s`: Sampling rate in seconds (integer)
-    - `start_time`: Start time of the time window (datetime or string format)
-- `cache_dir`: Cache directory (string)
-- `file_type`: File type (string)
-- `filter_nulls`: Whether to filter null values (boolean)
-    - `True`: Filter null values
-    - `False`: Don't filter null values
-- `schema`: Data schema (dictionary)
-- `timestamp_column_name`: Name of the timestamp column (string)
+| Parameter               | Type       | Description                   | Example Value          | Default Value |
+|-------------------------|------------|-------------------------------|------------------------|---------------|
+| `batching_options`      | dictionary | Options for batching          | See below              | -             |
+| `cache_dir`             | string     | Cache directory               | `./file_batcher_cache` | None          |
+| `file_type`             | string     | File type                     | JSON                   | JSON          |
+| `filter_nulls`          | boolean    | Whether to filter null values | false                  | false         |
+| `schema`                | dictionary | Data schema                   | See below              | `[Required]`  |
+| `timestamp_column_name` | string     | Name of the timestamp column  | timestamp              | timestamp     |
+
+### `batching_options`
+
+| Key                      | Type            | Description                         | Example Value                               | Default Value            |
+|--------------------------|-----------------|-------------------------------------|---------------------------------------------|--------------------------|
+| `end_time`               | datetime/string | Endtime of the time window          | "2023-03-14T23:59:59"                       | None                     |
+| `iso_date_regex_pattern` | string          | Regex pattern for ISO date matching | "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" | <iso_date_regex_pattern> |
+| `parser_kwargs`          | dictionary      | Additional arguments for the parser | {}                                          | {}                       |
+| `period`                 | string          | Time period for grouping files      | "1d"                                        | "1d"                     |
+| `sampling_rate_s`        | integer         | Sampling rate in seconds            | 60                                          | 60                       |
+| `start_time`             | datetime/string | Start time of the time window       | "2023-03-01T00:00:00"                       | None                     |
+
+### `schema`
+
+| Key          | Type   | Description   | Example Value | Default Value |
+|--------------|--------|---------------|---------------|---------------|
+| `encoding`   | string | Encoding      | "latin1"      | "latin1"      |
+| `schema_str` | string | Schema string | "string"      | `[Required]`  |
 
 ### Example JSON Configuration
 
@@ -42,28 +55,19 @@ This module loads the input files, removes files that are older than the chosen 
 {
   "batching_options": {
     "end_time": "2023-03-14T23:59:59",
-    "iso_date_regex_pattern": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}",
+    "iso_date_regex_pattern": "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
     "parser_kwargs": {},
     "period": "1d",
     "sampling_rate_s": 60,
     "start_time": "2023-03-01T00:00:00"
   },
   "cache_dir": "./file_batcher_cache",
-  "file_type": "CSV",
-  "filter_nulls": true,
+  "file_type": "JSON",
+  "filter_nulls": false,
   "schema": {
-    "column1": "string",
-    "column2": "int",
-    "timestamp": "datetime"
+    "schema_str": "string",
+    "encoding": "latin1"
   },
   "timestamp_column_name": "timestamp"
 }
 ```
-
-### Default Settings
-
-| Property | Value |
-| -------- | ----- |
-| iso_date_regex_pattern | (?P\<year\>\d{4})-(?P\<month\>\d{1,2})-(?P\<day\>\d{1,2})T(?P\<hour\>\d{1,2})(:\\\|_)(?P\<minute\>\d{1,2})(:\\\|_)(?P\<second\>\d{1,2})(?P\<microsecond\>\.\d{1,6})?Z|
-| period   | D  |
-| sampling_rate_s   | 0|
