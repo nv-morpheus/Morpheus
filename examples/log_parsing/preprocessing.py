@@ -154,11 +154,14 @@ class PreprocessLogParsingStage(PreprocessBaseStage):
                                          add_special_tokens=add_special_tokens)
         del text_ser
 
+        seg_ids = tokenized.segment_ids
+        seg_ids[:, 0] = seg_ids[:, 0] + x.mess_offset
+
         # Create the inference memory. Keep in mind count here could be > than input count
         memory = InferenceMemoryNLP(count=tokenized.input_ids.shape[0],
                                     input_ids=tokenized.input_ids,
                                     input_mask=tokenized.input_mask,
-                                    seq_ids=tokenized.segment_ids)
+                                    seq_ids=seg_ids)
 
         infer_message = MultiInferenceNLPMessage.from_message(x, memory=memory)
 
