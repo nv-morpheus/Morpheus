@@ -15,13 +15,9 @@
 import typing
 
 import mrc
-import pandas as pd
-
-import cudf
 
 from morpheus.config import Config
-from morpheus.messages import MessageMeta
-from morpheus.messages import MultiMessage
+from morpheus.messages import MessageBase
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
@@ -51,11 +47,11 @@ class InMemorySinkStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.messages.MessageMeta`, )
+        typing.Tuple(`morpheus.messages.MessageBase`, )
             Accepted input types.
 
         """
-        return (MessageMeta, )
+        return (MessageBase, )
 
     def supports_cpp_node(self) -> bool:
         return False
@@ -66,7 +62,7 @@ class InMemorySinkStage(SinglePortStage):
         """
         self._messages.clear()
 
-    def get_messages(self) -> typing.List[typing.Union[MessageMeta, MultiMessage]]:
+    def get_messages(self) -> typing.List[MessageBase]:
         """
         Returns
         -------
@@ -75,36 +71,7 @@ class InMemorySinkStage(SinglePortStage):
         """
         return self._messages
 
-    def concat_dataframes(self, clear=True) -> pd.DataFrame:
-        """
-        Concatinate the DataFrame associated with the collected messages into a single Pandas DataFrame,
-        and optionally clearing the list of collected messages.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        all_meta = []
-        for x in self._messages:
-            if isinstance(x, MultiMessage):
-                df = x.get_meta()
-            else:
-                df = x.df
-
-            if isinstance(df, cudf.DataFrame):
-                df = df.to_pandas()
-
-            all_meta.append(df)
-
-        df = pd.concat(all_meta)
-
-        if clear:
-            self.clear()
-
-        return df
-
-    def _append_message(self, message: typing.Union[MessageMeta,
-                                                    MultiMessage]) -> typing.Union[MessageMeta, MultiMessage]:
+    def _append_message(self, message: MessageBase) -> MessageBase:
         self._messages.append(message)
         return message
 

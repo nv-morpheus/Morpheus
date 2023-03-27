@@ -23,6 +23,7 @@ from morpheus.config import Config
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.stages.output.in_memory_sink_stage import InMemorySinkStage
 from morpheus.utils import compare_df
+from morpheus.utils import concat_df
 
 
 class CompareDataFrameStage(InMemorySinkStage):
@@ -97,13 +98,17 @@ class CompareDataFrameStage(InMemorySinkStage):
         dict
             Results dictionary
         """
-        if (len(self._messages) == 0):
+        messages = self.get_messages()
+        if (len(messages) == 0):
             return {}
 
-        combined_df = self.concat_dataframes(clear=clear)
+        combined_df = concat_df.concat_dataframes(messages)
 
         if self._reset_index:
             combined_df.reset_index(inplace=True)
+
+        if clear:
+            self.clear()
 
         return compare_df.compare_df(self._compare_df,
                                      combined_df,

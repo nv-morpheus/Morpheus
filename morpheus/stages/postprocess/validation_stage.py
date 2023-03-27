@@ -45,8 +45,8 @@ class ValidationStage(CompareDataFrameStage):
         The global configuration.
     val_file_name : str
         The comparison file.
-    results_file_name : str
-        Where to output a JSON containing the validation results.
+    results_file_name : str, optional
+        If not `None` specifies an output file path to write a JSON file containing the validation results.
     overwrite : boolean, default = False, is_flag = True
         Whether to overwrite the validation results if they exist, by default False.
     include : typing.List[str], optional
@@ -71,7 +71,7 @@ class ValidationStage(CompareDataFrameStage):
         self,
         c: Config,
         val_file_name: str,
-        results_file_name: str,
+        results_file_name: str = None,
         overwrite: bool = False,
         include: typing.List[str] = None,
         exclude: typing.List[str] = [r'^ID$', r'^_ts_'],
@@ -90,7 +90,7 @@ class ValidationStage(CompareDataFrameStage):
 
         self._results_file_name = results_file_name
 
-        if (os.path.exists(self._results_file_name)):
+        if (self._results_file_name is not None and os.path.exists(self._results_file_name)):
             if (overwrite):
                 os.remove(self._results_file_name)
             else:
@@ -116,7 +116,7 @@ class ValidationStage(CompareDataFrameStage):
 
     def _do_comparison(self):
         results = self.get_results()
-        if len(results):
+        if (len(results) and self._results_file_name is not None):
             with open(self._results_file_name, "w") as f:
                 json.dump(results, f, indent=2, sort_keys=True)
 
