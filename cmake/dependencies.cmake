@@ -21,21 +21,30 @@ if (VERBOSE)
   morpheus_utils_print_config()
 endif()
 
-# Load direct physical package dependencies first, so we fail early.
-find_package(Protobuf REQUIRED)
-find_package(CUDAToolkit REQUIRED) # Required by Morpheus. Fail early if we don't have it.
+# Load direct physical package dependencies first, so we fail early. Add all dependencies to our export set
+rapids_find_package(Protobuf
+  REQUIRED
+  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+)
+
+rapids_find_package(CUDAToolkit
+  REQUIRED
+  BUILD_EXPORT_SET ${PROJECT_NAME}-core-exports
+  INSTALL_EXPORT_SET ${PROJECT_NAME}-core-exports
+)
 
 if(MORPHEUS_BUILD_BENCHMARKS)
   # google benchmark
   # - Expects package to pre-exist in the build environment
   # ================
   rapids_find_package(benchmark REQUIRED
-          GLOBAL_TARGETS      benchmark::benchmark
-          BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
-          INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
-          FIND_ARGS
-          CONFIG
-          )
+    GLOBAL_TARGETS      benchmark::benchmark
+    BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
+    INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
+    FIND_ARGS
+    CONFIG
+  )
 endif()
 
 if(MORPHEUS_BUILD_TESTS)
@@ -43,12 +52,12 @@ if(MORPHEUS_BUILD_TESTS)
   # - Expects package to pre-exist in the build environment
   # ===========
   rapids_find_package(GTest REQUIRED
-          GLOBAL_TARGETS      GTest::gtest GTest::gmock GTest::gtest_main GTest::gmock_main
-          BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
-          INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
-          FIND_ARGS
-          CONFIG
-          )
+    GLOBAL_TARGETS      GTest::gtest GTest::gmock GTest::gtest_main GTest::gmock_main
+    BUILD_EXPORT_SET    ${PROJECT_NAME}-exports
+    INSTALL_EXPORT_SET  ${PROJECT_NAME}-exports
+    FIND_ARGS
+    CONFIG
+  )
 endif()
 
 # libcudacxx -- get an explicit lubcudacxx build, matx tries to pull a tag that doesn't exist.
