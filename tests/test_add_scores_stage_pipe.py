@@ -22,7 +22,7 @@ import pytest
 
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -94,9 +94,9 @@ def test_add_scores_stage_multi_segment_pipe(config, tmp_path, repeat):
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
     pipe.add_stage(ConvMsg(config, columns=get_column_names_from_file(input_file)))
-    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(AddScoresStage(config))
-    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))

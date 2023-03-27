@@ -50,9 +50,10 @@ RUN apt-get update &&\
     apt-get install --no-install-recommends -y \
         bc \
         build-essential \
-        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cudart-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         curl \
         git-lfs \
         jq \
@@ -141,6 +142,7 @@ ARG CUDA_MINOR_VER
 RUN apt update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     apt install --no-install-recommends -y \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cudart-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-cupti-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         cuda-nvml-dev-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \

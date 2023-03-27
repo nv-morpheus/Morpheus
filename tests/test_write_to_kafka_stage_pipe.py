@@ -22,7 +22,7 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage

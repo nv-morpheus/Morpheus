@@ -47,7 +47,7 @@ class DuoSourceStage(AutoencoderSourceStage):
         files. Any new files that are added that match the glob will then be processed.
     max_files: int, default = -1
         Max number of files to read. Useful for debugging to limit startup time. Default value of -1 is unlimited.
-    file_type : `morpheus._lib.common.FileTypes`, default = 'FileTypes.Auto'.
+    file_type : `morpheus.common.FileTypes`, default = 'FileTypes.Auto'.
         Indicates what type of file to read. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'json', 'csv'
     repeat: int, default = 1

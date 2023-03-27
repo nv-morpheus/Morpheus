@@ -18,6 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info_data.hpp"
 
 #include <cudf/io/types.hpp>
 #include <pybind11/pytypes.h>

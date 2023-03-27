@@ -15,17 +15,13 @@
 # limitations under the License.
 
 import operator
-import os
 import typing
 
 import pytest
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages.message_meta import MessageMeta
-from utils import TEST_DIRS
 from utils import assert_df_equal
 from utils import duplicate_df_index_rand
 
@@ -36,33 +32,26 @@ def index_type(request: pytest.FixtureRequest) -> typing.Literal["normal", "skip
 
 
 @pytest.fixture(scope="function")
-def df(df_type: typing.Literal['cudf', 'pandas'],
-       index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown'],
-       use_cpp: bool):
-
-    loaded_df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
-                                file_type=FileTypes.Auto,
-                                df_type=df_type)
-
+def df(filter_probs_df: cudf.DataFrame, index_type: typing.Literal['normal', 'skip', 'dup', 'down', 'updown']):
     if (index_type == "normal"):
-        return loaded_df
+        return filter_probs_df
     elif (index_type == "skip"):
         # Skip some rows
-        return loaded_df.iloc[::3, :].copy()
+        return filter_probs_df.iloc[::3, :].copy()
     elif (index_type == "dup"):
         # Duplicate
-        return duplicate_df_index_rand(loaded_df, count=2)
+        return duplicate_df_index_rand(filter_probs_df, count=2)
     elif (index_type == "down"):
         # Reverse
-        return loaded_df.iloc[::-1, :].copy()
+        return filter_probs_df.iloc[::-1, :].copy()
     elif (index_type == "updown"):
         # Go up then down
-        down = loaded_df.iloc[::-1, :].copy()
+        down = filter_probs_df.iloc[::-1, :].copy()
 
         # Increase the index to keep them unique
         down.index += len(down)
 
-        out_df = loaded_df.append(down)
+        out_df = filter_probs_df.append(down)
 
         assert out_df.index.is_unique
 

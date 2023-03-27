@@ -15,10 +15,10 @@
 import logging
 
 import mrc
-from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.module_ids import MODULE_NAMESPACE
 from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
@@ -70,7 +70,7 @@ def dfp_training(builder: mrc.Builder):
         model.fit(final_df, epochs=epochs)
         logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
-        output_message = MultiAEMessage(message.meta,
+        output_message = MultiAEMessage(meta=message.meta,
                                         mess_offset=message.mess_offset,
                                         mess_count=message.mess_count,
                                         model=model)

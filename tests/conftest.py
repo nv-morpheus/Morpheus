@@ -118,6 +118,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     supports
     """
 
+    # === use_cpp Parameterize ===
     use_cpp = metafunc.definition.get_closest_marker("use_cpp") is not None
     use_python = metafunc.definition.get_closest_marker("use_python") is not None
 
@@ -143,6 +144,22 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
 
     if (len(_set_use_cpp_params) > 0):
         metafunc.parametrize("_set_use_cpp", _set_use_cpp_params, indirect=True)
+
+    # === df_type Parameterize ===
+    if ("df_type" in metafunc.fixturenames):
+        # df_type fixture was requested. Only parameterize if both marks or neither marks are found. Otherwise, the
+        # fixture will determine it from the mark
+        use_cudf = metafunc.definition.get_closest_marker("use_cudf") is not None
+        use_pandas = metafunc.definition.get_closest_marker("use_pandas") is not None
+
+        if (use_pandas == use_cudf):
+            metafunc.parametrize(
+                "df_type",
+                [
+                    pytest.param("cudf", marks=pytest.mark.use_cudf(added_by="generate_tests"), id="use_cudf"),
+                    pytest.param("pandas", marks=pytest.mark.use_pandas(added_by="generate_tests"), id="use_pandas")
+                ],
+                indirect=True)
 
 
 def pytest_runtest_setup(item):
@@ -267,16 +284,28 @@ def config_no_cpp():
     yield Config()
 
 
-@pytest.fixture(scope="function",
-                params=[
-                    pytest.param("pandas", marks=pytest.mark.use_pandas, id="use_pandas"),
-                    pytest.param("cudf", marks=pytest.mark.use_cudf, id="use_cudf")
-                ])
+@pytest.fixture(scope="function")
 def df_type(request: pytest.FixtureRequest):
 
-    assert request.param in ["pandas", "cudf"], "Indirect parameter needed to be set to use df_type"
+    df_type_str: typing.Literal["cudf", "pandas"]
 
-    df_type_str: typing.Literal["cudf", "pandas"] = request.param
+    # Check for the param if this was indirectly set
+    if (hasattr(request, "param")):
+        assert request.param in ["pandas", "cudf"], "Invalid parameter for df_type"
+
+        df_type_str = request.param
+    else:
+        # If not, check for the marker and use that
+        use_pandas = request.node.get_closest_marker("use_pandas") is not None
+        use_cudf = request.node.get_closest_marker("use_cudf") is not None
+
+        if (use_pandas and use_cudf):
+            raise RuntimeError(
+                "Both markers (use_cpp and use_python) were added to function {}. Remove markers to support both.".
+                format(request.node.nodeid))
+        else:
+            # This will default to "cudf" or follow use_pandas
+            df_type_str = "cudf" if not use_pandas else "pandas"
 
     yield df_type_str
 
@@ -345,6 +374,26 @@ def reload_modules(request: pytest.FixtureRequest):
 
 
 @pytest.fixture(scope="function")
+def manual_seed():
+    """
+    Seeds the random number generators for the stdlib, PyTorch and NumPy.
+    By default this will seed with a value of `42`, however this fixture also yields the seed function allowing tests to
+    call this a second time, or seed with a different value.
+
+    Use this fixture to ensure repeatability of a test that depends on randomness.
+    Note: PyTorch only garuntees determanism on a per-GPU basis, resulting in some tests that might not be portable
+    across GPU models.
+    """
+    from morpheus.utils import seed as seed_utils
+
+    def seed_fn(seed=42):
+        seed_utils.manual_seed(seed)
+
+    seed_fn()
+    yield seed_fn
+
+
+@pytest.fixture(scope="function")
 def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     """
     Executes a test in the tmp_path directory
@@ -352,6 +401,25 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
     os.chdir(tmp_path)
     yield
     os.chdir(request.config.invocation_dir)
+
+
+@pytest.fixture(scope="session")
+def _filter_probs_df():
+    from morpheus._lib.common import FileTypes
+    from morpheus.io.deserializers import read_file_to_df
+    from utils import TEST_DIRS
+    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+    yield read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+
+
+@pytest.fixture(scope="function")
+def filter_probs_df(_filter_probs_df, df_type: typing.Literal['cudf', 'pandas'], use_cpp: bool):
+    if df_type == 'cudf':
+        yield _filter_probs_df.copy(deep=True)
+    elif df_type == 'pandas':
+        yield _filter_probs_df.to_pandas()
+    else:
+        assert False, "Unknown df_type type"
 
 
 def wait_for_camouflage(host="localhost", port=8000, timeout=5):

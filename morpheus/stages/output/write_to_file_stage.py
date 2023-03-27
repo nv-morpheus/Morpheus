@@ -22,9 +22,9 @@ import pandas as pd
 import cudf
 
 import morpheus._lib.stages as _stages
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import determine_file_type
 from morpheus.cli.register_stage import register_stage
+from morpheus.common import FileTypes
+from morpheus.common import determine_file_type
 from morpheus.config import Config
 from morpheus.io import serializers
 from morpheus.messages import MessageMeta
@@ -47,7 +47,7 @@ class WriteToFileStage(SinglePortStage):
         Name of the file to which the messages will be written.
     overwrite : boolean, default = False, is_flag = True
         Overwrite file if exists. Will generate an error otherwise.
-    file_type : `morpheus._lib.common.FileTypes`, optional, case_sensitive = False
+    file_type : `morpheus.common.FileTypes`, optional, case_sensitive = False
         Indicates what type of file to write. Specifying 'auto' will determine the file type from the extension.
         Supported extensions: 'csv', 'json' and 'jsonlines'
     include_index_col : bool, default = True
