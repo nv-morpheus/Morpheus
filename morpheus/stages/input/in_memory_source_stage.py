@@ -41,6 +41,7 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
 
     def __init__(self, c: Config, dataframes: typing.List[cudf.DataFrame], repeat: int = 1):
         super().__init__(c)
+
         self._dataframes = dataframes
         self._repeat_count = repeat
 
@@ -53,8 +54,7 @@ class InMemorySourceStage(PreallocatorMixin, SingleOutputSource):
 
     def _generate_frames(self) -> typing.Iterator[MessageMeta]:
         for i in range(self._repeat_count):
-            for k in range(len(self._dataframes)):
-                df = self._dataframes[k]
+            for k, df in enumerate(self._dataframes):
                 x = MessageMeta(df)
 
                 # If we are looping, copy the object. Do this before we push the object in case it changes

@@ -15,16 +15,16 @@
 import typing
 
 import mrc
+import mrc.core.operators as ops
 
 from morpheus.config import Config
-from morpheus.messages import MessageBase
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.pipeline.stream_pair import StreamPair
 
 
 class InMemorySinkStage(SinglePortStage):
     """
-    Collects incoming messages into a list.
+    Collects incoming messages into a list that can be accessed after the pipeline is complete. Useful for testing.
 
     Parameters
     ----------
@@ -47,11 +47,11 @@ class InMemorySinkStage(SinglePortStage):
 
         Returns
         -------
-        typing.Tuple(`morpheus.messages.MessageBase`, )
+        typing.Tuple(`typing.Any`, )
             Accepted input types.
 
         """
-        return (MessageBase, )
+        return (typing.Any, )
 
     def supports_cpp_node(self) -> bool:
         return False
@@ -62,7 +62,7 @@ class InMemorySinkStage(SinglePortStage):
         """
         self._messages.clear()
 
-    def get_messages(self) -> typing.List[MessageBase]:
+    def get_messages(self) -> typing.List[typing.Any]:
         """
         Returns
         -------
@@ -71,12 +71,12 @@ class InMemorySinkStage(SinglePortStage):
         """
         return self._messages
 
-    def _append_message(self, message: MessageBase) -> MessageBase:
+    def _append_message(self, message: typing.Any):
         self._messages.append(message)
         return message
 
     def _build_single(self, builder: mrc.Builder, input_stream: StreamPair) -> StreamPair:
-        node = builder.make_node(self.unique_name, self._append_message)
+        node = builder.make_node(self.unique_name, ops.map(self._append_message))
         builder.make_edge(input_stream[0], node)
 
         return node, input_stream[1]
