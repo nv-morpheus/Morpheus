@@ -16,18 +16,19 @@
 
 import json
 import os
-import sys
 
-print("Executable: " + sys.executable)
-print("Environ:")
-
-for k in sorted(os.environ.keys()):
-    print(f"{k}: {os.environ[k]}")
+# This must come before torch
+# isort: off
+import cudf  # noqa: E401
+# isort: on
 
 import numpy as np
 import pytest
 import torch
 
+from morpheus.models.dfencoder.autoencoder import AutoEncoder
+from morpheus.models.dfencoder.dataloader import DatasetFromPath
+from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from utils import TEST_DIRS
 
 FEATURE_COLUMNS = [
@@ -108,10 +109,6 @@ def test_dfencoder_distributed_e2e():
 
 
 def _run_test(rank, world_size):
-
-    from morpheus.models.dfencoder.autoencoder import AutoEncoder
-    from morpheus.models.dfencoder.dataloader import DatasetFromPath
-    from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 
     torch.cuda.set_device(rank)
 
