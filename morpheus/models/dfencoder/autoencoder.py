@@ -1201,6 +1201,7 @@ class AutoEncoder(torch.nn.Module):
             bin_target=bin_target,
             cat_target=cat_target,
             should_log=True,
+            _id=True,
         )
 
         num, bin, cat = self.model(input_swapped)
