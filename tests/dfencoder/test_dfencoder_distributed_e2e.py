@@ -16,6 +16,11 @@
 
 import json
 import os
+import sys
+
+print("Executable: " + sys.executable)
+print("Environ:")
+print(os.environ)
 
 import numpy as np
 import pytest
@@ -101,12 +106,6 @@ def test_dfencoder_distributed_e2e():
 
 
 def _run_test(rank, world_size):
-
-    import sys
-
-    print("Executable: " + sys.executable)
-    print("Environ:")
-    print(os.environ)
 
     from morpheus.models.dfencoder.autoencoder import AutoEncoder
     from morpheus.models.dfencoder.dataloader import DatasetFromPath
