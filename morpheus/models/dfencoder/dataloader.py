@@ -40,6 +40,9 @@ class DFEncoderDataLoader(DataLoader):
 
 
 class DatasetFromPath(Dataset):
+    """ A dataset class that reads data in batches from a folder and applies preprocessing to each batch.
+    * This class assumes that the data is saved in small csv files in one folder.
+    """
 
     def __init__(
         self,
@@ -50,88 +53,92 @@ class DatasetFromPath(Dataset):
         shuffle_rows_in_batch=True,
         preload_data_into_memory=False,
     ):
-        """
-        A dataset class that reads data in batches from a folder and applies preprocessing to each batch.
-        * This class assumes that the data is saved in small csv files in one folder.
+        """Initialize a `DatasetFromPath` object.
 
         Args:
-            data_folder (str): the path to the folder containing the data files
-            batch_size (int): the size of the batches to read the data in
-            preprocess_fn (function): a function to preprocess the data, which should take a pandas dataframe and
+            data_folder (str): The path to the folder containing the data files
+            batch_size (int): The size of the batches to read the data in
+            preprocess_fn (function): A function to preprocess the data, which should take a pandas.DataFrame and
                 a boolean indicating whether to shuffle rows in batch or not, and return a dictionary containing
                 the preprocessed data
-            load_data_fn (function): a function for loading data from a provided file path into a pandas dataframe
-            shuffle_rows_in_batch (bool): whether to shuffle the rows within each batch
-            preload_data_into_memory (bool): whether to preload all the data into memory
+            load_data_fn (function, optional): A function for loading data from a provided file path into a 
+                pandas.DataFrame. Defaults to pd.read_csv.
+            shuffle_rows_in_batch (bool, optional): Whether to shuffle the rows within each batch. Defaults to True.
+            preload_data_into_memory (bool, optional): Whether to preload all the data into memory. Defaults to False.
                 (can speed up data loading if the data can fit into memory)
         """
-        self.data_folder = data_folder
-        self.filenames = sorted(os.listdir(data_folder))
-        self.preprocess_fn = preprocess_fn
-        self.load_data_fn = load_data_fn
+        self._data_folder = data_folder
+        self._filenames = sorted(os.listdir(data_folder))
+        self._preprocess_fn = preprocess_fn
+        self._load_data_fn = load_data_fn
 
-        self.preloaded_data = None
+        self._preloaded_data = None
         if preload_data_into_memory:
-            self.preloaded_data = {fn: self.load_data_fn(f"{self.data_folder}/{fn}") for fn in self.filenames}
+            self._preloaded_data = {fn: self._load_data_fn(f"{self._data_folder}/{fn}") for fn in self._filenames}
 
-        self.file_sizes = {
-            fn: self._get_file_len(fn) - 1 if not self.preloaded_data else len(self.preloaded_data[fn])
-            for fn in self.filenames
+        self._file_sizes = {
+            fn: self._get_file_len(fn) - 1 if not self._preloaded_data else len(self._preloaded_data[fn])
+            for fn in self._filenames
         }
-        self.len = sum(v for v in self.file_sizes.values())
-        self.batch_size = batch_size
-        self.shuffle_rows_in_batch = shuffle_rows_in_batch
+        self._count = sum(v for v in self._file_sizes.values())
+        self._batch_size = batch_size
+        self._shuffle_rows_in_batch = shuffle_rows_in_batch
 
     def _get_file_len(self, fn, file_include_header_line=True):
-        """
-        Private method for getting the number of lines in a file.
+        """Private method for getting the number of lines in a file.
 
         Args:
-            fn (str): The name of the file to get the length of
-            file_include_header_line (bool): Whether the file includes a header line
+            fn (str): The name of the file to get the length of.
+            file_include_header_line (bool, optional): Whether the file includes a header line. Defaults to True.
 
         Returns:
-            int: The number of lines in the file
+            int: The number of lines in the file.
         """
-        with open(f"{self.data_folder}/{fn}") as f:
+        with open(f"{self._data_folder}/{fn}") as f:
             count = sum(1 for _ in f)
         return count - 1 if file_include_header_line else count
 
     @property
     def num_samples(self):
         """Returns the number of samples in the dataset."""
-        return sum(self.file_sizes.values())
+        return sum(self._file_sizes.values())
 
     def __len__(self):
         """Returns the number of batches in the dataset.
         Under normal circumstances, `Dataset` loads/returns one sample at a time. However, to optimize the loading of
         high-volume csv files, this class loads a batch of csv rows at a time. So this built-in len function needs to 
         return the batch count instead of sample count.
-        """
-        return int(np.ceil(self.len / self.batch_size))
+
+        Returns:
+            int: Number of batches in the dataset.
+        """        
+        return int(np.ceil(self._count / self._batch_size))
 
     def __iter__(self):
-        """Iterates through the whole dataset by batch in order, without any shuffling."""
+        """Iterates through the whole dataset by batch in order, without any shuffling.
+
+        Yields:
+            Dict: A dictionary containing the preprocessed data for a batch
+        """        
         for i in range(len(self)):
             yield self[i]
 
     def __getitem__(self, idx):
-        """
-        Gets the item at the given index in the dataset.
+        """Gets the item at the given index in the dataset.
 
         Args:
             idx (int): the index of the item to get
 
         Returns:
-            dict: a dictionary containing the preprocessed data for the current batch
+            Dict: a dictionary containing the preprocessed data for the current batch
         """
-        start = idx * self.batch_size
-        end = (idx + 1) * self.batch_size
+        start = idx * self._batch_size
+        end = (idx + 1) * self._batch_size
 
         data = []
         curr_cnt = 0
-        for fn in self.filenames:
-            f_count = self.file_sizes[fn]
+        for fn in self._filenames:
+            f_count = self._file_sizes[fn]
             curr_cnt = f_count
 
             if start < curr_cnt and end <= curr_cnt:
@@ -147,46 +154,43 @@ class DatasetFromPath(Dataset):
         return self._preprocess(pd.concat(data), batch_index=idx)
 
     def _get_data_from_filename(self, filename):
-        """
-        Returns the data from the given file as a pandas dataframe.
+        """Returns the data from the given file as a pandas.DataFrame.
 
         Args:
             filename (str): The filename of the file to load
 
         Returns:
-            pandas dataframe
+            pandas.DataFrame
         """
-        if self.preloaded_data:
-            return self.preloaded_data[filename]
-        return self.load_data_fn(f"{self.data_folder}/{filename}")
+        if self._preloaded_data:
+            return self._preloaded_data[filename]
+        return self._load_data_fn(f"{self._data_folder}/{filename}")
 
     def _preprocess(self, df, batch_index):
-        """
-        Preprocesses the given dataframe and returns a dictionary containing the preprocessed data.
+        """Preprocesses the given dataframe and returns a dictionary containing the preprocessed data.
 
         Args:
-            df (pandas dataframe): the dataframe to preprocess.
+            df (pandas.DataFrame): the dataframe to preprocess.
             batch_index (int): the index of the current batch.
 
         Returns:
-            dict: a dictionary containing the preprocessed data for the current batch.
+            Dict: a dictionary containing the preprocessed data for the current batch.
         """
-        data = self.preprocess_fn(
+        data = self._preprocess_fn(
             df,
-            shuffle_rows_in_batch=self.shuffle_rows_in_batch,
+            shuffle_rows_in_batch=self._shuffle_rows_in_batch,
         )
         return {"batch_index": batch_index, "data": data}
 
     def get_preloaded_data(self):
-        """
-        Loads all data from the files into memory and returns it as a pandas dataframe.
+        """Loads all data from the files into memory and returns it as a pandas.DataFrame.
 
         Returns:
-            pandas dataframe
+            pandas.DataFrame
         """
-        if self.preloaded_data is None:
-            self.preloaded_data = {fn: self.load_data_fn(f"{self.data_folder}/{fn}") for fn in self.filenames}
-        return pd.concat(pdf for pdf in self.preloaded_data.values())
+        if self._preloaded_data is None:
+            self._preloaded_data = {fn: self._load_data_fn(f"{self._data_folder}/{fn}") for fn in self._filenames}
+        return pd.concat(pdf for pdf in self._preloaded_data.values())
 
 
 class DatasetFromDataframe(Dataset):
@@ -206,9 +210,9 @@ class DatasetFromDataframe(Dataset):
           is called. (Even if this limits the ability to fully shuffle the whole dataset.)
 
         Args:
-            df (pandas dataframe): input dataframe used for the dataset
+            df (pandas.DataFrame): input dataframe used for the dataset
             batch_size (int): the size of the batches to read the data in
-            preprocess_fn (function): a function to preprocess the data, which should take a pandas dataframe and
+            preprocess_fn (function): a function to preprocess the data, which should take a pandas.DataFrame and
                 a boolean indicating whether to shuffle rows in batch or not, and return a dictionary containing
                 the preprocessed data
             shuffle_rows_in_batch (bool): whether to shuffle the rows within each batch
@@ -256,13 +260,13 @@ class DatasetFromDataframe(Dataset):
 
     def _get_data_from_filename(self, filename):
         """
-        Returns the data from the given file as a pandas dataframe.
+        Returns the data from the given file as a pandas.DataFrame.
 
         Args:
             filename (str): The filename of the file to load
 
         Returns:
-            pandas dataframe
+            pandas.DataFrame
         """
         if self.preloaded_data:
             return self.preloaded_data[filename]
@@ -273,7 +277,7 @@ class DatasetFromDataframe(Dataset):
         Preprocesses the given dataframe and returns a dictionary containing the preprocessed data.
 
         Args:
-            df (pandas dataframe): the dataframe to preprocess.
+            df (pandas.DataFrame): the dataframe to preprocess.
             batch_index (int): the index of the current batch.
 
         Returns:

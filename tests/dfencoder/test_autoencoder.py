@@ -111,7 +111,7 @@ def test_ohe():
 
 def test_compute_embedding_size():
     for (input, expected) in [(0, 0), (5, 4), (20, 9), (40000, 600)]:
-        assert ae_module.compute_embedding_size(input) == expected
+        assert ae_module._compute_embedding_size(input) == expected
 
 
 def test_complete_layer_constructor():
