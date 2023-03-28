@@ -27,5 +27,4 @@ dependencies:
     - pip:
         - stellargraph==1.2.1
         - tensorflow==2.12.0
-        # Duplicated in conda dev to ensure parity with libprotobuf
-        - protobuf==3.20.3
+        - protobuf==3.20.2
