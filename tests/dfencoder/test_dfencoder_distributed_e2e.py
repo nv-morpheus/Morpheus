@@ -84,7 +84,7 @@ PRESET_CATS_FILEPATH = os.path.join(TEST_DATA_DIR, 'preset_cats.json')
 PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH = os.path.join(TEST_DATA_DIR, 'preset_numerical_scaler_params.json')
 
 
-def setup(rank, world_size):
+def setup_dist(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12345'
 
@@ -92,20 +92,20 @@ def setup(rank, world_size):
     torch.distributed.init_process_group("nccl", rank=rank, world_size=world_size)
 
 
-def cleanup():
+def cleanup_dist():
     torch.distributed.destroy_process_group()
 
 
+@pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
     world_size = 1
     torch.multiprocessing.spawn(_run_test, args=(world_size, ), nprocs=world_size, join=True)
 
 
-@pytest.mark.usefixtures("manual_seed")
 def _run_test(rank, world_size):
     torch.cuda.set_device(rank)
 
-    setup(rank, world_size)
+    setup_dist(rank, world_size)
 
     preset_cats = json.load(open(PRESET_CATS_FILEPATH, 'r'))
     preset_numerical_scaler_params = json.load(open(PRESET_NUMERICAL_SCALER_PARAMS_FILEPATH, 'r'))
@@ -181,4 +181,4 @@ def _run_test(rank, world_size):
         assert (np.median(inf_res.mean_abs_z) < 100
                 )  # expect median mean_abs_z to be < 50. Using 100 to leave some room for variability
 
-    cleanup()
+    cleanup_dist()

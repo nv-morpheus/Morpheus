@@ -111,7 +111,7 @@ def test_dfencoder_e2e():
     model.fit(
         train_df,
         epochs=10,
-        val=validation_df,
+        val_data=validation_df,
         run_validation=True,
         use_val_for_loss_stats=True,
     )
