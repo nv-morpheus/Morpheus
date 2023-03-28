@@ -141,9 +141,9 @@ def test_progress_sink(mock_morph_tqdm, config):
 @pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.parametrize('morpheus_log_level',
                          [logging.CRITICAL, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG])
-@mock.patch('mrc.Builder.make_node_full')
+@mock.patch('mrc.Builder.make_node_component')
 @mock.patch('mrc.Builder.make_edge')
-def test_log_level(mock_make_edge, mock_make_node_full, config, morpheus_log_level):
+def test_log_level(mock_make_edge, mock_make_node_component, config, morpheus_log_level):
     """
     Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
     """
@@ -163,15 +163,18 @@ def test_log_level(mock_make_edge, mock_make_node_full, config, morpheus_log_lev
     pipe.run()
 
     expected_call_count = 1 if should_be_included else 0
-    assert mock_make_node_full.call_count == expected_call_count
+    assert mock_make_node_component.call_count == expected_call_count
 
 
+@pytest.mark.usefixtures("reset_loglevel")
 @pytest.mark.use_python
 def test_thread(config):
     """
     Test ensures the monitor stage doesn't add itself to the MRC pipeline if not configured for the current log-level
     """
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
+
+    set_log_level(log_level=logging.INFO)
 
     # Create a dummy forwarding stage that allows us to save the thread id from this progress engine
     class DummyStage(SinglePortStage):
