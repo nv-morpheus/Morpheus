@@ -83,7 +83,7 @@ class MultiPortModulesStage(Stage):
         Returns input type for the current stage.
         """
 
-        return (typing.Any,)
+        return (typing.Any, )
 
     def accepted_types(self) -> typing.Tuple:
         """
@@ -95,7 +95,7 @@ class MultiPortModulesStage(Stage):
             Accepted input types.
 
         """
-        return (typing.Any,)
+        return (typing.Any, )
 
     def _build(self, builder: mrc.Builder, in_stream_pairs: typing.List[StreamPair]) -> typing.List[StreamPair]:
 

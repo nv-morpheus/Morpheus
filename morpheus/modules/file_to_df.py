@@ -80,7 +80,7 @@ def file_to_df(builder: mrc.Builder):
     cache_dir = config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
-    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
 
     if (cache_dir is None):
         cache_dir = "./.cache"

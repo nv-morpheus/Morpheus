@@ -23,7 +23,8 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus.messages import ControlMessage, MessageMeta
+from morpheus.messages import ControlMessage
+from morpheus.messages import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 

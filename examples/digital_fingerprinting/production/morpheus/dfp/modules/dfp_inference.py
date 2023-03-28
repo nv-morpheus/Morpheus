@@ -15,13 +15,14 @@
 import logging
 import time
 
-import cudf
 import mrc
 import pandas as pd
 from dfp.utils.model_cache import ModelCache
 from dfp.utils.model_cache import ModelManager
 from mlflow.tracking.client import MlflowClient
 from mrc.core import operators as ops
+
+import cudf
 
 from morpheus.messages import ControlMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage

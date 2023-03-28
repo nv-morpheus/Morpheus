@@ -18,9 +18,9 @@ import typing
 from functools import partial
 
 import mrc
+import pandas as pd
 
 import cudf
-import pandas as pd
 
 from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta

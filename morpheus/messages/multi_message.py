@@ -275,8 +275,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
 
                 else:
                     # Need to determine the boolean mask to use indexes with df.loc
-                    row_mask = self._ranges_to_mask(df,
-                                                    [(self.mess_offset, self.mess_offset + self.mess_count)])
+                    row_mask = self._ranges_to_mask(df, [(self.mess_offset, self.mess_offset + self.mess_count)])
 
                     # Now set the slice
                     df.loc[row_mask, columns] = value

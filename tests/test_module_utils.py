@@ -36,6 +36,7 @@ def test_mrc_version():
 
 
 def test_register_module():
+
     @register_module("TestModule", "test_morpheus_modules")
     def module_init(builder: mrc.Builder):
         return True
@@ -44,6 +45,7 @@ def test_register_module():
 
     # Attempting to register duplicate module raises an error.
     with pytest.raises(TypeError):
+
         @register_module(None, "test_morpheus_modules")
         def module_init2(builder: mrc.Builder):
             pass

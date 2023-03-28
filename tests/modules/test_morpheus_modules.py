@@ -14,15 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import tempfile
 import time
 
 import mrc
-import cudf
-import tempfile
-import os
 
-import morpheus.modules  # Used to load and register morpheus modules
+import cudf
+
 import morpheus.messages as messages
+import morpheus.modules  # Used to load and register morpheus modules
 
 
 def on_next(control_msg):

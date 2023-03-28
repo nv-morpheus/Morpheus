@@ -16,9 +16,10 @@ import logging
 import time
 from datetime import datetime
 
-import cudf
 import mrc
 from mrc.core import operators as ops
+
+import cudf
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE

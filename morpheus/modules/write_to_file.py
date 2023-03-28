@@ -102,6 +102,7 @@ def write_to_file(builder: mrc.Builder):
 
         # Open up the file handle
         with open(output_file, "a") as out_file:
+
             def write_to_file(x: MessageMeta):
                 lines = convert_to_strings(x.df)
 
