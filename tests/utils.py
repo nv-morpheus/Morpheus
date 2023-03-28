@@ -322,7 +322,7 @@ def create_df_with_dup_ids(tmp_path: str, dup_row=8) -> str:
     df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'), file_type=FileTypes.Auto)
     assert df.index.is_unique
 
-    data = df_to_csv(df, include_header=True, include_index_col=True, strip_newline=True)
+    data = df_to_csv(df, include_header=True, include_index_col=True, strip_newlines=True)
 
     # Duplicate id=7
     dup_row_idx = dup_row + 1  # account for the header row

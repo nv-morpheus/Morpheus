@@ -23,6 +23,7 @@ from morpheus._lib.common import read_file_to_df
 from morpheus._lib.common import Tensor
 from morpheus._lib.common import tyepid_to_numpy_str
 from morpheus._lib.common import TypeId
+from morpheus._lib.common import write_df_to_file
 
 __all__ = [
     "determine_file_type",
@@ -33,4 +34,5 @@ __all__ = [
     "Tensor",
     "tyepid_to_numpy_str",
     "TypeId",
+    "write_df_to_file",
 ]
