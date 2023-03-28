@@ -23,7 +23,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus.messages import MessageControl, MessageMeta
+from morpheus.messages import ControlMessage, MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
 
@@ -72,8 +72,8 @@ def dfp_split_users(builder: mrc.Builder):
     # Map of user ids to total number of messages. Keep indexes monotonic and increasing per user
     user_index_map: typing.Dict[str, int] = {}
 
-    def generate_control_messages(control_message: MessageControl, split_dataframes: typing.Dict[str, cudf.DataFrame]):
-        output_messages: typing.List[MessageControl] = []
+    def generate_control_messages(control_message: ControlMessage, split_dataframes: typing.Dict[str, cudf.DataFrame]):
+        output_messages: typing.List[ControlMessage] = []
 
         for user_id in sorted(split_dataframes.keys()):
             if (user_id in skip_users):
@@ -118,7 +118,7 @@ def dfp_split_users(builder: mrc.Builder):
 
         return split_dataframes
 
-    def extract_users(control_message: MessageControl):
+    def extract_users(control_message: ControlMessage):
         # logger.debug("Extracting users from message")
         if (control_message is None):
             logger.debug("No message to extract users from")

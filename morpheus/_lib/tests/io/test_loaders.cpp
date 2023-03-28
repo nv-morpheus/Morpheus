@@ -60,7 +60,7 @@ TEST_F(TestLoader, LoaderFileTest)
     data_file << string_df;
     data_file.close();
 
-    auto msg    = std::make_shared<MessageControl>();
+    auto msg    = std::make_shared<ControlMessage>();
     auto loader = FileDataLoader();
 
     EXPECT_NO_THROW(loader.load(msg, task_properties));
@@ -70,7 +70,7 @@ TEST_F(TestLoader, LoaderFileTest)
 
 TEST_F(TestLoader, LoaderGRPCTest)
 {
-    auto msg    = std::make_shared<MessageControl>();
+    auto msg    = std::make_shared<ControlMessage>();
     auto task   = nlohmann::json();
     auto loader = GRPCDataLoader();
 
@@ -79,7 +79,7 @@ TEST_F(TestLoader, LoaderGRPCTest)
 
 TEST_F(TestLoader, LoaderPayloadTest)
 {
-    auto msg    = std::make_shared<MessageControl>();
+    auto msg    = std::make_shared<ControlMessage>();
     auto task   = nlohmann::json();
     auto loader = PayloadDataLoader();
 
@@ -88,7 +88,7 @@ TEST_F(TestLoader, LoaderPayloadTest)
 
 TEST_F(TestLoader, LoaderRESTTest)
 {
-    auto msg    = std::make_shared<MessageControl>();
+    auto msg    = std::make_shared<ControlMessage>();
     auto task   = nlohmann::json();
     auto loader = RESTDataLoader();
 

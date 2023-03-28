@@ -20,24 +20,22 @@
 #include "morpheus/messages/control.hpp"
 #include "morpheus/messages/meta.hpp"
 
-#include <boost/filesystem.hpp>
 #include <glog/logging.h>
 #include <nlohmann/json.hpp>
 #include <pybind11/pybind11.h>
 #include <pymrc/utilities/object_cache.hpp>
 
+#include <filesystem>
 #include <fstream>
-#include <memory>
 
-namespace {}
+namespace py = pybind11;
 
 namespace morpheus {
 
 FileDataLoader::FileDataLoader(nlohmann::json config) : Loader(config) {}
 
-std::shared_ptr<MessageControl> FileDataLoader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
+std::shared_ptr<ControlMessage> FileDataLoader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
 {
-    namespace py = pybind11;
     VLOG(30) << "Called FileDataLoader::load()";
 
     // Aggregate dataframes for each file
@@ -64,7 +62,7 @@ std::shared_ptr<MessageControl> FileDataLoader::load(std::shared_ptr<MessageCont
     // TODO(Devin) : Migrate this to use the cudf::io interface
     for (auto& file : files)
     {
-        boost::filesystem::path path(file.value("path", ""));
+        std::filesystem::path path(file.value("path", ""));
         std::string extension = file.value("type", path.extension().string());
         // Remove the leading period
         if (!extension.empty() && extension[0] == '.')

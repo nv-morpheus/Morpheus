@@ -30,7 +30,7 @@ template class FactoryRegistry<Loader>;
 
 void LoaderRegistryProxy::register_proxy_factory_fn(
     const std::string& name,
-    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl> control_message, pybind11::dict task)>
+    std::function<std::shared_ptr<ControlMessage>(std::shared_ptr<ControlMessage> control_message, pybind11::dict task)>
         proxy_constructor,
     bool throw_if_exists)
 {
@@ -38,7 +38,7 @@ void LoaderRegistryProxy::register_proxy_factory_fn(
         name,
         [proxy_constructor](nlohmann::json config) {
             return std::make_shared<LambdaLoader>(
-                [proxy_constructor](std::shared_ptr<MessageControl> control_message, nlohmann::json task) {
+                [proxy_constructor](std::shared_ptr<ControlMessage> control_message, nlohmann::json task) {
                     pybind11::gil_scoped_acquire gil;
                     auto py_task = mrc::pymrc::cast_from_json(task);
                     return std::move(proxy_constructor(control_message, py_task));

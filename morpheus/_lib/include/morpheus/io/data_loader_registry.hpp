@@ -38,7 +38,7 @@ struct LoaderRegistryProxy
 {
     static void register_proxy_factory_fn(
         const std::string& name,
-        std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>, pybind11::dict)>
+        std::function<std::shared_ptr<ControlMessage>(std::shared_ptr<ControlMessage>, pybind11::dict)>
             proxy_constructor,
         bool throw_if_exists = true);
 

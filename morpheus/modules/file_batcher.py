@@ -24,7 +24,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus.messages import MessageControl
+from morpheus.messages import ControlMessage
 from morpheus.utils.file_utils import date_extractor
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER
@@ -83,7 +83,7 @@ def file_batcher(builder: mrc.Builder):
         "end_time": config.get("end_time"),
     }
 
-    def validate_control_message(control_message: MessageControl):
+    def validate_control_message(control_message: ControlMessage):
         if control_message.has_metadata("batching_options") and not isinstance(
                 control_message.get_metadata("batching_options"), dict):
             raise ValueError("Invalid or missing 'batching_options' metadata in control message")
@@ -158,14 +158,13 @@ def file_batcher(builder: mrc.Builder):
             timestamps.append(ts)
             full_names.append(file_name)
 
-        # df = pd.DataFrame()
         df = cudf.DataFrame()
         df["ts"] = timestamps
         df["key"] = full_names
 
         return df
 
-    def generate_cms_for_batch_periods(control_message: MessageControl, period_gb, n_groups):
+    def generate_cms_for_batch_periods(control_message: ControlMessage, period_gb, n_groups):
         data_type = control_message.get_metadata("data_type")
 
         control_messages = []
@@ -209,7 +208,7 @@ def file_batcher(builder: mrc.Builder):
 
         return merge_dictionaries(batching_opts, default_batching_opts)
 
-    def on_data(control_message: MessageControl):
+    def on_data(control_message: ControlMessage):
         try:
             validate_control_message(control_message)
 

@@ -30,10 +30,7 @@ class DataLoaderModule : public mrc::modules::SegmentModule, public mrc::modules
     using type_t = DataLoaderModule;
 
   public:
-    ~DataLoaderModule() override
-    {
-        VLOG(1) << "Called DataLoaderModule::~DataLoaderModule()";
-    }
+    ~DataLoaderModule() override = default;
 
     DataLoaderModule(std::string module_name);
     DataLoaderModule(std::string module_name, nlohmann::json _config);

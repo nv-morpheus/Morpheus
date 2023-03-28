@@ -24,7 +24,7 @@ import pandas as pd
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.messages.message_control import MessageControl
+from morpheus.messages.message_control import ControlMessage
 from morpheus.pipeline.preallocator_mixin import PreallocatorMixin
 from morpheus.pipeline.single_output_source import SingleOutputSource
 from morpheus.pipeline.stream_pair import StreamPair
@@ -134,9 +134,9 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
                 # TODO(Devin) - one CM at a time(?), don't need to submit 'inputs'
                 for control_message_conf in control_messages_conf.get("inputs", []):
                     self._records_emitted += 1
-                    control_messages.append(MessageControl(control_message_conf))
+                    control_messages.append(ControlMessage(control_message_conf))
             except Exception as e:
-                logger.error("\nError converting payload to MessageControl : {}".format(e))
+                logger.error("\nError converting payload to ControlMessage : {}".format(e))
 
         if (not self._disable_commit):
             consumer.commit(message=msg, asynchronous=self._async_commits)
@@ -182,4 +182,4 @@ class ControlMessageKafkaSourceStage(PreallocatorMixin, SingleOutputSource):
 
         source = builder.make_source(self.unique_name, self._source_generator)
 
-        return source, MessageControl
+        return source, ControlMessage

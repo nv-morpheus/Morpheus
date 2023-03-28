@@ -38,7 +38,7 @@ def test_loader_registry_contains():
 
 
 def test_loader_registry_register_loader():
-    def test_loader(control_message: messages.MessageControl, task: dict):
+    def test_loader(control_message: messages.ControlMessage, task: dict):
         task_properties = task['properties']
         if ('files' not in task_properties):
             raise ValueError("No files specified in config")
@@ -73,7 +73,7 @@ def test_loader_registry_register_loader():
 
 
 def test_loader_registry_unregister_loader():
-    def test_loader(control_message: messages.MessageControl, task: dict):
+    def test_loader(control_message: messages.ControlMessage, task: dict):
         task_properties = task['properties']
         if ('files' not in task_properties):
             raise ValueError("No files specified in config")

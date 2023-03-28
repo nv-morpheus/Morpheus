@@ -34,13 +34,13 @@ class LambdaLoader : public Loader
 
     LambdaLoader() = delete;
     LambdaLoader(
-        std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>, nlohmann::json)> lambda_load,
+        std::function<std::shared_ptr<ControlMessage>(std::shared_ptr<ControlMessage>, nlohmann::json)> lambda_load,
         nlohmann::json config = {});
 
-    std::shared_ptr<MessageControl> load(std::shared_ptr<MessageControl> message, nlohmann::json task) final;
+    std::shared_ptr<ControlMessage> load(std::shared_ptr<ControlMessage> message, nlohmann::json task) final;
 
   private:
-    std::function<std::shared_ptr<MessageControl>(std::shared_ptr<MessageControl>, nlohmann::json)> m_lambda_load;
+    std::function<std::shared_ptr<ControlMessage>(std::shared_ptr<ControlMessage>, nlohmann::json)> m_lambda_load;
 };
 #pragma GCC visibility pop
 }  // namespace morpheus

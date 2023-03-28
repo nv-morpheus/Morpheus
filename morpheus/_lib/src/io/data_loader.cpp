@@ -38,21 +38,21 @@ nlohmann::json Loader::config() const
     return m_config;
 }
 
-std::shared_ptr<MessageMeta> Loader::payload(std::shared_ptr<MessageControl> message)
+std::shared_ptr<MessageMeta> Loader::payload(std::shared_ptr<ControlMessage> message)
 {
     return std::move(message->payload());
 }
 
-std::shared_ptr<MessageControl> Loader::load(std::shared_ptr<MessageControl> message, nlohmann::json task)
+std::shared_ptr<ControlMessage> Loader::load(std::shared_ptr<ControlMessage> message, nlohmann::json task)
 {
     return std::move(message);
 }
 
-std::shared_ptr<MessageControl> DataLoader::load(std::shared_ptr<MessageControl> control_message)
+std::shared_ptr<ControlMessage> DataLoader::load(std::shared_ptr<ControlMessage> control_message)
 {
     while (control_message->has_task("load"))
     {
-        auto task      = control_message->pop_task("load");
+        auto task      = control_message->remove_task("load");
         auto loader_id = task["loader_id"];
 
         auto loader = m_loaders.find(loader_id);

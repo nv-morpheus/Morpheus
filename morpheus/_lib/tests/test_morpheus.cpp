@@ -20,31 +20,16 @@
 #include "morpheus/io/data_loader_registry.hpp"
 #include "morpheus/io/loaders/all.hpp"
 #include "morpheus/messages/meta.hpp"
-
-#include <pybind11/pybind11.h>
-
-#include "test_morpheus.hpp"
+#include "morpheus/utilities/string_util.hpp"
 
 #include <pybind11/embed.h>
+#include <pybind11/pybind11.h>
 
 #include <cstdlib>
 #include <filesystem>
-#include <memory>
 #include <random>
 #include <sstream>
 #include <stdexcept>
-
-namespace {
-std::string accum_merge(std::string lhs, std::string rhs)
-{
-    if (lhs.empty())
-    {
-        return std::move(rhs);
-    }
-
-    return std::move(lhs) + "," + std::move(rhs);
-}
-}  // namespace
 
 namespace morpheus::test {
 
@@ -95,7 +80,7 @@ std::string create_mock_csv_file(std::vector<std::string> cols, std::vector<std:
     auto sstream = std::stringstream();
 
     // Create header
-    sstream << std::accumulate(cols.begin(), cols.end(), std::string(""), accum_merge);
+    sstream << StringUtil::join(cols.begin(), cols.end(), ",");
     sstream << std::endl;
 
     // Populate with random data

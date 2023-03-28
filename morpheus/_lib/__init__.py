@@ -13,5 +13,5 @@
 
 from . import common
 from . import messages
-from . import stages
 from . import modules
+from . import stages

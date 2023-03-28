@@ -19,7 +19,7 @@ import fsspec.utils
 
 import cudf
 
-from morpheus.messages import MessageControl
+from morpheus.messages import ControlMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.loader_ids import FSSPEC_LOADER
 from morpheus.utils.loader_utils import register_loader
@@ -30,22 +30,22 @@ dask_cluster = None
 
 
 @register_loader(FSSPEC_LOADER)
-def fsspec_loader(control_message: MessageControl, task: dict) -> MessageControl:
+def fsspec_loader(control_message: ControlMessage, task: dict) -> ControlMessage:
     """
-    Loads data from external sources using the fsspec library, and returns an updated MessageControl
+    Loads data from external sources using the fsspec library, and returns an updated ControlMessage
     object with payload as MessageMeta, which contains a dataframe with file names and data.
 
     Parameters
     ----------
-    control_message : MessageControl
-        The MessageControl object containing the pipeline control message.
+    control_message : ControlMessage
+        The ControlMessage object containing the pipeline control message.
     task : typing.Dict[any, any]
         A dictionary representing the current task in the pipeline control message.
 
     Returns
     -------
-    control_message : MessageControl
-        An updated MessageControl object with payload as a MessageMeta containing a dataframe
+    control_message : ControlMessage
+        An updated ControlMessage object with payload as a MessageMeta containing a dataframe
         with file names and data.
 
     Raises

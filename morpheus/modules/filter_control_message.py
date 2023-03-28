@@ -17,7 +17,7 @@ import logging
 import mrc
 from mrc.core import operators as ops
 
-from morpheus.messages import MessageControl
+from morpheus.messages import ControlMessage
 from morpheus.utils.module_ids import FILTER_CONTROL_MESSAGE
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
@@ -61,7 +61,7 @@ def filter_control_message(builder: mrc.Builder):
             raise ValueError("Data type filtering is enabled but no data type is specified")
         filter_data_type = config["filter_data_type"]
 
-    def on_data(control_message: MessageControl):
+    def on_data(control_message: ControlMessage):
         cm_data_type = control_message.get_metadata("data_type")
 
         if enable_task_filtering:
@@ -80,10 +80,7 @@ def filter_control_message(builder: mrc.Builder):
 
         return control_message
 
-    def node_fn(obs: mrc.Observable, sub: mrc.Subscriber):
-        obs.pipe(ops.map(on_data), ops.filter(lambda x: x is not None)).subscribe(sub)
-
-    node = builder.make_node(FILTER_CONTROL_MESSAGE, mrc.core.operators.build(node_fn))
+    node = builder.make_node(FILTER_CONTROL_MESSAGE, ops.map(on_data), ops.filter(lambda x: x is not None))
 
     # Register input and output port for a module.
     builder.register_module_input("input", node)

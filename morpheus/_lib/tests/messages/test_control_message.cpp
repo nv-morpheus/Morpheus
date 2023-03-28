@@ -28,7 +28,7 @@ using namespace morpheus::test;
 
 TEST_F(TestControlMessage, InitializationTest)
 {
-    auto msg_one = MessageControl();
+    auto msg_one = ControlMessage();
 
     auto config = nlohmann::json();
     nlohmann::json task_properties;
@@ -38,14 +38,14 @@ TEST_F(TestControlMessage, InitializationTest)
     };
     config["tasks"] = {{{"type", "load"}, {"properties", task_properties}}};
 
-    auto msg_two = MessageControl(config);
+    auto msg_two = ControlMessage(config);
 
     ASSERT_EQ(msg_two.has_task("load"), true);
 }
 
 TEST_F(TestControlMessage, SetMessageTest)
 {
-    auto msg = MessageControl();
+    auto msg = ControlMessage();
 
     ASSERT_EQ(msg.config().contains("nope"), false);
 
@@ -64,8 +64,8 @@ TEST_F(TestControlMessage, SetMessageTest)
 
 TEST_F(TestControlMessage, TaskTest)
 {
-    auto msg_infer = MessageControl();
-    auto msg_train = MessageControl();
+    auto msg_infer = ControlMessage();
+    auto msg_train = ControlMessage();
 
     ASSERT_EQ(msg_infer.config().contains("some_value"), false);
 
@@ -89,7 +89,7 @@ TEST_F(TestControlMessage, TaskTest)
     msg_infer.add_task("inference", {});
     ASSERT_EQ(msg_infer.has_task("inference"), true);
 
-    msg_infer.pop_task("inference");
+    msg_infer.remove_task("inference");
     ASSERT_EQ(msg_infer.has_task("inference"), false);
 
     ASSERT_THROW(msg_infer.add_task("training", {}), std::runtime_error);
@@ -98,20 +98,20 @@ TEST_F(TestControlMessage, TaskTest)
     msg_train.config(config);
     msg_train.add_task("training", {});
     ASSERT_EQ(msg_train.has_task("training"), true);
-    msg_train.pop_task("training");
+    msg_train.remove_task("training");
     ASSERT_EQ(msg_train.has_task("training"), false);
 
     ASSERT_THROW(msg_train.add_task("inference", {}), std::runtime_error);
 
     msg_train.add_task("custom", {});
     ASSERT_EQ(msg_train.has_task("custom"), true);
-    msg_train.pop_task("custom");
+    msg_train.remove_task("custom");
     ASSERT_EQ(msg_train.has_task("custom"), false);
 }
 
 TEST_F(TestControlMessage, PayloadTest)
 {
-    auto msg = MessageControl();
+    auto msg = ControlMessage();
 
     ASSERT_EQ(msg.payload(), nullptr);
 
