@@ -13,11 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG FROM_IMAGE="rapidsai/mambaforge-cuda"
-ARG CUDA_VER=11.8
-ARG LINUX_VER=ubuntu20.04
-ARG PYTHON_VER=3.8
-FROM ${FROM_IMAGE}:cuda${CUDA_VER}-base-${LINUX_DISTRO}${LINUX_VER}-py${PYTHON_VER} AS base
+ARG FROM_IMAGE="condaforge/miniforge-pypy3"
+ARG PYTHON_VER=3.11
+ARG TAG=22.11.1-4
+FROM ${FROM_IMAGE}:${TAG} AS base
 
 WORKDIR /mlflow
 
@@ -35,15 +34,17 @@ RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
     procps && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
-# but pin python version to avoid some newer CVE
-RUN source /etc/profile.d/conda.sh && conda deactivate && conda install "tini=0.19" python=${PYTHON_VER}
+
+RUN source /opt/conda/etc/profile.d/conda.sh && conda deactivate \
+    && conda update conda python=${PYTHON_VER} && conda install "tini=0.19" \
+    && conda clean --all
 RUN /opt/conda/bin/conda env create -f docker/conda/mlflow-env.yml
 RUN sed -i 's/conda activate base/conda activate mlflow/g' ~/.bashrc
 
 SHELL ["/opt/conda/bin/conda", "run", "-n", "mlflow", "/bin/bash", "-c"]
 
 ARG TRITON_DIR=/mlflow/triton-inference-server
-ARG TRITON_VER=r23.01
+ARG TRITON_VER=r23.03
 
 RUN mkdir ${TRITON_DIR} && \
     cd ${TRITON_DIR} && \
