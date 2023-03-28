@@ -20,10 +20,9 @@
 #include "morpheus/io/serializers.hpp"
 #include "morpheus/utilities/string_util.hpp"
 
-#include <glog/logging.h>
-
 #include <exception>
 #include <memory>
+#include <sstream>
 #include <stdexcept>  // for invalid_argument, runtime_error
 #include <string>
 #include <utility>  // for forward, move, addressof
@@ -44,18 +43,24 @@ WriteToFileStage::WriteToFileStage(
         file_type = determine_file_type(filename);
     }
 
-    if (file_type == FileTypes::CSV)
+    switch (file_type)
     {
-        m_write_func = [this](auto&& PH1) { write_csv(std::forward<decltype(PH1)>(PH1)); };
-    }
-    else if (file_type == FileTypes::JSON)
-    {
+    case FileTypes::JSON: {
         m_write_func = [this](auto&& PH1) { write_json(std::forward<decltype(PH1)>(PH1)); };
+        break;
     }
-    else  // FileTypes::AUTO
-    {
-        LOG(FATAL) << "Unknown extension for file: " << filename;
-        throw std::runtime_error("Unknown extension");
+    case FileTypes::CSV: {
+        m_write_func = [this](auto&& PH1) { write_csv(std::forward<decltype(PH1)>(PH1)); };
+        break;
+    }
+    case FileTypes::PARQUET: {
+        m_write_func = [this](auto&& PH1) { write_parquet(std::forward<decltype(PH1)>(PH1)); };
+        break;
+    }
+    case FileTypes::Auto:
+    default:
+        throw std::runtime_error(
+            MORPHEUS_CONCAT_STR("Unknown extension for file: '" << filename << "'. File type: " << file_type));
     }
 
     // Enable throwing exceptions in case something fails.
@@ -75,6 +80,12 @@ void WriteToFileStage::write_csv(WriteToFileStage::sink_type_t& msg)
 {
     // Call df_to_csv passing our fstream
     df_to_csv(msg->get_info(), m_fstream, m_is_first, m_include_index_col, m_flush);
+}
+
+void WriteToFileStage::write_parquet(WriteToFileStage::sink_type_t& msg)
+{
+    // Call df_to_csv passing our fstream
+    df_to_parquet(msg->get_info(), m_fstream, m_is_first, m_include_index_col, m_flush);
 }
 
 void WriteToFileStage::close()

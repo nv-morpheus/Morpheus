@@ -17,8 +17,8 @@ import typing
 import cupy as cp
 import mrc
 import pandas as pd
-from common.data_models import SnapshotData
 
+from common.data_models import SnapshotData
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
@@ -128,7 +128,6 @@ class PreprocessingRWStage(PreprocessBaseStage):
         """
 
         snapshot_df = x.get_meta()
-
         curr_snapshots_size = len(snapshot_df)
 
         # Set snapshot_id as index this is used to get ordered snapshots based on sliding window.
@@ -175,7 +174,7 @@ class PreprocessingRWStage(PreprocessBaseStage):
         data = cp.asarray(data)
 
         seg_ids = cp.zeros((curr_snapshots_size, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, curr_snapshots_size, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + curr_snapshots_size, dtype=cp.uint32)
         seg_ids[:, 2] = self._features_len * 3
 
         memory = InferenceMemoryFIL(count=curr_snapshots_size, input__0=data, seq_ids=seg_ids)
