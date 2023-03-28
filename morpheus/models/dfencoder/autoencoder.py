@@ -217,7 +217,7 @@ class AutoEncoder(torch.nn.Module):
 
         Args:
         df (pandas DataFrame, optional): The input data to be used to initialize the numerical features.
-        If not provided, self.preset_numerical_scaler_params must be provided. 
+        If not provided, self.preset_numerical_scaler_params must be provided.
 
         Raises:
         ValueError: If both df and self.preset_numerical_scaler_params are not provided.
@@ -406,7 +406,7 @@ class AutoEncoder(torch.nn.Module):
 
         Args:
             df (dataframe, optional): the input dataframe to be used to infer metadata
-            rank (int, optional): rank of the process being used for distributed training, 
+            rank (int, optional): rank of the process being used for distributed training,
                 used only if distributed_training=True
         """
         if self.verbose:
@@ -524,17 +524,17 @@ class AutoEncoder(torch.nn.Module):
         include_swapped_input_by_feature_type,
     ):
         """
-        Preprocesses a pandas dataframe `df` for input into the autoencoder model. 
+        Preprocesses a pandas dataframe `df` for input into the autoencoder model.
 
         Args:
             df (pandas dataframe): the input dataframe to preprocess
             shuffle_rows_in_batch (bool): whether to shuffle the rows of the dataframe before processing
-            include_original_input_tensor (bool): whether to process the df into an input tensor without swapping and include 
-                it in the returned data dict. 
+            include_original_input_tensor (bool): whether to process the df into an input tensor without swapping and include
+                it in the returned data dict.
                 Note. Training required only the swapped input tensor while validation can use both.
-            include_swapped_input_by_feature_type (bool): whether to process the swapped df into num/bin/cat feature tensors and include them 
+            include_swapped_input_by_feature_type (bool): whether to process the swapped df into num/bin/cat feature tensors and include them
             in the returned data dict. This is useful for baseline performance evaluation for validation.
-        
+
         Returns:
             preprocessed_data (dict): a dict containing the preprocessed input data and targets by feature type
         """
@@ -673,7 +673,7 @@ class AutoEncoder(torch.nn.Module):
         epochs=1,
         val_data=None,
         run_validation=False,
-        use_val_for_loss_stats=True,
+        use_val_for_loss_stats=False,
         rank=None,
         world_size=None,
     ):
@@ -681,19 +681,19 @@ class AutoEncoder(torch.nn.Module):
         Does training in the specified mode (indicated by self.distrivuted_training).
 
         Args:
-            train_data: pandas df (centralized) or pytorch dataloader (distributed) used 
+            train_data: pandas df (centralized) or pytorch dataloader (distributed) used
                 for training
             epochs: number of epochs to run training
             val_data: optional pandas dataframe (centralized) or pytorch dataset (distributed)
                 for validation and loss stats
-            run_validation: boolean indicating whether to collect validation loss for each 
+            run_validation: boolean indicating whether to collect validation loss for each
                 epoch during training
-            use_val_for_loss_stats: boolean indicating whether to use the validation set 
+            use_val_for_loss_stats: boolean indicating whether to use the validation set
                 for loss statistics collection (for z score calculation)
             rank: int, the rank of the current process
             world_size: int, the total number of processes
         Raises:
-            ValueError: 
+            ValueError:
                 if run_validation or use_val_for_loss_stats is True but val is not provided
 
         """
@@ -725,13 +725,13 @@ class AutoEncoder(torch.nn.Module):
             df: pandas df used for training
             epochs: number of epochs to run training
             val: optional pandas dataframe for validation or loss stats
-            run_validation: boolean indicating whether to collect validation loss for each 
+            run_validation: boolean indicating whether to collect validation loss for each
                 epoch during training
-            use_val_for_loss_stats: boolean indicating whether to use the validation set 
+            use_val_for_loss_stats: boolean indicating whether to use the validation set
                 for loss statistics collection (for z score calculation)
 
         Raises:
-            ValueError: 
+            ValueError:
                 if run_validation or use_val_for_loss_stats is True but val is not provided
         """
         if (run_validation or use_val_for_loss_stats) and val is None:
@@ -873,8 +873,8 @@ class AutoEncoder(torch.nn.Module):
         use_val_for_loss_stats=True,
     ):
         """
-        Fit the model in the distributed fashion with early stopping based on validation loss. 
-        If run_validation is True, the val_dataset will be used for validation during training 
+        Fit the model in the distributed fashion with early stopping based on validation loss.
+        If run_validation is True, the val_dataset will be used for validation during training
         and early stopping will be applied based on patience argument.
 
         Args:
@@ -882,15 +882,15 @@ class AutoEncoder(torch.nn.Module):
             rank (int): the rank of the current process
             world_size (int): the total number of processes
             epochs (int, optional): the number of epochs to train for
-            val_dataset (pytorch dataset or dataloader, optional): the validation dataset 
+            val_dataset (pytorch dataset or dataloader, optional): the validation dataset
                 (with __iter__() that yields a batch at a time)
             run_validation (bool, optional): whether to perform validation during training
-            use_val_for_loss_stats (bool, optional): whether to populate loss stats in the 
-                main process (rank 0) for z-score calculation using the validation set. 
+            use_val_for_loss_stats (bool, optional): whether to populate loss stats in the
+                main process (rank 0) for z-score calculation using the validation set.
                 If set to False, loss stats would be populated using the train_dataloader,
                 which can be slow due to data size.
                 `True` is the default as using the validation set to populate loss stats is
-                strongly recommended (for both efficiency and model efficacy). 
+                strongly recommended (for both efficiency and model efficacy).
         """
         if run_validation and val_dataset is None:
             raise ValueError("`run_validation` is set to True but the validation set (val_dataset) is not provided.")
@@ -984,7 +984,7 @@ class AutoEncoder(torch.nn.Module):
 
     def _fit_batch(self, input_swapped, num_target, bin_target, cat_target, **kwargs):
         """
-        Forward pass on the input_swapped, then computes the losses from the predicted outputs and actual targets, 
+        Forward pass on the input_swapped, then computes the losses from the predicted outputs and actual targets,
         performs backpropagation, updates the model parameters, and returns the net loss.
 
         Args:
@@ -992,7 +992,7 @@ class AutoEncoder(torch.nn.Module):
             num_target (tensor): tensor of shape (batch_size, numerical feature count) with numerical targets
             bin_target (tensor): tensor of shape (batch_size, binary feature count) with binary targets
             cat_target (list): list of size (categorical feature count), each entry is a 1-d tensor of shape (batch_size) containing the categorical targets
-        
+
         Returns:
             net_loss (float): total loss computed as the weighted sum of the mse, bce and cce losses
         """
@@ -1086,7 +1086,7 @@ class AutoEncoder(torch.nn.Module):
 
     def _validate_batch(self, input_original, input_swapped, num_target, bin_target, cat_target, **kwargs):
         """
-        Forward pass on the validation inputs, then computes the losses from the predicted outputs and actual targets, 
+        Forward pass on the validation inputs, then computes the losses from the predicted outputs and actual targets,
         and returns the net loss.
 
         Args:
@@ -1095,7 +1095,7 @@ class AutoEncoder(torch.nn.Module):
             num_target (tensor): tensor of shape (batch_size, numerical feature count) with numerical targets
             bin_target (tensor): tensor of shape (batch_size, binary feature count) with binary targets
             cat_target (list): list of size (categorical feature count), each entry is a 1-d tensor of shape (batch_size) containing the categorical targets
-        
+
         Returns:
             A tuple containing two floats:
             - orig_net_loss: the net loss when passing `input_original` through the model
@@ -1193,7 +1193,7 @@ class AutoEncoder(torch.nn.Module):
             dataset (torch.utils.data.Dataset): dataset for inference
             preloaded_df: a pandas dataframe that contains the original data
             return_abs: a boolean flag indicating whether the absolute value of the loss scalers should be returned.
-            
+
         Returns:
             result (pandas dataframe): inference result with losses of each feature
         """
@@ -1394,7 +1394,7 @@ class AutoEncoder(torch.nn.Module):
 
     def decode_outputs_to_df(self, num, bin, cat):
         """
-        Converts the model outputs of the numerical, binary, and categorical features 
+        Converts the model outputs of the numerical, binary, and categorical features
         back into a pandas dataframe.
         """
         row_count = len(num)
@@ -1466,8 +1466,8 @@ class AutoEncoder(torch.nn.Module):
 
     def get_anomaly_score_losses(self, df):
         """
-        Run the input dataframe `df` through the autoencoder to get the recovery losses by feature type 
-        (numerical/boolean/categorical). 
+        Run the input dataframe `df` through the autoencoder to get the recovery losses by feature type
+        (numerical/boolean/categorical).
         """
         self.model.eval()
 

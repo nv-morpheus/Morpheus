@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import typing
 
 import pandas as pd
 import pytest
@@ -74,13 +75,13 @@ def train_ae():
 
 
 @pytest.fixture(scope="module")
-def _train_df():
+def _train_df() -> pd.DataFrame:
     input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
     yield read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
 
 
 @pytest.fixture(scope="function")
-def train_df(_train_df):
+def train_df(_train_df) -> typing.Generator[pd.DataFrame, None, None]:
     yield _train_df.copy(deep=True)
 
 
@@ -188,7 +189,7 @@ def test_auto_encoder_constructor_default_vals():
     assert ae.n_megabatches == 1
 
 
-def test_auto_encoder_constructor(train_ae):
+def test_auto_encoder_constructor(train_ae: autoencoder.AutoEncoder):
     """
     Test copnstructor invokation using the values used by `train_ae_stage`
     """
@@ -226,7 +227,7 @@ def test_auto_encoder_get_scaler():
 
 def test_auto_encoder_init_numeric(filter_probs_df):
     ae = autoencoder.AutoEncoder()
-    ae.init_numeric(filter_probs_df)
+    ae._init_numeric(filter_probs_df)
 
     expected_features = {
         'v1': {
@@ -249,7 +250,7 @@ def test_auto_encoder_init_numeric(filter_probs_df):
     compare_numeric_features(ae.numeric_fts, expected_features)
 
 
-def test_auto_encoder_fit(train_ae, train_df):
+def test_auto_encoder_fit(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
 
     expected_numeric_features = {
@@ -287,7 +288,7 @@ def test_auto_encoder_fit(train_ae, train_df):
 
 
 @pytest.mark.usefixtures("manual_seed")
-def test_auto_encoder_get_anomaly_score(train_ae, train_df):
+def test_auto_encoder_get_anomaly_score(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
     anomaly_score = train_ae.get_anomaly_score(train_df)
     assert len(anomaly_score) == len(train_df)
@@ -295,7 +296,7 @@ def test_auto_encoder_get_anomaly_score(train_ae, train_df):
     assert round(anomaly_score.std().item(), 2) == 0.11
 
 
-def test_auto_encoder_prepare_df(train_ae, train_df):
+def test_auto_encoder_prepare_df(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
 
     dfc = train_df.copy(deep=True)
@@ -325,7 +326,7 @@ def test_auto_encoder_prepare_df(train_ae, train_df):
             assert '_other' not in prepared_df[cat].values
 
 
-def test_build_input_tensor(train_ae, train_df):
+def test_build_input_tensor(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
     prepared_df = train_ae.prepare_df(train_df)
     tensor = train_ae.build_input_tensor(prepared_df)
@@ -336,7 +337,7 @@ def test_build_input_tensor(train_ae, train_df):
 
 
 @pytest.mark.usefixtures("manual_seed")
-def test_auto_encoder_get_results(train_ae, train_df):
+def test_auto_encoder_get_results(train_ae: autoencoder.AutoEncoder, train_df: pd.DataFrame):
     train_ae.fit(train_df, epochs=1)
     results = train_ae.get_results(train_df)
 

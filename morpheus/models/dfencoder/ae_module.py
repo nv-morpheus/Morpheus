@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 from collections import OrderedDict
-
+import logging
 import torch
 
 
@@ -37,7 +36,7 @@ class CompleteLayer(torch.nn.Module):
     """Impliments a layer with linear transformation and optional activation and dropout. """
 
     def __init__(self, in_dim, out_dim, activation=None, dropout=None, *args, **kwargs):
-        """ Initializes a CompleteLayer object with given input and output dimensions, 
+        """ Initializes a CompleteLayer object with given input and output dimensions,
         activation function, and dropout probability.
 
         Args:
@@ -69,7 +68,7 @@ class CompleteLayer(torch.nn.Module):
         """Interprets the name of the activation function and returns the appropriate PyTorch function.
 
         Args:
-            act (str, optional): The name of the activation function to interpret. 
+            act (str, optional): The name of the activation function to interpret.
                 Defaults to None if no activation function is desired.
 
         Raises:
@@ -138,9 +137,9 @@ class AEModule(torch.nn.Module):
 
         Args:
             verbose (bool): If True, log information during the construction of the model.
-            encoder_layers (list[int], optional): List of hidden layer sizes for the encoder. 
+            encoder_layers (list[int], optional): List of hidden layer sizes for the encoder.
                 If not given, a default-sized encoder is used. Defaults to None.
-            decoder_layers (list[int], optional): List of hidden layer sizes for the decoder. 
+            decoder_layers (list[int], optional): List of hidden layer sizes for the decoder.
                 Defaults to None.
             encoder_dropout (Union[float, List[float]], optional): The dropout rate(s) for the encoder layer(s).
                 Defaults to None.
@@ -150,7 +149,7 @@ class AEModule(torch.nn.Module):
                 Defaults to None.
             decoder_activations (List[str], optional): The activation function(s) for the decoder layer(s).
                 Defaults to None.
-            activation (str, optional): The default activation function used for encoder and decoder layers if 
+            activation (str, optional): The default activation function used for encoder and decoder layers if
                 not specified in encoder_activations or decoder_activations. Defaults to "relu".
             device (str, optional): The device to run the model on.
         """
@@ -299,7 +298,7 @@ class AEModule(torch.nn.Module):
             input (torch.Tensor): The input tensor.
 
         Returns:
-            tuple of Union[torch.Tensor, List[torch.Tensor]]: A tuple containing the numeric (Tensor), 
+            tuple of Union[torch.Tensor, List[torch.Tensor]]: A tuple containing the numeric (Tensor),
                 binary (Tensor), and categorical outputs (List[torch.Tensor]) of the model.
         """
         encoding = self.encode(input)
@@ -311,7 +310,7 @@ class AEModule(torch.nn.Module):
 
         Args:
             x (torch.Tensor): The input tensor to encode.
-            layers (int, optional): The number of layers to use for encoding. 
+            layers (int, optional): The number of layers to use for encoding.
                 Defaults to None which will use all encoder layers.
 
         Returns:
@@ -329,11 +328,11 @@ class AEModule(torch.nn.Module):
 
         Args:
             x (torch.Tensor): The encoded input tensor to decode.
-            layers (int, optional): The number of layers to use for decoding. 
+            layers (int, optional): The number of layers to use for decoding.
                 Defaults to None which will use all decoder layers.
 
         Returns:
-            tuple of Union[torch.Tensor, List[torch.Tensor]]: A tuple containing the numeric (Tensor), 
+            tuple of Union[torch.Tensor, List[torch.Tensor]]: A tuple containing the numeric (Tensor),
                 binary (Tensor), and categorical outputs (List[torch.Tensor]) of the model.
         """
         if layers is None:
@@ -351,7 +350,7 @@ class AEModule(torch.nn.Module):
             x (torch.Tensor): The decoded input tensor.
 
         Returns:
-            tuple of Union[torch.Tensor, List[torch.Tensor]]: A tuple containing the numeric (Tensor), 
+            tuple of Union[torch.Tensor, List[torch.Tensor]]: A tuple containing the numeric (Tensor),
                 binary (Tensor), and categorical outputs (List[torch.Tensor]) of the model.
         """
         num = self.numeric_output(x)
