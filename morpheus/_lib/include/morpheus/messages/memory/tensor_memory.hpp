@@ -23,10 +23,8 @@
 
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>  // for size_t
-#include <memory>   // for shared_ptr
+#include <memory>  // for shared_ptr
 #include <string>
-#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -53,7 +51,7 @@ class TensorMemory
      *
      * @param count
      */
-    TensorMemory(size_t count);
+    TensorMemory(TensorIndex count);
 
     /**
      * @brief Construct a new Tensor Memory object
@@ -61,11 +59,10 @@ class TensorMemory
      * @param count
      * @param tensors
      */
-    TensorMemory(size_t count, TensorMap&& tensors);
+    TensorMemory(TensorIndex count, TensorMap&& tensors);
     virtual ~TensorMemory() = default;
 
-    size_t count{0};
-    TensorMap tensors;
+    TensorIndex count{0};
 
     /**
      * @brief Verify whether the specified tensor name is present in the tensor memory
@@ -75,16 +72,6 @@ class TensorMemory
      * @return false
      */
     bool has_tensor(const std::string& name) const;
-
-    /**
-     * @brief Copy tensor ranges
-     *
-     * @param ranges
-     * @param num_selected_rows
-     * @return TensorMap
-     */
-    TensorMap copy_tensor_ranges(const std::vector<std::pair<TensorIndex, TensorIndex>>& ranges,
-                                 size_t num_selected_rows) const;
 
     /**
      * @brief Get the tensor object identified by `name`
@@ -114,12 +101,28 @@ class TensorMemory
     void set_tensor(const std::string& name, TensorObject&& tensor);
 
     /**
+     * @brief Get a reference to the internal tensors map
+     *
+     * @return const TensorMap&
+     */
+    const TensorMap& get_tensors() const;
+
+    /**
      * @brief Set the tensors object
      *
      * @param tensors
      * @throws std::length_error If the number of rows in the `tensors` do not match `count`.
      */
     void set_tensors(TensorMap&& tensors);
+
+    /**
+     * @brief Copy tensor ranges
+     *
+     * @param ranges
+     * @param num_selected_rows
+     * @return TensorMap
+     */
+    TensorMap copy_tensor_ranges(const std::vector<RangeType>& ranges, TensorIndex num_selected_rows) const;
 
   protected:
     /**
@@ -145,6 +148,9 @@ class TensorMemory
      * @throws std::runtime_error If no tensor matching `name` exists
      */
     void verify_tensor_exists(const std::string& name) const;
+
+  private:
+    TensorMap m_tensors;
 };
 
 /****** TensorMemoryInterfaceProxy *************************/
@@ -161,15 +167,30 @@ struct TensorMemoryInterfaceProxy
      * @param tensors : Map of string on to cupy arrays
      * @return std::shared_ptr<TensorMemory>
      */
-    static std::shared_ptr<TensorMemory> init(std::size_t count, pybind11::object& tensors);
+    static std::shared_ptr<TensorMemory> init(TensorIndex count, pybind11::object& tensors);
 
     /**
      * @brief Get the count object
      *
      * @param self
-     * @return std::size_t
+     * @return TensorIndex
      */
-    static std::size_t get_count(TensorMemory& self);
+    static TensorIndex get_count(TensorMemory& self);
+
+    /**
+     * @brief Returns a list of the current tensor names
+     *
+     * @param self
+     * @return std::vector<std::string>
+     */
+    static std::vector<std::string> tensor_names_getter(TensorMemory& self);
+
+    /**
+     * @brief Returns true if a tensor with the requested name exists in the tensors object
+     *
+     * @param name Tensor name to lookup
+     */
+    static bool has_tensor(TensorMemory& self, std::string name);
 
     /**
      * @brief Get the tensors converted to CuPy arrays. Pybind11 will convert the std::map to a Python dict.

@@ -15,14 +15,17 @@
  * limitations under the License.
  */
 
+#include "morpheus/io/deserializers.hpp"  // for read_file_to_df
+#include "morpheus/io/serializers.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 #include "morpheus/objects/fiber_queue.hpp"
-#include "morpheus/objects/file_types.hpp"
+#include "morpheus/objects/file_types.hpp"  // for FileTypes, determine_file_type
 #include "morpheus/objects/filter_source.hpp"
 #include "morpheus/objects/tensor_object.hpp"  // for TensorObject
 #include "morpheus/objects/wrapped_tensor.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
+#include <pybind11/attr.h>
 #include <pybind11/pybind11.h>
 
 #include <memory>
@@ -41,10 +44,14 @@ PYBIND11_MODULE(common, m)
         )pbdoc";
 
     // Load the cudf helpers
-    load_cudf_helpers();
+    CudfHelper::load();
 
     py::class_<TensorObject>(m, "Tensor")
-        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface);
+        .def_property_readonly("__cuda_array_interface__", &TensorObjectInterfaceProxy::cuda_array_interface)
+        // No need to keep_alive here since cupy arrays have an owner object
+        .def("to_cupy", &TensorObjectInterfaceProxy::to_cupy)
+        // Need to set keep_alive here to keep the cupy array alive as long as the Tensor is
+        .def_static("from_cupy", &TensorObjectInterfaceProxy::from_cupy, py::keep_alive<0, 1>());
 
     py::class_<FiberQueue, std::shared_ptr<FiberQueue>>(m, "FiberQueue")
         .def(py::init<>(&FiberQueueInterfaceProxy::init), py::arg("max_size"))
@@ -75,9 +82,16 @@ PYBIND11_MODULE(common, m)
                          "'auto' to determine from the file extension.")
         .value("Auto", FileTypes::Auto)
         .value("JSON", FileTypes::JSON)
-        .value("CSV", FileTypes::CSV);
+        .value("CSV", FileTypes::CSV)
+        .value("PARQUET", FileTypes::PARQUET);
 
-    m.def("determine_file_type", &FileTypesInterfaceProxy::determine_file_type);
+    m.def("determine_file_type", &determine_file_type, py::arg("filename"));
+    m.def("read_file_to_df", &read_file_to_df, py::arg("filename"), py::arg("file_type") = FileTypes::Auto);
+    m.def("write_df_to_file",
+          &SerializersProxy::write_df_to_file,
+          py::arg("df"),
+          py::arg("filename"),
+          py::arg("file_type") = FileTypes::Auto);
 
     py::enum_<FilterSource>(
         m, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")

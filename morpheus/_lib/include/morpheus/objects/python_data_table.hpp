@@ -18,7 +18,7 @@
 #pragma once
 
 #include "morpheus/objects/data_table.hpp"  // for IDataTable
-#include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info_data.hpp"
 
 #include <cudf/types.hpp>      // for size_type
 #include <pybind11/pytypes.h>  // for object

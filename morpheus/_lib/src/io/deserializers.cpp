@@ -17,11 +17,13 @@
 
 #include "morpheus/io/deserializers.hpp"
 
+#include "morpheus/utilities/cudf_util.hpp"  // for CudfHelper
 #include "morpheus/utilities/stage_util.hpp"
+#include "morpheus/utilities/string_util.hpp"
 
 #include <cudf/column/column.hpp>
 #include <cudf/io/csv.hpp>
-#include <cudf/io/json.hpp>
+#include <cudf/io/parquet.hpp>
 #include <cudf/scalar/scalar.hpp>  // for string_scalar
 #include <cudf/strings/replace.hpp>
 #include <cudf/strings/strings_column_view.hpp>
@@ -29,15 +31,24 @@
 #include <cudf/types.hpp>        // for cudf::type_id
 #include <ext/alloc_traits.h>
 #include <glog/logging.h>
+#include <pybind11/pybind11.h>  // IWYU pragma: keep
 
 #include <algorithm>
 #include <cstddef>
-#include <filesystem>
 #include <memory>
-#include <ostream>  // needed for logging
 #include <regex>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
+// We're already including pybind11.h, and including only gil.h as IWYU suggests yields an undefined symbol error
+// IWYU pragma: no_include <pybind11/gil.h>
+
+namespace {
+const std::regex IndexRegex(R"(^\s*(unnamed: 0|id)\s*$)",
+                            std::regex_constants::ECMAScript | std::regex_constants::icase);
+
+const std::regex UnnamedRegex(R"(^\s*unnamed: 0\s*$)", std::regex_constants::ECMAScript | std::regex_constants::icase);
+}  // namespace
 
 namespace morpheus {
 
@@ -93,51 +104,88 @@ cudf::io::table_with_metadata load_json_table(cudf::io::json_reader_options&& js
     return tbl;
 }
 
-cudf::io::table_with_metadata load_table_from_file(const std::string& filename)
+cudf::io::table_with_metadata load_table_from_file(const std::string& filename, FileTypes file_type)
 {
-    auto file_path = std::filesystem::path(filename);
+    if (file_type == FileTypes::Auto)
+    {
+        file_type = determine_file_type(filename);  // throws if it is unable to determine the type
+    }
 
-    if (file_path.extension() == ".json" || file_path.extension() == ".jsonlines")
+    cudf::io::table_with_metadata table;
+
+    switch (file_type)
     {
-        // First, load the file into json
+    case FileTypes::JSON: {
         auto options = cudf::io::json_reader_options::builder(cudf::io::source_info{filename}).lines(true);
-        return load_json_table(options.build());
+        table        = load_json_table(options.build());
+        break;
     }
-    else if (file_path.extension() == ".csv")
-    {
+    case FileTypes::CSV: {
         auto options = cudf::io::csv_reader_options::builder(cudf::io::source_info{filename});
-        return cudf::io::read_csv(options.build());
+        table        = cudf::io::read_csv(options.build());
+        break;
     }
-    else
+    case FileTypes::PARQUET: {
+        auto options = cudf::io::parquet_reader_options::builder(cudf::io::source_info{filename});
+        table        = cudf::io::read_parquet(options.build());
+        break;
+    }
+    case FileTypes::Auto:
+    default:
+        throw std::logic_error(MORPHEUS_CONCAT_STR("Unsupported filetype: " << file_type));
+    }
+
+    if (!table.tbl)
     {
-        LOG(FATAL) << "Unknown extension for file: " << filename;
-        throw std::runtime_error("Unknown extension");
+        throw std::runtime_error(MORPHEUS_CONCAT_STR("Failed to load file '" << filename << "' as type " << file_type));
     }
+
+    return table;
 }
 
-int get_index_col_count(cudf::io::table_with_metadata& data_table)
+pybind11::object read_file_to_df(const std::string& filename, FileTypes file_type)
 {
-    int index_col_count = 0;
+    auto table          = load_table_from_file(filename, file_type);
+    int index_col_count = prepare_df_index(table);
+
+    pybind11::gil_scoped_acquire gil;
+    return CudfHelper::table_from_table_with_metadata(std::move(table), index_col_count);
+}
+
+int get_index_col_count(const cudf::io::table_with_metadata& data_table)
+{
+    int index_col_count   = 0;
+    const auto& col_names = data_table.metadata.column_names;
 
     // Check if we have a first column with INT64 data type
-    if (data_table.metadata.schema_info.size() >= 1 &&
-        data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
+    if (col_names.size() >= 1 && data_table.tbl->get_column(0).type().id() == cudf::type_id::INT64)
     {
-        std::regex index_regex(R"((unnamed: 0|id))", std::regex_constants::ECMAScript | std::regex_constants::icase);
-
         // Get the column name
-        auto col_name = data_table.metadata.schema_info[0].name;
+        const auto& col_name = col_names[0];
 
         // Check it against some common terms
-        if (std::regex_search(col_name, index_regex))
+        if (std::regex_search(col_name, IndexRegex))
         {
-            // Also, if its the hideous 'Unnamed: 0', then just use an empty string
-            if (col_name == "Unnamed: 0")
-            {
-                data_table.metadata.schema_info[0].name = "";
-            }
-
             index_col_count = 1;
+        }
+    }
+
+    return index_col_count;
+}
+
+int prepare_df_index(cudf::io::table_with_metadata& data_table)
+{
+    const int index_col_count = get_index_col_count(data_table);
+
+    if (index_col_count > 0)
+    {
+        auto& col_names = data_table.metadata.column_names;
+        auto& col_name  = col_names[0];
+
+        // Also, if its the hideous 'Unnamed: 0', then just use an empty string
+        if (std::regex_search(col_name, UnnamedRegex))
+        {
+            col_name.clear();
         }
     }
 

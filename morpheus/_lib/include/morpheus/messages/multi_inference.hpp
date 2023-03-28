@@ -17,15 +17,13 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/inference_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
-
-#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -62,13 +60,15 @@ class MultiInferenceMessage : public DerivedMultiMessage<MultiInferenceMessage, 
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      */
-    MultiInferenceMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                          std::size_t mess_offset,
-                          std::size_t mess_count,
-                          std::shared_ptr<morpheus::InferenceMemory> memory,
-                          std::size_t offset,
-                          std::size_t count);
+    MultiInferenceMessage(std::shared_ptr<MessageMeta> meta,
+                          TensorIndex mess_offset              = 0,
+                          TensorIndex mess_count               = -1,
+                          std::shared_ptr<TensorMemory> memory = nullptr,
+                          TensorIndex offset                   = 0,
+                          TensorIndex count                    = -1,
+                          std::string id_tensor_name           = "seq_ids");
 
     /**
      * @brief Returns the input tensor for the given `name`.
@@ -110,14 +110,16 @@ struct MultiInferenceMessageInterfaceProxy : public MultiTensorMessageInterfaceP
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      * @return std::shared_ptr<MultiInferenceMessage>
      */
     static std::shared_ptr<MultiInferenceMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                       cudf::size_type mess_offset,
-                                                       cudf::size_type mess_count,
-                                                       std::shared_ptr<InferenceMemory> memory,
-                                                       cudf::size_type offset,
-                                                       cudf::size_type count);
+                                                       TensorIndex mess_offset,
+                                                       TensorIndex mess_count,
+                                                       std::shared_ptr<TensorMemory> memory,
+                                                       TensorIndex offset,
+                                                       TensorIndex count,
+                                                       std::string id_tensor_name);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

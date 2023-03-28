@@ -14,8 +14,11 @@
 # limitations under the License.
 
 import dataclasses
+import typing
 
 import morpheus._lib.messages as _messages
+from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.message_meta import MessageMeta
 from morpheus.messages.multi_tensor_message import MultiTensorMessage
 
 
@@ -33,6 +36,22 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
     into the inference batch data.
     """
 
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
+
     @property
     def inputs(self):
         """
@@ -45,12 +64,6 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
 
         """
         return self.tensors
-
-    def __getstate__(self):
-        return self.__dict__
-
-    def __setstate__(self, d):
-        self.__dict__ = d
 
     def get_input(self, name: str):
         """
@@ -73,33 +86,6 @@ class MultiInferenceMessage(MultiTensorMessage, cpp_class=_messages.MultiInferen
         """
         return self.get_tensor(name)
 
-    def get_slice(self, start, stop):
-        """
-        Returns sliced batches based on offsets supplied. Automatically calculates the correct `mess_offset`
-        and `mess_count`.
-
-        Parameters
-        ----------
-        start : int
-            Start offset address.
-        stop : int
-            Stop offset address.
-
-        Returns
-        -------
-        `MultiInferenceMessage`
-            A new `MultiInferenceMessage` with sliced offset and count.
-
-        """
-        mess_start = self.mess_offset + self.seq_ids[start, 0].item()
-        mess_stop = self.mess_offset + self.seq_ids[stop - 1, 0].item() + 1
-        return MultiInferenceMessage(meta=self.meta,
-                                     mess_offset=mess_start,
-                                     mess_count=mess_stop - mess_start,
-                                     memory=self.memory,
-                                     offset=start,
-                                     count=stop - start)
-
 
 @dataclasses.dataclass
 class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiInferenceNLPMessage):
@@ -107,6 +93,24 @@ class MultiInferenceNLPMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
     A stronger typed version of `MultiInferenceMessage` that is used for NLP workloads. Helps ensure the
     proper inputs are set and eases debugging.
     """
+
+    required_tensors: typing.ClassVar[typing.List[str]] = ["input_ids", "input_mask", "seq_ids"]
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
 
     @property
     def input_ids(self):
@@ -158,6 +162,24 @@ class MultiInferenceFILMessage(MultiInferenceMessage, cpp_class=_messages.MultiI
     A stronger typed version of `MultiInferenceMessage` that is used for FIL workloads. Helps ensure the
     proper inputs are set and eases debugging.
     """
+
+    required_tensors: typing.ClassVar[typing.List[str]] = ["input__0", "seq_ids"]
+
+    def __init__(self,
+                 *,
+                 meta: MessageMeta,
+                 mess_offset: int = 0,
+                 mess_count: int = -1,
+                 memory: TensorMemory = None,
+                 offset: int = 0,
+                 count: int = -1):
+
+        super().__init__(meta=meta,
+                         mess_offset=mess_offset,
+                         mess_count=mess_count,
+                         memory=memory,
+                         offset=offset,
+                         count=count)
 
     @property
     def input__0(self):

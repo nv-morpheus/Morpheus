@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "morpheus_export.h"
+
 #include "morpheus/types.hpp"  // for ShapeType, TensorIndex
 
 #include <algorithm>   // IWYU pragma: keep
@@ -41,7 +43,7 @@ namespace morpheus {
  * @note A tensor whose values are laid out in the storage starting from the rightmost
  * dimension onward (that is, moving along rows for a 2D tensor) is defined as contiguous.
  */
-struct TensorUtils
+struct MORPHEUS_EXPORT TensorUtils
 {
     /**
      * @brief Write a formatted shape to a stream
@@ -92,7 +94,7 @@ struct TensorUtils
      * @param stride
      * @return ShapeType
      */
-    template <typename IndexT, typename SrcIndexT = IndexT>
+    template <typename IndexT = TensorIndex, typename SrcIndexT = IndexT>
     static std::vector<IndexT> get_element_stride(const std::vector<SrcIndexT>& stride)
     {
         std::vector<IndexT> tensor_stride(stride.size());

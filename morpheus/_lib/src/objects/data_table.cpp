@@ -18,6 +18,7 @@
 #include "morpheus/objects/data_table.hpp"
 
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info_data.hpp"
 
 #include <glog/logging.h>
 #include <pybind11/gil.h>
@@ -29,12 +30,7 @@
 
 namespace morpheus {
 
-TableInfo IDataTable::get_info(std::vector<std::string> column_names) const
-{
-    return this->get_info(0, -1, std::move(column_names));
-}
-
-TableInfo IDataTable::get_info(cudf::size_type start, cudf::size_type stop, std::vector<std::string> column_names) const
+TableInfo IDataTable::get_info() const
 {
     CHECK_EQ(PyGILState_Check(), 0)
         << "Cannot hold the Python GIL when accessing `get_info()`. Please release it first or deadlocks may occur.";
@@ -43,20 +39,13 @@ TableInfo IDataTable::get_info(cudf::size_type start, cudf::size_type stop, std:
     std::shared_lock lock(m_mutex);
 
     // Get the table info data
-    auto table_info_data = this->get_table_data().get_slice(start, stop, std::move(column_names));
+    auto table_info_data = this->get_table_data();
 
     // From this, create a new TableInfo
     return {this->shared_from_this(), std::move(lock), std::move(table_info_data)};
 }
 
-MutableTableInfo IDataTable::get_mutable_info(std::vector<std::string> column_names) const
-{
-    return this->get_mutable_info(0, -1, std::move(column_names));
-}
-
-MutableTableInfo IDataTable::get_mutable_info(cudf::size_type start,
-                                              cudf::size_type stop,
-                                              std::vector<std::string> column_names) const
+MutableTableInfo IDataTable::get_mutable_info() const
 {
     CHECK_EQ(PyGILState_Check(), 0) << "Cannot hold the Python GIL when accessing `get_mutable_info()`. Please release "
                                        "it first or deadlocks may occur.";
@@ -65,7 +54,7 @@ MutableTableInfo IDataTable::get_mutable_info(cudf::size_type start,
     std::unique_lock lock(m_mutex);
 
     // Get the table info data
-    auto table_info_data = this->get_table_data().get_slice(start, stop, std::move(column_names));
+    auto table_info_data = this->get_table_data();
 
     // From this, create a new TableInfo
     return {this->shared_from_this(), std::move(lock), std::move(table_info_data)};

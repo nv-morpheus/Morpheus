@@ -17,7 +17,6 @@ channels:
     - rapidsai
     - nvidia
     - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
-    - nvidia/label/cuda-11.5.2 # For cuda-nvml-dev=11.5, which is not published under nvidia channel yet.
     - stellargraph
     - conda-forge
 dependencies:

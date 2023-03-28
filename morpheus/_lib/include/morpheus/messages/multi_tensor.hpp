@@ -21,13 +21,12 @@
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex, RangeType
 
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>
 #include <memory>
 #include <string>
-#include <utility>  // for pair
 #include <vector>
 
 namespace morpheus {
@@ -72,17 +71,20 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in tensor memory instance
      * @param count Message count in tensor memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      */
-    MultiTensorMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                       std::size_t mess_offset,
-                       std::size_t mess_count,
-                       std::shared_ptr<morpheus::TensorMemory> memory,
-                       std::size_t offset,
-                       std::size_t count);
+    MultiTensorMessage(std::shared_ptr<MessageMeta> meta,
+                       TensorIndex mess_offset              = 0,
+                       TensorIndex mess_count               = -1,
+                       std::shared_ptr<TensorMemory> memory = nullptr,
+                       TensorIndex offset                   = 0,
+                       TensorIndex count                    = -1,
+                       std::string id_tensor_name           = "seq_ids");
 
     std::shared_ptr<morpheus::TensorMemory> memory;
-    std::size_t offset{0};
-    std::size_t count{0};
+    TensorIndex offset{0};
+    TensorIndex count{0};
+    std::string id_tensor_name;
 
     /**
      * @brief Returns a tensor with the given name.
@@ -112,15 +114,22 @@ class MultiTensorMessage : public DerivedMultiMessage<MultiTensorMessage, MultiM
      */
     void set_tensor(const std::string& name, const TensorObject& value);
 
+    /**
+     * @brief Get the tensor that holds message ID information. Equivalent to `get_tensor(id_tensor_name)`
+     *
+     * @return const TensorObject
+     */
+    TensorObject get_id_tensor() const;
+
   protected:
-    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, std::size_t start, std::size_t stop) const override;
+    void get_slice_impl(std::shared_ptr<MultiMessage> new_message, TensorIndex start, TensorIndex stop) const override;
 
     void copy_ranges_impl(std::shared_ptr<MultiMessage> new_message,
-                          const std::vector<std::pair<std::size_t, std::size_t>>& ranges,
-                          size_t num_selected_rows) const override;
+                          const std::vector<RangeType>& ranges,
+                          TensorIndex num_selected_rows) const override;
 
-    std::shared_ptr<morpheus::TensorMemory> copy_input_ranges(
-        const std::vector<std::pair<std::size_t, std::size_t>>& ranges, std::size_t num_selected_rows) const;
+    std::shared_ptr<morpheus::TensorMemory> copy_input_ranges(const std::vector<RangeType>& ranges,
+                                                              TensorIndex num_selected_rows) const;
 
     TensorObject get_tensor_impl(const std::string& name) const;
 };
@@ -141,14 +150,16 @@ struct MultiTensorMessageInterfaceProxy
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      * @return std::shared_ptr<MultiTensorMessage>
      */
     static std::shared_ptr<MultiTensorMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                    std::size_t mess_offset,
-                                                    std::size_t mess_count,
+                                                    TensorIndex mess_offset,
+                                                    TensorIndex mess_count,
                                                     std::shared_ptr<TensorMemory> memory,
-                                                    std::size_t offset,
-                                                    std::size_t count);
+                                                    TensorIndex offset,
+                                                    TensorIndex count,
+                                                    std::string id_tensor_name);
 
     /**
      * @brief Returns a shared pointer of a tensor memory object
@@ -161,17 +172,33 @@ struct MultiTensorMessageInterfaceProxy
      * @brief Message offset in tensor memory object
      *
      * @param self
-     * @return std::size_t
+     * @return TensorIndex
      */
-    static std::size_t offset(MultiTensorMessage& self);
+    static TensorIndex offset(MultiTensorMessage& self);
 
     /**
      * @brief Messages count in tensor memory object
      *
      * @param self
-     * @return std::size_t
+     * @return TensorIndex
      */
-    static std::size_t count(MultiTensorMessage& self);
+    static TensorIndex count(MultiTensorMessage& self);
+
+    /**
+     * @brief Gets the `id_tensor_name` property
+     *
+     * @param self
+     * @return std::string Name of `id_tensor_name`
+     */
+    static std::string id_tensor_name_getter(MultiTensorMessage& self);
+
+    /**
+     * @brief Sets the `id_tensor_name` property
+     *
+     * @param self
+     * @param id_tensor_name New name of `id_tensor_name` property
+     */
+    static void id_tensor_name_setter(MultiTensorMessage& self, std::string id_tensor_name);
 
     /**
      * @brief Returns the tensor tensor for a given name
@@ -182,6 +209,14 @@ struct MultiTensorMessageInterfaceProxy
      * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_tensor(MultiTensorMessage& self, const std::string& name);
+
+    /**
+     * @brief Get the tensor that holds message ID information. Equivalent to `get_tensor(id_tensor_name)`
+     *
+     * @param self
+     * @return pybind11::object A cupy.ndarray object
+     */
+    static pybind11::object get_id_tensor(MultiTensorMessage& self);
 
     /**
      * @brief Same as `get_tensor` but used when the method is being bound to a python property

@@ -18,19 +18,21 @@
 #pragma once
 
 #include "morpheus/messages/meta.hpp"
+#include "morpheus/types.hpp"
 
 #include <boost/fiber/future/future.hpp>
 #include <cudf/io/types.hpp>
 #include <librdkafka/rdkafkacpp.h>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
+#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, trace_activity
 
-#include <cstddef>  // for size_t
-#include <cstdint>  // for int32_t, uint32_t
+#include <cstdint>  // for uuint32_t
 #include <map>
 #include <memory>
 #include <string>
@@ -73,13 +75,13 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
      * Useful for testing. Disabled if `0`
      * @param async_commits : Asynchronously acknowledge consuming Kafka messages
      */
-    KafkaSourceStage(size_t max_batch_size,
+    KafkaSourceStage(TensorIndex max_batch_size,
                      std::string topic,
-                     int32_t batch_timeout_ms,
+                     uint32_t batch_timeout_ms,
                      std::map<std::string, std::string> config,
                      bool disable_commit        = false,
                      bool disable_pre_filtering = false,
-                     size_t stop_after          = 0,
+                     TensorIndex stop_after     = 0,
                      bool async_commits         = true);
 
     ~KafkaSourceStage() override = default;
@@ -87,12 +89,12 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
     /**
      * @return maximum batch size for KafkaSource.
      */
-    std::size_t max_batch_size();
+    TensorIndex max_batch_size();
 
     /**
      * @return batch timeout in ms.
      */
-    int32_t batch_timeout_ms();
+    uint32_t batch_timeout_ms();
 
   private:
     /**
@@ -134,7 +136,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
     std::shared_ptr<morpheus::MessageMeta> process_batch(
         std::vector<std::unique_ptr<RdKafka::Message>>&& message_batch);
 
-    size_t m_max_batch_size{128};
+    TensorIndex m_max_batch_size{128};
     uint32_t m_batch_timeout_ms{100};
 
     std::string m_topic;
@@ -144,7 +146,7 @@ class KafkaSourceStage : public mrc::pymrc::PythonSource<std::shared_ptr<Message
     bool m_disable_pre_filtering{false};
     bool m_requires_commit{false};  // Whether or not manual committing is required
     bool m_async_commits{true};
-    size_t m_stop_after{0};
+    TensorIndex m_stop_after{0};
 
     void* m_rebalancer;
 };
@@ -174,14 +176,14 @@ struct KafkaSourceStageInterfaceProxy
      */
     static std::shared_ptr<mrc::segment::Object<KafkaSourceStage>> init(mrc::segment::Builder& builder,
                                                                         const std::string& name,
-                                                                        size_t max_batch_size,
+                                                                        TensorIndex max_batch_size,
                                                                         std::string topic,
-                                                                        int32_t batch_timeout_ms,
+                                                                        uint32_t batch_timeout_ms,
                                                                         std::map<std::string, std::string> config,
                                                                         bool disable_commit,
                                                                         bool disable_pre_filtering,
-                                                                        size_t stop_after  = 0,
-                                                                        bool async_commits = true);
+                                                                        TensorIndex stop_after = 0,
+                                                                        bool async_commits     = true);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

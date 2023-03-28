@@ -26,7 +26,7 @@ from morpheus.config import PipelineModes
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
@@ -223,17 +223,17 @@ def test_abp_multi_segment_no_cpp(mock_triton_client, config: Config, tmp_path):
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 3
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 3
 
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 4
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 4
 
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 5
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 5
 
     pipe.add_stage(SerializeStage(config))
 
@@ -283,17 +283,17 @@ def test_abp_multi_segment_cpp(config, tmp_path):
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='localhost:8001',
                              force_convert_inputs=True))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 3
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 3
 
     pipe.add_stage(MonitorStage(config, description="Inference Rate", smoothing=0.001, unit="inf"))
     pipe.add_stage(AddClassificationsStage(config))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 4
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 4
 
     pipe.add_stage(
         ValidationStage(config, val_file_name=val_file_name, results_file_name=results_file_name, rel_tol=0.05))
 
-    pipe.add_segment_boundary(MultiResponseProbsMessage)  # Boundary 5
+    pipe.add_segment_boundary(MultiResponseMessage)  # Boundary 5
 
     pipe.add_stage(SerializeStage(config))
 

@@ -17,16 +17,17 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/inference_memory.hpp"  // for InferenceMemory
-#include "morpheus/messages/meta.hpp"                     // for MessageMeta
+#include "morpheus/messages/memory/tensor_memory.hpp"
+#include "morpheus/messages/meta.hpp"  // for MessageMeta
+#include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_inference.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>  // for object
 
-#include <cstddef>
 #include <memory>
+#include <string>
 
 namespace morpheus {
 /****** Component public implementations *******************/
@@ -44,7 +45,7 @@ namespace morpheus {
  * proper inputs are set and eases debugging.
  *
  */
-class MultiInferenceNLPMessage : public MultiInferenceMessage
+class MultiInferenceNLPMessage : public DerivedMultiMessage<MultiInferenceNLPMessage, MultiInferenceMessage>
 {
   public:
     /**
@@ -57,13 +58,15 @@ class MultiInferenceNLPMessage : public MultiInferenceMessage
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      */
-    MultiInferenceNLPMessage(std::shared_ptr<morpheus::MessageMeta> meta,
-                             std::size_t mess_offset,
-                             std::size_t mess_count,
-                             std::shared_ptr<morpheus::InferenceMemory> memory,
-                             std::size_t offset,
-                             std::size_t count);
+    MultiInferenceNLPMessage(std::shared_ptr<MessageMeta> meta,
+                             TensorIndex mess_offset              = 0,
+                             TensorIndex mess_count               = -1,
+                             std::shared_ptr<TensorMemory> memory = nullptr,
+                             TensorIndex offset                   = 0,
+                             TensorIndex count                    = -1,
+                             std::string id_tensor_name           = "seq_ids");
 
     /**
      * @brief Returns the 'input_ids' tensor, throws a `std::runtime_error` if it does not exist.
@@ -130,14 +133,16 @@ struct MultiInferenceNLPMessageInterfaceProxy : public MultiInferenceMessageInte
      * @param memory Holds the generic tensor data in cupy arrays that will be used for inference stages
      * @param offset Message offset in inference memory object
      * @param count Message count in inference memory object
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
      * @return std::shared_ptr<MultiInferenceNLPMessage>
      */
     static std::shared_ptr<MultiInferenceNLPMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                          cudf::size_type mess_offset,
-                                                          cudf::size_type mess_count,
-                                                          std::shared_ptr<InferenceMemory> memory,
-                                                          cudf::size_type offset,
-                                                          cudf::size_type count);
+                                                          TensorIndex mess_offset,
+                                                          TensorIndex mess_count,
+                                                          std::shared_ptr<TensorMemory> memory,
+                                                          TensorIndex offset,
+                                                          TensorIndex count,
+                                                          std::string id_tensor_name);
 
     /**
      * @brief Get  'input_ids' tensor as a python object

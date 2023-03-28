@@ -17,16 +17,15 @@
 
 #pragma once
 
-#include "morpheus/messages/memory/response_memory.hpp"
+#include "morpheus/messages/memory/tensor_memory.hpp"
 #include "morpheus/messages/meta.hpp"
 #include "morpheus/messages/multi.hpp"
 #include "morpheus/messages/multi_tensor.hpp"
 #include "morpheus/objects/tensor_object.hpp"
+#include "morpheus/types.hpp"  // for TensorIndex
 
-#include <cudf/types.hpp>
 #include <pybind11/pytypes.h>
 
-#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -64,13 +63,19 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
+     * @param probs_tensor_name Name of the tensor that holds output probabilities
      */
     MultiResponseMessage(std::shared_ptr<MessageMeta> meta,
-                         std::size_t mess_offset,
-                         std::size_t mess_count,
-                         std::shared_ptr<ResponseMemory> memory,
-                         std::size_t offset,
-                         std::size_t count);
+                         TensorIndex mess_offset              = 0,
+                         TensorIndex mess_count               = -1,
+                         std::shared_ptr<TensorMemory> memory = nullptr,
+                         TensorIndex offset                   = 0,
+                         TensorIndex count                    = -1,
+                         std::string id_tensor_name           = "seq_ids",
+                         std::string probs_tensor_name        = "probs");
+
+    std::string probs_tensor_name;
 
     /**
      * @brief Returns the output tensor with the given name.
@@ -98,6 +103,13 @@ class MultiResponseMessage : public DerivedMultiMessage<MultiResponseMessage, Mu
      * @param value
      */
     void set_output(const std::string& name, const TensorObject& value);
+
+    /**
+     * @brief Get the tensor that holds output probabilities. Equivalent to `get_tensor(probs_tensor_name)`
+     *
+     * @return const TensorObject
+     */
+    TensorObject get_probs_tensor() const;
 };
 
 /****** MultiResponseMessageInterfaceProxy *************************/
@@ -116,14 +128,34 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
      * @param memory Shared pointer of a tensor memory
      * @param offset Message offset in inference memory instance
      * @param count Message count in inference memory instance
+     * @param id_tensor_name Name of the tensor that correlates tensor rows to message IDs
+     * @param probs_tensor_name Name of the tensor that holds output probabilities
      * @return std::shared_ptr<MultiResponseMessage>
      */
     static std::shared_ptr<MultiResponseMessage> init(std::shared_ptr<MessageMeta> meta,
-                                                      cudf::size_type mess_offset,
-                                                      cudf::size_type mess_count,
-                                                      std::shared_ptr<ResponseMemory> memory,
-                                                      cudf::size_type offset,
-                                                      cudf::size_type count);
+                                                      TensorIndex mess_offset,
+                                                      TensorIndex mess_count,
+                                                      std::shared_ptr<TensorMemory> memory,
+                                                      TensorIndex offset,
+                                                      TensorIndex count,
+                                                      std::string id_tensor_name,
+                                                      std::string probs_tensor_name);
+
+    /**
+     * @brief Gets the `probs_tensor_name` property
+     *
+     * @param self
+     * @return std::string Name of `probs_tensor_name`
+     */
+    static std::string probs_tensor_name_getter(MultiResponseMessage& self);
+
+    /**
+     * @brief Sets the `probs_tensor_name` property
+     *
+     * @param self
+     * @param probs_tensor_name New name of `probs_tensor_name` property
+     */
+    static void probs_tensor_name_setter(MultiResponseMessage& self, std::string probs_tensor_name);
 
     /**
      * @brief Returns the output tensor for a given name
@@ -134,6 +166,14 @@ struct MultiResponseMessageInterfaceProxy : public MultiTensorMessageInterfacePr
      * @throws pybind11::key_error When no matching tensor exists.
      */
     static pybind11::object get_output(MultiResponseMessage& self, const std::string& name);
+
+    /**
+     * @brief Get the tensor that holds output probabilities. Equivalent to `get_tensor(probs_tensor_name)`
+     *
+     * @param self
+     * @return pybind11::object A cupy.ndarray object
+     */
+    static pybind11::object get_probs_tensor(MultiResponseMessage& self);
 };
 #pragma GCC visibility pop
 /** @} */  // end of group

@@ -76,18 +76,15 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
 
     @staticmethod
     def pre_process_batch(x: MultiMessage, fea_len: int, fea_cols: typing.List[str]) -> MultiInferenceFILMessage:
-        flags_bin_series = cudf.Series(x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b")))
+        # Converts the int flags field into a binary string
+        flags_bin_series = x.get_meta("flags").to_pandas().apply(lambda x: format(int(x), "05b"))
 
-        df = flags_bin_series.str.findall("[0-1]")
-
-        rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
+        # Expand binary string into an array
+        df = cudf.DataFrame(np.vstack(flags_bin_series.str.findall("[0-1]")).astype("int8"), index=x.get_meta().index)
 
         # adding [ack, psh, rst, syn, fin] details from the binary flag
-        for col in df.columns:
-            rename_col = rename_cols_dct[col]
-            df[rename_col] = df[col].astype("int8")
-
-        df = df.drop([0, 1, 2, 3, 4], axis=1)
+        rename_cols_dct = {0: "ack", 1: "psh", 2: "rst", 3: "syn", 4: "fin"}
+        df = df.rename(columns=rename_cols_dct)
 
         df["flags_bin"] = flags_bin_series
         df["timestamp"] = x.get_meta("timestamp").astype("int64")
@@ -173,26 +170,18 @@ class AbpPcapPreprocessingStage(PreprocessBaseStage):
         req_cols = ["flow_id", "rollup_time"]
 
         for col in req_cols:
-            # TODO: temporary work-around for Issue #286
-            x.meta.df[col] = merged_df[col].copy(True)
+            x.set_meta(col, merged_df[col])
 
         del merged_df
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
-        seg_ids[:, 0] = cp.arange(0, count, dtype=cp.uint32)
+        seg_ids[:, 0] = cp.arange(x.mess_offset, x.mess_offset + count, dtype=cp.uint32)
         seg_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count
         memory = InferenceMemoryFIL(count=count, input__0=data, seq_ids=seg_ids)
 
-        infer_message = MultiInferenceFILMessage(
-            meta=x.meta,
-            mess_offset=x.mess_offset,
-            mess_count=x.mess_count,
-            memory=memory,
-            offset=0,
-            count=memory.count,
-        )
+        infer_message = MultiInferenceFILMessage.from_message(x, memory=memory)
 
         return infer_message
 

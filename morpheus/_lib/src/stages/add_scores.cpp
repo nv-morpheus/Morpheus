@@ -17,78 +17,29 @@
 
 #include "morpheus/stages/add_scores.hpp"
 
-#include "morpheus/objects/tensor_object.hpp"  // for TensorObject
-#include "morpheus/types.hpp"                  // for TensorIndex
-
-#include <glog/logging.h>
+#include "morpheus/stages/add_scores_stage_base.hpp"
 
 #include <cstddef>  // for size_t
-#include <exception>
-#include <functional>
 #include <map>
 #include <memory>
-#include <ostream>  // for logging
+#include <optional>
 #include <utility>  // for move
-#include <vector>
 // IWYU thinks we need __alloc_traits<>::value_type for vector assignments
 // IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace morpheus {
+
 // Component public implementations
 // ************ AddScoresStage **************************** //
-AddScoresStage::AddScoresStage(std::size_t num_class_labels, std::map<std::size_t, std::string> idx2label) :
-  PythonNode(base_t::op_factory_from_sub_fn(build_operator())),
-  m_num_class_labels(num_class_labels),
-  m_idx2label(std::move(idx2label))
-{
-    CHECK(m_idx2label.size() <= m_num_class_labels) << "idx2label should represent a subset of the class_labels";
-}
-
-AddScoresStage::subscribe_fn_t AddScoresStage::build_operator()
-{
-    return [this](rxcpp::observable<sink_type_t> input, rxcpp::subscriber<source_type_t> output) {
-        return input.subscribe(rxcpp::make_observer<sink_type_t>(
-            [this, &output](sink_type_t x) {
-                const auto& probs = x->get_probs();
-                const auto& shape = probs.get_shape();
-
-                CHECK(shape.size() == 2 && shape[1] == m_num_class_labels)
-                    << "Label count does not match output of model. Label count: " << m_num_class_labels
-                    << ", Model output: " << shape[1];
-
-                const std::size_t num_rows    = shape[0];
-                const std::size_t num_columns = shape[1];
-
-                std::vector<std::string> columns(m_idx2label.size());
-                std::vector<TensorObject> tensors(m_idx2label.size());
-
-                std::size_t i = 0;
-                for (const auto& [column_num, column_name] : m_idx2label)
-                {
-                    columns[i] = column_name;
-                    tensors[i] = probs.slice(std::vector<TensorIndex>{0, static_cast<TensorIndex>(column_num)},
-                                             std::vector<TensorIndex>{static_cast<TensorIndex>(num_rows),
-                                                                      static_cast<TensorIndex>(column_num + 1)});
-
-                    ++i;
-                }
-
-                x->set_meta(columns, tensors);
-
-                output.on_next(x);
-            },
-            [&](std::exception_ptr error_ptr) { output.on_error(error_ptr); },
-            [&]() { output.on_completed(); }));
-    };
-}
+AddScoresStage::AddScoresStage(std::map<std::size_t, std::string> idx2label) :
+  AddScoresStageBase(std::move(idx2label), std::nullopt)
+{}
 
 // ************ AddScoresStageInterfaceProxy ************* //
 std::shared_ptr<mrc::segment::Object<AddScoresStage>> AddScoresStageInterfaceProxy::init(
-    mrc::segment::Builder& builder,
-    const std::string& name,
-    std::size_t num_class_labels,
-    std::map<std::size_t, std::string> idx2label)
+    mrc::segment::Builder& builder, const std::string& name, std::map<std::size_t, std::string> idx2label)
 {
-    return builder.construct_object<AddScoresStage>(name, num_class_labels, std::move(idx2label));
+    return builder.construct_object<AddScoresStage>(name, std::move(idx2label));
 }
+
 }  // namespace morpheus

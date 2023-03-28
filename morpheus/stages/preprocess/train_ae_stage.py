@@ -20,10 +20,7 @@ import typing
 
 import dill
 import mrc
-import numpy as np
 import pandas as pd
-import torch
-from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
 from morpheus.cli.register_stage import register_stage
@@ -31,8 +28,10 @@ from morpheus.config import Config
 from morpheus.config import PipelineModes
 from morpheus.messages.message_meta import UserMessageMeta
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.utils.seed import manual_seed
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +86,7 @@ class _UserModelManager(object):
 
         # If the seed is set, enforce that here
         if (self._seed is not None):
-            torch.manual_seed(self._seed)
-            torch.cuda.manual_seed(self._seed)
-            np.random.seed(self._seed)
-            torch.backends.cudnn.deterministic = True
+            manual_seed(self._seed)
 
         model = AutoEncoder(
             encoder_layers=[512, 500],  # layers of the encoding part
@@ -322,8 +318,6 @@ class TrainAEStage(MultiMessageStage):
                 model, scores_mean, scores_std = get_model_fn(x)
 
                 full_message = MultiAEMessage(meta=x,
-                                              mess_offset=0,
-                                              mess_count=x.count,
                                               model=model,
                                               train_scores_mean=scores_mean,
                                               train_scores_std=scores_std)
