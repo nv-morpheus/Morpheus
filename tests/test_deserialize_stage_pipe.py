@@ -14,34 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
-import numpy as np
 import pytest
 
-from morpheus.common import FileTypes
-from morpheus.io.deserializers import read_file_to_df
 from morpheus.messages import MessageMeta
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS
 from utils import assert_df_equal
-from utils import assert_path_exists
-from utils import create_df_with_dup_ids
+from utils import assert_results
+from utils import duplicate_df_index
 from utils import duplicate_df_index_rand
 
 
-def test_fixing_non_unique_indexes(use_cpp):
-
-    df = read_file_to_df(os.path.join(TEST_DIRS.tests_data_dir, 'filter_probs.csv'),
-                         file_type=FileTypes.Auto,
-                         df_type="cudf")
-
+@pytest.mark.use_cudf
+def test_fixing_non_unique_indexes(use_cpp, filter_probs_df):
     # Set 2 ids equal to others
-    df = duplicate_df_index_rand(df, count=2)
+    df = duplicate_df_index_rand(filter_probs_df, count=2)
 
     meta = MessageMeta(df.copy())
 
@@ -63,82 +53,44 @@ def test_fixing_non_unique_indexes(use_cpp):
     assert "_index_" in meta.df.columns
 
 
-@pytest.mark.slow
+@pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-@pytest.mark.parametrize("output_type", ["csv", "json"])
-def test_file_rw_pipe(tmp_path, config, output_type: str, dup_index: bool):
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
+def test_deserialize_pipe(config, filter_probs_df, dup_index: bool):
+    """
+    End to end test for DeserializeStage
+    """
+    expected_df = filter_probs_df.to_pandas()  # take a copy before we mess with the index
 
     if dup_index:
-        input_file = create_df_with_dup_ids(tmp_path)
-    else:
-        input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-
-    # We want to force the Python impl of the file source (work-around for issue #690)
-    py_file_source = FileSourceStage(config, filename=input_file)
-    py_file_source._build_cpp_node = lambda *a, **k: False
+        filter_probs_df = duplicate_df_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(py_file_source)
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    pipe.add_stage(
-        WriteToFileStage(config, filename=out_file, overwrite=False, include_index_col=(output_type == "json")))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    validation_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_data = np.loadtxt(validation_file, delimiter=",", skiprows=1)
-
-    if output_type == "csv":
-        # The output data will contain an additional id column that we will need to slice off
-        output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-    else:  # assume json
-        df = read_file_to_df(out_file, file_type=FileTypes.Auto)
-        output_data = df.values
-
-    # Somehow 0.7 ends up being 0.7000000000000001
-    output_data = np.around(output_data, 2)
-    assert output_data.tolist() == input_data.tolist()
+    assert_results(comp_stage.get_results())
 
 
-@pytest.mark.slow
+@pytest.mark.use_cudf
 @pytest.mark.parametrize("dup_index", [False, True])
-@pytest.mark.parametrize("output_type", ["csv", "json"])
-def test_file_rw_multi_segment_pipe(tmp_path, config, output_type: str, dup_index: bool):
-    out_file = os.path.join(tmp_path, 'results.{}'.format(output_type))
+def test_deserialize_multi_segment_pipe(config, filter_probs_df, dup_index: bool):
+    """
+    End to end test across mulitiple segments
+    """
+    expected_df = filter_probs_df.to_pandas()  # take a copy before we mess with the index
 
     if dup_index:
-        input_file = create_df_with_dup_ids(tmp_path)
-    else:
-        input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-
-    # We want to force the Python impl of the file source (work-around for issue #690)
-    py_file_source = FileSourceStage(config, filename=input_file)
-    py_file_source._build_cpp_node = lambda *a, **k: False
+        filter_probs_df = duplicate_df_index(filter_probs_df, {8: 7})
 
     pipe = LinearPipeline(config)
-    pipe.set_source(py_file_source)
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(SerializeStage(config, include=[r'^v\d+$']))
-    pipe.add_stage(
-        WriteToFileStage(config, filename=out_file, overwrite=False, include_index_col=(output_type == "json")))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    validation_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    input_data = np.loadtxt(validation_file, delimiter=",", skiprows=1)
-
-    if output_type == "csv":
-        # The output data will contain an additional id column that we will need to slice off
-        output_data = np.loadtxt(out_file, delimiter=",", skiprows=1)
-    else:  # assume json
-        df = read_file_to_df(out_file, file_type=FileTypes.Auto)
-        output_data = df.values
-
-    # Somehow 0.7 ends up being 0.7000000000000001
-    output_data = np.around(output_data, 2)
-    assert output_data.tolist() == input_data.tolist()
+    assert_results(comp_stage.get_results())
