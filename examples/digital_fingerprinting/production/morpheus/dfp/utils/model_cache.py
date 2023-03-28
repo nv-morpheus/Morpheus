@@ -20,11 +20,12 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import mlflow
-from dfencoder import AutoEncoder
 from mlflow.entities.model_registry import RegisteredModel
 from mlflow.exceptions import MlflowException
 from mlflow.store.entities.paged_list import PagedList
 from mlflow.tracking.client import MlflowClient
+
+from morpheus.models.dfencoder import AutoEncoder
 
 from .logging_timer import log_time
 

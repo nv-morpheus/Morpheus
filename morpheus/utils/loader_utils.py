@@ -14,7 +14,7 @@
 
 import logging
 
-from morpheus._lib.common import DataLoaderRegistry as registry
+from morpheus._lib.messages import DataLoaderRegistry as registry
 
 logger = logging.getLogger(__name__)
 

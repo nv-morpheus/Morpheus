@@ -87,6 +87,6 @@ void DataLoaderModule::initialize(mrc::segment::Builder& builder)
 
 std::string DataLoaderModule::module_type_name() const
 {
-    return std::string(::mrc::boost_type_name<type_t>());
+    return std::string(::mrc::type_name<type_t>());
 }
 }  // namespace morpheus

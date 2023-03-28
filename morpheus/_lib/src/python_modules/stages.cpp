@@ -33,9 +33,9 @@
 #include "morpheus/utilities/cudf_util.hpp"
 #include "morpheus/version.hpp"
 
-#include <mrc/utils/string_utils.hpp>
 #include <mrc/modules/module_registry_util.hpp>
 #include <mrc/segment/object.hpp>
+#include <mrc/utils/string_utils.hpp>
 #include <mrc/version.hpp>
 #include <pybind11/attr.h>      // for multiple_inheritance
 #include <pybind11/pybind11.h>  // for arg, init, class_, module_, str_attr_accessor, PYBIND11_MODULE, pybind11
@@ -69,18 +69,15 @@ PYBIND11_MODULE(stages, _module)
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("threshold"),
-             py::arg("num_class_labels"),
-             py::arg("idx2label"));
+             py::arg("idx2label"),
+             py::arg("threshold"));
 
     py::class_<mrc::segment::Object<AddScoresStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<AddScoresStage>>>(_module, "AddScoresStage", py::multiple_inheritance())
-        .def(py::init<>(&AddScoresStageInterfaceProxy::init),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("num_class_labels"),
-             py::arg("idx2label"));
+               std::shared_ptr<mrc::segment::Object<AddScoresStage>>>(
+        _module, "AddScoresStage", py::multiple_inheritance())
+        .def(
+            py::init<>(&AddScoresStageInterfaceProxy::init), py::arg("builder"), py::arg("name"), py::arg("idx2label"));
 
     py::class_<mrc::segment::Object<DeserializeStage>,
                mrc::segment::ObjectProperties,
@@ -94,7 +91,8 @@ PYBIND11_MODULE(stages, _module)
 
     py::class_<mrc::segment::Object<FileSourceStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(_module, "FileSourceStage", py::multiple_inheritance())
+               std::shared_ptr<mrc::segment::Object<FileSourceStage>>>(
+        _module, "FileSourceStage", py::multiple_inheritance())
         .def(py::init<>(&FileSourceStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -187,7 +185,8 @@ PYBIND11_MODULE(stages, _module)
 
     py::class_<mrc::segment::Object<SerializeStage>,
                mrc::segment::ObjectProperties,
-               std::shared_ptr<mrc::segment::Object<SerializeStage>>>(_module, "SerializeStage", py::multiple_inheritance())
+               std::shared_ptr<mrc::segment::Object<SerializeStage>>>(
+        _module, "SerializeStage", py::multiple_inheritance())
         .def(py::init<>(&SerializeStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
@@ -208,7 +207,7 @@ PYBIND11_MODULE(stages, _module)
              py::arg("include_index_col") = true,
              py::arg("flush")             = false);
 
-    _module.attr("__version__") = MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "."
-                                                                  << morpheus_VERSION_PATCH);
+    _module.attr("__version__") =
+        MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
 }
 }  // namespace morpheus

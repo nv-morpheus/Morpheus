@@ -169,8 +169,8 @@ if(MORPHEUS_ENABLE_DEBUG_INFO)
 
   morpheus_utils_print_target_properties(
       TARGETS
-        cuda_utils
         morpheus
+        morpheus_utils
       WRITE_TO_FILE
   )
 

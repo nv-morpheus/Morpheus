@@ -30,8 +30,8 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.common import FileTypes
 from morpheus.cli.utils import str_to_file_type
+from morpheus.common import FileTypes
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.utils.column_info import process_dataframe
 from morpheus.utils.module_ids import FILE_TO_DF
@@ -80,7 +80,7 @@ def file_to_df(builder: mrc.Builder):
     cache_dir = config.get("cache_dir", None)
 
     download_method: typing.Literal["single_thread", "multiprocess", "dask",
-    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
+                                    "dask_thread"] = os.environ.get("MORPHEUS_FILE_DOWNLOAD_TYPE", "multiprocess")
 
     if (cache_dir is None):
         cache_dir = "./.cache"

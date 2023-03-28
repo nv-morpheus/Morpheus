@@ -187,7 +187,7 @@ void ControlMessageProxy::add_task(ControlMessage& self, const std::string& task
     self.add_task(task_type, mrc::pymrc::cast_from_pyobject(task));
 }
 
-py::dict ControlMessageProxy::pop_task(ControlMessage& self, const std::string& task_type)
+py::dict ControlMessageProxy::remove_task(ControlMessage& self, const std::string& task_type)
 {
     auto task = self.remove_task(task_type);
 

@@ -17,13 +17,13 @@
 
 #include "morpheus/objects/python_data_table.hpp"
 
-#include "morpheus/objects/table_info.hpp"
 #include "morpheus/utilities/cudf_util.hpp"
 
 #include <cudf/types.hpp>
 #include <pybind11/cast.h>  // for object::cast
 #include <pybind11/gil.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include <utility>
 
@@ -46,7 +46,8 @@ PyDataTable::~PyDataTable()
 cudf::size_type PyDataTable::count() const
 {
     pybind11::gil_scoped_acquire gil;
-    return m_py_table.attr("_num_rows").cast<cudf::size_type>();
+
+    return m_py_table.attr("shape").attr("__getitem__")(0).cast<cudf::size_type>();
 }
 
 const pybind11::object& PyDataTable::get_py_object() const

@@ -35,6 +35,7 @@
 #include "morpheus/objects/mutable_table_ctx_mgr.hpp"
 #include "morpheus/types.hpp"  // for TensorIndex
 #include "morpheus/utilities/cudf_util.hpp"
+#include "morpheus/utilities/string_util.hpp"
 #include "morpheus/version.hpp"
 
 #include <boost/fiber/future/future.hpp>
@@ -44,7 +45,6 @@
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
 #include <mrc/types.hpp>
-#include <mrc/utils/string_utils.hpp>
 #include <pybind11/cast.h>
 #include <pybind11/detail/common.h>
 #include <pybind11/functional.h>  // IWYU pragma: keep
@@ -157,6 +157,7 @@ PYBIND11_MODULE(messages, _module)
     py::class_<TensorMemory, std::shared_ptr<TensorMemory>>(_module, "TensorMemory")
         .def(py::init<>(&TensorMemoryInterfaceProxy::init), py::arg("count"), py::arg("tensors") = py::none())
         .def_readonly("count", &TensorMemory::count)
+        .def_property_readonly("tensor_names", &TensorMemoryInterfaceProxy::tensor_names_getter)
         .def("has_tensor", &TensorMemoryInterfaceProxy::has_tensor)
         .def("get_tensors", &TensorMemoryInterfaceProxy::get_tensors, py::return_value_policy::move)
         .def("set_tensors", &TensorMemoryInterfaceProxy::set_tensors, py::arg("tensors"))
@@ -262,12 +263,14 @@ PYBIND11_MODULE(messages, _module)
              py::arg("mess_offset") = 0,
              py::arg("mess_count")  = -1,
              py::arg("memory"),
-             py::arg("offset") = 0,
-             py::arg("count")  = -1)
+             py::arg("offset")         = 0,
+             py::arg("count")          = -1,
+             py::arg("id_tensor_name") = "seq_ids")
         .def_property_readonly("memory", &MultiTensorMessageInterfaceProxy::memory)
         .def_property_readonly("offset", &MultiTensorMessageInterfaceProxy::offset)
         .def_property_readonly("count", &MultiTensorMessageInterfaceProxy::count)
-        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor);
+        .def("get_tensor", &MultiTensorMessageInterfaceProxy::get_tensor)
+        .def("get_id_tensor", &MultiResponseMessageInterfaceProxy::get_id_tensor);
 
     py::class_<MultiInferenceMessage, MultiTensorMessage, std::shared_ptr<MultiInferenceMessage>>(
         _module, "MultiInferenceMessage")
@@ -277,8 +280,9 @@ PYBIND11_MODULE(messages, _module)
              py::arg("mess_offset") = 0,
              py::arg("mess_count")  = -1,
              py::arg("memory"),
-             py::arg("offset") = 0,
-             py::arg("count")  = -1)
+             py::arg("offset")         = 0,
+             py::arg("count")          = -1,
+             py::arg("id_tensor_name") = "seq_ids")
         .def("get_input", &MultiInferenceMessageInterfaceProxy::get_tensor);
 
     py::class_<MultiInferenceNLPMessage, MultiInferenceMessage, std::shared_ptr<MultiInferenceNLPMessage>>(
@@ -289,8 +293,9 @@ PYBIND11_MODULE(messages, _module)
              py::arg("mess_offset") = 0,
              py::arg("mess_count")  = -1,
              py::arg("memory"),
-             py::arg("offset") = 0,
-             py::arg("count")  = -1)
+             py::arg("offset")         = 0,
+             py::arg("count")          = -1,
+             py::arg("id_tensor_name") = "seq_ids")
         .def_property_readonly("input_ids", &MultiInferenceNLPMessageInterfaceProxy::input_ids)
         .def_property_readonly("input_mask", &MultiInferenceNLPMessageInterfaceProxy::input_mask)
         .def_property_readonly("seq_ids", &MultiInferenceNLPMessageInterfaceProxy::seq_ids);
@@ -303,8 +308,9 @@ PYBIND11_MODULE(messages, _module)
              py::arg("mess_offset") = 0,
              py::arg("mess_count")  = -1,
              py::arg("memory"),
-             py::arg("offset") = 0,
-             py::arg("count")  = -1)
+             py::arg("offset")         = 0,
+             py::arg("count")          = -1,
+             py::arg("id_tensor_name") = "seq_ids")
         .def_property_readonly("input__0", &MultiInferenceFILMessageInterfaceProxy::input__0)
         .def_property_readonly("seq_ids", &MultiInferenceFILMessageInterfaceProxy::seq_ids);
 
@@ -316,9 +322,15 @@ PYBIND11_MODULE(messages, _module)
              py::arg("mess_offset") = 0,
              py::arg("mess_count")  = -1,
              py::arg("memory"),
-             py::arg("offset") = 0,
-             py::arg("count")  = -1)
-        .def("get_output", &MultiResponseMessageInterfaceProxy::get_tensor);
+             py::arg("offset")            = 0,
+             py::arg("count")             = -1,
+             py::arg("id_tensor_name")    = "seq_ids",
+             py::arg("probs_tensor_name") = "probs")
+        .def_property("probs_tensor_name",
+                      &MultiResponseMessageInterfaceProxy::probs_tensor_name_getter,
+                      &MultiResponseMessageInterfaceProxy::probs_tensor_name_setter)
+        .def("get_output", &MultiResponseMessageInterfaceProxy::get_tensor)
+        .def("get_probs_tensor", &MultiResponseMessageInterfaceProxy::get_probs_tensor);
 
     py::class_<MultiResponseProbsMessage, MultiResponseMessage, std::shared_ptr<MultiResponseProbsMessage>>(
         _module, "MultiResponseProbsMessage")
@@ -328,31 +340,30 @@ PYBIND11_MODULE(messages, _module)
              py::arg("mess_offset") = 0,
              py::arg("mess_count")  = -1,
              py::arg("memory"),
-             py::arg("offset") = 0,
-             py::arg("count")  = -1)
+             py::arg("offset")            = 0,
+             py::arg("count")             = -1,
+             py::arg("id_tensor_name")    = "seq_ids",
+             py::arg("probs_tensor_name") = "probs")
         .def_property_readonly("probs", &MultiResponseProbsMessageInterfaceProxy::probs);
 
     py::enum_<ControlMessageType>(_module, "ControlMessageType")
-        .value("NONE", ControlMessageType::NONE)
         .value("INFERENCE", ControlMessageType::INFERENCE)
+        .value("NONE", ControlMessageType::INFERENCE)
         .value("TRAINING", ControlMessageType::TRAINING);
 
+    // TODO(Devin): Circle back on return value policy choices
     py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(_module, "ControlMessage")
-        .def(py::init<>(), py::return_value_policy::reference_internal)
-        .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)),
-             py::return_value_policy::reference_internal)
-        .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)),
-             py::return_value_policy::reference_internal)
-        .def("config",
-             pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config),
-             py::return_value_policy::reference_internal)
+        .def(py::init<>())
+        .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
+        .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)))
+        .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
         .def("config",
              pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"))
-        .def("copy", &ControlMessageProxy::copy, py::return_value_policy::reference_internal)
+        .def("copy", &ControlMessageProxy::copy)
         .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
         .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
-        .def("remove_task", &ControlMessageProxy::pop_task, py::arg("task_type"))
+        .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
         .def("task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))
@@ -375,6 +386,6 @@ PYBIND11_MODULE(messages, _module)
                     py::arg("throw_if_not_exists") = true);
 
     _module.attr("__version__") =
-        MRC_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
+        MORPHEUS_CONCAT_STR(morpheus_VERSION_MAJOR << "." << morpheus_VERSION_MINOR << "." << morpheus_VERSION_PATCH);
 }
 }  // namespace morpheus

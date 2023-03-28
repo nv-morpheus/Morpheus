@@ -21,7 +21,6 @@ import urllib.parse
 import mlflow
 import mrc
 import requests
-from dfencoder import AutoEncoder
 from mlflow.exceptions import MlflowException
 from mlflow.models.signature import ModelSignature
 from mlflow.protos.databricks_pb2 import RESOURCE_ALREADY_EXISTS
@@ -35,6 +34,7 @@ from mlflow.types.utils import _infer_schema
 from mrc.core import operators as ops
 
 from morpheus.messages.multi_ae_message import MultiAEMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.utils.module_ids import MLFLOW_MODEL_WRITER
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
@@ -135,7 +135,7 @@ def mlflow_model_writer(builder: mrc.Builder):
                 "access_control_list": [{
                     "group_name": group, "permission_level": permission
                 } for group,
-                permission in databricks_permissions.items()]
+                                        permission in databricks_permissions.items()]
             }
 
             requests.patch(url=patch_registered_model_permissions_url,

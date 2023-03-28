@@ -58,8 +58,7 @@ class FactoryRegistry
                                                                          nlohmann::json config = {})
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
-        VLOG(2) << "Retrieving factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
-                << ")";
+        VLOG(2) << "Retrieving factory constructor: " << name << "(" << mrc::type_name<ObjectReturnTypeT>() << ")";
 
         if (m_object_constructors.count(name) == 0)
         {
@@ -74,8 +73,7 @@ class FactoryRegistry
                                     bool throw_if_exists = true)
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
-        VLOG(2) << "Registering factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
-                << ")";
+        VLOG(2) << "Registering factory constructor: " << name << "(" << mrc::type_name<ObjectReturnTypeT>() << ")";
         if (m_object_constructors.count(name) > 0)
         {
             if (throw_if_exists)
@@ -89,8 +87,7 @@ class FactoryRegistry
     static void unregister_factory_fn(const std::string& name, bool throw_if_missing = true)
     {
         std::lock_guard<decltype(m_mutex)> lock(m_mutex);
-        VLOG(2) << "Un-registering factory constructor: " << name << "(" << mrc::boost_type_name<ObjectReturnTypeT>()
-                << ")";
+        VLOG(2) << "Un-registering factory constructor: " << name << "(" << mrc::type_name<ObjectReturnTypeT>() << ")";
         if (m_object_constructors.count(name) == 0)
         {
             if (throw_if_missing)

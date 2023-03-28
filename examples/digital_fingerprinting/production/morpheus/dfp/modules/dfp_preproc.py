@@ -20,7 +20,6 @@ import mrc
 import morpheus.loaders.file_to_df_loader  # noqa: F401
 import morpheus.modules.file_batcher  # noqa: F401
 import morpheus.modules.filter_control_message  # noqa: F401
-
 from morpheus.utils.loader_ids import FILE_TO_DF_LOADER
 from morpheus.utils.module_ids import DATA_LOADER
 from morpheus.utils.module_ids import FILE_BATCHER

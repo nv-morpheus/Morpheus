@@ -18,9 +18,10 @@ import re
 import typing
 
 import mrc
-import cudf
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+import cudf
 
 logger = logging.getLogger(__name__)
 

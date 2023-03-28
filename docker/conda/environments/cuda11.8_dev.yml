@@ -17,6 +17,7 @@ name: morpheus
 channels:
     - rapidsai
     - nvidia
+    - nvidia/label/cuda-11.8.0
     - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
     - conda-forge
 dependencies:
@@ -37,6 +38,7 @@ dependencies:
     - cupy=9.5.0
     - cython=0.29.24
     - datacompy=0.8
+    - dill
     - docker-compose=1.29.2
     - docker-py=5.0
     - faker=12.3.0
@@ -80,6 +82,7 @@ dependencies:
     - python=3.8
     - rapidjson=1.1.0
     - scikit-build=0.13
+    - scikit-learn=0.23.1
     - sphinx
     - sphinx_rtd_theme
     - sysroot_linux-64=2.17

@@ -22,8 +22,8 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import determine_file_type
+from morpheus.common import FileTypes
+from morpheus.common import determine_file_type
 from morpheus.io import serializers
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
@@ -102,6 +102,7 @@ def write_to_file(builder: mrc.Builder):
 
         # Open up the file handle
         with open(output_file, "a") as out_file:
+
             def write_to_file(x: MessageMeta):
                 lines = convert_to_strings(x.df)
 
