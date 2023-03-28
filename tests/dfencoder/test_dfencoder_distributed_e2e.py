@@ -20,7 +20,9 @@ import sys
 
 print("Executable: " + sys.executable)
 print("Environ:")
-print(os.environ)
+
+for k in sorted(os.environ.keys()):
+    print(f"{k}: {os.environ[k]}")
 
 import numpy as np
 import pytest
