@@ -333,26 +333,23 @@ PYBIND11_MODULE(messages, _module)
         .def_property_readonly("probs", &MultiResponseProbsMessageInterfaceProxy::probs);
 
     py::enum_<ControlMessageType>(_module, "ControlMessageType")
-        .value("NONE", ControlMessageType::NONE)
         .value("INFERENCE", ControlMessageType::INFERENCE)
+        .value("NONE", ControlMessageType::INFERENCE)
         .value("TRAINING", ControlMessageType::TRAINING);
 
+    // TODO(Devin): Circle back on return value policy choices
     py::class_<ControlMessage, std::shared_ptr<ControlMessage>>(_module, "ControlMessage")
-        .def(py::init<>(), py::return_value_policy::reference_internal)
-        .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)),
-             py::return_value_policy::reference_internal)
-        .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)),
-             py::return_value_policy::reference_internal)
-        .def("config",
-             pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config),
-             py::return_value_policy::reference_internal)
+        .def(py::init<>())
+        .def(py::init(py::overload_cast<py::dict&>(&ControlMessageProxy::create)))
+        .def(py::init(py::overload_cast<std::shared_ptr<ControlMessage>>(&ControlMessageProxy::create)))
+        .def("config", pybind11::overload_cast<ControlMessage&>(&ControlMessageProxy::config))
         .def("config",
              pybind11::overload_cast<ControlMessage&, py::dict&>(&ControlMessageProxy::config),
              py::arg("config"))
-        .def("copy", &ControlMessageProxy::copy, py::return_value_policy::reference_internal)
+        .def("copy", &ControlMessageProxy::copy)
         .def("add_task", &ControlMessageProxy::add_task, py::arg("task_type"), py::arg("task"))
         .def("has_task", &ControlMessage::has_task, py::arg("task_type"))
-        .def("remove_task", &ControlMessageProxy::pop_task, py::arg("task_type"))
+        .def("remove_task", &ControlMessageProxy::remove_task, py::arg("task_type"))
         .def("task_type", pybind11::overload_cast<>(&ControlMessage::task_type))
         .def("task_type", pybind11::overload_cast<ControlMessageType>(&ControlMessage::task_type), py::arg("task_type"))
         .def("set_metadata", &ControlMessageProxy::set_metadata, py::arg("key"), py::arg("value"))

@@ -150,7 +150,7 @@ struct ControlMessageProxy
     static void config(ControlMessage& self, pybind11::dict& config);
 
     static void add_task(ControlMessage& self, const std::string& type, pybind11::dict& task);
-    static pybind11::dict pop_task(ControlMessage& self, const std::string& type);
+    static pybind11::dict remove_task(ControlMessage& self, const std::string& type);
 
     /**
      * @brief Set a metadata key-value pair -- value must be json serializable

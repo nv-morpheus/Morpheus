@@ -434,7 +434,7 @@ class MultiMessage(MessageData, cpp_class=_messages.MultiMessage):
         for p_name, param in signature.parameters.items():
 
             if (p_name == "self"):
-                # Skip self until this this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
+                # Skip self until this is fixed (python 3.9) https://github.com/python/cpython/issues/85074
                 # After that, switch to using inspect.signature(cls)
                 continue
 

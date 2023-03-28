@@ -93,13 +93,13 @@ def filter_detections(builder: mrc.Builder):
 
     message_type = pickle.loads(bytes(input_message_type, encoding))
 
-    def find_detections(x: MultiMessage, _filter_source) -> typing.Union[cp.ndarray, np.ndarray]:
+    def find_detections(multi_message: MultiMessage, _filter_source) -> typing.Union[cp.ndarray, np.ndarray]:
 
         # Determind the filter source
         if _filter_source == FilterSource.TENSOR:
-            _filter_source = x.get_output(field_name)
+            _filter_source = multi_message.get_output(field_name)
         else:
-            _filter_source = x.get_meta(field_name).values
+            _filter_source = multi_message.get_meta(field_name).values
 
         if (isinstance(_filter_source, np.ndarray)):
             array_mod = np
@@ -117,13 +117,13 @@ def filter_detections(builder: mrc.Builder):
 
         return array_mod.where(detections[1:] != detections[:-1])[0].reshape((-1, 2))
 
-    def filter_copy(x: MultiMessage) -> typing.Union[MultiMessage, None]:
+    def filter_copy(multi_message: MultiMessage) -> typing.Union[MultiMessage, None]:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
+        multi_message : `morpheus.pipeline.messages.MultiMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
@@ -132,20 +132,23 @@ def filter_detections(builder: mrc.Builder):
             A new message containing a copy of the rows above the threshold.
 
         """
-        if x is None:
+        if multi_message is None:
             return None
 
-        true_pairs = find_detections(x, filter_source)
+        true_pairs = find_detections(multi_message, filter_source)
 
-        return x.copy_ranges(true_pairs)
+        if (true_pairs.shape[0] == 0):
+            return None
 
-    def filter_slice(x: MultiMessage) -> typing.List[MultiMessage]:
+        return multi_message.copy_ranges(true_pairs)
+
+    def filter_slice(multi_message: MultiMessage) -> typing.List[MultiMessage]:
         """
         This function uses a threshold value to filter the messages.
 
         Parameters
         ----------
-        x : `morpheus.pipeline.messages.MultiMessage`
+        multi_message : `morpheus.pipeline.messages.MultiMessage`
             Response message with probabilities calculated from inference results.
 
         Returns
@@ -154,14 +157,15 @@ def filter_detections(builder: mrc.Builder):
             List of filtered messages.
 
         """
+
         # Unfortunately we have to convert this to a list in case there are non-contiguous groups
         output_list = []
-        if x is not None:
-            true_pairs = find_detections(x, filter_source)
+        if multi_message is not None:
+            true_pairs = find_detections(multi_message, filter_source)
             for pair in true_pairs:
                 pair = tuple(pair.tolist())
                 if ((pair[1] - pair[0]) > 0):
-                    output_list.append(x.get_slice(*pair))
+                    output_list.append(multi_message.get_slice(*pair))
 
         return output_list
 

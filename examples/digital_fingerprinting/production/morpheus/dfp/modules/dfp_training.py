@@ -20,7 +20,7 @@ from mrc.core import operators as ops
 
 import cudf
 
-from morpheus.messages.message_control import ControlMessage
+from morpheus.messages import ControlMessage
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module
@@ -71,7 +71,7 @@ def dfp_training(builder: mrc.Builder):
 
         output_messages = []
         while (control_message.has_task("training")):
-            control_message.pop_task("training")
+            control_message.remove_task("training")
 
             user_id = control_message.get_metadata("user_id")
             message_meta = control_message.payload()
@@ -89,11 +89,13 @@ def dfp_training(builder: mrc.Builder):
             logger.debug("Training AE model for user: '%s'... Complete.", user_id)
 
             dfp_mm = DFPMessageMeta(cudf.from_pandas(final_df), user_id=user_id)
-            multi_message = MultiDFPMessage(dfp_mm, mess_offset=0, mess_count=len(final_df))
-            output_message = MultiAEMessage(multi_message.meta,
+            multi_message = MultiDFPMessage(meta=dfp_mm, mess_offset=0, mess_count=len(final_df))
+            output_message = MultiAEMessage(meta=multi_message.meta,
                                             mess_offset=multi_message.mess_offset,
                                             mess_count=multi_message.mess_count,
-                                            model=model)
+                                            model=model,
+                                            train_scores_mean=0.0,
+                                            train_scores_std=1.0)
 
             output_messages.append(output_message)
 
