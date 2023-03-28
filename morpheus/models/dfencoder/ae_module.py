@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
+
 import torch
 
 
@@ -281,7 +282,7 @@ class AEModule(torch.nn.Module):
                 dictionaries containing the categories of the feature. The second-layer dictionaries have a key "cats"
                 which maps to a list containing the actual categorical values.
         """
-        
+
         self.numeric_output = torch.nn.Linear(dim, num_ft_cnt)
         self.binary_output = torch.nn.Linear(dim, bin_ft_cnt)
 

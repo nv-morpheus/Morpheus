@@ -18,7 +18,6 @@ import json
 import os
 
 import numpy as np
-import pandas as pd
 import pytest
 import torch
 
@@ -26,10 +25,6 @@ from morpheus.models.dfencoder.autoencoder import AutoEncoder
 from morpheus.models.dfencoder.dataloader import DatasetFromPath
 from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from utils import TEST_DIRS
-
-INFERENCE_START_DATE = "2022-11-01"
-VALIDATION_SET_SIZE = 3000  # around 1/10 of the train set
-TRAIN_VAL_SPLIT_SEED = 11
 
 FEATURE_COLUMNS = [
     "app_name",
@@ -141,9 +136,9 @@ def _run_test(rank, world_size):
 
     # Prepare the dataloader
     dataloader = DFEncoderDataLoader.get_distributed_training_dataloader_from_path(model,
-                                                               data_folder=TRAIN_FOLDER,
-                                                               rank=rank,
-                                                               world_size=world_size)
+                                                                                   data_folder=TRAIN_FOLDER,
+                                                                                   rank=rank,
+                                                                                   world_size=world_size)
     # Load validation set
     val_dataset = DatasetFromPath.get_validation_dataset(model, VALIDATION_FOLDER)
 

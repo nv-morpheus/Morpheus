@@ -25,7 +25,7 @@ from torch.utils.data.distributed import DistributedSampler
 class DFEncoderDataLoader(DataLoader):
 
     def __init__(self, *args, **kwargs):
-        """A Custom DataLoader that unbatch the input data if batch_size is set to 1. """        
+        """A Custom DataLoader that unbatch the input data if batch_size is set to 1. """
         super().__init__(*args, **kwargs)
 
     def __iter__(self):
@@ -34,7 +34,7 @@ class DFEncoderDataLoader(DataLoader):
         Yields:
             Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the unbatched input data of the 
                 current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
-        """        
+        """
         for data_d in super().__iter__():
             if self.batch_size == 1:
                 # unbatch to get rid of the first dimention of 1 intorduced by DataLoaders batching
@@ -58,7 +58,7 @@ class DFEncoderDataLoader(DataLoader):
 
         Returns:
             DataLoader: The training DataLoader with DistributedSampler for distributed training.
-        """        
+        """
         sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True, drop_last=False)
         dataloader = DFEncoderDataLoader(
             dataset,
@@ -73,12 +73,12 @@ class DFEncoderDataLoader(DataLoader):
 
     @staticmethod
     def get_distributed_training_dataloader_from_path(model,
-                                                  data_folder,
-                                                  rank,
-                                                  world_size,
-                                                  load_data_fn=pd.read_csv,
-                                                  pin_memory=False,
-                                                  num_workers=0):        
+                                                      data_folder,
+                                                      rank,
+                                                      world_size,
+                                                      load_data_fn=pd.read_csv,
+                                                      pin_memory=False,
+                                                      num_workers=0):
         """A helper funtion to get a distributed training DataLoader given a path to a folder containing data.
         
         Args:
@@ -93,7 +93,7 @@ class DFEncoderDataLoader(DataLoader):
 
         Returns:
             DFEncoderDataLoader: The training DataLoader with DistributedSampler for distributed training.
-        """                                                                     
+        """
         dataset = DatasetFromPath(
             data_folder,
             model.batch_size,
@@ -205,7 +205,7 @@ class DatasetFromPath(Dataset):
 
         Returns:
             int: number of samples in the dataset
-        """        
+        """
         return sum(self._file_sizes.values())
 
     def __len__(self):
@@ -216,7 +216,7 @@ class DatasetFromPath(Dataset):
 
         Returns:
             int: Number of batches in the dataset.
-        """        
+        """
         return int(np.ceil(self._count / self._batch_size))
 
     def __iter__(self):
@@ -383,7 +383,7 @@ class DatasetFromDataframe(Dataset):
         Yields:
             Dict[str, Union[int, Dict[str, torch.Tensor]]]: a dictionary containing the preprocessed data for the
                 current batch. Example: {"batch_index": 0, "data": {"data1": tensor1, "data2": tensor2}}
-        """      
+        """
         for i in range(len(self)):
             yield self[i]
 
