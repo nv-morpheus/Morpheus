@@ -14,22 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This must come before torch
+# isort: off
+import cudf  # noqa: F401
+# isort: on
+
 import json
 import os
 
-# This must come before torch
-# isort: off
-import cudf  # noqa: E401
-# isort: on
-
 import numpy as np
 import pytest
-import torch
 
 from morpheus.models.dfencoder.autoencoder import AutoEncoder
 from morpheus.models.dfencoder.dataloader import DatasetFromPath
 from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from utils import TEST_DIRS
+
+from .multiprocessing import start_processes
+
+# import torch
 
 FEATURE_COLUMNS = [
     "app_name",
@@ -93,11 +96,14 @@ def setup_dist(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12345'
 
+    import torch
+
     # initialize the process group
     torch.distributed.init_process_group("nccl", rank=rank, world_size=world_size)
 
 
 def cleanup_dist():
+    import torch
     torch.distributed.destroy_process_group()
 
 
@@ -105,11 +111,15 @@ def cleanup_dist():
 def test_dfencoder_distributed_e2e():
 
     world_size = 1
-    torch.multiprocessing.spawn(_run_test, args=(world_size, ), nprocs=world_size, join=True)
+
+    start_processes(_run_test, args=(world_size, ), nprocs=world_size, join=True)
+
+    # torch.multiprocessing.spawn(_run_test, args=(world_size, ), nprocs=world_size, join=True)
 
 
 def _run_test(rank, world_size):
 
+    import torch
     torch.cuda.set_device(rank)
 
     setup_dist(rank, world_size)
