@@ -37,6 +37,10 @@ FileTypes determine_file_type(const std::string& filename)
     {
         return FileTypes::CSV;
     }
+    else if (filename_path.extension() == ".parquet")
+    {
+        return FileTypes::PARQUET;
+    }
     else
     {
         throw std::runtime_error(MORPHEUS_CONCAT_STR("Unsupported extension '"
