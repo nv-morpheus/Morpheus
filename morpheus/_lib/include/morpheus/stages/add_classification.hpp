@@ -20,6 +20,7 @@
 #include "morpheus/stages/add_scores_stage_base.hpp"
 
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
 
 #include <cstddef>  // for size_t
 #include <map>
