@@ -17,15 +17,10 @@ limitations under the License.
 
 ## Filesystem Spec Loader
 
-Loads data from external sources using the fsspec library, and returns the updated ControlMessage object with payload as MessageMeta, which contains dataframe (with filenames).
+[DataLoader](../../modules/core/data_loader.md) module is configured to use this loader function. It is responsible for loading data from external sources using the fsspec library, and returns the updated ControlMessage object with payload as MessageMeta, which contains dataframe (with filenames).
 
-**Note** :  Loaders receive configuration from `load` task via the [control message](./../../source/control_message_guide.md) during runtime.
 
-### Configurable Parameters
-
-- `id` (str): Registered loader id.
-
-### Example JSON Configuration
+### Example Loader Configuration
 
 ```json
 {
@@ -35,8 +30,30 @@ Loads data from external sources using the fsspec library, and returns the updat
 }
 ```
 
-### Default Settings
+**Note** :  Loaders can receive configuration from the `load` task via [control message](../../../source/control_message_guide.md) during runtime.
 
-| Property | Value |
-| -------- | ----- |
-| files    | []    |
+### Task Configurable Parameters
+
+The parameters that can be configured for this specific loader at load task level:
+
+| Parameter          | Type       | Description                      | Example Value                     | Default Value  |
+| ------------------ | ---------- | -------------------------------- | --------------------------------- | -------------- |
+| `files`            | array      | List of files to load            | ["/your/input/filepath"]      	 | `[]`           |
+| `loader_id`        | string     | Unique identifier for the loader | "file_to_df"                      | `[Required]`            |
+
+
+
+
+### Example Load Task Configuration
+
+Below JSON configuration specifies how to pass additional configuration to the loader through a control message task at runtime.
+
+```json
+{
+	"type": "load",
+	"properties": {
+		"loader_id": "file_to_df",
+		"files": ["/your/input/filepath"],
+	}
+}
+```

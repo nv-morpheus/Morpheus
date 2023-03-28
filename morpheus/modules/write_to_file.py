@@ -28,7 +28,6 @@ from morpheus.io import serializers
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_FILE
-from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)

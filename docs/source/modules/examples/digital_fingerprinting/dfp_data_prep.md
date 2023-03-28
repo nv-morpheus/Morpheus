@@ -23,16 +23,16 @@ This module function prepares data for either inference or model training.
 
 | Parameter               | Type   | Description                  | Example Value | Default Value |
 |-------------------------|--------|------------------------------|---------------|---------------|
-| `schema`                | dict   | Schema configuration         | See Below     | -             |
-| `timestamp_column_name` | string | Name of the timestamp column | `timestamp`   | timestamp     |
+| `schema`                | dict   | Schema configuration         | See Below     | `-`           |
+| `timestamp_column_name` | string | Name of the timestamp column | "timestamp"   | `timestamp`   |
 
 #### `schema`
 
-| Key                  | Type   | Description                      | Example Value             | Default Value |
-|----------------------|--------|----------------------------------|---------------------------|---------------|
-| `schema_str`         | string | Serialized schema string         | `"cPickle schema string"` | -             |
-| `encoding`           | string | Encoding used for the schema_str | `"latin1"`                | -             |
-| `input_message_type` | string | Pickled message type             | `"message type"`          | -             |
+| Key                  | Type   | Description                      | Example Value           | Default Value |
+|----------------------|--------|----------------------------------|-------------------------|---------------|
+| `schema_str`         | string | Serialized schema string         | "cPickle schema string" | `-`           |
+| `encoding`           | string | Encoding used for the schema_str | "latin1"                | `-`           |
+| `input_message_type` | string | Pickled message type             | "message type"          | `-`           |
 
 ### Example JSON Configuration
 

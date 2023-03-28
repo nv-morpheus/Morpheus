@@ -23,10 +23,10 @@ This module function is responsible for training the model.
 
 | Parameter       | Type  | Description                            | Example Value                                                                                                                                                                                                                                                 | Default Value |
 |-----------------|-------|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| feature_columns | list  | List of feature columns to train on    | ["column1", "column2", "column3"]                                                                                                                                                                                                                             | -             |
-| epochs          | int   | Number of epochs to train for          | 50                                                                                                                                                                                                                                                            | -             |
+| feature_columns | list  | List of feature columns to train on    | ["column1", "column2", "column3"]                                                                                                                                                                                                                             | `-`           |
+| epochs          | int   | Number of epochs to train for          | 50                                                                                                                                                                                                                                                            | `-`           |
 | model_kwargs    | dict  | Keyword arguments to pass to the model | {"encoder_layers": [64, 32], "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9, "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10, "progress_bar": false, "device": "cpu"} | -             |
-| validation_size | float | Size of the validation set             | 0.1                                                                                                                                                                                                                                                           | -             |
+| validation_size | float | Size of the validation set             | 0.1                                                                                                                                                                                                                                                           | `-`           |
 
 ## JSON Example
 
@@ -62,11 +62,3 @@ This module function is responsible for training the model.
   "validation_size": 0.1
 }
 ```
-
-### Default Settings
-
-| Property | Value |
-| -------- | ----- |
-| epochs   | 1  |
-| model_kwargs   | {} |
-| validation_size   | 0.0  |

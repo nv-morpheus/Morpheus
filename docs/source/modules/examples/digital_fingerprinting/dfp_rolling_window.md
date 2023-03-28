@@ -23,13 +23,13 @@ This module function splits the data based on user IDs.
 
 | Parameter             | Type   | Description                                                 | Example Value | Default Value |
 |-----------------------|--------|-------------------------------------------------------------|---------------|---------------|
-| cache_mode            | string | The user ID to use if the user ID is not found              | 'batch'       | 'batch'       |
-| min_history           | int    | Minimum history to trigger a new training event             | 1             | 1             |
-| max_history           | int    | Maximum history to include in a new training event          | 0             | 0             |
-| timestamp_column_name | string | Name of the column containing timestamps                    | 'timestamp'   | 'timestamp'   |
-| aggregation_span      | string | Lookback timespan for training data in a new training event | '60d'         | '60d'         |
-| cache_to_disk         | bool   | Whether or not to cache streaming data to disk              | false         | false         |
-| cache_dir             | string | Directory to use for caching streaming data                 | './.cache'    | './.cache'    |
+| cache_mode            | string | The user ID to use if the user ID is not found              | "batch"       | `batch`       |
+| min_history           | int    | Minimum history to trigger a new training event             | 1             | `1`           |
+| max_history           | int    | Maximum history to include in a new training event          | 0             | `0`           |
+| timestamp_column_name | string | Name of the column containing timestamps                    | "timestamp"   | `timestamp`   |
+| aggregation_span      | string | Lookback timespan for training data in a new training event | "60d"         | `60d`         |
+| cache_to_disk         | bool   | Whether or not to cache streaming data to disk              | false         | `false`       |
+| cache_dir             | string | Directory to use for caching streaming data                 | "./.cache"    | `./.cache`    |
 
 ### Example JSON Configuration
 
