@@ -200,7 +200,7 @@ class FilterDetectionsStage(SinglePortStage):
 
             logger.debug(
                 f"filter_source was set to Auto, infering a filter source of {self._filter_source} based on an input "
-                "message type of {message_type}")
+                f"message type of {message_type}")
 
         if self._build_cpp_node():
             node = _stages.FilterDetectionsStage(builder,
