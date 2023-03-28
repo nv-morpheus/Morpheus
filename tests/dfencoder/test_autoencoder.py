@@ -21,7 +21,6 @@ import pandas as pd
 import pytest
 import torch
 
-from morpheus._lib.common import FileTypes
 from morpheus.config import AEFeatureScalar
 from morpheus.io.deserializers import read_file_to_df
 from morpheus.models.dfencoder import ae_module
@@ -77,7 +76,7 @@ def train_ae():
 @pytest.fixture(scope="module")
 def _train_df() -> pd.DataFrame:
     input_file = os.path.join(TEST_DIRS.validation_data_dir, "dfp-cloudtrail-role-g-validation-data-input.csv")
-    yield read_file_to_df(input_file, df_type='pandas', file_type=FileTypes.Auto)
+    yield read_file_to_df(input_file, df_type='pandas')
 
 
 @pytest.fixture(scope="function")

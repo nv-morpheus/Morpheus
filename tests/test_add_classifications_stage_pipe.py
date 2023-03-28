@@ -14,9 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+import typing
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -24,86 +23,62 @@ from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
 from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
-from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
-from utils import TEST_DIRS
-from utils import ConvMsg
-from utils import assert_path_exists
+from stages.conv_msg import ConvMsg
+from utils import assert_results
 
 
-@pytest.mark.slow
-def test_add_classifications_stage_pipe(config, tmp_path):
+def build_expected(df: pd.DataFrame, threshold: float, class_labels: typing.List[str]):
+    """
+    Generate the expected output of an add class by filtering by a threshold and applying the class labels
+    """
+    df = (df > threshold)
+    # Replace input columns with the class labels
+    return df.rename(columns=dict(zip(df.columns, class_labels)))
+
+
+@pytest.mark.use_cudf
+def test_add_classifications_stage_pipe(config, filter_probs_df):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
-
-    # Silly data with all false values
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
-
     threshold = 0.75
 
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, input_file))
+    pipe.add_stage(ConvMsg(config, filter_probs_df))
     pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(
+        CompareDataFrameStage(config, build_expected(filter_probs_df.to_pandas(), threshold, config.class_labels)))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
-    expected = (input_data > threshold)
-
-    # The output data will contain an additional id column that we will need to slice off
-    output_data = pd.read_csv(out_file)
-    idx = output_data.columns.intersection(config.class_labels)
-    assert idx.to_list() == config.class_labels
-
-    output_np = output_data[idx].to_numpy()
-
-    assert output_np.tolist() == expected.tolist()
+    assert_results(comp_stage.get_results())
 
 
-@pytest.mark.slow
-def test_add_classifications_stage_multi_segment_pipe(config, tmp_path):
+@pytest.mark.use_cudf
+def test_add_classifications_stage_multi_segment_pipe(config, filter_probs_df):
     config.class_labels = ['frogs', 'lizards', 'toads', 'turtles']
     config.num_threads = 1
-
-    # Silly data with all false values
-    input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    out_file = os.path.join(tmp_path, 'results.csv')
-
     threshold = 0.75
 
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.set_source(InMemorySourceStage(config, [filter_probs_df]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
-    pipe.add_stage(ConvMsg(config, input_file))
+    pipe.add_stage(ConvMsg(config, filter_probs_df))
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(AddClassificationsStage(config, threshold=threshold))
     pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(
+        CompareDataFrameStage(config, build_expected(filter_probs_df.to_pandas(), threshold, config.class_labels)))
     pipe.run()
 
-    assert_path_exists(out_file)
-
-    input_data = np.loadtxt(input_file, delimiter=",", skiprows=1)
-    expected = (input_data > threshold)
-
-    # The output data will contain an additional id column that we will need to slice off
-    output_data = pd.read_csv(out_file)
-    idx = output_data.columns.intersection(config.class_labels)
-    assert idx.to_list() == config.class_labels
-
-    output_np = output_data[idx].to_numpy()
-
-    assert output_np.tolist() == expected.tolist()
+    assert_results(comp_stage.get_results())
