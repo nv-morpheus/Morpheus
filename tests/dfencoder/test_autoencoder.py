@@ -99,12 +99,12 @@ def compare_numeric_features(features, expected_features):
 
 def test_ohe():
     tensor = torch.tensor(range(4), dtype=torch.int64)
-    results = autoencoder.ohe(tensor, 4, device="cpu")
+    results = autoencoder._ohe(tensor, 4, device="cpu")
     expected = torch.tensor([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
     assert results.device.type == "cpu"
     assert torch.equal(results, expected), f"{results} != {expected}"
 
-    results = autoencoder.ohe(tensor.to("cuda", copy=True), 4, device="cuda")
+    results = autoencoder._ohe(tensor.to("cuda", copy=True), 4, device="cuda")
     assert results.device.type == "cuda"
     assert torch.equal(results, expected.to("cuda", copy=True)), f"{results} != {expected}"
 
