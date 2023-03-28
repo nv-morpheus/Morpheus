@@ -41,7 +41,7 @@ services:
       target: jupyter
       args:
         - MORPHEUS_CONTAINER=${MORPHEUS_CONTAINER:-nvcr.io/nvidia/morpheus/morpheus}
-        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v23.01.00-runtime}
+        - MORPHEUS_CONTAINER_VERSION=${MORPHEUS_CONTAINER_VERSION:-v23.03.00-runtime}
     deploy:
       resources:
         reservations:
