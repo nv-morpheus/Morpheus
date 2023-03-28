@@ -96,15 +96,8 @@ def cleanup_dist():
 @pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
 
-    import multiprocessing
-    ctx = multiprocessing.get_context('spawn')
-
     world_size = 1
-    torch.multiprocessing.start_processes(_run_test,
-                                          args=(world_size, ),
-                                          nprocs=world_size,
-                                          join=True,
-                                          start_method="fork")
+    torch.multiprocessing.spawn(_run_test, args=(world_size, ), nprocs=world_size, join=True)
 
 
 def _run_test(rank, world_size):
