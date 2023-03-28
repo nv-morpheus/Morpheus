@@ -16,11 +16,16 @@
 channels:
     - rapidsai
     - nvidia
-    - nvidia/label/dev # For pre-releases of MRC. Should still default to full releases if available
-    - stellargraph
     - conda-forge
 dependencies:
     - chardet=5.0.0
     - cuml=22.10
-    - stellargraph=1.2.1
-    - tensorflow=2.9.1
+    # https://docs.rapids.ai/notices/rsn0026/ for libcusolver & libcusparse
+    - libcusolver<=11.4.1.48
+    - libcusparse<12
+    - cuda-python<=11.7.0 # Remove when Issue #251 is closed
+    - pip:
+        - stellargraph==1.2.1
+        - tensorflow==2.12.0
+        # Duplicated in conda dev to ensure parity with libprotobuf
+        - protobuf==3.20.3
