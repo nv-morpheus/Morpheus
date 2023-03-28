@@ -15,7 +15,6 @@
 import json
 import logging
 import time
-import typing
 
 import confluent_kafka as ck
 import mrc

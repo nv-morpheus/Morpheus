@@ -43,54 +43,103 @@ def dfp_deployment(builder: mrc.Builder):
 
     Notes
     -----
-    Configurable parameters:
-        - training_options (dict): Options for the training pipeline module, including:
-            - timestamp_column_name (str): Name of the timestamp column used in the data
-            - cache_dir (str): Directory to cache the rolling window data
-            - batching_options (dict): Options for batching the data, including:
-                - end_time (datetime|str): End time of the time window
-                - iso_date_regex_pattern (str): Regex pattern for ISO date matching
-                - parser_kwargs (dict): Additional arguments for the parser
-                - period (str): Time period for grouping files
-                - sampling_rate_s (int): Sampling rate in seconds
-                - start_time (datetime|str): Start time of the time window
-            - user_splitting_options (dict): Options for splitting the data by user, including:
-                - fallback_username (str): User ID to use if user ID not found (default: 'generic_user')
-                - include_generic (bool): Include generic user ID in output (default: False)
-                - include_individual (bool): Include individual user IDs in output (default: False)
-                - only_users (list): List of user IDs to include in output, others will be excluded (default: [])
-                - skip_users (list): List of user IDs to exclude from output (default: [])
-                - timestamp_column_name (str): Name of column containing timestamps (default: 'timestamp')
-                - userid_column_name (str): Name of column containing user IDs (default: 'username')
-            - stream_aggregation_options (dict): Options for aggregating the data by stream
-            - preprocessing_options (dict): Options for preprocessing the data
-            - dfencoder_options (dict): Options for configuring the data frame encoder, used for training the model
-            - mlflow_writer_options (dict): Options for the MLflow model writer, responsible for saving the trained model, including:
-                - model_name_formatter (str): Format string for the model name, e.g. "model_{timestamp}"
-                - experiment_name_formatter (str): Format string for the experiment name, e.g. "experiment_{timestamp}"
-                - timestamp_column_name (str): Name of the timestamp column used in the data
-                - conda_env (dict): Conda environment settings, including:
-                    - channels (list): List of channels to use for the environment
-                    - dependencies (list): List of dependencies for the environment
-                    - pip (list): List of pip packages to install in the environment
-                    - name (str): Name of the conda environment
-        - inference_options (dict): Options for the inference pipeline module, including:
-            - model_name_formatter (str): Format string for the model name, e.g. "model_{timestamp}"
-            - fallback_username (str): User ID to use if user ID not found (default: 'generic_user')
-            - timestamp_column_name (str): Name of the timestamp column in the input data
-            - batching_options (dict): Options for batching the data, including:
-                [omitted for brevity]
-            - cache_dir (str): Directory to cache the rolling window data
-            - detection_criteria (dict): Criteria for filtering detections, such as threshold and field_name
-            - inference_options (dict): Options for the inference module, including model settings and other configurations
-            - num_output_ports (int): Number of output ports for the module
-            - preprocessing_options (dict): Options for preprocessing the data, including schema and timestamp column name
-            - stream_aggregation_options (dict): Options for aggregating the data by stream, including:
-                - aggregation_span (int): The time span for the aggregation window, in seconds
-                - cache_to_disk (bool): Whether to cache the aggregated data to disk
-            - user_splitting_options (dict): Options for splitting the data by user, including:
-                [omitted for brevity]
-            - write_to_file_options (dict): Options for writing the detections to a file, such as filename and overwrite settings
+    Configurable Parameters:
+        - inference_options (dict): Options for the inference pipeline module; Example: See Below; Default: `[Required]`
+        - training_options (dict): Options for the training pipeline module; Example: See Below; Default: `[Required]`
+
+    Training Options Parameters:
+        - batching_options (dict): Options for batching the data; Example: See Below
+        - cache_dir (str): Directory to cache the rolling window data; Example: "/path/to/cache/dir"; Default: ./.cache
+        - dfencoder_options (dict): Options for configuring the data frame encoder; Example: See Below
+        - mlflow_writer_options (dict): Options for the MLflow model writer; Example: See Below
+        - preprocessing_options (dict): Options for preprocessing the data; Example: See Below
+        - stream_aggregation_options (dict): Options for aggregating the data by stream; Example: See Below
+        - timestamp_column_name (str): Name of the timestamp column used in the data; Example: "my_timestamp"; Default:
+        "timestamp"
+        - user_splitting_options (dict): Options for splitting the data by user; Example: See Below
+
+    Inference Options Parameters:
+        - batching_options (dict): Options for batching the data; Example: See Below
+        - cache_dir (str): Directory to cache the rolling window data; Example: "/path/to/cache/dir"; Default: ./.cache
+        - detection_criteria (dict): Criteria for filtering detections; Example: See Below
+        - fallback_username (str): User ID to use if user ID not found; Example: "generic_user"; Default: "generic_user"
+        - inference_options (dict): Options for the inference module; Example: See Below
+        - model_name_formatter (str): Format string for the model name; Example: "model_{timestamp}";
+        Default: `[Required]`
+        - num_output_ports (int): Number of output ports for the module; Example: 3
+        - timestamp_column_name (str): Name of the timestamp column in the input data; Example: "timestamp";
+        Default: "timestamp"
+        - stream_aggregation_options (dict): Options for aggregating the data by stream; Example: See Below
+        - user_splitting_options (dict): Options for splitting the data by user; Example: See Below
+        - write_to_file_options (dict): Options for writing the detections to a file; Example: See Below
+
+    batching_options:
+        - end_time (datetime/string): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
+        - iso_date_regex_pattern (string): Regex pattern for ISO date matching;
+        Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
+        - parser_kwargs (dictionary): Additional arguments for the parser; Example: {}; Default: {}
+        - period (string): Time period for grouping files; Example: "1d"; Default: "1d"
+        - sampling_rate_s (integer): Sampling rate in seconds; Example: 60; Default: 60
+        - start_time (datetime/string): Start time of the time window; Example: "2023-03-01T00:00:00"; Default: None
+
+    dfencoder_options:
+        - feature_columns (list): List of feature columns to train on; Example: ["column1", "column2", "column3"]
+        - epochs (int): Number of epochs to train for; Example: 50
+        - model_kwargs (dict): Keyword arguments to pass to the model; Example: {"encoder_layers": [64, 32],
+        "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9,
+        "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10,
+        "progress_bar": false, "device": "cpu"}
+        - validation_size (float): Size of the validation set; Example: 0.1
+
+    mlflow_writer_options:
+        - conda_env (string): Conda environment for the model; Example: `path/to/conda_env.yml`; Default: `[Required]`
+        - databricks_permissions (dictionary): Permissions for the model; Example: See Below; Default: None
+        - experiment_name_formatter (string): Formatter for the experiment name; Example: `experiment_name_{timestamp}`;
+         Default: `[Required]`
+        - model_name_formatter (string): Formatter for the model name; Example: `model_name_{timestamp}`;
+        Default: `[Required]`
+        - timestamp_column_name (string): Name of the timestamp column; Example: `timestamp`; Default: timestamp
+
+    stream_aggregation_options:
+        - cache_mode (string): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
+        - min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
+        - max_history (int): Maximum history to include in a new training event; Example: 0; Default: 0
+        - timestamp_column_name (string): Name of the column containing timestamps; Example: 'timestamp';
+        Default: 'timestamp'
+        - aggregation_span (string): Lookback timespan for training data in a new training event; Example: '60d';
+        Default: '60d'
+        - cache_to_disk (bool): Whether or not to cache streaming data to disk; Example: false; Default: false
+        - cache_dir (string): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
+
+    user_splitting_options:
+        - fallback_username (str): The user ID to use if the user ID is not found; Example: "generic_user";
+        Default: 'generic_user'
+        - include_generic (bool): Whether to include a generic user ID in the output; Example: false; Default: False
+        - include_individual (bool): Whether to include individual user IDs in the output; Example: true; Default: False
+        - only_users (list): List of user IDs to include; others will be excluded; Example: ["user1", "user2", "user3"];
+         Default: []
+        - skip_users (list): List of user IDs to exclude from the output; Example: ["user4", "user5"]; Default: []
+        - timestamp_column_name (str): Name of the column containing timestamps; Example: "timestamp";
+        Default: 'timestamp'
+        - userid_column_name (str): Name of the column containing user IDs; Example: "username"; Default: 'username'
+
+    detection_criteria:
+        - threshold (float): Threshold for filtering detections; Example: 0.5; Default: 0.5
+        - field_name (str): Name of the field to filter by threshold; Example: "score"; Default: probs
+
+    inference_options:
+        - model_name_formatter (string): Formatter for model names; Example: "user_{username}_model";
+        Default: `[Required]`
+        - fallback_username (string): Fallback user to use if no model is found for a user; Example: "generic_user";
+        Default: generic_user
+        - timestamp_column_name (string): Name of the timestamp column; Example: "timestamp"; Default: timestamp
+
+    write_to_file_options:
+        - filename (string): Path to the output file; Example: `output.csv`; Default: None
+        - file_type (FileTypes): Type of file to write; Example: `FileTypes.CSV`; Default: `FileTypes.Auto`
+        - flush (bool): If true, flush the file after each write; Example: `false`; Default: false
+        - include_index_col (bool): If true, include the index column; Example: `false`; Default: true
+        - overwrite (bool): If true, overwrite the file if it exists; Example: `true`; Default: false
     """
 
     module_config = builder.get_current_module_config()

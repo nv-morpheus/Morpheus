@@ -22,7 +22,6 @@ import dfp.modules.dfp_postprocessing  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
-from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import Schema
 from dfp.utils.schema_utils import SchemaBuilder
 

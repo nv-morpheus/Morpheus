@@ -39,7 +39,8 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_TRAINING_PIPE, MORPHEUS_MODULE_NAMESPACE)
 def dfp_training_pipe(builder: mrc.Builder):
     """
-    This module function consolidates multiple dfp pipeline modules relevant to the training process into a single module.
+    This module function consolidates multiple dfp pipeline modules relevant to the training process into a single
+    module.
 
     Parameters
     ----------
@@ -48,15 +49,70 @@ def dfp_training_pipe(builder: mrc.Builder):
 
     Notes
     -----
-    Configurable parameters:
-        - timestamp_column_name (str): Name of the timestamp column used in the data
-        - cache_dir (str): Directory to cache the rolling window data
-        - batching_options (dict): Options for batching the data
-        - user_splitting_options (dict): Options for splitting the data by user
-        - stream_aggregation_options (dict): Options for aggregating the data by stream
-        - preprocessing_options (dict): Options for preprocessing the data
-        - dfencoder_options (dict): Options for configuring the data frame encoder, used for training the model
-        - mlflow_writer_options (dict): Options for the MLflow model writer, responsible for saving the trained model
+        Configurable parameters:
+            - batching_options (dict): Options for batching the data; Example: See Below
+            - cache_dir (str): Directory to cache the rolling window data; Example: "/path/to/cache/dir";
+            Default: ./.cache
+            - dfencoder_options (dict): Options for configuring the data frame encoder; Example: See Below
+            - mlflow_writer_options (dict): Options for the MLflow model writer; Example: See Below
+            - stream_aggregation_options (dict): Options for aggregating the data by stream; Example: See Below
+            - timestamp_column_name (str): Name of the timestamp column used in the data; Example: "my_timestamp";
+            Default: "timestamp"
+            - user_splitting_options (dict): Options for splitting the data by user; Example: See Below
+
+        batching_options:
+            - end_time (datetime/string): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
+            - iso_date_regex_pattern (string): Regex pattern for ISO date matching;
+            Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
+            - parser_kwargs (dictionary): Additional arguments for the parser; Example: {}; Default: {}
+            - period (string): Time period for grouping files; Example: "1d"; Default: "1d"
+            - sampling_rate_s (integer): Sampling rate in seconds; Example: 60; Default: 60
+            - start_time (datetime/string): Start time of the time window; Example: "2023-03-01T00:00:00"; Default: N
+
+        dfencoder_options:
+            - feature_columns (list): List of feature columns to train on; Example: ["column1", "column2", "column3"]
+            - epochs (int): Number of epochs to train for; Example: 50
+            - model_kwargs (dict): Keyword arguments to pass to the model; Example: {"encoder_layers": [64, 32],
+            "decoder_layers": [32, 64], "activation": "relu", "swap_p": 0.1, "lr": 0.001, "lr_decay": 0.9,
+            "batch_size": 32, "verbose": 1, "optimizer": "adam", "scalar": "min_max", "min_cats": 10,
+            "progress_bar": false, "device": "cpu"}
+            - validation_size (float): Size of the validation set; Example: 0.1
+
+        mlflow_writer_options:
+            - conda_env (string): Conda environment for the model; Example: `path/to/conda_env.yml`;
+            Default: `[Required]`
+            - databricks_permissions (dictionary): Permissions for the model; Example: See Below; Default: None
+            - experiment_name_formatter (string): Formatter for the experiment name;
+            Example: `experiment_name_{timestamp}`;
+             Default: `[Required]`
+            - model_name_formatter (string): Formatter for the model name; Example: `model_name_{timestamp}`;
+            Default: `[Required]`
+            - timestamp_column_name (string): Name of the timestamp column; Example: `timestamp`; Default: timestamp
+
+        stream_aggregation_options:
+            - cache_mode (string): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
+            - min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
+            - max_history (int): Maximum history to include in a new training event; Example: 0; Default: 0
+            - timestamp_column_name (string): Name of the column containing timestamps; Example: 'timestamp';
+            Default: 'timestamp'
+            - aggregation_span (string): Lookback timespan for training data in a new training event; Example: '60d';
+            Default: '60d'
+            - cache_to_disk (bool): Whether or not to cache streaming data to disk; Example: false; Default: false
+            - cache_dir (string): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
+
+        user_splitting_options:
+            - fallback_username (str): The user ID to use if the user ID is not found; Example: "generic_user";
+            Default: 'generic_user'
+            - include_generic (bool): Whether to include a generic user ID in the output; Example: false; Default: False
+            - include_individual (bool): Whether to include individual user IDs in the output; Example: true;
+            Default: False
+            - only_users (list): List of user IDs to include; others will be excluded;
+            Example: ["user1", "user2", "user3"];
+             Default: []
+            - skip_users (list): List of user IDs to exclude from the output; Example: ["user4", "user5"]; Default: []
+            - timestamp_column_name (str): Name of the column containing timestamps; Example: "timestamp";
+            Default: 'timestamp'
+            - userid_column_name (str): Name of the column containing user IDs; Example: "username"; Default: 'username'
     """
 
     config = builder.get_current_module_config()

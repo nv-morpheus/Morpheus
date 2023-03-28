@@ -405,11 +405,10 @@ def chdir_tmpdir(request: pytest.FixtureRequest, tmp_path):
 
 @pytest.fixture(scope="session")
 def _filter_probs_df():
-    from morpheus._lib.common import FileTypes
     from morpheus.io.deserializers import read_file_to_df
     from utils import TEST_DIRS
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
-    yield read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='cudf')
+    yield read_file_to_df(input_file, df_type='cudf')
 
 
 @pytest.fixture(scope="function")

@@ -16,14 +16,13 @@
 
 import os
 import tempfile
-import time
 
 import mrc
 
 import cudf
 
 import morpheus.messages as messages
-import morpheus.modules  # Used to load and register morpheus modules
+import morpheus.modules  # noqa: F401
 
 
 def on_next(control_msg):
@@ -65,11 +64,10 @@ def test_get_module():
     assert fn_constructor is not None
 
     config = {}
-    module_instance = fn_constructor("ModuleDataLoaderTest", config)
+    module_instance = fn_constructor("ModuleDataLoaderTest", config)  # noqa: F841 -- we don't need to use it
 
 
 def test_get_module_with_bad_config_no_loaders():
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -100,14 +98,15 @@ def test_get_module_with_bad_config_no_loaders():
 
     try:
         executor.start()
-        assert (False, "This should fail, because no loaders were specified in the config and none were added.")
+        assert (  # noqa: F631
+            False,
+            "This should fail, because no loaders were specified in the config and none were added.")
         executor.join()
     except Exception:
         pass
 
 
 def test_get_module_with_bad_loader_type():
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -136,13 +135,12 @@ def test_get_module_with_bad_loader_type():
     pipeline = mrc.Pipeline()
     try:
         pipeline.make_segment("main", init_wrapper)
-        assert (False, "This should fail, because the loader type is not a valid loader")
+        assert (False, "This should fail, because the loader type is not a valid loader")  # noqa: F631
     except Exception:
         pass
 
 
 def test_get_module_with_bad_control_message():
-
     def init_wrapper(builder: mrc.Builder):
 
         def gen_data():
@@ -179,7 +177,8 @@ def test_get_module_with_bad_control_message():
 
     try:
         executor.start()
-        assert (False, "We should never get here, because the control message specifies an invalid loader")
+        assert (  # noqa: F631
+            False, "We should never get here, because the control message specifies an invalid loader")  # noqa: F631
         executor.join()
     except Exception:
         pass

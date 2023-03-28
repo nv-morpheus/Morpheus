@@ -48,15 +48,15 @@ def dfp_rolling_window(builder: mrc.Builder):
     Notes
     -----
     Configurable parameters:
-        - aggregation_span (str): Time span to aggregate over (e.g., '60d' for 60 days)
-        - cache_dir (str): Directory to cache rolling window data
-        - cache_to_disk (bool): Cache rolling window data to disk (default: False)
-        - cache_mode (str): Cache mode, either 'batch' or 'aggregate'
-            'aggregate': Cache entire rolling window
-            'batch': Cache until batch criteria met, then flush
-        - timestamp_column_name (str): Name of timestamp column (default: 'timestamp')
-        - trigger_on_min_history (int): Minimum number of rows required to trigger rolling window (default: 1)
-        - trigger_on_min_increment (int): Minimum number of rows required to trigger rolling window (default: 0)
+        - cache_mode (string): The user ID to use if the user ID is not found; Example: 'batch'; Default: 'batch'
+        - min_history (int): Minimum history to trigger a new training event; Example: 1; Default: 1
+        - max_history (int): Maximum history to include in a new training event; Example: 0; Default: 0
+        - timestamp_column_name (string): Name of the column containing timestamps; Example: 'timestamp';
+        Default: 'timestamp'
+        - aggregation_span (string): Lookback timespan for training data in a new training event; Example: '60d';
+        Default: '60d'
+        - cache_to_disk (bool): Whether to cache streaming data to disk; Example: false; Default: false
+        - cache_dir (string): Directory to use for caching streaming data; Example: './.cache'; Default: './.cache'
     """
 
     config = builder.get_current_module_config()
@@ -165,7 +165,7 @@ def dfp_rolling_window(builder: mrc.Builder):
             if (data_type == "payload"):
                 return control_message
             elif (data_type == "streaming"):
-                with log_time(logger.debug) as log_info:
+                with log_time(logger.debug):
                     result = try_build_window(payload, user_id)  # Return a MessageMeta
 
                     if (result is None):

@@ -48,10 +48,12 @@ def dfp_inference(builder: mrc.Builder):
 
     Notes
     ----------
-    Configurable parameters:
-        - model_name_formatter: Formatter for model names
-        - fallback_username: Fallback user to use if no model is found for a user
-        - timestamp_column_name: Name of the timestamp column
+        Configurable parameters:
+            - model_name_formatter (string): Formatter for model names; Example: "user_{username}_model";
+            Default: `[Required]`
+            - fallback_username (string): Fallback user to use if no model is found for a user; Example: "generic_user";
+            Default: generic_user
+            - timestamp_column_name (string): Name of the timestamp column; Example: "timestamp"; Default: timestamp
     """
 
     config = builder.get_current_module_config()

@@ -54,19 +54,26 @@ def file_batcher(builder: mrc.Builder):
 
     Notes
     -----
-    Configurable parameters:
-        - batching_options (dict):
-            - end_time (datetime|str): End time of the time window.
-            - iso_date_regex_pattern (str): Regex pattern for ISO date matching.
-            - parser_kwargs (dict): Additional arguments for the parser.
-            - period (str): Time period for grouping files.
-            - sampling_rate_s (int): Sampling rate in seconds.
-            - start_time (datetime|str): Start time of the time window.
-        - cache_dir (str): Cache directory.
-        - file_type (str): File type.
-        - filter_nulls (bool): Whether to filter null values.
-        - schema (dict): Data schema.
-        - timestamp_column_name (str): Name of the timestamp column.
+        Configurable Parameters:
+            - batching_options (dict): Options for batching; See below; Default: -
+            - cache_dir (str): Cache directory; Example: `./file_batcher_cache`; Default: None
+            - file_type (str): File type; Example: JSON; Default: JSON
+            - filter_nulls (bool): Whether to filter null values; Example: false; Default: false
+            - schema (dict): Data schema; See below; Default: `[Required]`
+            - timestamp_column_name (str): Name of the timestamp column; Example: timestamp; Default: timestamp
+
+        batching_options:
+            - end_time (datetime/string): Endtime of the time window; Example: "2023-03-14T23:59:59"; Default: None
+            - iso_date_regex_pattern (str): Regex pattern for ISO date matching;
+            Example: "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"; Default: <iso_date_regex_pattern>
+            - parser_kwargs (dict): Additional arguments for the parser; Example: {}; Default: {}
+            - period (str): Time period for grouping files; Example: "1d"; Default: "1d"
+            - sampling_rate_s (int): Sampling rate in seconds; Example: 60; Default: 60
+            - start_time (datetime/string): Start time of the time window; Example: "2023-03-01T00:00:00"; Default: None
+
+        schema:
+            - encoding (str): Encoding; Example: "latin1"; Default: "latin1"
+            - schema_str (str): Schema string; Example: "string"; Default: `[Required]`
     """
 
     config = builder.get_current_module_config()

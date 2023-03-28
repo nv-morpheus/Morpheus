@@ -14,25 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import csv
-import os
 import queue
 from unittest import mock
 
 import numpy as np
+import pandas as pd
 import pytest
+
+import cudf
 
 from morpheus.config import ConfigFIL
 from morpheus.config import PipelineModes
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.inference.triton_inference_stage import ResourcePool
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
-from morpheus.stages.input.file_source_stage import FileSourceStage
-from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.input.in_memory_source_stage import InMemorySourceStage
+from morpheus.stages.output.compare_dataframe_stage import CompareDataFrameStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.stages.preprocess.preprocess_fil_stage import PreprocessFILStage
+from utils import assert_results
 
 MODEL_MAX_BATCH_SIZE = 1024
 
@@ -120,7 +122,7 @@ def test_resource_pool_create_raises_error():
 @pytest.mark.use_python
 @pytest.mark.parametrize('num_records', [1000, 2000, 4000])
 @mock.patch('tritonclient.grpc.InferenceServerClient')
-def test_triton_stage_pipe(mock_triton_client, config, tmp_path, num_records):
+def test_triton_stage_pipe(mock_triton_client, config, num_records):
     mock_metadata = {
         "inputs": [{
             'name': 'input__0', 'datatype': 'FP32', "shape": [-1, 1]
@@ -131,12 +133,8 @@ def test_triton_stage_pipe(mock_triton_client, config, tmp_path, num_records):
     }
     mock_model_config = {"config": {"max_batch_size": MODEL_MAX_BATCH_SIZE}}
 
-    input_file = os.path.join(tmp_path, "input_data.csv")
-    with open(input_file, 'w') as fh:
-        writer = csv.writer(fh, dialect=csv.excel)
-        writer.writerow(['v'])
-        for i in range(num_records):
-            writer.writerow([i * 2])
+    input_df = pd.DataFrame(data={'v': (i * 2 for i in range(num_records))})
+    expected_df = pd.DataFrame(data={'v': input_df['v'], 'score_test': input_df['v']})
 
     mock_triton_client.return_value = mock_triton_client
     mock_triton_client.is_server_live.return_value = True
@@ -145,8 +143,7 @@ def test_triton_stage_pipe(mock_triton_client, config, tmp_path, num_records):
     mock_triton_client.get_model_metadata.return_value = mock_metadata
     mock_triton_client.get_model_config.return_value = mock_model_config
 
-    data = np.loadtxt(input_file, delimiter=',', skiprows=1)
-    inf_results = np.split(data, range(MODEL_MAX_BATCH_SIZE, len(data), MODEL_MAX_BATCH_SIZE))
+    inf_results = np.split(input_df.values, range(MODEL_MAX_BATCH_SIZE, len(input_df), MODEL_MAX_BATCH_SIZE))
 
     mock_infer_result = mock.MagicMock()
     mock_infer_result.as_numpy.side_effect = inf_results
@@ -165,25 +162,18 @@ def test_triton_stage_pipe(mock_triton_client, config, tmp_path, num_records):
     config.num_threads = 1
 
     config.fil = ConfigFIL()
-
     config.fil.feature_columns = ['v']
 
-    out_file = os.path.join(tmp_path, 'results.csv')
-
     pipe = LinearPipeline(config)
-    pipe.set_source(FileSourceStage(config, filename=input_file, iterative=False))
+    pipe.set_source(InMemorySourceStage(config, [cudf.DataFrame(input_df)]))
     pipe.add_stage(DeserializeStage(config))
     pipe.add_stage(PreprocessFILStage(config))
     pipe.add_stage(
         TritonInferenceStage(config, model_name='abp-nvsmi-xgb', server_url='test:0000', force_convert_inputs=True))
     pipe.add_stage(AddScoresStage(config, prefix="score_"))
     pipe.add_stage(SerializeStage(config))
-    pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
+    comp_stage = pipe.add_stage(CompareDataFrameStage(config, expected_df))
 
     pipe.run()
 
-    results = np.loadtxt(out_file, delimiter=',', skiprows=1)
-    assert len(results) == num_records
-
-    for (i, row) in enumerate(results):
-        assert (row == [i, i * 2, i * 2]).all()
+    assert_results(comp_stage.get_results())

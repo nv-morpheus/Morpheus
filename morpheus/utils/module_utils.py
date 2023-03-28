@@ -21,8 +21,6 @@ import mrc
 import numpy as np
 import pandas as pd
 
-import cudf
-
 logger = logging.getLogger(__name__)
 
 registry = mrc.ModuleRegistry
