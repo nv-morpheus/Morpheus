@@ -23,7 +23,10 @@
 #include <boost/fiber/future/future.hpp>
 #include <mrc/node/rx_sink_base.hpp>
 #include <mrc/node/rx_source_base.hpp>
+#include <mrc/node/sink_properties.hpp>
+#include <mrc/node/source_properties.hpp>
 #include <mrc/segment/builder.hpp>
+#include <mrc/segment/object.hpp>
 #include <mrc/types.hpp>
 #include <pymrc/node.hpp>
 #include <rxcpp/rx.hpp>  // for apply, make_subscriber, observable_member, is_on_error<>::not_void, is_on_next_of<>::not_void, from

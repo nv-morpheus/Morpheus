@@ -18,6 +18,7 @@
 #include "morpheus/objects/data_table.hpp"
 
 #include "morpheus/objects/table_info.hpp"
+#include "morpheus/objects/table_info_data.hpp"
 
 #include <glog/logging.h>
 #include <pybind11/gil.h>

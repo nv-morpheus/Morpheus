@@ -18,6 +18,7 @@
 #include "morpheus/io/data_loader_registry.hpp"
 #include "morpheus/io/deserializers.hpp"  // for read_file_to_df
 #include "morpheus/io/loaders/all.hpp"
+#include "morpheus/io/serializers.hpp"
 #include "morpheus/messages/control.hpp"
 #include "morpheus/objects/dtype.hpp"  // for TypeId
 #include "morpheus/objects/fiber_queue.hpp"
@@ -96,11 +97,18 @@ PYBIND11_MODULE(common, _module)
                          "'auto' to determine from the file extension.")
         .value("Auto", FileTypes::Auto)
         .value("JSON", FileTypes::JSON)
-        .value("CSV", FileTypes::CSV);
+        .value("CSV", FileTypes::CSV)
+        .value("PARQUET", FileTypes::PARQUET);
 
-    _module.def("tyepid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
+    _module.def("typeid_to_numpy_str", [](TypeId tid) { return DType(tid).type_str(); });
+
     _module.def("determine_file_type", &determine_file_type, py::arg("filename"));
     _module.def("read_file_to_df", &read_file_to_df, py::arg("filename"), py::arg("file_type") = FileTypes::Auto);
+    _module.def("write_df_to_file",
+                &SerializersProxy::write_df_to_file,
+                py::arg("df"),
+                py::arg("filename"),
+                py::arg("file_type") = FileTypes::Auto);
 
     py::enum_<FilterSource>(
         _module, "FilterSource", "Enum to indicate which source the FilterDetectionsStage should operate on.")

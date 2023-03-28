@@ -19,9 +19,7 @@ import os
 import numpy as np
 import pytest
 
-from morpheus._lib.common import FileTypes
-from morpheus._lib.common import FilterSource
-from morpheus.io.deserializers import read_file_to_df
+from morpheus.common import FilterSource
 from morpheus.pipeline import LinearPipeline
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
@@ -33,11 +31,12 @@ from utils import ConvMsg
 
 
 @pytest.mark.slow
+@pytest.mark.use_pandas
 @pytest.mark.parametrize('use_conv_msg', [True, False])
 @pytest.mark.parametrize('do_copy', [True, False])
 @pytest.mark.parametrize('threshold', [0.1, 0.5, 0.8])
 @pytest.mark.parametrize('field_name', ['v1', 'v2', 'v3', 'v4'])
-def test_filter_column(config, tmp_path, use_conv_msg, do_copy, threshold, field_name):
+def test_filter_column(config, tmp_path, filter_probs_df, use_conv_msg, do_copy, threshold, field_name):
     input_file = os.path.join(TEST_DIRS.tests_data_dir, "filter_probs.csv")
     out_file = os.path.join(tmp_path, 'results.csv')
 
@@ -66,7 +65,6 @@ def test_filter_column(config, tmp_path, use_conv_msg, do_copy, threshold, field
     # also somehow 0.7 ends up being 0.7000000000000001
     output_data = np.around(output_data[:, 1:], 2)
 
-    expected_df = read_file_to_df(input_file, file_type=FileTypes.Auto, df_type='pandas')
-    expected_df = expected_df[expected_df[field_name] > threshold]
+    expected_df = np.around(filter_probs_df[filter_probs_df[field_name] > threshold], 2)
 
     assert output_data.tolist() == expected_df.to_numpy().tolist()

@@ -15,13 +15,12 @@
 import logging
 import typing
 
-import numpy as np
 import pandas as pd
-import torch
-from dfencoder import AutoEncoder
 from tqdm import tqdm
 
 from morpheus.config import Config
+from morpheus.models.dfencoder import AutoEncoder
+from morpheus.utils.seed import manual_seed
 
 logger = logging.getLogger("morpheus.{}".format(__name__))
 
@@ -132,10 +131,7 @@ class UserModelManager(object):
 
         # If the seed is set, enforce that here
         if (self._seed is not None):
-            torch.manual_seed(self._seed)
-            torch.cuda.manual_seed(self._seed)
-            np.random.seed(self._seed)
-            torch.backends.cudnn.deterministic = True
+            manual_seed(self._seed)
 
         model = self._model_class(
             encoder_layers=[512, 500],  # layers of the encoding part
@@ -215,10 +211,7 @@ class UserModelManager(object):
 
         # If the seed is set, enforce that here
         if (self._seed is not None):
-            torch.manual_seed(self._seed)
-            torch.cuda.manual_seed(self._seed)
-            np.random.seed(self._seed)
-            torch.backends.cudnn.deterministic = True
+            manual_seed(self._seed)
 
         model = self._model_class(
             encoder_layers=[512, 500],  # layers of the encoding part

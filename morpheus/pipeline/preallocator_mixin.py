@@ -23,8 +23,8 @@ import pandas as pd
 
 import cudf
 
-from morpheus._lib.common import TypeId
-from morpheus._lib.common import tyepid_to_numpy_str
+from morpheus.common import TypeId
+from morpheus.common import typeid_to_numpy_str
 from morpheus.config import CppConfig
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
@@ -66,7 +66,7 @@ class PreallocatorMixin(ABC):
                 column_type = self._needed_columns[column_name]
                 logger.debug("Preallocating column %s[%s]", column_name, column_type)
                 if column_type != TypeId.STRING:
-                    column_type_str = tyepid_to_numpy_str(column_type)
+                    column_type_str = typeid_to_numpy_str(column_type)
                     df[column_name] = alloc_func(num_rows, column_type_str)
                 else:
                     df[column_name] = ''

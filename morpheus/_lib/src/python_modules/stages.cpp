@@ -69,18 +69,14 @@ PYBIND11_MODULE(stages, _module)
         .def(py::init<>(&AddClassificationStageInterfaceProxy::init),
              py::arg("builder"),
              py::arg("name"),
-             py::arg("threshold"),
-             py::arg("num_class_labels"),
-             py::arg("idx2label"));
+             py::arg("idx2label"),
+             py::arg("threshold"));
 
     py::class_<mrc::segment::Object<AddScoresStage>,
                mrc::segment::ObjectProperties,
                std::shared_ptr<mrc::segment::Object<AddScoresStage>>>(_module, "AddScoresStage", py::multiple_inheritance())
-        .def(py::init<>(&AddScoresStageInterfaceProxy::init),
-             py::arg("builder"),
-             py::arg("name"),
-             py::arg("num_class_labels"),
-             py::arg("idx2label"));
+        .def(
+            py::init<>(&AddScoresStageInterfaceProxy::init), py::arg("builder"), py::arg("name"), py::arg("idx2label"));
 
     py::class_<mrc::segment::Object<DeserializeStage>,
                mrc::segment::ObjectProperties,

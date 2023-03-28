@@ -14,12 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import mock
-
 import cupy as cp
 import pytest
 
+import cudf
+
+from morpheus.messages.memory.tensor_memory import TensorMemory
+from morpheus.messages.message_meta import MessageMeta
+from morpheus.messages.multi_response_message import MultiResponseMessage
 from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from utils import assert_df_equal
 
 
 def test_constructor(config):
@@ -41,41 +45,52 @@ def test_constructor(config):
     assert ac._labels, ['lizards']
     assert ac._idx2label, {1: 'test_lizards'}
 
-    pytest.raises(AssertionError, AddClassificationsStage, config, labels=['missing'])
+    with pytest.raises(AssertionError):
+        AddClassificationsStage(config, labels=['missing'])
 
 
 @pytest.mark.use_python
-def test_add_labels(config):
-    mock_message = mock.MagicMock()
-    mock_message.probs = cp.array([[0.1, 0.5, 0.8], [0.2, 0.6, 0.9]])
+def test_add_labels():
 
-    config.class_labels = ['frogs', 'lizards', 'toads']
+    class_labels = {0: "frogs", 1: "lizards", 2: "toads"}
 
-    ac = AddClassificationsStage(config, threshold=0.5)
-    ac._add_labels(mock_message)
+    threshold = 0.6
 
-    mock_message.set_meta.assert_has_calls([
-        mock.call('frogs', [False, False]),
-        mock.call('lizards', [False, True]),
-        mock.call('toads', [True, True]),
-    ])
+    df = cudf.DataFrame([0, 1], columns=["dummy"])
+    probs_array = cp.array([[0.1, 0.6, 0.8], [0.3, 0.61, 0.9]])
+    probs_array_bool = probs_array > threshold
 
-    wrong_shape = mock.MagicMock()
-    wrong_shape.probs = cp.array([[0.1, 0.5], [0.2, 0.6]])
-    pytest.raises(RuntimeError, ac._add_labels, wrong_shape)
+    message = MultiResponseMessage(meta=MessageMeta(df), memory=TensorMemory(count=2, tensors={"probs": probs_array}))
 
+    labeled = AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)
 
-@pytest.mark.use_python
-def test_build_single(config):
-    mock_stream = mock.MagicMock()
-    mock_segment = mock.MagicMock()
-    mock_segment.make_node.return_value = mock_stream
-    mock_input = mock.MagicMock()
+    assert assert_df_equal(labeled.get_meta("frogs"), probs_array_bool[:, 0])
+    assert assert_df_equal(labeled.get_meta("lizards"), probs_array_bool[:, 1])
+    assert assert_df_equal(labeled.get_meta("toads"), probs_array_bool[:, 2])
 
-    config.class_labels = ['frogs', 'lizards', 'toads']
+    # Same thing but change the probs tensor name
+    message = MultiResponseMessage(meta=MessageMeta(df),
+                                   memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
+                                   probs_tensor_name="other_probs")
 
-    ac = AddClassificationsStage(config)
-    ac._build_single(mock_segment, mock_input)
+    labeled = AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)
 
-    mock_segment.make_node.assert_called_once()
-    mock_segment.make_edge.assert_called_once()
+    assert assert_df_equal(labeled.get_meta("frogs"), probs_array_bool[:, 0])
+    assert assert_df_equal(labeled.get_meta("lizards"), probs_array_bool[:, 1])
+    assert assert_df_equal(labeled.get_meta("toads"), probs_array_bool[:, 2])
+
+    # Fail in missing probs data
+    message = MultiResponseMessage(meta=MessageMeta(df),
+                                   memory=TensorMemory(count=2, tensors={"other_probs": probs_array}),
+                                   probs_tensor_name="other_probs")
+    message.probs_tensor_name = "probs"
+
+    with pytest.raises(KeyError):
+        AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)
+
+    # Too small of a probs array
+    message = MultiResponseMessage(meta=MessageMeta(df),
+                                   memory=TensorMemory(count=2, tensors={"probs": probs_array[:, 0:-1]}))
+
+    with pytest.raises(RuntimeError):
+        AddClassificationsStage._add_labels(message, idx2label=class_labels, threshold=threshold)

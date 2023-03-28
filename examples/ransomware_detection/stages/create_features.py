@@ -15,12 +15,12 @@
 import typing
 
 import mrc
-from common.data_models import FeatureConfig
-from common.feature_extractor import FeatureExtractor
 from mrc.core import operators as ops
 
 from dask.distributed import Client
 
+from common.data_models import FeatureConfig
+from common.feature_extractor import FeatureExtractor
 from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes

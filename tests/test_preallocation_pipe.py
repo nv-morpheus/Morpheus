@@ -21,11 +21,11 @@ import pytest
 
 import cudf
 
-from morpheus._lib.common import TypeId
-from morpheus._lib.common import tyepid_to_numpy_str
+from morpheus.common import TypeId
+from morpheus.common import typeid_to_numpy_str
 from morpheus.messages import MessageMeta
 from morpheus.messages import MultiMessage
-from morpheus.messages import MultiResponseProbsMessage
+from morpheus.messages import MultiResponseMessage
 from morpheus.pipeline import LinearPipeline
 from morpheus.pipeline.single_port_stage import SinglePortStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
@@ -47,7 +47,7 @@ class CheckPreAlloc(SinglePortStage):
 
     def __init__(self, c, probs_type):
         super().__init__(c)
-        self._expected_type = cudf.dtype(tyepid_to_numpy_str(probs_type))
+        self._expected_type = cudf.dtype(typeid_to_numpy_str(probs_type))
         self._class_labels = c.class_labels
         self._needed_columns.update({label: probs_type for label in c.class_labels})
 
@@ -92,7 +92,7 @@ def test_preallocation(config, tmp_path, probs_type):
     pipe = LinearPipeline(config)
     pipe.set_source(file_src)
     pipe.add_stage(DeserializeStage(config))
-    pipe.add_stage(ConvMsg(config, columns=input_cols, probs_type=tyepid_to_numpy_str(probs_type)))
+    pipe.add_stage(ConvMsg(config, columns=input_cols, probs_type=typeid_to_numpy_str(probs_type)))
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))
@@ -128,10 +128,10 @@ def test_preallocation_multi_segment_pipe(config, tmp_path, probs_type):
     pipe.add_stage(DeserializeStage(config))
     pipe.add_segment_boundary(MultiMessage)
     pipe.add_stage(
-        ConvMsg(config, columns=get_column_names_from_file(input_file), probs_type=tyepid_to_numpy_str(probs_type)))
-    (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseProbsMessage)
+        ConvMsg(config, columns=get_column_names_from_file(input_file), probs_type=typeid_to_numpy_str(probs_type)))
+    (_, boundary_ingress) = pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(CheckPreAlloc(config, probs_type=probs_type))
-    pipe.add_segment_boundary(MultiResponseProbsMessage)
+    pipe.add_segment_boundary(MultiResponseMessage)
     pipe.add_stage(SerializeStage(config, include=["^{}$".format(c) for c in config.class_labels]))
     pipe.add_segment_boundary(MessageMeta)
     pipe.add_stage(WriteToFileStage(config, filename=out_file, overwrite=False))

@@ -17,23 +17,18 @@
 
 #pragma once
 
-#include "morpheus/messages/multi_response_probs.hpp"
+#include "morpheus/stages/add_scores_stage_base.hpp"
 
-#include <boost/fiber/future/future.hpp>
-#include <mrc/node/rx_sink_base.hpp>
-#include <mrc/node/rx_source_base.hpp>
 #include <mrc/segment/builder.hpp>
-#include <mrc/types.hpp>
-#include <pymrc/node.hpp>
-#include <rxcpp/rx.hpp>
+#include <mrc/segment/object.hpp>
 
 #include <cstddef>  // for size_t
 #include <map>
 #include <memory>
 #include <string>
-#include <vector>
 
 namespace morpheus {
+
 /****** Component public implementations *******************/
 /****** AddClassificationStage********************************/
 
@@ -48,43 +43,22 @@ namespace morpheus {
  * @brief Add detected classifications to each message. Classification labels based on probabilities calculated in
  * inference stage. Label indexes will be looked up in the idx2label property.
  */
-class AddClassificationsStage : public mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>,
-                                                              std::shared_ptr<MultiResponseProbsMessage>>
+class AddClassificationsStage : public AddScoresStageBase
 {
   public:
-    using base_t =
-        mrc::pymrc::PythonNode<std::shared_ptr<MultiResponseProbsMessage>, std::shared_ptr<MultiResponseProbsMessage>>;
-    using typename base_t::sink_type_t;
-    using typename base_t::source_type_t;
-    using typename base_t::subscribe_fn_t;
-
     /**
      * @brief Construct a new Add Classifications Stage object
      *
      * @param threshold : Threshold to consider true/false for each class
-     * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
      */
-    AddClassificationsStage(float threshold,
-                            std::size_t num_class_labels,
-                            std::map<std::size_t, std::string> idx2label);
-
-  private:
-    /**
-     * TODO(Documentation)
-     */
-    subscribe_fn_t build_operator();
-
-    float m_threshold;
-    std::size_t m_num_class_labels;
-    std::map<std::size_t, std::string> m_idx2label;
+    AddClassificationsStage(std::map<std::size_t, std::string> idx2label, float threshold);
 };
 
 /****** AddClassificationStageInterfaceProxy******************/
 /**
  * @brief Interface proxy, used to insulate python bindings.
  */
-
 struct AddClassificationStageInterfaceProxy
 {
     /**
@@ -92,17 +66,15 @@ struct AddClassificationStageInterfaceProxy
      *
      * @param builder : Pipeline context object reference
      * @param name : Name of a stage reference
-     * @param threshold : Threshold to consider true/false for each class
-     * @param num_class_labels : Number of classification labels
      * @param idx2label : Index to classification labels map
+     * @param threshold : Threshold to consider true/false for each class
      * @return std::shared_ptr<mrc::segment::Object<AddClassificationsStage>>
      */
     static std::shared_ptr<mrc::segment::Object<AddClassificationsStage>> init(
         mrc::segment::Builder& builder,
         const std::string& name,
-        float threshold,
-        std::size_t num_class_labels,
-        std::map<std::size_t, std::string> idx2label);
+        std::map<std::size_t, std::string> idx2label,
+        float threshold);
 };
 
 #pragma GCC visibility pop

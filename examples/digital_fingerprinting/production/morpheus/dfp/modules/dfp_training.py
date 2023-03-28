@@ -15,12 +15,12 @@
 import logging
 
 import mrc
-from dfencoder import AutoEncoder
 from mrc.core import operators as ops
 
 import cudf
 
 from morpheus.messages import ControlMessage
+from morpheus.models.dfencoder import AutoEncoder
 from morpheus.messages.multi_ae_message import MultiAEMessage
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_utils import register_module

@@ -86,6 +86,37 @@ struct StringUtil
     }
 
     /**
+     * @brief Generates a string representation of a std::map in the form "{key1: 'value1', key2: 'value2'}"
+     *
+     * @tparam IterT Deduced iterator type
+     * @param begin Start iterator. Use `myMap.begin()`
+     * @param end End iterator. Use `myMap.end()`
+     * @return std::string
+     */
+    template <typename IterT>
+    static std::string map_to_str(IterT begin, IterT end)
+    {
+        std::ostringstream ss;
+
+        ss << "{";
+
+        if (begin != end)
+        {
+            ss << begin->first << ": '" << begin->second << "'";
+            ++begin;
+        }
+        while (begin != end)
+        {
+            ss << ", " << begin->first << ": '" << begin->second << "'";
+            ++begin;
+        }
+
+        ss << "}";
+
+        return ss.str();
+    }
+
+    /**
      * @brief Check if a string contains a substring.
      *
      * This method takes two string arguments, `str` and `search_str`. It returns true if `str`
