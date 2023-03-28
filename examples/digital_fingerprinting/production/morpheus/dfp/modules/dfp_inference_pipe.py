@@ -18,7 +18,7 @@ import dfp.modules.dfp_data_prep  # noqa: F401
 import dfp.modules.dfp_inference  # noqa: F401
 import dfp.modules.dfp_postprocessing  # noqa: F401
 import dfp.modules.dfp_preproc  # noqa: F401
-import dfp.modules.dfp_rolling_window
+import dfp.modules.dfp_rolling_window  # noqa: F401
 import mrc
 
 import morpheus.modules.filter_detections  # noqa: F401
@@ -44,7 +44,8 @@ logger = logging.getLogger("morpheus.{}".format(__name__))
 @register_module(DFP_INFERENCE_PIPE, MORPHEUS_MODULE_NAMESPACE)
 def dfp_inference_pipe(builder: mrc.Builder):
     """
-    This module function consolidates multiple dfp pipeline modules relevant to the inference process into a single module.
+    This module function consolidates multiple dfp pipeline modules relevant to the inference process into a single
+    module.
 
     Parameters
     ----------
@@ -53,17 +54,22 @@ def dfp_inference_pipe(builder: mrc.Builder):
 
     Notes
     ----------
-    Configurable parameters:
-        - batching_options (dict): Options for batching data, including start and end times, sampling rate, and other settings.
-        - cache_dir (str): Directory for caching rolling window data.
-        - detection_criteria (dict): Criteria for filtering detections, such as threshold and field_name.
-        - inference_options (dict): Options for the inference module, including model settings and other configurations.
-        - num_output_ports (int): Number of output ports for the module.
-        - preprocessing_options (dict): Options for preprocessing data, including schema and timestamp column name.
-        - stream_aggregation_options (dict): Options for aggregating data by stream, including aggregation span and cache settings.
-        - timestamp_column_name (str): Name of the timestamp column in the input data.
-        - user_splitting_options (dict): Options for splitting data by user, including filtering and user ID column name.
-        - write_to_file_options (dict): Options for writing detections to a file, such as filename and overwrite settings.
+        Configurable parameters:
+            - batching_options (dict): Options for batching the data; Example: See Below
+            - cache_dir (str): Directory to cache the rolling window data; Example: "/path/to/cache/dir";
+            Default: ./.cache
+            - detection_criteria (dict): Criteria for filtering detections; Example: See Below
+            - fallback_username (str): User ID to use if user ID not found; Example: "generic_user";
+            Default: "generic_user"
+            - inference_options (dict): Options for the inference module; Example: See Below
+            - model_name_formatter (str): Format string for the model name; Example: "model_{timestamp}";
+            Default: `[Required]`
+            - num_output_ports (int): Number of output ports for the module; Example: 3
+            - timestamp_column_name (str): Name of the timestamp column in the input data; Example: "timestamp";
+            Default: "timestamp"
+            - stream_aggregation_options (dict): Options for aggregating the data by stream; Example: See Below
+            - user_splitting_options (dict): Options for splitting the data by user; Example: See Below
+            - write_to_file_options (dict): Options for writing the detections to a file; Example: See Below
     """
 
     config = builder.get_current_module_config()

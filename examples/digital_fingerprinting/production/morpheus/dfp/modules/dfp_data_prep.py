@@ -42,9 +42,9 @@ def dfp_data_prep(builder: mrc.Builder):
 
     Notes
     ----------
-    Configurable parameters:
-        - schema: Schema of the data
-        - timestamp_column_name: Name of the timestamp column
+        Configurable parameters:
+            - schema: Schema of the data
+            - timestamp_column_name: Name of the timestamp column
     """
 
     config = builder.get_current_module_config()

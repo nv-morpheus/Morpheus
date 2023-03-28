@@ -28,7 +28,6 @@ from morpheus.io import serializers
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import WRITE_TO_FILE
-from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
@@ -48,12 +47,12 @@ def write_to_file(builder: mrc.Builder):
 
     Notes
     -----
-    Configurable parameters:
-        - filename : str (Path to output file)
-        - overwrite : bool (If true, overwrite the file if it exists)
-        - flush : bool (If true, flush the file after each write)
-        - file_type : FileTypes (Type of file to write)
-        - include_index_col : bool (If true, include the index column)
+        Configurable Parameters:
+            - filename (string): Path to the output file; Example: `output.csv`; Default: None
+            - file_type (FileTypes): Type of file to write; Example: `FileTypes.CSV`; Default: `FileTypes.Auto`
+            - flush (bool): If true, flush the file after each write; Example: `false`; Default: false
+            - include_index_col (bool): If true, include the index column; Example: `false`; Default: true
+            - overwrite (bool): If true, overwrite the file if it exists; Example: `true`; Default: false
     """
 
     config = builder.get_current_module_config()
@@ -102,7 +101,6 @@ def write_to_file(builder: mrc.Builder):
 
         # Open up the file handle
         with open(output_file, "a") as out_file:
-
             def write_to_file(x: MessageMeta):
                 lines = convert_to_strings(x.df)
 

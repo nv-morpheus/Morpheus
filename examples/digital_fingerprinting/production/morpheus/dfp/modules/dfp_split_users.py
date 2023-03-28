@@ -16,7 +16,6 @@ import logging
 import typing
 
 import mrc
-import numpy as np
 import pandas as pd
 from dfp.utils.logging_timer import log_time
 from mrc.core import operators as ops
@@ -46,13 +45,16 @@ def dfp_split_users(builder: mrc.Builder):
     Notes
     -----
     Configurable parameters:
-        - fallback_username (str): User ID to use if user ID not found (default: 'generic_user')
-        - include_generic (bool): Include generic user ID in output (default: False)
-        - include_individual (bool): Include individual user IDs in output (default: False)
-        - only_users (list): List of user IDs to include in output, others will be excluded (default: [])
-        - skip_users (list): List of user IDs to exclude from output (default: [])
-        - timestamp_column_name (str): Name of column containing timestamps (default: 'timestamp')
-        - userid_column_name (str): Name of column containing user IDs (default: 'username')
+        - fallback_username (str): The user ID to use if the user ID is not found; Example: "generic_user";
+        Default: 'generic_user'
+        - include_generic (bool): Whether to include a generic user ID in the output; Example: false; Default: False
+        - include_individual (bool): Whether to include individual user IDs in the output; Example: true; Default: False
+        - only_users (list): List of user IDs to include; others will be excluded; Example: ["user1", "user2", "user3"];
+         Default: []
+        - skip_users (list): List of user IDs to exclude from the output; Example: ["user4", "user5"]; Default: []
+        - timestamp_column_name (str): Name of the column containing timestamps; Example: "timestamp";
+        Default: 'timestamp'
+        - userid_column_name (str): Name of the column containing user IDs; Example: "username"; Default: 'username'
     """
 
     config = builder.get_current_module_config()
@@ -129,7 +131,7 @@ def dfp_split_users(builder: mrc.Builder):
             control_messages = None  # for readability
             mm = control_message.payload()
             with mm.mutable_dataframe() as dfm:
-                with log_time(logger.debug) as log_info:
+                with log_time(logger.debug):
 
                     if (isinstance(dfm, cudf.DataFrame)):
                         # Convert to pandas because cudf is slow at this
@@ -143,7 +145,7 @@ def dfp_split_users(builder: mrc.Builder):
                     control_messages = generate_control_messages(control_message, split_dataframes)
 
             return control_messages
-        except Exception as e:
+        except Exception:
             logger.exception("Error extracting users from message, discarding control message")
             return []
 

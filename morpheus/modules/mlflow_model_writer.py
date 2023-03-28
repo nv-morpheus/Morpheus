@@ -53,13 +53,19 @@ def mlflow_model_writer(builder: mrc.Builder):
         mrc Builder object.
 
     Notes
-    ----------
-    Configurable parameters:
-        - model_name_formatter: Formatter for the model name
-        - experiment_name_formatter: Formatter for the experiment name
-        - conda_env: Conda environment for the model
-        - timestamp_column_name: Name of the timestamp column
-        - databricks_permissions: Permissions for the model
+    -----
+        Configurable Parameters:
+            - conda_env (str): Conda environment for the model; Example: `path/to/conda_env.yml`; Default: `[Required]`
+            - databricks_permissions (dict): Permissions for the model; See Below; Default: None
+            - experiment_name_formatter (str): Formatter for the experiment name;
+            Example: `experiment_name_{timestamp}`; Default: `[Required]`
+            - model_name_formatter (str): Formatter for the model name; Example: `model_name_{timestamp}`;
+            Default: `[Required]`
+            - timestamp_column_name (str): Name of the timestamp column; Example: `timestamp`; Default: timestamp
+
+        databricks_permissions:
+            - read (array): List of users with read permissions; Example: `["read_user1", "read_user2"]`; Default: -
+            - write (array): List of users with write permissions; Example: `["write_user1", "write_user2"]`; Default: -
     """
 
     config = builder.get_current_module_config()
@@ -135,7 +141,7 @@ def mlflow_model_writer(builder: mrc.Builder):
                 "access_control_list": [{
                     "group_name": group, "permission_level": permission
                 } for group,
-                                        permission in databricks_permissions.items()]
+                    permission in databricks_permissions.items()]
             }
 
             requests.patch(url=patch_registered_model_permissions_url,

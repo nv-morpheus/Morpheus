@@ -26,7 +26,6 @@ from morpheus.messages import MultiMessage
 from morpheus.messages.message_meta import MessageMeta
 from morpheus.utils.module_ids import MORPHEUS_MODULE_NAMESPACE
 from morpheus.utils.module_ids import SERIALIZE
-from morpheus.utils.module_utils import get_module_config
 from morpheus.utils.module_utils import register_module
 
 logger = logging.getLogger(__name__)
@@ -45,13 +44,16 @@ def serialize(builder: mrc.Builder):
         mrc Builder object.
 
     Notes
-    ----------
-    Configurable parameters:
-        - include : str (Regex to include columns)
-        - exclude : List[str] (List of regex to exclude columns)
-        - fixed_columns : bool (If true, the columns are fixed and not determined at runtime)
-        - columns : List[str] (List of columns to include)
-        - use_cpp : bool (If true, use C++ to serialize)
+    -----
+        Configurable Parameters:
+            - columns (list[string]): List of columns to include; Example: `["column1", "column2", "column3"]`;
+            Default: None
+            - exclude (list[string]): List of regex patterns to exclude columns; Example: `["column_to_exclude"]`;
+            Default: `[r'^ID$', r'^_ts_']`
+            - fixed_columns (bool): If true, the columns are fixed and not determined at runtime; Example: `true`;
+            Default: true
+            - include (string): Regex to include columns; Example: `^column`; Default: None
+            - use_cpp (bool): If true, use C++ to serialize; Example: `true`; Default: false
     """
 
     config = builder.get_current_module_config()

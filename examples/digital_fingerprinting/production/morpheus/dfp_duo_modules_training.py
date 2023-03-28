@@ -21,7 +21,6 @@ import dfp.modules.dfp_training_pipeline  # noqa: F401
 from dfp.stages.multi_file_source import MultiFileSource
 from dfp.utils.config_generator import ConfigGenerator
 from dfp.utils.config_generator import generate_ae_config
-from dfp.utils.dfp_arg_parser import DFPArgParser
 from dfp.utils.schema_utils import Schema
 from dfp.utils.schema_utils import SchemaBuilder
 
@@ -107,7 +106,6 @@ def run_pipeline(train_users,
                  log_level,
                  sample_rate_s,
                  **kwargs):
-
     dfp_arg_parser = DeriveArgs(skip_user,
                                 only_user,
                                 start_time,

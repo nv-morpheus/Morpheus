@@ -18,22 +18,18 @@ import pytest
 
 import cudf
 
-import morpheus._lib.messages as _messages
 import morpheus.messages as messages
 
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_init():
-    raw_control_message_one = _messages.ControlMessage()
-    raw_control_message_two = _messages.ControlMessage({"test": "test"})
-
-    control_message_one = messages.ControlMessage()
-    control_message_two = messages.ControlMessage({"test": "test"})
+    control_message_one = messages.ControlMessage()  # noqa: F841
+    control_message_two = messages.ControlMessage({"test": "test"})  # noqa: F841
 
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_get():
-    raw_control_message = _messages.ControlMessage({
+    raw_control_message = messages.ControlMessage({
         "test": "test_rcm", "tasks": [{
             "type": "load", "properties": {
                 "loader_id": "payload"
@@ -57,7 +53,7 @@ def test_control_message_get():
 
 @pytest.mark.usefixtures("config_only_cpp")
 def test_control_message_set():
-    raw_control_message = _messages.ControlMessage()
+    raw_control_message = messages.ControlMessage()
     control_message = messages.ControlMessage()
 
     raw_control_message.config({

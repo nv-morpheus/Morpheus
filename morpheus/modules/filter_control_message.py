@@ -37,11 +37,11 @@ def filter_control_message(builder: mrc.Builder):
 
     Notes
     -----
-    Configurable parameters:
-        - enable_task_filtering (bool): Enables filtering based on task type.
-        - enable_data_type_filtering (bool): Enables filtering based on data type.
-        - filter_task_type (str): The task type to be used as a filter.
-        - filter_data_type (str): The data type to be used as a filter.
+        Configurable Parameters:
+            - enable_data_type_filtering (bool): Enables filtering based on data type; Example: true; Default: false
+            - enable_task_filtering (bool): Enables filtering based on task type; Example: true; Default: false
+            - filter_data_type (str): The data type to be used as a filter; Example: `desired_data_type`; Default: None
+            - filter_task_type (str): The task type to be used as a filter; Example: `specific_task`; Default: None
     """
 
     config = builder.get_current_module_config()

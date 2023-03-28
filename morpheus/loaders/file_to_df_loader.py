@@ -18,7 +18,6 @@ import logging
 import multiprocessing as mp
 import os
 import pickle
-import time
 import typing
 from functools import partial
 
@@ -265,13 +264,12 @@ def file_to_df_loader(control_message: ControlMessage, task: dict):
         if (not filenames):
             return None
 
-        start_time = time.time()
-
         try:
+            # start_time = time.time()
             output_df, cache_hit = get_or_create_dataframe_from_s3_batch(filenames)
 
-            duration = (time.time() - start_time) * 1000.0
-
+            # duration = (time.time() - start_time) * 1000.0
+            #
             # logger.debug("S3 objects to DF complete. Rows: %s, Cache: %s, Duration: %s ms",
             #             len(output_df),
             #             "hit" if cache_hit else "miss",
