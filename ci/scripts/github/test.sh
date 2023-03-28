@@ -69,11 +69,12 @@ done
 rapids-logger "Running Python tests"
 set +e
 
-python -I -m pytest --run_slow --run_kafka \
+python -I -m pytest -s -v --run_slow --run_kafka \
        --junit-xml=${REPORTS_DIR}/report_pytest.xml \
        --cov=morpheus \
        --cov-report term-missing \
-       --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml
+       --cov-report=xml:${REPORTS_DIR}/report_pytest_coverage.xml \
+       dfencoder
 
 PYTEST_RESULTS=$?
 TEST_RESULTS=$(($TEST_RESULTS+$PYTEST_RESULTS))

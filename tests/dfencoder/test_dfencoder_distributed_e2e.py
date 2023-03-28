@@ -17,6 +17,11 @@
 import json
 import os
 
+# This must come before torch
+# isort: off
+import cudf  # noqa: E401
+# isort: on
+
 import numpy as np
 import pytest
 import torch
@@ -98,11 +103,13 @@ def cleanup_dist():
 
 @pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
+
     world_size = 1
     torch.multiprocessing.spawn(_run_test, args=(world_size, ), nprocs=world_size, join=True)
 
 
 def _run_test(rank, world_size):
+
     torch.cuda.set_device(rank)
 
     setup_dist(rank, world_size)
