@@ -21,9 +21,6 @@ import numpy as np
 import pytest
 import torch
 
-from morpheus.models.dfencoder.autoencoder import AutoEncoder
-from morpheus.models.dfencoder.dataloader import DatasetFromPath
-from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
 from utils import TEST_DIRS
 
 FEATURE_COLUMNS = [
@@ -98,11 +95,30 @@ def cleanup_dist():
 
 @pytest.mark.usefixtures("manual_seed")
 def test_dfencoder_distributed_e2e():
+
+    import multiprocessing
+    ctx = multiprocessing.get_context('spawn')
+
     world_size = 1
-    torch.multiprocessing.spawn(_run_test, args=(world_size, ), nprocs=world_size, join=True)
+    torch.multiprocessing.start_processes(_run_test,
+                                          args=(world_size, ),
+                                          nprocs=world_size,
+                                          join=True,
+                                          start_method="fork")
 
 
 def _run_test(rank, world_size):
+
+    import sys
+
+    print("Executable: " + sys.executable)
+    print("Environ:")
+    print(os.environ)
+
+    from morpheus.models.dfencoder.autoencoder import AutoEncoder
+    from morpheus.models.dfencoder.dataloader import DatasetFromPath
+    from morpheus.models.dfencoder.dataloader import DFEncoderDataLoader
+
     torch.cuda.set_device(rank)
 
     setup_dist(rank, world_size)
