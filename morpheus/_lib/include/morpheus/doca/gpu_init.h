@@ -14,7 +14,6 @@
 #define GPU_INIT_H
 
 #include <cuda.h>
-#include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 

@@ -39,7 +39,7 @@ from elasticsearch_ingest_stage import WriteToElasticsearchStage
 @click.command()
 @click.option(
     "--num_threads",
-    default=os.cpu_count(),
+    default=1,
     type=click.IntRange(min=1),
     help="Number of internal pipeline threads to use",
 )
@@ -123,11 +123,11 @@ def run_pipeline(
     # add doca source stage
     pipeline.set_source(DocaSourceStage(config, nic_addr, gpu_addr, source_ip_filter))
     #pipeline.set_source(FileSourceStage(config, filename='/workspace/examples/data/pcap_dump.jsonlines', repeat=10))
-    pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
+    # pipeline.add_stage(MonitorStage(config, description="DOCA GPUNetIO rate", unit='pkts'))
 
     # add deserialize stage
     pipeline.add_stage(DeserializeStage(config))
-    pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))    
+    # pipeline.add_stage(MonitorStage(config, description="Deserialize rate", unit='pkts'))    
 
     if True:
 
@@ -144,7 +144,7 @@ def run_pipeline(
                 )
             )    
 
-        pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
+        # pipeline.add_stage(MonitorStage(config, description="Tokenize rate", unit='pkts'))
 
         # add inference stage
         pipeline.add_stage(
@@ -158,37 +158,37 @@ def run_pipeline(
                 )
             )    
 
-        pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))    
+        # pipeline.add_stage(MonitorStage(config, description="Inference rate", unit='pkts'))    
 
-        # add class stage
-        pipeline.add_stage(AddClassificationsStage(config))
-        pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))  
+    #     # add class stage
+    #     pipeline.add_stage(AddClassificationsStage(config))
+    #     pipeline.add_stage(MonitorStage(config, description="AddClass rate", unit='pkts'))  
                   
-    if False:
-        # add serialization stage
-        pipeline.add_stage(SerializeStage(config))
-        pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))       
+    # if True:
+    #     # add serialization stage
+    #     pipeline.add_stage(SerializeStage(config))
+    #     pipeline.add_stage(MonitorStage(config, description="Serialization rate", unit='pkts'))       
         
-        #pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
-        #pipeline.add_stage(MonitorStage(config, description="File writer"))
+    #     #pipeline.add_stage(WriteToFileStage(config, filename="doca_test.csv", overwrite=True))
+    #     #pipeline.add_stage(MonitorStage(config, description="File writer"))
 
-        pipeline.add_stage(
-            WriteToElasticsearchStage(
-                config,
-                elastic_index='morpheus-sid-index',
-                elastic_hosts=elastic_hosts,
-                elastic_ports=elastic_ports,
-                elastic_user="elastic",
-                elastic_password="changeme",
-                elastic_cacrt="",
-                elastic_scheme="http",
-                num_threads=2
-                )
-            )
+    #     pipeline.add_stage(
+    #         WriteToElasticsearchStage(
+    #             config,
+    #             elastic_index='morpheus-sid-index',
+    #             elastic_hosts=elastic_hosts,
+    #             elastic_ports=elastic_ports,
+    #             elastic_user="elastic",
+    #             elastic_password="changeme",
+    #             elastic_cacrt="",
+    #             elastic_scheme="http",
+    #             num_threads=1
+    #             )
+    #         )
 
-        pipeline.add_stage(
-            MonitorStage(config, description="Elasticsearch index rate", unit='pkts')
-        ) 
+    #     pipeline.add_stage(
+    #         MonitorStage(config, description="Elasticsearch index rate", unit='pkts')
+    #     )
 
     # Build the pipeline here to see types in the vizualization
     pipeline.build()

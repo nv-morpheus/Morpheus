@@ -111,6 +111,8 @@ include(dependencies)
 # - Post dependencies setup --------
 morpheus_utils_compiler_set_defaults(MORPHEUS_USE_CLANG_TIDY)
 
+include(environment/init_compiler)
+
 # Setup IWYU if enabled
 include(environment/init_iwyu)
 

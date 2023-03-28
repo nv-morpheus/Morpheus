@@ -173,6 +173,8 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
       //           << "last_offset:      " << last_offset      << std::endl
       //           << std::flush;
 
+      cudaStreamSynchronize(processing_stream);
+
       // data columns
       auto data_offsets_out_d_size = data_offsets_out_d.size();
       auto data_offsets_out_d_col  = std::make_unique<cudf::column>(
@@ -206,7 +208,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudf::data_type{cudf::type_to_id<int64_t>()},
         src_mac_out_d_size,
         src_mac_out_d.release());
-      auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view(), processing_stream);
+      auto src_mac_out_str_col = morpheus::doca::integers_to_mac(src_mac_out_d_col->view());
 
       // dst_mac address column
       auto dst_mac_out_d_size = dst_mac_out_d.size();
@@ -214,9 +216,7 @@ DocaSourceStage::subscriber_fn_t DocaSourceStage::build()
         cudf::data_type{cudf::type_to_id<int64_t>()},
         dst_mac_out_d_size,
         dst_mac_out_d.release());
-      auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(dst_mac_out_d_col->view(), processing_stream);
-
-      cudaStreamSynchronize(processing_stream);
+      auto dst_mac_out_str_col = morpheus::doca::integers_to_mac(dst_mac_out_d_col->view());
 
       // src ip address column
       auto src_ip_out_d_size = src_ip_out_d.size();

@@ -118,17 +118,9 @@ is_http_packet(uint8_t* payload, uint8_t payload_size)
 }
 
 __device__ __forceinline__ bool
-is_udp_packet(rte_ipv4_hdr* packet_l3)
+is_tcp_packet(rte_ipv4_hdr* packet_l3)
 {
-  return true;
-  /*
-  if (packet_l3->next_proto_id == 6)
-  {
-    return true;
-  }
-
-  return false;
-  */
+  return packet_l3->next_proto_id == IPPROTO_TCP;
 }
 
 __global__ void _packet_receive_kernel(
@@ -145,10 +137,10 @@ __global__ void _packet_receive_kernel(
     *packet_count_out = 0;
     *packet_data_size_out = 0;
   }
-  
+
   __shared__ uint32_t packet_count;
   __shared__ doca_gpu_semaphore_status sem_status;
-  
+
   uintptr_t packet_address;
 
   if (threadIdx.x == 0)
@@ -229,8 +221,8 @@ __global__ void _packet_receive_kernel(
 
     auto data_size = get_payload_size(packet_l3, packet_l4);
 
-    
-    if (is_udp_packet(packet_l3)) 
+
+    if (is_tcp_packet(packet_l3))
     {
       atomicAdd(packet_data_size_out, data_size);
       atomicAdd(packet_count_out, 1);
@@ -380,8 +372,8 @@ __global__ void _packet_gather_kernel(
     );
 
     auto data_size = get_payload_size(packet_l3, packet_l4);
-    
-    if (is_udp_packet(packet_l3))
+
+    if (is_tcp_packet(packet_l3))
     {
       data_capture[i] = 1;
       data_offsets[i] = data_size;
@@ -430,19 +422,22 @@ __global__ void _packet_gather_kernel(
     );
 
     auto data_size = get_payload_size(packet_l3, packet_l4);
-    
-    if (not is_udp_packet(packet_l3))
+
+    if (not is_tcp_packet(packet_l3))
     {
       continue;
     }
- 
+
     auto packet_idx_out = data_capture[i];
 
     data_offsets_out[packet_idx_out] = data_offsets[i];
 
     for (auto data_idx = 0; data_idx < data_size; data_idx++)
     {
-      data_out[data_offsets[i] + data_idx] = packet_data[data_idx];
+      auto value = packet_data[data_idx];
+
+      // this is where the error occurs. this could happen if data_out is not big enough, or data_offsets gets corrupted somehow
+      data_out[data_offsets[i] + data_idx] = value;
     }
 
     // TCP timestamp option
@@ -527,7 +522,7 @@ struct integers_to_mac_fn {
   {
     int64_t mac_address = d_column.element<int64_t>(idx);
     char* out_ptr       = d_chars + d_offsets[idx];
-    
+
     mac_int64_to_chars(mac_address, out_ptr);
   }
 };
@@ -655,7 +650,7 @@ void packet_gather_kernel(
     data_size_out,
     tcp_flags_out,
     ether_type_out,
-    next_proto_id_out, 
+    next_proto_id_out,
     data_out
   );
 

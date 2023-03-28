@@ -121,13 +121,9 @@ inline void throw_cuda_error(cudaError_t error, const char* file, unsigned int l
  * be used after any asynchronous CUDA call, e.g., cudaMemcpyAsync, or an
  * asynchronous kernel launch.
  */
-#ifndef NDEBUG
 #define CHECK_CUDA(stream)                   \
   do {                                       \
     CUDA_TRY(cudaStreamSynchronize(stream)); \
     CUDA_TRY(cudaPeekAtLastError());         \
   } while (0);
-#else
-#define CHECK_CUDA(stream) CUDA_TRY(cudaPeekAtLastError());
-#endif
 /** @} */
